@@ -119,11 +119,13 @@ function AdminPanel() {
             <SettingCard key={s.key} setting={s} />
           ))}
 
+          <RechargeApprovals />
+          <CoinPackagesEditor />
+
           <div className="glass rounded-2xl p-4 text-xs text-muted-foreground">
             <p className="font-bold text-foreground">Coming soon in Admin</p>
             <ul className="mt-2 list-disc space-y-1 pl-4">
               <li>User management &amp; role grants</li>
-              <li>Recharge approval queue</li>
               <li>Room moderation &amp; reports</li>
               <li>Banner &amp; category editor</li>
               <li>Gift catalog editor</li>
@@ -135,6 +137,7 @@ function AdminPanel() {
     </>
   );
 }
+
 
 function SettingCard({ setting }: { setting: Setting }) {
   const qc = useQueryClient();
