@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
+import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
@@ -55,6 +56,11 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
   path: '/room/$roomId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
+  id: '/api/agora-token',
+  path: '/api/agora-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -86,6 +92,7 @@ export interface FileRoutesByFullPath {
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/me': typeof AuthenticatedMeRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
 }
 export interface FileRoutesByTo {
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/me': typeof AuthenticatedMeRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
 }
 export interface FileRoutesById {
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
+  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
 }
 export interface FileRouteTypes {
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/create-room'
     | '/me'
     | '/wallet'
+    | '/api/agora-token'
     | '/room/$roomId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/create-room'
     | '/me'
     | '/wallet'
+    | '/api/agora-token'
     | '/room/$roomId'
   id:
     | '__root__'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/_authenticated/create-room'
     | '/_authenticated/me'
     | '/_authenticated/wallet'
+    | '/api/agora-token'
     | '/room/$roomId'
   fileRoutesById: FileRoutesById
 }
@@ -161,6 +173,7 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
 }
 
@@ -213,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/room/$roomId'
       fullPath: '/room/$roomId'
       preLoaderRoute: typeof RoomRoomIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/agora-token': {
+      id: '/api/agora-token'
+      path: '/api/agora-token'
+      fullPath: '/api/agora-token'
+      preLoaderRoute: typeof ApiAgoraTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/wallet': {
@@ -270,6 +290,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  ApiAgoraTokenRoute: ApiAgoraTokenRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
 }
 export const routeTree = rootRouteImport
