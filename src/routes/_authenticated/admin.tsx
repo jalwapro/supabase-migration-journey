@@ -214,3 +214,326 @@ function SettingCard({ setting }: { setting: Setting }) {
     </div>
   );
 }
+
+// -------------------- Recharge Approvals --------------------
+
+type RechargeRow = {
+  id: string;
+  user_id: string;
+  method: string;
+  amount_pkr: number;
+  coins_expected: number;
+  proof_url: string | null;
+  sender_name: string | null;
+  sender_account: string | null;
+  txn_reference: string | null;
+  note: string | null;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  admin_note: string | null;
+};
+
+function RechargeApprovals() {
+  const qc = useQueryClient();
+  const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
+
+  const list = useQuery({
+    queryKey: ["admin_recharges", tab],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("recharge_requests")
+        .select("*")
+        .eq("status", tab)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as RechargeRow[];
+    },
+  });
+
+  const act = useMutation({
+    mutationFn: async ({
+      id,
+      approve,
+      note,
+    }: {
+      id: string;
+      approve: boolean;
+      note?: string;
+    }) => {
+      const fn = approve ? "approve_recharge" : "reject_recharge";
+      const { error } = await supabase.rpc(fn, {
+        _request_id: id,
+        _admin_note: note ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(v.approve ? "Approved & coins credited" : "Rejected");
+      qc.invalidateQueries({ queryKey: ["admin_recharges"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-bold">Recharge Approvals</h3>
+      </div>
+      <div className="mb-3 flex gap-1 rounded-full bg-card/60 p-1">
+        {(["pending", "approved", "rejected"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`flex-1 rounded-full py-1.5 text-xs font-bold capitalize ${
+              tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+      {list.isLoading && (
+        <div className="py-6 text-center">
+          <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {list.data?.length === 0 && (
+        <p className="py-6 text-center text-xs text-muted-foreground">No {tab} recharges</p>
+      )}
+      <div className="space-y-2">
+        {list.data?.map((r) => (
+          <div key={r.id} className="rounded-xl border border-border bg-card/40 p-3 text-xs">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-sm">
+                  {r.coins_expected.toLocaleString()} coins · Rs{" "}
+                  {Number(r.amount_pkr).toLocaleString()}
+                </p>
+                <p className="text-muted-foreground">
+                  {r.method} · {new Date(r.created_at).toLocaleString()}
+                </p>
+                <p className="mt-1 truncate text-[10px] text-muted-foreground">
+                  User: {r.user_id}
+                </p>
+                {r.sender_name && <p>From: {r.sender_name}</p>}
+                {r.sender_account && <p>Acct: {r.sender_account}</p>}
+                {r.txn_reference && <p>Ref: {r.txn_reference}</p>}
+                {r.note && <p className="text-muted-foreground">Note: {r.note}</p>}
+                {r.admin_note && (
+                  <p className="mt-1 text-[10px] text-[color:var(--gold)]">
+                    Admin: {r.admin_note}
+                  </p>
+                )}
+              </div>
+              {r.proof_url ? (
+                <a href={r.proof_url} target="_blank" rel="noreferrer" className="shrink-0">
+                  <img
+                    src={r.proof_url}
+                    alt="proof"
+                    className="h-16 w-16 rounded-lg object-cover"
+                  />
+                </a>
+              ) : (
+                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-lg bg-card/60">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+            </div>
+            {tab === "pending" && (
+              <div className="mt-2 flex gap-2">
+                <button
+                  disabled={act.isPending}
+                  onClick={() => act.mutate({ id: r.id, approve: true })}
+                  className="flex-1 rounded-full bg-emerald-500/90 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                >
+                  <Check className="mr-1 inline h-3 w-3" /> Approve
+                </button>
+                <button
+                  disabled={act.isPending}
+                  onClick={() => {
+                    const note = window.prompt("Reason for rejection (optional):") ?? undefined;
+                    act.mutate({ id: r.id, approve: false, note });
+                  }}
+                  className="flex-1 rounded-full bg-red-500/90 py-1.5 text-xs font-bold text-white disabled:opacity-50"
+                >
+                  <X className="mr-1 inline h-3 w-3" /> Reject
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// -------------------- Coin Packages CRUD --------------------
+
+type PkgRow = {
+  id: string;
+  coins: number;
+  bonus_coins: number;
+  price_pkr: number;
+  label: string | null;
+  badge: string | null;
+  sort_order: number;
+  active: boolean;
+};
+
+function CoinPackagesEditor() {
+  const qc = useQueryClient();
+  const list = useQuery({
+    queryKey: ["admin_packages"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coin_packages")
+        .select("*")
+        .order("sort_order");
+      if (error) throw error;
+      return (data ?? []) as PkgRow[];
+    },
+  });
+
+  const [draft, setDraft] = useState({
+    coins: 1000,
+    bonus_coins: 0,
+    price_pkr: 200,
+    label: "",
+    badge: "",
+    sort_order: 99,
+  });
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("coin_packages").insert({
+        coins: draft.coins,
+        bonus_coins: draft.bonus_coins,
+        price_pkr: draft.price_pkr,
+        label: draft.label || null,
+        badge: draft.badge || null,
+        sort_order: draft.sort_order,
+        active: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Package added");
+      qc.invalidateQueries({ queryKey: ["admin_packages"] });
+      qc.invalidateQueries({ queryKey: ["coin_packages"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const toggle = useMutation({
+    mutationFn: async (p: PkgRow) => {
+      const { error } = await supabase
+        .from("coin_packages")
+        .update({ active: !p.active })
+        .eq("id", p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_packages"] });
+      qc.invalidateQueries({ queryKey: ["coin_packages"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("coin_packages").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Deleted");
+      qc.invalidateQueries({ queryKey: ["admin_packages"] });
+      qc.invalidateQueries({ queryKey: ["coin_packages"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="glass rounded-2xl p-4">
+      <h3 className="mb-3 font-bold">Coin Packages</h3>
+      <div className="space-y-2">
+        {list.data?.map((p) => (
+          <div
+            key={p.id}
+            className="flex items-center gap-2 rounded-xl border border-border bg-card/40 p-2 text-xs"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="font-bold">
+                {p.coins.toLocaleString()}
+                {p.bonus_coins > 0 && (
+                  <span className="text-[color:var(--gold)]"> +{p.bonus_coins}</span>
+                )}{" "}
+                · Rs {Number(p.price_pkr).toLocaleString()}
+              </p>
+              <p className="text-muted-foreground">
+                {p.label || "—"} {p.badge && `· ${p.badge}`}
+              </p>
+            </div>
+            <button
+              onClick={() => toggle.mutate(p)}
+              className={`rounded-full px-2 py-1 text-[10px] font-bold ${
+                p.active
+                  ? "bg-emerald-500/20 text-emerald-400"
+                  : "bg-red-500/20 text-red-400"
+              }`}
+            >
+              {p.active ? "ON" : "OFF"}
+            </button>
+            <button
+              onClick={() => {
+                if (confirm("Delete this package?")) remove.mutate(p.id);
+              }}
+              className="rounded-full bg-red-500/10 p-1.5 text-red-400"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-3 rounded-xl border border-dashed border-border p-3">
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Add new package
+        </p>
+        <div className="grid grid-cols-2 gap-2">
+          {(
+            [
+              ["coins", "Coins", "number"],
+              ["bonus_coins", "Bonus", "number"],
+              ["price_pkr", "Price (PKR)", "number"],
+              ["sort_order", "Order", "number"],
+              ["label", "Label", "text"],
+              ["badge", "Badge", "text"],
+            ] as const
+          ).map(([k, l, t]) => (
+            <input
+              key={k}
+              type={t}
+              placeholder={l}
+              value={String(draft[k] ?? "")}
+              onChange={(e) =>
+                setDraft((d) => ({
+                  ...d,
+                  [k]: t === "number" ? Number(e.target.value) : e.target.value,
+                }))
+              }
+              className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+            />
+          ))}
+        </div>
+        <button
+          onClick={() => create.mutate()}
+          disabled={create.isPending}
+          className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-primary py-2 text-xs font-bold text-primary-foreground disabled:opacity-60"
+        >
+          <Plus className="h-3 w-3" /> Add package
+        </button>
+      </div>
+    </div>
+  );
+}
