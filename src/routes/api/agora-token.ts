@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { RtcTokenBuilder, RtcRole } from "agora-token";
+import pkg from "agora-token";
+const { RtcTokenBuilder, RtcRole } = pkg;
 import { createClient } from "@supabase/supabase-js";
 
 // Public Supabase URL — safe to embed
