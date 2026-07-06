@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -66,6 +67,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRechargeRoute = AuthenticatedRechargeRouteImport.update({
+  id: '/recharge',
+  path: '/recharge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
   id: '/me',
   path: '/me',
@@ -91,6 +97,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/me': typeof AuthenticatedMeRoute
+  '/recharge': typeof AuthenticatedRechargeRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -104,6 +111,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/me': typeof AuthenticatedMeRoute
+  '/recharge': typeof AuthenticatedRechargeRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -119,6 +127,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
+  '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -134,6 +143,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/create-room'
     | '/me'
+    | '/recharge'
     | '/wallet'
     | '/api/agora-token'
     | '/room/$roomId'
@@ -147,6 +157,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/create-room'
     | '/me'
+    | '/recharge'
     | '/wallet'
     | '/api/agora-token'
     | '/room/$roomId'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/create-room'
     | '/_authenticated/me'
+    | '/_authenticated/recharge'
     | '/_authenticated/wallet'
     | '/api/agora-token'
     | '/room/$roomId'
@@ -242,6 +254,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/recharge': {
+      id: '/_authenticated/recharge'
+      path: '/recharge'
+      fullPath: '/recharge'
+      preLoaderRoute: typeof AuthenticatedRechargeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/me': {
       id: '/_authenticated/me'
       path: '/me'
@@ -270,6 +289,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
+  AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
 }
 
@@ -277,6 +297,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
+  AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
 }
 
