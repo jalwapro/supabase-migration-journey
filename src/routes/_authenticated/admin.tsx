@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Save, Shield, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Shield, Loader2, Check, X, Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin")({
