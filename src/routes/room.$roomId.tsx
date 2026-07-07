@@ -788,11 +788,11 @@ function RoomPage() {
         >
           <div className="flex items-center gap-2">
             <button
-              onClick={() => setMicMuted((m) => !m)}
-              aria-label={micMuted ? "Unmute mic" : "Mute mic"}
+              onClick={() => agora.toggleMic()}
+              aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
-              {micMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
             <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
