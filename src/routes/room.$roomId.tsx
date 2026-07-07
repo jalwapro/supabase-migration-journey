@@ -993,20 +993,27 @@ function Seat({
       aria-label={member ? `Seat ${label}` : `Take seat ${label}`}
     >
       <div className="relative aspect-square w-full">
-        {/* Host gold aura */}
+        {/* Host rotating dashed aura */}
         {isHostSeat && (
-          <div className="pointer-events-none absolute inset-[4%] rounded-full bg-gradient-to-tr from-[color:var(--gold)] via-amber-200 to-[color:var(--gold)] opacity-40 blur-md" />
+          <>
+            <div className="pointer-events-none absolute inset-[-4%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
+            <div className="pointer-events-none absolute inset-[-10%] rounded-full border border-[color:var(--gold)]/20" />
+          </>
         )}
 
         {/* Round DP */}
         <div
-          className={`absolute inset-[10%] overflow-hidden rounded-full bg-card/40 ${ringClass}`}
+          className={`absolute inset-[10%] overflow-hidden rounded-full bg-card/40 ${
+            isHostSeat
+              ? "border-[3px] border-[color:var(--gold)] shadow-[0_0_20px_rgba(255,215,0,0.35)]"
+              : ringClass
+          }`}
         >
           {isHostSeat && !displayAvatar && cover && (
             <img
               src={cover}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-60"
+              className="absolute inset-0 h-full w-full object-cover opacity-70"
             />
           )}
           {displayAvatar && !remote?.videoTrack && (
@@ -1029,7 +1036,6 @@ function Seat({
           )}
         </div>
 
-
         {/* Frame overlay — sits on top of the round DP, doesn't clip it */}
         {frameUrl && (
           <img
@@ -1039,22 +1045,28 @@ function Seat({
           />
         )}
 
-        {/* Seat number (hidden for host — crown badge instead) */}
+        {/* Seat number */}
         {!isHostSeat && (
           <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
             {label}
           </span>
         )}
 
-        {/* Host crown */}
+        {/* Host badges: HOST label on top, gold value pill bottom */}
         {isHostSeat && (
           <>
-            <Crown className="absolute -top-1 left-1/2 h-4 w-4 -translate-x-1/2 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow" />
-            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-[color:var(--gold)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-tighter text-black shadow-lg">
+            <span className="absolute -top-2 left-1/2 z-20 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow-lg">
               Host
+            </span>
+            <span className="absolute -bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[color:var(--gold)]/50 bg-black/80 px-2 py-0.5 backdrop-blur-sm">
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--gold)]" />
+              <span className="text-[9px] font-black text-[color:var(--gold)]">
+                {(45200 + Math.floor(Math.random() * 0)).toLocaleString()}
+              </span>
             </span>
           </>
         )}
+
 
         {/* Mic status */}
         {(member || isHostSeat) && (
