@@ -35,6 +35,7 @@ import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
+import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 
 const SplashRoute = SplashRouteImport.update({
   id: '/splash',
@@ -170,6 +171,12 @@ const AuthenticatedAdminCoinsRoute = AuthenticatedAdminCoinsRouteImport.update({
   path: '/coins',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminBannersRoute =
+  AuthenticatedAdminBannersRouteImport.update({
+    id: '/banners',
+    path: '/banners',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
@@ -213,6 +221,7 @@ export interface FileRoutesByTo {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/banners'
     | '/admin/coins'
     | '/admin/gifts'
     | '/admin/integrations'
@@ -297,6 +308,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/banners'
     | '/admin/coins'
     | '/admin/gifts'
     | '/admin/integrations'
@@ -325,6 +337,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/_authenticated/admin/banners'
     | '/_authenticated/admin/coins'
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/integrations'
@@ -533,10 +546,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCoinsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/banners': {
+      id: '/_authenticated/admin/banners'
+      path: '/banners'
+      fullPath: '/admin/banners'
+      preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
@@ -549,6 +570,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
