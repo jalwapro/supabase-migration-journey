@@ -1,11 +1,10 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { Mic, Video, Lock, Loader2 } from "lucide-react";
+import { Mic, Video, Lock, Loader2, ArrowLeft, Radio, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/create-room")({
@@ -15,15 +14,16 @@ export const Route = createFileRoute("/_authenticated/create-room")({
 type Category = { id: string; name: string; slug: string; icon: string | null };
 
 function CreateRoom() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const [title, setTitle] = useState("");
+  const defaultTitle = `${profile?.username ?? "jalwa"}'s Live`;
+  const [title, setTitle] = useState(defaultTitle);
   const [type, setType] = useState<"voice" | "video">("voice");
-  const [seats, setSeats] = useState(8);
   const [locked, setLocked] = useState(false);
   const [password, setPassword] = useState("");
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(true);
 
   const cats = useQuery({
     queryKey: ["categories"],
@@ -37,6 +37,17 @@ function CreateRoom() {
       return data as Category[];
     },
   });
+
+  const categoryList: Category[] =
+    cats.data && cats.data.length > 0
+      ? cats.data
+      : [
+          { id: "popular", name: "Popular", slug: "popular", icon: null },
+          { id: "music", name: "Music", slug: "music", icon: null },
+          { id: "gaming", name: "Gaming", slug: "gaming", icon: null },
+          { id: "party", name: "Party", slug: "party", icon: null },
+          { id: "chat", name: "Chat", slug: "chat", icon: null },
+        ];
 
   async function create() {
     if (!user) return;
@@ -52,7 +63,7 @@ function CreateRoom() {
         host_id: user.id,
         title: title.trim(),
         room_type: type,
-        seat_count: seats,
+        seat_count: 8,
         is_locked: locked,
         password: locked ? password || null : null,
         category_id: categoryId,
@@ -71,26 +82,122 @@ function CreateRoom() {
 
   return (
     <>
-      <AppShell title="Go Live" subtitle="Create your party">
-        <div className="space-y-5 px-4 pt-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+      <main className="min-h-dvh bg-background pb-40">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 pt-5">
+          <button
+            onClick={() => navigate({ to: "/" })}
+            aria-label="Back"
+            className="grid h-9 w-9 place-items-center rounded-full bg-card/70 border border-border"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <h1 className="text-2xl font-extrabold tracking-tight">
+            <span className="bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] bg-clip-text text-transparent">
+              Live
+            </span>{" "}
+            Rooms
+          </h1>
+        </div>
+
+        {/* Type selector cards */}
+        <div className="mt-5 grid grid-cols-2 gap-3 px-4">
+          <button
+            onClick={() => {
+              setType("voice");
+              setSheetOpen(true);
+            }}
+            className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
+              type === "voice"
+                ? "border-[color:var(--primary)]/60 bg-gradient-to-br from-[color:var(--primary)]/25 via-card to-card shadow-lg shadow-[color:var(--primary)]/10"
+                : "border-border bg-card/60"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground">
+                <Mic className="h-5 w-5" />
+              </span>
+              <div>
+                <div className="text-sm font-bold">Voice Room</div>
+                <div className="text-[11px] text-muted-foreground">Audio party</div>
+              </div>
+            </div>
+          </button>
+          <button
+            onClick={() => {
+              setType("video");
+              setSheetOpen(true);
+            }}
+            className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
+              type === "video"
+                ? "border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--gold)]/25 via-card to-card shadow-lg shadow-[color:var(--gold)]/10"
+                : "border-border bg-card/60"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground">
+                <Video className="h-5 w-5" />
+              </span>
+              <div>
+                <div className="text-sm font-bold">Live Video Room</div>
+                <div className="text-[11px] text-muted-foreground">Camera live</div>
+              </div>
+            </div>
+          </button>
+        </div>
+
+        {/* Empty state */}
+        <div className="mt-4 px-4">
+          <div className="rounded-2xl border border-border bg-card/60 px-6 py-8 text-center">
+            <Radio className="mx-auto h-7 w-7 text-[color:var(--primary)]" />
+            <p className="mt-3 text-sm font-bold">No live rooms yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Be the first to go live and start the party.
+            </p>
+            <button
+              onClick={() => setSheetOpen(true)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-5 py-2 text-xs font-bold text-primary-foreground"
+            >
+              <Plus className="h-3.5 w-3.5" /> Create Room
+            </button>
+          </div>
+        </div>
+      </main>
+
+      {/* Go Live bottom sheet */}
+      {sheetOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+            onClick={() => setSheetOpen(false)}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+          >
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-extrabold">Go Live</h2>
+              <button
+                onClick={() => setSheetOpen(false)}
+                aria-label="Close"
+                className="grid h-8 w-8 place-items-center rounded-full bg-background/60 border border-border"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
               Room title
             </label>
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Friday night vibes 🎉"
               maxLength={60}
-              className="w-full rounded-2xl border border-border bg-card/60 px-4 py-3 outline-none focus:border-[color:var(--primary)]"
+              className="w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none focus:border-[color:var(--primary)]"
             />
-          </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Type
-            </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-2 gap-3">
               {(["voice", "video"] as const).map((t) => {
                 const Icon = t === "video" ? Video : Mic;
                 const active = type === t;
@@ -98,10 +205,10 @@ function CreateRoom() {
                   <button
                     key={t}
                     onClick={() => setType(t)}
-                    className={`flex items-center justify-center gap-2 rounded-2xl border py-4 font-semibold capitalize transition ${
+                    className={`flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold capitalize transition ${
                       active
-                        ? "border-transparent bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
-                        : "border-border bg-card/60 text-foreground/80"
+                        ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                        : "border border-border bg-background/60 text-foreground/80"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
@@ -110,80 +217,71 @@ function CreateRoom() {
                 );
               })}
             </div>
-          </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Category
-            </label>
-            <div className="scrollbar-hide flex gap-2 overflow-x-auto pb-1">
-              {(cats.data ?? []).map((c) => {
-                const active = categoryId === c.id;
+            <div className="mt-4 scrollbar-hide flex gap-2 overflow-x-auto pb-1">
+              {categoryList.map((c, i) => {
+                const active = categoryId === c.id || (!categoryId && i === 0);
                 return (
                   <button
                     key={c.id}
                     onClick={() => setCategoryId(active ? null : c.id)}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold ${
+                    className={`shrink-0 rounded-full px-4 py-1.5 text-xs font-semibold ${
                       active
-                        ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
-                        : "border border-border bg-card/60"
+                        ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--primary)] text-primary-foreground"
+                        : "border border-border bg-background/60"
                     }`}
                   >
-                    <span>{c.icon}</span>
+                    {c.icon ? `${c.icon} ` : ""}
                     {c.name}
                   </button>
                 );
               })}
             </div>
-          </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-              Seats · {seats}
-            </label>
-            <input
-              type="range"
-              min={2}
-              max={12}
-              value={seats}
-              onChange={(e) => setSeats(Number(e.target.value))}
-              className="w-full accent-[color:var(--primary)]"
-            />
-          </div>
+            <div className="mt-4 rounded-2xl border border-border bg-background/60 p-3">
+              <label className="flex cursor-pointer items-center justify-between gap-3">
+                <span className="flex items-center gap-3">
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-card">
+                    <Lock className="h-4 w-4" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-bold">Private Room (PIN lock)</span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      Only friends with the PIN can enter
+                    </span>
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={locked}
+                  onChange={(e) => setLocked(e.target.checked)}
+                  className="h-5 w-9 accent-[color:var(--primary)]"
+                />
+              </label>
+              {locked && (
+                <input
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Room PIN"
+                  className="mt-3 w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm outline-none focus:border-[color:var(--primary)]"
+                />
+              )}
+            </div>
 
-          <div className="rounded-2xl border border-border bg-card/60 p-4">
-            <label className="flex cursor-pointer items-center justify-between">
-              <span className="flex items-center gap-2 text-sm font-semibold">
-                <Lock className="h-4 w-4" /> Lock room with password
-              </span>
-              <input
-                type="checkbox"
-                checked={locked}
-                onChange={(e) => setLocked(e.target.checked)}
-                className="h-5 w-5 accent-[color:var(--primary)]"
-              />
-            </label>
-            {locked && (
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Room password"
-                className="mt-3 w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-[color:var(--primary)]"
-              />
-            )}
+            <button
+              onClick={create}
+              disabled={busy}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-4 text-base font-extrabold text-primary-foreground disabled:opacity-60"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radio className="h-4 w-4" />}
+              Start Live Room
+            </button>
           </div>
+        </>
+      )}
 
-          <button
-            onClick={create}
-            disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-4 text-base font-bold text-primary-foreground disabled:opacity-60"
-          >
-            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            Go Live
-          </button>
-        </div>
-      </AppShell>
       <BottomNav />
+      <Link to="/" className="hidden" />
     </>
   );
 }
