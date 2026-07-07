@@ -801,6 +801,78 @@ function RoomPage() {
   );
 }
 
+function IconRound({
+  children,
+  onClick,
+  label,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className={`grid h-8 w-8 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
+        danger ? "bg-[color:var(--destructive)]/90 text-white" : "bg-black/30 text-white/80"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Pill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md">
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+function RoundBtn({
+  icon,
+  label,
+  onClick,
+  active,
+  badge,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+  badge?: number;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="relative flex flex-col items-center gap-0.5"
+    >
+      <span
+        className={`grid h-9 w-9 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
+          active
+            ? "bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white"
+            : "bg-black/30 text-white/80"
+        }`}
+      >
+        {icon}
+      </span>
+      {badge != null && badge > 0 && (
+        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--destructive)] px-1 text-[9px] font-bold text-white">
+          {badge}
+        </span>
+      )}
+      <span className="text-[9px] text-white/60">{label}</span>
+    </button>
+  );
+}
+
+
 function TopBtn({
   icon,
   label,
