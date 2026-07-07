@@ -155,6 +155,14 @@
   }
 }
 
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+@utility animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}
+
+
 /* Mobile-app frame: cap app to phone width on larger screens */
 .app-frame-outer {
   min-height: 100dvh;
