@@ -27,15 +27,34 @@ import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
+import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
+import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
+import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
+import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenticated/admin.splash'
+import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
+import { Route as AuthenticatedAdminRoomsRouteImport } from './routes/_authenticated/admin.rooms'
+import { Route as AuthenticatedAdminRoomBackgroundsRouteImport } from './routes/_authenticated/admin.room-backgrounds'
+import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin.roles'
+import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
+import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin.rankings'
+import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
+import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
+import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
+import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
+import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
+import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
+import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
+import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
+import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
 
 const SplashRoute = SplashRouteImport.update({
   id: '/splash',
@@ -127,6 +146,12 @@ const AuthenticatedGamesLuckySpinRoute =
     path: '/lucky-spin',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
+const AuthenticatedAdminWithdrawalsRoute =
+  AuthenticatedAdminWithdrawalsRouteImport.update({
+    id: '/withdrawals',
+    path: '/withdrawals',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminVipRoute = AuthenticatedAdminVipRouteImport.update({
   id: '/vip',
   path: '/vip',
@@ -143,18 +168,97 @@ const AuthenticatedAdminThemesRoute =
     path: '/themes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminThemeCategoriesRoute =
+  AuthenticatedAdminThemeCategoriesRouteImport.update({
+    id: '/theme-categories',
+    path: '/theme-categories',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSupportRoute =
+  AuthenticatedAdminSupportRouteImport.update({
+    id: '/support',
+    path: '/support',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSplashRoute =
+  AuthenticatedAdminSplashRouteImport.update({
+    id: '/splash',
+    path: '/splash',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSettingsRoute =
+  AuthenticatedAdminSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminRoomsRoute = AuthenticatedAdminRoomsRouteImport.update({
+  id: '/rooms',
+  path: '/rooms',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminRoomBackgroundsRoute =
+  AuthenticatedAdminRoomBackgroundsRouteImport.update({
+    id: '/room-backgrounds',
+    path: '/room-backgrounds',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminRolesRoute = AuthenticatedAdminRolesRouteImport.update({
+  id: '/roles',
+  path: '/roles',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminReportsRoute =
+  AuthenticatedAdminReportsRouteImport.update({
+    id: '/reports',
+    path: '/reports',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminRechargeRoute =
   AuthenticatedAdminRechargeRouteImport.update({
     id: '/recharge',
     path: '/recharge',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminRankingsRoute =
+  AuthenticatedAdminRankingsRouteImport.update({
+    id: '/rankings',
+    path: '/rankings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminProfileAdminRoute =
+  AuthenticatedAdminProfileAdminRouteImport.update({
+    id: '/profile-admin',
+    path: '/profile-admin',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPkRoute = AuthenticatedAdminPkRouteImport.update({
+  id: '/pk',
+  path: '/pk',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPaymentAccountsRoute =
   AuthenticatedAdminPaymentAccountsRouteImport.update({
     id: '/payment-accounts',
     path: '/payment-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPartnersRoute =
+  AuthenticatedAdminPartnersRouteImport.update({
+    id: '/partners',
+    path: '/partners',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminLiveRoute = AuthenticatedAdminLiveRouteImport.update({
+  id: '/live',
+  path: '/live',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminIntegrationsRoute =
   AuthenticatedAdminIntegrationsRouteImport.update({
     id: '/integrations',
@@ -166,9 +270,26 @@ const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
   path: '/gifts',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminFreeAccountsRoute =
+  AuthenticatedAdminFreeAccountsRouteImport.update({
+    id: '/free-accounts',
+    path: '/free-accounts',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminFinanceReportsRoute =
+  AuthenticatedAdminFinanceReportsRouteImport.update({
+    id: '/finance-reports',
+    path: '/finance-reports',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCoinsRoute = AuthenticatedAdminCoinsRouteImport.update({
   id: '/coins',
   path: '/coins',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
+  id: '/cms',
+  path: '/cms',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminBannersRoute =
@@ -177,6 +298,11 @@ const AuthenticatedAdminBannersRoute =
     path: '/banners',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
+  id: '/ads',
+  path: '/ads',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -194,15 +320,34 @@ export interface FileRoutesByFullPath {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/ads': typeof AuthenticatedAdminAdsRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
+  '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
+  '/admin/live': typeof AuthenticatedAdminLiveRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/admin/pk': typeof AuthenticatedAdminPkRoute
+  '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
+  '/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
+  '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/splash': typeof AuthenticatedAdminSplashRoute
+  '/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
+  '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -221,15 +366,34 @@ export interface FileRoutesByTo {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/ads': typeof AuthenticatedAdminAdsRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
+  '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
+  '/admin/live': typeof AuthenticatedAdminLiveRoute
+  '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/admin/pk': typeof AuthenticatedAdminPkRoute
+  '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
+  '/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
+  '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/splash': typeof AuthenticatedAdminSplashRoute
+  '/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
+  '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -251,15 +415,34 @@ export interface FileRoutesById {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
+  '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
+  '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
+  '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
+  '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
+  '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
+  '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
+  '/_authenticated/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
+  '/_authenticated/admin/rooms': typeof AuthenticatedAdminRoomsRoute
+  '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/splash': typeof AuthenticatedAdminSplashRoute
+  '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
+  '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -281,15 +464,34 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/ads'
     | '/admin/banners'
+    | '/admin/cms'
     | '/admin/coins'
+    | '/admin/finance-reports'
+    | '/admin/free-accounts'
     | '/admin/gifts'
     | '/admin/integrations'
+    | '/admin/live'
+    | '/admin/logs'
+    | '/admin/partners'
     | '/admin/payment-accounts'
+    | '/admin/pk'
+    | '/admin/profile-admin'
+    | '/admin/rankings'
     | '/admin/recharge'
+    | '/admin/reports'
+    | '/admin/roles'
+    | '/admin/room-backgrounds'
+    | '/admin/rooms'
+    | '/admin/settings'
+    | '/admin/splash'
+    | '/admin/support'
+    | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
     | '/admin/vip'
+    | '/admin/withdrawals'
     | '/games/lucky-spin'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -308,15 +510,34 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/ads'
     | '/admin/banners'
+    | '/admin/cms'
     | '/admin/coins'
+    | '/admin/finance-reports'
+    | '/admin/free-accounts'
     | '/admin/gifts'
     | '/admin/integrations'
+    | '/admin/live'
+    | '/admin/logs'
+    | '/admin/partners'
     | '/admin/payment-accounts'
+    | '/admin/pk'
+    | '/admin/profile-admin'
+    | '/admin/rankings'
     | '/admin/recharge'
+    | '/admin/reports'
+    | '/admin/roles'
+    | '/admin/room-backgrounds'
+    | '/admin/rooms'
+    | '/admin/settings'
+    | '/admin/splash'
+    | '/admin/support'
+    | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
     | '/admin/vip'
+    | '/admin/withdrawals'
     | '/games/lucky-spin'
     | '/admin'
   id:
@@ -337,15 +558,34 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/_authenticated/admin/ads'
     | '/_authenticated/admin/banners'
+    | '/_authenticated/admin/cms'
     | '/_authenticated/admin/coins'
+    | '/_authenticated/admin/finance-reports'
+    | '/_authenticated/admin/free-accounts'
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/integrations'
+    | '/_authenticated/admin/live'
+    | '/_authenticated/admin/logs'
+    | '/_authenticated/admin/partners'
     | '/_authenticated/admin/payment-accounts'
+    | '/_authenticated/admin/pk'
+    | '/_authenticated/admin/profile-admin'
+    | '/_authenticated/admin/rankings'
     | '/_authenticated/admin/recharge'
+    | '/_authenticated/admin/reports'
+    | '/_authenticated/admin/roles'
+    | '/_authenticated/admin/room-backgrounds'
+    | '/_authenticated/admin/rooms'
+    | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/splash'
+    | '/_authenticated/admin/support'
+    | '/_authenticated/admin/theme-categories'
     | '/_authenticated/admin/themes'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/vip'
+    | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -490,6 +730,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesLuckySpinRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/admin/withdrawals': {
+      id: '/_authenticated/admin/withdrawals'
+      path: '/withdrawals'
+      fullPath: '/admin/withdrawals'
+      preLoaderRoute: typeof AuthenticatedAdminWithdrawalsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/vip': {
       id: '/_authenticated/admin/vip'
       path: '/vip'
@@ -511,6 +758,62 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminThemesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/theme-categories': {
+      id: '/_authenticated/admin/theme-categories'
+      path: '/theme-categories'
+      fullPath: '/admin/theme-categories'
+      preLoaderRoute: typeof AuthenticatedAdminThemeCategoriesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/support': {
+      id: '/_authenticated/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AuthenticatedAdminSupportRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/splash': {
+      id: '/_authenticated/admin/splash'
+      path: '/splash'
+      fullPath: '/admin/splash'
+      preLoaderRoute: typeof AuthenticatedAdminSplashRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/settings': {
+      id: '/_authenticated/admin/settings'
+      path: '/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/rooms': {
+      id: '/_authenticated/admin/rooms'
+      path: '/rooms'
+      fullPath: '/admin/rooms'
+      preLoaderRoute: typeof AuthenticatedAdminRoomsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/room-backgrounds': {
+      id: '/_authenticated/admin/room-backgrounds'
+      path: '/room-backgrounds'
+      fullPath: '/admin/room-backgrounds'
+      preLoaderRoute: typeof AuthenticatedAdminRoomBackgroundsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/roles': {
+      id: '/_authenticated/admin/roles'
+      path: '/roles'
+      fullPath: '/admin/roles'
+      preLoaderRoute: typeof AuthenticatedAdminRolesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/reports': {
+      id: '/_authenticated/admin/reports'
+      path: '/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AuthenticatedAdminReportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/recharge': {
       id: '/_authenticated/admin/recharge'
       path: '/recharge'
@@ -518,11 +821,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRechargeRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/rankings': {
+      id: '/_authenticated/admin/rankings'
+      path: '/rankings'
+      fullPath: '/admin/rankings'
+      preLoaderRoute: typeof AuthenticatedAdminRankingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/profile-admin': {
+      id: '/_authenticated/admin/profile-admin'
+      path: '/profile-admin'
+      fullPath: '/admin/profile-admin'
+      preLoaderRoute: typeof AuthenticatedAdminProfileAdminRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pk': {
+      id: '/_authenticated/admin/pk'
+      path: '/pk'
+      fullPath: '/admin/pk'
+      preLoaderRoute: typeof AuthenticatedAdminPkRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/payment-accounts': {
       id: '/_authenticated/admin/payment-accounts'
       path: '/payment-accounts'
       fullPath: '/admin/payment-accounts'
       preLoaderRoute: typeof AuthenticatedAdminPaymentAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/partners': {
+      id: '/_authenticated/admin/partners'
+      path: '/partners'
+      fullPath: '/admin/partners'
+      preLoaderRoute: typeof AuthenticatedAdminPartnersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/logs': {
+      id: '/_authenticated/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AuthenticatedAdminLogsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/live': {
+      id: '/_authenticated/admin/live'
+      path: '/live'
+      fullPath: '/admin/live'
+      preLoaderRoute: typeof AuthenticatedAdminLiveRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/integrations': {
@@ -539,11 +884,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/free-accounts': {
+      id: '/_authenticated/admin/free-accounts'
+      path: '/free-accounts'
+      fullPath: '/admin/free-accounts'
+      preLoaderRoute: typeof AuthenticatedAdminFreeAccountsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/finance-reports': {
+      id: '/_authenticated/admin/finance-reports'
+      path: '/finance-reports'
+      fullPath: '/admin/finance-reports'
+      preLoaderRoute: typeof AuthenticatedAdminFinanceReportsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/coins': {
       id: '/_authenticated/admin/coins'
       path: '/coins'
       fullPath: '/admin/coins'
       preLoaderRoute: typeof AuthenticatedAdminCoinsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/cms': {
+      id: '/_authenticated/admin/cms'
+      path: '/cms'
+      fullPath: '/admin/cms'
+      preLoaderRoute: typeof AuthenticatedAdminCmsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/banners': {
@@ -553,33 +919,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/ads': {
+      id: '/_authenticated/admin/ads'
+      path: '/ads'
+      fullPath: '/admin/ads'
+      preLoaderRoute: typeof AuthenticatedAdminAdsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAdsRoute: typeof AuthenticatedAdminAdsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
+  AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
+  AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
+  AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
+  AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
+  AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
+  AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
+  AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
+  AuthenticatedAdminProfileAdminRoute: typeof AuthenticatedAdminProfileAdminRoute
+  AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
+  AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
+  AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
+  AuthenticatedAdminRoomBackgroundsRoute: typeof AuthenticatedAdminRoomBackgroundsRoute
+  AuthenticatedAdminRoomsRoute: typeof AuthenticatedAdminRoomsRoute
+  AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminSplashRoute: typeof AuthenticatedAdminSplashRoute
+  AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
+  AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
+  AuthenticatedAdminWithdrawalsRoute: typeof AuthenticatedAdminWithdrawalsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAdsRoute: AuthenticatedAdminAdsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
+  AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
+  AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
+  AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
+  AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,
+  AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
+  AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
+  AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
+  AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
+  AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
+  AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
+  AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
+  AuthenticatedAdminRoomBackgroundsRoute:
+    AuthenticatedAdminRoomBackgroundsRoute,
+  AuthenticatedAdminRoomsRoute: AuthenticatedAdminRoomsRoute,
+  AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminSplashRoute: AuthenticatedAdminSplashRoute,
+  AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
+  AuthenticatedAdminThemeCategoriesRoute:
+    AuthenticatedAdminThemeCategoriesRoute,
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
+  AuthenticatedAdminWithdrawalsRoute: AuthenticatedAdminWithdrawalsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
