@@ -1689,3 +1689,205 @@ function SeatsSheet({
     </>
   );
 }
+
+/* ─── Premium video room settings sheet ───────────────────────── */
+type VideoFxKey = "beauty" | "mirror" | "hd" | "blur";
+
+function VideoSettingsSheet({
+  open,
+  onClose,
+  isHost,
+  fx,
+  onFxChange,
+  videoOn,
+  onToggleVideo,
+  muted,
+  onToggleMute,
+  onOpenSeats,
+  onOpenMusic,
+  onOpenGames,
+  onShare,
+  onEndLive,
+  onPk,
+}: {
+  open: boolean;
+  onClose: () => void;
+  isHost: boolean;
+  fx: Record<VideoFxKey, boolean>;
+  onFxChange: (k: VideoFxKey, v: boolean) => void;
+  videoOn: boolean;
+  onToggleVideo: () => void;
+  muted: boolean;
+  onToggleMute: () => void;
+  onOpenSeats: () => void;
+  onOpenMusic: () => void;
+  onOpenGames: () => void;
+  onShare: () => void;
+  onEndLive: () => void;
+  onPk: () => void;
+}) {
+  if (!open) return null;
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-white/10 bg-gradient-to-b from-[#1a0b2e] via-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/25" />
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-extrabold">
+            <span className="bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] bg-clip-text text-transparent">
+              Room Settings
+            </span>
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/10"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Video FX row */}
+        {(isHost || videoOn) && (
+          <>
+            <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
+              Video Effects
+            </div>
+            <div className="mb-4 grid grid-cols-4 gap-2">
+              <FxToggle
+                icon={<Sparkles className="h-4 w-4" />}
+                label="Beauty"
+                active={fx.beauty}
+                onClick={() => onFxChange("beauty", !fx.beauty)}
+              />
+              <FxToggle
+                icon={<FlipHorizontal className="h-4 w-4" />}
+                label="Mirror"
+                active={fx.mirror}
+                onClick={() => onFxChange("mirror", !fx.mirror)}
+              />
+              <FxToggle
+                icon={<Video className="h-4 w-4" />}
+                label={fx.hd ? "HD" : "SD"}
+                active={fx.hd}
+                onClick={() => onFxChange("hd", !fx.hd)}
+              />
+              <FxToggle
+                icon={<Grid3x3 className="h-4 w-4" />}
+                label="Blur BG"
+                active={fx.blur}
+                onClick={() => onFxChange("blur", !fx.blur)}
+              />
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <button
+                onClick={onToggleVideo}
+                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+                  videoOn
+                    ? "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                    : "border-white/15 bg-white/5 text-white/80"
+                }`}
+              >
+                {videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+                {videoOn ? "Camera On" : "Camera Off"}
+              </button>
+              <button
+                onClick={onToggleMute}
+                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+                  muted
+                    ? "border-white/15 bg-white/5 text-white/80"
+                    : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                }`}
+              >
+                {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                {muted ? "Mic Off" : "Mic On"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Actions grid */}
+        <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
+          Room Tools
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <ToolBtn icon={<Music className="h-5 w-5" />} label="Music" onClick={onOpenMusic} disabled={!isHost} />
+          <ToolBtn icon={<Gamepad2 className="h-5 w-5" />} label="Games" onClick={onOpenGames} />
+          <ToolBtn icon={<Swords className="h-5 w-5" />} label="PK" onClick={onPk} />
+          <ToolBtn icon={<Share2 className="h-5 w-5" />} label="Invite" onClick={onShare} />
+          {isHost && (
+            <ToolBtn icon={<Armchair className="h-5 w-5" />} label="Seats" onClick={onOpenSeats} />
+          )}
+          <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={() => {}} />
+          <ToolBtn icon={<Trophy className="h-5 w-5" />} label="Rank" onClick={() => {}} />
+          <ToolBtn icon={<Flame className="h-5 w-5" />} label="Boost" onClick={() => {}} />
+        </div>
+
+        {isHost && (
+          <button
+            onClick={onEndLive}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-rose-500 via-[color:var(--destructive)] to-rose-600 py-3.5 text-sm font-black text-white shadow-lg shadow-rose-500/30"
+          >
+            <Power className="h-4 w-4" /> End Live
+          </button>
+        )}
+      </div>
+    </>
+  );
+}
+
+function FxToggle({
+  icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-1 rounded-2xl border py-3 transition ${
+        active
+          ? "border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--gold)]/25 to-[color:var(--primary)]/15 text-white shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
+          : "border-white/12 bg-white/5 text-white/70"
+      }`}
+    >
+      {icon}
+      <span className="text-[10.5px] font-bold">{label}</span>
+    </button>
+  );
+}
+
+function ToolBtn({
+  icon,
+  label,
+  onClick,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="flex flex-col items-center justify-center gap-1 rounded-2xl border border-white/12 bg-white/5 py-3 text-white/85 transition hover:bg-white/10 disabled:opacity-40"
+    >
+      {icon}
+      <span className="text-[10.5px] font-bold">{label}</span>
+    </button>
+  );
+}
