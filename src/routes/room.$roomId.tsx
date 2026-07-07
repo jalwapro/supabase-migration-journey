@@ -119,8 +119,11 @@ function RoomPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
-  const [liked, setLiked] = useState(false);
-  const [roomPoints, setRoomPoints] = useState(0);
+  const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
+    coin_score: 0,
+    like_count: 0,
+    gift_count: 0,
+  });
 
   const room = useQuery({
     queryKey: ["room", roomId],
@@ -155,7 +158,12 @@ function RoomPage() {
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const [{ data: mData }, { data: msgData }] = await Promise.all([
+      const [
+        { data: mData },
+        { data: msgData },
+        { data: likeData },
+        { data: popData },
+      ] = await Promise.all([
         supabase
           .from("room_members")
           .select(
@@ -170,10 +178,31 @@ function RoomPage() {
           .eq("room_id", roomId)
           .order("created_at", { ascending: false })
           .limit(50),
+        supabase
+          .from("room_seat_likes")
+          .select("seat_index")
+          .eq("room_id", roomId),
+        supabase
+          .from("room_popularity")
+          .select("coin_score,like_count,gift_count")
+          .eq("room_id", roomId)
+          .maybeSingle(),
       ]);
       if (cancel) return;
       setMembers((mData ?? []) as unknown as Member[]);
       setMessages(((msgData ?? []) as unknown as Message[]).reverse());
+      const likeMap: Record<number, number> = {};
+      (likeData ?? []).forEach((row: { seat_index: number }) => {
+        likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
+      });
+      setSeatLikes(likeMap);
+      if (popData) {
+        setPopularity({
+          coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
+          like_count: Number((popData as { like_count: number }).like_count ?? 0),
+          gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
+        });
+      }
     })();
     return () => {
       cancel = true;
@@ -202,7 +231,6 @@ function RoomPage() {
             row.user = (data as Message["user"]) ?? null;
           }
           setMessages((prev) => [...prev.slice(-99), row]);
-          if (row.kind === "gift") setRoomPoints((n) => n + 10);
         },
       )
       .on(
@@ -221,6 +249,40 @@ function RoomPage() {
             )
             .eq("room_id", roomId);
           setMembers((data ?? []) as unknown as Member[]);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "room_seat_likes",
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as { seat_index: number };
+          setSeatLikes((prev) => ({
+            ...prev,
+            [row.seat_index]: (prev[row.seat_index] ?? 0) + 1,
+          }));
+          setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "gift_sends",
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as { coins_spent: number; quantity: number };
+          setPopularity((p) => ({
+            ...p,
+            coin_score: p.coin_score + Number(row.coins_spent ?? 0),
+            gift_count: p.gift_count + Number(row.quantity ?? 0),
+          }));
         },
       )
       .subscribe();
@@ -408,9 +470,27 @@ function RoomPage() {
     setLudoOpen(true);
   }
 
-  function likeSeat(i: number) {
+  async function likeSeat(i: number) {
+    if (!user) {
+      toast.error("Sign in to like");
+      return;
+    }
+    // optimistic bump
     setSeatLikes((prev) => ({ ...prev, [i]: (prev[i] ?? 0) + 1 }));
-    setRoomPoints((n) => n + 1);
+    setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
+    const { data, error } = await supabase.rpc("like_room_seat", {
+      _room_id: roomId,
+      _seat_index: i,
+    });
+    if (error) {
+      toast.error(error.message);
+      setSeatLikes((prev) => ({ ...prev, [i]: Math.max(0, (prev[i] ?? 1) - 1) }));
+      setPopularity((p) => ({ ...p, like_count: Math.max(0, p.like_count - 1) }));
+      return;
+    }
+    if (typeof data === "number") {
+      setSeatLikes((prev) => ({ ...prev, [i]: data }));
+    }
   }
 
   if (room.isLoading) {
@@ -438,7 +518,14 @@ function RoomPage() {
 
   const r = room.data;
   const roomCode = shortRoomCode(r.id);
-  const popularityPct = Math.min(100, Math.round((roomPoints / 200) * 100));
+  const popScore = popularity.coin_score + popularity.like_count;
+  const popularityPct = Math.min(100, Math.round((popScore / 2000) * 100));
+  const popScoreLabel =
+    popScore >= 1_000_000
+      ? `${(popScore / 1_000_000).toFixed(1)}M`
+      : popScore >= 1000
+        ? `${(popScore / 1000).toFixed(1)}K`
+        : String(popScore);
   const giftReceivers: GiftReceiver[] = [
     ...(r.host && r.host_id !== user?.id
       ? [{ id: r.host_id, username: r.host.username, avatar: r.host.avatar }]
@@ -509,11 +596,16 @@ function RoomPage() {
 
         {/* Rank + members row */}
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <button className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur">
+          <Link
+            to="/rank"
+            className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur"
+          >
             <span className="text-lg leading-none">🏆</span>
-            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">No ranking yet</span>
+            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">
+              {popScore > 0 ? `${popScoreLabel} pts` : "Unranked"}
+            </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
-          </button>
+          </Link>
           <div className="flex items-center gap-1.5">
             {!isHost && (
               <button
@@ -611,7 +703,7 @@ function RoomPage() {
                 ))}
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages.length === 0 && <EmptyChat />}
                 {messages
                   .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
@@ -626,7 +718,7 @@ function RoomPage() {
                   <span className="truncate text-[13px] font-bold text-white/90">🔥 Room Popularity</span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
                 </div>
-                <div className="mt-2 text-2xl font-semibold leading-none">12.5K</div>
+                <div className="mt-2 text-2xl font-semibold leading-none">{popScoreLabel}</div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300"
@@ -663,7 +755,7 @@ function RoomPage() {
                 ))}
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages.length === 0 && <EmptyChat />}
                 {messages
                   .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
@@ -1029,33 +1121,14 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   );
 }
 
-function DefaultVoiceMessages() {
+function EmptyChat() {
   return (
-    <div className="space-y-1.5 text-[11px] leading-snug text-white/88">
-      <p>
-        🧡 <span className="font-bold text-violet-300">Room</span> : Welcome to the room. Please
-        follow the community guidelines.
-      </p>
-      <p>
-        💙 <span className="font-bold text-sky-300">System</span> : Respect each other and enjoy
-        your time here.
-      </p>
-      <p>
-        👩 <span className="font-bold text-violet-200">Sunny💗</span> : Hello everyone 👋
-      </p>
-      <p>
-        🏆 <span className="font-bold text-[color:var(--gold)]">Queen👑</span> : Hi Sunny 💞
-      </p>
-      <p>
-        🎁 <span className="font-bold text-[color:var(--primary)]">Ali King</span> :{" "}
-        <span className="font-bold text-[color:var(--gold)]">sent Rose 🌹 x10</span>
-      </p>
-      <p>
-        👥 <span className="font-bold text-emerald-300">Sara</span> : joined the room
-      </p>
+    <div className="grid h-full place-items-center py-4 text-center text-[11px] leading-snug text-white/50">
+      <p>Say hi to break the ice 👋</p>
     </div>
   );
 }
+
 
 function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
   if (!latestEnter?.user) return null;
