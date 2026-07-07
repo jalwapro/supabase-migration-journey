@@ -23,6 +23,8 @@ import {
   Music,
   Flame,
   Sparkles,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -220,6 +222,34 @@ function RoomPage() {
     };
   }, [user, room.data, roomId, isHost]);
 
+  // Does current user follow the host? (host is exempt)
+  const followsHost = useQuery({
+    enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
+    queryKey: ["follows-host", user?.id, room.data?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", user!.id)
+        .eq("following_id", room.data!.host_id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  async function followHost() {
+    if (!user || !room.data) return;
+    const { error } = await supabase
+      .from("follows")
+      .insert({ follower_id: user.id, following_id: room.data.host_id });
+    if (error && error.code !== "23505") {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Following host — you can join a seat now");
+    followsHost.refetch();
+  }
+
   async function takeSeat(seatIndex: number) {
     if (!user) {
       toast.error("Sign in first");
@@ -227,6 +257,12 @@ function RoomPage() {
     }
     if (seatIndex === 0 && !isHost) {
       toast.error("Seat 1 is for the host");
+      return;
+    }
+    if (!isHost && !followsHost.data) {
+      toast.error("Follow the host to join a seat", {
+        action: { label: "Follow", onClick: () => void followHost() },
+      });
       return;
     }
     const { error } = await supabase
@@ -246,6 +282,29 @@ function RoomPage() {
       .eq("room_id", roomId)
       .eq("user_id", user.id);
     if (error) toast.error(error.message);
+  }
+
+  async function changeSeatCount(delta: number) {
+    if (!isHost || !room.data) return;
+    const next = Math.max(4, Math.min(20, room.data.seat_count + delta));
+    if (next === room.data.seat_count) return;
+    // If shrinking, kick anyone on seats >= next
+    if (next < room.data.seat_count) {
+      await supabase
+        .from("room_members")
+        .update({ seat_index: null })
+        .eq("room_id", roomId)
+        .gte("seat_index", next);
+    }
+    const { error } = await supabase
+      .from("live_rooms")
+      .update({ seat_count: next })
+      .eq("id", roomId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    room.refetch();
   }
 
   async function send() {
@@ -300,12 +359,25 @@ function RoomPage() {
     return m;
   }, [members]);
 
+  const seatedCount = useMemo(
+    () => members.filter((m) => m.seat_index != null).length,
+    [members],
+  );
+
   const ludoPlayers: LudoPlayer[] = [0, 1, 2, 3].map((i) => {
     const m = seatsByIndex.get(i);
     return m
       ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null }
       : { id: `empty-${i}`, username: null, avatar: null };
   });
+
+  function openLudo() {
+    if (seatedCount < 4) {
+      toast.error(`Ludo needs 4 users on seats (currently ${seatedCount})`);
+      return;
+    }
+    setLudoOpen(true);
+  }
 
   if (room.isLoading) {
     return (
@@ -419,8 +491,37 @@ function RoomPage() {
       </div>
 
       <main className="mx-auto max-w-md px-3">
+        {/* Seats header with host controls */}
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-[11px] font-bold text-muted-foreground">
+            Seats <span className="text-foreground">{seatedCount}/{r.seat_count}</span>
+          </div>
+          {isHost && (
+            <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-1 py-0.5">
+              <button
+                onClick={() => changeSeatCount(-1)}
+                disabled={r.seat_count <= 4}
+                aria-label="Fewer seats"
+                className="grid h-6 w-6 place-items-center rounded-full bg-background/60 disabled:opacity-30"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="min-w-6 text-center text-[11px] font-extrabold">{r.seat_count}</span>
+              <button
+                onClick={() => changeSeatCount(1)}
+                disabled={r.seat_count >= 20}
+                aria-label="More seats"
+                className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground disabled:opacity-30"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Seat grid */}
         <div className="grid grid-cols-5 gap-2">
+
           {Array.from({ length: r.seat_count }).map((_, i) => {
             const m = seatsByIndex.get(i);
             const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
@@ -596,7 +697,7 @@ function RoomPage() {
           <ActionBtn
             icon={<Gamepad2 className="h-4 w-4" />}
             label="Game"
-            onClick={() => setLudoOpen(true)}
+            onClick={openLudo}
           />
           {isHost && (
             <ActionBtn
