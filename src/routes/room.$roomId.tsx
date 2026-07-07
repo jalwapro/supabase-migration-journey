@@ -222,6 +222,34 @@ function RoomPage() {
     };
   }, [user, room.data, roomId, isHost]);
 
+  // Does current user follow the host? (host is exempt)
+  const followsHost = useQuery({
+    enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
+    queryKey: ["follows-host", user?.id, room.data?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", user!.id)
+        .eq("following_id", room.data!.host_id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  async function followHost() {
+    if (!user || !room.data) return;
+    const { error } = await supabase
+      .from("follows")
+      .insert({ follower_id: user.id, following_id: room.data.host_id });
+    if (error && error.code !== "23505") {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Following host — you can join a seat now");
+    followsHost.refetch();
+  }
+
   async function takeSeat(seatIndex: number) {
     if (!user) {
       toast.error("Sign in first");
@@ -229,6 +257,12 @@ function RoomPage() {
     }
     if (seatIndex === 0 && !isHost) {
       toast.error("Seat 1 is for the host");
+      return;
+    }
+    if (!isHost && !followsHost.data) {
+      toast.error("Follow the host to join a seat", {
+        action: { label: "Follow", onClick: () => void followHost() },
+      });
       return;
     }
     const { error } = await supabase
@@ -248,6 +282,29 @@ function RoomPage() {
       .eq("room_id", roomId)
       .eq("user_id", user.id);
     if (error) toast.error(error.message);
+  }
+
+  async function changeSeatCount(delta: number) {
+    if (!isHost || !room.data) return;
+    const next = Math.max(4, Math.min(20, room.data.seat_count + delta));
+    if (next === room.data.seat_count) return;
+    // If shrinking, kick anyone on seats >= next
+    if (next < room.data.seat_count) {
+      await supabase
+        .from("room_members")
+        .update({ seat_index: null })
+        .eq("room_id", roomId)
+        .gte("seat_index", next);
+    }
+    const { error } = await supabase
+      .from("live_rooms")
+      .update({ seat_count: next })
+      .eq("id", roomId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    room.refetch();
   }
 
   async function send() {
