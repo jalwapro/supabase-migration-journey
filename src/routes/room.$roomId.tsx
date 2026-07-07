@@ -421,12 +421,13 @@ function RoomPage() {
 
   return (
     <div
-      className="min-h-[100dvh] pb-28"
+      className="flex h-[100dvh] flex-col overflow-hidden"
       style={{
         background:
           "radial-gradient(1200px 500px at 50% -10%, color-mix(in oklab, var(--primary) 40%, transparent), #0e0a1a 60%)",
       }}
     >
+
       {/* Top row */}
       <div
         className="mx-auto grid max-w-md grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-3 pb-2"
