@@ -196,7 +196,7 @@ function RoomPage() {
           if (row.user_id) {
             const { data } = await supabase
               .from("profiles")
-              .select("username,avatar")
+              .select("username,avatar,level")
               .eq("id", row.user_id)
               .maybeSingle();
             row.user = (data as Message["user"]) ?? null;
