@@ -137,7 +137,7 @@ export function LudoSheet({
               );
             })}
             <div
-              className="col-start-2 row-start-2 grid place-items-center rounded-xl bg-gradient-to-br from-[color:var(--primary)]/20 to-[color:var(--secondary)]/20"
+              className="glow-4d col-start-2 row-start-2 grid place-items-center rounded-xl bg-gradient-to-br from-[color:var(--primary)]/20 to-[color:var(--secondary)]/20"
             >
               <span className="text-center text-[10px] font-semibold text-muted-foreground">
                 Ludo board<br />coming next

@@ -38,7 +38,7 @@ function MessagesPage() {
           <div className="px-6 pt-12 text-center">
             <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground" />
             <p className="mt-3 text-sm text-muted-foreground">Sign in to chat with friends</p>
-            <Link to="/auth" className="mt-4 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground">Sign in</Link>
+            <Link to="/auth" className="glow-4d mt-4 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground">Sign in</Link>
           </div>
         </AppShell>
         <BottomNav />
@@ -393,7 +393,7 @@ function AddFriend() {
         </div>
         <button
           onClick={doSearch}
-          className="rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground"
+          className="glow-4d rounded-full bg-primary px-4 text-xs font-bold text-primary-foreground"
         >
           {searching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Find"}
         </button>

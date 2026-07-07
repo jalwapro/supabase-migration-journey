@@ -86,7 +86,7 @@ export function HostMusicPlayer({
             <div className="flex items-center gap-3">
               <button
                 onClick={toggle}
-                className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                className="glow-4d grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
               >
                 {playing ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
               </button>

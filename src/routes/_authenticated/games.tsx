@@ -48,7 +48,7 @@ function GamesPage() {
                 to={to}
                 className="glass flex items-center gap-3 rounded-2xl p-4"
               >
-                <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[color:var(--gold)]/30 to-[color:var(--primary)]/30 text-3xl">
+                <div className="glow-4d grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[color:var(--gold)]/30 to-[color:var(--primary)]/30 text-3xl">
                   {g.icon ?? <Gamepad2 className="h-6 w-6" />}
                 </div>
                 <div className="min-w-0 flex-1">

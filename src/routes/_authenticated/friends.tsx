@@ -75,7 +75,7 @@ function Page() {
           <div className="space-y-2">
             {(list ?? []).map((p: any) => (
               <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-3">
-                <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-black">
+                <div className="glow-4d grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-black">
                   {p.avatar ? <img src={p.avatar} className="h-full w-full object-cover" alt="" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
                 </div>
                 <div className="min-w-0 flex-1">

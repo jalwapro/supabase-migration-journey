@@ -115,7 +115,7 @@ function Page() {
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                   aria-label="Change photo"
-                  className="absolute -right-1 -bottom-1 grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-lg ring-2 ring-black/60 disabled:opacity-60"
+                  className="glow-4d absolute -right-1 -bottom-1 grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-lg ring-2 ring-black/60 disabled:opacity-60"
                 >
                   {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                 </button>
