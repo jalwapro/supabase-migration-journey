@@ -766,12 +766,10 @@ function RoomPage() {
         </div>
       )}
 
-      {/* ─── Enters-the-room banner ─────────────────────────────── */}
-      {!isVideo && (
-        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-2">
-          <EnterRoomBanner latestEnter={latestEnter} />
-        </div>
-      )}
+      {/* ─── Enters-the-room banner (animated, all room types) ── */}
+      <div className="pointer-events-none absolute inset-x-0 top-[190px] z-30 mx-auto w-full max-w-md px-3">
+        <EnterRoomBanner latestEnter={latestEnter} />
+      </div>
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
