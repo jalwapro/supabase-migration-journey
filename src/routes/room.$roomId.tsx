@@ -1119,6 +1119,7 @@ function Seat({
   onClaim,
   likeCount,
   onLike,
+  videoStyle,
 }: {
   index: number;
   member?: Member;
@@ -1129,6 +1130,7 @@ function Seat({
   onClaim: () => void;
   likeCount: number;
   onLike: () => void;
+  videoStyle?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -1152,6 +1154,45 @@ function Seat({
     : speaking
       ? "ring-2 ring-[color:var(--primary)]"
       : "ring-1 ring-white/15";
+
+  if (videoStyle) {
+    const numberLabel = String(index + 1).padStart(2, "0");
+    return (
+      <button
+        onClick={() => (member ? undefined : onClaim())}
+        className="relative aspect-[1.02/1] overflow-hidden rounded-xl border border-violet-300/55 bg-[radial-gradient(circle_at_50%_35%,rgba(139,92,246,0.22),rgba(5,7,24,0.78)_60%),linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.015))] shadow-[inset_0_0_22px_rgba(255,255,255,0.035)]"
+        aria-label={member ? `Seat ${numberLabel}` : `Take seat ${numberLabel}`}
+      >
+        <span className="absolute left-1.5 top-1 text-[11px] font-medium leading-none text-white/90">
+          {numberLabel}
+        </span>
+        {isHostSeat && (
+          <span className="absolute right-1.5 top-1 rounded-full bg-[color:var(--gold)]/20 px-1 text-[9px] text-[color:var(--gold)]">
+            ♛
+          </span>
+        )}
+        <div className="absolute inset-x-0 top-[28%] grid place-items-center">
+          {displayAvatar && !remote?.videoTrack ? (
+            <img
+              src={displayAvatar}
+              alt=""
+              className="h-10 w-10 rounded-full border border-white/30 object-cover shadow-lg"
+            />
+          ) : remote?.videoTrack ? (
+            <div ref={videoRef} className="h-11 w-11 overflow-hidden rounded-full" />
+          ) : (
+            <span className="text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
+              📹
+            </span>
+          )}
+        </div>
+        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
+          {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          <span>{displayName ? `@${displayName}` : "Solo"}</span>
+        </div>
+      </button>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-1">
