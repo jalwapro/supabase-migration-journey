@@ -329,6 +329,50 @@ function RoomPage() {
     },
   });
 
+  const hostFamily = useQuery({
+    enabled: !!room.data?.host_id,
+    queryKey: ["host-family", room.data?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("families")
+        .select("id,name,badge")
+        .eq("owner_id", room.data!.host_id)
+        .maybeSingle();
+      return data as { id: string; name: string; badge: string | null } | null;
+    },
+  });
+
+  const familyMember = useQuery({
+    enabled: !!user && !!hostFamily.data?.id,
+    queryKey: ["family-member", user?.id, hostFamily.data?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("family_members")
+        .select("family_id")
+        .eq("family_id", hostFamily.data!.id)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  async function joinFamily() {
+    if (!user || !room.data) {
+      toast.error("Sign in first");
+      return;
+    }
+    const { error } = await supabase.rpc("join_host_family", {
+      _host_id: room.data.host_id,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Joined family 👑");
+    await Promise.all([hostFamily.refetch(), familyMember.refetch()]);
+  }
+
+
   async function followHost() {
     if (!user || !room.data) return;
     const { error } = await supabase
