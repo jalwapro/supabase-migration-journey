@@ -56,7 +56,12 @@ function RankPage() {
   return (
     <>
       <AppShell title="Star Leaderboard" subtitle="Top hosts & gifters">
+        <div className="px-4">
+          <TopGiftersBanner />
+        </div>
+
         {/* Board switch */}
+
         <div className="px-4 pt-3">
           <div className="glass flex rounded-full p-1">
             {(["hosts", "gifters"] as Board[]).map((b) => (
