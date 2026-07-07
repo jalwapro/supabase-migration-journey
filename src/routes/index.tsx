@@ -445,6 +445,72 @@ function Home() {
         </div>
       </div>
       <BottomNav />
+
+      <Dialog open={friendsOpen} onOpenChange={setFriendsOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30">
+                <UserRound className="h-4 w-4" />
+              </span>
+              Friends online
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 max-h-[60vh] space-y-2 overflow-y-auto">
+            {friends.isLoading ? (
+              <p className="py-6 text-center text-xs text-muted-foreground">
+                Loading…
+              </p>
+            ) : friends.data && friends.data.length > 0 ? (
+              friends.data.map((u) => (
+                <div
+                  key={u.id}
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5"
+                >
+                  <span className="relative shrink-0">
+                    <span className="block h-10 w-10 overflow-hidden rounded-full">
+                      {u.avatar ? (
+                        <img
+                          src={u.avatar}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="grid h-full w-full place-items-center bg-card text-sm font-bold">
+                          {(u.username ?? "?").charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </span>
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      @{u.username ?? "user"}
+                    </p>
+                    <p className="text-[11px] text-emerald-500">Online now</p>
+                  </div>
+                  <Link
+                    to="/messages/$peerId"
+                    params={{ peerId: u.id }}
+                    onClick={() => setFriendsOpen(false)}
+                    className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                    aria-label="Message"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center">
+                <p className="text-sm font-semibold">No friends online</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Mutual follows (you follow each other) will appear here when they're online.
+                </p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
