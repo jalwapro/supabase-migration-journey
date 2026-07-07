@@ -235,8 +235,14 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
 }
 
 function TopGiftersBanner() {
+  // Daily winners — locked for the full 24h day (UTC).
+  const dayKey = new Date().toISOString().slice(0, 10);
+
   const q = useQuery({
-    queryKey: ["top-gifters-week"],
+    queryKey: ["daily-winners", dayKey],
+    // Cache for a full day so the same 3 winners show for 24 hours.
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: 24 * 60 * 60 * 1000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -253,7 +259,7 @@ function TopGiftersBanner() {
 
   useEffect(() => {
     if (items.length < 2) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % items.length), 3000);
+    const t = setInterval(() => setIdx((i) => (i + 1) % items.length), 3500);
     return () => clearInterval(t);
   }, [items.length]);
 
@@ -264,7 +270,10 @@ function TopGiftersBanner() {
       <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[color:var(--gold)]/20 blur-2xl" />
       <div className="flex items-center gap-2 px-4 pt-3">
         <Trophy className="h-4 w-4 text-[color:var(--gold)]" />
-        <p className="text-xs font-bold tracking-wide">Top Gifters This Week</p>
+        <p className="text-xs font-bold tracking-wide">Daily Winners</p>
+        <span className="ml-1 rounded-full bg-[color:var(--gold)]/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[color:var(--gold)]">
+          24h
+        </span>
         <Sparkles className="ml-auto h-4 w-4 animate-pulse text-[color:var(--gold)]" />
       </div>
       <div
@@ -289,7 +298,7 @@ function TopGiftersBanner() {
             </div>
             <div className="min-w-0 flex-1">
               <span className="inline-block rounded-full bg-[color:var(--gold)]/20 px-2 py-0.5 text-[10px] font-bold text-[color:var(--gold)]">
-                #{i + 1} this week
+                #{i + 1} Winner today
               </span>
               <p className="mt-1 truncate text-sm font-extrabold">
                 {e.username ?? "user"}
@@ -304,9 +313,22 @@ function TopGiftersBanner() {
           </div>
         ))}
       </div>
+      {items.length > 1 && (
+        <div className="flex justify-center gap-1 pb-2">
+          {items.map((_, i) => (
+            <span
+              key={i}
+              className={`h-1.5 rounded-full transition-all ${
+                i === idx ? "w-4 bg-[color:var(--gold)]" : "w-1.5 bg-white/30"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
+
 
 function formatCoins(n: number) {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
