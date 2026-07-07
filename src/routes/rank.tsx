@@ -289,7 +289,7 @@ function TopGiftersBanner() {
         className="mt-2 flex transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${idx * 100}%)` }}
       >
-        {items.map((e, i) => (
+        {display.map((e, i) => (
           <div key={e.id} className="flex w-full shrink-0 items-center gap-3 px-4 pb-4">
             <div className="relative shrink-0">
               {e.avatar ? (
@@ -322,9 +322,9 @@ function TopGiftersBanner() {
           </div>
         ))}
       </div>
-      {items.length > 1 && (
+      {display.length > 1 && (
         <div className="flex justify-center gap-1 pb-2">
-          {items.map((_, i) => (
+          {display.map((_, i) => (
             <span
               key={i}
               className={`h-1.5 rounded-full transition-all ${
