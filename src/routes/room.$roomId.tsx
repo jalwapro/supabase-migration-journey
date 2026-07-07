@@ -531,15 +531,12 @@ function RoomPage() {
           mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
         />
       ) : (
-        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-          <div className="rounded-3xl border border-white/10 bg-black/30 p-3 backdrop-blur-md">
+        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-2 pt-1.5">
+          <div className="p-0">
             {(() => {
-              const sc = r.seat_count;
-              const cols = sc <= 4 ? 4 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
-              const colsClass =
-                cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
+              const sc = Math.max(20, r.seat_count);
               return (
-                <div className={`grid ${colsClass} gap-x-2 gap-y-3`}>
+                <div className="grid grid-cols-5 gap-1.5">
                   {Array.from({ length: sc }).map((_, i) => {
                     const m = seatsByIndex.get(i);
                     const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
@@ -560,6 +557,7 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => likeSeat(i)}
+                        videoStyle
                       />
                     );
                   })}
@@ -571,26 +569,9 @@ function RoomPage() {
       )}
 
       {/* ─── Enters-the-room banner ─────────────────────────────── */}
-      {latestEnter && (
-        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-[color:var(--primary)]/25 via-[color:var(--secondary)]/20 to-transparent px-3 py-1.5 backdrop-blur">
-            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10">
-              {latestEnter.user?.avatar ? (
-                <img
-                  src={latestEnter.user.avatar}
-                  alt=""
-                  className="h-full w-full rounded-full object-cover"
-                />
-              ) : (
-                <UserIcon className="h-3 w-3 text-white/60" />
-              )}
-            </div>
-            <div className="truncate text-[11px] font-bold text-[color:var(--gold)]">
-              ✽ {latestEnter.user?.username ?? "Guest"}{" "}
-              <span className="text-white/70">enters the room</span>
-            </div>
-            <ChevronRight className="ml-auto h-3.5 w-3.5 text-white/40" />
-          </div>
+      {!isVideo && (
+        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-2">
+          <EnterRoomBanner latestEnter={latestEnter} />
         </div>
       )}
 
