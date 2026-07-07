@@ -410,9 +410,27 @@ function RoomPage() {
     setLudoOpen(true);
   }
 
-  function likeSeat(i: number) {
+  async function likeSeat(i: number) {
+    if (!user) {
+      toast.error("Sign in to like");
+      return;
+    }
+    // optimistic bump
     setSeatLikes((prev) => ({ ...prev, [i]: (prev[i] ?? 0) + 1 }));
-    setRoomPoints((n) => n + 1);
+    setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
+    const { data, error } = await supabase.rpc("like_room_seat", {
+      _room_id: roomId,
+      _seat_index: i,
+    });
+    if (error) {
+      toast.error(error.message);
+      setSeatLikes((prev) => ({ ...prev, [i]: Math.max(0, (prev[i] ?? 1) - 1) }));
+      setPopularity((p) => ({ ...p, like_count: Math.max(0, p.like_count - 1) }));
+      return;
+    }
+    if (typeof data === "number") {
+      setSeatLikes((prev) => ({ ...prev, [i]: data }));
+    }
   }
 
   if (room.isLoading) {
