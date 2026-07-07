@@ -602,31 +602,6 @@ function RoomPage() {
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
               </div>
-              <div className="mt-2 flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1.5 pr-2">
-                <button
-                  aria-label="Emoji"
-                  onClick={() => toast.info("Emoji soon")}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-black/35 text-white/85"
-                >
-                  <Smile className="h-4 w-4" />
-                </button>
-                <input
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && send()}
-                  placeholder="Type a message..."
-                  className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
-                  disabled={!user}
-                />
-                <button
-                  onClick={send}
-                  aria-label="Send"
-                  disabled={!text.trim()}
-                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-[color:var(--secondary)] disabled:opacity-40"
-                >
-                  <Send className="h-3.5 w-3.5" />
-                </button>
-              </div>
             </div>
 
             <div className="flex min-h-0 flex-col gap-2">
