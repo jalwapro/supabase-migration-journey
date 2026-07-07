@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Crown, Trophy, Flame, Coins, Sparkles } from "lucide-react";
+
 
 export const Route = createFileRoute("/rank")({
   component: RankPage,
@@ -55,7 +56,12 @@ function RankPage() {
   return (
     <>
       <AppShell title="Star Leaderboard" subtitle="Top hosts & gifters">
+        <div className="px-4">
+          <TopGiftersBanner />
+        </div>
+
         {/* Board switch */}
+
         <div className="px-4 pt-3">
           <div className="glass flex rounded-full p-1">
             {(["hosts", "gifters"] as Board[]).map((b) => (
@@ -224,3 +230,84 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
     </li>
   );
 }
+
+function TopGiftersBanner() {
+  const q = useQuery({
+    queryKey: ["top-gifters-week"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,username,avatar,coins")
+        .order("coins", { ascending: false })
+        .limit(3);
+      if (error) throw error;
+      return (data ?? []) as unknown as Entry[];
+    },
+  });
+
+  const items = q.data ?? [];
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    if (items.length < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % items.length), 3000);
+    return () => clearInterval(t);
+  }, [items.length]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div className="relative mt-4 overflow-hidden rounded-3xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/15 via-card to-[color:var(--primary)]/10 shadow-xl shadow-[color:var(--gold)]/10">
+      <div className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full bg-[color:var(--gold)]/20 blur-2xl" />
+      <div className="flex items-center gap-2 px-4 pt-3">
+        <Trophy className="h-4 w-4 text-[color:var(--gold)]" />
+        <p className="text-xs font-bold tracking-wide">Top Gifters This Week</p>
+        <Sparkles className="ml-auto h-4 w-4 animate-pulse text-[color:var(--gold)]" />
+      </div>
+      <div
+        className="mt-2 flex transition-transform duration-500 ease-out"
+        style={{ transform: `translateX(-${idx * 100}%)` }}
+      >
+        {items.map((e, i) => (
+          <div key={e.id} className="flex w-full shrink-0 items-center gap-3 px-4 pb-4">
+            <div className="relative shrink-0">
+              {e.avatar ? (
+                <img
+                  alt={e.username ?? "user"}
+                  className="h-16 w-16 rounded-2xl object-cover text-xl ring-2 ring-[color:var(--gold)]"
+                  src={e.avatar}
+                />
+              ) : (
+                <div className="grid h-16 w-16 place-items-center rounded-2xl bg-card text-xl font-bold ring-2 ring-[color:var(--gold)]">
+                  {(e.username ?? "?").slice(0, 1).toUpperCase()}
+                </div>
+              )}
+              <Crown className="absolute -top-3 left-1/2 h-5 w-5 -translate-x-1/2 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="inline-block rounded-full bg-[color:var(--gold)]/20 px-2 py-0.5 text-[10px] font-bold text-[color:var(--gold)]">
+                #{i + 1} this week
+              </span>
+              <p className="mt-1 truncate text-sm font-extrabold">
+                {e.username ?? "user"}
+              </p>
+              <div className="mt-0.5 flex items-center gap-3 text-[11px]">
+                <span className="flex items-center gap-1 text-[color:var(--gold)]">
+                  <Coins className="h-3 w-3" />
+                  {formatCoins(e.coins ?? 0)}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function formatCoins(n: number) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
+  return n.toString();
+}
+
