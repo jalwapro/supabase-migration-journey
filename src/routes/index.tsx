@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import jalwaLogo from "@/assets/jalwa-logo.png";
+const jalwaLogo = "/__l5e/assets-v1/4d052932-1040-4825-a7d9-cbabb2b9707d/jalwa-logo.png";
 import {
   Radio,
   Users,
