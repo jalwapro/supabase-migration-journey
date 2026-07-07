@@ -114,6 +114,13 @@ function RoomPage() {
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
+  const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
+  const [videoFx, setVideoFx] = useState({
+    beauty: true,
+    mirror: true,
+    hd: true,
+    blur: false,
+  });
 
   const [chatTab, setChatTab] = useState<"all" | "chat">("all");
   const [messages, setMessages] = useState<Message[]>([]);
