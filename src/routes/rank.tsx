@@ -258,12 +258,23 @@ function TopGiftersBanner() {
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
-    if (items.length < 2) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % items.length), 3500);
+    const len = items.length > 0 ? items.length : 3;
+    if (len < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % len), 3500);
     return () => clearInterval(t);
   }, [items.length]);
 
-  if (items.length === 0) return null;
+
+  // Always render — fill with placeholders when there's no data yet.
+  const display: Entry[] =
+    items.length > 0
+      ? items
+      : [
+          { id: "p1", username: "Winner 1", avatar: null, coins: 0 },
+          { id: "p2", username: "Winner 2", avatar: null, coins: 0 },
+          { id: "p3", username: "Winner 3", avatar: null, coins: 0 },
+        ];
+
 
   return (
     <div className="relative mt-4 overflow-hidden rounded-3xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/15 via-card to-[color:var(--primary)]/10 shadow-xl shadow-[color:var(--gold)]/10">
@@ -280,7 +291,7 @@ function TopGiftersBanner() {
         className="mt-2 flex transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${idx * 100}%)` }}
       >
-        {items.map((e, i) => (
+        {display.map((e, i) => (
           <div key={e.id} className="flex w-full shrink-0 items-center gap-3 px-4 pb-4">
             <div className="relative shrink-0">
               {e.avatar ? (
@@ -313,9 +324,9 @@ function TopGiftersBanner() {
           </div>
         ))}
       </div>
-      {items.length > 1 && (
+      {display.length > 1 && (
         <div className="flex justify-center gap-1 pb-2">
-          {items.map((_, i) => (
+          {display.map((_, i) => (
             <span
               key={i}
               className={`h-1.5 rounded-full transition-all ${
