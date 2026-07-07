@@ -1326,11 +1326,11 @@ function Seat({
   }
 
   return (
-    <div className="flex flex-col items-center gap-1">
+    <div className="flex flex-col items-center gap-0.5">
       <button
-        onClick={() => (member ? undefined : onClaim())}
+        onClick={() => (member ? onLike() : onClaim())}
         className="relative aspect-square w-full"
-        aria-label={member ? `Seat ${label}` : `Take ${label}`}
+        aria-label={member ? `Like seat ${label}` : `Take ${label}`}
       >
         {isHostSeat && (
           <div className="pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
@@ -1357,12 +1357,12 @@ function Seat({
           )}
         </div>
         {isHostSeat && displayAvatar && (
-          <span className="absolute -top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow">
-            <Crown className="inline h-2.5 w-2.5" />
+          <span className="absolute -top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-1 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow">
+            <Crown className="inline h-2 w-2" />
           </span>
         )}
         {(member || (isHostSeat && displayAvatar)) && (
-          <span className="absolute bottom-1 right-1 grid h-4 w-4 place-items-center rounded-full bg-black/70">
+          <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             {member?.is_muted ? (
               <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
             ) : (
@@ -1370,22 +1370,21 @@ function Seat({
             )}
           </span>
         )}
+        {likeCount > 0 && (
+          <span className="absolute -bottom-0.5 left-0.5 z-10 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[8px] font-bold text-white/80 backdrop-blur">
+            <Heart className="h-2 w-2 text-[color:var(--destructive)]" />
+            {likeCount}
+          </span>
+        )}
       </button>
-      <span className={`text-[11px] font-black ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
+      <span className={`text-[10px] font-black leading-tight ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
         {label}
       </span>
       {displayName && (
-        <span className="max-w-full truncate text-[9px] font-semibold text-white/60">
+        <span className="max-w-full truncate text-[8px] font-semibold leading-tight text-white/55">
           @{displayName}
         </span>
       )}
-      <button
-        onClick={onLike}
-        className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold text-white/70 backdrop-blur"
-      >
-        <Heart className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
-        {likeCount}
-      </button>
     </div>
   );
 }
