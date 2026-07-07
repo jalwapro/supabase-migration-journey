@@ -29,6 +29,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
@@ -135,6 +136,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminThemesRoute =
+  AuthenticatedAdminThemesRouteImport.update({
+    id: '/themes',
+    path: '/themes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminRechargeRoute =
   AuthenticatedAdminRechargeRouteImport.update({
     id: '/recharge',
@@ -185,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
+  '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
@@ -210,6 +218,7 @@ export interface FileRoutesByTo {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
+  '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
@@ -238,6 +247,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
+  '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
@@ -266,6 +276,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/payment-accounts'
     | '/admin/recharge'
+    | '/admin/themes'
     | '/admin/users'
     | '/admin/vip'
     | '/games/lucky-spin'
@@ -291,6 +302,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/payment-accounts'
     | '/admin/recharge'
+    | '/admin/themes'
     | '/admin/users'
     | '/admin/vip'
     | '/games/lucky-spin'
@@ -318,6 +330,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/recharge'
+    | '/_authenticated/admin/themes'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/vip'
     | '/_authenticated/games/lucky-spin'
@@ -478,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/themes': {
+      id: '/_authenticated/admin/themes'
+      path: '/themes'
+      fullPath: '/admin/themes'
+      preLoaderRoute: typeof AuthenticatedAdminThemesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/recharge': {
       id: '/_authenticated/admin/recharge'
       path: '/recharge'
@@ -522,6 +542,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
+  AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
@@ -534,6 +555,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
+  AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
