@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SplashRouteImport } from './routes/splash'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as MessagesRouteImport } from './routes/messages'
@@ -26,6 +27,11 @@ import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 
+const SplashRoute = SplashRouteImport.update({
+  id: '/splash',
+  path: '/splash',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoomsRoute = RoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/messages': typeof MessagesRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/splash': typeof SplashRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/messages': typeof MessagesRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/splash': typeof SplashRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/messages': typeof MessagesRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
+  '/splash': typeof SplashRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
@@ -168,6 +177,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/reset-password'
     | '/rooms'
+    | '/splash'
     | '/admin'
     | '/create-room'
     | '/games'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/reset-password'
     | '/rooms'
+    | '/splash'
     | '/admin'
     | '/create-room'
     | '/games'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '/messages'
     | '/reset-password'
     | '/rooms'
+    | '/splash'
     | '/_authenticated/admin'
     | '/_authenticated/create-room'
     | '/_authenticated/games'
@@ -222,12 +234,20 @@ export interface RootRouteChildren {
   MessagesRoute: typeof MessagesRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
+  SplashRoute: typeof SplashRoute
   ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/splash': {
+      id: '/splash'
+      path: '/splash'
+      fullPath: '/splash'
+      preLoaderRoute: typeof SplashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rooms': {
       id: '/rooms'
       path: '/rooms'
@@ -394,6 +414,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessagesRoute: MessagesRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
+  SplashRoute: SplashRoute,
   ApiAgoraTokenRoute: ApiAgoraTokenRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
 }
