@@ -251,6 +251,40 @@ function RoomPage() {
           setMembers((data ?? []) as unknown as Member[]);
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "room_seat_likes",
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as { seat_index: number };
+          setSeatLikes((prev) => ({
+            ...prev,
+            [row.seat_index]: (prev[row.seat_index] ?? 0) + 1,
+          }));
+          setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "gift_sends",
+          filter: `room_id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as { coins_spent: number; quantity: number };
+          setPopularity((p) => ({
+            ...p,
+            coin_score: p.coin_score + Number(row.coins_spent ?? 0),
+            gift_count: p.gift_count + Number(row.quantity ?? 0),
+          }));
+        },
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
