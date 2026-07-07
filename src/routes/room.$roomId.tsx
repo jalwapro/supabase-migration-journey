@@ -909,6 +909,42 @@ function ActionBtn({
   );
 }
 
+function FooterBtn({
+  icon,
+  label,
+  onClick,
+  badge,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  badge?: number;
+  tint?: "danger" | "muted";
+}) {
+  const bubble =
+    tint === "danger"
+      ? "bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--primary)] text-white shadow-md shadow-[color:var(--destructive)]/30"
+      : tint === "muted"
+        ? "bg-white/10 text-white/40 border border-white/10"
+        : "bg-white/10 text-white/90 border border-white/10";
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="relative flex flex-1 flex-col items-center gap-0.5"
+    >
+      <span className={`grid h-9 w-9 place-items-center rounded-full ${bubble}`}>{icon}</span>
+      {badge != null && badge > 0 && (
+        <span className="absolute right-1 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--destructive)] px-1 text-[9px] font-bold text-white">
+          {badge}
+        </span>
+      )}
+      <span className="text-[9px] text-white/60">{label}</span>
+    </button>
+  );
+}
+
 function Seat({
   index,
   member,
