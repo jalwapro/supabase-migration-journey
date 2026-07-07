@@ -1082,33 +1082,14 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   );
 }
 
-function DefaultVoiceMessages() {
+function EmptyChat() {
   return (
-    <div className="space-y-1.5 text-[11px] leading-snug text-white/88">
-      <p>
-        🧡 <span className="font-bold text-violet-300">Room</span> : Welcome to the room. Please
-        follow the community guidelines.
-      </p>
-      <p>
-        💙 <span className="font-bold text-sky-300">System</span> : Respect each other and enjoy
-        your time here.
-      </p>
-      <p>
-        👩 <span className="font-bold text-violet-200">Sunny💗</span> : Hello everyone 👋
-      </p>
-      <p>
-        🏆 <span className="font-bold text-[color:var(--gold)]">Queen👑</span> : Hi Sunny 💞
-      </p>
-      <p>
-        🎁 <span className="font-bold text-[color:var(--primary)]">Ali King</span> :{" "}
-        <span className="font-bold text-[color:var(--gold)]">sent Rose 🌹 x10</span>
-      </p>
-      <p>
-        👥 <span className="font-bold text-emerald-300">Sara</span> : joined the room
-      </p>
+    <div className="grid h-full place-items-center py-4 text-center text-[11px] leading-snug text-white/50">
+      <p>Say hi to break the ice 👋</p>
     </div>
   );
 }
+
 
 function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
   if (!latestEnter?.user) return null;
