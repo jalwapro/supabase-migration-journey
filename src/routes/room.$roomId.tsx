@@ -500,26 +500,36 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Seat grid */}
-        <div className="grid grid-cols-5 gap-2">
+        {/* Seat grid — columns adapt to seat count so avatars shrink as seats grow */}
+        {(() => {
+          const sc = r.seat_count;
+          const cols = sc <= 4 ? 4 : sc <= 6 ? 3 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
+          const gap = sc <= 6 ? "gap-3" : sc <= 12 ? "gap-2.5" : "gap-2";
+          const colsClass =
+            cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
+          return (
+            <div className={`grid ${colsClass} ${gap}`}>
+              {Array.from({ length: sc }).map((_, i) => {
+                const m = seatsByIndex.get(i);
+                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+                const isHostSeat = i === 0;
+                return (
+                  <Seat
+                    key={i}
+                    index={i}
+                    member={m}
+                    remote={remote}
+                    isHostSeat={isHostSeat}
+                    cover={r.cover_url}
+                    onClaim={() => takeSeat(i)}
+                  />
+                );
+              })}
+            </div>
+          );
+        })()}
 
-          {Array.from({ length: r.seat_count }).map((_, i) => {
-            const m = seatsByIndex.get(i);
-            const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-            const isHostSeat = i === 0;
-            return (
-              <Seat
-                key={i}
-                index={i}
-                member={m}
-                remote={remote}
-                isHostSeat={isHostSeat}
-                cover={r.cover_url}
-                onClaim={() => takeSeat(i)}
-              />
-            );
-          })}
-        </div>
+
 
 
         {/* Tabs */}
