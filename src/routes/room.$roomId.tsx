@@ -788,7 +788,7 @@ function RoomPage() {
         >
           <div className="flex items-center gap-2">
             <button
-              onClick={() => agora.toggleMic()}
+              onClick={() => agora.toggleMute()}
               aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
