@@ -261,7 +261,20 @@ function CreateRoom() {
                 Seats
               </label>
               <div className="flex gap-2">
-                {[4, 6, 8, 12, 20].map((n) => {
+                {(type === "video"
+                  ? ([
+                      { n: 1, label: "Solo" },
+                      { n: 2, label: "1 / 1" },
+                      { n: 4, label: "2 / 2" },
+                    ] as const)
+                  : ([
+                      { n: 4, label: "4" },
+                      { n: 6, label: "6" },
+                      { n: 8, label: "8" },
+                      { n: 12, label: "12" },
+                      { n: 20, label: "20" },
+                    ] as const)
+                ).map(({ n, label }) => {
                   const active = seatCount === n;
                   return (
                     <button
@@ -273,7 +286,7 @@ function CreateRoom() {
                           : "border border-border bg-background/60"
                       }`}
                     >
-                      {n}
+                      {label}
                     </button>
                   );
                 })}
