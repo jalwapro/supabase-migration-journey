@@ -460,10 +460,10 @@ function RoomPage() {
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           {/* Host chip */}
-          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-3 backdrop-blur-md">
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)]">
+          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
+            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
               {r.host?.avatar ? (
                 <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -472,10 +472,10 @@ function RoomPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <span className="truncate text-[13px] font-black leading-tight">
+                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
                   {r.title}
                 </span>
-                <span className="shrink-0 text-[13px]">💗</span>
+                <span className="shrink-0 text-[19px] leading-none">💖</span>
               </div>
               <div className="truncate text-[10px] font-semibold text-white/60">
                 ID:{roomCode}
@@ -483,7 +483,7 @@ function RoomPage() {
             </div>
           </div>
           {/* Action icons */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-start gap-2">
             <HeaderIcon onClick={() => toast.info("Reported")} label="Report">
               <Flag className="h-4 w-4" />
             </HeaderIcon>
@@ -497,20 +497,13 @@ function RoomPage() {
         </div>
 
         {/* Rank + members row */}
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            onClick={() => navigate({ to: "/" })}
-            aria-label="Home"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 backdrop-blur"
-          >
-            <Home className="h-4 w-4" />
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <button className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur">
+            <span className="text-lg leading-none">🏆</span>
+            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">No ranking yet</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
           </button>
-          <button className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur">
-            <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-            <span className="text-[11px] font-bold text-white/80">No ranking yet</span>
-            <ChevronRight className="h-3 w-3 text-white/50" />
-          </button>
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
             {!isHost && (
               <button
                 onClick={() => void followHost()}
@@ -520,9 +513,10 @@ function RoomPage() {
                 {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
               </button>
             )}
-            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
-              <Users className="h-3.5 w-3.5 text-white/70" />
-              <span className="text-[11px] font-black">{members.length}</span>
+            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-3 py-1.5 backdrop-blur">
+              <Users className="h-4 w-4 text-white/80" />
+              <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             </div>
           </div>
         </div>
