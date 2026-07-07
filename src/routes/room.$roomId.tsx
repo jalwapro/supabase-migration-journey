@@ -460,10 +460,10 @@ function RoomPage() {
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           {/* Host chip */}
-          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-3 backdrop-blur-md">
-            <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)]">
+          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
+            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
               {r.host?.avatar ? (
                 <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -472,10 +472,10 @@ function RoomPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <span className="truncate text-[13px] font-black leading-tight">
+                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
                   {r.title}
                 </span>
-                <span className="shrink-0 text-[13px]">💗</span>
+                <span className="shrink-0 text-[19px] leading-none">💖</span>
               </div>
               <div className="truncate text-[10px] font-semibold text-white/60">
                 ID:{roomCode}
@@ -483,7 +483,7 @@ function RoomPage() {
             </div>
           </div>
           {/* Action icons */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-start gap-2">
             <HeaderIcon onClick={() => toast.info("Reported")} label="Report">
               <Flag className="h-4 w-4" />
             </HeaderIcon>
@@ -497,20 +497,13 @@ function RoomPage() {
         </div>
 
         {/* Rank + members row */}
-        <div className="mt-2 flex items-center gap-2">
-          <button
-            onClick={() => navigate({ to: "/" })}
-            aria-label="Home"
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 backdrop-blur"
-          >
-            <Home className="h-4 w-4" />
+        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          <button className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur">
+            <span className="text-lg leading-none">🏆</span>
+            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">No ranking yet</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
           </button>
-          <button className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur">
-            <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-            <span className="text-[11px] font-bold text-white/80">No ranking yet</span>
-            <ChevronRight className="h-3 w-3 text-white/50" />
-          </button>
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
             {!isHost && (
               <button
                 onClick={() => void followHost()}
@@ -520,9 +513,10 @@ function RoomPage() {
                 {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
               </button>
             )}
-            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
-              <Users className="h-3.5 w-3.5 text-white/70" />
-              <span className="text-[11px] font-black">{members.length}</span>
+            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-3 py-1.5 backdrop-blur">
+              <Users className="h-4 w-4 text-white/80" />
+              <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
             </div>
           </div>
         </div>
@@ -537,15 +531,12 @@ function RoomPage() {
           mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
         />
       ) : (
-        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-          <div className="rounded-3xl border border-white/10 bg-black/30 p-3 backdrop-blur-md">
+        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-2 pt-1.5">
+          <div className="p-0">
             {(() => {
-              const sc = r.seat_count;
-              const cols = sc <= 4 ? 4 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
-              const colsClass =
-                cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
+              const sc = Math.max(20, r.seat_count);
               return (
-                <div className={`grid ${colsClass} gap-x-2 gap-y-3`}>
+                <div className="grid grid-cols-5 gap-1.5">
                   {Array.from({ length: sc }).map((_, i) => {
                     const m = seatsByIndex.get(i);
                     const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
@@ -566,6 +557,7 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => likeSeat(i)}
+                        videoStyle
                       />
                     );
                   })}
@@ -577,96 +569,133 @@ function RoomPage() {
       )}
 
       {/* ─── Enters-the-room banner ─────────────────────────────── */}
-      {latestEnter && (
-        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-[color:var(--primary)]/25 via-[color:var(--secondary)]/20 to-transparent px-3 py-1.5 backdrop-blur">
-            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10">
-              {latestEnter.user?.avatar ? (
-                <img
-                  src={latestEnter.user.avatar}
-                  alt=""
-                  className="h-full w-full rounded-full object-cover"
-                />
-              ) : (
-                <UserIcon className="h-3 w-3 text-white/60" />
-              )}
-            </div>
-            <div className="truncate text-[11px] font-bold text-[color:var(--gold)]">
-              ✽ {latestEnter.user?.username ?? "Guest"}{" "}
-              <span className="text-white/70">enters the room</span>
-            </div>
-            <ChevronRight className="ml-auto h-3.5 w-3.5 text-white/40" />
-          </div>
+      {!isVideo && (
+        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-2">
+          <EnterRoomBanner latestEnter={latestEnter} />
         </div>
       )}
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
-      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-3">
-        <div className="flex min-h-0 flex-1 gap-2">
-          {/* Chat card */}
-          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-            <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
-              {(["all", "chat"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setChatTab(t)}
-                  className={`text-[12px] font-black capitalize ${
-                    chatTab === t
-                      ? "text-white"
-                      : "text-white/40"
-                  }`}
-                >
-                  {t}
-                  {chatTab === t && (
-                    <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-              {messages.length === 0 && (
-                <div className="pt-3 text-[10px] leading-relaxed text-white/50">
-                  <div className="font-bold text-white/70">Room announcement:</div>
-                  <div>Welcome to the room. Follow community guidelines — no vulgarity, fraud, or politics. Inspectors are on 24/7.</div>
-                </div>
-              )}
-              {messages
-                .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
-                .map((m) => (
-                  <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
+        {!isVideo ? (
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_39%] gap-2">
+            <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
+              <div className="mb-2 flex items-center gap-7 border-b border-white/10 px-1 pb-2">
+                {(["all", "chat"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setChatTab(t)}
+                    className={`relative text-sm font-bold capitalize ${chatTab === t ? "text-white" : "text-white/60"}`}
+                  >
+                    {t}
+                    {chatTab === t && (
+                      <span className="absolute -bottom-2 left-0 h-0.5 w-full rounded-full bg-[color:var(--primary)]" />
+                    )}
+                  </button>
                 ))}
+              </div>
+              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages
+                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .map((m) => (
+                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                  ))}
+              </div>
+              <div className="mt-2 flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1.5 pr-2">
+                <button
+                  aria-label="Emoji"
+                  onClick={() => toast.info("Emoji soon")}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-black/35 text-white/85"
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && send()}
+                  placeholder="Type a message..."
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+                  disabled={!user}
+                />
+                <button
+                  onClick={send}
+                  aria-label="Send"
+                  disabled={!text.trim()}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-[color:var(--secondary)] disabled:opacity-40"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Right widgets column (rocket + event banner) */}
-          <div className="flex w-[34%] shrink-0 flex-col gap-2">
-            <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-              <div className="text-lg leading-none">🚀</div>
-              <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-orange-400 to-[color:var(--primary)] transition-all"
-                  style={{ width: `${popularityPct}%` }}
+            <div className="flex min-h-0 flex-col gap-2">
+              <button className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-bold text-white/90">🔥 Room Popularity</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
+                </div>
+                <div className="mt-2 text-2xl font-semibold leading-none">12.5K</div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300"
+                    style={{ width: `${Math.max(56, popularityPct)}%` }}
+                  />
+                </div>
+              </button>
+              <div className="grid flex-1 grid-cols-3 gap-2">
+                <MiniAction
+                  icon={agora.muted || !shouldPublish ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  label={agora.muted || !shouldPublish ? "Mic Off" : "Mic On"}
+                  onClick={() => {
+                    if (!shouldPublish) return toast.info("Take a seat to talk");
+                    agora.toggleMute();
+                  }}
+                  active={!agora.muted && shouldPublish}
+                />
+                <MiniAction
+                  icon={<Music className="h-5 w-5" />}
+                  label="Music"
+                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
+                />
+                <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
+                <MiniAction icon={<Gift className="h-5 w-5" />} label="Gift" onClick={() => setGiftOpen(true)} />
+                <MiniAction icon={<Gamepad2 className="h-5 w-5" />} label="Game" onClick={openLudo} />
+                <MiniAction
+                  icon={<MoreHorizontal className="h-5 w-5" />}
+                  label="More"
+                  onClick={() => setSeatsSheetOpen(true)}
                 />
               </div>
-              <div className="mt-0.5 text-[9px] font-bold text-white/70">{popularityPct}%</div>
             </div>
-            <button
-              onClick={() => toast.info("Event: Century Wedding")}
-              className="relative flex-1 min-h-[80px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/30 via-purple-500/25 to-indigo-500/30 p-2 text-left backdrop-blur-md"
-            >
-              <div className="text-[18px]">💒</div>
-              <div className="mt-1 text-[10px] font-black leading-tight text-white">
-                Century Wedding
-              </div>
-              <div className="mt-1 flex gap-1">
-                <span className="h-1 w-2 rounded-full bg-white" />
-                <span className="h-1 w-1 rounded-full bg-white/40" />
-              </div>
-            </button>
           </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 gap-2">
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
+              <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
+                {(["all", "chat"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setChatTab(t)}
+                    className={`text-[12px] font-black capitalize ${chatTab === t ? "text-white" : "text-white/40"}`}
+                  >
+                    {t}
+                    {chatTab === t && (
+                      <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages
+                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .map((m) => (
+                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                  ))}
+              </div>
+            </div>
 
-          {/* Video-only extra actions */}
-          {isVideo && (
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
               <div className="grid grid-cols-3 gap-1.5">
                 <MiniAction
@@ -678,66 +707,22 @@ function RoomPage() {
                   }}
                   active={!agora.muted && shouldPublish}
                 />
-                <MiniAction
-                  icon={<Music className="h-4 w-4" />}
-                  label="Music"
-                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
-                />
-                <MiniAction
-                  icon={<UserPlus className="h-4 w-4" />}
-                  label="Invite"
-                  onClick={share}
-                />
-                <MiniAction
-                  icon={<Gift className="h-4 w-4" />}
-                  label="Gift"
-                  onClick={() => setGiftOpen(true)}
-                />
-                <MiniAction
-                  icon={<Gamepad2 className="h-4 w-4" />}
-                  label="Game"
-                  onClick={openLudo}
-                />
-                <MiniAction
-                  icon={<MoreHorizontal className="h-4 w-4" />}
-                  label="More"
-                  onClick={() => setSeatsSheetOpen(true)}
-                />
+                <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
+                <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
+                <MiniAction icon={<Gift className="h-4 w-4" />} label="Gift" onClick={() => setGiftOpen(true)} />
+                <MiniAction icon={<Gamepad2 className="h-4 w-4" />} label="Game" onClick={openLudo} />
+                <MiniAction icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setSeatsSheetOpen(true)} />
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Activity feed rows (voice only) */}
-        {!isVideo && latestEnter && (
-          <div className="mt-2 space-y-1.5">
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
-              <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10">
-                <UserIcon className="h-3 w-3 text-white/60" />
-              </div>
-              <span className="truncate text-[10px] font-bold text-[color:var(--gold)]">
-                ✽ {latestEnter.user?.username ?? "Guest"}{" "}
-                <span className="text-white/70">enters the room</span>
-              </span>
-            </div>
-            <button className="flex w-full items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
-              <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10">
-                <Trophy className="h-3 w-3 text-[color:var(--gold)]" />
-              </div>
-              <span className="truncate text-[10px] font-bold text-white/80">
-                Completed magic quests to get energy rewards
-              </span>
-              <ChevronRight className="ml-auto h-3 w-3 text-white/50" />
-            </button>
           </div>
         )}
       </div>
 
 
-      {/* ─── Video: quick-gift horizontal strip ─────────────────── */}
-      {isVideo && (
+      {/* ─── Quick-gift horizontal strip ─────────────────── */}
+      {(isVideo || !isVideo) && (
         <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
-          <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md scrollbar-hide">
+          <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-violet-300/30 bg-black/35 p-2 backdrop-blur-md scrollbar-hide">
             {QUICK_GIFTS.map((g) => (
               <button
                 key={g.name}
@@ -763,67 +748,53 @@ function RoomPage() {
       )}
 
       {/* ─── Composer + footer dock ─────────────────────────────── */}
-      <div
-        className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
-            <button
-              aria-label="Emoji"
-              onClick={() => toast.info("Emoji soon")}
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
-            >
-              <Smile className="h-4 w-4" />
-            </button>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Ask your followers to support to make the room more popular"
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
-              disabled={!user}
-            />
-            <button
-              onClick={send}
-              aria-label="Send"
-              disabled={!text.trim()}
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
+      {isVideo ? (
+        <div
+          className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
+              <button
+                aria-label="Emoji"
+                onClick={() => toast.info("Emoji soon")}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+              >
+                <Smile className="h-4 w-4" />
+              </button>
+              <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && send()}
+                placeholder="Ask your followers to support to make the room more popular"
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+                disabled={!user}
+              />
+              <button
+                onClick={send}
+                aria-label="Send"
+                disabled={!text.trim()}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
-          {!isVideo && (
-            <>
-              <DockIcon onClick={() => setGiftOpen(true)} label="Gift" glow>
-                <Gift className="h-4 w-4" />
-              </DockIcon>
-              <DockIcon onClick={openLudo} label="Game">
-                <Gamepad2 className="h-4 w-4" />
-              </DockIcon>
-              <DockIcon
-                onClick={() => {
-                  if (!shouldPublish) return toast.info("Take a seat to talk");
-                  agora.toggleMute();
-                }}
-                label="Mic"
-              >
-                {agora.muted || !shouldPublish ? (
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </DockIcon>
-              <DockIcon
-                onClick={() => (isHost ? setSeatsSheetOpen(true) : iAmOnSeat ? leaveSeat() : toast.info("Tap a seat"))}
-                label="More"
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </DockIcon>
-            </>
-          )}
         </div>
-      </div>
+      ) : (
+        <div
+          className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+        >
+          <div className="grid grid-cols-5 rounded-2xl border border-violet-300/30 bg-black/35 px-2 py-2 backdrop-blur-md">
+            <BottomRoomTab active icon={<Home className="h-6 w-6" />} label="Home" onClick={() => navigate({ to: "/" })} />
+            <BottomRoomTab icon={<Gift className="h-6 w-6" />} label="Gifts" onClick={() => setGiftOpen(true)} />
+            <BottomRoomTab icon={<Gamepad2 className="h-6 w-6" />} label="Game" onClick={openLudo} />
+            <BottomRoomTab icon={<Inbox className="h-6 w-6" />} label="Chat" onClick={() => setChatTab("chat")} />
+            <BottomRoomTab icon={<UserIcon className="h-6 w-6" />} label="Profile" onClick={() => navigate({ to: "/me" })} />
+          </div>
+        </div>
+      )}
 
       <GiftSheet
         open={giftOpen}
@@ -956,14 +927,14 @@ function MiniAction({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 rounded-xl border py-2 backdrop-blur transition ${
+      className={`flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-xl border py-2 backdrop-blur transition ${
         active
-          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-white"
-          : "border-white/10 bg-white/5 text-white/85"
+          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-emerald-300"
+          : "border-violet-300/25 bg-black/30 text-white/88"
       }`}
     >
       {icon}
-      <span className="text-[9px] font-bold">{label}</span>
+      <span className="text-[11px] font-medium">{label}</span>
     </button>
   );
 }
@@ -1016,6 +987,74 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
         </span>
       </div>
     </div>
+  );
+}
+
+function DefaultVoiceMessages() {
+  return (
+    <div className="space-y-1.5 text-[11px] leading-snug text-white/88">
+      <p>
+        🧡 <span className="font-bold text-violet-300">Room</span> : Welcome to the room. Please
+        follow the community guidelines.
+      </p>
+      <p>
+        💙 <span className="font-bold text-sky-300">System</span> : Respect each other and enjoy
+        your time here.
+      </p>
+      <p>
+        👩 <span className="font-bold text-violet-200">Sunny💗</span> : Hello everyone 👋
+      </p>
+      <p>
+        🏆 <span className="font-bold text-[color:var(--gold)]">Queen👑</span> : Hi Sunny 💞
+      </p>
+      <p>
+        🎁 <span className="font-bold text-[color:var(--primary)]">Ali King</span> :{" "}
+        <span className="font-bold text-[color:var(--gold)]">sent Rose 🌹 x10</span>
+      </p>
+      <p>
+        👥 <span className="font-bold text-emerald-300">Sara</span> : joined the room
+      </p>
+    </div>
+  );
+}
+
+function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
+  return (
+    <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--primary)]/60 bg-black/35 px-3 py-2 shadow-[inset_0_0_20px_rgba(255,255,255,0.04)] backdrop-blur-md">
+      <span className="text-lg leading-none">📣</span>
+      <div className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white/90">
+        <span className="font-black tracking-wide">ALI KING✤</span>{" "}
+        <span>enters the room</span>
+        {latestEnter?.user?.username ? (
+          <span className="text-[color:var(--gold)]"> · @{latestEnter.user.username}</span>
+        ) : null}
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-white/85" />
+    </div>
+  );
+}
+
+function BottomRoomTab({
+  icon,
+  label,
+  onClick,
+  active,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-1 text-[12px] font-medium ${
+        active ? "text-[color:var(--secondary)]" : "text-white/85"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
 
@@ -1080,6 +1119,7 @@ function Seat({
   onClaim,
   likeCount,
   onLike,
+  videoStyle,
 }: {
   index: number;
   member?: Member;
@@ -1090,6 +1130,7 @@ function Seat({
   onClaim: () => void;
   likeCount: number;
   onLike: () => void;
+  videoStyle?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -1113,6 +1154,45 @@ function Seat({
     : speaking
       ? "ring-2 ring-[color:var(--primary)]"
       : "ring-1 ring-white/15";
+
+  if (videoStyle) {
+    const numberLabel = String(index + 1).padStart(2, "0");
+    return (
+      <button
+        onClick={() => (member ? undefined : onClaim())}
+        className="relative aspect-[1.02/1] overflow-hidden rounded-xl border border-violet-300/55 bg-[radial-gradient(circle_at_50%_35%,rgba(139,92,246,0.22),rgba(5,7,24,0.78)_60%),linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.015))] shadow-[inset_0_0_22px_rgba(255,255,255,0.035)]"
+        aria-label={member ? `Seat ${numberLabel}` : `Take seat ${numberLabel}`}
+      >
+        <span className="absolute left-1.5 top-1 text-[11px] font-medium leading-none text-white/90">
+          {numberLabel}
+        </span>
+        {isHostSeat && (
+          <span className="absolute right-1.5 top-1 rounded-full bg-[color:var(--gold)]/20 px-1 text-[9px] text-[color:var(--gold)]">
+            ♛
+          </span>
+        )}
+        <div className="absolute inset-x-0 top-[28%] grid place-items-center">
+          {displayAvatar && !remote?.videoTrack ? (
+            <img
+              src={displayAvatar}
+              alt=""
+              className="h-10 w-10 rounded-full border border-white/30 object-cover shadow-lg"
+            />
+          ) : remote?.videoTrack ? (
+            <div ref={videoRef} className="h-11 w-11 overflow-hidden rounded-full" />
+          ) : (
+            <span className="text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
+              📹
+            </span>
+          )}
+        </div>
+        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
+          {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          <span>{displayName ? `@${displayName}` : "Solo"}</span>
+        </div>
+      </button>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-1">
