@@ -232,12 +232,22 @@ function RoomPage() {
   useEffect(() => {
     if (!user || !room.data) return;
     const seatIndex = isHost ? 0 : null;
-    void supabase
-      .from("room_members")
-      .upsert(
-        { room_id: roomId, user_id: user.id, seat_index: seatIndex },
-        { onConflict: "room_id,user_id" },
-      );
+    void (async () => {
+      await supabase
+        .from("room_members")
+        .upsert(
+          { room_id: roomId, user_id: user.id, seat_index: seatIndex },
+          { onConflict: "room_id,user_id" },
+        );
+      if (!isHost) {
+        await supabase.from("room_messages").insert({
+          room_id: roomId,
+          user_id: user.id,
+          kind: "join",
+          text: "entered the room",
+        });
+      }
+    })();
     return () => {
       void supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
     };
