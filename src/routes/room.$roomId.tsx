@@ -719,10 +719,10 @@ function RoomPage() {
       </div>
 
 
-      {/* ─── Video: quick-gift horizontal strip ─────────────────── */}
-      {isVideo && (
+      {/* ─── Quick-gift horizontal strip ─────────────────── */}
+      {(isVideo || !isVideo) && (
         <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
-          <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md scrollbar-hide">
+          <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-violet-300/30 bg-black/35 p-2 backdrop-blur-md scrollbar-hide">
             {QUICK_GIFTS.map((g) => (
               <button
                 key={g.name}
@@ -748,67 +748,53 @@ function RoomPage() {
       )}
 
       {/* ─── Composer + footer dock ─────────────────────────────── */}
-      <div
-        className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
-            <button
-              aria-label="Emoji"
-              onClick={() => toast.info("Emoji soon")}
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
-            >
-              <Smile className="h-4 w-4" />
-            </button>
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Ask your followers to support to make the room more popular"
-              className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
-              disabled={!user}
-            />
-            <button
-              onClick={send}
-              aria-label="Send"
-              disabled={!text.trim()}
-              className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
+      {isVideo ? (
+        <div
+          className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
+              <button
+                aria-label="Emoji"
+                onClick={() => toast.info("Emoji soon")}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+              >
+                <Smile className="h-4 w-4" />
+              </button>
+              <input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && send()}
+                placeholder="Ask your followers to support to make the room more popular"
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+                disabled={!user}
+              />
+              <button
+                onClick={send}
+                aria-label="Send"
+                disabled={!text.trim()}
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
-          {!isVideo && (
-            <>
-              <DockIcon onClick={() => setGiftOpen(true)} label="Gift" glow>
-                <Gift className="h-4 w-4" />
-              </DockIcon>
-              <DockIcon onClick={openLudo} label="Game">
-                <Gamepad2 className="h-4 w-4" />
-              </DockIcon>
-              <DockIcon
-                onClick={() => {
-                  if (!shouldPublish) return toast.info("Take a seat to talk");
-                  agora.toggleMute();
-                }}
-                label="Mic"
-              >
-                {agora.muted || !shouldPublish ? (
-                  <MicOff className="h-4 w-4" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </DockIcon>
-              <DockIcon
-                onClick={() => (isHost ? setSeatsSheetOpen(true) : iAmOnSeat ? leaveSeat() : toast.info("Tap a seat"))}
-                label="More"
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </DockIcon>
-            </>
-          )}
         </div>
-      </div>
+      ) : (
+        <div
+          className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+        >
+          <div className="grid grid-cols-5 rounded-2xl border border-violet-300/30 bg-black/35 px-2 py-2 backdrop-blur-md">
+            <BottomRoomTab active icon={<Home className="h-6 w-6" />} label="Home" onClick={() => navigate({ to: "/" })} />
+            <BottomRoomTab icon={<Gift className="h-6 w-6" />} label="Gifts" onClick={() => setGiftOpen(true)} />
+            <BottomRoomTab icon={<Gamepad2 className="h-6 w-6" />} label="Game" onClick={openLudo} />
+            <BottomRoomTab icon={<Inbox className="h-6 w-6" />} label="Chat" onClick={() => setChatTab("chat")} />
+            <BottomRoomTab icon={<UserIcon className="h-6 w-6" />} label="Profile" onClick={() => navigate({ to: "/me" })} />
+          </div>
+        </div>
+      )}
 
       <GiftSheet
         open={giftOpen}
