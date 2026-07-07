@@ -531,12 +531,16 @@ function RoomPage() {
           mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
         />
       ) : (
-        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-2 pt-1.5">
+        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
           <div className="p-0">
             {(() => {
-              const sc = Math.max(20, r.seat_count);
+              const sc = Math.max(4, r.seat_count);
+              const cols = sc <= 8 ? 4 : 5;
               return (
-                <div className="grid grid-cols-5 gap-1.5">
+                <div
+                  className="grid gap-x-2 gap-y-3"
+                  style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                >
                   {Array.from({ length: sc }).map((_, i) => {
                     const m = seatsByIndex.get(i);
                     const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
@@ -557,7 +561,6 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => likeSeat(i)}
-                        videoStyle
                       />
                     );
                   })}
