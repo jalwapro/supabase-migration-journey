@@ -491,32 +491,11 @@ function RoomPage() {
       </div>
 
       <main className="mx-auto max-w-md px-3">
-        {/* Seats header with host controls */}
+        {/* Seats header */}
         <div className="mb-2 flex items-center justify-between">
           <div className="text-[11px] font-bold text-muted-foreground">
             Seats <span className="text-foreground">{seatedCount}/{r.seat_count}</span>
           </div>
-          {isHost && (
-            <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-1 py-0.5">
-              <button
-                onClick={() => changeSeatCount(-1)}
-                disabled={r.seat_count <= 4}
-                aria-label="Fewer seats"
-                className="grid h-6 w-6 place-items-center rounded-full bg-background/60 disabled:opacity-30"
-              >
-                <Minus className="h-3 w-3" />
-              </button>
-              <span className="min-w-6 text-center text-[11px] font-extrabold">{r.seat_count}</span>
-              <button
-                onClick={() => changeSeatCount(1)}
-                disabled={r.seat_count >= 20}
-                aria-label="More seats"
-                className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground disabled:opacity-30"
-              >
-                <Plus className="h-3 w-3" />
-              </button>
-            </div>
-          )}
         </div>
 
         {/* Seat grid */}
@@ -540,17 +519,6 @@ function RoomPage() {
           })}
         </div>
 
-        {/* Welcome banner */}
-        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border/60 bg-card/40 px-3 py-2.5">
-          <Sparkles className="h-4 w-4 text-[color:var(--gold)]" />
-          <div className="min-w-0 flex-1 truncate text-[12px]">
-            <span className="font-bold">
-              {r.host?.username ? `${r.host.username}'s Live` : r.title}
-            </span>
-            <span className="text-muted-foreground"> — welcome to the room ✨</span>
-          </div>
-          <span className="text-muted-foreground">›</span>
-        </div>
 
         {/* Tabs */}
         <div className="mt-3 flex items-center gap-4 border-b border-border/40 px-1">
