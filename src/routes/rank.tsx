@@ -263,7 +263,16 @@ function TopGiftersBanner() {
     return () => clearInterval(t);
   }, [items.length]);
 
-  if (items.length === 0) return null;
+  // Always render — fill with placeholders when there's no data yet.
+  const display: Entry[] =
+    items.length > 0
+      ? items
+      : [
+          { id: "p1", username: "Winner 1", avatar: null, coins: 0 },
+          { id: "p2", username: "Winner 2", avatar: null, coins: 0 },
+          { id: "p3", username: "Winner 3", avatar: null, coins: 0 },
+        ];
+
 
   return (
     <div className="relative mt-4 overflow-hidden rounded-3xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--gold)]/15 via-card to-[color:var(--primary)]/10 shadow-xl shadow-[color:var(--gold)]/10">
