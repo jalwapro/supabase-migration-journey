@@ -1037,37 +1037,30 @@ function RoomPage() {
   );
 }
 
-/* ─── Video main stage ───────────────────────────────────────── */
-function VideoStage({
+/* ─── Video seat grid (SOLO / 1-1 / 2-2) ─────────────────────── */
+type VideoSeatData = {
+  index: number;
+  isHostSeat: boolean;
+  member?: Member;
+  remote?: RemoteUser;
+  fallbackUser: { username: string | null; avatar: string | null } | null;
+  onClaim: () => void;
+  onLike: () => void;
+  likeCount: number;
+};
+
+function VideoSeatGrid({
   coverUrl,
-  hostRemote,
   isLive,
-  mode,
-  onFlip,
-  videoOn,
+  layout,
+  seats,
 }: {
   coverUrl: string | null;
-  hostRemote?: RemoteUser;
   isLive: boolean;
-  mode: "SOLO" | "MULTI";
-  onFlip?: () => void | Promise<void>;
-  videoOn?: boolean;
+  layout: "SOLO" | "1/1" | "2/2";
+  seats: VideoSeatData[];
 }) {
-  const videoRef = useRef<HTMLDivElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
-  const [muted, setMuted] = useState(false);
-  useEffect(() => {
-    if (hostRemote?.videoTrack && videoRef.current) {
-      hostRemote.videoTrack.play(videoRef.current, { fit: "cover" });
-    }
-    return () => {
-      hostRemote?.videoTrack?.stop();
-    };
-  }, [hostRemote?.videoTrack]);
-
-  useEffect(() => {
-    hostRemote?.audioTrack?.setVolume(muted ? 0 : 100);
-  }, [muted, hostRemote?.audioTrack]);
 
   async function goFullscreen() {
     const el = wrapRef.current;
@@ -1080,57 +1073,122 @@ function VideoStage({
     }
   }
 
+  const gridClass =
+    layout === "SOLO"
+      ? "grid grid-cols-1 gap-0"
+      : layout === "1/1"
+        ? "grid grid-cols-2 gap-1.5"
+        : "grid grid-cols-2 grid-rows-2 gap-1.5";
+
   return (
     <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
       <div
         ref={wrapRef}
-        className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/60"
+        className="relative aspect-[4/5] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/60 p-1.5"
       >
-        {hostRemote?.videoTrack ? (
-          <div ref={videoRef} className="absolute inset-0" />
-        ) : coverUrl ? (
-          <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[color:var(--secondary)]/40 to-black">
-            <Video className="h-16 w-16 text-white/30" />
-          </div>
-        )}
-        {/* Top badges */}
-        <div className="absolute inset-x-0 top-0 flex items-center justify-between p-2.5">
+        <div className={`h-full w-full ${gridClass}`}>
+          {seats.map((s) => (
+            <VideoTile key={s.index} data={s} coverUrl={coverUrl} />
+          ))}
+        </div>
+        {/* Top badges overlay */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between p-2.5">
           <span className="rounded-full border border-white/20 bg-black/50 px-2.5 py-0.5 text-[10px] font-black text-white backdrop-blur">
-            {mode}
+            {layout}
           </span>
           <span className="flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur">
             <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "bg-red-500 animate-pulse" : "bg-white/40"}`} />
             {isLive ? "LIVE" : "OFF"}
           </span>
         </div>
-        {/* Bottom controls */}
-        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-2.5">
-          <span className="flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
-            <Mic className="h-3 w-3" /> {mode === "SOLO" ? "Solo" : "Multi"}
-          </span>
-          <div className="flex items-center gap-1.5">
-            <StageBtn
-              icon={<Volume2 className="h-3.5 w-3.5" />}
-              label={muted ? "Unmute" : "Mute"}
-              onClick={() => setMuted((v) => !v)}
-              active={muted}
-            />
-            {onFlip && (
-              <StageBtn
-                icon={videoOn ? <VideoOff className="h-3.5 w-3.5" /> : <Video className="h-3.5 w-3.5" />}
-                label="Camera"
-                onClick={onFlip}
-              />
-            )}
-            <StageBtn icon={<Maximize2 className="h-3.5 w-3.5" />} label="Full" onClick={goFullscreen} />
-          </div>
-        </div>
+        <button
+          onClick={goFullscreen}
+          aria-label="Fullscreen"
+          className="absolute bottom-2 right-2 grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur"
+        >
+          <Maximize2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
 }
+
+function VideoTile({
+  data,
+  coverUrl,
+}: {
+  data: VideoSeatData;
+  coverUrl: string | null;
+}) {
+  const videoRef = useRef<HTMLDivElement | null>(null);
+  const { member, remote, isHostSeat, fallbackUser, onClaim, onLike, index, likeCount } = data;
+
+  useEffect(() => {
+    if (remote?.videoTrack && videoRef.current) {
+      remote.videoTrack.play(videoRef.current, { fit: "cover" });
+    }
+    return () => {
+      remote?.videoTrack?.stop();
+    };
+  }, [remote?.videoTrack]);
+
+  const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
+  const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
+  const speaking = remote?.hasAudio && !member?.is_muted;
+  const label = `No.${index + 1}`;
+
+  return (
+    <button
+      onClick={() => (member ? onLike() : onClaim())}
+      className={`relative h-full w-full overflow-hidden rounded-2xl border bg-black/60 ${
+        isHostSeat
+          ? "border-[color:var(--gold)]/70 shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+          : speaking
+            ? "border-[color:var(--primary)]/70"
+            : "border-white/15"
+      }`}
+      aria-label={member ? `Like ${label}` : `Take ${label}`}
+    >
+      {remote?.videoTrack ? (
+        <div ref={videoRef} className="absolute inset-0" />
+      ) : displayAvatar ? (
+        <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+      ) : coverUrl ? (
+        <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-40" />
+      ) : (
+        <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[color:var(--secondary)]/40 to-black">
+          <Video className="h-10 w-10 text-white/30" />
+        </div>
+      )}
+
+      {/* label */}
+      <span className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur">
+        {label}
+      </span>
+      {isHostSeat && (
+        <span className="absolute right-2 top-2 rounded-full bg-[color:var(--gold)]/25 px-1.5 py-0.5 text-[10px] font-black text-[color:var(--gold)] backdrop-blur">
+          ♛ HOST
+        </span>
+      )}
+
+      {/* footer chip */}
+      <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10.5px] font-bold text-white backdrop-blur">
+          {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          <span className="truncate max-w-[90px]">
+            {displayName ? `@${displayName}` : "Empty"}
+          </span>
+        </span>
+        {member && (
+          <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white/90 backdrop-blur">
+            <Heart className="h-2.5 w-2.5 text-rose-400" /> {likeCount}
+          </span>
+        )}
+      </div>
+    </button>
+  );
+}
+
 
 function StageBtn({
   icon,
