@@ -216,6 +216,14 @@ function RoomPage() {
   const r = room.data;
   const seatsByIndex = new Map<number, Member>();
   members.forEach((m) => { if (m.seat_index != null) seatsByIndex.set(m.seat_index, m); });
+  const giftReceivers: GiftReceiver[] = [
+    ...(r.host && r.host_id !== user?.id
+      ? [{ id: r.host_id, username: r.host.username, avatar: r.host.avatar }]
+      : []),
+    ...members
+      .filter((m) => m.seat_index != null && m.user_id !== user?.id && m.user_id !== r.host_id)
+      .map((m) => ({ id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null })),
+  ];
 
   return (
     <div
@@ -324,17 +332,26 @@ function RoomPage() {
             {messages.length === 0 && (
               <p className="pt-6 text-center text-xs text-muted-foreground">Say hi to the room 👋</p>
             )}
-            {messages.map((m) => (
-              <div key={m.id} className="flex items-start gap-2">
-                <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[color:var(--secondary)]/40 text-[10px] font-bold">
-                  {(m.user?.username ?? "?").slice(0, 1).toUpperCase()}
+            {messages.map((m) => {
+              const isGift = m.kind === "gift";
+              return (
+                <div key={m.id} className={`flex items-start gap-2 ${isGift ? "rounded-xl bg-gradient-to-r from-[color:var(--gold)]/15 to-[color:var(--primary)]/10 p-2" : ""}`}>
+                  <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[color:var(--secondary)]/40 text-[10px] font-bold">
+                    {(m.user?.username ?? "?").slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] text-muted-foreground">@{m.user?.username ?? "user"}</p>
+                    {isGift ? (
+                      <p className="break-words text-sm font-bold text-[color:var(--gold)]">
+                        🎁 sent {m.text}
+                      </p>
+                    ) : (
+                      <p className="break-words text-sm">{m.text}</p>
+                    )}
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[10px] text-muted-foreground">@{m.user?.username ?? "user"}</p>
-                  <p className="break-words text-sm">{m.text}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-3 flex items-center gap-2">
@@ -368,6 +385,12 @@ function RoomPage() {
         </div>
       </main>
       <BottomNav />
+      <GiftSheet
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        roomId={roomId}
+        receivers={giftReceivers}
+      />
     </div>
   );
 }
