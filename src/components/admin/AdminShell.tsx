@@ -106,7 +106,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     </li>
                   );
                 })}
-              </div>
+              </ul>
             </div>
           ))}
           <Link
