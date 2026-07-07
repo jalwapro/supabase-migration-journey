@@ -1099,16 +1099,23 @@ function Seat({
           {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
           {!displayAvatar && !remote?.videoTrack && (
             <div className="absolute inset-0 grid place-items-center">
-              <UserIcon className={`h-1/3 w-1/3 ${isHostSeat ? "text-[color:var(--gold)]/70" : "text-white/40"}`} />
+              {isHostSeat ? (
+                <div className="relative grid h-full w-full place-items-center">
+                  <Crown className="absolute top-1 h-3 w-3 text-[color:var(--gold)]" />
+                  <Armchair className="h-1/2 w-1/2 text-[color:var(--gold)]/90" strokeWidth={1.5} />
+                </div>
+              ) : (
+                <Armchair className="h-1/2 w-1/2 text-white/60" strokeWidth={1.5} />
+              )}
             </div>
           )}
         </div>
-        {isHostSeat && (
+        {isHostSeat && displayAvatar && (
           <span className="absolute -top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow">
             <Crown className="inline h-2.5 w-2.5" />
           </span>
         )}
-        {(member || isHostSeat) && (
+        {(member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-1 right-1 grid h-4 w-4 place-items-center rounded-full bg-black/70">
             {member?.is_muted ? (
               <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
@@ -1118,9 +1125,14 @@ function Seat({
           </span>
         )}
       </button>
-      <span className={`text-[10px] font-black ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/85"}`}>
-        {displayName ? `@${displayName}` : label}
+      <span className={`text-[11px] font-black ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
+        {label}
       </span>
+      {displayName && (
+        <span className="max-w-full truncate text-[9px] font-semibold text-white/60">
+          @{displayName}
+        </span>
+      )}
       <button
         onClick={onLike}
         className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold text-white/70 backdrop-blur"
