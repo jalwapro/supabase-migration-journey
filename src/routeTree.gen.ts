@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
+import { Route as MessagesPeerIdRouteImport } from './routes/messages.$peerId'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
@@ -58,6 +59,11 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
   id: '/room/$roomId',
   path: '/room/$roomId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
+  id: '/$peerId',
+  path: '/$peerId',
+  getParentRoute: () => MessagesRoute,
 } as any)
 const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
   id: '/api/agora-token',
@@ -104,7 +110,7 @@ const AuthenticatedGamesLuckySpinRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/messages': typeof MessagesRoute
+  '/messages': typeof MessagesRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -114,13 +120,14 @@ export interface FileRoutesByFullPath {
   '/recharge': typeof AuthenticatedRechargeRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/messages': typeof MessagesRoute
+  '/messages': typeof MessagesRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/recharge': typeof AuthenticatedRechargeRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
 }
@@ -138,7 +146,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/messages': typeof MessagesRoute
+  '/messages': typeof MessagesRouteWithChildren
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
 }
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/recharge'
     | '/wallet'
     | '/api/agora-token'
+    | '/messages/$peerId'
     | '/room/$roomId'
     | '/games/lucky-spin'
   fileRoutesByTo: FileRoutesByTo
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/recharge'
     | '/wallet'
     | '/api/agora-token'
+    | '/messages/$peerId'
     | '/room/$roomId'
     | '/games/lucky-spin'
   id:
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recharge'
     | '/_authenticated/wallet'
     | '/api/agora-token'
+    | '/messages/$peerId'
     | '/room/$roomId'
     | '/_authenticated/games/lucky-spin'
   fileRoutesById: FileRoutesById
@@ -207,7 +219,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  MessagesRoute: typeof MessagesRoute
+  MessagesRoute: typeof MessagesRouteWithChildren
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
@@ -264,6 +276,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/room/$roomId'
       preLoaderRoute: typeof RoomRoomIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/messages/$peerId': {
+      id: '/messages/$peerId'
+      path: '/$peerId'
+      fullPath: '/messages/$peerId'
+      preLoaderRoute: typeof MessagesPeerIdRouteImport
+      parentRoute: typeof MessagesRoute
     }
     '/api/agora-token': {
       id: '/api/agora-token'
@@ -356,11 +375,23 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface MessagesRouteChildren {
+  MessagesPeerIdRoute: typeof MessagesPeerIdRoute
+}
+
+const MessagesRouteChildren: MessagesRouteChildren = {
+  MessagesPeerIdRoute: MessagesPeerIdRoute,
+}
+
+const MessagesRouteWithChildren = MessagesRoute._addFileChildren(
+  MessagesRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  MessagesRoute: MessagesRoute,
+  MessagesRoute: MessagesRouteWithChildren,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   ApiAgoraTokenRoute: ApiAgoraTokenRoute,
