@@ -158,7 +158,12 @@ function RoomPage() {
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const [{ data: mData }, { data: msgData }] = await Promise.all([
+      const [
+        { data: mData },
+        { data: msgData },
+        { data: likeData },
+        { data: popData },
+      ] = await Promise.all([
         supabase
           .from("room_members")
           .select(
@@ -173,10 +178,31 @@ function RoomPage() {
           .eq("room_id", roomId)
           .order("created_at", { ascending: false })
           .limit(50),
+        supabase
+          .from("room_seat_likes")
+          .select("seat_index")
+          .eq("room_id", roomId),
+        supabase
+          .from("room_popularity")
+          .select("coin_score,like_count,gift_count")
+          .eq("room_id", roomId)
+          .maybeSingle(),
       ]);
       if (cancel) return;
       setMembers((mData ?? []) as unknown as Member[]);
       setMessages(((msgData ?? []) as unknown as Message[]).reverse());
+      const likeMap: Record<number, number> = {};
+      (likeData ?? []).forEach((row: { seat_index: number }) => {
+        likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
+      });
+      setSeatLikes(likeMap);
+      if (popData) {
+        setPopularity({
+          coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
+          like_count: Number((popData as { like_count: number }).like_count ?? 0),
+          gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
+        });
+      }
     })();
     return () => {
       cancel = true;
