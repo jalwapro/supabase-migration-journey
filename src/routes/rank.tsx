@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Crown, Trophy, Flame, Coins, Sparkles } from "lucide-react";
+import { Crown, Trophy, Heart, Coins, Sparkles } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 
 export const Route = createFileRoute("/rank")({
