@@ -6,6 +6,12 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 const jalwaLogo = "/__l5e/assets-v1/4d052932-1040-4825-a7d9-cbabb2b9707d/jalwa-logo.png";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Radio,
   Users,
   Lock,
@@ -16,6 +22,8 @@ import {
   Wallet as WalletIcon,
   Swords,
   Flame,
+  UserRound,
+  MessageCircle,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
