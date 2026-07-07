@@ -69,7 +69,37 @@ function Home() {
   const { user, profile, isAdmin } = useAuth();
   const [tab, setTab] = useState<TabKey>("video");
   const [q, setQ] = useState("");
+  const [friendsOpen, setFriendsOpen] = useState(false);
   const query = q.trim();
+
+  const friends = useQuery({
+    queryKey: ["home-mutual-friends-online", user?.id],
+    enabled: !!user?.id && friendsOpen,
+    refetchInterval: friendsOpen ? 30_000 : false,
+    queryFn: async () => {
+      const uid = user!.id;
+      const [{ data: outRows, error: e1 }, { data: inRows, error: e2 }] =
+        await Promise.all([
+          supabase.from("follows").select("following_id").eq("follower_id", uid),
+          supabase.from("follows").select("follower_id").eq("following_id", uid),
+        ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+      const following = new Set((outRows ?? []).map((r) => r.following_id as string));
+      const followers = new Set((inRows ?? []).map((r) => r.follower_id as string));
+      const mutual = [...following].filter((id) => followers.has(id));
+      if (mutual.length === 0) return [] as LiveUser[];
+      const since = new Date(Date.now() - 5 * 60_000).toISOString();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,username,avatar,frame,last_seen")
+        .in("id", mutual)
+        .gte("last_seen", since)
+        .order("last_seen", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as LiveUser[];
+    },
+  });
 
   const banners = useQuery({
     queryKey: ["banners"],
