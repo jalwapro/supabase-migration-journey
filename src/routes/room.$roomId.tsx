@@ -529,14 +529,20 @@ function RoomPage() {
           hostRemote={hostRemote}
           isLive={r.status === "live"}
           mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
+          onFlip={isHost ? agora.toggleVideo : undefined}
+          videoOn={agora.videoOn}
         />
       ) : (
-        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-2 pt-1.5">
+        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
           <div className="p-0">
             {(() => {
-              const sc = Math.max(20, r.seat_count);
+              const sc = Math.max(4, r.seat_count);
+              const cols = sc <= 8 ? 4 : 5;
               return (
-                <div className="grid grid-cols-5 gap-1.5">
+                <div
+                  className="grid gap-x-2 gap-y-3"
+                  style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+                >
                   {Array.from({ length: sc }).map((_, i) => {
                     const m = seatsByIndex.get(i);
                     const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
@@ -557,7 +563,6 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => likeSeat(i)}
-                        videoStyle
                       />
                     );
                   })}
@@ -680,7 +685,7 @@ function RoomPage() {
             <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
               <button
                 aria-label="Emoji"
-                onClick={() => toast.info("Emoji soon")}
+                onClick={() => setText((t) => t + "😊")}
                 className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
               >
                 <Smile className="h-4 w-4" />
@@ -721,7 +726,7 @@ function RoomPage() {
             <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
               <button
                 aria-label="Emoji"
-                onClick={() => toast.info("Emoji soon")}
+                onClick={() => setText((t) => t + "😊")}
                 className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
               >
                 <Smile className="h-4 w-4" />
@@ -759,7 +764,7 @@ function RoomPage() {
               <Gamepad2 className="h-4 w-4" />
             </button>
             <button
-              onClick={() => toast.info("More actions soon")}
+              onClick={() => (isHost ? setSeatsSheetOpen(true) : toast.info("Host only"))}
               aria-label="More"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
@@ -821,13 +826,19 @@ function VideoStage({
   hostRemote,
   isLive,
   mode,
+  onFlip,
+  videoOn,
 }: {
   coverUrl: string | null;
   hostRemote?: RemoteUser;
   isLive: boolean;
   mode: "SOLO" | "MULTI";
+  onFlip?: () => void | Promise<void>;
+  videoOn?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [muted, setMuted] = useState(false);
   useEffect(() => {
     if (hostRemote?.videoTrack && videoRef.current) {
       hostRemote.videoTrack.play(videoRef.current, { fit: "cover" });
@@ -837,9 +848,27 @@ function VideoStage({
     };
   }, [hostRemote?.videoTrack]);
 
+  useEffect(() => {
+    hostRemote?.audioTrack?.setVolume(muted ? 0 : 100);
+  }, [muted, hostRemote?.audioTrack]);
+
+  async function goFullscreen() {
+    const el = wrapRef.current;
+    if (!el) return;
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await el.requestFullscreen();
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
     <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/60">
+      <div
+        ref={wrapRef}
+        className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/60"
+      >
         {hostRemote?.videoTrack ? (
           <div ref={videoRef} className="absolute inset-0" />
         ) : coverUrl ? (
@@ -862,12 +891,23 @@ function VideoStage({
         {/* Bottom controls */}
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-2.5">
           <span className="flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
-            <Mic className="h-3 w-3" /> Solo
+            <Mic className="h-3 w-3" /> {mode === "SOLO" ? "Solo" : "Multi"}
           </span>
           <div className="flex items-center gap-1.5">
-            <StageBtn icon={<Volume2 className="h-3.5 w-3.5" />} label="Sound" />
-            <StageBtn icon={<RefreshCcw className="h-3.5 w-3.5" />} label="Flip" />
-            <StageBtn icon={<Maximize2 className="h-3.5 w-3.5" />} label="Full" />
+            <StageBtn
+              icon={<Volume2 className="h-3.5 w-3.5" />}
+              label={muted ? "Unmute" : "Mute"}
+              onClick={() => setMuted((v) => !v)}
+              active={muted}
+            />
+            {onFlip && (
+              <StageBtn
+                icon={videoOn ? <VideoOff className="h-3.5 w-3.5" /> : <Video className="h-3.5 w-3.5" />}
+                label="Camera"
+                onClick={onFlip}
+              />
+            )}
+            <StageBtn icon={<Maximize2 className="h-3.5 w-3.5" />} label="Full" onClick={goFullscreen} />
           </div>
         </div>
       </div>
@@ -875,11 +915,26 @@ function VideoStage({
   );
 }
 
-function StageBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
+function StageBtn({
+  icon,
+  label,
+  onClick,
+  active,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void | Promise<void>;
+  active?: boolean;
+}) {
   return (
     <button
       aria-label={label}
-      className="grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur"
+      onClick={onClick ? () => void onClick() : undefined}
+      className={`grid h-7 w-7 place-items-center rounded-full border backdrop-blur ${
+        active
+          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white"
+          : "border-white/20 bg-black/50 text-white"
+      }`}
     >
       {icon}
     </button>
