@@ -576,72 +576,126 @@ function RoomPage() {
       )}
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
-      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-3">
-        <div className="flex min-h-0 flex-1 gap-2">
-          {/* Chat card */}
-          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-            <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
-              {(["all", "chat"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setChatTab(t)}
-                  className={`text-[12px] font-black capitalize ${
-                    chatTab === t
-                      ? "text-white"
-                      : "text-white/40"
-                  }`}
-                >
-                  {t}
-                  {chatTab === t && (
-                    <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
-                  )}
-                </button>
-              ))}
-            </div>
-            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-              {messages.length === 0 && (
-                <div className="pt-3 text-[10px] leading-relaxed text-white/50">
-                  <div className="font-bold text-white/70">Room announcement:</div>
-                  <div>Welcome to the room. Follow community guidelines — no vulgarity, fraud, or politics. Inspectors are on 24/7.</div>
-                </div>
-              )}
-              {messages
-                .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
-                .map((m) => (
-                  <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
+        {!isVideo ? (
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_39%] gap-2">
+            <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
+              <div className="mb-2 flex items-center gap-7 border-b border-white/10 px-1 pb-2">
+                {(["all", "chat"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setChatTab(t)}
+                    className={`relative text-sm font-bold capitalize ${chatTab === t ? "text-white" : "text-white/60"}`}
+                  >
+                    {t}
+                    {chatTab === t && (
+                      <span className="absolute -bottom-2 left-0 h-0.5 w-full rounded-full bg-[color:var(--primary)]" />
+                    )}
+                  </button>
                 ))}
+              </div>
+              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages
+                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .map((m) => (
+                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                  ))}
+              </div>
+              <div className="mt-2 flex items-center gap-2 rounded-full bg-white/10 py-1 pl-1.5 pr-2">
+                <button
+                  aria-label="Emoji"
+                  onClick={() => toast.info("Emoji soon")}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-black/35 text-white/85"
+                >
+                  <Smile className="h-4 w-4" />
+                </button>
+                <input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && send()}
+                  placeholder="Type a message..."
+                  className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+                  disabled={!user}
+                />
+                <button
+                  onClick={send}
+                  aria-label="Send"
+                  disabled={!text.trim()}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-sky-400 to-[color:var(--secondary)] disabled:opacity-40"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Right widgets column (rocket + event banner) */}
-          <div className="flex w-[34%] shrink-0 flex-col gap-2">
-            <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-              <div className="text-lg leading-none">🚀</div>
-              <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-orange-400 to-[color:var(--primary)] transition-all"
-                  style={{ width: `${popularityPct}%` }}
+            <div className="flex min-h-0 flex-col gap-2">
+              <button className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="truncate text-[13px] font-bold text-white/90">🔥 Room Popularity</span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
+                </div>
+                <div className="mt-2 text-2xl font-semibold leading-none">12.5K</div>
+                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300"
+                    style={{ width: `${Math.max(56, popularityPct)}%` }}
+                  />
+                </div>
+              </button>
+              <div className="grid flex-1 grid-cols-3 gap-2">
+                <MiniAction
+                  icon={agora.muted || !shouldPublish ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                  label={agora.muted || !shouldPublish ? "Mic Off" : "Mic On"}
+                  onClick={() => {
+                    if (!shouldPublish) return toast.info("Take a seat to talk");
+                    agora.toggleMute();
+                  }}
+                  active={!agora.muted && shouldPublish}
+                />
+                <MiniAction
+                  icon={<Music className="h-5 w-5" />}
+                  label="Music"
+                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
+                />
+                <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
+                <MiniAction icon={<Gift className="h-5 w-5" />} label="Gift" onClick={() => setGiftOpen(true)} />
+                <MiniAction icon={<Gamepad2 className="h-5 w-5" />} label="Game" onClick={openLudo} />
+                <MiniAction
+                  icon={<MoreHorizontal className="h-5 w-5" />}
+                  label="More"
+                  onClick={() => setSeatsSheetOpen(true)}
                 />
               </div>
-              <div className="mt-0.5 text-[9px] font-bold text-white/70">{popularityPct}%</div>
             </div>
-            <button
-              onClick={() => toast.info("Event: Century Wedding")}
-              className="relative flex-1 min-h-[80px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/30 via-purple-500/25 to-indigo-500/30 p-2 text-left backdrop-blur-md"
-            >
-              <div className="text-[18px]">💒</div>
-              <div className="mt-1 text-[10px] font-black leading-tight text-white">
-                Century Wedding
-              </div>
-              <div className="mt-1 flex gap-1">
-                <span className="h-1 w-2 rounded-full bg-white" />
-                <span className="h-1 w-1 rounded-full bg-white/40" />
-              </div>
-            </button>
           </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 gap-2">
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
+              <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
+                {(["all", "chat"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setChatTab(t)}
+                    className={`text-[12px] font-black capitalize ${chatTab === t ? "text-white" : "text-white/40"}`}
+                  >
+                    {t}
+                    {chatTab === t && (
+                      <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages
+                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .map((m) => (
+                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                  ))}
+              </div>
+            </div>
 
-          {/* Video-only extra actions */}
-          {isVideo && (
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
               <div className="grid grid-cols-3 gap-1.5">
                 <MiniAction
@@ -653,57 +707,13 @@ function RoomPage() {
                   }}
                   active={!agora.muted && shouldPublish}
                 />
-                <MiniAction
-                  icon={<Music className="h-4 w-4" />}
-                  label="Music"
-                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
-                />
-                <MiniAction
-                  icon={<UserPlus className="h-4 w-4" />}
-                  label="Invite"
-                  onClick={share}
-                />
-                <MiniAction
-                  icon={<Gift className="h-4 w-4" />}
-                  label="Gift"
-                  onClick={() => setGiftOpen(true)}
-                />
-                <MiniAction
-                  icon={<Gamepad2 className="h-4 w-4" />}
-                  label="Game"
-                  onClick={openLudo}
-                />
-                <MiniAction
-                  icon={<MoreHorizontal className="h-4 w-4" />}
-                  label="More"
-                  onClick={() => setSeatsSheetOpen(true)}
-                />
+                <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
+                <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
+                <MiniAction icon={<Gift className="h-4 w-4" />} label="Gift" onClick={() => setGiftOpen(true)} />
+                <MiniAction icon={<Gamepad2 className="h-4 w-4" />} label="Game" onClick={openLudo} />
+                <MiniAction icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setSeatsSheetOpen(true)} />
               </div>
             </div>
-          )}
-        </div>
-
-        {/* Activity feed rows (voice only) */}
-        {!isVideo && latestEnter && (
-          <div className="mt-2 space-y-1.5">
-            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
-              <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10">
-                <UserIcon className="h-3 w-3 text-white/60" />
-              </div>
-              <span className="truncate text-[10px] font-bold text-[color:var(--gold)]">
-                ✽ {latestEnter.user?.username ?? "Guest"}{" "}
-                <span className="text-white/70">enters the room</span>
-              </span>
-            </div>
-            <button className="flex w-full items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
-              <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10">
-                <Trophy className="h-3 w-3 text-[color:var(--gold)]" />
-              </div>
-              <span className="truncate text-[10px] font-bold text-white/80">
-                Completed magic quests to get energy rewards
-              </span>
-              <ChevronRight className="ml-auto h-3 w-3 text-white/50" />
-            </button>
           </div>
         )}
       </div>
