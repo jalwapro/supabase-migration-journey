@@ -520,91 +520,48 @@ function RoomPage() {
         </button>
       </div>
 
-      {/* ─── Stage: host + seats ─────────────────────────────────── */}
-      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-4">
-        {/* Host spotlight */}
+      {/* ─── Unified mic seats grid (host = seat 1) ──────────────── */}
+      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-4 pt-2">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+            Mic Seats
+          </span>
+          <span className="text-[10px] font-bold text-white/70">
+            {seatedCount}/{r.seat_count}
+          </span>
+        </div>
         {(() => {
-          const host = seatsByIndex.get(0);
-          const remote = host ? agora.remotes.get(uidFromUuid(host.user_id)) : undefined;
-          const speaking = remote?.hasAudio && !host?.is_muted;
+          const sc = r.seat_count;
+          const cols = sc <= 4 ? 4 : sc <= 6 ? 3 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
+          const gap = sc <= 6 ? "gap-y-6 gap-x-4" : sc <= 9 ? "gap-y-5 gap-x-3" : "gap-y-4 gap-x-2.5";
+          const colsClass =
+            cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
           return (
-            <div className="flex flex-col items-center pt-1">
-              <button
-                onClick={() => takeSeat(0)}
-                className="relative h-20 w-20"
-                aria-label="Host seat"
-              >
-                {/* Rotating gradient ring when speaking */}
-                <div
-                  className={`absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--destructive),var(--primary),var(--gold))] p-[3px] ${
-                    speaking ? "animate-spin-slow" : ""
-                  }`}
-                >
-                  <div className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#1a0b2e]">
-                    {host?.user?.avatar ? (
-                      <img src={host.user.avatar} alt="" className="h-full w-full object-cover" />
-                    ) : r.host?.avatar ? (
-                      <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <UserIcon className="h-8 w-8 text-white/60" />
-                    )}
-                  </div>
-                </div>
-                <Crown className="absolute -top-2 left-1/2 h-5 w-5 -translate-x-1/2 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow-lg" />
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-extrabold text-[color:var(--gold)]">
-                  HOST
-                </span>
-              </button>
-              <div className="mt-3 text-center">
-                <div className="text-[13px] font-extrabold">
-                  {r.host?.username ?? "Host"}
-                </div>
-                <div className="text-[10px] text-white/50">Tap seats to join · Follow to speak</div>
-              </div>
+            <div className={`grid ${colsClass} ${gap}`}>
+              {Array.from({ length: sc }).map((_, i) => {
+                const m = seatsByIndex.get(i);
+                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+                const isHostSeat = i === 0;
+                const fallbackHost =
+                  isHostSeat && !m
+                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                    : null;
+                return (
+                  <Seat
+                    key={i}
+                    index={i}
+                    member={m}
+                    remote={remote}
+                    isHostSeat={isHostSeat}
+                    cover={r.cover_url}
+                    fallbackUser={fallbackHost}
+                    onClaim={() => takeSeat(i)}
+                  />
+                );
+              })}
             </div>
           );
         })()}
-
-        {/* Mic seats grid */}
-        <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-              Mic Seats
-            </span>
-            <span className="text-[10px] font-bold text-white/70">
-              {seatedCount}/{r.seat_count}
-            </span>
-          </div>
-          {(() => {
-            const sc = r.seat_count;
-            // exclude host seat (index 0) — already shown above
-            const rest = sc - 1;
-            const cols = rest <= 5 ? 5 : rest <= 8 ? 4 : rest <= 12 ? 4 : 5;
-            const gap = rest <= 8 ? "gap-3" : "gap-2";
-            const colsClass =
-              cols === 4 ? "grid-cols-4" : cols === 5 ? "grid-cols-5" : "grid-cols-4";
-            return (
-              <div className={`grid ${colsClass} ${gap}`}>
-                {Array.from({ length: rest }).map((_, idx) => {
-                  const i = idx + 1;
-                  const m = seatsByIndex.get(i);
-                  const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-                  return (
-                    <Seat
-                      key={i}
-                      index={i}
-                      member={m}
-                      remote={remote}
-                      isHostSeat={false}
-                      cover={r.cover_url}
-                      onClaim={() => takeSeat(i)}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
       </div>
 
       {/* ─── Chat overlay (transparent, scrolls internally) ──────── */}
@@ -948,6 +905,7 @@ function Seat({
   remote,
   isHostSeat,
   cover,
+  fallbackUser,
   onClaim,
 }: {
   index: number;
@@ -955,6 +913,7 @@ function Seat({
   remote?: RemoteUser;
   isHostSeat: boolean;
   cover: string | null;
+  fallbackUser?: { username: string | null; avatar: string | null } | null;
   onClaim: () => void;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
@@ -972,44 +931,58 @@ function Seat({
   const speaking = remote?.hasAudio && !member?.is_muted;
 
   const frameUrl = (member?.user as { frame_url?: string | null } | null)?.frame_url ?? null;
+  const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
+  const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
+
+  const ringClass = isHostSeat
+    ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+    : speaking
+      ? "ring-2 ring-[color:var(--primary)]"
+      : "ring-1 ring-white/10";
 
   return (
     <button
       onClick={() => (member ? undefined : onClaim())}
-      className="relative flex flex-col items-center gap-1"
+      className="relative flex flex-col items-center gap-1.5"
       aria-label={member ? `Seat ${label}` : `Take seat ${label}`}
     >
       <div className="relative aspect-square w-full">
+        {/* Host gold aura */}
+        {isHostSeat && (
+          <div className="pointer-events-none absolute inset-[4%] rounded-full bg-gradient-to-tr from-[color:var(--gold)] via-amber-200 to-[color:var(--gold)] opacity-40 blur-md" />
+        )}
+
         {/* Round DP */}
         <div
-          className={`absolute inset-[10%] overflow-hidden rounded-full border border-border/40 bg-card/40 ${
-            speaking ? "ring-2 ring-[color:var(--primary)]" : ""
-          }`}
+          className={`absolute inset-[10%] overflow-hidden rounded-full bg-card/40 ${ringClass}`}
         >
-          {isHostSeat && !member && cover && (
+          {isHostSeat && !displayAvatar && cover && (
             <img
               src={cover}
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-60"
             />
           )}
-          {member?.user?.avatar && !remote?.videoTrack && (
+          {displayAvatar && !remote?.videoTrack && (
             <img
-              src={member.user.avatar}
+              src={displayAvatar}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
           {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
-          {isHostSeat && member && cover && !member.user?.avatar && (
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          )}
-          {!member && !isHostSeat && (
+          {!displayAvatar && !isHostSeat && (
             <div className="absolute inset-0 grid place-items-center">
               <UserIcon className="h-1/3 w-1/3 text-muted-foreground/40" />
             </div>
           )}
+          {!displayAvatar && isHostSeat && !cover && (
+            <div className="absolute inset-0 grid place-items-center">
+              <UserIcon className="h-1/3 w-1/3 text-[color:var(--gold)]/60" />
+            </div>
+          )}
         </div>
+
 
         {/* Frame overlay — sits on top of the round DP, doesn't clip it */}
         {frameUrl && (
@@ -1020,24 +993,40 @@ function Seat({
           />
         )}
 
-        {/* Seat number */}
-        <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
-          {label}
-        </span>
+        {/* Seat number (hidden for host — crown badge instead) */}
+        {!isHostSeat && (
+          <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
+            {label}
+          </span>
+        )}
+
+        {/* Host crown */}
+        {isHostSeat && (
+          <>
+            <Crown className="absolute -top-1 left-1/2 h-4 w-4 -translate-x-1/2 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow" />
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-[color:var(--gold)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-tighter text-black shadow-lg">
+              Host
+            </span>
+          </>
+        )}
 
         {/* Mic status */}
-        <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full bg-black/70">
-          {member?.is_muted ? (
-            <MicOff className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
-          ) : (
-            <Mic className="h-2.5 w-2.5 text-[color:var(--primary)]" />
-          )}
-        </span>
+        {(member || isHostSeat) && (
+          <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full bg-black/70">
+            {member?.is_muted ? (
+              <MicOff className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
+            ) : (
+              <Mic className="h-2.5 w-2.5 text-[color:var(--primary)]" />
+            )}
+          </span>
+        )}
       </div>
 
       {/* Username under the DP */}
-      <span className="max-w-full truncate text-[10px] font-bold text-foreground/90">
-        {member?.user?.username ? `@${member.user.username}` : "Seat"}
+      <span
+        className={`max-w-full truncate text-[10px] font-bold ${isHostSeat ? "text-[color:var(--gold)]" : "text-foreground/90"}`}
+      >
+        {displayName ? `@${displayName}` : isHostSeat ? "Host" : "Seat"}
       </span>
     </button>
   );
