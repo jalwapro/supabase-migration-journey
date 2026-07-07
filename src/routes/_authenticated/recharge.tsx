@@ -299,7 +299,7 @@ function RechargePage() {
               />
 
               <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-border bg-card/40 p-4">
-                <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/20">
+                <div className="glow-4d grid h-10 w-10 place-items-center rounded-full bg-primary/20">
                   {file ? (
                     <CheckCircle2 className="h-5 w-5 text-[color:var(--gold)]" />
                   ) : (

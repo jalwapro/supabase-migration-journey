@@ -565,7 +565,7 @@ function RoomPage() {
           <p className="text-sm text-muted-foreground">This room doesn't exist.</p>
           <Link
             to="/"
-            className="mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+            className="glow-4d mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
           >
             Home
           </Link>
@@ -619,7 +619,7 @@ function RoomPage() {
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           {/* Host chip */}
           <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
-            <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
+            <div className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
               {r.host?.avatar ? (
                 <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
               ) : (
@@ -916,7 +916,7 @@ function RoomPage() {
                 onClick={send}
                 aria-label="Send"
                 disabled={!text.trim()}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+                className="glow-4d grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
               >
                 <Send className="h-3.5 w-3.5" />
               </button>
@@ -925,7 +925,7 @@ function RoomPage() {
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             >
               <Gift className="h-4 w-4" />
             </button>
@@ -972,7 +972,7 @@ function RoomPage() {
                 onClick={send}
                 aria-label="Send"
                 disabled={!text.trim()}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+                className="glow-4d grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
               >
                 <Send className="h-3.5 w-3.5" />
               </button>
@@ -981,7 +981,7 @@ function RoomPage() {
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             >
               <Gift className="h-4 w-4" />
             </button>
@@ -1317,7 +1317,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
           className="mt-0.5 h-5 w-5 shrink-0 rounded-full border border-white/20 object-cover"
         />
       ) : (
-        <div className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-[9px] font-bold text-white">
+        <div className="glow-4d mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-[9px] font-bold text-white">
           {initial}
         </div>
       )}

@@ -196,7 +196,7 @@ function AuthPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                className="glow-4d w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 {otpStep === "email" ? "Send login code" : "Verify & continue"}
@@ -244,7 +244,7 @@ function AuthPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                className="glow-4d w-full inline-flex items-center justify-center gap-2 rounded-full bg-primary py-3 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 {isSignUp ? "Create account" : "Sign in"}

@@ -203,7 +203,7 @@ function DmThread() {
               onClick={send}
               disabled={!text.trim()}
               aria-label="Send"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
+              className="glow-4d grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
             >
               <Send className="h-4 w-4" />
             </button>

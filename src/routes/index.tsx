@@ -450,7 +450,7 @@ function Home() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30">
+              <span className="glow-4d grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30">
                 <UserRound className="h-4 w-4" />
               </span>
               Friends online
@@ -493,7 +493,7 @@ function Home() {
                     to="/messages/$peerId"
                     params={{ peerId: u.id }}
                     onClick={() => setFriendsOpen(false)}
-                    className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                    className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
                     aria-label="Message"
                   >
                     <MessageCircle className="h-4 w-4" />
@@ -538,7 +538,7 @@ function RoomCard({ room }: { room: Room }) {
         Live
       </div>
       {room.pk_battle && (
-        <div className="absolute left-2 top-8 flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
+        <div className="glow-4d absolute left-2 top-8 flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
           <Flame className="h-2.5 w-2.5" />
           PK
         </div>

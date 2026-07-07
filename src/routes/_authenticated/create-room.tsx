@@ -139,7 +139,7 @@ function CreateRoom() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground">
+              <span className="glow-4d grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground">
                 <Mic className="h-5 w-5" />
               </span>
               <div>
@@ -160,7 +160,7 @@ function CreateRoom() {
             }`}
           >
             <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground">
+              <span className="glow-4d grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground">
                 <Video className="h-5 w-5" />
               </span>
               <div>
@@ -181,7 +181,7 @@ function CreateRoom() {
             </p>
             <button
               onClick={() => setSheetOpen(true)}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-5 py-2 text-xs font-bold text-primary-foreground"
+              className="glow-4d mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-5 py-2 text-xs font-bold text-primary-foreground"
             >
               <Plus className="h-3.5 w-3.5" /> Create Room
             </button>

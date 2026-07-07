@@ -72,7 +72,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
       <aside className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 md:block">
         <div className="p-4">
           <Link to="/admin" className="flex items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <div className="glow-4d grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
               <BarChart3 className="h-4 w-4" />
             </div>
             <div>
