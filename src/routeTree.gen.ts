@@ -27,6 +27,7 @@ import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
+import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
@@ -124,6 +125,11 @@ const AuthenticatedGamesLuckySpinRoute =
     path: '/lucky-spin',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
+const AuthenticatedAdminVipRoute = AuthenticatedAdminVipRouteImport.update({
+  id: '/vip',
+  path: '/vip',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
@@ -180,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
@@ -258,6 +267,7 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/recharge'
     | '/admin/users'
+    | '/admin/vip'
     | '/games/lucky-spin'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/recharge'
     | '/admin/users'
+    | '/admin/vip'
     | '/games/lucky-spin'
     | '/admin'
   id:
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/recharge'
     | '/_authenticated/admin/users'
+    | '/_authenticated/admin/vip'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
@@ -452,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesLuckySpinRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/admin/vip': {
+      id: '/_authenticated/admin/vip'
+      path: '/vip'
+      fullPath: '/admin/vip'
+      preLoaderRoute: typeof AuthenticatedAdminVipRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/users': {
       id: '/_authenticated/admin/users'
       path: '/users'
@@ -504,6 +523,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
@@ -515,6 +535,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminPaymentAccountsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
