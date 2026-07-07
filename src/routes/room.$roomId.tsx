@@ -93,6 +93,8 @@ function RoomPage() {
   const [giftOpen, setGiftOpen] = useState(false);
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
+  const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
+
   const [chatTab, setChatTab] = useState<"all" | "chat">("all");
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
