@@ -480,18 +480,25 @@ function RoomPage() {
         </div>
       </div>
 
-      {/* Rank + viewers row */}
-      <div className="mx-auto flex max-w-md items-center justify-between px-3 pb-3">
+      {/* Rank + viewers + points row */}
+      <div className="mx-auto flex w-full max-w-md items-center justify-between gap-2 px-3 pb-3">
         <button className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-[11px] font-semibold">
           <Trophy className="h-3 w-3 text-[color:var(--gold)]" />
           No ranking yet
           <span className="text-muted-foreground">›</span>
         </button>
-        <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-[11px] font-bold">
-          <Users className="h-3 w-3" /> {members.length}
-          <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--primary)]" />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full border border-border/60 bg-card/40 px-2.5 py-1 text-[11px] font-bold">
+            <Flame className="h-3 w-3 text-[color:var(--gold)]" />
+            <span className="text-[color:var(--gold)]">{roomPoints}</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-[11px] font-bold">
+            <Users className="h-3 w-3" /> {members.length}
+            <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--primary)]" />
+          </div>
         </div>
       </div>
+
 
       <main className="mx-auto max-w-md px-3">
         {/* Seats header */}
