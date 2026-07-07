@@ -24,6 +24,7 @@ function CreateRoom() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(true);
+  const [seatCount, setSeatCount] = useState<number>(8);
 
   const cats = useQuery({
     queryKey: ["categories"],
