@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -24,6 +24,13 @@ import {
   Flame,
   UserRound,
   MessageCircle,
+  Crown,
+  Gift,
+  Trophy,
+  Sparkles,
+  Palette,
+  Rocket,
+  Bell,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -60,9 +67,18 @@ type SearchUser = {
 
 type TabKey = "video" | "voice" | "pk";
 const TABS: { key: TabKey; label: string; Icon: typeof Video }[] = [
-  { key: "video", label: "Video Room", Icon: Video },
-  { key: "voice", label: "Voice Room", Icon: Mic },
+  { key: "video", label: "Video", Icon: Video },
+  { key: "voice", label: "Voice", Icon: Mic },
   { key: "pk", label: "PK Battle", Icon: Swords },
+];
+
+const QUICK_ACTIONS = [
+  { to: "/create-room" as const, label: "Go Live", Icon: Rocket, tint: "from-[color:var(--primary)] to-[color:var(--secondary)]" },
+  { to: "/pk" as const, label: "PK Battle", Icon: Swords, tint: "from-[color:var(--gold)] to-[color:var(--primary)]" },
+  { to: "/rankings" as const, label: "Ranking", Icon: Trophy, tint: "from-amber-400 to-orange-500" },
+  { to: "/theme-shop" as const, label: "Themes", Icon: Palette, tint: "from-fuchsia-500 to-violet-500" },
+  { to: "/gifts" as const, label: "Gifts", Icon: Gift, tint: "from-rose-500 to-pink-500" },
+  { to: "/vip" as const, label: "VIP", Icon: Crown, tint: "from-yellow-400 to-amber-500" },
 ];
 
 function Home() {
@@ -71,6 +87,8 @@ function Home() {
   const [tab, setTab] = useState<TabKey>("video");
   const [q, setQ] = useState("");
   const [friendsOpen, setFriendsOpen] = useState(false);
+  const [bannerIdx, setBannerIdx] = useState(0);
+  const bannerRef = useRef<HTMLDivElement>(null);
   const query = q.trim();
 
   // Show splash once per browser session on domain open
@@ -187,39 +205,67 @@ function Home() {
     },
   });
 
+  // Track banner scroll for pagination dots
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const w = el.clientWidth;
+      if (w === 0) return;
+      setBannerIdx(Math.round(el.scrollLeft / (w * 0.88)));
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [banners.data]);
+
+  // Auto-advance banners
+  useEffect(() => {
+    const list = banners.data;
+    if (!list || list.length < 2) return;
+    const t = setInterval(() => {
+      const el = bannerRef.current;
+      if (!el) return;
+      const step = el.clientWidth * 0.88 + 12;
+      const next = (bannerIdx + 1) % list.length;
+      el.scrollTo({ left: next * step, behavior: "smooth" });
+    }, 4500);
+    return () => clearInterval(t);
+  }, [banners.data, bannerIdx]);
+
+  const tabIndex = TABS.findIndex((t) => t.key === tab);
+
   return (
     <>
-      <div className="min-h-[100dvh] pb-24">
+      {/* Ambient premium aurora background */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-40 -left-24 h-[420px] w-[420px] rounded-full bg-[color:var(--primary)]/25 blur-[120px]" />
+        <div className="absolute top-40 -right-24 h-[380px] w-[380px] rounded-full bg-[color:var(--secondary)]/25 blur-[120px]" />
+        <div className="absolute bottom-0 left-1/3 h-[320px] w-[320px] rounded-full bg-[color:var(--gold)]/15 blur-[120px]" />
+      </div>
+
+      <div className="min-h-[100dvh] pb-28">
         {/* Premium top bar */}
         <header
-          className="sticky top-0 z-30 border-b border-border/60 bg-background/80 backdrop-blur-xl"
+          className="sticky top-0 z-30 border-b border-white/5 bg-background/60 backdrop-blur-2xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
-            <Link to={user ? "/me" : "/auth"} className="relative shrink-0">
+            <Link to={user ? "/me" : "/auth"} className="relative shrink-0" aria-label="Profile">
               <span
                 aria-hidden
-                className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] opacity-90 blur-[1px]"
+                className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))] animate-[spin_6s_linear_infinite]"
               />
               <span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-background">
                 {profile?.avatar ? (
-                  <img
-                    src={profile.avatar}
-                    alt={profile.username ?? "me"}
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={profile.avatar} alt={profile.username ?? "me"} className="h-full w-full object-cover" />
                 ) : (
-                  <img
-                    src={jalwaLogo}
-                    alt="Jalwa"
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={jalwaLogo} alt="Jalwa" className="h-full w-full object-cover" />
                 )}
               </span>
             </Link>
 
-            <label className="flex min-w-0 items-center gap-2 rounded-full border border-border/70 bg-card/70 px-3 py-2 shadow-inner">
-              <Search className="h-4 w-4 text-muted-foreground" />
+            <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-inner backdrop-blur transition focus-within:border-[color:var(--primary)]/60 focus-within:bg-white/10">
+              <Search className="h-4 w-4 text-muted-foreground transition group-focus-within:text-[color:var(--primary)]" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -234,15 +280,16 @@ function Home() {
                   type="button"
                   onClick={() => setFriendsOpen(true)}
                   aria-label="Friends online"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card/60 text-foreground/80 hover:text-[color:var(--primary)]"
+                  className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
                 >
                   <UserRound className="h-4 w-4" />
+                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
                 </button>
               )}
               {profile && (
                 <Link
                   to="/wallet"
-                  className="flex items-center gap-1 rounded-full border border-border bg-card/60 px-2.5 py-1.5 text-[11px] font-semibold"
+                  className="glow-4d flex items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-gradient-to-r from-[color:var(--gold)]/20 to-transparent px-2.5 py-1.5 text-[11px] font-bold"
                 >
                   <WalletIcon className="h-3.5 w-3.5 text-[color:var(--gold)]" />
                   <span>{profile.coins.toLocaleString()}</span>
@@ -252,7 +299,7 @@ function Home() {
                 <Link
                   to="/admin"
                   aria-label="Admin"
-                  className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--gold)]/15 text-[color:var(--gold)]"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-[color:var(--gold)]/15 text-[color:var(--gold)] ring-1 ring-[color:var(--gold)]/40"
                 >
                   <Shield className="h-4 w-4" />
                 </Link>
@@ -260,7 +307,7 @@ function Home() {
               {!user && (
                 <Link
                   to="/auth"
-                  className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-1.5 text-[11px] font-semibold text-primary-foreground"
+                  className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
                 >
                   Sign in
                 </Link>
@@ -273,27 +320,16 @@ function Home() {
           {/* Search results (users) */}
           {query.length >= 2 && (
             <section className="px-4 pt-3">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Users
-              </p>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Users</p>
               {userSearch.isLoading ? (
-                <p className="py-3 text-center text-xs text-muted-foreground">
-                  Searching…
-                </p>
+                <p className="py-3 text-center text-xs text-muted-foreground">Searching…</p>
               ) : userSearch.data && userSearch.data.length > 0 ? (
                 <div className="space-y-2">
                   {userSearch.data.map((u) => (
-                    <div
-                      key={u.id}
-                      className="glass flex items-center gap-3 rounded-2xl p-2.5"
-                    >
+                    <div key={u.id} className="glass flex items-center gap-3 rounded-2xl p-2.5">
                       <div className="grid h-10 w-10 shrink-0 overflow-hidden rounded-full bg-card">
                         {u.avatar ? (
-                          <img
-                            src={u.avatar}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
+                          <img src={u.avatar} alt="" className="h-full w-full object-cover" />
                         ) : (
                           <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[color:var(--primary)]/40 to-[color:var(--secondary)]/40 text-xs font-bold">
                             {(u.username ?? "?").charAt(0).toUpperCase()}
@@ -313,43 +349,63 @@ function Home() {
                   ))}
                 </div>
               ) : (
-                <p className="py-3 text-center text-xs text-muted-foreground">
-                  No users found
-                </p>
+                <p className="py-3 text-center text-xs text-muted-foreground">No users found</p>
               )}
             </section>
           )}
 
-          {/* Banners */}
+          {/* Hero Banners */}
           <section className="px-4 pt-3">
             {banners.data && banners.data.length > 0 ? (
-              <div className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4">
-                {banners.data.map((b) => (
-                  <a
-                    key={b.id}
-                    href={b.link_url ?? "#"}
-                    className="relative aspect-[16/7] w-[85%] shrink-0 snap-center overflow-hidden rounded-2xl border border-border"
-                  >
-                    <img
-                      src={b.image_url}
-                      alt={b.title ?? ""}
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                    />
-                  </a>
-                ))}
-              </div>
+              <>
+                <div
+                  ref={bannerRef}
+                  className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scroll-smooth"
+                >
+                  {banners.data.map((b) => (
+                    <a
+                      key={b.id}
+                      href={b.link_url ?? "#"}
+                      className="glow-4d relative aspect-[16/8] w-[88%] shrink-0 snap-center overflow-hidden rounded-3xl border border-white/10"
+                    >
+                      <img src={b.image_url} alt={b.title ?? ""} className="h-full w-full object-cover" loading="lazy" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      {b.title && (
+                        <div className="absolute inset-x-4 bottom-3">
+                          <p className="text-sm font-bold text-white drop-shadow">{b.title}</p>
+                        </div>
+                      )}
+                    </a>
+                  ))}
+                </div>
+                {banners.data.length > 1 && (
+                  <div className="mt-2 flex justify-center gap-1.5">
+                    {banners.data.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all ${
+                          i === bannerIdx
+                            ? "w-5 bg-[color:var(--primary)]"
+                            : "w-1.5 bg-white/20"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="relative aspect-[16/7] w-full overflow-hidden rounded-2xl bg-gradient-to-br from-[color:var(--gold)]/30 via-[color:var(--primary)]/40 to-[color:var(--secondary)]/40 p-5">
+              <div className="glow-4d relative aspect-[16/8] w-full overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklab,var(--gold)_35%,transparent),transparent_60%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklab,var(--secondary)_50%,transparent),transparent_60%),linear-gradient(135deg,color-mix(in_oklab,var(--primary)_40%,transparent),color-mix(in_oklab,var(--secondary)_50%,transparent))] p-5">
                 <div className="flex h-full flex-col justify-between">
-                  <span className="w-fit rounded-full bg-background/40 px-2 py-0.5 text-[10px] uppercase tracking-widest">
-                    Welcome
+                  <span className="w-fit rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
+                    <Sparkles className="mr-1 inline h-3 w-3" /> Welcome
                   </span>
                   <div>
-                    <h2 className="text-2xl font-black leading-tight">
+                    <h2 className="text-2xl font-black leading-tight drop-shadow">
                       Go live. Get gifts.
                       <br />
-                      Shine bright.
+                      <span className="bg-gradient-to-r from-[color:var(--gold)] to-white bg-clip-text text-transparent">
+                        Shine bright.
+                      </span>
                     </h2>
                   </div>
                 </div>
@@ -357,13 +413,37 @@ function Home() {
             )}
           </section>
 
-          {/* Live user slider */}
+          {/* Quick actions rail */}
           <section className="mt-4">
+            <div className="scrollbar-hide -mx-1 flex snap-x gap-2.5 overflow-x-auto px-4">
+              {QUICK_ACTIONS.map(({ to, label, Icon, tint }) => (
+                <Link
+                  key={to}
+                  to={to}
+                  className="group flex w-16 shrink-0 snap-start flex-col items-center gap-1"
+                >
+                  <span className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${tint} shadow-[0_8px_24px_-10px_rgba(0,0,0,0.6)] ring-1 ring-white/20 transition group-active:scale-95`}>
+                    <Icon className="h-5 w-5 text-white drop-shadow" />
+                  </span>
+                  <span className="w-full truncate text-center text-[10px] font-medium text-foreground/85">
+                    {label}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* Live user slider */}
+          <section className="mt-5">
             <div className="flex items-center justify-between px-4">
-              <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
+              <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
                 Live now
               </p>
-              <span className="text-[10px] font-semibold text-[color:var(--gold)]">
+              <span className="text-[10px] font-bold text-[color:var(--gold)]">
                 {liveUsers.data?.length ?? 0} online
               </span>
             </div>
@@ -378,22 +458,20 @@ function Home() {
                   <span className="relative">
                     <span
                       aria-hidden
-                      className="absolute -inset-0.5 rounded-full bg-gradient-to-tr from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)]"
+                      className="absolute -inset-0.5 rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))] animate-[spin_4s_linear_infinite]"
                     />
                     <span className="relative block h-14 w-14 overflow-hidden rounded-full ring-2 ring-background">
                       {u.avatar ? (
-                        <img
-                          src={u.avatar}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+                        <img src={u.avatar} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="grid h-full w-full place-items-center bg-card text-sm font-bold">
                           {(u.username ?? "?").charAt(0).toUpperCase()}
                         </div>
                       )}
                     </span>
-                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
+                    <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-1.5 text-[8px] font-black text-white ring-2 ring-background">
+                      LIVE
+                    </span>
                   </span>
                   <span className="w-full truncate text-center text-[10px] text-foreground/80">
                     @{u.username ?? "user"}
@@ -401,26 +479,29 @@ function Home() {
                 </Link>
               ))}
               {(!liveUsers.data || liveUsers.data.length === 0) && (
-                <p className="py-4 text-xs text-muted-foreground">
-                  No one online right now
-                </p>
+                <div className="flex items-center gap-2 py-4 pl-1 text-xs text-muted-foreground">
+                  <Bell className="h-3.5 w-3.5" /> No one online right now
+                </div>
               )}
             </div>
           </section>
 
-          {/* Tabs */}
-          <section className="mt-3 px-4">
-            <div className="glass grid grid-cols-3 gap-1 rounded-full p-1">
+          {/* Tabs with sliding indicator */}
+          <section className="mt-4 px-4">
+            <div className="relative grid grid-cols-3 gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur">
+              <span
+                aria-hidden
+                className="absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_80%,transparent)] transition-transform duration-300"
+                style={{ transform: `translateX(${tabIndex * 100}%)` }}
+              />
               {TABS.map(({ key, label, Icon }) => {
                 const active = tab === key;
                 return (
                   <button
                     key={key}
                     onClick={() => setTab(key)}
-                    className={`flex items-center justify-center gap-1.5 rounded-full px-2 py-2 text-xs font-semibold transition ${
-                      active
-                        ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground shadow-[0_6px_20px_-8px_color-mix(in_oklab,var(--primary)_70%,transparent)]"
-                        : "text-foreground/70"
+                    className={`relative z-10 flex items-center justify-center gap-1.5 rounded-full px-2 py-2 text-xs font-bold transition ${
+                      active ? "text-primary-foreground" : "text-foreground/70"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -436,10 +517,7 @@ function Home() {
             {rooms.isLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="aspect-square animate-pulse rounded-2xl bg-card/60"
-                  />
+                  <div key={i} className="aspect-square animate-pulse rounded-3xl bg-white/5" />
                 ))}
               </div>
             ) : filteredRooms.length > 0 ? (
@@ -468,23 +546,14 @@ function Home() {
           </DialogHeader>
           <div className="mt-2 max-h-[60vh] space-y-2 overflow-y-auto">
             {friends.isLoading ? (
-              <p className="py-6 text-center text-xs text-muted-foreground">
-                Loading…
-              </p>
+              <p className="py-6 text-center text-xs text-muted-foreground">Loading…</p>
             ) : friends.data && friends.data.length > 0 ? (
               friends.data.map((u) => (
-                <div
-                  key={u.id}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5"
-                >
+                <div key={u.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5">
                   <span className="relative shrink-0">
                     <span className="block h-10 w-10 overflow-hidden rounded-full">
                       {u.avatar ? (
-                        <img
-                          src={u.avatar}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
+                        <img src={u.avatar} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="grid h-full w-full place-items-center bg-card text-sm font-bold">
                           {(u.username ?? "?").charAt(0).toUpperCase()}
@@ -494,9 +563,7 @@ function Home() {
                     <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      @{u.username ?? "user"}
-                    </p>
+                    <p className="truncate text-sm font-semibold">@{u.username ?? "user"}</p>
                     <p className="text-[11px] text-emerald-500">Online now</p>
                   </div>
                   <Link
@@ -531,7 +598,7 @@ function RoomCard({ room }: { room: Room }) {
     <Link
       to="/room/$roomId"
       params={{ roomId: room.id }}
-      className="group relative aspect-square overflow-hidden rounded-2xl border border-border bg-card"
+      className="group relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-card shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)] transition active:scale-[0.98]"
     >
       {room.cover_url ? (
         <img
@@ -540,34 +607,55 @@ function RoomCard({ room }: { room: Room }) {
           className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
         />
       ) : (
-        <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/60 to-[color:var(--primary)]/60" />
+        <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-[color:var(--destructive)]/90 px-2 py-0.5 text-[10px] font-bold uppercase">
-        <Radio className="h-2.5 w-2.5" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
+
+      {/* Live badge */}
+      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-[color:var(--destructive)]/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-white" />
+        </span>
         Live
       </div>
+
       {room.pk_battle && (
-        <div className="glow-4d absolute left-2 top-8 flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
+        <div className="glow-4d absolute left-2 top-9 flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-2 py-0.5 text-[10px] font-black uppercase text-black">
           <Flame className="h-2.5 w-2.5" />
           PK
         </div>
       )}
-      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-semibold">
+
+      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
         <Users className="h-2.5 w-2.5" />
         {room.viewer_count}
       </div>
+
       {room.is_locked && (
-        <div className="absolute right-2 bottom-2 grid h-6 w-6 place-items-center rounded-full bg-black/60">
-          <Lock className="h-3 w-3" />
+        <div className="absolute right-2 top-9 grid h-6 w-6 place-items-center rounded-full bg-black/60 backdrop-blur">
+          <Lock className="h-3 w-3 text-white" />
         </div>
       )}
+
+      {/* Host chip */}
       <div className="absolute inset-x-2 bottom-2">
-        <div className="flex items-center gap-1 text-[10px] text-white/80">
-          <TypeIcon className="h-3 w-3" />
-          <span className="truncate">@{room.host?.username ?? "host"}</span>
+        <div className="mb-1 flex items-center gap-1.5">
+          <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-white/40">
+            {room.host?.avatar ? (
+              <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="grid h-full w-full place-items-center bg-white/10 text-[9px] font-bold text-white">
+                {(room.host?.username ?? "?").charAt(0).toUpperCase()}
+              </span>
+            )}
+          </span>
+          <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
+            <TypeIcon className="h-3 w-3 shrink-0" />
+            <span className="truncate">@{room.host?.username ?? "host"}</span>
+          </span>
         </div>
-        <h3 className="mt-0.5 line-clamp-2 text-xs font-bold text-white">
+        <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
           {room.title}
         </h3>
       </div>
@@ -579,19 +667,19 @@ function EmptyRooms({ tab }: { tab: TabKey }) {
   const label =
     tab === "pk" ? "PK battles" : tab === "video" ? "video rooms" : "voice rooms";
   return (
-    <div className="glass mt-2 rounded-2xl p-6 text-center">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-[color:var(--primary)]/20">
-        <Radio className="h-6 w-6 text-[color:var(--primary)]" />
+    <div className="glass mt-2 rounded-3xl border border-white/10 p-8 text-center">
+      <div className="glow-4d mx-auto grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30">
+        <Radio className="h-7 w-7 text-[color:var(--primary)]" />
       </div>
-      <h3 className="mt-3 font-bold">No live {label} yet</h3>
+      <h3 className="mt-3 text-base font-black">No live {label} yet</h3>
       <p className="mt-1 text-xs text-muted-foreground">
         Be the first to go live and start the party.
       </p>
       <Link
         to="/create-room"
-        className="glow-4d mt-4 inline-flex rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-5 py-2 text-xs font-bold text-primary-foreground"
+        className="glow-4d mt-4 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-5 py-2.5 text-xs font-black text-primary-foreground"
       >
-        Go Live
+        <Rocket className="h-3.5 w-3.5" /> Go Live
       </Link>
     </div>
   );
