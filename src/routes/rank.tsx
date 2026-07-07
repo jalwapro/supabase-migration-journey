@@ -258,10 +258,12 @@ function TopGiftersBanner() {
   const [idx, setIdx] = useState(0);
 
   useEffect(() => {
-    if (items.length < 2) return;
-    const t = setInterval(() => setIdx((i) => (i + 1) % items.length), 3500);
+    const len = items.length > 0 ? items.length : 3;
+    if (len < 2) return;
+    const t = setInterval(() => setIdx((i) => (i + 1) % len), 3500);
     return () => clearInterval(t);
   }, [items.length]);
+
 
   // Always render — fill with placeholders when there's no data yet.
   const display: Entry[] =
