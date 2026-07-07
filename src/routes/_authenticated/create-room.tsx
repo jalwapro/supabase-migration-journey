@@ -24,6 +24,7 @@ function CreateRoom() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(true);
+  const [seatCount, setSeatCount] = useState<number>(8);
 
   const cats = useQuery({
     queryKey: ["categories"],
@@ -74,7 +75,7 @@ function CreateRoom() {
         host_id: user.id,
         title: autoTitle,
         room_type: type,
-        seat_count: 8,
+        seat_count: seatCount,
         is_locked: locked,
         password: locked ? password || null : null,
         category_id: categoryId,
@@ -253,6 +254,30 @@ function CreateRoom() {
                   </button>
                 );
               })}
+            </div>
+
+            <div className="mt-4">
+              <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Seats
+              </label>
+              <div className="flex gap-2">
+                {[4, 6, 8, 12, 20].map((n) => {
+                  const active = seatCount === n;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setSeatCount(n)}
+                      className={`flex-1 rounded-full py-2 text-xs font-bold transition ${
+                        active
+                          ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                          : "border border-border bg-background/60"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="mt-4 rounded-2xl border border-border bg-background/60 p-3">
