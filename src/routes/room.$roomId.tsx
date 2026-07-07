@@ -35,6 +35,11 @@ import {
   Grid3x3,
   Inbox,
   Armchair,
+  Sparkles,
+  FlipHorizontal,
+  Swords,
+  Radio,
+  X,
 } from "lucide-react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
