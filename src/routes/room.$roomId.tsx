@@ -421,12 +421,13 @@ function RoomPage() {
 
   return (
     <div
-      className="min-h-[100dvh] pb-28"
+      className="flex h-[100dvh] flex-col overflow-hidden"
       style={{
         background:
           "radial-gradient(1200px 500px at 50% -10%, color-mix(in oklab, var(--primary) 40%, transparent), #0e0a1a 60%)",
       }}
     >
+
       {/* Top row */}
       <div
         className="mx-auto grid max-w-md grid-cols-[minmax(0,1fr)_auto] items-start gap-3 px-3 pb-2"
@@ -479,20 +480,27 @@ function RoomPage() {
         </div>
       </div>
 
-      {/* Rank + viewers row */}
-      <div className="mx-auto flex max-w-md items-center justify-between px-3 pb-3">
+      {/* Rank + viewers + points row */}
+      <div className="mx-auto flex w-full max-w-md items-center justify-between gap-2 px-3 pb-3">
         <button className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-[11px] font-semibold">
           <Trophy className="h-3 w-3 text-[color:var(--gold)]" />
           No ranking yet
           <span className="text-muted-foreground">›</span>
         </button>
-        <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-[11px] font-bold">
-          <Users className="h-3 w-3" /> {members.length}
-          <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--primary)]" />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full border border-border/60 bg-card/40 px-2.5 py-1 text-[11px] font-bold">
+            <Flame className="h-3 w-3 text-[color:var(--gold)]" />
+            <span className="text-[color:var(--gold)]">{roomPoints}</span>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/40 px-3 py-1 text-[11px] font-bold">
+            <Users className="h-3 w-3" /> {members.length}
+            <span className="ml-0.5 h-1.5 w-1.5 rounded-full bg-[color:var(--primary)]" />
+          </div>
         </div>
       </div>
 
-      <main className="mx-auto max-w-md px-3">
+
+      <main className="mx-auto flex w-full min-h-0 max-w-md flex-1 flex-col overflow-hidden px-3">
         {/* Seats header */}
         <div className="mb-2 flex items-center justify-between">
           <div className="text-[11px] font-bold text-muted-foreground">
@@ -508,7 +516,7 @@ function RoomPage() {
           const colsClass =
             cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
           return (
-            <div className={`grid ${colsClass} ${gap}`}>
+            <div className={`grid shrink-0 ${colsClass} ${gap}`}>
               {Array.from({ length: sc }).map((_, i) => {
                 const m = seatsByIndex.get(i);
                 const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
@@ -529,11 +537,8 @@ function RoomPage() {
           );
         })()}
 
-
-
-
         {/* Tabs */}
-        <div className="mt-3 flex items-center gap-4 border-b border-border/40 px-1">
+        <div className="mt-3 flex shrink-0 items-center gap-4 border-b border-border/40 px-1">
           {(["all", "chat"] as const).map((t) => (
             <button
               key={t}
@@ -550,9 +555,9 @@ function RoomPage() {
           ))}
         </div>
 
-        {/* Chat + side cards */}
-        <div className="mt-3 grid grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] gap-3">
-          <div className="min-h-[180px] space-y-2">
+        {/* Chat — fixed panel, only inner list scrolls */}
+        <div className="mt-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40">
+          <div className="flex-1 space-y-2 overflow-y-auto p-3">
             {messages.length === 0 && (
               <p className="pt-8 text-center text-xs text-muted-foreground">Say hello 👋</p>
             )}
@@ -567,7 +572,9 @@ function RoomPage() {
                     {(m.user?.username ?? "?").slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[10px] text-muted-foreground">@{m.user?.username ?? "user"}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      @{m.user?.username ?? "user"}
+                    </p>
                     {isGift ? (
                       <p className="break-words text-sm font-bold text-[color:var(--gold)]">
                         🎁 sent {m.text}
@@ -580,53 +587,15 @@ function RoomPage() {
               );
             })}
           </div>
-
-          <div className="space-y-3">
-            <div className="rounded-2xl border border-border/60 bg-card/40 p-3">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold">
-                <Flame className="h-3.5 w-3.5 text-[color:var(--gold)]" /> Room Points
-              </div>
-              <div className="mt-1 text-lg font-extrabold text-[color:var(--gold)]">{roomPoints}</div>
-              <div className="mt-1.5 h-1 w-full rounded-full bg-background/40">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)]"
-                  style={{ width: `${Math.min(100, roomPoints / 5)}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-border/60 bg-card/40 p-3">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="flex items-center gap-1 font-bold">
-                  <Users className="h-3.5 w-3.5 text-[color:var(--destructive)]" /> Members
-                </span>
-                <span className="text-[color:var(--gold)] font-bold">{members.length}</span>
-              </div>
-              <div className="mt-2 flex -space-x-2">
-                {members.slice(0, 5).map((m) => (
-                  <div
-                    key={m.user_id}
-                    className="h-6 w-6 overflow-hidden rounded-full border-2 border-card bg-[color:var(--secondary)]/40 grid place-items-center text-[9px] font-bold"
-                  >
-                    {m.user?.avatar ? (
-                      <img src={m.user.avatar} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      (m.user?.username ?? "?").slice(0, 1).toUpperCase()
-                    )}
-                  </div>
-                ))}
-              </div>
-              <p className="mt-1.5 text-[10px] text-muted-foreground">Tap to manage members</p>
-            </div>
-          </div>
         </div>
       </main>
 
       {/* Message input + bottom action bar */}
       <div
-        className="fixed bottom-0 left-1/2 z-30 w-full max-w-[480px] -translate-x-1/2 border-t border-border/40 bg-background/80 backdrop-blur-xl"
+        className="mx-auto w-full max-w-[480px] shrink-0 border-t border-border/40 bg-background/80 backdrop-blur-xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 8px)" }}
       >
+
         <div className="flex items-center gap-2 px-3 pt-2">
           <div className="flex flex-1 items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5">
             <Smile className="h-4 w-4 text-muted-foreground" />
