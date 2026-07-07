@@ -652,15 +652,25 @@ function RoomPage() {
           </Link>
           <div className="flex items-center gap-1.5">
             {!isHost && (
-              <button
-                onClick={() => void followHost()}
-                disabled={!!followsHost.data}
-                className="rounded-full bg-[color:var(--primary)] px-3 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
-              >
-                {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
-              </button>
+              <>
+                <button
+                  onClick={() => void followHost()}
+                  disabled={!!followsHost.data}
+                  className="rounded-full bg-[color:var(--primary)] px-2.5 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
+                >
+                  {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
+                </button>
+                <button
+                  onClick={() => void joinFamily()}
+                  disabled={!!familyMember.data}
+                  className="rounded-full border border-[color:var(--gold)]/50 bg-gradient-to-r from-[color:var(--gold)]/20 to-amber-400/10 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/20 disabled:opacity-60"
+                  aria-label="Join family"
+                >
+                  {familyMember.data ? "👑 JOINED" : "👑 FAMILY"}
+                </button>
+              </>
             )}
-            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-3 py-1.5 backdrop-blur">
+            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur">
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
