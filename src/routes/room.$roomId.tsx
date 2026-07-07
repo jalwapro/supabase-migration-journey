@@ -205,7 +205,6 @@ function RoomPage() {
             row.user = (data as Message["user"]) ?? null;
           }
           setMessages((prev) => [...prev.slice(-99), row]);
-          if (row.kind === "gift") setRoomPoints((n) => n + 10);
         },
       )
       .on(
