@@ -570,7 +570,7 @@ function RoomPage() {
                   })}
                 </div>
               );
-            })}
+            })()}
           </div>
         </div>
       )}
