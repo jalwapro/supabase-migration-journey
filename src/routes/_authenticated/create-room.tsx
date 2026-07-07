@@ -256,6 +256,30 @@ function CreateRoom() {
               })}
             </div>
 
+            <div className="mt-4">
+              <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
+                Seats
+              </label>
+              <div className="flex gap-2">
+                {[4, 6, 8, 12, 20].map((n) => {
+                  const active = seatCount === n;
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setSeatCount(n)}
+                      className={`flex-1 rounded-full py-2 text-xs font-bold transition ${
+                        active
+                          ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                          : "border border-border bg-background/60"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="mt-4 rounded-2xl border border-border bg-background/60 p-3">
               <label className="flex cursor-pointer items-center justify-between gap-3">
                 <span className="flex items-center gap-3">
