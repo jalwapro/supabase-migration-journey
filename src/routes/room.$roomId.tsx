@@ -429,68 +429,67 @@ function RoomPage() {
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
       style={{
         background:
-          "radial-gradient(1000px 600px at 50% -20%, color-mix(in oklab, var(--primary) 55%, transparent), transparent 60%), radial-gradient(800px 500px at 100% 100%, color-mix(in oklab, var(--destructive) 30%, transparent), transparent 70%), linear-gradient(180deg, #1a0b2e 0%, #0b0716 100%)",
+          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
       }}
     >
-      {/* Decorative glow */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-64 opacity-40"
-        style={{
-          background:
-            "radial-gradient(400px 200px at 30% 20%, color-mix(in oklab, var(--gold) 40%, transparent), transparent), radial-gradient(400px 200px at 70% 30%, color-mix(in oklab, var(--secondary) 40%, transparent), transparent)",
-        }}
-      />
+      {/* Ambient blurs */}
+      <div className="pointer-events-none absolute -top-24 -left-24 h-[400px] w-[400px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px]" />
+      <div className="pointer-events-none absolute top-1/3 -right-16 h-[300px] w-[300px] rounded-full bg-[color:var(--primary)]/15 blur-[100px]" />
 
       {/* ─── Top bar ─────────────────────────────────────────────── */}
       <div
-        className="relative z-10 mx-auto flex w-full max-w-md items-center gap-2 px-3"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+        className="relative z-10 mx-auto flex w-full max-w-md items-center justify-between gap-2 bg-gradient-to-b from-black/40 to-transparent px-4 pb-3"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
       >
-        {/* Host chip */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/30 py-1 pl-1 pr-2 backdrop-blur-md">
-          <div className="relative h-9 w-9 shrink-0">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--destructive)] p-[2px]">
-              <div className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#1a0b2e]">
-                {r.host?.avatar ? (
-                  <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Room ID chip */}
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 py-1 pl-1 pr-3 backdrop-blur-md">
+            <div className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)]">
+              {r.host?.avatar ? (
+                <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-[10px] font-black">ID</span>
+              )}
+              <Crown className="absolute -top-0.5 -right-0.5 h-3 w-3 fill-[color:var(--gold)] text-[color:var(--gold)]" />
+            </div>
+            <span className="truncate font-mono text-[11px] font-bold text-white/90">{roomCode}</span>
+          </div>
+          {/* Heat pill */}
+          <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 backdrop-blur-md">
+            <span className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]" />
+            <span className="text-[10px] font-black uppercase tracking-wide text-white">
+              Heat {roomPoints}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {/* Stacked online avatars */}
+          <div className="flex -space-x-2">
+            {members.slice(0, 3).map((m) => (
+              <div
+                key={m.user_id}
+                className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border border-white/20 bg-neutral-800"
+              >
+                {m.user?.avatar ? (
+                  <img src={m.user.avatar} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  <UserIcon className="h-4 w-4" />
+                  <UserIcon className="h-3 w-3 text-white/50" />
                 )}
               </div>
-            </div>
-            <Crown className="absolute -top-1 -right-0.5 h-3.5 w-3.5 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow" />
+            ))}
           </div>
-          <div className="min-w-0 leading-tight">
-            <div className="flex items-center gap-1">
-              <span className="truncate text-[12px] font-extrabold">
-                {r.host?.username ?? "Host"}
-              </span>
-              {(r as unknown as { is_locked?: boolean }).is_locked && <Lock className="h-3 w-3 text-[color:var(--gold)]" />}
-            </div>
-            <div className="flex items-center gap-1 text-[9px] text-white/60">
-              <span className="rounded-sm bg-white/10 px-1 font-mono">{roomCode}</span>
-              <span>· {members.length} online</span>
-            </div>
-          </div>
-          {!isHost && (
+          {!isHost ? (
             <button
               onClick={() => void followHost()}
               disabled={!!followsHost.data}
-              className="ml-1 flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--primary)] px-2.5 py-1 text-[10px] font-extrabold disabled:from-white/10 disabled:to-white/10 disabled:text-white/50"
+              className="rounded-full bg-[color:var(--primary)] px-3.5 py-1.5 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
             >
-              <UserPlus className="h-3 w-3" />
-              {followsHost.data ? "Following" : "Follow"}
+              {followsHost.data ? "FOLLOWING" : "FOLLOW"}
             </button>
-          )}
-        </div>
-
-        {/* Right actions */}
-        <div className="flex items-center gap-1.5">
+          ) : null}
           <IconRound onClick={share} label="Share">
             <Share2 className="h-3.5 w-3.5" />
-          </IconRound>
-          <IconRound onClick={() => toast.info("Reported")} label="Report">
-            <Flag className="h-3.5 w-3.5" />
           </IconRound>
           <IconRound onClick={leaveRoom} label="Exit" danger>
             <Power className="h-3.5 w-3.5" />
@@ -498,17 +497,14 @@ function RoomPage() {
         </div>
       </div>
 
-      {/* Ranking / points / like row */}
-      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md items-center gap-1.5 overflow-x-auto px-3 pb-2 scrollbar-hide">
-        <Pill icon={<Trophy className="h-3 w-3 text-[color:var(--gold)]" />}>
-          No ranking <ChevronRight className="h-3 w-3 text-white/40" />
-        </Pill>
-        <Pill icon={<Flame className="h-3 w-3 text-[color:var(--gold)]" />}>
-          <span className="font-extrabold text-[color:var(--gold)]">{roomPoints}</span>
-        </Pill>
-        <Pill icon={<Users className="h-3 w-3" />}>
-          <span className="font-extrabold">{members.length}</span>
-        </Pill>
+      {/* Room title + rank/like row */}
+      <div className="relative z-10 mx-auto flex w-full max-w-md items-center gap-1.5 px-4 pb-2">
+        <span className="truncate text-[13px] font-black text-white/90">
+          {r.title}
+        </span>
+        <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] font-bold text-white/70 backdrop-blur-md">
+          <Trophy className="h-3 w-3 text-[color:var(--gold)]" /> No rank
+        </span>
         <button
           onClick={() => setLiked((v) => !v)}
           aria-label="Like"
@@ -518,7 +514,11 @@ function RoomPage() {
             className={`h-3.5 w-3.5 ${liked ? "fill-[color:var(--destructive)] text-[color:var(--destructive)]" : "text-white/70"}`}
           />
         </button>
+        <IconRound onClick={() => toast.info("Reported")} label="Report">
+          <Flag className="h-3.5 w-3.5" />
+        </IconRound>
       </div>
+
 
       {/* ─── Unified mic seats grid (host = seat 1) ──────────────── */}
       <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-4 pt-2">
