@@ -683,7 +683,7 @@ function RoomPage() {
             <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
               <button
                 aria-label="Emoji"
-                onClick={() => toast.info("Emoji soon")}
+                onClick={() => setText((t) => t + "😊")}
                 className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
               >
                 <Smile className="h-4 w-4" />
