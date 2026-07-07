@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic, Video, Gift } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import logo from "@/assets/jalwa-logo.png.asset.json";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/splash")({
   component: Splash,
@@ -24,23 +26,87 @@ export const Route = createFileRoute("/splash")({
   }),
 });
 
+type SplashCfg = {
+  splash_enabled: boolean;
+  splash_video: string | null;
+  splash_video_poster: string | null;
+  splash_image: string | null;
+  splash_duration: number;
+};
+
 function Splash() {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  const cfg = useQuery({
+    queryKey: ["splash_cfg"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_settings")
+        .select("splash_enabled,splash_video,splash_video_poster,splash_image,splash_duration")
+        .eq("id", "global")
+        .maybeSingle();
+      return (data ?? null) as SplashCfg | null;
+    },
+    staleTime: 60_000,
+  });
+
+  const videoUrl = cfg.data?.splash_video ?? null;
+  const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
+
+  // Fallback progress bar (used when no video, or before video plays)
   useEffect(() => {
+    if (videoUrl) return; // video onEnded handles nav
     const start = Date.now();
-    const duration = 2400;
     let raf = 0;
     const tick = () => {
       const p = Math.min(1, (Date.now() - start) / duration);
       setProgress(p);
       if (p < 1) raf = requestAnimationFrame(tick);
-      else navigate({ to: "/" });
+      else {
+        try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
+        navigate({ to: "/" });
+      }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [navigate]);
+  }, [navigate, duration, videoUrl]);
+
+  function finishVideo() {
+    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
+    navigate({ to: "/" });
+  }
+
+  if (videoUrl) {
+    return (
+      <main
+        className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-black"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
+        <video
+          ref={videoRef}
+          src={videoUrl}
+          poster={cfg.data?.splash_video_poster ?? undefined}
+          autoPlay
+          muted
+          playsInline
+          onEnded={finishVideo}
+          onError={finishVideo}
+          className="h-full max-h-[100dvh] w-full max-w-[480px] object-cover"
+        />
+        <button
+          onClick={finishVideo}
+          className="absolute bottom-6 right-6 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur"
+        >
+          Skip
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -50,54 +116,32 @@ function Splash() {
         paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      {/* ambient glows */}
       <div
         aria-hidden
         className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-60 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--primary) 55%, transparent), transparent)",
-        }}
+        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--primary) 55%, transparent), transparent)" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full opacity-50 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--secondary) 55%, transparent), transparent)",
-        }}
+        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--secondary) 55%, transparent), transparent)" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-24 left-1/3 h-80 w-80 rounded-full opacity-40 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(closest-side, color-mix(in oklab, var(--gold) 45%, transparent), transparent)",
-        }}
+        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--gold) 45%, transparent), transparent)" }}
       />
 
       <div className="relative z-10 flex w-full max-w-xs flex-col items-center">
         <div
           className="relative h-32 w-32 overflow-hidden rounded-[28px] border border-border shadow-[0_20px_60px_-20px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-          style={{
-            background:
-              "linear-gradient(135deg, var(--gold), var(--primary), var(--secondary))",
-          }}
+          style={{ background: "linear-gradient(135deg, var(--gold), var(--primary), var(--secondary))" }}
         >
-          <img
-            src={logo.url}
-            alt="Jalwa"
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
+          <img src={cfg.data?.splash_image || logo.url} alt="Jalwa" className="h-full w-full object-cover" draggable={false} />
         </div>
 
-        <h1 className="mt-6 text-5xl font-black tracking-tight text-gradient">
-          Jalwa
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Live Voice &amp; Video Party
-        </p>
+        <h1 className="mt-6 text-5xl font-black tracking-tight text-gradient">Jalwa</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Live Voice &amp; Video Party</p>
 
         <div className="mt-8 flex items-center gap-8">
           <Feature Icon={Mic} label="Voice" color="var(--secondary)" />
@@ -110,8 +154,7 @@ function Splash() {
             className="h-full rounded-full transition-[width] duration-100 ease-linear"
             style={{
               width: `${Math.round(progress * 100)}%`,
-              background:
-                "linear-gradient(90deg, var(--primary), var(--gold), var(--secondary))",
+              background: "linear-gradient(90deg, var(--primary), var(--gold), var(--secondary))",
             }}
           />
         </div>
