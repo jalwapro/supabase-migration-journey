@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 
 export const Route = createFileRoute("/room/$roomId")({
   component: RoomPage,
@@ -60,6 +61,7 @@ function RoomPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [text, setText] = useState("");
+  const [giftOpen, setGiftOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
 
@@ -339,7 +341,10 @@ function RoomPage() {
             <button
               aria-label="Gift"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground"
-              onClick={() => toast("Gifts coming in Phase 5 🎁")}
+              onClick={() => {
+                if (!user) { toast.error("Sign in to send gifts"); return; }
+                setGiftOpen(true);
+              }}
             >
               <Gift className="h-4 w-4" />
             </button>
