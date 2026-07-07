@@ -329,6 +329,50 @@ function RoomPage() {
     },
   });
 
+  const hostFamily = useQuery({
+    enabled: !!room.data?.host_id,
+    queryKey: ["host-family", room.data?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("families")
+        .select("id,name,badge")
+        .eq("owner_id", room.data!.host_id)
+        .maybeSingle();
+      return data as { id: string; name: string; badge: string | null } | null;
+    },
+  });
+
+  const familyMember = useQuery({
+    enabled: !!user && !!hostFamily.data?.id,
+    queryKey: ["family-member", user?.id, hostFamily.data?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("family_members")
+        .select("family_id")
+        .eq("family_id", hostFamily.data!.id)
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  async function joinFamily() {
+    if (!user || !room.data) {
+      toast.error("Sign in first");
+      return;
+    }
+    const { error } = await supabase.rpc("join_host_family", {
+      _host_id: room.data.host_id,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Joined family 👑");
+    await Promise.all([hostFamily.refetch(), familyMember.refetch()]);
+  }
+
+
   async function followHost() {
     if (!user || !room.data) return;
     const { error } = await supabase
@@ -608,15 +652,25 @@ function RoomPage() {
           </Link>
           <div className="flex items-center gap-1.5">
             {!isHost && (
-              <button
-                onClick={() => void followHost()}
-                disabled={!!followsHost.data}
-                className="rounded-full bg-[color:var(--primary)] px-3 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
-              >
-                {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
-              </button>
+              <>
+                <button
+                  onClick={() => void followHost()}
+                  disabled={!!followsHost.data}
+                  className="rounded-full bg-[color:var(--primary)] px-2.5 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
+                >
+                  {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
+                </button>
+                <button
+                  onClick={() => void joinFamily()}
+                  disabled={!!familyMember.data}
+                  className="rounded-full border border-[color:var(--gold)]/50 bg-gradient-to-r from-[color:var(--gold)]/20 to-amber-400/10 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/20 disabled:opacity-60"
+                  aria-label="Join family"
+                >
+                  {familyMember.data ? "👑 JOINED" : "👑 FAMILY"}
+                </button>
+              </>
             )}
-            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-3 py-1.5 backdrop-blur">
+            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur">
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
