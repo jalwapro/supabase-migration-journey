@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -67,10 +67,20 @@ const TABS: { key: TabKey; label: string; Icon: typeof Video }[] = [
 
 function Home() {
   const { user, profile, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("video");
   const [q, setQ] = useState("");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const query = q.trim();
+
+  // Show splash once per browser session on domain open
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem("splash_shown")) {
+        navigate({ to: "/splash", replace: true });
+      }
+    } catch { /* no-op */ }
+  }, [navigate]);
 
   const friends = useQuery({
     queryKey: ["home-mutual-friends-online", user?.id],
