@@ -745,7 +745,7 @@ function RoomPage() {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Type a message…"
+              placeholder="Ask your followers to support to make the room more popular"
               className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
               disabled={!user}
             />
