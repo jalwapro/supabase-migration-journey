@@ -716,7 +716,7 @@ function RoomPage() {
                 ))}
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                {messages.length === 0 && <DefaultVoiceMessages />}
+                {messages.length === 0 && <EmptyChat />}
                 {messages
                   .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
