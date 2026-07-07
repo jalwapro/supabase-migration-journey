@@ -679,7 +679,7 @@ function RoomPage() {
                   <span className="truncate text-[13px] font-bold text-white/90">🔥 Room Popularity</span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
                 </div>
-                <div className="mt-2 text-2xl font-semibold leading-none">12.5K</div>
+                <div className="mt-2 text-2xl font-semibold leading-none">{popScoreLabel}</div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                   <div
                     className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300"
