@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Radio, Plus, MessageCircle, User } from "lucide-react";
+import { Home, Radio, Plus, Gamepad2, User } from "lucide-react";
 import type { ComponentType } from "react";
 
 type Tab = {
@@ -13,7 +13,7 @@ const TABS: Tab[] = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/rooms", label: "Rooms", Icon: Radio },
   { to: "/create-room", label: "Go Live", Icon: Plus, primary: true },
-  { to: "/messages", label: "Chat", Icon: MessageCircle },
+  { to: "/games", label: "Games", Icon: Gamepad2 },
   { to: "/me", label: "Me", Icon: User },
 ];
 
