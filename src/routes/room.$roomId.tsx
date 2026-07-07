@@ -874,57 +874,78 @@ function Seat({
   const label = String(index + 1).padStart(2, "0");
   const speaking = remote?.hasAudio && !member?.is_muted;
 
+  const frameUrl = (member?.user as { frame_url?: string | null } | null)?.frame_url ?? null;
+
   return (
     <button
       onClick={() => (member ? undefined : onClaim())}
-      className="relative flex flex-col items-center"
+      className="relative flex flex-col items-center gap-1"
       aria-label={member ? `Seat ${label}` : `Take seat ${label}`}
     >
-      <div
-        className={`relative aspect-square w-full overflow-hidden rounded-2xl border border-border/40 bg-card/40 ${
-          speaking ? "ring-2 ring-[color:var(--primary)]" : ""
-        }`}
-      >
-        {/* Cover (host seat only when empty) */}
-        {isHostSeat && !member && cover && (
-          <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
-        )}
-        {/* Occupied — show avatar or video */}
-        {member?.user?.avatar && !remote?.videoTrack && (
+      <div className="relative aspect-square w-full">
+        {/* Round DP */}
+        <div
+          className={`absolute inset-[10%] overflow-hidden rounded-full border border-border/40 bg-card/40 ${
+            speaking ? "ring-2 ring-[color:var(--primary)]" : ""
+          }`}
+        >
+          {isHostSeat && !member && cover && (
+            <img
+              src={cover}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover opacity-60"
+            />
+          )}
+          {member?.user?.avatar && !remote?.videoTrack && (
+            <img
+              src={member.user.avatar}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
+          {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
+          {isHostSeat && member && cover && !member.user?.avatar && (
+            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          )}
+          {!member && !isHostSeat && (
+            <div className="absolute inset-0 grid place-items-center">
+              <UserIcon className="h-1/3 w-1/3 text-muted-foreground/40" />
+            </div>
+          )}
+        </div>
+
+        {/* Frame overlay — sits on top of the round DP, doesn't clip it */}
+        {frameUrl && (
           <img
-            src={member.user.avatar}
+            src={frameUrl}
             alt=""
-            className="absolute inset-0 h-full w-full object-cover"
+            className="pointer-events-none absolute inset-0 h-full w-full object-contain"
           />
-        )}
-        {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
-        {isHostSeat && member && cover && !member.user?.avatar && (
-          <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        )}
-        {!member && !isHostSeat && (
-          <div className="absolute inset-0 grid place-items-center">
-            <UserIcon className="h-5 w-5 text-muted-foreground/40" />
-          </div>
         )}
 
         {/* Seat number */}
-        <span className="absolute left-1 top-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
+        <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
           {label}
         </span>
 
-        {/* Mic + Seat label bottom */}
-        <div className="absolute bottom-1 left-1 flex items-center gap-0.5 text-[9px] font-bold text-[color:var(--primary)]">
+        {/* Mic status */}
+        <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full bg-black/70">
           {member?.is_muted ? (
-            <MicOff className="h-2.5 w-2.5" />
+            <MicOff className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
           ) : (
-            <Mic className="h-2.5 w-2.5" />
+            <Mic className="h-2.5 w-2.5 text-[color:var(--primary)]" />
           )}
-          <span>{member?.user?.username ? `@${member.user.username.slice(0, 6)}` : "Seat"}</span>
-        </div>
+        </span>
       </div>
+
+      {/* Username under the DP */}
+      <span className="max-w-full truncate text-[10px] font-bold text-foreground/90">
+        {member?.user?.username ? `@${member.user.username}` : "Seat"}
+      </span>
     </button>
   );
 }
+
 
 function SeatsSheet({
   open,
