@@ -696,25 +696,12 @@ function RoomPage() {
             icon={<Settings className="h-4 w-4" />}
             label={iAmOnSeat && !isHost ? "Step off" : "Seats"}
             onClick={() => {
-              if (iAmOnSeat && !isHost) leaveSeat();
+              if (isHost) setSeatsSheetOpen(true);
+              else if (iAmOnSeat) leaveSeat();
               else toast.info("Tap a seat to join");
             }}
           />
-          {isHost && (
-            <>
-              <ActionBtn
-                icon={<Minus className="h-4 w-4" />}
-                label="Less"
-                onClick={() => changeSeatCount(-1)}
-              />
-              <ActionBtn
-                icon={<Plus className="h-4 w-4" />}
-                label={`Seats ${r.seat_count}`}
-                onClick={() => changeSeatCount(1)}
-                active
-              />
-            </>
-          )}
+
 
           <button
             onClick={() => {
