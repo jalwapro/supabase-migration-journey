@@ -22,13 +22,18 @@ import {
   Settings,
   Music,
   Flame,
-  Sparkles,
   Plus,
   Minus,
   Crown,
   ChevronRight,
   UserPlus,
-  Lock,
+  Home,
+  Maximize2,
+  Volume2,
+  RefreshCcw,
+  MoreHorizontal,
+  Grid3x3,
+  Inbox,
 } from "lucide-react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -72,7 +77,6 @@ type Message = {
   user: { username: string | null; avatar: string | null } | null;
 };
 
-// Deterministic 31-bit int from uuid for Agora uid
 function uidFromUuid(uuid: string): number {
   let h = 0;
   for (let i = 0; i < uuid.length; i++) {
@@ -82,12 +86,21 @@ function uidFromUuid(uuid: string): number {
 }
 
 function shortRoomCode(id: string) {
-  // Deterministic 7-char display code
   let h = 0;
   for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
-  const num = Math.abs(h) % 10_000_000;
-  return "C" + String(num).padStart(7, "0");
+  const num = Math.abs(h) % 100_000_000;
+  return String(num).padStart(8, "0");
 }
+
+const QUICK_GIFTS: { name: string; icon: string; price: number }[] = [
+  { name: "Hot", icon: "🔥", price: 1 },
+  { name: "Rose", icon: "🌹", price: 10 },
+  { name: "Heart", icon: "💖", price: 50 },
+  { name: "Lion", icon: "🦁", price: 100 },
+  { name: "Ferrari", icon: "🏎️", price: 500 },
+  { name: "Castle", icon: "🏰", price: 1000 },
+  { name: "Diamond", icon: "💎", price: 5000 },
+];
 
 function RoomPage() {
   const { roomId } = Route.useParams();
@@ -103,6 +116,7 @@ function RoomPage() {
   const [chatTab, setChatTab] = useState<"all" | "chat">("all");
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
   const [liked, setLiked] = useState(false);
   const [roomPoints, setRoomPoints] = useState(0);
 
@@ -126,16 +140,16 @@ function RoomPage() {
   const myMember = members.find((m) => m.user_id === user?.id) ?? null;
   const iAmOnSeat = myMember?.seat_index != null;
   const shouldPublish = isHost || iAmOnSeat;
+  const isVideo = room.data?.room_type === "video";
 
   const agora = useAgoraRoom({
     channel: room.data?.agora_channel ?? null,
     uid: myUid,
     publish: shouldPublish,
-    video: room.data?.room_type === "video",
+    video: isVideo,
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
-  // Load initial members + messages
   useEffect(() => {
     let cancel = false;
     (async () => {
@@ -164,7 +178,6 @@ function RoomPage() {
     };
   }, [roomId]);
 
-  // Realtime: chat + members
   useEffect(() => {
     const ch = supabase
       .channel(`room-${roomId}`)
@@ -214,7 +227,6 @@ function RoomPage() {
     };
   }, [roomId]);
 
-  // Join as viewer (or seat 0 if host) on mount
   useEffect(() => {
     if (!user || !room.data) return;
     const seatIndex = isHost ? 0 : null;
@@ -229,7 +241,6 @@ function RoomPage() {
     };
   }, [user, room.data, roomId, isHost]);
 
-  // Does current user follow the host? (host is exempt)
   const followsHost = useQuery({
     enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
     queryKey: ["follows-host", user?.id, room.data?.host_id],
@@ -253,7 +264,7 @@ function RoomPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Following host — you can join a seat now");
+    toast.success("Following host");
     followsHost.refetch();
   }
 
@@ -291,29 +302,6 @@ function RoomPage() {
     if (error) toast.error(error.message);
   }
 
-  async function changeSeatCount(delta: number) {
-    if (!isHost || !room.data) return;
-    const next = Math.max(4, Math.min(20, room.data.seat_count + delta));
-    if (next === room.data.seat_count) return;
-    // If shrinking, kick anyone on seats >= next
-    if (next < room.data.seat_count) {
-      await supabase
-        .from("room_members")
-        .update({ seat_index: null })
-        .eq("room_id", roomId)
-        .gte("seat_index", next);
-    }
-    const { error } = await supabase
-      .from("live_rooms")
-      .update({ seat_count: next })
-      .eq("id", roomId);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    room.refetch();
-  }
-
   async function send() {
     if (!user) {
       toast.error("Sign in to chat");
@@ -334,6 +322,20 @@ function RoomPage() {
     }
   }
 
+  async function sendQuickGift(g: (typeof QUICK_GIFTS)[number]) {
+    if (!user) {
+      toast.error("Sign in to send gifts");
+      return;
+    }
+    const { error } = await supabase.from("room_messages").insert({
+      room_id: roomId,
+      user_id: user.id,
+      kind: "gift",
+      text: `${g.icon} ${g.name}`,
+    });
+    if (error) toast.error(error.message);
+  }
+
   async function leaveRoom() {
     if (user && isHost) {
       await supabase
@@ -351,7 +353,7 @@ function RoomPage() {
         await navigator.share({ url, title: room.data?.title ?? "Live Room" });
         return;
       } catch {
-        /* user cancelled */
+        /* cancelled */
       }
     }
     await navigator.clipboard.writeText(url);
@@ -371,6 +373,14 @@ function RoomPage() {
     [members],
   );
 
+  const latestEnter = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.kind === "join" || m.kind === "system") return m;
+    }
+    return null;
+  }, [messages]);
+
   const ludoPlayers: LudoPlayer[] = [0, 1, 2, 3].map((i) => {
     const m = seatsByIndex.get(i);
     return m
@@ -384,6 +394,11 @@ function RoomPage() {
       return;
     }
     setLudoOpen(true);
+  }
+
+  function likeSeat(i: number) {
+    setSeatLikes((prev) => ({ ...prev, [i]: (prev[i] ?? 0) + 1 }));
+    setRoomPoints((n) => n + 1);
   }
 
   if (room.isLoading) {
@@ -411,6 +426,7 @@ function RoomPage() {
 
   const r = room.data;
   const roomCode = shortRoomCode(r.id);
+  const popularityPct = Math.min(100, Math.round((roomPoints / 200) * 100));
   const giftReceivers: GiftReceiver[] = [
     ...(r.host && r.host_id !== user?.id
       ? [{ id: r.host_id, username: r.host.username, avatar: r.host.avatar }]
@@ -424,6 +440,8 @@ function RoomPage() {
       })),
   ];
 
+  const hostRemote = agora.remotes.get(uidFromUuid(r.host_id));
+
   return (
     <div
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
@@ -436,309 +454,340 @@ function RoomPage() {
       <div className="pointer-events-none absolute -top-24 -left-24 h-[400px] w-[400px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 -right-16 h-[300px] w-[300px] rounded-full bg-[color:var(--primary)]/15 blur-[100px]" />
 
-      {/* ─── Top bar ─────────────────────────────────────────────── */}
+      {/* ─── Header ─────────────────────────────────────────────── */}
       <div
-        className="relative z-10 mx-auto flex w-full max-w-md items-center justify-between gap-2 bg-gradient-to-b from-black/40 to-transparent px-4 pb-3"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}
+        className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        <div className="flex min-w-0 items-center gap-2">
-          {/* Room ID chip */}
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 py-1 pl-1 pr-3 backdrop-blur-md">
-            <div className="relative grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)]">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+          {/* Host chip */}
+          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-1.5 pl-1.5 pr-3 backdrop-blur-md">
+            <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)]">
               {r.host?.avatar ? (
                 <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-[10px] font-black">ID</span>
+                <UserIcon className="h-5 w-5 text-white/80" />
               )}
-              <Crown className="absolute -top-0.5 -right-0.5 h-3 w-3 fill-[color:var(--gold)] text-[color:var(--gold)]" />
             </div>
-            <span className="truncate font-mono text-[11px] font-bold text-white/90">{roomCode}</span>
-          </div>
-          {/* Heat pill */}
-          <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1.5 backdrop-blur-md">
-            <span className="h-2 w-2 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]" />
-            <span className="text-[10px] font-black uppercase tracking-wide text-white">
-              Heat {roomPoints}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Stacked online avatars */}
-          <div className="flex -space-x-2">
-            {members.slice(0, 3).map((m) => (
-              <div
-                key={m.user_id}
-                className="grid h-6 w-6 place-items-center overflow-hidden rounded-full border border-white/20 bg-neutral-800"
-              >
-                {m.user?.avatar ? (
-                  <img src={m.user.avatar} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <UserIcon className="h-3 w-3 text-white/50" />
-                )}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1">
+                <span className="truncate text-[13px] font-black leading-tight">
+                  {r.title}
+                </span>
+                <span className="shrink-0 text-[13px]">💗</span>
               </div>
-            ))}
+              <div className="truncate text-[10px] font-semibold text-white/60">
+                ID:{roomCode}
+              </div>
+            </div>
           </div>
-          {!isHost ? (
-            <button
-              onClick={() => void followHost()}
-              disabled={!!followsHost.data}
-              className="rounded-full bg-[color:var(--primary)] px-3.5 py-1.5 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
-            >
-              {followsHost.data ? "FOLLOWING" : "FOLLOW"}
-            </button>
-          ) : null}
-          <IconRound onClick={share} label="Share">
-            <Share2 className="h-3.5 w-3.5" />
-          </IconRound>
-          <IconRound onClick={leaveRoom} label="Exit" danger>
-            <Power className="h-3.5 w-3.5" />
-          </IconRound>
+          {/* Action icons */}
+          <div className="flex items-center gap-1.5">
+            <HeaderIcon onClick={() => toast.info("Reported")} label="Report">
+              <Flag className="h-4 w-4" />
+            </HeaderIcon>
+            <HeaderIcon onClick={share} label="Share">
+              <Share2 className="h-4 w-4" />
+            </HeaderIcon>
+            <HeaderIcon onClick={leaveRoom} label="Exit" danger>
+              <Power className="h-4 w-4" />
+            </HeaderIcon>
+          </div>
+        </div>
+
+        {/* Rank + members row */}
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            onClick={() => navigate({ to: "/" })}
+            aria-label="Home"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/5 backdrop-blur"
+          >
+            <Home className="h-4 w-4" />
+          </button>
+          <button className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 backdrop-blur">
+            <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+            <span className="text-[11px] font-bold text-white/80">No ranking yet</span>
+            <ChevronRight className="h-3 w-3 text-white/50" />
+          </button>
+          <div className="ml-auto flex items-center gap-1.5">
+            {!isHost && (
+              <button
+                onClick={() => void followHost()}
+                disabled={!!followsHost.data}
+                className="rounded-full bg-[color:var(--primary)] px-3 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
+              >
+                {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
+              </button>
+            )}
+            <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
+              <Users className="h-3.5 w-3.5 text-white/70" />
+              <span className="text-[11px] font-black">{members.length}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Room title + rank/like row */}
-      <div className="relative z-10 mx-auto flex w-full max-w-md items-center gap-1.5 px-4 pb-2">
-        <span className="truncate text-[13px] font-black text-white/90">
-          {r.title}
-        </span>
-        <span className="ml-2 inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2 py-0.5 text-[10px] font-bold text-white/70 backdrop-blur-md">
-          <Trophy className="h-3 w-3 text-[color:var(--gold)]" /> No rank
-        </span>
-        <button
-          onClick={() => setLiked((v) => !v)}
-          aria-label="Like"
-          className="ml-auto grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-black/30 backdrop-blur"
-        >
-          <Heart
-            className={`h-3.5 w-3.5 ${liked ? "fill-[color:var(--destructive)] text-[color:var(--destructive)]" : "text-white/70"}`}
-          />
-        </button>
-        <IconRound onClick={() => toast.info("Reported")} label="Report">
-          <Flag className="h-3.5 w-3.5" />
-        </IconRound>
-      </div>
-
-
-      {/* ─── Unified mic seats grid (host = seat 1) ──────────────── */}
-      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-4 pt-2">
-        <div className="mb-2 flex items-center justify-between px-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-            Mic Seats
-          </span>
-          <span className="text-[10px] font-bold text-white/70">
-            {seatedCount}/{r.seat_count}
-          </span>
-        </div>
-        {(() => {
-          const sc = r.seat_count;
-          const cols = sc <= 4 ? 4 : sc <= 6 ? 3 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
-          const gap = sc <= 6 ? "gap-y-6 gap-x-4" : sc <= 9 ? "gap-y-5 gap-x-3" : "gap-y-4 gap-x-2.5";
-          const colsClass =
-            cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
-          return (
-            <div className={`grid ${colsClass} ${gap}`}>
-              {Array.from({ length: sc }).map((_, i) => {
-                const m = seatsByIndex.get(i);
-                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-                const isHostSeat = i === 0;
-                const fallbackHost =
-                  isHostSeat && !m
-                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
-                    : null;
-                return (
-                  <Seat
-                    key={i}
-                    index={i}
-                    member={m}
-                    remote={remote}
-                    isHostSeat={isHostSeat}
-                    cover={r.cover_url}
-                    fallbackUser={fallbackHost}
-                    onClaim={() => takeSeat(i)}
-                  />
-                );
-              })}
-            </div>
-          );
-        })()}
-      </div>
-
-      {/* ─── Chat overlay (transparent, scrolls internally) ──────── */}
-      <div className="relative z-10 mx-auto mt-3 flex w-full max-w-md min-h-0 flex-1 flex-col px-3">
-        <div className="flex-1 space-y-1.5 overflow-y-auto pb-2 pr-1 scrollbar-hide [mask-image:linear-gradient(to_bottom,transparent,black_24px,black)]">
-          {messages.length === 0 && (
-            <div className="mt-6 text-center text-[11px] text-white/40">
-              Welcome to the room ✨ Say hi
-            </div>
-          )}
-          {messages.map((m) => {
-            const isGift = m.kind === "gift";
-            if (isGift) {
+      {/* ─── Main stage: voice grid OR video area ───────────────── */}
+      {isVideo ? (
+        <VideoStage
+          coverUrl={r.cover_url}
+          hostRemote={hostRemote}
+          isLive={r.status === "live"}
+          mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
+        />
+      ) : (
+        <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+          <div className="rounded-3xl border border-white/10 bg-black/30 p-3 backdrop-blur-md">
+            {(() => {
+              const sc = r.seat_count;
+              const cols = sc <= 4 ? 4 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
+              const colsClass =
+                cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
               return (
-                <div
-                  key={m.id}
-                  className="inline-flex max-w-[85%] items-center gap-2 rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/10 px-3 py-1.5 text-[12px] font-bold text-[color:var(--gold)]"
-                >
-                  🎁 <span className="text-white/80">@{m.user?.username ?? "user"}</span> sent{" "}
-                  {m.text}
+                <div className={`grid ${colsClass} gap-x-2 gap-y-3`}>
+                  {Array.from({ length: sc }).map((_, i) => {
+                    const m = seatsByIndex.get(i);
+                    const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+                    const isHostSeat = i === 0;
+                    const fallbackHost =
+                      isHostSeat && !m
+                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                        : null;
+                    return (
+                      <Seat
+                        key={i}
+                        index={i}
+                        member={m}
+                        remote={remote}
+                        isHostSeat={isHostSeat}
+                        cover={r.cover_url}
+                        fallbackUser={fallbackHost}
+                        onClaim={() => takeSeat(i)}
+                        likeCount={seatLikes[i] ?? 0}
+                        onLike={() => likeSeat(i)}
+                      />
+                    );
+                  })}
                 </div>
               );
-            }
-            const isMe = !!(user?.id && m.user_id === user.id);
-            const initial = (m.user?.username ?? "U").charAt(0).toUpperCase();
-            return (
-              <div key={m.id} className="flex max-w-[88%] items-start gap-2">
-                {m.user?.avatar ? (
-                  <img
-                    src={m.user.avatar}
-                    alt=""
-                    className="h-6 w-6 shrink-0 rounded-full border border-white/20 object-cover"
-                  />
-                ) : (
-                  <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-[10px] font-bold text-white">
-                    {initial}
-                  </div>
-                )}
-                <div
-                  className={`rounded-2xl border px-2.5 py-1.5 backdrop-blur-sm ${
-                    isMe
-                      ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/20"
-                      : "border-white/10 bg-black/50"
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Enters-the-room banner ─────────────────────────────── */}
+      {latestEnter && (
+        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-gradient-to-r from-[color:var(--primary)]/25 via-[color:var(--secondary)]/20 to-transparent px-3 py-1.5 backdrop-blur">
+            <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10">
+              {latestEnter.user?.avatar ? (
+                <img
+                  src={latestEnter.user.avatar}
+                  alt=""
+                  className="h-full w-full rounded-full object-cover"
+                />
+              ) : (
+                <UserIcon className="h-3 w-3 text-white/60" />
+              )}
+            </div>
+            <div className="truncate text-[11px] font-bold text-[color:var(--gold)]">
+              ✽ {latestEnter.user?.username ?? "Guest"}{" "}
+              <span className="text-white/70">enters the room</span>
+            </div>
+            <ChevronRight className="ml-auto h-3.5 w-3.5 text-white/40" />
+          </div>
+        </div>
+      )}
+
+      {/* ─── Chat + (video: side panel) ─────────────────────────── */}
+      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-3">
+        <div className="flex min-h-0 flex-1 gap-2">
+          {/* Chat card */}
+          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
+            <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
+              {(["all", "chat"] as const).map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setChatTab(t)}
+                  className={`text-[12px] font-black capitalize ${
+                    chatTab === t
+                      ? "text-white"
+                      : "text-white/40"
                   }`}
                 >
-                  <div className="text-[10px] font-bold leading-none text-[color:var(--gold)]">
-                    @{m.user?.username ?? "user"}
-                  </div>
-                  <div className="mt-1 break-words text-[12px] leading-snug text-white/95">
-                    {m.text}
-                  </div>
+                  {t}
+                  {chatTab === t && (
+                    <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
+                  )}
+                </button>
+              ))}
+            </div>
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+              {messages.length === 0 && (
+                <div className="pt-3 text-[10px] leading-relaxed text-white/50">
+                  <div className="font-bold text-white/70">Room announcement:</div>
+                  <div>Welcome to the room. Follow community guidelines — no vulgarity, fraud, or politics. Inspectors are on 24/7.</div>
+                </div>
+              )}
+              {messages
+                .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                .map((m) => (
+                  <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                ))}
+            </div>
+          </div>
+
+          {/* Video-only right column */}
+          {isVideo && (
+            <div className="flex w-[38%] shrink-0 flex-col gap-2">
+              <div className="rounded-2xl border border-white/10 bg-black/40 p-2.5 backdrop-blur-md">
+                <div className="mb-1 flex items-center gap-1">
+                  <Flame className="h-3 w-3 text-orange-400" />
+                  <span className="text-[10px] font-bold text-white/80">Room Popularity</span>
+                </div>
+                <div className="text-[16px] font-black leading-none text-white">
+                  {roomPoints >= 1000
+                    ? `${(roomPoints / 1000).toFixed(1)}K`
+                    : roomPoints}
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-orange-400 to-[color:var(--primary)] transition-all"
+                    style={{ width: `${popularityPct}%` }}
+                  />
                 </div>
               </div>
-            );
-          })}
+              <div className="grid grid-cols-3 gap-1.5">
+                <MiniAction
+                  icon={agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  label={agora.muted ? "Mic Off" : "Mic On"}
+                  onClick={() => {
+                    if (!shouldPublish) return toast.info("Take a seat to talk");
+                    agora.toggleMute();
+                  }}
+                  active={!agora.muted && shouldPublish}
+                />
+                <MiniAction
+                  icon={<Music className="h-4 w-4" />}
+                  label="Music"
+                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
+                />
+                <MiniAction
+                  icon={<UserPlus className="h-4 w-4" />}
+                  label="Invite"
+                  onClick={share}
+                />
+                <MiniAction
+                  icon={<Gift className="h-4 w-4" />}
+                  label="Gift"
+                  onClick={() => setGiftOpen(true)}
+                />
+                <MiniAction
+                  icon={<Gamepad2 className="h-4 w-4" />}
+                  label="Game"
+                  onClick={openLudo}
+                />
+                <MiniAction
+                  icon={<MoreHorizontal className="h-4 w-4" />}
+                  label="More"
+                  onClick={() => setSeatsSheetOpen(true)}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ─── Message input (full-width pill) ─────────────────────── */}
-      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-2 backdrop-blur-md">
-          <button
-            aria-label="Emoji"
-            onClick={() => toast.info("Emoji soon")}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
-          >
-            <Smile className="h-4 w-4" />
-          </button>
-          <input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && send()}
-            placeholder="Type a message…"
-            className="flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
-            disabled={!user}
-          />
-          <button
-            onClick={send}
-            aria-label="Send"
-            disabled={!text.trim()}
-            className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
-          >
-            <Send className="h-3.5 w-3.5" />
-          </button>
+      {/* ─── Video: quick-gift horizontal strip ─────────────────── */}
+      {isVideo && (
+        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
+          <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md scrollbar-hide">
+            {QUICK_GIFTS.map((g) => (
+              <button
+                key={g.name}
+                onClick={() => void sendQuickGift(g)}
+                className="flex shrink-0 flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 hover:bg-white/5"
+              >
+                <span className="text-lg leading-none">{g.icon}</span>
+                <span className="text-[9px] font-bold text-white/80">{g.name}</span>
+                <span className="text-[8px] font-bold text-[color:var(--gold)]">
+                  ⓢ {g.price}
+                </span>
+              </button>
+            ))}
+            <button
+              onClick={() => setGiftOpen(true)}
+              className="flex shrink-0 flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5"
+            >
+              <MoreHorizontal className="h-5 w-5 text-white/80" />
+              <span className="text-[9px] font-bold text-white/80">More</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ─── Footer dock ─────────────────────────────────────────── */}
+      {/* ─── Composer + footer dock ─────────────────────────────── */}
       <div
-        className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-3"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+        className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
       >
-        <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-black/50 px-3 py-2.5 backdrop-blur-md">
-          {/* Mic toggle */}
-          <FooterBtn
-            label="Mic"
-            onClick={() => {
-              if (!shouldPublish) {
-                toast.info("Take a seat to talk");
-                return;
-              }
-              agora.toggleMute();
-            }}
-            icon={
-              agora.muted || !shouldPublish ? (
-                <MicOff className="h-4 w-4" />
-              ) : (
-                <Mic className="h-4 w-4" />
-              )
-            }
-            tint={
-              !shouldPublish
-                ? "muted"
-                : agora.muted
-                  ? "danger"
-                  : "danger"
-            }
-          />
-          <FooterBtn
-            label="Emoji"
-            onClick={() => toast.info("Emoji soon")}
-            icon={<Smile className="h-4 w-4" />}
-          />
-          <FooterBtn
-            label="Game"
-            onClick={openLudo}
-            icon={<Gamepad2 className="h-4 w-4" />}
-          />
-          {isHost && (
-            <FooterBtn
-              label="Music"
-              onClick={() => setMusicOpen(true)}
-              icon={<Music className="h-4 w-4" />}
+        <div className="flex items-center gap-2">
+          <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
+            <button
+              aria-label="Emoji"
+              onClick={() => toast.info("Emoji soon")}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+            >
+              <Smile className="h-4 w-4" />
+            </button>
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && send()}
+              placeholder="Type a message…"
+              className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+              disabled={!user}
             />
+            <button
+              onClick={send}
+              aria-label="Send"
+              disabled={!text.trim()}
+              className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          {!isVideo && (
+            <>
+              <DockIcon onClick={() => setGiftOpen(true)} label="Gift" glow>
+                <Gift className="h-4 w-4" />
+              </DockIcon>
+              <DockIcon onClick={openLudo} label="Game">
+                <Gamepad2 className="h-4 w-4" />
+              </DockIcon>
+              <DockIcon
+                onClick={() => {
+                  if (!shouldPublish) return toast.info("Take a seat to talk");
+                  agora.toggleMute();
+                }}
+                label="Mic"
+              >
+                {agora.muted || !shouldPublish ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
+              </DockIcon>
+              <DockIcon
+                onClick={() => (isHost ? setSeatsSheetOpen(true) : iAmOnSeat ? leaveSeat() : toast.info("Tap a seat"))}
+                label="More"
+              >
+                <Grid3x3 className="h-4 w-4" />
+              </DockIcon>
+            </>
           )}
-          {r.room_type === "video" && shouldPublish && (
-            <FooterBtn
-              label="Cam"
-              onClick={agora.toggleVideo}
-              icon={
-                agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />
-              }
-            />
-          )}
-          <FooterBtn
-            label="Members"
-            onClick={() => toast.info("Members panel soon")}
-            icon={<Users className="h-4 w-4" />}
-            badge={members.length}
-          />
-          <FooterBtn
-            label={iAmOnSeat && !isHost ? "Off" : "Seats"}
-            onClick={() => {
-              if (isHost) setSeatsSheetOpen(true);
-              else if (iAmOnSeat) leaveSeat();
-              else toast.info("Tap a seat to join");
-            }}
-            icon={<Settings className="h-4 w-4" />}
-          />
-          <button
-            onClick={() => {
-              if (!user) {
-                toast.error("Sign in to send gifts");
-                return;
-              }
-              setGiftOpen(true);
-            }}
-            className="ml-auto flex flex-col items-center"
-          >
-            <span className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--destructive)] to-[color:var(--primary)] px-4 py-2 text-[12px] font-extrabold text-white shadow-lg shadow-[color:var(--destructive)]/30">
-              <Gift className="h-4 w-4" /> Gift
-            </span>
-          </button>
         </div>
       </div>
-
-
 
       <GiftSheet
         open={giftOpen}
@@ -761,7 +810,6 @@ function RoomPage() {
           onChange={async (next) => {
             const delta = next - r.seat_count;
             if (delta !== 0) {
-              // shrink: clear members on removed seats
               if (next < r.seat_count) {
                 await supabase
                   .from("room_members")
@@ -783,12 +831,159 @@ function RoomPage() {
           }}
         />
       )}
-
     </div>
   );
 }
 
-function IconRound({
+/* ─── Video main stage ───────────────────────────────────────── */
+function VideoStage({
+  coverUrl,
+  hostRemote,
+  isLive,
+  mode,
+}: {
+  coverUrl: string | null;
+  hostRemote?: RemoteUser;
+  isLive: boolean;
+  mode: "SOLO" | "MULTI";
+}) {
+  const videoRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (hostRemote?.videoTrack && videoRef.current) {
+      hostRemote.videoTrack.play(videoRef.current, { fit: "cover" });
+    }
+    return () => {
+      hostRemote?.videoTrack?.stop();
+    };
+  }, [hostRemote?.videoTrack]);
+
+  return (
+    <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-white/10 bg-black/60">
+        {hostRemote?.videoTrack ? (
+          <div ref={videoRef} className="absolute inset-0" />
+        ) : coverUrl ? (
+          <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-80" />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[color:var(--secondary)]/40 to-black">
+            <Video className="h-16 w-16 text-white/30" />
+          </div>
+        )}
+        {/* Top badges */}
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between p-2.5">
+          <span className="rounded-full border border-white/20 bg-black/50 px-2.5 py-0.5 text-[10px] font-black text-white backdrop-blur">
+            {mode}
+          </span>
+          <span className="flex items-center gap-1 rounded-full border border-white/20 bg-black/50 px-2 py-0.5 text-[10px] font-black text-white backdrop-blur">
+            <span className={`h-1.5 w-1.5 rounded-full ${isLive ? "bg-red-500 animate-pulse" : "bg-white/40"}`} />
+            {isLive ? "LIVE" : "OFF"}
+          </span>
+        </div>
+        {/* Bottom controls */}
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-2.5">
+          <span className="flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
+            <Mic className="h-3 w-3" /> Solo
+          </span>
+          <div className="flex items-center gap-1.5">
+            <StageBtn icon={<Volume2 className="h-3.5 w-3.5" />} label="Sound" />
+            <StageBtn icon={<RefreshCcw className="h-3.5 w-3.5" />} label="Flip" />
+            <StageBtn icon={<Maximize2 className="h-3.5 w-3.5" />} label="Full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StageBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <button
+      aria-label={label}
+      className="grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur"
+    >
+      {icon}
+    </button>
+  );
+}
+
+function MiniAction({
+  icon,
+  label,
+  onClick,
+  active,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-0.5 rounded-xl border py-2 backdrop-blur transition ${
+        active
+          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-white"
+          : "border-white/10 bg-white/5 text-white/85"
+      }`}
+    >
+      {icon}
+      <span className="text-[9px] font-bold">{label}</span>
+    </button>
+  );
+}
+
+function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
+  if (m.kind === "gift") {
+    return (
+      <div className="inline-flex max-w-[95%] items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/10 px-2.5 py-1 text-[11px] font-bold text-[color:var(--gold)]">
+        🎁 <span className="text-white/80">@{m.user?.username ?? "user"}</span> sent{" "}
+        {m.text}
+      </div>
+    );
+  }
+  if (m.kind === "system" || m.kind === "join" || m.kind === "leave") {
+    return (
+      <div className="text-[10.5px] leading-snug text-white/60">
+        <span className="mr-1 rounded bg-white/10 px-1 py-0.5 text-[9px] font-black uppercase text-white/70">
+          {m.kind}
+        </span>
+        {m.text ?? (m.kind === "join" ? "joined the room" : "left the room")}
+      </div>
+    );
+  }
+  const initial = (m.user?.username ?? "U").charAt(0).toUpperCase();
+  return (
+    <div className="flex max-w-full items-start gap-1.5">
+      {m.user?.avatar ? (
+        <img
+          src={m.user.avatar}
+          alt=""
+          className="mt-0.5 h-5 w-5 shrink-0 rounded-full border border-white/20 object-cover"
+        />
+      ) : (
+        <div className="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-[9px] font-bold text-white">
+          {initial}
+        </div>
+      )}
+      <div
+        className={`rounded-xl border px-2 py-1 backdrop-blur-sm ${
+          isMe
+            ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
+            : "border-white/10 bg-black/50"
+        }`}
+      >
+        <span className="mr-1 text-[10px] font-bold text-[color:var(--gold)]">
+          @{m.user?.username ?? "user"}:
+        </span>
+        <span className="break-words text-[11.5px] leading-snug text-white/95">
+          {m.text}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function HeaderIcon({
   children,
   onClick,
   label,
@@ -803,8 +998,8 @@ function IconRound({
     <button
       onClick={onClick}
       aria-label={label}
-      className={`grid h-8 w-8 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
-        danger ? "bg-[color:var(--destructive)]/90 text-white" : "bg-black/30 text-white/80"
+      className={`grid h-9 w-9 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
+        danger ? "bg-[color:var(--destructive)]/90 text-white" : "bg-white/5 text-white/85"
       }`}
     >
       {children}
@@ -812,159 +1007,33 @@ function IconRound({
   );
 }
 
-function Pill({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function DockIcon({
+  children,
+  onClick,
+  label,
+  glow,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  label: string;
+  glow?: boolean;
+}) {
   return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[11px] font-semibold backdrop-blur-md">
-      {icon}
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
+        glow
+          ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--destructive)] to-[color:var(--primary)] text-white shadow-lg shadow-[color:var(--destructive)]/30"
+          : "bg-white/10 text-white/85"
+      }`}
+    >
       {children}
-    </span>
-  );
-}
-
-function RoundBtn({
-  icon,
-  label,
-  onClick,
-  active,
-  badge,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  active?: boolean;
-  badge?: number;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      className="relative flex flex-col items-center gap-0.5"
-    >
-      <span
-        className={`grid h-9 w-9 place-items-center rounded-full border border-white/10 backdrop-blur-md ${
-          active
-            ? "bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white"
-            : "bg-black/30 text-white/80"
-        }`}
-      >
-        {icon}
-      </span>
-      {badge != null && badge > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--destructive)] px-1 text-[9px] font-bold text-white">
-          {badge}
-        </span>
-      )}
-      <span className="text-[9px] text-white/60">{label}</span>
     </button>
   );
 }
 
-
-function TopBtn({
-  icon,
-  label,
-  onClick,
-  danger,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center gap-0.5"
-      aria-label={label}
-    >
-      <span
-        className={`grid h-9 w-9 place-items-center rounded-full border border-border/60 ${danger ? "bg-[color:var(--destructive)]/90" : "bg-card/60"}`}
-      >
-        {icon}
-      </span>
-      <span className="text-[9px] text-muted-foreground">{label}</span>
-    </button>
-  );
-}
-
-function ActionBtn({
-  icon,
-  label,
-  onClick,
-  active,
-  danger,
-  badge,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  active?: boolean;
-  danger?: boolean;
-  badge?: number;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="relative flex flex-col items-center gap-0.5"
-      aria-label={label}
-    >
-      <span
-        className={`grid h-9 w-9 place-items-center rounded-full ${
-          active
-            ? "bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
-            : danger
-              ? "bg-[color:var(--destructive)]/80"
-              : "bg-card/60 border border-border/60"
-        }`}
-      >
-        {icon}
-      </span>
-      {badge != null && badge > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--destructive)] px-1 text-[9px] font-bold text-white">
-          {badge}
-        </span>
-      )}
-      <span className="text-[9px] text-muted-foreground">{label}</span>
-    </button>
-  );
-}
-
-function FooterBtn({
-  icon,
-  label,
-  onClick,
-  badge,
-  tint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  onClick: () => void;
-  badge?: number;
-  tint?: "danger" | "muted";
-}) {
-  const bubble =
-    tint === "danger"
-      ? "bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--primary)] text-white shadow-md shadow-[color:var(--destructive)]/30"
-      : tint === "muted"
-        ? "bg-white/10 text-white/40 border border-white/10"
-        : "bg-white/10 text-white/90 border border-white/10";
-  return (
-    <button
-      onClick={onClick}
-      aria-label={label}
-      className="relative flex flex-1 flex-col items-center gap-0.5"
-    >
-      <span className={`grid h-9 w-9 place-items-center rounded-full ${bubble}`}>{icon}</span>
-      {badge != null && badge > 0 && (
-        <span className="absolute right-1 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--destructive)] px-1 text-[9px] font-bold text-white">
-          {badge}
-        </span>
-      )}
-      <span className="text-[9px] text-white/60">{label}</span>
-    </button>
-  );
-}
-
+/* ─── Voice seat with No.X label + heart counter ─────────────── */
 function Seat({
   index,
   member,
@@ -973,6 +1042,8 @@ function Seat({
   cover,
   fallbackUser,
   onClaim,
+  likeCount,
+  onLike,
 }: {
   index: number;
   member?: Member;
@@ -981,6 +1052,8 @@ function Seat({
   cover: string | null;
   fallbackUser?: { username: string | null; avatar: string | null } | null;
   onClaim: () => void;
+  likeCount: number;
+  onLike: () => void;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -993,10 +1066,9 @@ function Seat({
     };
   }, [remote?.videoTrack]);
 
-  const label = String(index + 1).padStart(2, "0");
+  const label = `No.${index + 1}`;
   const speaking = remote?.hasAudio && !member?.is_muted;
 
-  const frameUrl = (member?.user as { frame_url?: string | null } | null)?.frame_url ?? null;
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
 
@@ -1004,111 +1076,60 @@ function Seat({
     ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
     : speaking
       ? "ring-2 ring-[color:var(--primary)]"
-      : "ring-1 ring-white/10";
+      : "ring-1 ring-white/15";
 
   return (
-    <button
-      onClick={() => (member ? undefined : onClaim())}
-      className="relative flex flex-col items-center gap-1.5"
-      aria-label={member ? `Seat ${label}` : `Take seat ${label}`}
-    >
-      <div className="relative aspect-square w-full">
-        {/* Host rotating dashed aura */}
+    <div className="flex flex-col items-center gap-1">
+      <button
+        onClick={() => (member ? undefined : onClaim())}
+        className="relative aspect-square w-full"
+        aria-label={member ? `Seat ${label}` : `Take ${label}`}
+      >
         {isHostSeat && (
-          <>
-            <div className="pointer-events-none absolute inset-[-4%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
-            <div className="pointer-events-none absolute inset-[-10%] rounded-full border border-[color:var(--gold)]/20" />
-          </>
+          <div className="pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
         )}
-
-        {/* Round DP */}
-        <div
-          className={`absolute inset-[10%] overflow-hidden rounded-full bg-card/40 ${
-            isHostSeat
-              ? "border-[3px] border-[color:var(--gold)] shadow-[0_0_20px_rgba(255,215,0,0.35)]"
-              : ringClass
-          }`}
-        >
+        <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${ringClass}`}>
           {isHostSeat && !displayAvatar && cover && (
-            <img
-              src={cover}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-70"
-            />
+            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
           )}
           {displayAvatar && !remote?.videoTrack && (
-            <img
-              src={displayAvatar}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
           {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
-          {!displayAvatar && !isHostSeat && (
+          {!displayAvatar && !remote?.videoTrack && (
             <div className="absolute inset-0 grid place-items-center">
-              <UserIcon className="h-1/3 w-1/3 text-muted-foreground/40" />
-            </div>
-          )}
-          {!displayAvatar && isHostSeat && !cover && (
-            <div className="absolute inset-0 grid place-items-center">
-              <UserIcon className="h-1/3 w-1/3 text-[color:var(--gold)]/60" />
+              <UserIcon className={`h-1/3 w-1/3 ${isHostSeat ? "text-[color:var(--gold)]/70" : "text-white/40"}`} />
             </div>
           )}
         </div>
-
-        {/* Frame overlay — sits on top of the round DP, doesn't clip it */}
-        {frameUrl && (
-          <img
-            src={frameUrl}
-            alt=""
-            className="pointer-events-none absolute inset-0 h-full w-full object-contain"
-          />
-        )}
-
-        {/* Seat number */}
-        {!isHostSeat && (
-          <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
-            {label}
+        {isHostSeat && (
+          <span className="absolute -top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow">
+            <Crown className="inline h-2.5 w-2.5" />
           </span>
         )}
-
-        {/* Host badges: HOST label on top, gold value pill bottom */}
-        {isHostSeat && (
-          <>
-            <span className="absolute -top-2 left-1/2 z-20 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-2 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow-lg">
-              Host
-            </span>
-            <span className="absolute -bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[color:var(--gold)]/50 bg-black/80 px-2 py-0.5 backdrop-blur-sm">
-              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--gold)]" />
-              <span className="text-[9px] font-black text-[color:var(--gold)]">LIVE</span>
-
-            </span>
-          </>
-        )}
-
-
-        {/* Mic status */}
         {(member || isHostSeat) && (
-          <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full bg-black/70">
+          <span className="absolute bottom-1 right-1 grid h-4 w-4 place-items-center rounded-full bg-black/70">
             {member?.is_muted ? (
-              <MicOff className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
+              <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
             ) : (
-              <Mic className="h-2.5 w-2.5 text-[color:var(--primary)]" />
+              <Mic className="h-2 w-2 text-[color:var(--primary)]" />
             )}
           </span>
         )}
-      </div>
-
-      {/* Username under the DP */}
-      <span
-        className={`max-w-full truncate text-[10px] font-bold ${isHostSeat ? "text-[color:var(--gold)]" : "text-foreground/90"}`}
-      >
-        {displayName ? `@${displayName}` : isHostSeat ? "Host" : "Seat"}
+      </button>
+      <span className={`text-[10px] font-black ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/85"}`}>
+        {displayName ? `@${displayName}` : label}
       </span>
-    </button>
+      <button
+        onClick={onLike}
+        className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-1.5 py-0.5 text-[9px] font-bold text-white/70 backdrop-blur"
+      >
+        <Heart className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
+        {likeCount}
+      </button>
+    </div>
   );
 }
-
 
 function SeatsSheet({
   open,
@@ -1143,7 +1164,6 @@ function SeatsSheet({
         <p className="mt-1 text-xs text-muted-foreground">
           Choose how many seats your room has (minimum 4, maximum 20).
         </p>
-
         <div className="mt-5 flex items-center justify-center gap-6">
           <button
             onClick={() => setN((v) => clamp(v - 1))}
@@ -1165,7 +1185,6 @@ function SeatsSheet({
             <Plus className="h-5 w-5" />
           </button>
         </div>
-
         <div className="mt-5 flex flex-wrap justify-center gap-2">
           {presets.map((p) => {
             const active = n === p;
@@ -1184,7 +1203,6 @@ function SeatsSheet({
             );
           })}
         </div>
-
         <button
           onClick={() => onChange(n)}
           className="mt-5 w-full rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--destructive)] py-3.5 text-base font-extrabold text-primary-foreground"
@@ -1195,4 +1213,3 @@ function SeatsSheet({
     </>
   );
 }
-
