@@ -359,12 +359,25 @@ function RoomPage() {
     return m;
   }, [members]);
 
+  const seatedCount = useMemo(
+    () => members.filter((m) => m.seat_index != null).length,
+    [members],
+  );
+
   const ludoPlayers: LudoPlayer[] = [0, 1, 2, 3].map((i) => {
     const m = seatsByIndex.get(i);
     return m
       ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null }
       : { id: `empty-${i}`, username: null, avatar: null };
   });
+
+  function openLudo() {
+    if (seatedCount < 4) {
+      toast.error(`Ludo needs 4 users on seats (currently ${seatedCount})`);
+      return;
+    }
+    setLudoOpen(true);
+  }
 
   if (room.isLoading) {
     return (
