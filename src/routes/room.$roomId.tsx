@@ -698,6 +698,22 @@ function RoomPage() {
               else toast.info("Tap a seat to join");
             }}
           />
+          {isHost && (
+            <>
+              <ActionBtn
+                icon={<Minus className="h-4 w-4" />}
+                label="Less"
+                onClick={() => changeSeatCount(-1)}
+              />
+              <ActionBtn
+                icon={<Plus className="h-4 w-4" />}
+                label={`Seats ${r.seat_count}`}
+                onClick={() => changeSeatCount(1)}
+                active
+              />
+            </>
+          )}
+
           <button
             onClick={() => {
               if (!user) {
