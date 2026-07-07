@@ -657,22 +657,11 @@ function RoomPage() {
             </div>
 
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-3 gap-1.5">
-                <MiniAction
-                  icon={agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                  label={agora.muted ? "Mic Off" : "Mic On"}
-                  onClick={() => {
-                    if (!shouldPublish) return toast.info("Take a seat to talk");
-                    agora.toggleMute();
-                  }}
-                  active={!agora.muted && shouldPublish}
-                />
+              <div className="grid grid-cols-2 gap-1.5">
                 <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
                 <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
-                <MiniAction icon={<Gift className="h-4 w-4" />} label="Gift" onClick={() => setGiftOpen(true)} />
-                <MiniAction icon={<Gamepad2 className="h-4 w-4" />} label="Game" onClick={openLudo} />
-                <MiniAction icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setSeatsSheetOpen(true)} />
               </div>
+
             </div>
           </div>
         )}
