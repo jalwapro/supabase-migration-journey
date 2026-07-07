@@ -679,16 +679,40 @@ function RoomPage() {
         </div>
       </div>
 
-      {/* ─── Main stage: voice grid OR video area ───────────────── */}
+      {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo ? (
-        <VideoStage
-          coverUrl={r.cover_url}
-          hostRemote={hostRemote}
-          isLive={r.status === "live"}
-          mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
-          onFlip={isHost ? agora.toggleVideo : undefined}
-          videoOn={agora.videoOn}
-        />
+        (() => {
+          const rawSeats = Math.max(1, r.seat_count);
+          const videoSeats = rawSeats <= 1 ? 1 : rawSeats <= 2 ? 2 : 4;
+          const layout: "SOLO" | "1/1" | "2/2" =
+            videoSeats === 1 ? "SOLO" : videoSeats === 2 ? "1/1" : "2/2";
+          return (
+            <VideoSeatGrid
+              coverUrl={r.cover_url}
+              isLive={r.status === "live"}
+              layout={layout}
+              seats={Array.from({ length: videoSeats }).map((_, i) => {
+                const m = seatsByIndex.get(i);
+                const isHostSeat = i === 0;
+                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+                const fallback =
+                  isHostSeat && !m
+                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                    : null;
+                return {
+                  index: i,
+                  isHostSeat,
+                  member: m,
+                  remote,
+                  fallbackUser: fallback,
+                  onClaim: () => void takeSeat(i),
+                  onLike: () => void likeSeat(i),
+                  likeCount: seatLikes[i] ?? 0,
+                };
+              })}
+            />
+          );
+        })()
       ) : (
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
           <div className="p-0">
