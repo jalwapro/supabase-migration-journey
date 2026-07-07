@@ -529,6 +529,8 @@ function RoomPage() {
           hostRemote={hostRemote}
           isLive={r.status === "live"}
           mode={seatedCount <= 1 ? "SOLO" : "MULTI"}
+          onFlip={isHost ? agora.toggleVideo : undefined}
+          videoOn={agora.videoOn}
         />
       ) : (
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
