@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Mail, KeyRound, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import jalwaLogo from "@/assets/jalwa-logo.png";
+import jalwaLogo from "@/assets/jalwa-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -119,7 +119,7 @@ function AuthPage() {
         <div className="glass rounded-3xl p-8 shadow-2xl">
           <div className="flex flex-col items-center text-center">
             <img
-              src={jalwaLogo}
+              src={jalwaLogo.url}
               alt="Jalwa"
               className="h-16 w-16 rounded-2xl object-cover shadow-lg"
             />
