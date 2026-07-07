@@ -219,6 +219,16 @@ function Home() {
             </label>
 
             <div className="flex shrink-0 items-center gap-1.5">
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => setFriendsOpen(true)}
+                  aria-label="Friends online"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-border bg-card/60 text-foreground/80 hover:text-[color:var(--primary)]"
+                >
+                  <UserRound className="h-4 w-4" />
+                </button>
+              )}
               {profile && (
                 <Link
                   to="/wallet"
