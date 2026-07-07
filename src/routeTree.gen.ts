@@ -24,6 +24,7 @@ import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 
 const SplashRoute = SplashRouteImport.update({
@@ -100,6 +101,11 @@ const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   path: '/create-room',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
     id: '/lucky-spin',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
@@ -150,6 +158,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
   '/_authenticated/me': typeof AuthenticatedMeRoute
@@ -169,6 +178,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/admin'
     | '/create-room'
     | '/games'
     | '/me'
@@ -186,6 +196,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/admin'
     | '/create-room'
     | '/games'
     | '/me'
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/_authenticated/admin'
     | '/_authenticated/create-room'
     | '/_authenticated/games'
     | '/_authenticated/me'
@@ -334,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreateRoomRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/games/lucky-spin': {
       id: '/_authenticated/games/lucky-spin'
       path: '/lucky-spin'
@@ -356,6 +375,7 @@ const AuthenticatedGamesRouteWithChildren =
   AuthenticatedGamesRoute._addFileChildren(AuthenticatedGamesRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRouteWithChildren
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
@@ -364,6 +384,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRouteWithChildren,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
