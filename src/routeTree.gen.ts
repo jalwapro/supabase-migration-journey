@@ -20,8 +20,10 @@ import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
+import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 
 const RoomsRoute = RoomsRouteImport.update({
   id: '/rooms',
@@ -77,6 +79,11 @@ const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
   path: '/me',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGamesRoute = AuthenticatedGamesRouteImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
@@ -87,6 +94,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGamesLuckySpinRoute =
+  AuthenticatedGamesLuckySpinRouteImport.update({
+    id: '/lucky-spin',
+    path: '/lucky-spin',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,11 +109,13 @@ export interface FileRoutesByFullPath {
   '/rooms': typeof RoomsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
+  '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -110,11 +125,13 @@ export interface FileRoutesByTo {
   '/rooms': typeof RoomsRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
+  '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -126,11 +143,13 @@ export interface FileRoutesById {
   '/rooms': typeof RoomsRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
+  '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,11 +161,13 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/admin'
     | '/create-room'
+    | '/games'
     | '/me'
     | '/recharge'
     | '/wallet'
     | '/api/agora-token'
     | '/room/$roomId'
+    | '/games/lucky-spin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -156,11 +177,13 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/admin'
     | '/create-room'
+    | '/games'
     | '/me'
     | '/recharge'
     | '/wallet'
     | '/api/agora-token'
     | '/room/$roomId'
+    | '/games/lucky-spin'
   id:
     | '__root__'
     | '/'
@@ -171,11 +194,13 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/_authenticated/admin'
     | '/_authenticated/create-room'
+    | '/_authenticated/games'
     | '/_authenticated/me'
     | '/_authenticated/recharge'
     | '/_authenticated/wallet'
     | '/api/agora-token'
     | '/room/$roomId'
+    | '/_authenticated/games/lucky-spin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -268,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/games': {
+      id: '/_authenticated/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof AuthenticatedGamesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create-room': {
       id: '/_authenticated/create-room'
       path: '/create-room'
@@ -282,12 +314,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/games/lucky-spin': {
+      id: '/_authenticated/games/lucky-spin'
+      path: '/lucky-spin'
+      fullPath: '/games/lucky-spin'
+      preLoaderRoute: typeof AuthenticatedGamesLuckySpinRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
   }
 }
+
+interface AuthenticatedGamesRouteChildren {
+  AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
+}
+
+const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
+  AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
+}
+
+const AuthenticatedGamesRouteWithChildren =
+  AuthenticatedGamesRoute._addFileChildren(AuthenticatedGamesRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
+  AuthenticatedGamesRoute: typeof AuthenticatedGamesRouteWithChildren
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
@@ -296,6 +347,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
+  AuthenticatedGamesRoute: AuthenticatedGamesRouteWithChildren,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
