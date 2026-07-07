@@ -47,6 +47,8 @@ import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
+import { LevelBadge } from "@/components/LevelBadge";
+import { tierForLevel } from "@/lib/levels";
 
 export const Route = createFileRoute("/room/$roomId")({
   component: RoomPage,
@@ -766,12 +768,10 @@ function RoomPage() {
         </div>
       )}
 
-      {/* ─── Enters-the-room banner ─────────────────────────────── */}
-      {!isVideo && (
-        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-2">
-          <EnterRoomBanner latestEnter={latestEnter} />
-        </div>
-      )}
+      {/* ─── Enters-the-room banner (animated, all room types) ── */}
+      <div className="pointer-events-none absolute inset-x-0 top-[190px] z-30 mx-auto w-full max-w-md px-3">
+        <EnterRoomBanner latestEnter={latestEnter} />
+      </div>
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
@@ -1349,39 +1349,106 @@ function EmptyChat() {
 
 
 function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
-  if (!latestEnter?.user) return null;
-  const name = latestEnter.user.username ?? "guest";
-  const level = latestEnter.user.level ?? 1;
-  const avatar = latestEnter.user.avatar;
-  const tier =
-    level >= 50
-      ? { label: "SVIP", cls: "from-[color:var(--gold)] to-amber-500 text-black" }
-      : level >= 20
-        ? { label: "VIP", cls: "from-[color:var(--primary)] to-[color:var(--secondary)] text-white" }
-        : { label: "Lv", cls: "from-sky-500 to-violet-500 text-white" };
+  const [visible, setVisible] = useState(false);
+  const [shown, setShown] = useState<Message | null>(null);
+
+  useEffect(() => {
+    if (!latestEnter?.user) return;
+    setShown(latestEnter);
+    setVisible(true);
+    const t = setTimeout(() => setVisible(false), 4500);
+    return () => clearTimeout(t);
+  }, [latestEnter?.id]);
+
+  if (!shown?.user) return null;
+  const name = shown.user.username ?? "guest";
+  const level = shown.user.level ?? 1;
+  const avatar = shown.user.avatar;
+  const tier = tierForLevel(level);
+
   return (
-    <div className="flex items-center gap-2 rounded-full border border-[color:var(--primary)]/60 bg-gradient-to-r from-black/60 via-[color:var(--secondary)]/20 to-black/60 px-2 py-1 shadow-[inset_0_0_18px_rgba(255,255,255,0.05)] backdrop-blur-md">
-      <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] ring-1 ring-white/25">
-        {avatar ? (
-          <img src={avatar} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <UserIcon className="h-3.5 w-3.5 text-white/80" />
-        )}
-      </div>
-      <span
-        className={`flex shrink-0 items-center gap-0.5 rounded-full bg-gradient-to-r ${tier.cls} px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider shadow`}
+    <div
+      key={shown.id}
+      className={`pointer-events-auto transition-all duration-500 ease-out ${
+        visible ? "translate-x-0 opacity-100" : "-translate-x-6 opacity-0"
+      }`}
+    >
+      <div
+        className="relative flex items-center gap-2 overflow-hidden rounded-full py-1.5 pl-1.5 pr-2 backdrop-blur-md"
+        style={{
+          background: `linear-gradient(90deg, ${tier.color}55 0%, #0a0114cc 55%, ${tier.color}33 100%)`,
+          border: `1.5px solid ${tier.color}cc`,
+          boxShadow: `0 0 24px -4px ${tier.color}, inset 0 0 20px ${tier.color}22`,
+        }}
       >
-        <Crown className="h-2.5 w-2.5" />
-        {tier.label} {level}
-      </span>
-      <div className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white/90">
-        <span className="font-black tracking-wide text-[color:var(--gold)]">@{name}</span>{" "}
-        <span className="text-white/70">entered the room</span>
+        {/* shimmer sweep */}
+        <span
+          className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 animate-[shimmer_2s_linear_infinite]"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent)",
+          }}
+        />
+
+        {/* Avatar with tier ring */}
+        <div
+          className="relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full"
+          style={{ boxShadow: `0 0 10px ${tier.color}` }}
+        >
+          <div
+            className="absolute inset-0 rounded-full"
+            style={{
+              background: `conic-gradient(from 0deg, ${tier.color}, #fff, ${tier.color})`,
+            }}
+          />
+          <div className="absolute inset-[2px] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60">
+            {avatar ? (
+              <img src={avatar} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-white/80">
+                <UserIcon className="h-4 w-4" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Name + status */}
+        <div className="relative min-w-0 flex-1 leading-tight">
+          <div className="truncate text-[12.5px] font-black text-white">
+            <span
+              className="uppercase tracking-wide"
+              style={{ textShadow: `0 0 8px ${tier.color}` }}
+            >
+              {name}
+            </span>
+          </div>
+          <div className="truncate text-[10px] font-medium text-white/75">
+            has entered the room
+          </div>
+        </div>
+
+        {/* Level chip */}
+        <div className="relative flex flex-col items-end gap-0 pr-1 text-right leading-none">
+          <span className="text-[9px] font-black uppercase tracking-widest text-white/85">
+            Level {level}
+          </span>
+          <span
+            className="text-[10px] font-black uppercase tracking-widest"
+            style={{ color: tier.color, textShadow: `0 0 6px ${tier.color}` }}
+          >
+            {tier.label}
+          </span>
+        </div>
+
+        {/* Rank badge */}
+        <div className="relative shrink-0">
+          <LevelBadge level={level} size="sm" showLabel={false} />
+        </div>
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-white/70" />
     </div>
   );
 }
+
 
 function BottomRoomTab({
   icon,

@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { LevelBadge } from "@/components/LevelBadge";
 import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 
 export const Route = createFileRoute("/_authenticated/me")({
@@ -168,6 +169,34 @@ function MePage() {
                 )}
               </div>
             </div>
+
+            {/* Ranking badge */}
+            <button
+              onClick={() => setFrameSheetOpen(true)}
+              className="relative mt-5 flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left backdrop-blur"
+              style={{
+                borderColor: `${tier.color}80`,
+                background: `linear-gradient(90deg, ${tier.color}22 0%, #0a011477 100%)`,
+                boxShadow: `0 0 24px -6px ${tier.color}`,
+              }}
+            >
+              <LevelBadge level={level} size="md" showLabel={false} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
+                  Your Rank
+                </p>
+                <p
+                  className="truncate text-lg font-black uppercase"
+                  style={{ color: tier.color, textShadow: `0 0 10px ${tier.color}` }}
+                >
+                  {tier.label}
+                </p>
+                <p className="text-[11px] font-bold text-white/75">
+                  Level {level} · Tap to view all tiers
+                </p>
+              </div>
+              <ChevronRight className="h-5 w-5 text-white/60" />
+            </button>
 
             {/* Level progress bar */}
             <button
@@ -320,7 +349,7 @@ function FrameCollectionSheet({
                     : "border-white/10 bg-white/5"
                 }`}
               >
-                <LevelAvatar level={t.minLevel} size="md" showBadge={false} />
+                <LevelBadge level={t.minLevel} size="md" showLabel={false} />
                 <div>
                   <p className="text-[11px] font-black">{t.label}</p>
                   <p className="text-[10px] text-white/60">
