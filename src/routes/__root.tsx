@@ -118,8 +118,10 @@ function RootShell({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
-        {children}
+      <body className="bg-background">
+        <div className="app-frame-outer">
+          <div className="app-frame">{children}</div>
+        </div>
         <Scripts />
       </body>
     </html>
