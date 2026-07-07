@@ -520,91 +520,48 @@ function RoomPage() {
         </button>
       </div>
 
-      {/* ─── Stage: host + seats ─────────────────────────────────── */}
-      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-4">
-        {/* Host spotlight */}
+      {/* ─── Unified mic seats grid (host = seat 1) ──────────────── */}
+      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-4 pt-2">
+        <div className="mb-2 flex items-center justify-between px-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
+            Mic Seats
+          </span>
+          <span className="text-[10px] font-bold text-white/70">
+            {seatedCount}/{r.seat_count}
+          </span>
+        </div>
         {(() => {
-          const host = seatsByIndex.get(0);
-          const remote = host ? agora.remotes.get(uidFromUuid(host.user_id)) : undefined;
-          const speaking = remote?.hasAudio && !host?.is_muted;
+          const sc = r.seat_count;
+          const cols = sc <= 4 ? 4 : sc <= 6 ? 3 : sc <= 9 ? 3 : sc <= 12 ? 4 : sc <= 16 ? 4 : 5;
+          const gap = sc <= 6 ? "gap-y-6 gap-x-4" : sc <= 9 ? "gap-y-5 gap-x-3" : "gap-y-4 gap-x-2.5";
+          const colsClass =
+            cols === 3 ? "grid-cols-3" : cols === 4 ? "grid-cols-4" : "grid-cols-5";
           return (
-            <div className="flex flex-col items-center pt-1">
-              <button
-                onClick={() => takeSeat(0)}
-                className="relative h-20 w-20"
-                aria-label="Host seat"
-              >
-                {/* Rotating gradient ring when speaking */}
-                <div
-                  className={`absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--destructive),var(--primary),var(--gold))] p-[3px] ${
-                    speaking ? "animate-spin-slow" : ""
-                  }`}
-                >
-                  <div className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#1a0b2e]">
-                    {host?.user?.avatar ? (
-                      <img src={host.user.avatar} alt="" className="h-full w-full object-cover" />
-                    ) : r.host?.avatar ? (
-                      <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <UserIcon className="h-8 w-8 text-white/60" />
-                    )}
-                  </div>
-                </div>
-                <Crown className="absolute -top-2 left-1/2 h-5 w-5 -translate-x-1/2 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow-lg" />
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-extrabold text-[color:var(--gold)]">
-                  HOST
-                </span>
-              </button>
-              <div className="mt-3 text-center">
-                <div className="text-[13px] font-extrabold">
-                  {r.host?.username ?? "Host"}
-                </div>
-                <div className="text-[10px] text-white/50">Tap seats to join · Follow to speak</div>
-              </div>
+            <div className={`grid ${colsClass} ${gap}`}>
+              {Array.from({ length: sc }).map((_, i) => {
+                const m = seatsByIndex.get(i);
+                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+                const isHostSeat = i === 0;
+                const fallbackHost =
+                  isHostSeat && !m
+                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                    : null;
+                return (
+                  <Seat
+                    key={i}
+                    index={i}
+                    member={m}
+                    remote={remote}
+                    isHostSeat={isHostSeat}
+                    cover={r.cover_url}
+                    fallbackUser={fallbackHost}
+                    onClaim={() => takeSeat(i)}
+                  />
+                );
+              })}
             </div>
           );
         })()}
-
-        {/* Mic seats grid */}
-        <div className="mt-4">
-          <div className="mb-2 flex items-center justify-between px-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-              Mic Seats
-            </span>
-            <span className="text-[10px] font-bold text-white/70">
-              {seatedCount}/{r.seat_count}
-            </span>
-          </div>
-          {(() => {
-            const sc = r.seat_count;
-            // exclude host seat (index 0) — already shown above
-            const rest = sc - 1;
-            const cols = rest <= 5 ? 5 : rest <= 8 ? 4 : rest <= 12 ? 4 : 5;
-            const gap = rest <= 8 ? "gap-3" : "gap-2";
-            const colsClass =
-              cols === 4 ? "grid-cols-4" : cols === 5 ? "grid-cols-5" : "grid-cols-4";
-            return (
-              <div className={`grid ${colsClass} ${gap}`}>
-                {Array.from({ length: rest }).map((_, idx) => {
-                  const i = idx + 1;
-                  const m = seatsByIndex.get(i);
-                  const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-                  return (
-                    <Seat
-                      key={i}
-                      index={i}
-                      member={m}
-                      remote={remote}
-                      isHostSeat={false}
-                      cover={r.cover_url}
-                      onClaim={() => takeSeat(i)}
-                    />
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
       </div>
 
       {/* ─── Chat overlay (transparent, scrolls internally) ──────── */}
