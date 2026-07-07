@@ -34,6 +34,7 @@ import {
   MoreHorizontal,
   Grid3x3,
   Inbox,
+  Armchair,
 } from "lucide-react";
 
 import { useEffect, useMemo, useRef, useState } from "react";
