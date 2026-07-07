@@ -207,12 +207,12 @@ function CreateRoom() {
             <label className="mb-1.5 block text-xs font-semibold text-muted-foreground">
               Room title
             </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={60}
-              className="w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm outline-none focus:border-[color:var(--primary)]"
-            />
+            <div className="w-full rounded-2xl border border-border bg-background/60 px-4 py-3 text-sm">
+              <div className="font-semibold">{autoTitle}</div>
+              <div className="mt-0.5 text-[11px] text-muted-foreground">
+                Auto-set from your profile · ID {user?.id?.slice(0, 8)}
+              </div>
+            </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3">
               {(["voice", "video"] as const).map((t) => {
