@@ -16,8 +16,8 @@ type Category = { id: string; name: string; slug: string; icon: string | null };
 function CreateRoom() {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const defaultTitle = `${profile?.username ?? "jalwa"}'s Live`;
-  const [title, setTitle] = useState(defaultTitle);
+  const hostName = profile?.username?.trim() || user?.email?.split("@")[0] || "jalwa";
+  const autoTitle = `${hostName}'s Live`;
   const [type, setType] = useState<"voice" | "video">("voice");
   const [locked, setLocked] = useState(false);
   const [password, setPassword] = useState("");
@@ -51,17 +51,28 @@ function CreateRoom() {
 
   async function create() {
     if (!user) return;
-    if (!title.trim()) {
-      toast.error("Give your room a title");
+    setBusy(true);
+
+    // One live room per user — jump to existing one if already live.
+    const { data: existing } = await supabase
+      .from("live_rooms")
+      .select("id")
+      .eq("host_id", user.id)
+      .eq("status", "live")
+      .maybeSingle();
+    if (existing?.id) {
+      setBusy(false);
+      toast.info("You already have a live room — opening it.");
+      navigate({ to: "/room/$roomId", params: { roomId: existing.id } });
       return;
     }
-    setBusy(true);
+
     const channel = `jalwa-${crypto.randomUUID().slice(0, 12)}`;
     const { data, error } = await supabase
       .from("live_rooms")
       .insert({
         host_id: user.id,
-        title: title.trim(),
+        title: autoTitle,
         room_type: type,
         seat_count: 8,
         is_locked: locked,
@@ -73,12 +84,18 @@ function CreateRoom() {
       .single();
     setBusy(false);
     if (error) {
-      toast.error(error.message);
+      // Unique-index violation → user already has a live room
+      if (error.code === "23505") {
+        toast.error("You already have an active live room.");
+      } else {
+        toast.error(error.message);
+      }
       return;
     }
     toast.success("You're live!");
     navigate({ to: "/room/$roomId", params: { roomId: data.id } });
   }
+
 
   return (
     <>
