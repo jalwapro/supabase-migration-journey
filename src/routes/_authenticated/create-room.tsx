@@ -172,7 +172,7 @@ function CreateRoom() {
             onClick={() => setSheetOpen(false)}
           />
           <div
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+            className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
           >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
