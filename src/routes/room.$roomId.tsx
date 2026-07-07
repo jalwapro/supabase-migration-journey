@@ -600,36 +600,44 @@ function RoomPage() {
         </div>
       </div>
 
-      {/* ─── Bottom bar ──────────────────────────────────────────── */}
-      <div
-        className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
-      >
-        <div className="flex items-center gap-2">
-          {/* Input pill */}
-          <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
-            <Smile className="h-4 w-4 text-white/60" />
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="Say something…"
-              className="flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
-              disabled={!user}
-            />
-            {text.trim() && (
-              <button
-                onClick={send}
-                aria-label="Send"
-                className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)]"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          {/* Mic toggle — big round */}
+      {/* ─── Message input (full-width pill) ─────────────────────── */}
+      <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+        <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-2 backdrop-blur-md">
           <button
+            aria-label="Emoji"
+            onClick={() => toast.info("Emoji soon")}
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+          >
+            <Smile className="h-4 w-4" />
+          </button>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && send()}
+            placeholder="Type a message…"
+            className="flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+            disabled={!user}
+          />
+          <button
+            onClick={send}
+            aria-label="Send"
+            disabled={!text.trim()}
+            className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+          >
+            <Send className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Footer dock ─────────────────────────────────────────── */}
+      <div
+        className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+      >
+        <div className="flex items-center gap-2 rounded-3xl border border-white/10 bg-black/50 px-3 py-2.5 backdrop-blur-md">
+          {/* Mic toggle */}
+          <FooterBtn
+            label="Mic"
             onClick={() => {
               if (!shouldPublish) {
                 toast.info("Take a seat to talk");
@@ -637,61 +645,60 @@ function RoomPage() {
               }
               agora.toggleMute();
             }}
-            aria-label="Mic"
-            className={`grid h-11 w-11 shrink-0 place-items-center rounded-full shadow-lg ${
+            icon={
+              agora.muted || !shouldPublish ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )
+            }
+            tint={
               !shouldPublish
-                ? "bg-white/10 text-white/40"
+                ? "muted"
                 : agora.muted
-                  ? "bg-[color:var(--destructive)] text-white"
-                  : "bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--destructive)] text-white"
-            }`}
-          >
-            {agora.muted || !shouldPublish ? (
-              <MicOff className="h-5 w-5" />
-            ) : (
-              <Mic className="h-5 w-5" />
-            )}
-          </button>
-        </div>
-
-        {/* Action row */}
-        <div className="mt-3 flex items-center justify-between gap-1">
-          <RoundBtn
-            onClick={() => toast.info("Emoji soon")}
+                  ? "danger"
+                  : "danger"
+            }
+          />
+          <FooterBtn
             label="Emoji"
+            onClick={() => toast.info("Emoji soon")}
             icon={<Smile className="h-4 w-4" />}
           />
-          <RoundBtn onClick={openLudo} label="Game" icon={<Gamepad2 className="h-4 w-4" />} />
+          <FooterBtn
+            label="Game"
+            onClick={openLudo}
+            icon={<Gamepad2 className="h-4 w-4" />}
+          />
           {isHost && (
-            <RoundBtn
-              onClick={() => setMusicOpen(true)}
+            <FooterBtn
               label="Music"
+              onClick={() => setMusicOpen(true)}
               icon={<Music className="h-4 w-4" />}
             />
           )}
           {r.room_type === "video" && shouldPublish && (
-            <RoundBtn
-              onClick={agora.toggleVideo}
+            <FooterBtn
               label="Cam"
-              active={agora.videoOn}
+              onClick={agora.toggleVideo}
               icon={
                 agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />
               }
             />
           )}
-          <RoundBtn
+          <FooterBtn
+            label="Members"
             onClick={() => toast.info("Members panel soon")}
-            label="Room"
-            badge={members.length}
             icon={<Users className="h-4 w-4" />}
+            badge={members.length}
           />
-          <RoundBtn
+          <FooterBtn
+            label={iAmOnSeat && !isHost ? "Off" : "Seats"}
             onClick={() => {
               if (isHost) setSeatsSheetOpen(true);
               else if (iAmOnSeat) leaveSeat();
               else toast.info("Tap a seat to join");
             }}
-            label={iAmOnSeat && !isHost ? "Off" : "Seats"}
             icon={<Settings className="h-4 w-4" />}
           />
           <button
@@ -702,12 +709,15 @@ function RoomPage() {
               }
               setGiftOpen(true);
             }}
-            className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--destructive)] to-[color:var(--primary)] px-3.5 py-2 text-[11px] font-extrabold text-white shadow-lg shadow-[color:var(--destructive)]/30"
+            className="ml-auto flex flex-col items-center"
           >
-            <Gift className="h-4 w-4" /> Gift
+            <span className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--destructive)] to-[color:var(--primary)] px-4 py-2 text-[12px] font-extrabold text-white shadow-lg shadow-[color:var(--destructive)]/30">
+              <Gift className="h-4 w-4" /> Gift
+            </span>
           </button>
         </div>
       </div>
+
 
 
       <GiftSheet
@@ -895,6 +905,42 @@ function ActionBtn({
         </span>
       )}
       <span className="text-[9px] text-muted-foreground">{label}</span>
+    </button>
+  );
+}
+
+function FooterBtn({
+  icon,
+  label,
+  onClick,
+  badge,
+  tint,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  badge?: number;
+  tint?: "danger" | "muted";
+}) {
+  const bubble =
+    tint === "danger"
+      ? "bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--primary)] text-white shadow-md shadow-[color:var(--destructive)]/30"
+      : tint === "muted"
+        ? "bg-white/10 text-white/40 border border-white/10"
+        : "bg-white/10 text-white/90 border border-white/10";
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      className="relative flex flex-1 flex-col items-center gap-0.5"
+    >
+      <span className={`grid h-9 w-9 place-items-center rounded-full ${bubble}`}>{icon}</span>
+      {badge != null && badge > 0 && (
+        <span className="absolute right-1 top-0 grid h-4 min-w-4 place-items-center rounded-full bg-[color:var(--destructive)] px-1 text-[9px] font-bold text-white">
+          {badge}
+        </span>
+      )}
+      <span className="text-[9px] text-white/60">{label}</span>
     </button>
   );
 }
