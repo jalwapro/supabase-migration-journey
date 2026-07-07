@@ -75,8 +75,9 @@ type Message = {
   kind: string;
   text: string | null;
   created_at: string;
-  user: { username: string | null; avatar: string | null } | null;
+  user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
+
 
 function uidFromUuid(uuid: string): number {
   let h = 0;
@@ -164,7 +165,7 @@ function RoomPage() {
         supabase
           .from("room_messages")
           .select(
-            "id,user_id,kind,text,created_at,user:profiles!room_messages_user_id_fkey(username,avatar)",
+            "id,user_id,kind,text,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
           )
           .eq("room_id", roomId)
           .order("created_at", { ascending: false })
@@ -195,7 +196,7 @@ function RoomPage() {
           if (row.user_id) {
             const { data } = await supabase
               .from("profiles")
-              .select("username,avatar")
+              .select("username,avatar,level")
               .eq("id", row.user_id)
               .maybeSingle();
             row.user = (data as Message["user"]) ?? null;
@@ -231,12 +232,22 @@ function RoomPage() {
   useEffect(() => {
     if (!user || !room.data) return;
     const seatIndex = isHost ? 0 : null;
-    void supabase
-      .from("room_members")
-      .upsert(
-        { room_id: roomId, user_id: user.id, seat_index: seatIndex },
-        { onConflict: "room_id,user_id" },
-      );
+    void (async () => {
+      await supabase
+        .from("room_members")
+        .upsert(
+          { room_id: roomId, user_id: user.id, seat_index: seatIndex },
+          { onConflict: "room_id,user_id" },
+        );
+      if (!isHost) {
+        await supabase.from("room_messages").insert({
+          room_id: roomId,
+          user_id: user.id,
+          kind: "join",
+          text: "entered the room",
+        });
+      }
+    })();
     return () => {
       void supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
     };
@@ -1047,17 +1058,36 @@ function DefaultVoiceMessages() {
 }
 
 function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
+  if (!latestEnter?.user) return null;
+  const name = latestEnter.user.username ?? "guest";
+  const level = latestEnter.user.level ?? 1;
+  const avatar = latestEnter.user.avatar;
+  const tier =
+    level >= 50
+      ? { label: "SVIP", cls: "from-[color:var(--gold)] to-amber-500 text-black" }
+      : level >= 20
+        ? { label: "VIP", cls: "from-[color:var(--primary)] to-[color:var(--secondary)] text-white" }
+        : { label: "Lv", cls: "from-sky-500 to-violet-500 text-white" };
   return (
-    <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--primary)]/60 bg-black/35 px-3 py-2 shadow-[inset_0_0_20px_rgba(255,255,255,0.04)] backdrop-blur-md">
-      <span className="text-lg leading-none">📣</span>
-      <div className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white/90">
-        <span className="font-black tracking-wide">ALI KING✤</span>{" "}
-        <span>enters the room</span>
-        {latestEnter?.user?.username ? (
-          <span className="text-[color:var(--gold)]"> · @{latestEnter.user.username}</span>
-        ) : null}
+    <div className="flex items-center gap-2 rounded-full border border-[color:var(--primary)]/60 bg-gradient-to-r from-black/60 via-[color:var(--secondary)]/20 to-black/60 px-2 py-1 shadow-[inset_0_0_18px_rgba(255,255,255,0.05)] backdrop-blur-md">
+      <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] ring-1 ring-white/25">
+        {avatar ? (
+          <img src={avatar} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <UserIcon className="h-3.5 w-3.5 text-white/80" />
+        )}
       </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-white/85" />
+      <span
+        className={`flex shrink-0 items-center gap-0.5 rounded-full bg-gradient-to-r ${tier.cls} px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider shadow`}
+      >
+        <Crown className="h-2.5 w-2.5" />
+        {tier.label} {level}
+      </span>
+      <div className="min-w-0 flex-1 truncate text-[12px] font-semibold text-white/90">
+        <span className="font-black tracking-wide text-[color:var(--gold)]">@{name}</span>{" "}
+        <span className="text-white/70">entered the room</span>
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-white/70" />
     </div>
   );
 }
