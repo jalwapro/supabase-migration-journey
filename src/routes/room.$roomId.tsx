@@ -697,7 +697,7 @@ function RoomPage() {
           <ActionBtn
             icon={<Gamepad2 className="h-4 w-4" />}
             label="Game"
-            onClick={() => setLudoOpen(true)}
+            onClick={openLudo}
           />
           {isHost && (
             <ActionBtn
