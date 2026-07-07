@@ -817,29 +817,29 @@ function RoomPage() {
           className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => agora.toggleMute()}
               aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
               {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
-            <div className="flex flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 backdrop-blur-md">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
                 aria-label="Emoji"
                 onClick={() => setText((t) => t + "😊")}
-                className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
               >
-                <Smile className="h-4 w-4" />
+                <Smile className="h-3.5 w-3.5" />
               </button>
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Say something to the room…"
-                className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
+                placeholder="Say hi…"
+                className="min-w-0 flex-1 bg-transparent text-[12px] text-white placeholder:text-white/40 outline-none"
                 disabled={!user}
               />
               <button
@@ -855,21 +855,21 @@ function RoomPage() {
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
             >
               <Gift className="h-4 w-4" />
             </button>
             <button
               onClick={openLudo}
               aria-label="Games"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
               <Gamepad2 className="h-4 w-4" />
             </button>
             <button
               onClick={() => (isHost ? setSeatsSheetOpen(true) : toast.info("Host only"))}
               aria-label="More"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
               <MoreHorizontal className="h-4 w-4" />
             </button>
