@@ -47,6 +47,8 @@ import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
+import { LevelBadge } from "@/components/LevelBadge";
+import { tierForLevel } from "@/lib/levels";
 
 export const Route = createFileRoute("/room/$roomId")({
   component: RoomPage,
