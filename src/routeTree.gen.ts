@@ -30,6 +30,7 @@ import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
+import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
 
 const SplashRoute = SplashRouteImport.update({
   id: '/splash',
@@ -138,6 +139,12 @@ const AuthenticatedAdminPaymentAccountsRoute =
     path: '/payment-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminIntegrationsRoute =
+  AuthenticatedAdminIntegrationsRouteImport.update({
+    id: '/integrations',
+    path: '/integrations',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -176,6 +184,7 @@ export interface FileRoutesByTo {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -200,6 +209,7 @@ export interface FileRoutesById {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/integrations'
     | '/admin/payment-accounts'
     | '/admin/recharge'
     | '/admin/users'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/integrations'
     | '/admin/payment-accounts'
     | '/admin/recharge'
     | '/admin/users'
@@ -268,6 +280,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/recharge'
     | '/_authenticated/admin/users'
@@ -436,10 +449,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPaymentAccountsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/integrations': {
+      id: '/_authenticated/admin/integrations'
+      path: '/integrations'
+      fullPath: '/admin/integrations'
+      preLoaderRoute: typeof AuthenticatedAdminIntegrationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -447,6 +468,7 @@ interface AuthenticatedAdminRouteChildren {
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
