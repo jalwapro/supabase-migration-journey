@@ -484,7 +484,14 @@ function RoomPage() {
 
   const r = room.data;
   const roomCode = shortRoomCode(r.id);
-  const popularityPct = Math.min(100, Math.round((roomPoints / 200) * 100));
+  const popScore = popularity.coin_score + popularity.like_count;
+  const popularityPct = Math.min(100, Math.round((popScore / 2000) * 100));
+  const popScoreLabel =
+    popScore >= 1_000_000
+      ? `${(popScore / 1_000_000).toFixed(1)}M`
+      : popScore >= 1000
+        ? `${(popScore / 1000).toFixed(1)}K`
+        : String(popScore);
   const giftReceivers: GiftReceiver[] = [
     ...(r.host && r.host_id !== user?.id
       ? [{ id: r.host_id, username: r.host.username, avatar: r.host.avatar }]
