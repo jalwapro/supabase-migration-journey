@@ -925,11 +925,11 @@ function RoomPage() {
               <Gift className="h-4 w-4" />
             </button>
             <button
-              onClick={() => (isHost ? setSeatsSheetOpen(true) : toast.info("Host only"))}
-              aria-label="More"
+              onClick={() => setVideoSettingsOpen(true)}
+              aria-label="Room settings"
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <Settings className="h-4 w-4" />
             </button>
           </div>
         </div>
