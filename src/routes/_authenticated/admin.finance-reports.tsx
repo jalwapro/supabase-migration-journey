@@ -11,12 +11,15 @@ export const Route = createFileRoute("/_authenticated/admin/finance-reports")({
 function useSum(table: string, col: string, filter?: { c: string; v: string }) {
   return useQuery({
     queryKey: ["fin_sum", table, col, filter],
-    queryFn: async () => {
+    queryFn: async (): Promise<number> => {
       let q = supabase.from(table).select(col);
       if (filter) q = q.eq(filter.c, filter.v);
       const { data, error } = await q;
-      if (error) return 0;
-      return (data ?? []).reduce((s: number, r: Record<string, unknown>) => s + Number(r[col] ?? 0), 0);
+      if (error || !data) return 0;
+      return (data as Array<Record<string, unknown>>).reduce(
+        (s, r) => s + Number(r[col] ?? 0),
+        0,
+      );
     },
   });
 }
