@@ -75,7 +75,7 @@ function CreateRoom() {
         host_id: user.id,
         title: autoTitle,
         room_type: type,
-        seat_count: 8,
+        seat_count: seatCount,
         is_locked: locked,
         password: locked ? password || null : null,
         category_id: categoryId,
