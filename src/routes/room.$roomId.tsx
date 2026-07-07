@@ -585,15 +585,35 @@ function RoomPage() {
                 </div>
               );
             }
+            const isMe = !!(user?.id && m.user_id === user.id);
+            const initial = (m.user?.username ?? "U").charAt(0).toUpperCase();
             return (
-              <div
-                key={m.id}
-                className="inline-flex max-w-[85%] items-start gap-2 rounded-2xl bg-black/40 px-2.5 py-1.5 backdrop-blur-sm"
-              >
-                <span className="text-[11px] font-bold text-[color:var(--gold)]">
-                  @{m.user?.username ?? "user"}
-                </span>
-                <span className="break-words text-[12px] text-white/90">{m.text}</span>
+              <div key={m.id} className="flex max-w-[88%] items-start gap-2">
+                {m.user?.avatar ? (
+                  <img
+                    src={m.user.avatar}
+                    alt=""
+                    className="h-6 w-6 shrink-0 rounded-full border border-white/20 object-cover"
+                  />
+                ) : (
+                  <div className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-[10px] font-bold text-white">
+                    {initial}
+                  </div>
+                )}
+                <div
+                  className={`rounded-2xl border px-2.5 py-1.5 backdrop-blur-sm ${
+                    isMe
+                      ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/20"
+                      : "border-white/10 bg-black/50"
+                  }`}
+                >
+                  <div className="text-[10px] font-bold leading-none text-[color:var(--gold)]">
+                    @{m.user?.username ?? "user"}
+                  </div>
+                  <div className="mt-1 break-words text-[12px] leading-snug text-white/95">
+                    {m.text}
+                  </div>
+                </div>
               </div>
             );
           })}
