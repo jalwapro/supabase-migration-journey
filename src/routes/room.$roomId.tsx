@@ -465,7 +465,7 @@ function RoomPage() {
               <span className="truncate text-[12px] font-extrabold">
                 {r.host?.username ?? "Host"}
               </span>
-              {r.is_locked && <Lock className="h-3 w-3 text-[color:var(--gold)]" />}
+              {(r as unknown as { is_locked?: boolean }).is_locked && <Lock className="h-3 w-3 text-[color:var(--gold)]" />}
             </div>
             <div className="flex items-center gap-1 text-[9px] text-white/60">
               <span className="rounded-sm bg-white/10 px-1 font-mono">{roomCode}</span>
