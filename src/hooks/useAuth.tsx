@@ -22,6 +22,7 @@ export type Profile = {
   coins: number;
   diamonds: number;
   level: number;
+  xp: number;
   is_vip: boolean;
   vip_expiry: string | null;
   status: string;
