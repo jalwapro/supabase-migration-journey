@@ -915,3 +915,90 @@ function Seat({
     </button>
   );
 }
+
+function SeatsSheet({
+  open,
+  onClose,
+  value,
+  onChange,
+}: {
+  open: boolean;
+  onClose: () => void;
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  const [n, setN] = useState(value);
+  useEffect(() => {
+    if (open) setN(value);
+  }, [open, value]);
+  if (!open) return null;
+  const presets = [4, 6, 8, 12, 16, 20];
+  const clamp = (x: number) => Math.max(4, Math.min(20, x));
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="flex items-center gap-2">
+          <Settings className="h-4 w-4 text-[color:var(--destructive)]" />
+          <h2 className="text-lg font-extrabold">Room Seats</h2>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Choose how many seats your room has (minimum 4, maximum 20).
+        </p>
+
+        <div className="mt-5 flex items-center justify-center gap-6">
+          <button
+            onClick={() => setN((v) => clamp(v - 1))}
+            disabled={n <= 4}
+            aria-label="Fewer seats"
+            className="grid h-12 w-12 place-items-center rounded-full border border-border bg-background/60 disabled:opacity-30"
+          >
+            <Minus className="h-5 w-5" />
+          </button>
+          <div className="grid h-20 w-20 place-items-center rounded-2xl bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--destructive)] text-3xl font-extrabold text-primary-foreground shadow-lg">
+            {n}
+          </div>
+          <button
+            onClick={() => setN((v) => clamp(v + 1))}
+            disabled={n >= 20}
+            aria-label="More seats"
+            className="grid h-12 w-12 place-items-center rounded-full border border-border bg-background/60 disabled:opacity-30"
+          >
+            <Plus className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          {presets.map((p) => {
+            const active = n === p;
+            return (
+              <button
+                key={p}
+                onClick={() => setN(p)}
+                className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
+                  active
+                    ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--primary)] text-primary-foreground"
+                    : "border border-border bg-background/60 text-foreground/80"
+                }`}
+              >
+                {p} seats
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => onChange(n)}
+          className="mt-5 w-full rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--destructive)] py-3.5 text-base font-extrabold text-primary-foreground"
+        >
+          Done
+        </button>
+      </div>
+    </>
+  );
+}
+
