@@ -600,7 +600,7 @@ function RoomPage() {
         </div>
       )}
 
-      {/* ─── Chat + (video: side panel) ─────────────────────────── */}
+      {/* ─── Chat + right widgets ───────────────────────────────── */}
       <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-3">
         <div className="flex min-h-0 flex-1 gap-2">
           {/* Chat card */}
@@ -638,26 +638,36 @@ function RoomPage() {
             </div>
           </div>
 
-          {/* Video-only right column */}
+          {/* Right widgets column (rocket + event banner) */}
+          <div className="flex w-[34%] shrink-0 flex-col gap-2">
+            <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
+              <div className="text-lg leading-none">🚀</div>
+              <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-white/10">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-orange-400 to-[color:var(--primary)] transition-all"
+                  style={{ width: `${popularityPct}%` }}
+                />
+              </div>
+              <div className="mt-0.5 text-[9px] font-bold text-white/70">{popularityPct}%</div>
+            </div>
+            <button
+              onClick={() => toast.info("Event: Century Wedding")}
+              className="relative flex-1 min-h-[80px] overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-pink-500/30 via-purple-500/25 to-indigo-500/30 p-2 text-left backdrop-blur-md"
+            >
+              <div className="text-[18px]">💒</div>
+              <div className="mt-1 text-[10px] font-black leading-tight text-white">
+                Century Wedding
+              </div>
+              <div className="mt-1 flex gap-1">
+                <span className="h-1 w-2 rounded-full bg-white" />
+                <span className="h-1 w-1 rounded-full bg-white/40" />
+              </div>
+            </button>
+          </div>
+
+          {/* Video-only extra actions */}
           {isVideo && (
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="rounded-2xl border border-white/10 bg-black/40 p-2.5 backdrop-blur-md">
-                <div className="mb-1 flex items-center gap-1">
-                  <Flame className="h-3 w-3 text-orange-400" />
-                  <span className="text-[10px] font-bold text-white/80">Room Popularity</span>
-                </div>
-                <div className="text-[16px] font-black leading-none text-white">
-                  {roomPoints >= 1000
-                    ? `${(roomPoints / 1000).toFixed(1)}K`
-                    : roomPoints}
-                </div>
-                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-orange-400 to-[color:var(--primary)] transition-all"
-                    style={{ width: `${popularityPct}%` }}
-                  />
-                </div>
-              </div>
               <div className="grid grid-cols-3 gap-1.5">
                 <MiniAction
                   icon={agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -697,7 +707,32 @@ function RoomPage() {
             </div>
           )}
         </div>
+
+        {/* Activity feed rows (voice only) */}
+        {!isVideo && latestEnter && (
+          <div className="mt-2 space-y-1.5">
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
+              <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10">
+                <UserIcon className="h-3 w-3 text-white/60" />
+              </div>
+              <span className="truncate text-[10px] font-bold text-[color:var(--gold)]">
+                ✽ {latestEnter.user?.username ?? "Guest"}{" "}
+                <span className="text-white/70">enters the room</span>
+              </span>
+            </div>
+            <button className="flex w-full items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 backdrop-blur">
+              <div className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-white/10">
+                <Trophy className="h-3 w-3 text-[color:var(--gold)]" />
+              </div>
+              <span className="truncate text-[10px] font-bold text-white/80">
+                Completed magic quests to get energy rewards
+              </span>
+              <ChevronRight className="ml-auto h-3 w-3 text-white/50" />
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* ─── Video: quick-gift horizontal strip ─────────────────── */}
       {isVideo && (
