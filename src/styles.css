@@ -162,6 +162,11 @@
   animation: spin-slow 4s linear infinite;
 }
 
+@keyframes shimmer {
+  0%   { transform: translateX(0) skewX(-12deg); }
+  100% { transform: translateX(500%) skewX(-12deg); }
+}
+
 
 /* Mobile-app frame: cap app to phone width on larger screens */
 .app-frame-outer {
