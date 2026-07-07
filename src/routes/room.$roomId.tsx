@@ -119,8 +119,11 @@ function RoomPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
-  const [liked, setLiked] = useState(false);
-  const [roomPoints, setRoomPoints] = useState(0);
+  const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
+    coin_score: 0,
+    like_count: 0,
+    gift_count: 0,
+  });
 
   const room = useQuery({
     queryKey: ["room", roomId],
