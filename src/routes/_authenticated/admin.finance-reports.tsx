@@ -16,7 +16,7 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }) {
       if (filter) q = q.eq(filter.c, filter.v);
       const { data, error } = await q;
       if (error || !data) return 0;
-      return (data as Array<Record<string, unknown>>).reduce(
+      return (data as unknown as Array<Record<string, unknown>>).reduce(
         (s, r) => s + Number(r[col] ?? 0),
         0,
       );
