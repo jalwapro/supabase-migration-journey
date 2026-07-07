@@ -26,6 +26,13 @@ function CreateRoom() {
   const [sheetOpen, setSheetOpen] = useState(true);
   const [seatCount, setSeatCount] = useState<number>(20);
 
+  // Keep seat count valid for the current room type
+  const setRoomType = (t: "voice" | "video") => {
+    setType(t);
+    if (t === "video" && ![1, 2, 4].includes(seatCount)) setSeatCount(1);
+    if (t === "voice" && ![4, 6, 8, 12, 20].includes(seatCount)) setSeatCount(20);
+  };
+
   const cats = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
