@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { Mail, KeyRound, Loader2, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import jalwaLogo from "@/assets/jalwa-logo.png";
+import jalwaLogo from "@/assets/jalwa-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
