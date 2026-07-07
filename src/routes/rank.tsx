@@ -226,7 +226,7 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
       </div>
       <Link
         to="/rank"
-        className="rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-md active:scale-95 transition"
+        className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-4 py-1.5 text-xs font-bold text-primary-foreground"
       >
         View
       </Link>

@@ -250,7 +250,7 @@ function Home() {
               {!user && (
                 <Link
                   to="/auth"
-                  className="rounded-full bg-primary px-3 py-1.5 text-[11px] font-semibold text-primary-foreground"
+                  className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-1.5 text-[11px] font-semibold text-primary-foreground"
                 >
                   Sign in
                 </Link>
@@ -579,7 +579,7 @@ function EmptyRooms({ tab }: { tab: TabKey }) {
       </p>
       <Link
         to="/create-room"
-        className="mt-4 inline-flex rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-5 py-2 text-xs font-bold text-primary-foreground"
+        className="glow-4d mt-4 inline-flex rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-5 py-2 text-xs font-bold text-primary-foreground"
       >
         Go Live
       </Link>
