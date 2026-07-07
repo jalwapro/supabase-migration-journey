@@ -29,7 +29,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="PK History" showBack>
+      <AppShell title="PK History">
         <div className="space-y-3 px-4 pt-4">
           <div className="grid grid-cols-3 gap-2">
             <Stat label="Wins" value={wins} color="text-green-400" />

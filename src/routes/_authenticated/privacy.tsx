@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_authenticated/privacy")({ component: Pag
 function Page() {
   return (
     <>
-      <AppShell title="Privacy Policy" showBack>
+      <AppShell title="Privacy Policy">
         <div className="space-y-4 px-4 pt-4 pb-6 text-sm leading-relaxed text-muted-foreground">
           <Section title="1. Information We Collect">
             We collect your email, username, profile info, chat/room activity, and payment data required to

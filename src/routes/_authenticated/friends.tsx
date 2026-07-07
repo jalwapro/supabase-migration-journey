@@ -56,7 +56,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Friends" showBack>
+      <AppShell title="Friends">
         <div className="px-4 pt-4">
           <div className="mb-3 grid grid-cols-2 gap-1 rounded-2xl bg-card/60 p-1">
             {(["following", "followers"] as Tab[]).map((t) => (

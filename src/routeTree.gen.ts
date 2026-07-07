@@ -20,11 +20,21 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages.$peerId'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
+import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
+import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
+import { Route as AuthenticatedPrivacyRouteImport } from './routes/_authenticated/privacy'
+import { Route as AuthenticatedPkHistoryRouteImport } from './routes/_authenticated/pk-history'
+import { Route as AuthenticatedMyRoomsRouteImport } from './routes/_authenticated/my-rooms'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
+import { Route as AuthenticatedGalleryRouteImport } from './routes/_authenticated/gallery'
+import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
+import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
@@ -111,14 +121,49 @@ const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
   path: '/api/agora-token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
+  id: '/withdraw',
+  path: '/withdraw',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVipRoute = AuthenticatedVipRouteImport.update({
+  id: '/vip',
+  path: '/vip',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedThemeShopRoute = AuthenticatedThemeShopRouteImport.update({
+  id: '/theme-shop',
+  path: '/theme-shop',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRechargeRoute = AuthenticatedRechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPrivacyRoute = AuthenticatedPrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPkHistoryRoute = AuthenticatedPkHistoryRouteImport.update({
+  id: '/pk-history',
+  path: '/pk-history',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMyRoomsRoute = AuthenticatedMyRoomsRouteImport.update({
+  id: '/my-rooms',
+  path: '/my-rooms',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
@@ -131,9 +176,24 @@ const AuthenticatedGamesRoute = AuthenticatedGamesRouteImport.update({
   path: '/games',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGalleryRoute = AuthenticatedGalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
+  id: '/friends',
+  path: '/friends',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
+  id: '/blocked',
+  path: '/blocked',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -319,11 +379,21 @@ export interface FileRoutesByFullPath {
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
+  '/friends': typeof AuthenticatedFriendsRoute
+  '/gallery': typeof AuthenticatedGalleryRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
+  '/my-rooms': typeof AuthenticatedMyRoomsRoute
+  '/pk-history': typeof AuthenticatedPkHistoryRoute
+  '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/theme-shop': typeof AuthenticatedThemeShopRoute
+  '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -366,11 +436,21 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
+  '/friends': typeof AuthenticatedFriendsRoute
+  '/gallery': typeof AuthenticatedGalleryRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
+  '/my-rooms': typeof AuthenticatedMyRoomsRoute
+  '/pk-history': typeof AuthenticatedPkHistoryRoute
+  '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
+  '/settings': typeof AuthenticatedSettingsRoute
+  '/theme-shop': typeof AuthenticatedThemeShopRoute
+  '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -416,11 +496,21 @@ export interface FileRoutesById {
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
+  '/_authenticated/friends': typeof AuthenticatedFriendsRoute
+  '/_authenticated/gallery': typeof AuthenticatedGalleryRoute
   '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
   '/_authenticated/me': typeof AuthenticatedMeRoute
+  '/_authenticated/my-rooms': typeof AuthenticatedMyRoomsRoute
+  '/_authenticated/pk-history': typeof AuthenticatedPkHistoryRoute
+  '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
+  '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
+  '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -466,11 +556,21 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/splash'
     | '/admin'
+    | '/blocked'
     | '/create-room'
+    | '/friends'
+    | '/gallery'
     | '/games'
     | '/me'
+    | '/my-rooms'
+    | '/pk-history'
+    | '/privacy'
     | '/recharge'
+    | '/settings'
+    | '/theme-shop'
+    | '/vip'
     | '/wallet'
+    | '/withdraw'
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
@@ -513,11 +613,21 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/blocked'
     | '/create-room'
+    | '/friends'
+    | '/gallery'
     | '/games'
     | '/me'
+    | '/my-rooms'
+    | '/pk-history'
+    | '/privacy'
     | '/recharge'
+    | '/settings'
+    | '/theme-shop'
+    | '/vip'
     | '/wallet'
+    | '/withdraw'
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
@@ -562,11 +672,21 @@ export interface FileRouteTypes {
     | '/rooms'
     | '/splash'
     | '/_authenticated/admin'
+    | '/_authenticated/blocked'
     | '/_authenticated/create-room'
+    | '/_authenticated/friends'
+    | '/_authenticated/gallery'
     | '/_authenticated/games'
     | '/_authenticated/me'
+    | '/_authenticated/my-rooms'
+    | '/_authenticated/pk-history'
+    | '/_authenticated/privacy'
     | '/_authenticated/recharge'
+    | '/_authenticated/settings'
+    | '/_authenticated/theme-shop'
+    | '/_authenticated/vip'
     | '/_authenticated/wallet'
+    | '/_authenticated/withdraw'
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
@@ -694,6 +814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAgoraTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/withdraw': {
+      id: '/_authenticated/withdraw'
+      path: '/withdraw'
+      fullPath: '/withdraw'
+      preLoaderRoute: typeof AuthenticatedWithdrawRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/wallet': {
       id: '/_authenticated/wallet'
       path: '/wallet'
@@ -701,11 +828,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWalletRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vip': {
+      id: '/_authenticated/vip'
+      path: '/vip'
+      fullPath: '/vip'
+      preLoaderRoute: typeof AuthenticatedVipRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/theme-shop': {
+      id: '/_authenticated/theme-shop'
+      path: '/theme-shop'
+      fullPath: '/theme-shop'
+      preLoaderRoute: typeof AuthenticatedThemeShopRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/recharge': {
       id: '/_authenticated/recharge'
       path: '/recharge'
       fullPath: '/recharge'
       preLoaderRoute: typeof AuthenticatedRechargeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/privacy': {
+      id: '/_authenticated/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof AuthenticatedPrivacyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pk-history': {
+      id: '/_authenticated/pk-history'
+      path: '/pk-history'
+      fullPath: '/pk-history'
+      preLoaderRoute: typeof AuthenticatedPkHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/my-rooms': {
+      id: '/_authenticated/my-rooms'
+      path: '/my-rooms'
+      fullPath: '/my-rooms'
+      preLoaderRoute: typeof AuthenticatedMyRoomsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/me': {
@@ -722,11 +891,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gallery': {
+      id: '/_authenticated/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof AuthenticatedGalleryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/friends': {
+      id: '/_authenticated/friends'
+      path: '/friends'
+      fullPath: '/friends'
+      preLoaderRoute: typeof AuthenticatedFriendsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create-room': {
       id: '/_authenticated/create-room'
       path: '/create-room'
       fullPath: '/create-room'
       preLoaderRoute: typeof AuthenticatedCreateRoomRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/blocked': {
+      id: '/_authenticated/blocked'
+      path: '/blocked'
+      fullPath: '/blocked'
+      preLoaderRoute: typeof AuthenticatedBlockedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/admin': {
@@ -1032,20 +1222,40 @@ const AuthenticatedGamesRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
+  AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
+  AuthenticatedGalleryRoute: typeof AuthenticatedGalleryRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRouteWithChildren
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
+  AuthenticatedMyRoomsRoute: typeof AuthenticatedMyRoomsRoute
+  AuthenticatedPkHistoryRoute: typeof AuthenticatedPkHistoryRoute
+  AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
+  AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
+  AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
+  AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
+  AuthenticatedGalleryRoute: AuthenticatedGalleryRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRouteWithChildren,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
+  AuthenticatedMyRoomsRoute: AuthenticatedMyRoomsRoute,
+  AuthenticatedPkHistoryRoute: AuthenticatedPkHistoryRoute,
+  AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
+  AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
+  AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

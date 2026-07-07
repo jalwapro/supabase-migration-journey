@@ -40,7 +40,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Blocked Users" showBack>
+      <AppShell title="Blocked Users">
         <div className="space-y-2 px-4 pt-4">
           {(list ?? []).map((p: any) => (
             <div key={p.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-3">

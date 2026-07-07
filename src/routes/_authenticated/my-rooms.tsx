@@ -25,7 +25,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="My Rooms" showBack>
+      <AppShell title="My Rooms">
         <div className="space-y-2 px-4 pt-4">
           {(rooms ?? []).map((r) => {
             const active = r.status === "live";

@@ -52,7 +52,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Settings" showBack>
+      <AppShell title="Settings">
         <div className="space-y-4 px-4 pt-4">
           <div className="space-y-3 rounded-2xl border border-border bg-card/60 p-4">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Profile</p>

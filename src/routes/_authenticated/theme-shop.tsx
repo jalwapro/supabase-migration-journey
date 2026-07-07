@@ -49,7 +49,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Theme Shop" showBack>
+      <AppShell title="Theme Shop">
         <div className="grid grid-cols-2 gap-3 px-4 pt-4">
           {(data?.themes ?? []).map((t: any) => {
             const isOwned = data?.owned.has(t.id) ?? false;

@@ -49,7 +49,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Gallery" showBack>
+      <AppShell title="Gallery">
         <div className="space-y-4 px-4 pt-4">
           <div className="glass rounded-2xl p-3">
             <p className="mb-2 text-xs text-muted-foreground">Paste an image URL to add to your gallery</p>

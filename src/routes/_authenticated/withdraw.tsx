@@ -56,7 +56,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Withdraw Diamonds" showBack>
+      <AppShell title="Withdraw Diamonds">
         <div className="space-y-4 px-4 pt-4">
           <div className="glass rounded-3xl p-4 text-center">
             <p className="text-xs text-muted-foreground">Available balance</p>

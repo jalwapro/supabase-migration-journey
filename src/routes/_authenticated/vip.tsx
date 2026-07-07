@@ -37,7 +37,7 @@ function Page() {
 
   return (
     <>
-      <AppShell title="VIP Membership" showBack>
+      <AppShell title="VIP Membership">
         <div className="space-y-4 px-4 pt-4">
           <div className="glass rounded-3xl p-5 text-center">
             <Crown className="mx-auto h-10 w-10 text-[color:var(--gold)]" />
