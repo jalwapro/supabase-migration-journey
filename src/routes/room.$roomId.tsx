@@ -915,11 +915,26 @@ function VideoStage({
   );
 }
 
-function StageBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
+function StageBtn({
+  icon,
+  label,
+  onClick,
+  active,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void | Promise<void>;
+  active?: boolean;
+}) {
   return (
     <button
       aria-label={label}
-      className="grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-black/50 text-white backdrop-blur"
+      onClick={onClick ? () => void onClick() : undefined}
+      className={`grid h-7 w-7 place-items-center rounded-full border backdrop-blur ${
+        active
+          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white"
+          : "border-white/20 bg-black/50 text-white"
+      }`}
     >
       {icon}
     </button>
