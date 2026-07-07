@@ -719,33 +719,7 @@ function RoomPage() {
       </div>
 
 
-      {/* ─── Quick-gift horizontal strip ─────────────────── */}
-      {(isVideo || !isVideo) && (
-        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
-          <div className="flex gap-1.5 overflow-x-auto rounded-2xl border border-violet-300/30 bg-black/35 p-2 backdrop-blur-md scrollbar-hide">
-            {QUICK_GIFTS.map((g) => (
-              <button
-                key={g.name}
-                onClick={() => void sendQuickGift(g)}
-                className="flex shrink-0 flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 hover:bg-white/5"
-              >
-                <span className="text-lg leading-none">{g.icon}</span>
-                <span className="text-[9px] font-bold text-white/80">{g.name}</span>
-                <span className="text-[8px] font-bold text-[color:var(--gold)]">
-                  ⓢ {g.price}
-                </span>
-              </button>
-            ))}
-            <button
-              onClick={() => setGiftOpen(true)}
-              className="flex shrink-0 flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5"
-            >
-              <MoreHorizontal className="h-5 w-5 text-white/80" />
-              <span className="text-[9px] font-bold text-white/80">More</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Quick-gift strip removed — use footer Gift button */}
 
       {/* ─── Composer + footer dock ─────────────────────────────── */}
       {isVideo ? (
