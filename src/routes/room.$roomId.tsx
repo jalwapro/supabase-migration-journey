@@ -927,14 +927,14 @@ function MiniAction({
   return (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center gap-0.5 rounded-xl border py-2 backdrop-blur transition ${
+      className={`flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-xl border py-2 backdrop-blur transition ${
         active
-          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-white"
-          : "border-white/10 bg-white/5 text-white/85"
+          ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-emerald-300"
+          : "border-violet-300/25 bg-black/30 text-white/88"
       }`}
     >
       {icon}
-      <span className="text-[9px] font-bold">{label}</span>
+      <span className="text-[11px] font-medium">{label}</span>
     </button>
   );
 }
@@ -987,6 +987,74 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
         </span>
       </div>
     </div>
+  );
+}
+
+function DefaultVoiceMessages() {
+  return (
+    <div className="space-y-1.5 text-[11px] leading-snug text-white/88">
+      <p>
+        🧡 <span className="font-bold text-violet-300">Room</span> : Welcome to the room. Please
+        follow the community guidelines.
+      </p>
+      <p>
+        💙 <span className="font-bold text-sky-300">System</span> : Respect each other and enjoy
+        your time here.
+      </p>
+      <p>
+        👩 <span className="font-bold text-violet-200">Sunny💗</span> : Hello everyone 👋
+      </p>
+      <p>
+        🏆 <span className="font-bold text-[color:var(--gold)]">Queen👑</span> : Hi Sunny 💞
+      </p>
+      <p>
+        🎁 <span className="font-bold text-[color:var(--primary)]">Ali King</span> :{" "}
+        <span className="font-bold text-[color:var(--gold)]">sent Rose 🌹 x10</span>
+      </p>
+      <p>
+        👥 <span className="font-bold text-emerald-300">Sara</span> : joined the room
+      </p>
+    </div>
+  );
+}
+
+function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
+  return (
+    <div className="flex items-center gap-2 rounded-2xl border border-[color:var(--primary)]/60 bg-black/35 px-3 py-2 shadow-[inset_0_0_20px_rgba(255,255,255,0.04)] backdrop-blur-md">
+      <span className="text-lg leading-none">📣</span>
+      <div className="min-w-0 flex-1 truncate text-[13px] font-semibold text-white/90">
+        <span className="font-black tracking-wide">ALI KING✤</span>{" "}
+        <span>enters the room</span>
+        {latestEnter?.user?.username ? (
+          <span className="text-[color:var(--gold)]"> · @{latestEnter.user.username}</span>
+        ) : null}
+      </div>
+      <ChevronRight className="h-5 w-5 shrink-0 text-white/85" />
+    </div>
+  );
+}
+
+function BottomRoomTab({
+  icon,
+  label,
+  onClick,
+  active,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onClick: () => void;
+  active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center gap-1 text-[12px] font-medium ${
+        active ? "text-[color:var(--secondary)]" : "text-white/85"
+      }`}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }
 
