@@ -993,24 +993,40 @@ function Seat({
           />
         )}
 
-        {/* Seat number */}
-        <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
-          {label}
-        </span>
+        {/* Seat number (hidden for host — crown badge instead) */}
+        {!isHostSeat && (
+          <span className="absolute left-0 top-0 rounded-md bg-black/60 px-1.5 py-0.5 text-[9px] font-extrabold">
+            {label}
+          </span>
+        )}
+
+        {/* Host crown */}
+        {isHostSeat && (
+          <>
+            <Crown className="absolute -top-1 left-1/2 h-4 w-4 -translate-x-1/2 fill-[color:var(--gold)] text-[color:var(--gold)] drop-shadow" />
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded bg-[color:var(--gold)] px-1.5 py-0.5 text-[8px] font-black uppercase tracking-tighter text-black shadow-lg">
+              Host
+            </span>
+          </>
+        )}
 
         {/* Mic status */}
-        <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full bg-black/70">
-          {member?.is_muted ? (
-            <MicOff className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
-          ) : (
-            <Mic className="h-2.5 w-2.5 text-[color:var(--primary)]" />
-          )}
-        </span>
+        {(member || isHostSeat) && (
+          <span className="absolute bottom-0 right-0 grid h-5 w-5 place-items-center rounded-full bg-black/70">
+            {member?.is_muted ? (
+              <MicOff className="h-2.5 w-2.5 text-[color:var(--destructive)]" />
+            ) : (
+              <Mic className="h-2.5 w-2.5 text-[color:var(--primary)]" />
+            )}
+          </span>
+        )}
       </div>
 
       {/* Username under the DP */}
-      <span className="max-w-full truncate text-[10px] font-bold text-foreground/90">
-        {member?.user?.username ? `@${member.user.username}` : "Seat"}
+      <span
+        className={`max-w-full truncate text-[10px] font-bold ${isHostSeat ? "text-[color:var(--gold)]" : "text-foreground/90"}`}
+      >
+        {displayName ? `@${displayName}` : isHostSeat ? "Host" : "Seat"}
       </span>
     </button>
   );
