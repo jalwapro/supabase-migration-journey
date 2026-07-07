@@ -165,7 +165,7 @@ function RoomPage() {
         supabase
           .from("room_messages")
           .select(
-            "id,user_id,kind,text,created_at,user:profiles!room_messages_user_id_fkey(username,avatar)",
+            "id,user_id,kind,text,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
           )
           .eq("room_id", roomId)
           .order("created_at", { ascending: false })
