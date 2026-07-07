@@ -491,8 +491,37 @@ function RoomPage() {
       </div>
 
       <main className="mx-auto max-w-md px-3">
+        {/* Seats header with host controls */}
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-[11px] font-bold text-muted-foreground">
+            Seats <span className="text-foreground">{seatedCount}/{r.seat_count}</span>
+          </div>
+          {isHost && (
+            <div className="flex items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-1 py-0.5">
+              <button
+                onClick={() => changeSeatCount(-1)}
+                disabled={r.seat_count <= 4}
+                aria-label="Fewer seats"
+                className="grid h-6 w-6 place-items-center rounded-full bg-background/60 disabled:opacity-30"
+              >
+                <Minus className="h-3 w-3" />
+              </button>
+              <span className="min-w-6 text-center text-[11px] font-extrabold">{r.seat_count}</span>
+              <button
+                onClick={() => changeSeatCount(1)}
+                disabled={r.seat_count >= 20}
+                aria-label="More seats"
+                className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground disabled:opacity-30"
+              >
+                <Plus className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Seat grid */}
         <div className="grid grid-cols-5 gap-2">
+
           {Array.from({ length: r.seat_count }).map((_, i) => {
             const m = seatsByIndex.get(i);
             const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
