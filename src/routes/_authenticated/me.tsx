@@ -349,7 +349,7 @@ function FrameCollectionSheet({
                     : "border-white/10 bg-white/5"
                 }`}
               >
-                <LevelAvatar level={t.minLevel} size="md" showBadge={false} />
+                <LevelBadge level={t.minLevel} size="md" showLabel={false} />
                 <div>
                   <p className="text-[11px] font-black">{t.label}</p>
                   <p className="text-[10px] text-white/60">
