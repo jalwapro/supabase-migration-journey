@@ -1040,6 +1040,40 @@ function RoomPage() {
           }}
         />
       )}
+      {isVideo && (
+        <VideoSettingsSheet
+          open={videoSettingsOpen}
+          onClose={() => setVideoSettingsOpen(false)}
+          isHost={isHost}
+          fx={videoFx}
+          onFxChange={(k, v) => setVideoFx((s) => ({ ...s, [k]: v }))}
+          videoOn={agora.videoOn}
+          onToggleVideo={() => void agora.toggleVideo()}
+          muted={agora.muted}
+          onToggleMute={() => void agora.toggleMute()}
+          onOpenSeats={() => {
+            setVideoSettingsOpen(false);
+            setSeatsSheetOpen(true);
+          }}
+          onOpenMusic={() => {
+            setVideoSettingsOpen(false);
+            setMusicOpen(true);
+          }}
+          onOpenGames={() => {
+            setVideoSettingsOpen(false);
+            openLudo();
+          }}
+          onShare={() => {
+            setVideoSettingsOpen(false);
+            void share();
+          }}
+          onEndLive={() => {
+            setVideoSettingsOpen(false);
+            void leaveRoom();
+          }}
+          onPk={() => toast.info("PK Battle — coming soon")}
+        />
+      )}
     </div>
   );
 }
