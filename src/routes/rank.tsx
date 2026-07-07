@@ -205,7 +205,7 @@ function Podium({ top3 }: { top3: Entry[] }) {
 function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
   return (
     <li className="glass flex items-center gap-3 rounded-2xl p-3">
-      <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+      <div className="w-6 shrink-0 text-center text-sm font-bold text-muted-foreground">
         {rank}
       </div>
       <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-card ring-1 ring-border">
@@ -218,16 +218,18 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">@{entry.username ?? "user"}</p>
+        <p className="truncate text-sm font-semibold">{entry.username ?? "user"}</p>
         <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-          <Flame className="h-3 w-3 text-[color:var(--primary)]" />
-          Rising star
+          <Heart className="h-3 w-3 text-[color:var(--primary)]" />
+          {(entry.coins ?? 0).toLocaleString()} points
         </div>
       </div>
-      <div className="flex items-center gap-1 rounded-full bg-[color:var(--gold)]/10 px-2.5 py-1 text-xs font-bold text-[color:var(--gold)]">
-        <Coins className="h-3 w-3" />
-        {(entry.coins ?? 0).toLocaleString()}
-      </div>
+      <Link
+        to="/rank"
+        className="rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-4 py-1.5 text-xs font-bold text-primary-foreground shadow-md active:scale-95 transition"
+      >
+        View
+      </Link>
     </li>
   );
 }
