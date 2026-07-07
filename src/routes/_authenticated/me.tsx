@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { LevelBadge } from "@/components/LevelBadge";
 import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 
 export const Route = createFileRoute("/_authenticated/me")({
