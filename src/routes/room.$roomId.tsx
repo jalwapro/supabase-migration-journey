@@ -75,8 +75,9 @@ type Message = {
   kind: string;
   text: string | null;
   created_at: string;
-  user: { username: string | null; avatar: string | null } | null;
+  user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
+
 
 function uidFromUuid(uuid: string): number {
   let h = 0;
