@@ -1060,9 +1060,8 @@ function Seat({
             </span>
             <span className="absolute -bottom-2 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1 rounded-full border border-[color:var(--gold)]/50 bg-black/80 px-2 py-0.5 backdrop-blur-sm">
               <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--gold)]" />
-              <span className="text-[9px] font-black text-[color:var(--gold)]">
-                {(45200 + Math.floor(Math.random() * 0)).toLocaleString()}
-              </span>
+              <span className="text-[9px] font-black text-[color:var(--gold)]">LIVE</span>
+
             </span>
           </>
         )}
