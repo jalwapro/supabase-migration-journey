@@ -26,6 +26,13 @@ function CreateRoom() {
   const [sheetOpen, setSheetOpen] = useState(true);
   const [seatCount, setSeatCount] = useState<number>(20);
 
+  // Keep seat count valid for the current room type
+  const setRoomType = (t: "voice" | "video") => {
+    setType(t);
+    if (t === "video" && ![1, 2, 4].includes(seatCount)) setSeatCount(1);
+    if (t === "voice" && ![4, 6, 8, 12, 20].includes(seatCount)) setSeatCount(20);
+  };
+
   const cats = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
@@ -122,7 +129,7 @@ function CreateRoom() {
         <div className="mt-5 grid grid-cols-2 gap-3 px-4">
           <button
             onClick={() => {
-              setType("voice");
+              setRoomType("voice");
               setSheetOpen(true);
             }}
             className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
@@ -143,7 +150,7 @@ function CreateRoom() {
           </button>
           <button
             onClick={() => {
-              setType("video");
+              setRoomType("video");
               setSheetOpen(true);
             }}
             className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
@@ -222,7 +229,7 @@ function CreateRoom() {
                 return (
                   <button
                     key={t}
-                    onClick={() => setType(t)}
+                    onClick={() => setRoomType(t)}
                     className={`flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold capitalize transition ${
                       active
                         ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
@@ -261,7 +268,20 @@ function CreateRoom() {
                 Seats
               </label>
               <div className="flex gap-2">
-                {[4, 6, 8, 12, 20].map((n) => {
+                {(type === "video"
+                  ? ([
+                      { n: 1, label: "Solo" },
+                      { n: 2, label: "1 / 1" },
+                      { n: 4, label: "2 / 2" },
+                    ] as const)
+                  : ([
+                      { n: 4, label: "4" },
+                      { n: 6, label: "6" },
+                      { n: 8, label: "8" },
+                      { n: 12, label: "12" },
+                      { n: 20, label: "20" },
+                    ] as const)
+                ).map(({ n, label }) => {
                   const active = seatCount === n;
                   return (
                     <button
@@ -273,7 +293,7 @@ function CreateRoom() {
                           : "border border-border bg-background/60"
                       }`}
                     >
-                      {n}
+                      {label}
                     </button>
                   );
                 })}
