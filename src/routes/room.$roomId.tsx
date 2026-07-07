@@ -596,11 +596,16 @@ function RoomPage() {
 
         {/* Rank + members row */}
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <button className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur">
+          <Link
+            to="/rank"
+            className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur"
+          >
             <span className="text-lg leading-none">🏆</span>
-            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">No ranking yet</span>
+            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">
+              {popScore > 0 ? `${popScoreLabel} pts` : "Unranked"}
+            </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
-          </button>
+          </Link>
           <div className="flex items-center gap-1.5">
             {!isHost && (
               <button
