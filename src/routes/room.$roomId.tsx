@@ -905,6 +905,7 @@ function Seat({
   remote,
   isHostSeat,
   cover,
+  fallbackUser,
   onClaim,
 }: {
   index: number;
@@ -912,6 +913,7 @@ function Seat({
   remote?: RemoteUser;
   isHostSeat: boolean;
   cover: string | null;
+  fallbackUser?: { username: string | null; avatar: string | null } | null;
   onClaim: () => void;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
@@ -929,44 +931,58 @@ function Seat({
   const speaking = remote?.hasAudio && !member?.is_muted;
 
   const frameUrl = (member?.user as { frame_url?: string | null } | null)?.frame_url ?? null;
+  const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
+  const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
+
+  const ringClass = isHostSeat
+    ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+    : speaking
+      ? "ring-2 ring-[color:var(--primary)]"
+      : "ring-1 ring-white/10";
 
   return (
     <button
       onClick={() => (member ? undefined : onClaim())}
-      className="relative flex flex-col items-center gap-1"
+      className="relative flex flex-col items-center gap-1.5"
       aria-label={member ? `Seat ${label}` : `Take seat ${label}`}
     >
       <div className="relative aspect-square w-full">
+        {/* Host gold aura */}
+        {isHostSeat && (
+          <div className="pointer-events-none absolute inset-[4%] rounded-full bg-gradient-to-tr from-[color:var(--gold)] via-amber-200 to-[color:var(--gold)] opacity-40 blur-md" />
+        )}
+
         {/* Round DP */}
         <div
-          className={`absolute inset-[10%] overflow-hidden rounded-full border border-border/40 bg-card/40 ${
-            speaking ? "ring-2 ring-[color:var(--primary)]" : ""
-          }`}
+          className={`absolute inset-[10%] overflow-hidden rounded-full bg-card/40 ${ringClass}`}
         >
-          {isHostSeat && !member && cover && (
+          {isHostSeat && !displayAvatar && cover && (
             <img
               src={cover}
               alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-60"
             />
           )}
-          {member?.user?.avatar && !remote?.videoTrack && (
+          {displayAvatar && !remote?.videoTrack && (
             <img
-              src={member.user.avatar}
+              src={displayAvatar}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
           {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
-          {isHostSeat && member && cover && !member.user?.avatar && (
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          )}
-          {!member && !isHostSeat && (
+          {!displayAvatar && !isHostSeat && (
             <div className="absolute inset-0 grid place-items-center">
               <UserIcon className="h-1/3 w-1/3 text-muted-foreground/40" />
             </div>
           )}
+          {!displayAvatar && isHostSeat && !cover && (
+            <div className="absolute inset-0 grid place-items-center">
+              <UserIcon className="h-1/3 w-1/3 text-[color:var(--gold)]/60" />
+            </div>
+          )}
         </div>
+
 
         {/* Frame overlay — sits on top of the round DP, doesn't clip it */}
         {frameUrl && (
