@@ -762,7 +762,7 @@ function RoomPage() {
               <Gamepad2 className="h-4 w-4" />
             </button>
             <button
-              onClick={() => toast.info("More actions soon")}
+              onClick={() => (isHost ? setSeatsSheetOpen(true) : toast.info("Host only"))}
               aria-label="More"
               className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
