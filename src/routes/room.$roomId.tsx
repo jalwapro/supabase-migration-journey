@@ -23,6 +23,8 @@ import {
   Music,
   Flame,
   Sparkles,
+  Plus,
+  Minus,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
