@@ -731,6 +731,37 @@ function RoomPage() {
         isHost={isHost}
       />
       <HostMusicPlayer open={musicOpen && isHost} onClose={() => setMusicOpen(false)} />
+      {isHost && (
+        <SeatsSheet
+          open={seatsSheetOpen}
+          onClose={() => setSeatsSheetOpen(false)}
+          value={r.seat_count}
+          onChange={async (next) => {
+            const delta = next - r.seat_count;
+            if (delta !== 0) {
+              // shrink: clear members on removed seats
+              if (next < r.seat_count) {
+                await supabase
+                  .from("room_members")
+                  .update({ seat_index: null })
+                  .eq("room_id", roomId)
+                  .gte("seat_index", next);
+              }
+              const { error } = await supabase
+                .from("live_rooms")
+                .update({ seat_count: next })
+                .eq("id", roomId);
+              if (error) {
+                toast.error(error.message);
+                return;
+              }
+              room.refetch();
+            }
+            setSeatsSheetOpen(false);
+          }}
+        />
+      )}
+
     </div>
   );
 }
