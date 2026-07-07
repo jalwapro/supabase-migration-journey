@@ -28,6 +28,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 
 const SplashRoute = SplashRouteImport.update({
   id: '/splash',
@@ -124,6 +125,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminRechargeRoute =
+  AuthenticatedAdminRechargeRouteImport.update({
+    id: '/recharge',
+    path: '/recharge',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -141,6 +148,7 @@ export interface FileRoutesByFullPath {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -182,6 +191,7 @@ export interface FileRoutesById {
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
+  '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -204,6 +214,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/recharge'
     | '/admin/users'
     | '/games/lucky-spin'
     | '/admin/'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/admin/recharge'
     | '/admin/users'
     | '/games/lucky-spin'
     | '/admin'
@@ -244,6 +256,7 @@ export interface FileRouteTypes {
     | '/api/agora-token'
     | '/messages/$peerId'
     | '/room/$roomId'
+    | '/_authenticated/admin/recharge'
     | '/_authenticated/admin/users'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/admin/'
@@ -396,15 +409,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/recharge': {
+      id: '/_authenticated/admin/recharge'
+      path: '/recharge'
+      fullPath: '/admin/recharge'
+      preLoaderRoute: typeof AuthenticatedAdminRechargeRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
