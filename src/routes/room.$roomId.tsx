@@ -25,7 +25,12 @@ import {
   Sparkles,
   Plus,
   Minus,
+  Crown,
+  ChevronRight,
+  UserPlus,
+  Lock,
 } from "lucide-react";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
