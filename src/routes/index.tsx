@@ -262,11 +262,6 @@ function Home() {
                   <img src={jalwaLogo} alt="Jalwa" className="h-full w-full object-cover" />
                 )}
               </span>
-              {profile?.vip_level ? (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--gold)] px-1 text-[8px] font-black text-black shadow">
-                  VIP{profile.vip_level}
-                </span>
-              ) : null}
             </Link>
 
             <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-inner backdrop-blur transition focus-within:border-[color:var(--primary)]/60 focus-within:bg-white/10">
