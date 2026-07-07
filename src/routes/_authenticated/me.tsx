@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { Shield, LogOut, Settings, Crown, Gift, Trophy, ChevronRight, Copy } from "lucide-react";
+import { Shield, LogOut, Settings, Crown, Gift, Trophy, ChevronRight, Copy, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/me")({
@@ -57,6 +57,7 @@ function MePage() {
             </div>
           </div>
 
+          <MenuItem to="/messages" Icon={MessageCircle} label="Messages & Friends" />
           <MenuItem to="/wallet" Icon={Gift} label="Wallet & Recharge" />
           <MenuItem to="/rooms" Icon={Trophy} label="Live Rooms" />
           {isAdmin && (
