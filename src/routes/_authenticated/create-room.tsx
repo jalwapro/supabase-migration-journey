@@ -129,7 +129,7 @@ function CreateRoom() {
         <div className="mt-5 grid grid-cols-2 gap-3 px-4">
           <button
             onClick={() => {
-              setType("voice");
+              setRoomType("voice");
               setSheetOpen(true);
             }}
             className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
@@ -150,7 +150,7 @@ function CreateRoom() {
           </button>
           <button
             onClick={() => {
-              setType("video");
+              setRoomType("video");
               setSheetOpen(true);
             }}
             className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
@@ -229,7 +229,7 @@ function CreateRoom() {
                 return (
                   <button
                     key={t}
-                    onClick={() => setType(t)}
+                    onClick={() => setRoomType(t)}
                     className={`flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold capitalize transition ${
                       active
                         ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
