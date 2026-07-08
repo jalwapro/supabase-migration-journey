@@ -72,13 +72,11 @@ const TABS: { key: TabKey; label: string; Icon: typeof Video }[] = [
   { key: "pk", label: "PK Battle", Icon: Swords },
 ];
 
-const QUICK_ACTIONS = [
-  { to: "/create-room" as const, label: "Go Live", Icon: Rocket, tint: "from-[color:var(--primary)] to-[color:var(--secondary)]" },
-  { to: "/pk" as const, label: "PK Battle", Icon: Swords, tint: "from-[color:var(--gold)] to-[color:var(--primary)]" },
-  { to: "/rankings" as const, label: "Ranking", Icon: Trophy, tint: "from-amber-400 to-orange-500" },
-  { to: "/theme-shop" as const, label: "Shop", Icon: Palette, tint: "from-fuchsia-500 to-violet-500" },
-  { to: "/gifts" as const, label: "Gifts", Icon: Gift, tint: "from-rose-500 to-pink-500" },
-  { to: "/vip" as const, label: "VIP", Icon: Crown, tint: "from-yellow-400 to-amber-500" },
+const DEFAULT_BANNERS: Banner[] = [
+  { id: "d1", title: "Go Live & Shine Bright", image_url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=70&auto=format&fit=crop", link_url: "/create-room" },
+  { id: "d2", title: "PK Battles — Win Big", image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200&q=70&auto=format&fit=crop", link_url: "/pk" },
+  { id: "d3", title: "Weekly Rankings", image_url: "https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&q=70&auto=format&fit=crop", link_url: "/rankings" },
+  { id: "d4", title: "New Themes in Shop", image_url: "https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=1200&q=70&auto=format&fit=crop", link_url: "/theme-shop" },
 ];
 
 function Home() {
