@@ -89,7 +89,7 @@ function ThemeBackgroundInner({
   gradient: string | undefined;
   fallbackImage: string | null;
 }) {
-  const { rx, ry, active } = useDeviceTilt(22);
+  const { rx, ry } = useDeviceTilt(18);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -111,8 +111,8 @@ function ThemeBackgroundInner({
   const renderMedia = (isDepth = false) => {
     if (!media) return null;
     
-    // For depth layer of a video, use the fallback image to save performance and prevent sync flicker
-    if (isDepth && isVideo && fallbackImage) {
+    // Use a stable image for video themes when available; mobile GPUs can flicker on fixed autoplay video backgrounds.
+    if (isVideo && fallbackImage) {
       return (
         <img
           src={fallbackImage}
@@ -130,11 +130,9 @@ function ThemeBackgroundInner({
       return (
         <video
           src={media}
-          autoPlay
-          loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
           onCanPlay={() => setIsLoaded(true)}
           className="theme-background-media-asset h-full w-full object-cover"
         />
@@ -157,7 +155,7 @@ function ThemeBackgroundInner({
     <div
       aria-hidden
       className={cn(
-        "theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden transition-opacity duration-700",
+        "theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden",
         isLoaded ? "opacity-100" : "opacity-0"
       )}
       style={{
@@ -167,13 +165,9 @@ function ThemeBackgroundInner({
       }}
     >
       <div
-        className={cn(
-          "theme-background-stage absolute inset-[-14%] overflow-hidden",
-          active ? "theme-background-4d theme-background-4d-tilt" : "theme-background-4d theme-background-4d-idle"
-        )}
+        className="theme-background-stage theme-background-4d theme-background-4d-tilt absolute inset-[-14%] overflow-hidden"
         style={tiltStyle}
       >
-        <div className="theme-background-depth absolute inset-0">{renderMedia(true)}</div>
         <div className="theme-background-media absolute inset-0">{renderMedia(false)}</div>
         <div className="theme-background-gradient-depth pointer-events-none absolute inset-0" />
         <div className="theme-background-pixels pointer-events-none absolute inset-0" />

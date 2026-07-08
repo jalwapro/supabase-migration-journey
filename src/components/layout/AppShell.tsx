@@ -22,7 +22,7 @@ export function AppShell({
     <div className="min-h-[100dvh] pb-24">
       {showHeader && (
         <header
-          className="sticky top-0 z-30 border-b border-border bg-background/70 backdrop-blur-xl"
+          className="sticky top-0 z-30 border-b border-border bg-background/95"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto grid max-w-md grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">

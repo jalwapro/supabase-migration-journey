@@ -29,9 +29,9 @@ export function LevelAvatar({
       className={`relative shrink-0 ${className}`}
       style={{ width: px, height: px }}
     >
-      {/* Rotating gradient ring (the "frame") */}
+      {/* Gradient ring (static for mobile GPU stability) */}
       <div
-        className={`absolute inset-0 rounded-full bg-gradient-to-tr ${tier.ringGradient} animate-[spin_8s_linear_infinite]`}
+        className={`absolute inset-0 rounded-full bg-gradient-to-tr ${tier.ringGradient}`}
         style={{
           boxShadow: `0 0 18px -2px ${tier.glow}`,
           maskImage:
