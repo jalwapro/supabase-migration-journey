@@ -526,38 +526,98 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
  * ============================================================= */
 .shop-premium {
   background:
-    radial-gradient(120% 50% at 50% -10%, rgba(212,175,55,0.22), transparent 60%),
-    radial-gradient(90% 55% at 50% 105%, rgba(168,85,247,0.12), transparent 65%),
-    linear-gradient(180deg, #150a02 0%, #0a0603 55%, #050301 100%);
+    radial-gradient(120% 50% at 50% -10%, rgba(212,175,55,0.28), transparent 60%),
+    radial-gradient(90% 55% at 50% 105%, rgba(168,85,247,0.16), transparent 65%),
+    radial-gradient(60% 40% at 10% 30%, rgba(236,72,153,0.10), transparent 70%),
+    linear-gradient(180deg, #180b03 0%, #0a0603 55%, #050202 100%);
   color: #fff;
+  position: relative;
+}
+.shop-premium::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(rgba(255,215,120,0.06) 1px, transparent 1px);
+  background-size: 3px 3px;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
 }
 .shop-item-card {
+  position: relative;
   background:
-    radial-gradient(120% 80% at 50% 0%, rgba(255,215,120,0.08), transparent 60%),
-    linear-gradient(180deg, rgba(30,18,4,0.85), rgba(12,6,2,0.9));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 8px 20px rgba(0,0,0,0.35);
+    radial-gradient(120% 80% at 50% 0%, rgba(255,215,120,0.10), transparent 60%),
+    linear-gradient(180deg, rgba(36,20,4,0.92), rgba(10,5,2,0.95));
+  box-shadow:
+    inset 0 1px 0 rgba(255,215,120,0.10),
+    inset 0 0 0 1px rgba(255,255,255,0.05),
+    0 10px 24px rgba(0,0,0,0.5);
+  isolation: isolate;
 }
 .shop-item-card:active { transform: scale(0.98); }
 .shop-item-premium {
+  background:
+    radial-gradient(140% 90% at 50% -10%, rgba(255,215,120,0.22), transparent 55%),
+    linear-gradient(180deg, rgba(60,32,6,0.95), rgba(16,8,2,0.98));
   box-shadow:
-    inset 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent),
-    0 0 22px rgba(212,175,55,0.18),
-    0 8px 22px rgba(0,0,0,0.45);
+    inset 0 0 0 1px color-mix(in oklab, var(--gold) 70%, transparent),
+    inset 0 1px 0 rgba(255,235,180,0.35),
+    0 0 30px rgba(212,175,55,0.28),
+    0 12px 28px rgba(0,0,0,0.55);
+}
+.shop-item-premium::before {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,235,180,0.28) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: shop-holo-sweep 5.5s ease-in-out infinite;
+  border-radius: inherit;
+  z-index: 1;
+}
+@keyframes shop-holo-sweep {
+  0%, 45% { transform: translateX(-120%); }
+  70%, 100% { transform: translateX(120%); }
 }
 .shop-item-selected {
   box-shadow:
     inset 0 0 0 2px var(--gold),
-    0 0 26px rgba(212,175,55,0.4),
-    0 10px 26px rgba(0,0,0,0.5);
+    inset 0 0 24px rgba(212,175,55,0.25),
+    0 0 32px rgba(212,175,55,0.5),
+    0 12px 30px rgba(0,0,0,0.6);
 }
 .shop-chip-shimmer {
-  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
+  background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.28) 50%, transparent 70%);
+  animation: shop-holo-sweep 6s ease-in-out infinite;
 }
 .shop-featured {
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--gold) 40%, transparent), 0 12px 28px rgba(0,0,0,0.5);
+  position: relative;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent),
+    inset 0 0 40px rgba(212,175,55,0.15),
+    0 16px 40px rgba(0,0,0,0.6);
+}
+.shop-featured::before,
+.shop-featured::after {
+  content: "";
+  position: absolute;
+  width: 28px; height: 28px;
+  border: 2px solid var(--gold);
+  opacity: 0.85;
+  pointer-events: none;
+}
+.shop-featured::before {
+  top: 8px; left: 8px;
+  border-right: none; border-bottom: none;
+  border-top-left-radius: 12px;
+}
+.shop-featured::after {
+  bottom: 8px; right: 8px;
+  border-left: none; border-top: none;
+  border-bottom-right-radius: 12px;
 }
 .shop-featured-shine {
-  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+  background: linear-gradient(115deg, transparent 40%, rgba(255,235,180,0.28) 50%, transparent 60%);
   transform: translateX(-100%);
   animation: shop-featured-sweep 4.5s ease-in-out infinite;
 }
@@ -565,8 +625,32 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
   0%, 40% { transform: translateX(-100%); }
   70%, 100% { transform: translateX(100%); }
 }
+
+/* Category rail pill */
+.shop-cat-active {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--gold) 30%, transparent), rgba(255,255,255,0.03) 60%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--gold) 65%, transparent),
+    inset 0 1px 0 rgba(255,235,180,0.25),
+    0 0 18px rgba(212,175,55,0.25);
+}
+
+/* Gold text shimmer */
+.shop-gold-shimmer {
+  background: linear-gradient(90deg, #f5d67a 0%, #fff4c2 25%, #d4a017 50%, #fff4c2 75%, #f5d67a 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shop-gold-shine 4s linear infinite;
+}
+@keyframes shop-gold-shine {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .shop-featured-shine { animation: none; }
+  .shop-featured-shine, .shop-item-premium::before, .shop-chip-shimmer, .shop-gold-shimmer { animation: none; }
 }
 
 /* Back-compat (legacy classes still referenced elsewhere) */
