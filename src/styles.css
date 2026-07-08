@@ -640,3 +640,21 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
 @media (prefers-reduced-motion: reduce) {
   .dp-sparkle { animation: none; opacity: .6; }
 }
+
+.dp-ring-spin { animation: dp-ring-spin 8s linear infinite; transform-origin: 50% 50%; }
+@keyframes dp-ring-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .dp-ring-spin { animation: none; } }
+
+.entrance-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.25), transparent);
+  background-size: 200% 100%;
+  animation: entrance-shimmer 2.6s linear infinite;
+}
+@keyframes entrance-shimmer { to { background-position: -200% 0; } }
+
+.car-drive { animation: car-drive 6s ease-in-out infinite; }
+@keyframes car-drive {
+  0%   { transform: translateX(-30%); }
+  50%  { transform: translateX(30%); }
+  100% { transform: translateX(-30%); }
+}
