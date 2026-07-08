@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceTilt } from "@/hooks/useDeviceTilt";
+import { cn } from "@/lib/utils";
 
 type ThemeRow = {
   id: string;
@@ -13,17 +14,24 @@ type ThemeRow = {
 };
 
 export function ThemeBackground() {
-  const { profile } = useAuth();
+  const { profile, loading: authLoading } = useAuth();
   const themeId = profile?.theme_id ?? null;
   const [theme, setTheme] = useState<ThemeRow | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+    
+    if (authLoading) return;
+
     if (!themeId) {
       setTheme(null);
+      setLoading(false);
       if (typeof document !== "undefined") document.body.classList.remove("themed");
       return;
     }
+
+    setLoading(true);
     supabase
       .from("themes")
       .select("id,bg_image,animation_url,preview_url,primary_color,accent_color")
@@ -31,37 +39,70 @@ export function ThemeBackground() {
       .maybeSingle()
       .then(({ data }) => {
         if (!cancelled) {
-          setTheme((data as ThemeRow | null) ?? null);
-          if (typeof document !== "undefined" && data)
+          const themeData = (data as ThemeRow | null) ?? null;
+          setTheme(themeData);
+          setLoading(false);
+          if (typeof document !== "undefined" && themeData) {
             document.body.classList.add("themed");
+          } else {
+            document.body.classList.remove("themed");
+          }
         }
       });
+
     return () => {
       cancelled = true;
     };
-  }, [themeId]);
+  }, [themeId, authLoading]);
 
-  if (!theme) return null;
+  // If loading or no theme, show the default aurora
+  if (loading || !theme) {
+    return <DefaultAurora />;
+  }
+
   const media = theme.animation_url || theme.bg_image || theme.preview_url;
   const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+  const fallbackImage = theme.bg_image || theme.preview_url;
+  
   const gradient =
     theme.primary_color && theme.accent_color
       ? `linear-gradient(160deg, ${theme.primary_color}, ${theme.accent_color})`
       : undefined;
 
-  return <ThemeBackgroundInner media={media} isVideo={isVideo} gradient={gradient} />;
+  return (
+    <ThemeBackgroundInner 
+      media={media} 
+      isVideo={isVideo} 
+      gradient={gradient} 
+      fallbackImage={fallbackImage}
+    />
+  );
+}
+
+function DefaultAurora() {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background">
+      <div className="absolute -top-40 -left-24 h-[420px] w-[420px] rounded-full bg-[color:var(--primary)]/20 blur-[120px] animate-pulse" />
+      <div className="absolute top-40 -right-24 h-[380px] w-[380px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px] animate-pulse [animation-delay:1s]" />
+      <div className="absolute bottom-0 left-1/3 h-[320px] w-[320px] rounded-full bg-[color:var(--gold)]/10 blur-[120px] animate-pulse [animation-delay:2s]" />
+    </div>
+  );
 }
 
 function ThemeBackgroundInner({
   media,
   isVideo,
   gradient,
+  fallbackImage,
 }: {
   media: string | null;
   isVideo: boolean;
   gradient: string | undefined;
+  fallbackImage: string | null;
 }) {
   const { rx, ry, active } = useDeviceTilt(22);
+  const [isLoaded, setIsLoaded] = useState(false);
+
   const tiltStyle = {
     background: gradient,
     "--tilt-rx": `${rx}deg`,
@@ -74,26 +115,45 @@ function ThemeBackgroundInner({
     "--glint-y": `${50 - rx * 1.25}%`,
   } as CSSProperties;
 
-  const renderMedia = (extraClass = "") => {
+  const renderMedia = (isDepth = false) => {
     if (!media) return null;
-    return isVideo ? (
-      <video
-        src={media}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className={`h-full w-full object-cover ${extraClass}`}
+    
+    // For depth layer of a video, use the fallback image to save performance and prevent sync flicker
+    if (isDepth && isVideo && fallbackImage) {
+      return <img src={fallbackImage} alt="" className="h-full w-full object-cover" />;
+    }
+
+    if (isVideo) {
+      return (
+        <video
+          src={media}
+          autoPlay
+          loop
+          muted
+          playsInline
+          onCanPlay={() => setIsLoaded(true)}
+          className="h-full w-full object-cover"
+        />
+      );
+    }
+    
+    return (
+      <img 
+        src={media} 
+        alt="" 
+        onLoad={() => setIsLoaded(true)}
+        className="h-full w-full object-cover" 
       />
-    ) : (
-      <img src={media} alt="" className={`h-full w-full object-cover ${extraClass}`} />
     );
   };
 
   return (
     <div
       aria-hidden
-      className="theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      className={cn(
+        "theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden transition-opacity duration-700",
+        isLoaded ? "opacity-100" : "opacity-0"
+      )}
       style={{
         background: gradient,
         perspective: "760px",
@@ -101,13 +161,14 @@ function ThemeBackgroundInner({
       }}
     >
       <div
-        className={`theme-background-stage absolute inset-[-14%] overflow-hidden ${
+        className={cn(
+          "theme-background-stage absolute inset-[-14%] overflow-hidden",
           active ? "theme-background-4d theme-background-4d-tilt" : "theme-background-4d theme-background-4d-idle"
-        }`}
+        )}
         style={tiltStyle}
       >
-        <div className="theme-background-depth absolute inset-0">{renderMedia()}</div>
-        <div className="theme-background-media absolute inset-0">{renderMedia()}</div>
+        <div className="theme-background-depth absolute inset-0">{renderMedia(true)}</div>
+        <div className="theme-background-media absolute inset-0">{renderMedia(false)}</div>
         <div className="theme-background-gradient-depth pointer-events-none absolute inset-0" />
         <div className="theme-background-pixels pointer-events-none absolute inset-0" />
         <div className="theme-background-glint pointer-events-none absolute inset-0" />
