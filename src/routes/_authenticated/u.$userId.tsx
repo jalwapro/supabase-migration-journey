@@ -19,6 +19,8 @@ import {
   Loader2,
   MapPin,
   Copy,
+  Lock,
+  Images,
 } from "lucide-react";
 import { toast } from "sonner";
 import { levelProgress, tierForLevel } from "@/lib/levels";
@@ -110,6 +112,68 @@ function UserProfilePage() {
         .maybeSingle();
       return !!data;
     },
+  });
+
+  // Public gallery images (visible to everyone)
+  const publicGallery = useQuery({
+    queryKey: ["user-public-gallery", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_images")
+        .select("id, path")
+        .eq("user_id", userId)
+        .eq("is_public", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Private album unlock status (viewer perspective)
+  const albumAccess = useQuery({
+    queryKey: ["album-access", me?.id, userId],
+    enabled: !!me && !isMe,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_unlocks")
+        .select("status")
+        .eq("owner_id", userId)
+        .eq("viewer_id", me!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.status as "pending" | "accepted" | "revoked" | undefined) ?? null;
+    },
+  });
+
+  const privateGallery = useQuery({
+    queryKey: ["user-private-gallery", userId, albumAccess.data],
+    enabled: albumAccess.data === "accepted" || isMe,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_images")
+        .select("id, path")
+        .eq("user_id", userId)
+        .eq("is_public", false)
+        .order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const requestAlbum = useMutation({
+    mutationFn: async () => {
+      if (!me) throw new Error("Sign in");
+      const { error } = await supabase.from("gallery_unlocks").upsert(
+        { owner_id: userId, viewer_id: me.id, status: "pending" },
+        { onConflict: "owner_id,viewer_id" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Access request bhej diya");
+      qc.invalidateQueries({ queryKey: ["album-access", me?.id, userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const follow = useMutation({
@@ -317,6 +381,68 @@ function UserProfilePage() {
             value={p.diamonds.toLocaleString()}
             icon={<Gem className="h-3 w-3 text-cyan-400" />}
           />
+        </div>
+      )}
+
+      {/* Public gallery */}
+      {(publicGallery.data?.length ?? 0) > 0 && (
+        <div className="mx-4 mt-4">
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <Images className="h-3 w-3" /> Gallery
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {publicGallery.data!.map((img) => (
+              <a
+                key={img.id}
+                href={img.path}
+                target="_blank"
+                rel="noreferrer"
+                className="aspect-square overflow-hidden rounded-xl bg-card/60"
+              >
+                <img src={img.path} alt="" className="h-full w-full object-cover" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Private album gate — only for other users */}
+      {!isMe && (
+        <div className="mx-4 mt-4 rounded-2xl border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 p-3">
+          <p className="mb-2 flex items-center gap-2 text-xs font-bold text-[color:var(--gold)]">
+            <Lock className="h-3.5 w-3.5" /> Private Album
+          </p>
+          {albumAccess.data === "accepted" ? (
+            (privateGallery.data?.length ?? 0) > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {privateGallery.data!.map((img) => (
+                  <a
+                    key={img.id}
+                    href={img.path}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="aspect-square overflow-hidden rounded-xl bg-card/60"
+                  >
+                    <img src={img.path} alt="" className="h-full w-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Access mila hai — abhi koi private photo nahi</p>
+            )
+          ) : albumAccess.data === "pending" ? (
+            <p className="text-xs text-muted-foreground">Request bheji ja chuki — owner ke approve karne ka intezaar</p>
+          ) : albumAccess.data === "revoked" ? (
+            <p className="text-xs text-red-400">Access revoked kiya gaya hai</p>
+          ) : (
+            <button
+              onClick={() => requestAlbum.mutate()}
+              disabled={requestAlbum.isPending}
+              className="w-full rounded-full bg-gradient-to-r from-[color:var(--gold)] to-amber-500 py-2 text-xs font-bold text-black disabled:opacity-60"
+            >
+              {requestAlbum.isPending ? "Bhej rahe hain…" : "Request access"}
+            </button>
+          )}
         </div>
       )}
 
