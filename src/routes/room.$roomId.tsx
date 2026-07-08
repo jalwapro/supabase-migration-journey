@@ -1674,6 +1674,7 @@ function Seat({
   likeCount,
   onLike,
   videoStyle,
+  glowing,
 }: {
   index: number;
   member?: Member;
@@ -1685,6 +1686,7 @@ function Seat({
   likeCount: number;
   onLike: () => void;
   videoStyle?: boolean;
+  glowing?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
