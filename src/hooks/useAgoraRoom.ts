@@ -53,8 +53,20 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
   const [muted, setMuted] = useState(false);
   const [videoOn, setVideoOn] = useState(video);
 
+  const musicTrackRef = useRef<IBufferSourceAudioTrack | null>(null);
+  const [musicPlaying, setMusicPlaying] = useState(false);
+  const [musicTitle, setMusicTitle] = useState<string | null>(null);
+
   const teardown = useCallback(async () => {
     const client = clientRef.current;
+    if (musicTrackRef.current) {
+      try { musicTrackRef.current.stopProcessAudioBuffer(); } catch { /* ignore */ }
+      try { if (client) await client.unpublish(musicTrackRef.current); } catch { /* ignore */ }
+      try { musicTrackRef.current.close(); } catch { /* ignore */ }
+      musicTrackRef.current = null;
+      setMusicPlaying(false);
+      setMusicTitle(null);
+    }
     if (localAudioRef.current) {
       localAudioRef.current.stop();
       localAudioRef.current.close();
@@ -73,6 +85,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
     setRemotes(new Map());
     setStatus("idle");
   }, []);
+
 
   useEffect(() => {
     if (!enabled || !channel || uid == null) {
