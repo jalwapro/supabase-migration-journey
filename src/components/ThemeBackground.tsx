@@ -21,7 +21,7 @@ export function ThemeBackground() {
 
   useEffect(() => {
     let cancelled = false;
-    
+
     if (authLoading) return;
 
     if (!themeId) {
@@ -32,6 +32,8 @@ export function ThemeBackground() {
     }
 
     setLoading(true);
+    if (typeof document !== "undefined") document.body.classList.add("themed");
+
     supabase
       .from("themes")
       .select("id,bg_image,animation_url,preview_url,primary_color,accent_color")
@@ -55,15 +57,12 @@ export function ThemeBackground() {
     };
   }, [themeId, authLoading]);
 
-  // If loading or no theme, show the default aurora
-  if (loading || !theme) {
-    return <DefaultAurora />;
-  }
+  if (loading || !theme) return null;
 
   const media = theme.animation_url || theme.bg_image || theme.preview_url;
   const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
   const fallbackImage = theme.bg_image || theme.preview_url;
-  
+
   const gradient =
     theme.primary_color && theme.accent_color
       ? `linear-gradient(160deg, ${theme.primary_color}, ${theme.accent_color})`
@@ -76,16 +75,6 @@ export function ThemeBackground() {
       gradient={gradient} 
       fallbackImage={fallbackImage}
     />
-  );
-}
-
-function DefaultAurora() {
-  return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background">
-      <div className="absolute -top-40 -left-24 h-[420px] w-[420px] rounded-full bg-[color:var(--primary)]/20 blur-[120px] animate-pulse" />
-      <div className="absolute top-40 -right-24 h-[380px] w-[380px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px] animate-pulse [animation-delay:1s]" />
-      <div className="absolute bottom-0 left-1/3 h-[320px] w-[320px] rounded-full bg-[color:var(--gold)]/10 blur-[120px] animate-pulse [animation-delay:2s]" />
-    </div>
   );
 }
 
@@ -102,6 +91,10 @@ function ThemeBackgroundInner({
 }) {
   const { rx, ry, active } = useDeviceTilt(22);
   const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    setIsLoaded(!media);
+  }, [media]);
 
   const tiltStyle = {
     background: gradient,
@@ -120,8 +113,18 @@ function ThemeBackgroundInner({
     
     // For depth layer of a video, use the fallback image to save performance and prevent sync flicker
     if (isDepth && isVideo && fallbackImage) {
-      return <img src={fallbackImage} alt="" className="h-full w-full object-cover" />;
+      return (
+        <img
+          src={fallbackImage}
+          alt=""
+          draggable={false}
+          decoding="async"
+          className="theme-background-media-asset h-full w-full object-cover"
+        />
+      );
     }
+
+    if (isDepth && isVideo) return null;
 
     if (isVideo) {
       return (
@@ -131,8 +134,9 @@ function ThemeBackgroundInner({
           loop
           muted
           playsInline
+          preload="auto"
           onCanPlay={() => setIsLoaded(true)}
-          className="h-full w-full object-cover"
+          className="theme-background-media-asset h-full w-full object-cover"
         />
       );
     }
@@ -141,8 +145,10 @@ function ThemeBackgroundInner({
       <img 
         src={media} 
         alt="" 
+        draggable={false}
+        decoding="async"
         onLoad={() => setIsLoaded(true)}
-        className="h-full w-full object-cover" 
+        className="theme-background-media-asset h-full w-full object-cover" 
       />
     );
   };
