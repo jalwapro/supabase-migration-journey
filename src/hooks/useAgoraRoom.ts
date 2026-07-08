@@ -208,6 +208,62 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
     }
   }, []);
 
+  const playMusicFile = useCallback(async (file: Blob, title: string) => {
+    const client = clientRef.current;
+    if (!client) throw new Error("Not connected to room yet");
+    const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
+    // Stop previous
+    if (musicTrackRef.current) {
+      try { musicTrackRef.current.stopProcessAudioBuffer(); } catch { /* ignore */ }
+      try { await client.unpublish(musicTrackRef.current); } catch { /* ignore */ }
+      try { musicTrackRef.current.close(); } catch { /* ignore */ }
+      musicTrackRef.current = null;
+    }
+    const track = await AgoraRTC.createBufferSourceAudioTrack({ source: file as File });
+    musicTrackRef.current = track;
+    track.on("source-state-change", (state) => {
+      if (state === "stopped") {
+        setMusicPlaying(false);
+      } else if (state === "playing") {
+        setMusicPlaying(true);
+      }
+    });
+    track.startProcessAudioBuffer({ loop: false });
+    await client.publish(track);
+    setMusicTitle(title);
+    setMusicPlaying(true);
+  }, []);
+
+  const pauseMusic = useCallback(() => {
+    const t = musicTrackRef.current;
+    if (!t) return;
+    t.pauseProcessAudioBuffer();
+    setMusicPlaying(false);
+  }, []);
+
+  const resumeMusic = useCallback(() => {
+    const t = musicTrackRef.current;
+    if (!t) return;
+    t.resumeProcessAudioBuffer();
+    setMusicPlaying(true);
+  }, []);
+
+  const stopMusic = useCallback(async () => {
+    const client = clientRef.current;
+    const t = musicTrackRef.current;
+    if (!t) return;
+    try { t.stopProcessAudioBuffer(); } catch { /* ignore */ }
+    try { if (client) await client.unpublish(t); } catch { /* ignore */ }
+    try { t.close(); } catch { /* ignore */ }
+    musicTrackRef.current = null;
+    setMusicPlaying(false);
+    setMusicTitle(null);
+  }, []);
+
+  const setMusicVolume = useCallback((v: number) => {
+    musicTrackRef.current?.setVolume(v);
+  }, []);
+
   return {
     status,
     error,
@@ -218,5 +274,14 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
     toggleVideo,
     localAudioTrack: localAudioRef,
     localVideoTrack: localVideoRef,
+    // music
+    musicPlaying,
+    musicTitle,
+    playMusicFile,
+    pauseMusic,
+    resumeMusic,
+    stopMusic,
+    setMusicVolume,
   };
+
 }
