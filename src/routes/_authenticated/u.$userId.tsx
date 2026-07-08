@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
+import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { LevelBadge } from "@/components/LevelBadge";
@@ -167,6 +168,22 @@ function UserProfilePage() {
     },
   });
 
+  // Owned shop items — visible on every user's profile
+  const ownedItems = useQuery({
+    queryKey: ["user-owned-items", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_themes")
+        .select(
+          "theme_id, expires_at, purchased_price_diamonds, themes:theme_id(id,name,preview_url,bg_image,animation_url,primary_color,accent_color,category_id,theme_categories:category_id(name,slug,icon_url))",
+        )
+        .eq("user_id", userId)
+        .order("expires_at", { ascending: false, nullsFirst: true });
+      if (error) throw error;
+      return (data ?? []).filter((r: any) => r.themes);
+    },
+  });
+
   const requestAlbum = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sign in");
@@ -245,10 +262,24 @@ function UserProfilePage() {
       {/* Hero */}
       <div className="relative overflow-hidden">
         {p.data_card && (
-          <div
-            className="absolute inset-0 -z-10"
-            style={{ backgroundImage: `url(${p.data_card})`, backgroundSize: "cover", backgroundPosition: "center" }}
-          />
+          <>
+            <div
+              className="absolute inset-0 -z-10"
+              style={{ backgroundImage: `url(${p.data_card})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            />
+            {/* Data card label — buyer's name + ID overlay */}
+            <div className="pointer-events-none absolute right-3 top-14 z-[2] rounded-lg bg-black/55 px-2.5 py-1.5 text-right text-white backdrop-blur">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[color:var(--gold)]">
+                Data Card
+              </div>
+              <div className="text-sm font-black leading-tight">
+                {p.username ?? p.full_name ?? "Member"}
+              </div>
+              {p.user_code && (
+                <div className="text-[10px] font-bold opacity-80">ID: {p.user_code}</div>
+              )}
+            </div>
+          </>
         )}
         {p.entrance && (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-12 overflow-hidden">
@@ -499,6 +530,53 @@ function UserProfilePage() {
             <Sparkles className="h-3.5 w-3.5" /> Currently hosting {stats.data?.liveRooms} live room
             {(stats.data?.liveRooms ?? 0) > 1 ? "s" : ""}
           </p>
+        </div>
+      )}
+
+      {/* Owned shop items (public inventory) */}
+      {(ownedItems.data?.length ?? 0) > 0 && (
+        <div className="mx-4 mt-4">
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <Sparkles className="h-3 w-3 text-[color:var(--gold)]" /> Owned Items ({ownedItems.data!.length})
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {ownedItems.data!.map((row: any) => {
+              const t = row.themes;
+              const cat = t?.theme_categories;
+              const slug = (cat?.slug ?? "").toLowerCase();
+              const media = t.preview_url || t.bg_image || t.animation_url;
+              const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+              return (
+                <div
+                  key={t.id}
+                  className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br p-2"
+                  style={{
+                    background: `linear-gradient(160deg, ${t.primary_color ?? "#5b21b6"}22, ${t.accent_color ?? "#ec4899"}22)`,
+                  }}
+                >
+                  <div className="aspect-square w-full overflow-hidden rounded-lg bg-black/40">
+                    {media && !isVideo ? (
+                      <img src={media} alt={t.name} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <ItemAnimation
+                        slug={slug}
+                        name={p.username ?? p.full_name ?? "Member"}
+                        primary={t.primary_color ?? "#7c3aed"}
+                        accent={t.accent_color ?? "#ec4899"}
+                        fill
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1.5 truncate text-[10px] font-bold text-white">
+                    {t.name}
+                  </div>
+                  <div className="text-[9px] uppercase tracking-wider text-white/50">
+                    {cat?.name ?? ""}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
