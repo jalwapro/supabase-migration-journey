@@ -143,6 +143,11 @@ function RoomPage() {
     like_count: 0,
     gift_count: 0,
   });
+  const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
+  const [flyingEmojis, setFlyingEmojis] = useState<
+    { id: string; emoji: string; seat: number }[]
+  >([]);
+  const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
 
   const room = useQuery({
     queryKey: ["room", roomId],
