@@ -2169,3 +2169,145 @@ function SeatActionSheet({
     </>
   );
 }
+
+/* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
+const REACTION_EMOJIS = [
+  "❤️", "😂", "🔥", "👏", "😍", "🥰", "😎", "😘",
+  "🤩", "🎉", "🌹", "💖", "💯", "😢", "😡", "👑",
+  "🙏", "😴", "🤡", "🎁", "🍿", "💃", "🕺", "✨",
+];
+
+function EmojiReactionSheet({
+  open,
+  onClose,
+  seatCount,
+  seatsByIndex,
+  defaultSeat,
+  onSend,
+}: {
+  open: boolean;
+  onClose: () => void;
+  seatCount: number;
+  seatsByIndex: Map<number, Member>;
+  defaultSeat: number;
+  onSend: (emoji: string, seat: number) => void;
+}) {
+  const [seat, setSeat] = useState(defaultSeat);
+  useEffect(() => {
+    if (open) setSeat(defaultSeat);
+  }, [open, defaultSeat]);
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-black">Send reaction</h2>
+          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
+          Target seat
+        </div>
+        <div className="mt-1.5 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+          {Array.from({ length: seatCount }).map((_, i) => {
+            const m = seatsByIndex.get(i);
+            const active = seat === i;
+            return (
+              <button
+                key={i}
+                onClick={() => setSeat(i)}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black transition ${
+                  active
+                    ? "border-[color:var(--gold)] bg-[color:var(--gold)]/25 text-[color:var(--gold)]"
+                    : "border-white/15 bg-white/5 text-white/80"
+                }`}
+              >
+                No.{i + 1}
+                {m?.user?.username ? ` · @${m.user.username.slice(0, 8)}` : ""}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
+          Tap an emoji
+        </div>
+        <div className="mt-2 grid grid-cols-8 gap-1.5">
+          {REACTION_EMOJIS.map((e) => (
+            <button
+              key={e}
+              onClick={() => {
+                onSend(e, seat);
+              }}
+              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 text-2xl transition active:scale-90 hover:bg-white/15"
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Flying emoji layer: bottom → target seat with glow ─── */
+function FlyingEmojiLayer({
+  emojis,
+}: {
+  emojis: { id: string; emoji: string; seat: number }[];
+}) {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[60]">
+      {emojis.map((e) => (
+        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} />
+      ))}
+    </div>
+  );
+}
+
+function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [target, setTarget] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    // Locate seat rect
+    const el = document.querySelector<HTMLElement>(`[data-seat-index="${seat}"]`);
+    const rect = el?.getBoundingClientRect();
+    const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 60;
+    const startY = window.innerHeight - 60;
+    setPos({ x: startX, y: startY });
+    if (rect) {
+      setTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    } else {
+      setTarget({ x: startX, y: startY - 300 });
+    }
+  }, [seat]);
+
+  if (!pos || !target) return null;
+  return (
+    <span
+      className="absolute text-4xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)] transition-all ease-out"
+      style={{
+        left: 0,
+        top: 0,
+        transform: `translate(${target.x - 16}px, ${target.y - 20}px) scale(1.4)`,
+        transitionDuration: "1400ms",
+        opacity: 0,
+        // start position via animation via double raf trick using key
+        animation: "flyEmoji 1.5s ease-out forwards",
+        // fallback: use css var start
+        ["--fx" as never]: `${pos.x - 16}px`,
+        ["--fy" as never]: `${pos.y - 20}px`,
+        ["--tx" as never]: `${target.x - 16}px`,
+        ["--ty" as never]: `${target.y - 20}px`,
+      }}
+    >
+      {emoji}
+    </span>
+  );
+}
