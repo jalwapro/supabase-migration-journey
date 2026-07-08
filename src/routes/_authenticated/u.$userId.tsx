@@ -157,7 +157,8 @@ function UserProfilePage() {
         .order("sort_order");
       if (error) throw error;
       return data ?? [];
-    });
+    },
+  });
 
   const requestAlbum = useMutation({
     mutationFn: async () => {
