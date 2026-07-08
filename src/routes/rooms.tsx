@@ -22,7 +22,11 @@ type Room = {
 };
 
 function RoomsPage() {
+  useRealtimeInvalidate("rooms-list-live", [
+    { table: "live_rooms", invalidate: [["rooms", "all"]] },
+  ]);
   const rooms = useQuery({
+
     queryKey: ["rooms", "all"],
     queryFn: async () => {
       const { data, error } = await supabase
