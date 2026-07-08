@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Crown, Trophy, Heart, Coins, Sparkles } from "lucide-react";
+import { Crown, Trophy, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useAuth } from "@/hooks/useAuth";
 
 
 export const Route = createFileRoute("/rank")({
@@ -30,7 +29,6 @@ type Entry = {
   id: string;
   username: string | null;
   avatar: string | null;
-  coins: number | null;
   vip_level?: number | null;
 };
 
@@ -44,13 +42,13 @@ function RankPage() {
       // Try full select; if vip_level column missing, retry without it.
       let { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,coins,vip_level")
+        .select("id,username,avatar,vip_level")
         .order("coins", { ascending: false })
         .limit(50);
       if (error) {
         const res = await supabase
           .from("profiles")
-          .select("id,username,avatar,coins")
+          .select("id,username,avatar")
           .order("coins", { ascending: false })
           .limit(50);
         if (res.error) throw res.error;
@@ -162,7 +160,6 @@ function RankPage() {
 }
 
 function Podium({ top3 }: { top3: Entry[] }) {
-  const { isAdmin } = useAuth();
   // Order visually: 2nd, 1st, 3rd
   const [first, second, third] = top3;
   const cells = [
@@ -174,7 +171,12 @@ function Podium({ top3 }: { top3: Entry[] }) {
   return (
     <div className="grid grid-cols-3 items-end gap-2">
       {cells.map(({ e, place, h, ring }) => (
-        <div key={place} className="flex flex-col items-center">
+        <Link
+          key={place}
+          to="/u/$userId"
+          params={{ userId: e.id }}
+          className="flex min-w-0 flex-col items-center"
+        >
           <div className="relative">
             {place === 1 && (
               <Crown className="absolute -top-5 left-1/2 h-6 w-6 -translate-x-1/2 text-[color:var(--gold)] drop-shadow" />
@@ -194,12 +196,6 @@ function Podium({ top3 }: { top3: Entry[] }) {
           <p className="mt-2 max-w-full truncate text-xs font-bold">
             @{e.username ?? "user"}
           </p>
-          {isAdmin && (
-            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[color:var(--gold)]">
-              <Coins className="h-3 w-3" />
-              {(e.coins ?? 0).toLocaleString()}
-            </div>
-          )}
           <div
             className={`mt-2 w-full ${h} rounded-t-2xl bg-gradient-to-t ${
               place === 1
@@ -211,16 +207,20 @@ function Podium({ top3 }: { top3: Entry[] }) {
           >
             <span className="text-2xl font-black text-gradient">{place}</span>
           </div>
-        </div>
+        </Link>
       ))}
     </div>
   );
 }
 
 function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
-  const { isAdmin } = useAuth();
   return (
-    <li className="glass flex items-center gap-3 rounded-2xl p-3">
+    <li>
+      <Link
+        to="/u/$userId"
+        params={{ userId: entry.id }}
+        className="glass flex items-center gap-3 rounded-2xl p-3 transition hover:border-[color:var(--primary)]/40"
+      >
       <div className="w-6 shrink-0 text-center text-sm font-bold text-muted-foreground">
         {rank}
       </div>
@@ -235,25 +235,14 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{entry.username ?? "user"}</p>
-        {isAdmin && (
-          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-            <Heart className="h-3 w-3 text-[color:var(--primary)]" />
-            {(entry.coins ?? 0).toLocaleString()} points
-          </div>
-        )}
+        <p className="mt-0.5 text-[11px] text-muted-foreground">View profile</p>
       </div>
-      <Link
-        to="/rank"
-        className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-4 py-1.5 text-xs font-bold text-primary-foreground"
-      >
-        View
       </Link>
     </li>
   );
 }
 
 function TopGiftersBanner() {
-  const { isAdmin } = useAuth();
   // Daily winners — locked for the full 24h day (UTC).
   const dayKey = new Date().toISOString().slice(0, 10);
 
@@ -265,7 +254,7 @@ function TopGiftersBanner() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,coins")
+        .select("id,username,avatar")
         .order("coins", { ascending: false })
         .limit(3);
       if (error) throw error;
@@ -289,9 +278,9 @@ function TopGiftersBanner() {
     items.length > 0
       ? items
       : [
-          { id: "p1", username: "Winner 1", avatar: null, coins: 0 },
-          { id: "p2", username: "Winner 2", avatar: null, coins: 0 },
-          { id: "p3", username: "Winner 3", avatar: null, coins: 0 },
+          { id: "p1", username: "Winner 1", avatar: null },
+          { id: "p2", username: "Winner 2", avatar: null },
+          { id: "p3", username: "Winner 3", avatar: null },
         ];
 
 
@@ -310,8 +299,10 @@ function TopGiftersBanner() {
         className="mt-2 flex transition-transform duration-500 ease-out"
         style={{ transform: `translateX(-${idx * 100}%)` }}
       >
-        {display.map((e, i) => (
-          <div key={e.id} className="flex w-full shrink-0 items-center gap-3 px-4 pb-4">
+        {display.map((e, i) => {
+          const isPlaceholder = e.id.startsWith("p");
+          const content = (
+            <>
             <div className="relative shrink-0">
               {e.avatar ? (
                 <img
@@ -333,17 +324,26 @@ function TopGiftersBanner() {
               <p className="mt-1 truncate text-sm font-extrabold">
                 {e.username ?? "user"}
               </p>
-              {isAdmin && (
-                <div className="mt-0.5 flex items-center gap-3 text-[11px]">
-                  <span className="flex items-center gap-1 text-[color:var(--gold)]">
-                    <Coins className="h-3 w-3" />
-                    {formatCoins(e.coins ?? 0)}
-                  </span>
-                </div>
-              )}
+              {!isPlaceholder && <p className="mt-0.5 text-[11px] text-muted-foreground">View profile</p>}
             </div>
-          </div>
-        ))}
+            </>
+          );
+
+          return isPlaceholder ? (
+            <div key={e.id} className="flex w-full shrink-0 items-center gap-3 px-4 pb-4">
+              {content}
+            </div>
+          ) : (
+            <Link
+              key={e.id}
+              to="/u/$userId"
+              params={{ userId: e.id }}
+              className="flex w-full shrink-0 items-center gap-3 px-4 pb-4"
+            >
+              {content}
+            </Link>
+          );
+        })}
       </div>
       {display.length > 1 && (
         <div className="flex justify-center gap-1 pb-2">
@@ -359,12 +359,5 @@ function TopGiftersBanner() {
       )}
     </div>
   );
-}
-
-
-function formatCoins(n: number) {
-  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";
-  return n.toString();
 }
 
