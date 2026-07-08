@@ -72,6 +72,15 @@ function Splash() {
     navigate({ to: "/" });
   }
 
+  // If settings fetch hangs on a slow/offline network, don't trap the user on
+  // the black splash screen. Move into the app and let auth hydrate normally.
+  useEffect(() => {
+    if (!cfg.isLoading) return;
+    const t = window.setTimeout(finishVideo, 3500);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cfg.isLoading]);
+
   // Start-watchdog: if the video hasn't begun playing within 10s (bad network
   // / broken file), give up and move on. Once it starts, let it play through
   // to its natural end — no total-duration cap.

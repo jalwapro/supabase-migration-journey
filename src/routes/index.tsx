@@ -82,7 +82,7 @@ const DEFAULT_BANNERS: Banner[] = [
 ];
 
 function Home() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("video");
   const [q, setQ] = useState("");
@@ -236,6 +236,17 @@ function Home() {
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
+            {loading ? (
+              <span className="relative shrink-0" aria-label="Profile">
+                <span
+                  aria-hidden
+                  className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"
+                />
+                <span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-background">
+                  <img src={jalwaLogo} alt="Jalwa" className="h-full w-full object-cover" />
+                </span>
+              </span>
+            ) : (
             <Link to={user ? "/me" : "/auth"} className="relative shrink-0" aria-label="Profile">
               <span
                 aria-hidden
@@ -249,6 +260,7 @@ function Home() {
                 )}
               </span>
             </Link>
+            )}
 
             <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-inner backdrop-blur transition focus-within:border-[color:var(--primary)]/60 focus-within:bg-white/10">
               <Search className="h-4 w-4 text-muted-foreground transition group-focus-within:text-[color:var(--primary)]" />
@@ -290,7 +302,7 @@ function Home() {
                   <Shield className="h-4 w-4" />
                 </Link>
               )}
-              {!user && (
+              {!loading && !user && (
                 <Link
                   to="/auth"
                   className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-1.5 text-[11px] font-bold text-primary-foreground"

@@ -116,6 +116,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 0);
   }, []);
 
+  const loadInitialSession = useCallback(async () => {
+    let nextSession: Session | null = null;
+    try {
+      const { data } = await supabase.auth.getSession();
+      nextSession = data.session;
+    } catch (error) {
+      console.warn("[useAuth] initial session", error);
+    }
+
+    if (!nextSession) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+      try {
+        const retry = await supabase.auth.getSession();
+        nextSession = retry.data.session;
+      } catch (error) {
+        console.warn("[useAuth] initial session retry", error);
+      }
+    }
+
+    await hydrate(nextSession);
+    setLoading(false);
+  }, [hydrate]);
+
   const refresh = useCallback(async () => {
     if (!user) return;
     const [p, r] = await Promise.all([loadProfile(user.id), loadRoles(user.id)]);
@@ -143,14 +166,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       void hydrate(s);
     });
     // 2. Then check current session
-    supabase.auth.getSession().then(({ data }) => {
-      void hydrate(data.session);
-      setLoading(false);
-    });
+    void loadInitialSession();
     return () => {
       sub.subscription.unsubscribe();
     };
-  }, [hydrate]);
+  }, [hydrate, loadInitialSession]);
 
   // Presence heartbeat — update last_seen every 15s + on focus/visibility
   useEffect(() => {
