@@ -156,7 +156,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           });
         });
 
-        const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience");
+        const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience", resolvedKind);
         if (cancelled) return;
         await client.join(appId, channel, token, uid);
 
