@@ -250,12 +250,12 @@ function UserProfilePage() {
       <div className="mx-4 -mt-2 rounded-2xl border border-white/10 bg-card/80 p-3 backdrop-blur">
         <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
           <span>Level {p.level}</span>
-          <span>{prog.current.toLocaleString()} / {prog.next.toLocaleString()} XP</span>
+          <span>{prog.have.toLocaleString()} / {prog.need.toLocaleString()} XP</span>
         </div>
         <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
           <div
             className="h-full rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)]"
-            style={{ width: `${Math.round((prog.current / Math.max(prog.next, 1)) * 100)}%` }}
+            style={{ width: `${Math.round(prog.pct * 100)}%` }}
           />
         </div>
       </div>
