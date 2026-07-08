@@ -279,6 +279,7 @@ function UserProfilePage() {
             level={p.level}
             size="xl"
             showBadge
+            frame={p.frame}
           />
           <div className="mt-4 flex items-center gap-2">
             <h1 className="text-xl font-black text-white">
