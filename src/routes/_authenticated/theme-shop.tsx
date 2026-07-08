@@ -106,13 +106,13 @@ function Page() {
 
   return (
     <>
-      <div className="min-h-[100dvh] shop-royal pb-28">
+      <div className="mx-auto min-h-[100dvh] max-w-md shop-royal pb-28">
         {/* Header */}
         <header
           className="sticky top-0 z-30 border-b border-[color:var(--gold)]/25 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/90 backdrop-blur-xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="mx-auto flex max-w-md items-center justify-between px-3 py-2.5">
+          <div className="flex items-center justify-between px-3 py-2.5">
             <button
               onClick={() => router.history.back()}
               className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white"
