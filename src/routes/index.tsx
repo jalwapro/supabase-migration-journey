@@ -101,7 +101,8 @@ function Home() {
   const friends = useQuery({
     queryKey: ["home-mutual-friends-online", user?.id],
     enabled: !!user?.id && friendsOpen,
-    refetchInterval: friendsOpen ? 30_000 : false,
+    refetchInterval: friendsOpen ? 15_000 : false,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const uid = user!.id;
       const [{ data: outRows, error: e1 }, { data: inRows, error: e2 }] =
@@ -115,7 +116,7 @@ function Home() {
       const followers = new Set((inRows ?? []).map((r) => r.follower_id as string));
       const mutual = [...following].filter((id) => followers.has(id));
       if (mutual.length === 0) return [] as LiveUser[];
-      const since = new Date(Date.now() - 5 * 60_000).toISOString();
+      const since = new Date(Date.now() - 2 * 60_000).toISOString();
       const { data, error } = await supabase
         .from("profiles")
         .select("id,username,avatar,frame,last_seen")
@@ -143,7 +144,7 @@ function Home() {
   const liveUsers = useQuery({
     queryKey: ["home-live-users"],
     queryFn: async () => {
-      const since = new Date(Date.now() - 5 * 60_000).toISOString();
+      const since = new Date(Date.now() - 2 * 60_000).toISOString();
       const { data, error } = await supabase
         .from("profiles")
         .select("id,username,avatar,frame,last_seen")
@@ -153,7 +154,8 @@ function Home() {
       if (error) throw error;
       return (data ?? []) as LiveUser[];
     },
-    refetchInterval: 30_000,
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
   });
 
   const rooms = useQuery({
