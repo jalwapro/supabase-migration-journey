@@ -398,3 +398,75 @@ function timeAgo(iso: string) {
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
 }
+
+function DateRangeFilter({ range, onChange }: { range: DateRange; onChange: (r: DateRange) => void }) {
+  const [open, setOpen] = useState(false);
+  const presets: { key: Exclude<RangePreset, "custom">; label: string }[] = [
+    { key: "7d", label: "7d" },
+    { key: "30d", label: "30d" },
+    { key: "90d", label: "90d" },
+  ];
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-1 rounded-full border border-border bg-card/50 p-1">
+        {presets.map((p) => {
+          const active = range.preset === p.key;
+          return (
+            <button
+              key={p.key}
+              onClick={() => onChange(defaultRange(p.key))}
+              className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition ${
+            range.preset === "custom" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Calendar className="h-3 w-3" /> Custom
+        </button>
+      </div>
+      {open && (
+        <div className="absolute right-0 top-full z-40 mt-2 w-72 rounded-2xl border border-border bg-card p-3 shadow-2xl">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Custom range</p>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-[10px] text-muted-foreground">
+              From
+              <input
+                type="date"
+                value={range.from}
+                max={range.to}
+                onChange={(e) => onChange({ ...range, preset: "custom", from: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+              />
+            </label>
+            <label className="text-[10px] text-muted-foreground">
+              To
+              <input
+                type="date"
+                value={range.to}
+                min={range.from}
+                max={toYmd(new Date())}
+                onChange={(e) => onChange({ ...range, preset: "custom", to: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+              />
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end gap-2">
+            <button onClick={() => setOpen(false)} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">Close</button>
+            <button
+              onClick={() => { onChange(defaultRange("30d")); setOpen(false); }}
+              className="rounded-lg bg-muted px-3 py-1.5 text-xs font-bold"
+            >Reset</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
