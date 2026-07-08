@@ -1,15 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Users, DoorOpen, Wallet, Coins, Flag, Crown, TrendingUp, ArrowUpRight,
-  Radio, Video, Mic, ArrowUpFromLine, Search, Bell,
+  Radio, Video, Mic, ArrowUpFromLine, Search, Bell, Calendar,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
+
+type RangePreset = "7d" | "30d" | "90d" | "custom";
+type DateRange = { from: string; to: string; preset: RangePreset };
+
+function defaultRange(preset: Exclude<RangePreset, "custom">): DateRange {
+  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - (days - 1));
+  return { preset, from: toYmd(from), to: toYmd(to) };
+}
+function toYmd(d: Date) { return d.toISOString().slice(0, 10); }
+function rangeBounds(r: DateRange) {
+  const from = new Date(`${r.from}T00:00:00.000Z`).toISOString();
+  const to = new Date(`${r.to}T23:59:59.999Z`).toISOString();
+  return { from, to };
+}
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: Dashboard,
