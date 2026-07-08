@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#1a0b3a"/><stop offset="1" stop-color="#4a1c6e"/>
+    </linearGradient>
+    <linearGradient id="body" x1="0" x2="1">
+      <stop offset="0" stop-color="#ff2d95"/><stop offset="1" stop-color="#7a1fff"/>
+    </linearGradient>
+    <radialGradient id="head" cx=".3" cy=".5" r=".7">
+      <stop offset="0" stop-color="#fffbe6"/><stop offset="1" stop-color="#ffb400" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#sky)"/>
+  <!-- moving stars -->
+  <g fill="#fff">
+    <circle cx="30" cy="40" r="1.2"><animate attributeName="opacity" values="0.2;1;0.2" dur="2s" repeatCount="indefinite"/></circle>
+    <circle cx="120" cy="80" r="1"><animate attributeName="opacity" values="1;0.3;1" dur="1.5s" repeatCount="indefinite"/></circle>
+    <circle cx="260" cy="60" r="1.5"><animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite"/></circle>
+    <circle cx="350" cy="100" r="1"><animate attributeName="opacity" values="1;0.2;1" dur="1.8s" repeatCount="indefinite"/></circle>
+  </g>
+  <!-- road -->
+  <rect x="0" y="220" width="400" height="80" fill="#0a0410"/>
+  <g stroke="#ffcf40" stroke-width="4" stroke-dasharray="30 20">
+    <line x1="-40" y1="260" x2="440" y2="260">
+      <animate attributeName="stroke-dashoffset" from="0" to="-50" dur="0.5s" repeatCount="indefinite"/>
+    </line>
+  </g>
+  <!-- car -->
+  <g>
+    <animateTransform attributeName="transform" type="translate"
+      values="-160,0; 260,0; 500,0" keyTimes="0;0.7;1" dur="4s" repeatCount="indefinite"/>
+    <!-- headlight glow -->
+    <ellipse cx="150" cy="205" rx="80" ry="18" fill="url(#head)" opacity="0.7"/>
+    <!-- body -->
+    <path d="M20 210 Q40 160 100 160 L170 160 Q210 160 230 200 L240 210 L240 235 L20 235 Z" fill="url(#body)" stroke="#fff2" stroke-width="1.5"/>
+    <rect x="95" y="170" width="80" height="22" rx="4" fill="#000a"/>
+    <circle cx="55" cy="235" r="15" fill="#111" stroke="#ff2d95" stroke-width="3"/>
+    <circle cx="55" cy="235" r="6" fill="#333"/>
+    <circle cx="195" cy="235" r="15" fill="#111" stroke="#ff2d95" stroke-width="3"/>
+    <circle cx="195" cy="235" r="6" fill="#333"/>
+    <!-- neon underglow -->
+    <ellipse cx="130" cy="240" rx="110" ry="6" fill="#ff2d95" opacity="0.6">
+      <animate attributeName="opacity" values="0.4;0.9;0.4" dur="0.6s" repeatCount="indefinite"/>
+    </ellipse>
+  </g>
+</svg>

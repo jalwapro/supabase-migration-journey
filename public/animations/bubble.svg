@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".5" r=".7">
+      <stop offset="0" stop-color="#0c4a6e"/><stop offset="1" stop-color="#020617"/>
+    </radialGradient>
+    <linearGradient id="bub" x1="0" x2="1">
+      <stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="bub2" x1="0" x2="1">
+      <stop offset="0" stop-color="#f472b6"/><stop offset="1" stop-color="#9d174d"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <!-- bubble 1 -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="50,240; 50,60; 50,-40" keyTimes="0;0.7;1" dur="4s" repeatCount="indefinite"/>
+    <rect x="0" y="0" width="180" height="52" rx="26" fill="url(#bub)" opacity="0.95"/>
+    <text x="90" y="33" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="18" fill="#fff">Hey there ✨</text>
+    <polygon points="30,50 20,68 46,52" fill="#0369a1"/>
+  </g>
+  <!-- bubble 2 -->
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="170,300; 170,120; 170,20" keyTimes="0;0.7;1" dur="4s" begin="1.3s" repeatCount="indefinite"/>
+    <rect x="0" y="0" width="200" height="52" rx="26" fill="url(#bub2)" opacity="0.95"/>
+    <text x="100" y="33" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="18" fill="#fff">Love it 💖</text>
+    <polygon points="30,50 20,68 46,52" fill="#9d174d"/>
+  </g>
+  <!-- floating dots -->
+  <g fill="#22d3ee" opacity="0.5">
+    <circle cx="330" cy="200" r="4">
+      <animate attributeName="cy" from="260" to="60" dur="3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0.8;0" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="360" cy="180" r="3">
+      <animate attributeName="cy" from="260" to="40" dur="3s" begin="1s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0;0.8;0" dur="3s" begin="1s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>
