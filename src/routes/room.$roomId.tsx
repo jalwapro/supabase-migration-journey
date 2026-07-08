@@ -870,7 +870,7 @@ function RoomPage() {
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
@@ -922,7 +922,7 @@ function RoomPage() {
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
