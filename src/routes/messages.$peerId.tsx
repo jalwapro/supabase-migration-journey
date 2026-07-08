@@ -26,7 +26,7 @@ type DM = {
   id: string;
   sender_id: string;
   recipient_id: string;
-  text: string | null;
+  message: string | null;
   kind: "text" | "image" | "video" | "file" | "voice" | "album";
   media_url: string | null;
   media_mime: string | null;
@@ -181,7 +181,7 @@ function DmThread() {
     const v = text.trim();
     if (!v) return;
     setText("");
-    const ok = await insertMsg({ kind: "text", text: v });
+    const ok = await insertMsg({ kind: "text", message: v });
     if (!ok) setText(v);
   }
 
@@ -205,7 +205,7 @@ function DmThread() {
         kind,
         media_url: res.url,
         media_mime: file.type,
-        text: file.type.startsWith("image") || file.type.startsWith("video") ? null : file.name,
+        message: file.type.startsWith("image") || file.type.startsWith("video") ? null : file.name,
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
