@@ -114,6 +114,67 @@ function UserProfilePage() {
     },
   });
 
+  // Public gallery images (visible to everyone)
+  const publicGallery = useQuery({
+    queryKey: ["user-public-gallery", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_images")
+        .select("id, path")
+        .eq("user_id", userId)
+        .eq("is_public", true)
+        .order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // Private album unlock status (viewer perspective)
+  const albumAccess = useQuery({
+    queryKey: ["album-access", me?.id, userId],
+    enabled: !!me && !isMe,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_unlocks")
+        .select("status")
+        .eq("owner_id", userId)
+        .eq("viewer_id", me!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.status as "pending" | "accepted" | "revoked" | undefined) ?? null;
+    },
+  });
+
+  const privateGallery = useQuery({
+    queryKey: ["user-private-gallery", userId, albumAccess.data],
+    enabled: albumAccess.data === "accepted" || isMe,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("gallery_images")
+        .select("id, path")
+        .eq("user_id", userId)
+        .eq("is_public", false)
+        .order("sort_order");
+      if (error) throw error;
+      return data ?? [];
+    });
+
+  const requestAlbum = useMutation({
+    mutationFn: async () => {
+      if (!me) throw new Error("Sign in");
+      const { error } = await supabase.from("gallery_unlocks").upsert(
+        { owner_id: userId, viewer_id: me.id, status: "pending" },
+        { onConflict: "owner_id,viewer_id" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Access request bhej diya");
+      qc.invalidateQueries({ queryKey: ["album-access", me?.id, userId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const follow = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sign in");
