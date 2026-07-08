@@ -42,15 +42,26 @@ function Splash() {
   const cfg = useQuery({
     queryKey: ["splash_cfg"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_settings")
-        .select("splash_enabled,splash_video,splash_video_poster,splash_image,splash_duration")
-        .eq("id", "global")
-        .maybeSingle();
-      return (data ?? null) as SplashCfg | null;
+      // Progressive fallback: some deployments may not have every splash column yet.
+      const attempts = [
+        "splash_enabled,splash_video,splash_video_poster,splash_image,splash_duration",
+        "splash_video,splash_video_poster,splash_image",
+        "splash_image",
+      ];
+      for (const cols of attempts) {
+        const { data, error } = await supabase
+          .from("app_settings")
+          .select(cols)
+          .eq("id", "global")
+          .maybeSingle();
+        if (!error) return (data ?? null) as unknown as SplashCfg | null;
+      }
+      return null;
     },
     staleTime: 60_000,
+    retry: false,
   });
+
 
   const videoUrl = cfg.data?.splash_video ?? null;
   const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
