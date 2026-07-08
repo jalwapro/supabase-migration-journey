@@ -11,6 +11,7 @@ export function LevelAvatar({
   level,
   size = "md",
   showBadge = true,
+  frame,
   className = "",
 }: {
   src?: string | null;
@@ -18,11 +19,14 @@ export function LevelAvatar({
   level: number;
   size?: Size;
   showBadge?: boolean;
+  /** Equipped DP frame media URL (image / gif / webp / mp4). Renders a sparkling overlay around the avatar. */
+  frame?: string | null;
   className?: string;
 }) {
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
+  const frameIsVideo = !!frame && /\.(mp4|webm|mov)($|\?)/i.test(frame);
 
   return (
     <div
@@ -34,16 +38,12 @@ export function LevelAvatar({
         className={`absolute inset-0 rounded-full bg-gradient-to-tr ${tier.ringGradient}`}
         style={{
           boxShadow: `0 0 18px -2px ${tier.glow}`,
-          maskImage:
-            "radial-gradient(circle, transparent 58%, black 60%)",
-          WebkitMaskImage:
-            "radial-gradient(circle, transparent 58%, black 60%)",
+          maskImage: "radial-gradient(circle, transparent 58%, black 60%)",
+          WebkitMaskImage: "radial-gradient(circle, transparent 58%, black 60%)",
         }}
       />
       {/* Inner disc */}
-      <div
-        className="absolute inset-[8%] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40"
-      >
+      <div className="absolute inset-[8%] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
         {src ? (
           <img src={src} alt="" className="h-full w-full object-cover" />
         ) : (
@@ -57,10 +57,45 @@ export function LevelAvatar({
         )}
       </div>
 
+      {/* Equipped DP frame overlay with sparkles */}
+      {frame && (
+        <>
+          <div
+            className="pointer-events-none absolute inset-[-22%] z-[5]"
+            aria-hidden
+          >
+            {frameIsVideo ? (
+              <video
+                src={frame}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <img
+                src={frame}
+                alt=""
+                className="h-full w-full object-contain"
+                draggable={false}
+              />
+            )}
+          </div>
+          {/* Sparkle particles */}
+          <span className="pointer-events-none absolute inset-[-22%] z-[6]" aria-hidden>
+            <span className="dp-sparkle dp-sparkle-a" />
+            <span className="dp-sparkle dp-sparkle-b" />
+            <span className="dp-sparkle dp-sparkle-c" />
+            <span className="dp-sparkle dp-sparkle-d" />
+          </span>
+        </>
+      )}
+
       {/* Level chip */}
       {showBadge && (
         <span
-          className={`absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r ${tier.badgeGradient} px-2 py-[1px] text-[9px] font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40`}
+          className={`absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full bg-gradient-to-r ${tier.badgeGradient} px-2 py-[1px] text-[9px] font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40`}
         >
           <span className="mr-0.5">{tier.icon}</span>
           Lv {level}
