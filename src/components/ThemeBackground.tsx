@@ -11,7 +11,9 @@ type ThemeRow = {
   preview_url: string | null;
   primary_color: string | null;
   accent_color: string | null;
+  category_id?: string | null;
 };
+
 
 export function ThemeBackground() {
   const { profile, loading: authLoading } = useAuth();
@@ -36,21 +38,30 @@ export function ThemeBackground() {
 
     supabase
       .from("themes")
-      .select("id,bg_image,animation_url,preview_url,primary_color,accent_color")
+      .select("id,bg_image,animation_url,preview_url,primary_color,accent_color,category_id,theme_categories(slug,name)")
       .eq("id", themeId)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) {
-          const themeData = (data as ThemeRow | null) ?? null;
-          setTheme(themeData);
-          setLoading(false);
-          if (typeof document !== "undefined" && themeData) {
-            document.body.classList.add("themed");
-          } else {
-            document.body.classList.remove("themed");
-          }
+        if (cancelled) return;
+        const raw = data as (ThemeRow & { theme_categories?: { slug: string | null; name: string | null } | null }) | null;
+        // Only apply as background if the item belongs to the "theme" category
+        // (or has no category — legacy themes). Other shop categories like
+        // car / frame / ring / bubble must never render as room/app background.
+        const cat = raw?.theme_categories;
+        const slug = (cat?.slug ?? "").toLowerCase();
+        const name = (cat?.name ?? "").toLowerCase();
+        const isThemeCategory =
+          !raw?.category_id || slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
+        const themeData = isThemeCategory ? (raw as ThemeRow | null) : null;
+        setTheme(themeData);
+        setLoading(false);
+        if (typeof document !== "undefined" && themeData) {
+          document.body.classList.add("themed");
+        } else {
+          document.body.classList.remove("themed");
         }
       });
+
 
     return () => {
       cancelled = true;
