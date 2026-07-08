@@ -905,7 +905,7 @@ function RoomPage() {
         >
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => agora.toggleMute()}
+              onClick={() => void toggleMuteWithSync()}
               aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
@@ -974,7 +974,7 @@ function RoomPage() {
         >
           <div className="flex items-center gap-1.5">
             <button
-              onClick={() => agora.toggleMute()}
+              onClick={() => void toggleMuteWithSync()}
               aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
@@ -1085,7 +1085,7 @@ function RoomPage() {
           videoOn={agora.videoOn}
           onToggleVideo={() => void agora.toggleVideo()}
           muted={agora.muted}
-          onToggleMute={() => void agora.toggleMute()}
+          onToggleMute={() => void toggleMuteWithSync()}
           onOpenSeats={() => {
             setVideoSettingsOpen(false);
             setSeatsSheetOpen(true);
