@@ -2291,16 +2291,12 @@ function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
   if (!pos || !target) return null;
   return (
     <span
-      className="absolute text-4xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)] transition-all ease-out"
+      className="absolute text-4xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)]"
       style={{
         left: 0,
         top: 0,
-        transform: `translate(${target.x - 16}px, ${target.y - 20}px) scale(1.4)`,
-        transitionDuration: "1400ms",
-        opacity: 0,
-        // start position via animation via double raf trick using key
+        willChange: "transform, opacity",
         animation: "flyEmoji 1.5s ease-out forwards",
-        // fallback: use css var start
         ["--fx" as never]: `${pos.x - 16}px`,
         ["--fy" as never]: `${pos.y - 20}px`,
         ["--tx" as never]: `${target.x - 16}px`,
