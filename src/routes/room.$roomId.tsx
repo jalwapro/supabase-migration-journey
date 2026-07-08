@@ -2019,3 +2019,66 @@ function ToolBtn({
     </button>
   );
 }
+
+/* ─── Seat Action Sheet (host manages a seated user) ─────────── */
+function SeatActionSheet({
+  member,
+  onClose,
+  onToggleModerator,
+  onKickFromSeat,
+}: {
+  member: Member | null;
+  onClose: () => void;
+  onToggleModerator: () => void;
+  onKickFromSeat: () => void;
+}) {
+  if (!member) return null;
+  const name = member.user?.username ?? "User";
+  const avatar = member.user?.avatar ?? null;
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="flex items-center gap-3">
+          {avatar ? (
+            <img src={avatar} alt="" className="h-12 w-12 rounded-full object-cover" />
+          ) : (
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-white/10 text-lg font-bold">
+              {name[0]?.toUpperCase() ?? "?"}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-base font-extrabold">@{name}</div>
+            <div className="text-[11px] text-muted-foreground">
+              {member.is_moderator ? "Moderator" : "On seat"}
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={onToggleModerator}
+            className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
+          >
+            {member.is_moderator ? "Remove as Moderator" : "Make Moderator"}
+          </button>
+          <button
+            onClick={onKickFromSeat}
+            className="w-full rounded-2xl bg-[color:var(--destructive)]/80 py-3 text-sm font-bold text-white"
+          >
+            Remove from Seat
+          </button>
+          <button
+            onClick={onClose}
+            className="mt-1 w-full rounded-2xl border border-border py-3 text-sm font-bold"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
