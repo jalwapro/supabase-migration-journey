@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Shield, Wallet as WalletIcon } from "lucide-react";
+import { formatCompact } from "@/lib/utils";
 
 export function AppShell({
   title,
