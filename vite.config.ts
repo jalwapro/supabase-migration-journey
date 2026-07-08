@@ -10,11 +10,17 @@ const stripTanStackSourceMarkers = () => ({
   name: "strip-tanstack-source-markers",
   enforce: "post" as const,
   transform(code: string, id: string) {
-    if (!/[jt]sx?(\?|$)/.test(id) || !code.includes("data-tsd-source")) return null;
+    if (!/\.[cm]?[jt]sx?(\?|$)/.test(id) || !code.includes("data-tsd-source")) return null;
     return {
-      code: code.replace(/\sdata-tsd-source="[^"]*"/g, ""),
+      code: code
+        .replace(/\sdata-tsd-source="[^"]*"/g, "")
+        .replace(/\s+["']data-tsd-source["']\s*:\s*["'][^"']*["'],?/g, "")
+        .replace(/\s+"data-tsd-source"\s*,\s*"[^"]*"\s*,?/g, ""),
       map: null,
     };
+  },
+  transformIndexHtml(html: string) {
+    return html.replace(/\sdata-tsd-source="[^"]*"/g, "");
   },
 });
 

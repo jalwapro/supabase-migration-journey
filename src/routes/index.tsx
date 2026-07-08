@@ -246,7 +246,7 @@ function Home() {
             <Link to={user ? "/me" : "/auth"} className="relative shrink-0" aria-label="Profile">
               <span
                 aria-hidden
-                className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))] animate-[spin_6s_linear_infinite]"
+                className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"
               />
               <span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-background">
                 {profile?.avatar ? (
@@ -431,7 +431,6 @@ function Home() {
             <div className="flex items-center justify-between px-4">
               <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 </span>
                 Live now
@@ -451,7 +450,7 @@ function Home() {
                   <span className="relative">
                     <span
                       aria-hidden
-                      className="absolute -inset-0.5 rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))] animate-[spin_4s_linear_infinite]"
+                      className="absolute -inset-0.5 rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"
                     />
                     <span className="relative block h-14 w-14 overflow-hidden rounded-full ring-2 ring-background">
                       {u.avatar ? (
@@ -510,7 +509,7 @@ function Home() {
             {rooms.isLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="aspect-square animate-pulse rounded-3xl bg-white/5" />
+                  <div key={i} className="aspect-square rounded-3xl bg-white/5" />
                 ))}
               </div>
             ) : filteredRooms.length > 0 ? (
