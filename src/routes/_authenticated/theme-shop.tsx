@@ -353,7 +353,7 @@ function Page() {
               <button
                 disabled={!selected || buy.isPending || !canAfford}
                 onClick={() => selected && buy.mutate(selected)}
-                className="flex-1 rounded-full bg-gradient-to-b from-[#b6ff9a] via-[#4fd160] to-[#0f6c2a] py-2.5 text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_10px_rgba(0,0,0,0.35)] disabled:opacity-40"
+                className="flex-1 rounded-full bg-primary py-2.5 text-sm font-black text-primary-foreground disabled:opacity-40"
               >
                 {buy.isPending ? (
                   <Loader2 className="mx-auto h-4 w-4 animate-spin" />
