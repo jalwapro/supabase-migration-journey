@@ -278,7 +278,7 @@ function Dashboard() {
                   formatter={(v) => [`PKR ${Number(v).toLocaleString()}`, "Revenue"]}
                 />
                 <Bar dataKey="value" fill="url(#barPink)" radius={[10, 10, 4, 4]}>
-                  {(monthly.data ?? []).map((_, i) => <Cell key={i} />)}
+                  {(monthly.data ?? []).map((_: unknown, i: number) => <Cell key={i} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
