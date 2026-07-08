@@ -235,10 +235,12 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{entry.username ?? "user"}</p>
-        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-          <Heart className="h-3 w-3 text-[color:var(--primary)]" />
-          {(entry.coins ?? 0).toLocaleString()} points
-        </div>
+        {isAdmin && (
+          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Heart className="h-3 w-3 text-[color:var(--primary)]" />
+            {(entry.coins ?? 0).toLocaleString()} points
+          </div>
+        )}
       </div>
       <Link
         to="/rank"
