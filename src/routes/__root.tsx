@@ -21,6 +21,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
+import { useWakeLock } from "../hooks/useWakeLock";
 
 function NotFoundComponent() {
   return (
@@ -131,6 +132,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useWakeLock();
   useEffect(() => {
     void import("../lib/native").then((m) => m.initNativeShell());
   }, []);
