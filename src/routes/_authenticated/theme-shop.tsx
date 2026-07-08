@@ -221,10 +221,14 @@ function Page() {
                     >
                       {isBackground ? (
                         <div
-                          className={`shop-theme-3d relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
+                          className={`${tilt.active ? "" : "shop-theme-3d"} relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
                           style={{
                             background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
                             willChange: "transform",
+                            transform: tilt.active && !isSelected
+                              ? `translateZ(0) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`
+                              : undefined,
+                            transition: tilt.active ? "transform 120ms ease-out" : undefined,
                           }}
                         >
                           {media ? (
