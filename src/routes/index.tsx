@@ -451,8 +451,8 @@ function Home() {
               {(liveUsers.data ?? []).map((u) => (
                 <Link
                   key={u.id}
-                  to="/messages/$peerId"
-                  params={{ peerId: u.id }}
+                  to="/u/$userId"
+                  params={{ userId: u.id }}
                   className="flex w-16 shrink-0 snap-start flex-col items-center gap-1"
                 >
                   <span className="relative">
