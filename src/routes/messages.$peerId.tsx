@@ -25,7 +25,7 @@ export const Route = createFileRoute("/messages/$peerId")({
 type DM = {
   id: string;
   sender_id: string;
-  receiver_id: string;
+  recipient_id: string;
   text: string | null;
   kind: "text" | "image" | "video" | "file" | "voice" | "album";
   media_url: string | null;
@@ -112,7 +112,7 @@ function DmThread() {
         .from("direct_messages")
         .select("*")
         .or(
-          `and(sender_id.eq.${user.id},receiver_id.eq.${peerId}),and(sender_id.eq.${peerId},receiver_id.eq.${user.id})`,
+          `and(sender_id.eq.${user.id},recipient_id.eq.${peerId}),and(sender_id.eq.${peerId},recipient_id.eq.${user.id})`,
         )
         .order("created_at", { ascending: true })
         .limit(200);
@@ -123,7 +123,7 @@ function DmThread() {
         .from("direct_messages")
         .update({ read_at: new Date().toISOString() })
         .eq("sender_id", peerId)
-        .eq("receiver_id", user.id)
+        .eq("recipient_id", user.id)
         .is("read_at", null);
       qc.invalidateQueries({ queryKey: ["dm_index", user.id] });
     })();
@@ -140,11 +140,11 @@ function DmThread() {
       }, (payload) => {
         const m = payload.new as DM;
         const pair =
-          (m.sender_id === user.id && m.receiver_id === peerId) ||
-          (m.sender_id === peerId && m.receiver_id === user.id);
+          (m.sender_id === user.id && m.recipient_id === peerId) ||
+          (m.sender_id === peerId && m.recipient_id === user.id);
         if (!pair) return;
         setMessages((prev) => [...prev, m]);
-        if (m.receiver_id === user.id) {
+        if (m.recipient_id === user.id) {
           void supabase
             .from("direct_messages")
             .update({ read_at: new Date().toISOString() })
@@ -163,7 +163,7 @@ function DmThread() {
     if (!user) return;
     const { error } = await supabase.from("direct_messages").insert({
       sender_id: user.id,
-      receiver_id: peerId,
+      recipient_id: peerId,
       ...row,
     });
     if (error) {
@@ -453,7 +453,7 @@ function MessageBody({
   mine: boolean;
   albumSrc?: string;
 }) {
-  if (m.kind === "text") return <>{m.text}</>;
+  if (m.kind === "text") return <>{m.message}</>;
   if (m.kind === "image") {
     return (
       <a href={m.media_url ?? "#"} target="_blank" rel="noreferrer">
@@ -485,7 +485,7 @@ function MessageBody({
         className="flex items-center gap-2 underline"
       >
         <Paperclip className="h-3 w-3" />
-        {m.text ?? "File"}
+        {m.message ?? "File"}
       </a>
     );
   }
