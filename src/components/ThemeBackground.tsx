@@ -74,20 +74,21 @@ function ThemeBackgroundInner({
     "--glint-y": `${50 - rx * 1.25}%`,
   } as CSSProperties;
 
-  const mediaNode = media ? (
-    isVideo ? (
+  const renderMedia = (extraClass = "") => {
+    if (!media) return null;
+    return isVideo ? (
       <video
         src={media}
         autoPlay
         loop
         muted
         playsInline
-        className="h-full w-full object-cover"
+        className={`h-full w-full object-cover ${extraClass}`}
       />
     ) : (
-      <img src={media} alt="" className="h-full w-full object-cover" />
-    )
-  ) : null;
+      <img src={media} alt="" className={`h-full w-full object-cover ${extraClass}`} />
+    );
+  };
 
   return (
     <div
@@ -99,19 +100,18 @@ function ThemeBackgroundInner({
         perspectiveOrigin: "50% 50%",
       }}
     >
-      {media && (
-        <div
-          className={`theme-background-stage absolute inset-[-14%] overflow-hidden ${
-            active ? "theme-background-4d theme-background-4d-tilt" : "theme-background-4d theme-background-4d-idle"
-          }`}
-          style={tiltStyle}
-        >
-          <div className="theme-background-depth absolute inset-0">{mediaNode}</div>
-          <div className="theme-background-media absolute inset-0">{mediaNode}</div>
-          <div className="theme-background-pixels pointer-events-none absolute inset-0" />
-          <div className="theme-background-glint pointer-events-none absolute inset-0" />
-        </div>
-      )}
+      <div
+        className={`theme-background-stage absolute inset-[-14%] overflow-hidden ${
+          active ? "theme-background-4d theme-background-4d-tilt" : "theme-background-4d theme-background-4d-idle"
+        }`}
+        style={tiltStyle}
+      >
+        <div className="theme-background-depth absolute inset-0">{renderMedia()}</div>
+        <div className="theme-background-media absolute inset-0">{renderMedia()}</div>
+        <div className="theme-background-gradient-depth pointer-events-none absolute inset-0" />
+        <div className="theme-background-pixels pointer-events-none absolute inset-0" />
+        <div className="theme-background-glint pointer-events-none absolute inset-0" />
+      </div>
       <div className="theme-background-dim absolute inset-0" />
     </div>
   );

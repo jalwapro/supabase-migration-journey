@@ -302,6 +302,10 @@ body.themed .app-frame,
 body.themed .app-frame-outer {
   background: transparent !important;
 }
+body.themed .app-frame > .relative.z-10 [class*="min-h-dvh"][class*="bg-background"],
+body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"] {
+  background-color: transparent !important;
+}
 @media (min-width: 481px) {
   .app-frame {
     box-shadow: 0 30px 80px -20px color-mix(in oklab, var(--primary) 35%, transparent),
@@ -622,6 +626,14 @@ body.themed .app-frame-outer {
   opacity: .48;
   filter: blur(20px) saturate(1.25);
   transform: translateZ(-52px) scale(1.18);
+}
+.theme-background-gradient-depth {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255,255,255,.28), transparent 22%),
+    radial-gradient(circle at 82% 22%, color-mix(in oklab, var(--primary) 36%, transparent), transparent 28%),
+    radial-gradient(circle at 50% 85%, color-mix(in oklab, var(--secondary) 34%, transparent), transparent 32%);
+  opacity: .62;
+  transform: translateZ(46px) scale(.94);
 }
 .theme-background-media {
   filter: saturate(1.18) contrast(1.06) brightness(1.03);
