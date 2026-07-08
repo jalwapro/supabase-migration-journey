@@ -1045,7 +1045,7 @@ function RoomPage() {
         players={ludoPlayers}
         isHost={isHost}
       />
-      <HostMusicPlayer open={musicOpen && isHost} onClose={() => setMusicOpen(false)} />
+      <HostMusicPlayer open={musicOpen && isHost} onClose={() => setMusicOpen(false)} controller={agora} />
       {isHost && (
         <SeatsSheet
           open={seatsSheetOpen}
