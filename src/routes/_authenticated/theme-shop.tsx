@@ -225,21 +225,33 @@ function Page() {
                     </span>
 
                     {/* Media area */}
-                    <div className="relative z-10 grid aspect-square place-items-center px-4 py-3">
+                    <div
+                      className={`relative z-10 grid place-items-center px-3 py-3 ${isBackground ? "aspect-[3/4]" : "aspect-square"}`}
+                      style={{ perspective: "800px" }}
+                    >
                       {isBackground ? (
                         <div
-                          className="relative h-full w-full overflow-hidden rounded-lg"
+                          className={`shop-theme-3d relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
                           style={{
-                            background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
+                            background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
                           }}
                         >
                           {media ? (
                             isVideo ? (
-                              <video src={media} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                              <video src={media} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" />
                             ) : (
-                              <img src={media} alt={it.name} className="h-full w-full object-cover" />
+                              <img src={media} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                             )
                           ) : null}
+                          {/* profile preview overlay so it reads as a real theme */}
+                          <div className="absolute inset-x-0 top-2 flex flex-col items-center">
+                            <div className="h-6 w-6 rounded-full border-2 border-white/80 bg-gradient-to-br from-pink-400 to-fuchsia-600" />
+                            <div className="mt-0.5 text-[9px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                              {it.name}
+                            </div>
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="pointer-events-none absolute inset-0 shop-theme-shine" />
                         </div>
                       ) : media ? (
                         isVideo ? (
