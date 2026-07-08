@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".5" r=".7">
+      <stop offset="0" stop-color="#3a0f5c"/><stop offset="1" stop-color="#0a0018"/>
+    </radialGradient>
+    <linearGradient id="ring" x1="0" x2="1">
+      <stop offset="0" stop-color="#e0f2fe"/>
+      <stop offset=".5" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <rect width="300" height="300" fill="url(#bg)"/>
+  <!-- rotating gradient ring -->
+  <g transform="translate(150 150)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="8s" repeatCount="indefinite"/>
+      <circle r="110" fill="none" stroke="url(#ring)" stroke-width="14" stroke-dasharray="20 10"/>
+    </g>
+    <!-- gems -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="12s" repeatCount="indefinite"/>
+      <circle cx="0" cy="-90" r="8" fill="#fff">
+        <animate attributeName="r" values="7;10;7" dur="1.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="78" cy="45" r="6" fill="#f0abfc">
+        <animate attributeName="r" values="5;8;5" dur="1.2s" begin="0.4s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="-78" cy="45" r="6" fill="#67e8f9">
+        <animate attributeName="r" values="5;8;5" dur="1.2s" begin="0.8s" repeatCount="indefinite"/>
+      </circle>
+    </g>
+    <!-- inner glow -->
+    <circle r="70" fill="none" stroke="#fff" stroke-width="1.5" opacity="0.4">
+      <animate attributeName="r" values="70;80;70" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>

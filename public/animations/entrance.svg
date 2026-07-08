@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <defs>
+    <radialGradient id="bg" cx=".5" cy=".7" r=".8">
+      <stop offset="0" stop-color="#3b0764"/><stop offset="1" stop-color="#000"/>
+    </radialGradient>
+    <radialGradient id="core" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#fff"/>
+      <stop offset=".4" stop-color="#facc15"/>
+      <stop offset="1" stop-color="#f97316" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="300" fill="url(#bg)"/>
+  <!-- firework bursts -->
+  <g transform="translate(200 160)">
+    <!-- burst 1 -->
+    <g>
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.6;1" dur="2s" repeatCount="indefinite"/>
+      <g fill="#f97316">
+        <circle r="3"><animate attributeName="r" from="1" to="8" dur="2s" repeatCount="indefinite"/></circle>
+      </g>
+      <g stroke="#facc15" stroke-width="2" fill="none">
+        <line x1="0" y1="0" x2="0" y2="-80"><animate attributeName="y2" from="0" to="-90" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="80" y2="0"><animate attributeName="x2" from="0" to="90" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="0" y2="80"><animate attributeName="y2" from="0" to="90" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="-80" y2="0"><animate attributeName="x2" from="0" to="-90" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="56" y2="-56"><animate attributeName="x2" from="0" to="64" dur="2s" repeatCount="indefinite"/><animate attributeName="y2" from="0" to="-64" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="-56" y2="-56"><animate attributeName="x2" from="0" to="-64" dur="2s" repeatCount="indefinite"/><animate attributeName="y2" from="0" to="-64" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="56" y2="56"><animate attributeName="x2" from="0" to="64" dur="2s" repeatCount="indefinite"/><animate attributeName="y2" from="0" to="64" dur="2s" repeatCount="indefinite"/></line>
+        <line x1="0" y1="0" x2="-56" y2="56"><animate attributeName="x2" from="0" to="-64" dur="2s" repeatCount="indefinite"/><animate attributeName="y2" from="0" to="64" dur="2s" repeatCount="indefinite"/></line>
+      </g>
+    </g>
+    <!-- burst 2 offset -->
+    <g transform="translate(-70 -30)">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.6;1" dur="2s" begin="1s" repeatCount="indefinite"/>
+      <g stroke="#a855f7" stroke-width="1.5" fill="none">
+        <circle r="40"><animate attributeName="r" from="10" to="55" dur="2s" begin="1s" repeatCount="indefinite"/></circle>
+        <circle r="24"><animate attributeName="r" from="5" to="35" dur="2s" begin="1s" repeatCount="indefinite"/></circle>
+      </g>
+    </g>
+    <!-- burst 3 -->
+    <g transform="translate(80 20)">
+      <animate attributeName="opacity" values="0;1;1;0" keyTimes="0;0.1;0.6;1" dur="2s" begin="1.5s" repeatCount="indefinite"/>
+      <g stroke="#22d3ee" stroke-width="1.5" fill="none">
+        <circle r="40"><animate attributeName="r" from="8" to="50" dur="2s" begin="1.5s" repeatCount="indefinite"/></circle>
+      </g>
+    </g>
+    <!-- core -->
+    <circle r="30" fill="url(#core)">
+      <animate attributeName="r" values="20;40;20" dur="1s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+</svg>
