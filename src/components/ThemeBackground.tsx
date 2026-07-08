@@ -130,11 +130,9 @@ function ThemeBackgroundInner({
       return (
         <video
           src={media}
-          autoPlay
-          loop
           muted
           playsInline
-          preload="auto"
+          preload="metadata"
           onCanPlay={() => setIsLoaded(true)}
           className="theme-background-media-asset h-full w-full object-cover"
         />
