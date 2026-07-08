@@ -63,35 +63,28 @@ function Splash() {
   });
 
 
-  // Detect slow / data-saver networks so we don't force a big video download.
-  const slowNetwork = (() => {
-    if (typeof navigator === "undefined") return false;
-    const c = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
-    if (!c) return false;
-    if (c.saveData) return true;
-    return c.effectiveType === "2g" || c.effectiveType === "slow-2g" || c.effectiveType === "3g";
-  })();
-
-  const videoUrl = !slowNetwork ? (cfg.data?.splash_video ?? null) : null;
+  const videoUrl = cfg.data?.splash_video ?? null;
   const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
+  const [videoStarted, setVideoStarted] = useState(false);
 
   function finishVideo() {
     try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
     navigate({ to: "/" });
   }
 
-  // Hard cap: never keep the user on splash for more than 6s total, even if
-  // the video is still buffering on a slow connection.
+  // Start-watchdog: if the video hasn't begun playing within 10s (bad network
+  // / broken file), give up and move on. Once it starts, let it play through
+  // to its natural end — no total-duration cap.
   useEffect(() => {
-    if (!videoUrl) return;
-    const t = window.setTimeout(finishVideo, 6000);
+    if (!videoUrl || videoStarted) return;
+    const t = window.setTimeout(finishVideo, 10000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoUrl]);
+  }, [videoUrl, videoStarted]);
 
-  // Fallback progress bar (used when no video, or before video plays)
+  // Fallback progress bar (used when no video)
   useEffect(() => {
-    if (videoUrl) return; // video onEnded handles nav
+    if (videoUrl) return;
     const start = Date.now();
     let raf = 0;
     const tick = () => {
@@ -127,8 +120,14 @@ function Splash() {
           onEnded={finishVideo}
           onError={finishVideo}
           onCanPlay={() => { void videoRef.current?.play().catch(() => {}); }}
-          className="h-full max-h-[100dvh] w-full max-w-[480px] object-cover"
+          onPlaying={() => setVideoStarted(true)}
+          className="h-full max-h-[100dvh] w-full max-w-[480px] object-contain"
         />
+        {!videoStarted && (
+          <div className="pointer-events-none absolute inset-0 grid place-items-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
+          </div>
+        )}
         <button
           onClick={finishVideo}
           className="absolute bottom-6 right-6 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur"
@@ -138,6 +137,7 @@ function Splash() {
       </main>
     );
   }
+
 
   return (
     <main
