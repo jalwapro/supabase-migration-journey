@@ -1206,6 +1206,17 @@ function RoomPage() {
           }
         }}
       />
+      <EmojiReactionSheet
+        open={emojiSheetOpen}
+        onClose={() => setEmojiSheetOpen(false)}
+        seatCount={Math.max(4, r.seat_count)}
+        seatsByIndex={seatsByIndex}
+        defaultSeat={
+          myMember?.seat_index != null ? myMember.seat_index : 0
+        }
+        onSend={(emoji, seat) => void sendEmoji(emoji, seat)}
+      />
+      <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
   );
 }
