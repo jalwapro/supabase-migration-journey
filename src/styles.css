@@ -199,7 +199,11 @@
   overflow: hidden;
   transform: translateZ(0);
   transition: transform 200ms cubic-bezier(.2,.8,.2,1), filter 200ms ease;
-  animation: glow-pulse-4d 3.2s ease-in-out infinite;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--primary) 45%, transparent) inset,
+    0 1px 0 color-mix(in oklab, white 30%, transparent) inset,
+    0 8px 22px -8px color-mix(in oklab, var(--primary) 55%, transparent),
+    0 18px 48px -18px color-mix(in oklab, var(--secondary) 45%, transparent);
   &::before {
     content: "";
     position: absolute;
@@ -218,18 +222,6 @@
     pointer-events: none;
     opacity: .9;
     z-index: 1;
-  }
-  &::after {
-    content: "";
-    position: absolute;
-    top: 0; bottom: 0; left: 0;
-    width: 40%;
-    background: linear-gradient(90deg, transparent,
-      color-mix(in oklab, white 55%, transparent), transparent);
-    filter: blur(6px);
-    animation: glow-sheen-4d 3.8s ease-in-out infinite;
-    pointer-events: none;
-    z-index: 2;
   }
   &:hover { transform: translateY(-1px) scale(1.02); filter: saturate(1.15) brightness(1.05); }
   &:active { transform: translateY(0) scale(0.98); }
@@ -253,7 +245,6 @@
     background: linear-gradient(90deg, transparent,
       color-mix(in oklab, white 60%, transparent), transparent);
     filter: blur(6px);
-    animation: glow-sheen-4d 4.2s ease-in-out infinite;
     pointer-events: none;
   }
   &:hover { transform: translateY(-1px) scale(1.02); filter: saturate(1.15) brightness(1.06); }
@@ -570,7 +561,6 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
 }
 .shop-chip-shimmer {
   background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.55) 50%, transparent 70%);
-  animation: shop-chip-shimmer 2.6s ease-in-out infinite;
 }
 
 /* 3D theme card tilt — mobile-safe, GPU-forced */
@@ -579,7 +569,6 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
   transform-style: preserve-3d;
   backface-visibility: hidden;
   transition: transform 0.5s cubic-bezier(.2,.9,.3,1.2);
-  animation: shop-theme-idle 4.5s ease-in-out infinite;
   will-change: transform;
 }
 .shop-theme-3d-active {
@@ -590,15 +579,8 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
   0%, 100% { transform: translateZ(0) rotateY(-22deg) rotateX(8deg); }
   50%      { transform: translateZ(0) rotateY(22deg)  rotateX(-6deg); }
 }
-/* Force animation even if the OS requests reduced motion — subtle, safe */
-@media (prefers-reduced-motion: reduce) {
-  .shop-theme-3d {
-    animation: shop-theme-idle 6s ease-in-out infinite;
-  }
-}
 .shop-theme-shine {
   background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
-  animation: shop-chip-shimmer 3.4s ease-in-out infinite;
 }
 
 /* Full-screen equipped theme background — stronger 4D depth on mobile */
