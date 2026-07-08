@@ -1010,6 +1010,7 @@ function RoomPage() {
         roomId={roomId}
         receivers={giftReceivers}
       />
+      <GiftAnimationPlayer roomId={roomId} />
       <LudoSheet
         open={ludoOpen}
         onClose={() => setLudoOpen(false)}
