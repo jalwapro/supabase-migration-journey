@@ -2328,7 +2328,7 @@ function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
         left: 0,
         top: 0,
         willChange: "transform, opacity",
-        animation: "flyEmoji 1.5s ease-out forwards",
+        animation: "flyEmoji 2.2s cubic-bezier(0.22,1,0.36,1) forwards",
         ["--fx" as never]: `${pos.x - 16}px`,
         ["--fy" as never]: `${pos.y - 20}px`,
         ["--tx" as never]: `${target.x - 16}px`,
