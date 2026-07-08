@@ -157,7 +157,7 @@ function ThemeBackgroundInner({
     <div
       aria-hidden
       className={cn(
-        "theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden transition-opacity duration-700",
+        "theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden",
         isLoaded ? "opacity-100" : "opacity-0"
       )}
       style={{
@@ -173,7 +173,6 @@ function ThemeBackgroundInner({
         )}
         style={tiltStyle}
       >
-        <div className="theme-background-depth absolute inset-0">{renderMedia(true)}</div>
         <div className="theme-background-media absolute inset-0">{renderMedia(false)}</div>
         <div className="theme-background-gradient-depth pointer-events-none absolute inset-0" />
         <div className="theme-background-pixels pointer-events-none absolute inset-0" />
