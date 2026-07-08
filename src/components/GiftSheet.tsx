@@ -101,26 +101,29 @@ export function GiftSheet({
             {receivers.length === 0 && (
               <p className="text-xs text-muted-foreground">No one on stage to gift.</p>
             )}
-            {receivers.map((r) => (
-              <button
-                key={r.id}
-                onClick={() => setReceiverId(r.id)}
-                className={`flex shrink-0 flex-col items-center gap-1 rounded-2xl px-3 py-2 text-[10px] ${
-                  receiverId === r.id
-                    ? "bg-[color:var(--primary)]/20 text-foreground"
-                    : "text-muted-foreground"
-                }`}
-              >
-                <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-card">
-                  {r.avatar ? (
-                    <img src={r.avatar} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-sm font-bold">{(r.username ?? "?").slice(0, 1).toUpperCase()}</span>
-                  )}
-                </div>
-                <span className="max-w-[64px] truncate">@{r.username ?? "user"}</span>
-              </button>
-            ))}
+            {receivers.map((r) => {
+              const active = receiverId === r.id;
+              return (
+                <button
+                  key={r.id}
+                  onClick={() => setReceiverId(r.id)}
+                  aria-label={r.username ?? "user"}
+                  className={`shrink-0 rounded-full p-[2px] transition ${
+                    active
+                      ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                      : "bg-white/10"
+                  }`}
+                >
+                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-card">
+                    {r.avatar ? (
+                      <img src={r.avatar} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-sm font-bold">{(r.username ?? "?").slice(0, 1).toUpperCase()}</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

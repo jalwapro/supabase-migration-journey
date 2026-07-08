@@ -2214,22 +2214,30 @@ function EmojiReactionSheet({
         <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
           Target seat
         </div>
-        <div className="mt-1.5 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+        <div className="mt-1.5 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {Array.from({ length: seatCount }).map((_, i) => {
             const m = seatsByIndex.get(i);
             const active = seat === i;
+            const avatar = m?.user?.avatar ?? null;
+            const initial = (m?.user?.username ?? String(i + 1)).slice(0, 1).toUpperCase();
             return (
               <button
                 key={i}
                 onClick={() => setSeat(i)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black transition ${
+                aria-label={`Seat ${i + 1}`}
+                className={`shrink-0 rounded-full p-[2px] transition ${
                   active
-                    ? "border-[color:var(--gold)] bg-[color:var(--gold)]/25 text-[color:var(--gold)]"
-                    : "border-white/15 bg-white/5 text-white/80"
+                    ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                    : "bg-white/10"
                 }`}
               >
-                No.{i + 1}
-                {m?.user?.username ? ` · @${m.user.username.slice(0, 8)}` : ""}
+                <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-black/40">
+                  {avatar ? (
+                    <img src={avatar} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-[13px] font-black text-white/85">{initial}</span>
+                  )}
+                </div>
               </button>
             );
           })}
@@ -2242,8 +2250,8 @@ function EmojiReactionSheet({
             <button
               key={e}
               onClick={() => {
-                onSend(e, seat);
                 onClose();
+                setTimeout(() => onSend(e, seat), 0);
               }}
               className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 text-2xl transition active:scale-90 hover:bg-white/15"
             >
