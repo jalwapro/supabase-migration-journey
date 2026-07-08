@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
+import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
@@ -116,6 +117,11 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
 const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   id: '/messages_/$peerId',
   path: '/messages/$peerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
+  id: '/api/send-email',
+  path: '/api/send-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
@@ -408,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/api/send-email': typeof ApiSendEmailRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -467,6 +474,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/api/send-email': typeof ApiSendEmailRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -529,6 +537,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/api/send-email': typeof ApiSendEmailRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -591,6 +600,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/withdraw'
     | '/api/agora-token'
+    | '/api/send-email'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -650,6 +660,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/withdraw'
     | '/api/agora-token'
+    | '/api/send-email'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -711,6 +722,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/api/agora-token'
+    | '/api/send-email'
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
@@ -757,6 +769,7 @@ export interface RootRouteChildren {
   RoomsRoute: typeof RoomsRoute
   SplashRoute: typeof SplashRoute
   ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
+  ApiSendEmailRoute: typeof ApiSendEmailRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
 }
@@ -831,6 +844,13 @@ declare module '@tanstack/react-router' {
       path: '/messages/$peerId'
       fullPath: '/messages/$peerId'
       preLoaderRoute: typeof MessagesPeerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/send-email': {
+      id: '/api/send-email'
+      path: '/api/send-email'
+      fullPath: '/api/send-email'
+      preLoaderRoute: typeof ApiSendEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/agora-token': {
@@ -1315,6 +1335,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoomsRoute: RoomsRoute,
   SplashRoute: SplashRoute,
   ApiAgoraTokenRoute: ApiAgoraTokenRoute,
+  ApiSendEmailRoute: ApiSendEmailRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
 }
