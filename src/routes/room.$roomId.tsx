@@ -257,7 +257,7 @@ function RoomPage() {
             setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
             setTimeout(() => {
               setFlyingEmojis((prev) => prev.filter((e) => e.id !== id));
-            }, 1800);
+            }, 2400);
             setTimeout(() => {
               setGlowSeats((prev) => {
                 const next = { ...prev };
@@ -265,7 +265,7 @@ function RoomPage() {
                 if (!next[seat]) delete next[seat];
                 return next;
               });
-            }, 2200);
+            }, 2600);
             return;
           }
           if (row.user_id) {
@@ -521,7 +521,7 @@ function RoomPage() {
         if (!next[seatIndex]) delete next[seatIndex];
         return next;
       });
-    }, 2200);
+    }, 2600);
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
