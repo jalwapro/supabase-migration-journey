@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { FileUploader } from "@/components/FileUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/ads")({
   component: AdsAdmin,
@@ -104,7 +105,15 @@ function AdsAdmin() {
             <option value="splash">Splash</option>
             <option value="interstitial">Interstitial</option>
           </select>
-          <input placeholder="Image URL" value={draft.image_url} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
+          <div className="col-span-2">
+            <FileUploader
+              bucket="ads"
+              accept="image/*,video/mp4"
+              label="Upload ad image / video"
+              value={draft.image_url}
+              onChange={(url) => setDraft({ ...draft, image_url: url ?? "" })}
+            />
+          </div>
           <input placeholder="Link URL" value={draft.link_url} onChange={(e) => setDraft({ ...draft, link_url: e.target.value })} className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
           <input placeholder="Sort order" type="number" value={draft.sort_order} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
         </div>
