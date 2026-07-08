@@ -113,47 +113,24 @@ function Page() {
 
   return (
     <>
-      <div className="mx-auto min-h-[100dvh] max-w-md shop-royal pb-28">
+      <div className="mx-auto min-h-[100dvh] max-w-md pb-28">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 border-b border-[color:var(--gold)]/25 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/90 backdrop-blur-xl"
+          className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="flex items-center justify-between px-3 py-2.5">
             <button
               onClick={() => router.history.back()}
-              className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white"
+              className="grid h-9 w-9 place-items-center rounded-full bg-muted text-foreground"
               aria-label="Back"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-black tracking-wide text-[color:var(--gold)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            <h1 className="text-lg font-black tracking-wide text-foreground">
               Shop
             </h1>
-            <Link
-              to="/me"
-              className="rounded-full bg-gradient-to-r from-[#7a4a08] to-[#3a1f04] px-3 py-1.5 text-[11px] font-bold text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.55)]"
-            >
-              Mine
-            </Link>
-          </div>
-
-          {/* Promo banner */}
-          <div className="px-3 pb-2">
-            <div className="relative overflow-hidden rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[#4a1a5c] via-[#5b1e6f] to-[#3a0f4a] px-3 py-1.5 pr-16">
-              <div className="flex items-center gap-2 text-[11px] font-bold text-white">
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-red-500">
-                  <Gift className="h-3.5 w-3.5 text-white" />
-                </span>
-                <span className="truncate">
-                  Win <span className="text-[color:var(--gold)]">10,000</span> by sending a gift
-                </span>
-              </div>
-              <div className="absolute -right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-600 px-2 py-0.5 text-xs font-black text-red-900 shadow-[0_0_12px_rgba(255,190,60,0.6)]">
-                x250
-                <span className="text-[8px] font-bold text-red-800/80">Times</span>
-              </div>
-            </div>
+            <span className="h-9 w-9" aria-hidden />
           </div>
         </header>
 
