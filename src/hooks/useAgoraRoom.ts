@@ -51,6 +51,8 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
   const [error, setError] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
   const [muted, setMuted] = useState(false);
+  const [speakerMuted, setSpeakerMuted] = useState(false);
+  const speakerMutedRef = useRef(false);
   const [videoOn, setVideoOn] = useState(video);
 
   const musicTrackRef = useRef<IBufferSourceAudioTrack | null>(null);
