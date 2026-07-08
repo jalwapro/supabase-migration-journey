@@ -72,13 +72,11 @@ const TABS: { key: TabKey; label: string; Icon: typeof Video }[] = [
   { key: "pk", label: "PK Battle", Icon: Swords },
 ];
 
-const QUICK_ACTIONS = [
-  { to: "/create-room" as const, label: "Go Live", Icon: Rocket, tint: "from-[color:var(--primary)] to-[color:var(--secondary)]" },
-  { to: "/pk" as const, label: "PK Battle", Icon: Swords, tint: "from-[color:var(--gold)] to-[color:var(--primary)]" },
-  { to: "/rankings" as const, label: "Ranking", Icon: Trophy, tint: "from-amber-400 to-orange-500" },
-  { to: "/theme-shop" as const, label: "Shop", Icon: Palette, tint: "from-fuchsia-500 to-violet-500" },
-  { to: "/gifts" as const, label: "Gifts", Icon: Gift, tint: "from-rose-500 to-pink-500" },
-  { to: "/vip" as const, label: "VIP", Icon: Crown, tint: "from-yellow-400 to-amber-500" },
+const DEFAULT_BANNERS: Banner[] = [
+  { id: "d1", title: "Go Live & Shine Bright", image_url: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=1200&q=70&auto=format&fit=crop", link_url: "/create-room" },
+  { id: "d2", title: "PK Battles — Win Big", image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=1200&q=70&auto=format&fit=crop", link_url: "/pk" },
+  { id: "d3", title: "Weekly Rankings", image_url: "https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=1200&q=70&auto=format&fit=crop", link_url: "/rankings" },
+  { id: "d4", title: "New Themes in Shop", image_url: "https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=1200&q=70&auto=format&fit=crop", link_url: "/theme-shop" },
 ];
 
 function Home() {
@@ -349,13 +347,13 @@ function Home() {
 
           {/* Hero Banners */}
           <section className="px-4 pt-3">
-            {banners.data && banners.data.length > 0 ? (
+            {(() => { const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS; return list.length > 0 ? (
               <>
                 <div
                   ref={bannerRef}
                   className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scroll-smooth"
                 >
-                  {banners.data.map((b) => (
+                  {list.map((b) => (
                     <a
                       key={b.id}
                       href={b.link_url ?? "#"}
@@ -371,9 +369,9 @@ function Home() {
                     </a>
                   ))}
                 </div>
-                {banners.data.length > 1 && (
+                {list.length > 1 && (
                   <div className="mt-2 flex justify-center gap-1.5">
-                    {banners.data.map((_, i) => (
+                    {list.map((_, i) => (
                       <span
                         key={i}
                         className={`h-1.5 rounded-full transition-all ${
@@ -403,28 +401,10 @@ function Home() {
                   </div>
                 </div>
               </div>
-            )}
+            ); })()}
           </section>
 
-          {/* Quick actions rail */}
-          <section className="mt-4">
-            <div className="scrollbar-hide -mx-1 flex snap-x gap-2.5 overflow-x-auto px-4">
-              {QUICK_ACTIONS.map(({ to, label, Icon, tint }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="group flex w-16 shrink-0 snap-start flex-col items-center gap-1"
-                >
-                  <span className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${tint} shadow-[0_8px_24px_-10px_rgba(0,0,0,0.6)] ring-1 ring-white/20 transition group-active:scale-95`}>
-                    <Icon className="h-5 w-5 text-white drop-shadow" />
-                  </span>
-                  <span className="w-full truncate text-center text-[10px] font-medium text-foreground/85">
-                    {label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
+          {/* (Quick actions removed per request) */}
 
           {/* Live user slider */}
           <section className="mt-5">
