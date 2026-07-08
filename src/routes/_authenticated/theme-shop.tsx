@@ -324,10 +324,10 @@ function Page() {
 
         {/* Bottom action bar */}
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="mx-auto flex max-w-md items-center gap-2 px-3 py-2.5">
+          <div className="flex items-center gap-2 px-3 py-2.5">
             <Link
               to="/wallet"
               className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 text-sm font-black text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.4)]"
