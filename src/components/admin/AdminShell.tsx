@@ -95,9 +95,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
                     <li key={it.to}>
                       <Link
                         to={it.to}
-                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm ${
+                        className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
                           active
-                            ? "bg-primary/15 font-semibold text-primary"
+                            ? "emboss-nav-active font-semibold text-foreground"
                             : "text-muted-foreground hover:bg-card/60 hover:text-foreground"
                         }`}
                       >
@@ -112,7 +112,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           ))}
           <Link
             to="/"
-            className="mx-2 mt-2 flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground hover:bg-card/60 hover:text-foreground"
+            className="mx-2 mt-2 flex items-center gap-2 rounded-lg emboss px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
             <LogOut className="h-4 w-4" /> Exit to App
           </Link>

@@ -104,7 +104,7 @@ function StatCard({ label, value, icon: Icon, tone, delta, sub }: {
   label: string; value: number | string; icon: LucideIcon; tone: string; delta?: string; sub?: string;
 }) {
   return (
-    <div className="glass group relative overflow-hidden rounded-2xl p-5 transition hover:-translate-y-0.5">
+    <div className="emboss group relative overflow-hidden rounded-2xl p-5 transition hover:-translate-y-0.5">
       <div className="flex items-start justify-between">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -187,7 +187,7 @@ function Dashboard() {
 
       {/* Chart + Room types */}
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <div className="glass rounded-2xl p-5 lg:col-span-2">
+        <div className="emboss rounded-2xl p-5 lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-bold">Revenue Overview</p>
@@ -220,7 +220,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-5">
+        <div className="emboss rounded-2xl p-5">
           <div className="mb-4">
             <p className="text-sm font-bold">Room Types</p>
             <p className="text-[11px] text-muted-foreground">Currently active</p>
@@ -239,14 +239,14 @@ function Dashboard() {
 
       {/* Recent activity + Quick actions */}
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
-        <div className="glass rounded-2xl p-5 lg:col-span-2">
+        <div className="emboss rounded-2xl p-5 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-bold">Recent Activity</p>
             <Link to="/admin/logs" className="text-[11px] font-bold text-primary hover:underline">View all</Link>
           </div>
           <div className="space-y-1.5">
             {(activity.data ?? []).map((row) => (
-              <div key={row.id} className="flex items-center gap-3 rounded-xl bg-card/40 px-3 py-2.5">
+              <div key={row.id} className="flex items-center gap-3 rounded-xl emboss-inset px-3 py-2.5">
                 <div className={`grid h-8 w-8 place-items-center rounded-full ${row.kind === "recharge" ? "bg-emerald-500/15 text-emerald-400" : row.kind === "withdraw" ? "bg-red-500/15 text-red-400" : "bg-primary/15 text-primary"}`}>
                   {row.kind === "recharge" ? <Wallet className="h-4 w-4" /> : row.kind === "withdraw" ? <ArrowUpFromLine className="h-4 w-4" /> : <Users className="h-4 w-4" />}
                 </div>
@@ -263,7 +263,7 @@ function Dashboard() {
           </div>
         </div>
 
-        <div className="glass rounded-2xl p-5">
+        <div className="emboss rounded-2xl p-5">
           <p className="mb-3 text-sm font-bold">Quick Actions</p>
           <div className="space-y-2">
             <QuickLink to="/admin/recharge" label="Review Recharges" badge={pendingR.data ?? 0} icon={Wallet} />
@@ -272,7 +272,7 @@ function Dashboard() {
             <QuickLink to="/admin/live" label="Live Rooms" badge={liveRooms.data ?? 0} icon={Radio} />
             <QuickLink to="/admin/users" label="Manage Users" icon={Users} />
           </div>
-          <div className="mt-4 rounded-xl border border-border bg-card/40 p-3 text-[11px] text-muted-foreground">
+          <div className="mt-4 rounded-xl emboss-inset p-3 text-[11px] text-muted-foreground">
             <p className="font-bold text-foreground">Money out</p>
             <p className="mt-1">Total withdrawals paid: <span className="font-bold text-red-400">PKR {Number(withdrawn.data ?? 0).toLocaleString()}</span></p>
           </div>
@@ -298,7 +298,7 @@ function RoomRow({ icon: Icon, label, value, pct, tone }: { icon: LucideIcon; la
 
 function MiniStat({ icon: Icon, label, value, tone }: { icon: LucideIcon; label: string; value: number; tone: string }) {
   return (
-    <div className="rounded-xl bg-card/40 p-2.5">
+    <div className="rounded-xl emboss-inset p-2.5">
       <div className={`mb-1 grid h-6 w-6 place-items-center rounded-md ${tone}`}><Icon className="h-3 w-3" /></div>
       <p className="text-lg font-bold leading-none">{value.toLocaleString()}</p>
       <p className="mt-1 text-[10px] text-muted-foreground">{label}</p>
@@ -308,7 +308,7 @@ function MiniStat({ icon: Icon, label, value, tone }: { icon: LucideIcon; label:
 
 function QuickLink({ to, label, badge, icon: Icon }: { to: string; label: string; badge?: number; icon: LucideIcon }) {
   return (
-    <Link to={to} className="flex items-center gap-3 rounded-xl bg-card/40 px-3 py-2.5 text-sm hover:bg-card/70">
+    <Link to={to} className="flex items-center gap-3 rounded-xl emboss-inset px-3 py-2.5 text-sm hover:brightness-125">
       <Icon className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1 truncate">{label}</span>
       {typeof badge === "number" && badge > 0 && (
