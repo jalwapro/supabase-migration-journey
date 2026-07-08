@@ -540,6 +540,12 @@ function RoomPage() {
       toast.error("Sign in to like");
       return;
     }
+    // Host tapping a seated (non-self) user → open manage sheet instead of liking
+    const seated = members.find((m) => m.seat_index === i);
+    if (isHost && seated && seated.user_id !== user.id) {
+      setManageMember(seated);
+      return;
+    }
     // optimistic bump
     setSeatLikes((prev) => ({ ...prev, [i]: (prev[i] ?? 0) + 1 }));
     setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
@@ -555,6 +561,22 @@ function RoomPage() {
     }
     if (typeof data === "number") {
       setSeatLikes((prev) => ({ ...prev, [i]: data }));
+    }
+  }
+
+  async function toggleMuteWithSync() {
+    if (!shouldPublish) {
+      toast.info("Take a seat first to talk");
+      return;
+    }
+    await agora.toggleMute();
+    const nextMuted = !agora.muted;
+    if (user) {
+      await supabase
+        .from("room_members")
+        .update({ is_muted: nextMuted })
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
     }
   }
 
