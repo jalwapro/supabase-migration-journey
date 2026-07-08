@@ -48,6 +48,7 @@ import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
+import { InviteSheet } from "@/components/room/InviteSheet";
 import { LevelBadge } from "@/components/LevelBadge";
 import { tierForLevel } from "@/lib/levels";
 
@@ -122,6 +123,7 @@ function RoomPage() {
   const [giftOpen, setGiftOpen] = useState(false);
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
   const [manageMember, setManageMember] = useState<Member | null>(null);
@@ -485,19 +487,10 @@ function RoomPage() {
     navigate({ to: "/" });
   }
 
-  async function share() {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ url, title: room.data?.title ?? "Live Room" });
-        return;
-      } catch {
-        /* cancelled */
-      }
-    }
-    await navigator.clipboard.writeText(url);
-    toast.success("Room link copied");
+  function share() {
+    setInviteOpen(true);
   }
+
 
   const seatsByIndex = useMemo(() => {
     const m = new Map<number, Member>();
@@ -1046,6 +1039,12 @@ function RoomPage() {
         isHost={isHost}
       />
       <HostMusicPlayer open={musicOpen && isHost} onClose={() => setMusicOpen(false)} controller={agora} />
+      <InviteSheet
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        roomUrl={typeof window !== "undefined" ? window.location.href : ""}
+        roomTitle={room.data?.title ?? "Live Room"}
+      />
       {isHost && (
         <SeatsSheet
           open={seatsSheetOpen}
