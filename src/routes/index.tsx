@@ -347,7 +347,7 @@ function Home() {
 
           {/* Hero Banners */}
           <section className="px-4 pt-3">
-            {banners.data && banners.data.length > 0 ? (
+            {(() => { const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS; return list.length > 0 ? (
               <>
                 <div
                   ref={bannerRef}
