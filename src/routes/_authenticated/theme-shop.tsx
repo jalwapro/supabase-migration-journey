@@ -214,10 +214,10 @@ function Page() {
               <ChevronLeft className="h-5 w-5" />
             </button>
             <div className="flex flex-col items-center">
-              <h1 className="text-base font-black uppercase tracking-[0.28em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-100 to-amber-400">
-                Royal Shop
+              <h1 className="shop-gold-shimmer text-base font-black uppercase tracking-[0.32em]">
+                ✦ Royal Shop ✦
               </h1>
-              <span className="mt-0.5 h-[2px] w-16 rounded-full bg-gradient-to-r from-transparent via-[color:var(--gold)] to-transparent" />
+              <span className="mt-0.5 h-[2px] w-20 rounded-full bg-gradient-to-r from-transparent via-[color:var(--gold)] to-transparent" />
             </div>
             <Link
               to="/wallet"
