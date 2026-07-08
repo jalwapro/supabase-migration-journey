@@ -40,15 +40,26 @@ function RankPage() {
   const q = useQuery({
     queryKey: ["rank", board, period],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Try full select; if vip_level column missing, retry without it.
+      let { data, error } = await supabase
         .from("profiles")
         .select("id,username,avatar,coins,vip_level")
         .order("coins", { ascending: false })
         .limit(50);
-      if (error) throw error;
+      if (error) {
+        const res = await supabase
+          .from("profiles")
+          .select("id,username,avatar,coins")
+          .order("coins", { ascending: false })
+          .limit(50);
+        if (res.error) throw res.error;
+        data = res.data as unknown as typeof data;
+      }
       return (data ?? []) as unknown as Entry[];
     },
+    staleTime: 30_000,
   });
+
 
   const list = q.data ?? [];
   const top3 = list.slice(0, 3);
