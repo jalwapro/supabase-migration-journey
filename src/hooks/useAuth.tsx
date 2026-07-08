@@ -88,7 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const user = session?.user ?? null;
-  const isAdmin = roles.includes("admin") || roles.includes("super_admin");
+  const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
+  const isAdmin =
+    roles.includes("admin") ||
+    roles.includes("super_admin") ||
+    (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
@@ -114,7 +118,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("[useAuth] signOut", e);
+    }
+    setSession(null);
+    setProfile(null);
+    setRoles([]);
+    if (typeof window !== "undefined") {
+      window.location.replace("/auth");
+    }
   }, []);
 
   useEffect(() => {
