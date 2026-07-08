@@ -17,8 +17,12 @@ function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("following");
+  useRealtimeInvalidate(`friends-live-${user?.id ?? "anon"}`, [
+    { table: "follows", invalidate: [["friends"], ["me-counts"]] },
+  ]);
 
   const { data: list } = useQuery({
+
     queryKey: ["friends", tab, user?.id],
     enabled: !!user,
     queryFn: async () => {
