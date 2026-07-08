@@ -177,6 +177,7 @@ function RoomPage() {
     uid: myUid,
     publish: shouldPublish,
     video: isVideo,
+    kind: isVideo ? "video" : "voice",
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
