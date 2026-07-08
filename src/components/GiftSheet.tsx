@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { X, Loader2, Coins, Send } from "lucide-react";
 import { toast } from "sonner";
+
 
 export type Gift = {
   id: string;
@@ -185,7 +187,7 @@ export function GiftSheet({
         </div>
         {selectedGift && !canAfford && (
           <p className="mt-2 text-center text-[11px] text-[color:var(--destructive)]">
-            Not enough coins. <a href="/recharge" className="underline">Recharge</a>
+            Not enough coins. <Link to="/recharge" className="underline">Recharge</Link>
           </p>
         )}
       </div>
