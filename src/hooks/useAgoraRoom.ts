@@ -109,7 +109,13 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
 
         client.on("user-published", async (user, mediaType) => {
           await client.subscribe(user, mediaType);
-          if (mediaType === "audio") user.audioTrack?.play();
+          if (mediaType === "audio") {
+            if (speakerMutedRef.current) {
+              try { user.audioTrack?.setVolume(0); } catch { /* ignore */ }
+            } else {
+              user.audioTrack?.play();
+            }
+          }
           setRemotes((prev) => {
             const next = new Map(prev);
             const uidNum = Number(user.uid);
