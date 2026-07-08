@@ -147,6 +147,47 @@ function Page() {
     onError: (e: Error) => toast.error(`Apply failed: ${e.message}`),
   });
 
+  const unequip = useMutation({
+    mutationFn: async (item: ShopItem) => {
+      const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
+      const slug = (cat?.slug ?? "").toLowerCase().trim();
+      const name = (cat?.name ?? "").toLowerCase().trim();
+      const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
+      if (isTheme) {
+        const { error } = await supabase.from("profiles").update({ theme_id: null }).eq("id", user!.id);
+        if (error) throw error;
+        return;
+      }
+      const column = COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name];
+      if (!column) return;
+      const { error } = await supabase.from("profiles").update({ [column]: null }).eq("id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success("Unequipped");
+      await refresh();
+      qc.invalidateQueries({ queryKey: ["shop"] });
+    },
+    onError: (e: Error) => toast.error(`Unequip failed: ${e.message}`),
+  });
+
+  const equippedColumnFor = (item: ShopItem): "theme_id" | "frame" | "ring" | "bubble" | "car" | "entrance" | "special_id" | "data_card" | null => {
+    const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
+    const slug = (cat?.slug ?? "").toLowerCase().trim();
+    const name = (cat?.name ?? "").toLowerCase().trim();
+    if (slug === "theme" || slug === "themes" || name === "theme" || name === "themes") return "theme_id";
+    return COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name] || null;
+  };
+
+  const isItemEquipped = (item: ShopItem): boolean => {
+    const col = equippedColumnFor(item);
+    if (!col) return false;
+    if (col === "theme_id") return profile?.theme_id === item.id;
+    const url = item.animation_url || item.preview_url || item.bg_image;
+    const cur = (profile as unknown as Record<string, string | null>)?.[col];
+    return !!cur && !!url && cur === url;
+  };
+
   const isOwned = (id: string) => {
     const r = data?.owned.get(id);
     return !!r && (!r.expires_at || new Date(r.expires_at) > new Date());
