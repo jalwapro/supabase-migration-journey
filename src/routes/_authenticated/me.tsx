@@ -234,7 +234,7 @@ function MePage() {
           <Row to="/gallery" icon="📸" title="Gallery" sub="Manage your photos" />
           <Row to="/wallet" icon="💰" title="Wallet & Coins" sub="Recharge your balance" />
           <Row to="/withdraw" icon="💎" title="Withdraw Diamonds" sub="Cash out your earnings" />
-          <Row to="/theme-shop" icon="🎨" title="Theme Shop" sub="Unlock app themes" />
+          <Row to="/theme-shop" icon="🛍️" title="Shop" sub="Cars, frames, rings, entrances & more" />
           <Row to="/vip" icon="👑" title="VIP Membership" sub="Upgrade to VIP" />
           <Row to="/my-rooms" icon="🏠" title="My Rooms" sub="Room history, points & active time" />
           <Row to="/pk-history" icon="⚔️" title="PK History" sub="Battle wins & losses" />
