@@ -216,17 +216,17 @@ function Home() {
     return () => el.removeEventListener("scroll", onScroll);
   }, [banners.data]);
 
-  // Auto-advance banners
+  // Auto-advance banners every 3s
   useEffect(() => {
-    const list = banners.data;
-    if (!list || list.length < 2) return;
+    const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS;
+    if (list.length < 2) return;
     const t = setInterval(() => {
       const el = bannerRef.current;
       if (!el) return;
       const step = el.clientWidth * 0.88 + 12;
       const next = (bannerIdx + 1) % list.length;
       el.scrollTo({ left: next * step, behavior: "smooth" });
-    }, 4500);
+    }, 3000);
     return () => clearInterval(t);
   }, [banners.data, bannerIdx]);
 
