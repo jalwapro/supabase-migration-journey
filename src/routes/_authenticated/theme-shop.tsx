@@ -80,20 +80,27 @@ function Page() {
       await refresh();
       qc.invalidateQueries({ queryKey: ["shop"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(`Purchase failed: ${e.message}`),
   });
 
   const equip = useMutation({
     mutationFn: async (item: ShopItem) => {
       const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
-      if (error) throw error;
+      if (error) {
+        // Fallback: try updating profile directly if RPC is missing
+        const { error: upErr } = await supabase
+          .from("profiles")
+          .update({ theme_id: item.id })
+          .eq("id", user!.id);
+        if (upErr) throw error; // surface the original RPC error
+      }
     },
     onSuccess: async () => {
-      toast.success("Equipped");
+      toast.success("Applied ✨");
       await refresh();
       qc.invalidateQueries({ queryKey: ["shop"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(`Apply failed: ${e.message}`),
   });
 
   const isOwned = (id: string) => {
