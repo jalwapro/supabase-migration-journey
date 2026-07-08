@@ -256,7 +256,7 @@ function Dashboard() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-bold">Revenue Overview</p>
-              <p className="text-[11px] text-muted-foreground">Last 12 months (PKR)</p>
+              <p className="text-[11px] text-muted-foreground">{rangeLabel} (PKR)</p>
             </div>
             <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-400">Live</span>
           </div>
