@@ -120,8 +120,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="min-w-0 flex-1">
         <MobileNav pathname={pathname} />
-        <div className="mx-auto max-w-6xl p-4 md:p-6">{children}</div>
+        <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8">{children}</div>
       </main>
+
     </div>
   );
 }
