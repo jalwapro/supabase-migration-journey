@@ -1751,7 +1751,14 @@ function Seat({
   }
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div
+      data-seat-index={index}
+      className={`relative flex flex-col items-center gap-0.5 rounded-full transition-shadow duration-300 ${
+        glowing
+          ? "shadow-[0_0_28px_6px_color-mix(in_oklab,var(--gold)_65%,transparent)] animate-pulse"
+          : ""
+      }`}
+    >
       <button
         onClick={() => (member ? onLike() : onClaim())}
         className="relative aspect-square w-full"
