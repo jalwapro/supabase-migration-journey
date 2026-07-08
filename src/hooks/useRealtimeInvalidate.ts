@@ -22,10 +22,16 @@ export function useRealtimeInvalidate(channelName: string, subs: Sub[]) {
     if (!subs.length) return;
     let ch = supabase.channel(channelName);
     for (const s of subs) {
-      ch = ch.on(
-        // @ts-expect-error — supabase-js overload accepts this
+      ch = (ch as unknown as {
+        on: (
+          type: string,
+          cfg: Record<string, unknown>,
+          cb: () => void,
+        ) => typeof ch;
+      }).on(
         "postgres_changes",
         { event: "*", schema: "public", table: s.table, ...(s.filter ? { filter: s.filter } : {}) },
+
         () => {
           for (const key of s.invalidate) {
             qc.invalidateQueries({
