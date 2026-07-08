@@ -96,11 +96,11 @@ function MePage() {
           <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a0b2e] via-[#2d0b4d] to-[#050510] p-5 text-white shadow-2xl">
             {/* ambient glow */}
             <div
-              className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-40 blur-3xl"
+              className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-20"
               style={{ background: tier.glow }}
             />
             <div
-              className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full opacity-30 blur-3xl"
+              className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full opacity-15"
               style={{ background: "color-mix(in oklab, var(--primary) 70%, transparent)" }}
             />
 
@@ -148,7 +148,7 @@ function MePage() {
                   <Link
                     to="/settings"
                     aria-label="Edit profile"
-                    className="ml-auto grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/85 backdrop-blur"
+                    className="ml-auto grid h-7 w-7 place-items-center rounded-full bg-white/15 text-white/85"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Link>
@@ -173,7 +173,7 @@ function MePage() {
             {/* Ranking badge */}
             <button
               onClick={() => setFrameSheetOpen(true)}
-              className="relative mt-5 flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left backdrop-blur"
+              className="relative mt-5 flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left"
               style={{
                 borderColor: `${tier.color}80`,
                 background: `linear-gradient(90deg, ${tier.color}22 0%, #0a011477 100%)`,
@@ -268,7 +268,7 @@ function StatLink({ to, value, label, gold }: { to: string; value: number; label
   return (
     <Link
       to={to}
-      className="rounded-2xl border border-white/10 bg-white/5 py-2 backdrop-blur active:scale-95 transition-transform"
+      className="rounded-2xl border border-white/10 bg-white/10 py-2 active:scale-95 transition-transform"
     >
       <p className={`text-base font-black ${gold ? "text-[color:var(--gold)]" : "text-white"}`}>
         {value.toLocaleString()}
@@ -313,7 +313,7 @@ function FrameCollectionSheet({
 }) {
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-black/75" onClick={onClose} />
       <div
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-white/10 bg-gradient-to-b from-[#1a0b2e] via-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
