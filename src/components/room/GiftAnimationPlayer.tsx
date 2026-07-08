@@ -155,13 +155,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           <span
             key={i}
             className="absolute text-2xl gift-anim-particle"
-            style={
-              {
-                // @ts-expect-error CSS custom property
-                "--angle": `${angle}deg`,
-                animationDelay: `${(i % 5) * 40}ms`,
-              } as React.CSSProperties
-            }
+            style={{
+              ["--angle" as string]: `${angle}deg`,
+              animationDelay: `${(i % 5) * 40}ms`,
+            } as React.CSSProperties}
           >
             {i % 3 === 0 ? "✨" : i % 3 === 1 ? "⭐" : "💫"}
           </span>
