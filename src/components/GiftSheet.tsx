@@ -187,7 +187,7 @@ export function GiftSheet({
         </div>
         {selectedGift && !canAfford && (
           <p className="mt-2 text-center text-[11px] text-[color:var(--destructive)]">
-            Not enough coins. <a href="/recharge" className="underline">Recharge</a>
+            Not enough coins. <Link to="/recharge" className="underline">Recharge</Link>
           </p>
         )}
       </div>
