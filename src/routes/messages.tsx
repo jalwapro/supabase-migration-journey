@@ -75,23 +75,30 @@ function MessagesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("direct_messages")
-        .select("sender_id,receiver_id,text,created_at,read_at")
-        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+        .select("sender_id,recipient_id,message,kind,created_at,read_at")
+        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
       const map = new Map<string, LastMsg>();
       for (const m of data ?? []) {
-        const peer = m.sender_id === user.id ? m.receiver_id : m.sender_id;
+        const peer = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        const preview =
+          m.kind === "image" ? "📷 Photo"
+          : m.kind === "video" ? "🎬 Video"
+          : m.kind === "voice" ? "🎙️ Voice message"
+          : m.kind === "album" ? "🖼️ Shared from gallery"
+          : m.kind === "file" ? "📎 File"
+          : (m.message ?? "");
         const existing = map.get(peer);
         if (!existing) {
           map.set(peer, {
             peer_id: peer,
-            text: m.text,
+            text: preview,
             created_at: m.created_at,
-            unread: m.receiver_id === user.id && !m.read_at ? 1 : 0,
+            unread: m.recipient_id === user.id && !m.read_at ? 1 : 0,
           });
-        } else if (m.receiver_id === user.id && !m.read_at) {
+        } else if (m.recipient_id === user.id && !m.read_at) {
           existing.unread += 1;
         }
       }
