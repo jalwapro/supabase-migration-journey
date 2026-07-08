@@ -11,7 +11,9 @@ type ThemeRow = {
   preview_url: string | null;
   primary_color: string | null;
   accent_color: string | null;
+  category_id?: string | null;
 };
+
 
 export function ThemeBackground() {
   const { profile, loading: authLoading } = useAuth();
