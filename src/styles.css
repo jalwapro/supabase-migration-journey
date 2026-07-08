@@ -296,9 +296,10 @@
   position: relative;
   overflow-x: hidden;
 }
+body.themed,
 body.themed .app-frame,
 body.themed .app-frame-outer {
-  background: transparent;
+  background: transparent !important;
 }
 @media (min-width: 481px) {
   .app-frame {
