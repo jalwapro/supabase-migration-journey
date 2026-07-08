@@ -137,7 +137,7 @@ function Page() {
         {/* Body */}
         <div className="flex">
           {/* Sidebar categories */}
-          <aside className="w-[78px] shrink-0 space-y-1.5 bg-black/50 px-1.5 py-2">
+          <aside className="w-[78px] shrink-0 space-y-1.5 bg-card/60 px-1.5 py-2">
             {cats.map((c) => {
               const active = c.id === currentCat;
               return (
@@ -149,23 +149,23 @@ function Page() {
                   }}
                   className={`relative flex w-full flex-col items-center gap-1 rounded-xl py-2 transition ${
                     active
-                      ? "bg-gradient-to-b from-[color:var(--gold)]/35 via-[color:var(--gold)]/10 to-transparent shadow-[inset_0_0_0_1px_rgba(212,175,55,0.6)]"
-                      : "hover:bg-white/5"
+                      ? "bg-gradient-to-b from-primary/25 via-primary/10 to-transparent shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                      : "hover:bg-muted/50"
                   }`}
                 >
                   {active && (
-                    <span className="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-r bg-[color:var(--gold)]" />
+                    <span className="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-r bg-primary" />
                   )}
-                  <div className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full ${active ? "ring-2 ring-[color:var(--gold)]" : "ring-1 ring-white/10"}`}>
+                  <div className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full ${active ? "ring-2 ring-primary" : "ring-1 ring-border"}`}>
                     {c.icon_url ? (
                       <img src={c.icon_url} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#5b3808] to-[#1a0e02]">
-                        <Sparkles className="h-4 w-4 text-[color:var(--gold)]" />
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-primary/40 to-secondary/40">
+                        <Sparkles className="h-4 w-4 text-primary-foreground" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-[10px] font-bold ${active ? "text-[color:var(--gold)]" : "text-white/60"}`}>
+                  <span className={`text-[10px] font-bold ${active ? "text-primary" : "text-muted-foreground"}`}>
                     {c.name}
                   </span>
                 </button>
