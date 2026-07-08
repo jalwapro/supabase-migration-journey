@@ -503,6 +503,33 @@ function RoomPage() {
     if (error) toast.error(error.message);
   }
 
+  async function sendEmoji(emoji: string, seatIndex: number) {
+    if (!user) {
+      toast.error("Sign in to react");
+      return;
+    }
+    // Local optimistic — even sender sees it fly
+    const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex }]);
+    setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
+    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 1800);
+    setTimeout(() => {
+      setGlowSeats((prev) => {
+        const next = { ...prev };
+        next[seatIndex] = Math.max(0, (next[seatIndex] ?? 1) - 1);
+        if (!next[seatIndex]) delete next[seatIndex];
+        return next;
+      });
+    }, 2200);
+    const { error } = await supabase.from("room_messages").insert({
+      room_id: roomId,
+      user_id: user.id,
+      kind: "emoji",
+      text: `${emoji}|${seatIndex}`,
+    });
+    if (error) console.warn("[emoji]", error.message);
+  }
+
   async function leaveRoom() {
     if (user && isHost) {
       await supabase
