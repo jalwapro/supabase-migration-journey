@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceTilt } from "@/hooks/useDeviceTilt";
