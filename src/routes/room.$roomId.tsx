@@ -833,6 +833,7 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => likeSeat(i)}
+                        glowing={!!glowSeats[i]}
                       />
                     );
                   })}
