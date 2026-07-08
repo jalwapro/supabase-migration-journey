@@ -59,6 +59,7 @@ function Page() {
     },
   });
 
+  const tilt = useDeviceTilt(22);
   const cats = data?.cats ?? [];
   const currentCat = activeCat ?? cats[0]?.id ?? null;
   const items = useMemo(
