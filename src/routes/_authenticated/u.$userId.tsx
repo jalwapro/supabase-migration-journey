@@ -41,6 +41,12 @@ type FullProfile = {
   full_name: string | null;
   avatar: string | null;
   frame: string | null;
+  ring: string | null;
+  bubble: string | null;
+  car: string | null;
+  entrance: string | null;
+  special_id: string | null;
+  data_card: string | null;
   bio: string | null;
   gender: string | null;
   country: string | null;
@@ -69,7 +75,7 @@ function UserProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,username,full_name,avatar,frame,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
+          "id,username,full_name,avatar,frame,ring,bubble,car,entrance,special_id,data_card,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
         )
         .eq("id", userId)
         .maybeSingle();
@@ -238,6 +244,33 @@ function UserProfilePage() {
     <AppShell showHeader={false}>
       {/* Hero */}
       <div className="relative overflow-hidden">
+        {p.data_card && (
+          <div
+            className="absolute inset-0 -z-10"
+            style={{ backgroundImage: `url(${p.data_card})`, backgroundSize: "cover", backgroundPosition: "center" }}
+          />
+        )}
+        {p.entrance && (
+          <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-12 overflow-hidden">
+            {/\.(mp4|webm|mov)($|\?)/i.test(p.entrance) ? (
+              <video src={p.entrance} autoPlay muted loop playsInline className="h-full w-full object-cover" />
+            ) : (
+              <img src={p.entrance} alt="" className="h-full w-full object-cover" />
+            )}
+            <div className="entrance-shimmer absolute inset-0" />
+          </div>
+        )}
+        {p.car && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-4 z-[1] h-12">
+            <div className="car-drive absolute inset-y-0 left-0 w-28">
+              {/\.(mp4|webm|mov)($|\?)/i.test(p.car) ? (
+                <video src={p.car} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+              ) : (
+                <img src={p.car} alt="" className="h-full w-full object-contain" />
+              )}
+            </div>
+          </div>
+        )}
         <div
           className="absolute inset-0 opacity-90"
           style={{
@@ -245,6 +278,7 @@ function UserProfilePage() {
           }}
         />
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
+
 
         {/* Top bar */}
         <div
@@ -263,10 +297,19 @@ function UserProfilePage() {
                 navigator.clipboard.writeText(p.user_code!);
                 toast.success("ID copied");
               }}
-              className="flex items-center gap-1 rounded-full bg-black/50 px-3 py-1.5 text-xs font-bold text-white backdrop-blur"
+              className="relative flex items-center gap-1 overflow-hidden rounded-full bg-black/50 px-3 py-1.5 text-xs font-bold text-white backdrop-blur"
             >
-              ID: {p.user_code}
-              <Copy className="h-3 w-3 opacity-70" />
+              {p.special_id && (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-80"
+                  style={{ backgroundImage: `url(${p.special_id})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                />
+              )}
+              <span className="relative z-10 flex items-center gap-1 drop-shadow">
+                ID: {p.user_code}
+                <Copy className="h-3 w-3 opacity-70" />
+              </span>
             </button>
           )}
         </div>
@@ -280,6 +323,7 @@ function UserProfilePage() {
             size="xl"
             showBadge
             frame={p.frame}
+            ring={p.ring}
           />
           <div className="mt-4 flex items-center gap-2">
             <h1 className="text-xl font-black text-white">
