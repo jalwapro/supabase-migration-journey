@@ -1109,6 +1109,37 @@ function RoomPage() {
           onPk={() => toast.info("PK Battle — coming soon")}
         />
       )}
+      <SeatActionSheet
+        member={manageMember}
+        onClose={() => setManageMember(null)}
+        onToggleModerator={async () => {
+          if (!manageMember) return;
+          const next = !manageMember.is_moderator;
+          const { error } = await supabase
+            .from("room_members")
+            .update({ is_moderator: next })
+            .eq("room_id", roomId)
+            .eq("user_id", manageMember.user_id);
+          if (error) toast.error(error.message);
+          else {
+            toast.success(next ? "Made moderator" : "Removed as moderator");
+            setManageMember(null);
+          }
+        }}
+        onKickFromSeat={async () => {
+          if (!manageMember) return;
+          const { error } = await supabase
+            .from("room_members")
+            .update({ seat_index: null, is_moderator: false })
+            .eq("room_id", roomId)
+            .eq("user_id", manageMember.user_id);
+          if (error) toast.error(error.message);
+          else {
+            toast.success("Removed from seat");
+            setManageMember(null);
+          }
+        }}
+      />
     </div>
   );
 }
