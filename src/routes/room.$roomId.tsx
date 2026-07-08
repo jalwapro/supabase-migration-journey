@@ -1019,19 +1019,21 @@ function RoomPage() {
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => void toggleMuteWithSync()}
-              aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-            >
-              {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </button>
+            {shouldPublish ? (
+              <button
+                onClick={() => void toggleMuteWithSync()}
+                aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              >
+                {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            ) : null}
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
-                aria-label="Emoji"
-                onClick={() => setText((t) => t + "😊")}
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+                aria-label="Emoji reactions"
+                onClick={() => setEmojiSheetOpen(true)}
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white"
               >
                 <Smile className="h-3.5 w-3.5" />
               </button>
@@ -1060,20 +1062,24 @@ function RoomPage() {
             >
               <Gift className="h-4 w-4" />
             </button>
-            <button
-              onClick={openLudo}
-              aria-label="Games"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-            >
-              <Gamepad2 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => (isHost ? setSeatsSheetOpen(true) : toast.info("Host only"))}
-              aria-label="More"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
+            {isHost && (
+              <>
+                <button
+                  onClick={openLudo}
+                  aria-label="Games"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setSeatsSheetOpen(true)}
+                  aria-label="Room seats"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
