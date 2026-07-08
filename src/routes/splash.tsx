@@ -63,8 +63,31 @@ function Splash() {
   });
 
 
-  const videoUrl = cfg.data?.splash_video ?? null;
+  // Detect slow / data-saver networks so we don't force a big video download.
+  const slowNetwork = (() => {
+    if (typeof navigator === "undefined") return false;
+    const c = (navigator as unknown as { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+    if (!c) return false;
+    if (c.saveData) return true;
+    return c.effectiveType === "2g" || c.effectiveType === "slow-2g" || c.effectiveType === "3g";
+  })();
+
+  const videoUrl = !slowNetwork ? (cfg.data?.splash_video ?? null) : null;
   const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
+
+  function finishVideo() {
+    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
+    navigate({ to: "/" });
+  }
+
+  // Hard cap: never keep the user on splash for more than 6s total, even if
+  // the video is still buffering on a slow connection.
+  useEffect(() => {
+    if (!videoUrl) return;
+    const t = window.setTimeout(finishVideo, 6000);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoUrl]);
 
   // Fallback progress bar (used when no video, or before video plays)
   useEffect(() => {
@@ -84,11 +107,6 @@ function Splash() {
     return () => cancelAnimationFrame(raf);
   }, [navigate, duration, videoUrl]);
 
-  function finishVideo() {
-    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
-    navigate({ to: "/" });
-  }
-
   if (videoUrl) {
     return (
       <main
@@ -105,8 +123,10 @@ function Splash() {
           autoPlay
           muted
           playsInline
+          preload="auto"
           onEnded={finishVideo}
           onError={finishVideo}
+          onCanPlay={() => { void videoRef.current?.play().catch(() => {}); }}
           className="h-full max-h-[100dvh] w-full max-w-[480px] object-cover"
         />
         <button
