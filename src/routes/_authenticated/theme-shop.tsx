@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
+import { useDeviceTilt } from "@/hooks/useDeviceTilt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/theme-shop")({ component: Page });
@@ -58,6 +59,7 @@ function Page() {
     },
   });
 
+  const tilt = useDeviceTilt(22);
   const cats = data?.cats ?? [];
   const currentCat = activeCat ?? cats[0]?.id ?? null;
   const items = useMemo(
@@ -219,10 +221,14 @@ function Page() {
                     >
                       {isBackground ? (
                         <div
-                          className={`shop-theme-3d relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
+                          className={`${tilt.active ? "" : "shop-theme-3d"} relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
                           style={{
                             background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
                             willChange: "transform",
+                            transform: tilt.active && !isSelected
+                              ? `translateZ(0) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`
+                              : undefined,
+                            transition: tilt.active ? "transform 120ms ease-out" : undefined,
                           }}
                         >
                           {media ? (
