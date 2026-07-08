@@ -485,9 +485,7 @@ function Page() {
         const modalImage = isVideo ? it.bg_image || it.preview_url : media;
         const owned = isOwned(it.id);
         const frameUrl2 = it.animation_url || it.preview_url || it.bg_image;
-        const isEquipped =
-          profile?.theme_id === it.id ||
-          (!!profile?.frame && !!frameUrl2 && profile.frame === frameUrl2);
+        const isEquipped = isItemEquipped(it);
         return (
           <div
             className="fixed inset-0 z-50 flex items-end justify-center bg-black/85 backdrop-blur-sm sm:items-center"
