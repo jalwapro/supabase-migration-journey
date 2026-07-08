@@ -356,9 +356,7 @@ function Page() {
               {items.map((it) => {
                 const owned = isOwned(it.id);
                 const frameUrl = it.animation_url || it.preview_url || it.bg_image;
-                const isEquipped =
-                  profile?.theme_id === it.id ||
-                  (!!profile?.frame && !!frameUrl && profile.frame === frameUrl);
+                const isEquipped = isItemEquipped(it);
                 const isSelected = selectedId === it.id;
                 const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days}d` : "Perm";
                 const cat = cats.find((c) => c.id === it.category_id);
