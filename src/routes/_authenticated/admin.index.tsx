@@ -45,12 +45,16 @@ function useCount(table: string, filter?: { col: string; val: string }) {
   });
 }
 
-function useSum(table: string, col: string, filter?: { c: string; v: string }) {
+function useSum(table: string, col: string, filter?: { c: string; v: string }, range?: DateRange) {
   return useQuery({
-    queryKey: ["admin_sum", table, col, filter],
+    queryKey: ["admin_sum", table, col, filter, range?.from, range?.to],
     queryFn: async (): Promise<number> => {
-      let q = supabase.from(table).select(col);
+      let q = supabase.from(table).select(`${col},created_at`);
       if (filter) q = q.eq(filter.c, filter.v);
+      if (range) {
+        const b = rangeBounds(range);
+        q = q.gte("created_at", b.from).lte("created_at", b.to);
+      }
       const { data } = await q;
       const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
       return rows.reduce((s, r) => s + Number(r[col] ?? 0), 0);
@@ -58,35 +62,69 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }) {
   });
 }
 
-function useMonthlyRevenue() {
+function useRangeCount(table: string, filter: { col: string; val: string } | undefined, range: DateRange) {
   return useQuery({
-    queryKey: ["admin_monthly_rev"],
+    queryKey: ["admin_rcount", table, filter, range.from, range.to],
     queryFn: async () => {
-      const since = new Date();
-      since.setMonth(since.getMonth() - 11);
-      since.setDate(1);
+      const b = rangeBounds(range);
+      let q = supabase.from(table).select("id", { count: "exact", head: true })
+        .gte("created_at", b.from).lte("created_at", b.to);
+      if (filter) q = q.eq(filter.col, filter.val);
+      const { count } = await q;
+      return count ?? 0;
+    },
+  });
+}
+
+function useRevenueSeries(range: DateRange) {
+  return useQuery({
+    queryKey: ["admin_rev_series", range.from, range.to],
+    queryFn: async () => {
+      const b = rangeBounds(range);
       const { data } = await supabase
         .from("recharge_requests")
         .select("amount_pkr,created_at,status")
         .eq("status", "approved")
-        .gte("created_at", since.toISOString());
-      const months: { name: string; value: number; key: string }[] = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        months.push({ key, name: d.toLocaleString("en", { month: "short" }), value: 0 });
+        .gte("created_at", b.from)
+        .lte("created_at", b.to);
+
+      const start = new Date(`${range.from}T00:00:00.000Z`);
+      const end = new Date(`${range.to}T00:00:00.000Z`);
+      const days = Math.max(1, Math.round((+end - +start) / 86400000) + 1);
+      const useMonthly = days > 120;
+
+      type Bucket = { key: string; name: string; value: number };
+      const buckets: Bucket[] = [];
+      const idx = new Map<string, Bucket>();
+
+      if (useMonthly) {
+        const cur = new Date(start); cur.setUTCDate(1);
+        while (cur <= end) {
+          const key = `${cur.getUTCFullYear()}-${cur.getUTCMonth()}`;
+          const bk: Bucket = { key, name: cur.toLocaleString("en", { month: "short", year: "2-digit" }), value: 0 };
+          buckets.push(bk); idx.set(key, bk);
+          cur.setUTCMonth(cur.getUTCMonth() + 1);
+        }
+      } else {
+        const cur = new Date(start);
+        while (cur <= end) {
+          const key = toYmd(cur);
+          const bk: Bucket = { key, name: cur.toLocaleDateString("en", { month: "short", day: "numeric" }), value: 0 };
+          buckets.push(bk); idx.set(key, bk);
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
       }
       (data ?? []).forEach((r: Record<string, unknown>) => {
         const dt = new Date(r.created_at as string);
-        const key = `${dt.getFullYear()}-${dt.getMonth()}`;
-        const m = months.find((x) => x.key === key);
-        if (m) m.value += Number(r.amount_pkr ?? 0);
+        const key = useMonthly ? `${dt.getUTCFullYear()}-${dt.getUTCMonth()}` : toYmd(dt);
+        const bk = idx.get(key);
+        if (bk) bk.value += Number(r.amount_pkr ?? 0);
       });
-      return months;
+      return buckets;
     },
   });
 }
+
 
 function useRecentActivity() {
   return useQuery({
