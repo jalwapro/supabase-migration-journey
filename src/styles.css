@@ -598,13 +598,21 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
 }
 .shop-theme-shine {
   background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
-  mix-blend-mode: overlay;
   animation: shop-chip-shimmer 3.4s ease-in-out infinite;
 }
 
 /* Full-screen equipped theme background — stronger 4D depth on mobile */
 .theme-background-root {
-  contain: layout paint;
+  --tilt-rx: 0deg;
+  --tilt-ry: 0deg;
+  --tilt-shift-x: 0px;
+  --tilt-shift-y: 0px;
+  --tilt-shift-x-inverse: 0px;
+  --tilt-shift-y-inverse: 0px;
+  --glint-x: 50%;
+  --glint-y: 50%;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 .theme-background-stage,
 .theme-background-4d {
@@ -616,52 +624,55 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
   will-change: transform;
 }
 .theme-background-4d-idle {
-  animation: theme-background-idle-4d 5.2s ease-in-out infinite;
+  transform: translate3d(0, 0, 0) rotateX(0deg) rotateY(0deg) scale(1.12);
 }
 .theme-background-4d-tilt {
-  transform: translate3d(var(--tilt-shift-x), var(--tilt-shift-y), 0) rotateX(var(--tilt-rx)) rotateY(var(--tilt-ry)) scale(1.16);
-  transition: transform 80ms linear;
+  transform: translate3d(var(--tilt-shift-x), var(--tilt-shift-y), 0) rotateX(var(--tilt-rx)) rotateY(var(--tilt-ry)) scale(1.15);
+  transition: transform 110ms linear;
 }
 .theme-background-depth {
-  opacity: .48;
-  filter: blur(20px) saturate(1.25);
-  transform: translateZ(-52px) scale(1.18);
+  opacity: .38;
+  filter: blur(18px) saturate(1.18);
+  transform: translateZ(-48px) scale(1.16);
 }
 .theme-background-gradient-depth {
   background:
-    radial-gradient(circle at 20% 18%, rgba(255,255,255,.28), transparent 22%),
-    radial-gradient(circle at 82% 22%, color-mix(in oklab, var(--primary) 36%, transparent), transparent 28%),
-    radial-gradient(circle at 50% 85%, color-mix(in oklab, var(--secondary) 34%, transparent), transparent 32%);
-  opacity: .62;
-  transform: translateZ(46px) scale(.94);
+    radial-gradient(circle at 20% 18%, rgba(255,255,255,.18), transparent 24%),
+    radial-gradient(circle at 82% 22%, color-mix(in oklab, var(--primary) 28%, transparent), transparent 30%),
+    radial-gradient(circle at 50% 85%, color-mix(in oklab, var(--secondary) 26%, transparent), transparent 34%);
+  opacity: .42;
+  transform: translateZ(36px) scale(.96);
 }
 .theme-background-media {
-  filter: saturate(1.18) contrast(1.06) brightness(1.03);
-  transform: translateZ(32px) scale(1.02);
+  filter: saturate(1.08) contrast(1.03) brightness(1.02);
+  transform: translateZ(24px) scale(1.01);
+}
+.theme-background-media-asset {
+  display: block;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  will-change: transform;
 }
 .theme-background-pixels {
   background-image:
-    repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px);
-  opacity: .35;
-  transform: translateZ(60px) translate3d(var(--tilt-shift-x-inverse), var(--tilt-shift-y-inverse), 0);
+    repeating-linear-gradient(0deg, rgba(255,255,255,.045) 0 1px, transparent 1px 14px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.045) 0 1px, transparent 1px 14px);
+  opacity: .24;
+  transform: translateZ(48px) translate3d(var(--tilt-shift-x-inverse), var(--tilt-shift-y-inverse), 0);
 }
 .theme-background-glint {
   background:
-    radial-gradient(circle at var(--glint-x) var(--glint-y), rgba(255,255,255,.18), transparent 34%);
-  opacity: .5;
-  transform: translateZ(80px);
+    radial-gradient(circle at var(--glint-x) var(--glint-y), rgba(255,255,255,.13), transparent 36%);
+  opacity: .34;
+  transform: translateZ(64px);
 }
 .theme-background-dim {
   background:
     radial-gradient(110% 80% at 50% 0%, transparent 0%, color-mix(in oklab, var(--background) 18%, transparent) 55%, color-mix(in oklab, var(--background) 50%, transparent) 100%),
     linear-gradient(180deg, color-mix(in oklab, var(--background) 20%, transparent), color-mix(in oklab, var(--background) 58%, transparent));
 }
-@keyframes theme-background-idle-4d {
-  0%, 100% { transform: translate3d(-10px, -3px, 0) rotateX(4deg) rotateY(-14deg) scale(1.12); }
-  50%      { transform: translate3d(10px, 4px, 0) rotateX(-4deg) rotateY(14deg) scale(1.12); }
-}
 @media (prefers-reduced-motion: reduce) {
-  .theme-background-4d-idle { animation: none; transform: scale(1.12); }
+  .theme-background-4d-tilt,
+  .theme-background-4d-idle { transition: none; transform: scale(1.12); }
 }
 

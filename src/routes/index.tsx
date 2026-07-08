@@ -236,13 +236,6 @@ function Home() {
 
   return (
     <>
-      {/* Ambient premium aurora background */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-40 -left-24 h-[420px] w-[420px] rounded-full bg-[color:var(--primary)]/25 blur-[120px]" />
-        <div className="absolute top-40 -right-24 h-[380px] w-[380px] rounded-full bg-[color:var(--secondary)]/25 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 h-[320px] w-[320px] rounded-full bg-[color:var(--gold)]/15 blur-[120px]" />
-      </div>
-
       <div className="min-h-[100dvh] pb-28">
         {/* Premium top bar */}
         <header
