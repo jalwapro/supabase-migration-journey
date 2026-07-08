@@ -563,9 +563,13 @@ function Page() {
 
                   {owned ? (
                     isEquipped ? (
-                      <div className="flex flex-1 items-center justify-center gap-1 rounded-full bg-emerald-500/20 py-3 text-sm font-black text-emerald-300 ring-1 ring-emerald-400/40">
-                        <Check className="h-4 w-4" /> Wearing
-                      </div>
+                      <button
+                        onClick={() => unequip.mutate(it)}
+                        disabled={unequip.isPending}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-full bg-white/10 py-3 text-sm font-black text-white ring-1 ring-white/20 disabled:opacity-40"
+                      >
+                        {unequip.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 text-emerald-300" /> Unequip</>}
+                      </button>
                     ) : (
                       <button
                         onClick={() => equip.mutate(it)}
