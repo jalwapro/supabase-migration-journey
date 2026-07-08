@@ -198,11 +198,21 @@ function MePage() {
                       navigator.clipboard.writeText(profile.user_code!);
                       toast.success("ID copied");
                     }}
-                    className="mt-2 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/80"
+                    className="relative mt-2 inline-flex items-center gap-1 overflow-hidden rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/90"
                   >
-                    ID · {profile.user_code} <Copy className="h-3 w-3" />
+                    {profile?.special_id && (
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 -z-0 opacity-80"
+                        style={{ backgroundImage: `url(${profile.special_id})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1 font-black drop-shadow">
+                      ID · {profile.user_code} <Copy className="h-3 w-3" />
+                    </span>
                   </button>
                 )}
+
               </div>
             </div>
 
