@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [hydrate]);
 
-  // Presence heartbeat — update last_seen every 30s while signed in
+  // Presence heartbeat — update last_seen every 15s + on focus/visibility
   useEffect(() => {
     if (!user) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
@@ -169,10 +169,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     };
     tick();
-    heartbeatRef.current = setInterval(tick, 30_000);
+    heartbeatRef.current = setInterval(tick, 15_000);
+    const onFocus = () => tick();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [user]);
 
