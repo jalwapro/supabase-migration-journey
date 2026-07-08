@@ -194,10 +194,12 @@ function Podium({ top3 }: { top3: Entry[] }) {
           <p className="mt-2 max-w-full truncate text-xs font-bold">
             @{e.username ?? "user"}
           </p>
-          <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[color:var(--gold)]">
-            <Coins className="h-3 w-3" />
-            {(e.coins ?? 0).toLocaleString()}
-          </div>
+          {isAdmin && (
+            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[color:var(--gold)]">
+              <Coins className="h-3 w-3" />
+              {(e.coins ?? 0).toLocaleString()}
+            </div>
+          )}
           <div
             className={`mt-2 w-full ${h} rounded-t-2xl bg-gradient-to-t ${
               place === 1
