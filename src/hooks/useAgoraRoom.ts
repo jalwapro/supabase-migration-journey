@@ -194,6 +194,23 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
     setMuted(next);
   }, [muted]);
 
+  const toggleSpeaker = useCallback(() => {
+    setSpeakerMuted((prev) => {
+      const next = !prev;
+      speakerMutedRef.current = next;
+      remotes.forEach((r) => {
+        try {
+          if (next) r.audioTrack?.setVolume(0);
+          else {
+            r.audioTrack?.setVolume(100);
+            r.audioTrack?.play();
+          }
+        } catch { /* ignore */ }
+      });
+      return next;
+    });
+  }, [remotes]);
+
   const toggleVideo = useCallback(async () => {
     const client = clientRef.current;
     if (!client) return;
