@@ -52,8 +52,7 @@ export function useDeviceTilt(maxDeg = 22) {
         } catch {
           /* ignore */
         }
-        window.removeEventListener("touchend", requestOnce);
-        window.removeEventListener("click", requestOnce);
+        window.removeEventListener("pointerdown", requestOnce);
       };
       window.addEventListener("pointerdown", requestOnce, { once: true, passive: true });
     } else {
