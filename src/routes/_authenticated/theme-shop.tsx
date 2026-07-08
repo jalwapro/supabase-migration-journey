@@ -147,6 +147,47 @@ function Page() {
     onError: (e: Error) => toast.error(`Apply failed: ${e.message}`),
   });
 
+  const unequip = useMutation({
+    mutationFn: async (item: ShopItem) => {
+      const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
+      const slug = (cat?.slug ?? "").toLowerCase().trim();
+      const name = (cat?.name ?? "").toLowerCase().trim();
+      const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
+      if (isTheme) {
+        const { error } = await supabase.from("profiles").update({ theme_id: null }).eq("id", user!.id);
+        if (error) throw error;
+        return;
+      }
+      const column = COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name];
+      if (!column) return;
+      const { error } = await supabase.from("profiles").update({ [column]: null }).eq("id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: async () => {
+      toast.success("Unequipped");
+      await refresh();
+      qc.invalidateQueries({ queryKey: ["shop"] });
+    },
+    onError: (e: Error) => toast.error(`Unequip failed: ${e.message}`),
+  });
+
+  const equippedColumnFor = (item: ShopItem): "theme_id" | "frame" | "ring" | "bubble" | "car" | "entrance" | "special_id" | "data_card" | null => {
+    const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
+    const slug = (cat?.slug ?? "").toLowerCase().trim();
+    const name = (cat?.name ?? "").toLowerCase().trim();
+    if (slug === "theme" || slug === "themes" || name === "theme" || name === "themes") return "theme_id";
+    return COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name] || null;
+  };
+
+  const isItemEquipped = (item: ShopItem): boolean => {
+    const col = equippedColumnFor(item);
+    if (!col) return false;
+    if (col === "theme_id") return profile?.theme_id === item.id;
+    const url = item.animation_url || item.preview_url || item.bg_image;
+    const cur = (profile as unknown as Record<string, string | null>)?.[col];
+    return !!cur && !!url && cur === url;
+  };
+
   const isOwned = (id: string) => {
     const r = data?.owned.get(id);
     return !!r && (!r.expires_at || new Date(r.expires_at) > new Date());
@@ -315,9 +356,7 @@ function Page() {
               {items.map((it) => {
                 const owned = isOwned(it.id);
                 const frameUrl = it.animation_url || it.preview_url || it.bg_image;
-                const isEquipped =
-                  profile?.theme_id === it.id ||
-                  (!!profile?.frame && !!frameUrl && profile.frame === frameUrl);
+                const isEquipped = isItemEquipped(it);
                 const isSelected = selectedId === it.id;
                 const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days}d` : "Perm";
                 const cat = cats.find((c) => c.id === it.category_id);
@@ -446,9 +485,7 @@ function Page() {
         const modalImage = isVideo ? it.bg_image || it.preview_url : media;
         const owned = isOwned(it.id);
         const frameUrl2 = it.animation_url || it.preview_url || it.bg_image;
-        const isEquipped =
-          profile?.theme_id === it.id ||
-          (!!profile?.frame && !!frameUrl2 && profile.frame === frameUrl2);
+        const isEquipped = isItemEquipped(it);
         return (
           <div
             className="fixed inset-0 z-50 flex items-end justify-center bg-black/85 backdrop-blur-sm sm:items-center"
@@ -526,9 +563,13 @@ function Page() {
 
                   {owned ? (
                     isEquipped ? (
-                      <div className="flex flex-1 items-center justify-center gap-1 rounded-full bg-emerald-500/20 py-3 text-sm font-black text-emerald-300 ring-1 ring-emerald-400/40">
-                        <Check className="h-4 w-4" /> Wearing
-                      </div>
+                      <button
+                        onClick={() => unequip.mutate(it)}
+                        disabled={unequip.isPending}
+                        className="flex flex-1 items-center justify-center gap-1 rounded-full bg-white/10 py-3 text-sm font-black text-white ring-1 ring-white/20 disabled:opacity-40"
+                      >
+                        {unequip.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Check className="h-4 w-4 text-emerald-300" /> Unequip</>}
+                      </button>
                     ) : (
                       <button
                         onClick={() => equip.mutate(it)}
