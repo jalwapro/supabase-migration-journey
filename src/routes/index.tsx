@@ -203,32 +203,15 @@ function Home() {
     },
   });
 
-  // Track banner scroll for pagination dots
-  useEffect(() => {
-    const el = bannerRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const w = el.clientWidth;
-      if (w === 0) return;
-      setBannerIdx(Math.round(el.scrollLeft / (w * 0.88)));
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [banners.data]);
-
-  // Auto-advance banners every 3s
+  // Auto-advance banners every 3s (fixed slider, transform-based)
   useEffect(() => {
     const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS;
     if (list.length < 2) return;
     const t = setInterval(() => {
-      const el = bannerRef.current;
-      if (!el) return;
-      const step = el.clientWidth * 0.88 + 12;
-      const next = (bannerIdx + 1) % list.length;
-      el.scrollTo({ left: next * step, behavior: "smooth" });
+      setBannerIdx((i) => (i + 1) % list.length);
     }, 3000);
     return () => clearInterval(t);
-  }, [banners.data, bannerIdx]);
+  }, [banners.data]);
 
   const tabIndex = TABS.findIndex((t) => t.key === tab);
 
@@ -345,30 +328,34 @@ function Home() {
             </section>
           )}
 
-          {/* Hero Banners */}
+          {/* Hero Banners — fixed slider (transform-based, auto 3s) */}
           <section className="px-4 pt-3">
             {(() => { const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS; return list.length > 0 ? (
               <>
-                <div
-                  ref={bannerRef}
-                  className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scroll-smooth"
-                >
-                  {list.map((b) => (
-                    <a
-                      key={b.id}
-                      href={b.link_url ?? "#"}
-                      className="glow-4d relative aspect-[16/8] w-[88%] shrink-0 snap-center overflow-hidden rounded-3xl border border-white/10"
-                    >
-                      <img src={b.image_url} alt={b.title ?? ""} className="h-full w-full object-cover" loading="lazy" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      {b.title && (
-                        <div className="absolute inset-x-4 bottom-3">
-                          <p className="text-sm font-bold text-white drop-shadow">{b.title}</p>
-                        </div>
-                      )}
-                    </a>
-                  ))}
+                <div className="glow-4d relative aspect-[16/8] w-full overflow-hidden rounded-3xl border border-white/10">
+                  <div
+                    ref={bannerRef}
+                    className="flex h-full w-full transition-transform duration-500 ease-out"
+                    style={{ transform: `translateX(-${bannerIdx * 100}%)` }}
+                  >
+                    {list.map((b) => (
+                      <a
+                        key={b.id}
+                        href={b.link_url ?? "#"}
+                        className="relative block h-full w-full shrink-0"
+                      >
+                        <img src={b.image_url} alt={b.title ?? ""} className="h-full w-full object-cover" loading="lazy" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        {b.title && (
+                          <div className="absolute inset-x-4 bottom-3">
+                            <p className="text-sm font-bold text-white drop-shadow">{b.title}</p>
+                          </div>
+                        )}
+                      </a>
+                    ))}
+                  </div>
                 </div>
+
                 {list.length > 1 && (
                   <div className="mt-2 flex justify-center gap-1.5">
                     {list.map((_, i) => (
