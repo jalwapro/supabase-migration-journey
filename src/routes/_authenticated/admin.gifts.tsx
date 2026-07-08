@@ -3,22 +3,27 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
   component: GiftsAdmin,
+  errorComponent: ({ error }) => (
+    <div className="p-6 text-sm text-red-400">
+      Failed to load gifts: {error?.message ?? "Unknown error"}
+    </div>
+  ),
 });
 
 type GiftRow = {
   id: string;
   name: string;
-  icon: string | null;
-  price_coins: number;
-  diamonds_value: number;
-  category: string | null;
+  emoji: string;
+  price: number;
+  category: string;
+  animation: string;
   sort_order: number;
-  active: boolean;
+  is_active: boolean;
 };
 
 function GiftsAdmin() {
@@ -26,7 +31,10 @@ function GiftsAdmin() {
   const list = useQuery({
     queryKey: ["admin_gifts"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("gifts").select("*").order("sort_order");
+      const { data, error } = await supabase
+        .from("gifts")
+        .select("id,name,emoji,price,category,animation,sort_order,is_active")
+        .order("sort_order");
       if (error) throw error;
       return (data ?? []) as GiftRow[];
     },
@@ -34,17 +42,17 @@ function GiftsAdmin() {
 
   const [draft, setDraft] = useState({
     name: "",
-    icon: "🎁",
-    price_coins: 100,
-    diamonds_value: 10,
+    emoji: "🎁",
+    price: 100,
     category: "popular",
+    animation: "pop",
     sort_order: 99,
   });
 
   const create = useMutation({
     mutationFn: async () => {
       if (!draft.name.trim()) throw new Error("Name required");
-      const { error } = await supabase.from("gifts").insert({ ...draft, active: true });
+      const { error } = await supabase.from("gifts").insert({ ...draft, is_active: true });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -58,10 +66,11 @@ function GiftsAdmin() {
 
   const toggle = useMutation({
     mutationFn: async (g: GiftRow) => {
-      const { error } = await supabase.from("gifts").update({ active: !g.active }).eq("id", g.id);
+      const { error } = await supabase.from("gifts").update({ is_active: !g.is_active }).eq("id", g.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_gifts"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const remove = useMutation({
@@ -73,25 +82,38 @@ function GiftsAdmin() {
       toast.success("Deleted");
       qc.invalidateQueries({ queryKey: ["admin_gifts"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
     <>
       <AdminPageHeader title="Gifts Management" subtitle="Catalog shown in the gift sheet" />
+      {list.isLoading && (
+        <div className="flex items-center justify-center py-10">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      )}
+      {list.error && (
+        <div className="mb-3 rounded-xl bg-red-500/10 p-3 text-xs text-red-400">
+          {(list.error as Error).message}
+        </div>
+      )}
       <div className="grid gap-3 md:grid-cols-[1fr_320px]">
         <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
           {list.data?.map((g) => (
             <div key={g.id} className="glass flex items-center gap-2 rounded-xl p-2 text-xs">
-              <span className="text-2xl leading-none">{g.icon ?? "🎁"}</span>
+              <span className="text-2xl leading-none">{g.emoji ?? "🎁"}</span>
               <div className="min-w-0 flex-1">
                 <p className="truncate font-bold">{g.name}</p>
-                <p className="truncate text-[10px] text-[color:var(--gold)]">{g.price_coins.toLocaleString()} coins</p>
+                <p className="truncate text-[10px] text-[color:var(--gold)]">
+                  {g.price.toLocaleString()} coins · {g.category}
+                </p>
               </div>
               <button
                 onClick={() => toggle.mutate(g)}
-                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${g.active ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}
+                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${g.is_active ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"}`}
               >
-                {g.active ? "ON" : "OFF"}
+                {g.is_active ? "ON" : "OFF"}
               </button>
               <button
                 onClick={() => confirm(`Delete ${g.name}?`) && remove.mutate(g.id)}
@@ -101,6 +123,9 @@ function GiftsAdmin() {
               </button>
             </div>
           ))}
+          {list.data && list.data.length === 0 && (
+            <p className="col-span-full text-center text-xs text-muted-foreground">No gifts yet.</p>
+          )}
         </div>
         <div className="glass h-fit rounded-2xl p-4">
           <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add new gift</p>
@@ -108,10 +133,10 @@ function GiftsAdmin() {
             {(
               [
                 ["name", "Name", "text"],
-                ["icon", "Icon (emoji)", "text"],
-                ["price_coins", "Price (coins)", "number"],
-                ["diamonds_value", "Diamonds", "number"],
+                ["emoji", "Emoji", "text"],
+                ["price", "Price (coins)", "number"],
                 ["category", "Category", "text"],
+                ["animation", "Animation", "text"],
                 ["sort_order", "Order", "number"],
               ] as const
             ).map(([k, l, t]) => (
