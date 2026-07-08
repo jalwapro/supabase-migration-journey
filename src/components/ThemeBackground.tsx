@@ -49,6 +49,19 @@ export function ThemeBackground() {
       ? `linear-gradient(160deg, ${theme.primary_color}, ${theme.accent_color})`
       : undefined;
 
+  return <ThemeBackgroundInner media={media} isVideo={isVideo} gradient={gradient} />;
+}
+
+function ThemeBackgroundInner({
+  media,
+  isVideo,
+  gradient,
+}: {
+  media: string | null;
+  isVideo: boolean;
+  gradient: string | undefined;
+}) {
+  const { rx, ry, active } = useDeviceTilt(22);
   return (
     <div
       aria-hidden
@@ -61,8 +74,15 @@ export function ThemeBackground() {
     >
       {media && (
         <div
-          className="shop-theme-3d absolute inset-[-8%] overflow-hidden"
-          style={{ background: gradient, willChange: "transform" }}
+          className={active ? "absolute inset-[-8%] overflow-hidden" : "shop-theme-3d absolute inset-[-8%] overflow-hidden"}
+          style={{
+            background: gradient,
+            willChange: "transform",
+            transform: active
+              ? `translateZ(0) rotateX(${rx}deg) rotateY(${ry}deg)`
+              : undefined,
+            transition: active ? "transform 120ms ease-out" : undefined,
+          }}
         >
           {isVideo ? (
             <video
