@@ -28,12 +28,12 @@ function cookiePrefix(storageKey: string) {
 
 function getCookie(name: string) {
   if (typeof document === "undefined") return null;
-  const encodedName = `${encodeURIComponent(name)}=`;
-  const part = document.cookie
-    .split("; ")
-    .find((row) => row.startsWith(encodedName));
-  if (!part) return null;
   try {
+    const encodedName = `${encodeURIComponent(name)}=`;
+    const part = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(encodedName));
+    if (!part) return null;
     return decodeURIComponent(part.slice(encodedName.length));
   } catch {
     return null;
@@ -42,10 +42,14 @@ function getCookie(name: string) {
 
 function setCookie(name: string, value: string, maxAge = COOKIE_MAX_AGE) {
   if (typeof document === "undefined") return;
-  const secure = window.location.protocol === "https:" ? "; Secure" : "";
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
-    value,
-  )}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
+  try {
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
+      value,
+    )}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
+  } catch {
+    /* cookie fallback unavailable */
+  }
 }
 
 function removeCookie(name: string) {
@@ -79,9 +83,13 @@ function setCookieAuthItem(storageKey: string, value: string) {
     return;
   }
 
-  const boundedChunks = Math.min(chunks, COOKIE_CHUNK_LIMIT);
-  setCookie(`${prefix}_chunks`, String(boundedChunks));
-  for (let i = 0; i < boundedChunks; i += 1) {
+  if (chunks > COOKIE_CHUNK_LIMIT) {
+    removeCookie(`${prefix}_chunks`);
+    return;
+  }
+
+  setCookie(`${prefix}_chunks`, String(chunks));
+  for (let i = 0; i < chunks; i += 1) {
     setCookie(`${prefix}_${i}`, value.slice(i * COOKIE_CHUNK_SIZE, (i + 1) * COOKIE_CHUNK_SIZE));
   }
 }
