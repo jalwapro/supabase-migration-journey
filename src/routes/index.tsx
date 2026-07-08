@@ -572,18 +572,7 @@ function Home() {
                     <p className="truncate text-sm font-semibold">@{u.username ?? "user"}</p>
                     <p className="text-[11px] text-emerald-500">Online now</p>
                   </div>
-                  <Link
-                    to="/messages/$peerId"
-                    params={{ peerId: u.id }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFriendsOpen(false);
-                    }}
-                    className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
-                    aria-label="Message"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Link>
+                  <MessageCircle className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
                 </Link>
               ))
             ) : (
