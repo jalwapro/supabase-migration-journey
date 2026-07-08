@@ -20,6 +20,7 @@ import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
+import { ThemeBackground } from "../components/ThemeBackground";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <ThemeBackground />
         <Outlet />
         <Toaster position="top-center" theme="dark" richColors />
       </AuthProvider>
