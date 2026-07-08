@@ -1,15 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Users, DoorOpen, Wallet, Coins, Flag, Crown, TrendingUp, ArrowUpRight,
-  Radio, Video, Mic, ArrowUpFromLine, Search, Bell,
+  Radio, Video, Mic, ArrowUpFromLine, Search, Bell, Calendar,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell,
 } from "recharts";
+
+type RangePreset = "7d" | "30d" | "90d" | "custom";
+type DateRange = { from: string; to: string; preset: RangePreset };
+
+function defaultRange(preset: Exclude<RangePreset, "custom">): DateRange {
+  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - (days - 1));
+  return { preset, from: toYmd(from), to: toYmd(to) };
+}
+function toYmd(d: Date) { return d.toISOString().slice(0, 10); }
+function rangeBounds(r: DateRange) {
+  const from = new Date(`${r.from}T00:00:00.000Z`).toISOString();
+  const to = new Date(`${r.to}T23:59:59.999Z`).toISOString();
+  return { from, to };
+}
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: Dashboard,
@@ -27,12 +45,16 @@ function useCount(table: string, filter?: { col: string; val: string }) {
   });
 }
 
-function useSum(table: string, col: string, filter?: { c: string; v: string }) {
+function useSum(table: string, col: string, filter?: { c: string; v: string }, range?: DateRange) {
   return useQuery({
-    queryKey: ["admin_sum", table, col, filter],
+    queryKey: ["admin_sum", table, col, filter, range?.from, range?.to],
     queryFn: async (): Promise<number> => {
-      let q = supabase.from(table).select(col);
+      let q = supabase.from(table).select(`${col},created_at`);
       if (filter) q = q.eq(filter.c, filter.v);
+      if (range) {
+        const b = rangeBounds(range);
+        q = q.gte("created_at", b.from).lte("created_at", b.to);
+      }
       const { data } = await q;
       const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
       return rows.reduce((s, r) => s + Number(r[col] ?? 0), 0);
@@ -40,35 +62,69 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }) {
   });
 }
 
-function useMonthlyRevenue() {
+function useRangeCount(table: string, filter: { col: string; val: string } | undefined, range: DateRange) {
   return useQuery({
-    queryKey: ["admin_monthly_rev"],
+    queryKey: ["admin_rcount", table, filter, range.from, range.to],
     queryFn: async () => {
-      const since = new Date();
-      since.setMonth(since.getMonth() - 11);
-      since.setDate(1);
+      const b = rangeBounds(range);
+      let q = supabase.from(table).select("id", { count: "exact", head: true })
+        .gte("created_at", b.from).lte("created_at", b.to);
+      if (filter) q = q.eq(filter.col, filter.val);
+      const { count } = await q;
+      return count ?? 0;
+    },
+  });
+}
+
+function useRevenueSeries(range: DateRange) {
+  return useQuery({
+    queryKey: ["admin_rev_series", range.from, range.to],
+    queryFn: async () => {
+      const b = rangeBounds(range);
       const { data } = await supabase
         .from("recharge_requests")
         .select("amount_pkr,created_at,status")
         .eq("status", "approved")
-        .gte("created_at", since.toISOString());
-      const months: { name: string; value: number; key: string }[] = [];
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
-        const key = `${d.getFullYear()}-${d.getMonth()}`;
-        months.push({ key, name: d.toLocaleString("en", { month: "short" }), value: 0 });
+        .gte("created_at", b.from)
+        .lte("created_at", b.to);
+
+      const start = new Date(`${range.from}T00:00:00.000Z`);
+      const end = new Date(`${range.to}T00:00:00.000Z`);
+      const days = Math.max(1, Math.round((+end - +start) / 86400000) + 1);
+      const useMonthly = days > 120;
+
+      type Bucket = { key: string; name: string; value: number };
+      const buckets: Bucket[] = [];
+      const idx = new Map<string, Bucket>();
+
+      if (useMonthly) {
+        const cur = new Date(start); cur.setUTCDate(1);
+        while (cur <= end) {
+          const key = `${cur.getUTCFullYear()}-${cur.getUTCMonth()}`;
+          const bk: Bucket = { key, name: cur.toLocaleString("en", { month: "short", year: "2-digit" }), value: 0 };
+          buckets.push(bk); idx.set(key, bk);
+          cur.setUTCMonth(cur.getUTCMonth() + 1);
+        }
+      } else {
+        const cur = new Date(start);
+        while (cur <= end) {
+          const key = toYmd(cur);
+          const bk: Bucket = { key, name: cur.toLocaleDateString("en", { month: "short", day: "numeric" }), value: 0 };
+          buckets.push(bk); idx.set(key, bk);
+          cur.setUTCDate(cur.getUTCDate() + 1);
+        }
       }
       (data ?? []).forEach((r: Record<string, unknown>) => {
         const dt = new Date(r.created_at as string);
-        const key = `${dt.getFullYear()}-${dt.getMonth()}`;
-        const m = months.find((x) => x.key === key);
-        if (m) m.value += Number(r.amount_pkr ?? 0);
+        const key = useMonthly ? `${dt.getUTCFullYear()}-${dt.getUTCMonth()}` : toYmd(dt);
+        const bk = idx.get(key);
+        if (bk) bk.value += Number(r.amount_pkr ?? 0);
       });
-      return months;
+      return buckets;
     },
   });
 }
+
 
 function useRecentActivity() {
   return useQuery({
@@ -127,6 +183,14 @@ function StatCard({ label, value, icon: Icon, tone, delta, sub }: {
 
 function Dashboard() {
   const { profile } = useAuth();
+  const [range, setRange] = useState<DateRange>(() => defaultRange("30d"));
+  const rangeLabel = useMemo(() => {
+    if (range.preset === "7d") return "Last 7 days";
+    if (range.preset === "30d") return "Last 30 days";
+    if (range.preset === "90d") return "Last 90 days";
+    return `${range.from} → ${range.to}`;
+  }, [range]);
+
   const users = useCount("profiles");
   const rooms = useCount("rooms");
   const liveRooms = useCount("rooms", { col: "is_live", val: "true" });
@@ -137,11 +201,14 @@ function Dashboard() {
   const reports = useCount("user_reports", { col: "status", val: "pending" });
   const vip = useCount("profiles", { col: "is_vip", val: "true" });
 
-  const revenue = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" });
-  const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" });
+  const newUsers = useRangeCount("profiles", undefined, range);
+  const approvedInRange = useRangeCount("recharge_requests", { col: "status", val: "approved" }, range);
+  const revenue = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" }, range);
+  const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" }, range);
   const coinsCirc = useSum("profiles", "coins");
-  const monthly = useMonthlyRevenue();
+  const monthly = useRevenueSeries(range);
   const activity = useRecentActivity();
+
 
   const totalRooms = (voiceRooms.data ?? 0) + (videoRooms.data ?? 0);
   const voicePct = totalRooms ? Math.round(((voiceRooms.data ?? 0) / totalRooms) * 100) : 0;
@@ -152,13 +219,10 @@ function Dashboard() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Dashboard</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">Live overview of the Jalwa platform</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Live overview · {rangeLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-2 text-xs text-muted-foreground md:flex">
-            <Search className="h-3.5 w-3.5" />
-            <input placeholder="Search users, rooms, transactions…" className="w-64 bg-transparent outline-none" />
-          </div>
+          <DateRangeFilter range={range} onChange={setRange} />
           <button className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card/50 text-muted-foreground hover:text-foreground">
             <Bell className="h-4 w-4" />
             {(pendingR.data ?? 0) + (pendingW.data ?? 0) + (reports.data ?? 0) > 0 && (
@@ -179,11 +243,12 @@ function Dashboard() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Total Users" value={users.data ?? 0} icon={Users} tone="bg-primary/15 text-primary" sub="Registered accounts" />
-        <StatCard label="Revenue (PKR)" value={`Rs ${Number(revenue.data ?? 0).toLocaleString()}`} icon={TrendingUp} tone="bg-[color:var(--gold)]/15 text-[color:var(--gold)]" sub="Approved recharges" />
-        <StatCard label="Pending Recharge" value={pendingR.data ?? 0} icon={Wallet} tone="bg-orange-500/15 text-orange-400" sub="Awaiting review" />
-        <StatCard label="Coins in Circulation" value={compact(coinsCirc.data ?? 0)} icon={Coins} tone="bg-purple-500/15 text-purple-400" sub="Across all wallets" />
+        <StatCard label="New Users" value={newUsers.data ?? 0} icon={Users} tone="bg-primary/15 text-primary" sub={rangeLabel} />
+        <StatCard label="Revenue (PKR)" value={`Rs ${Number(revenue.data ?? 0).toLocaleString()}`} icon={TrendingUp} tone="bg-[color:var(--gold)]/15 text-[color:var(--gold)]" sub={`${approvedInRange.data ?? 0} approved`} />
+        <StatCard label="Pending Recharge" value={pendingR.data ?? 0} icon={Wallet} tone="bg-orange-500/15 text-orange-400" sub="All time" />
+        <StatCard label="Coins in Circulation" value={compact(coinsCirc.data ?? 0)} icon={Coins} tone="bg-purple-500/15 text-purple-400" sub={`${users.data ?? 0} wallets`} />
       </div>
+
 
       {/* Chart + Room types */}
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
@@ -191,7 +256,7 @@ function Dashboard() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <p className="text-sm font-bold">Revenue Overview</p>
-              <p className="text-[11px] text-muted-foreground">Last 12 months (PKR)</p>
+              <p className="text-[11px] text-muted-foreground">{rangeLabel} (PKR)</p>
             </div>
             <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-bold text-emerald-400">Live</span>
           </div>
@@ -213,7 +278,7 @@ function Dashboard() {
                   formatter={(v) => [`PKR ${Number(v).toLocaleString()}`, "Revenue"]}
                 />
                 <Bar dataKey="value" fill="url(#barPink)" radius={[10, 10, 4, 4]}>
-                  {(monthly.data ?? []).map((_, i) => <Cell key={i} />)}
+                  {(monthly.data ?? []).map((_: unknown, i: number) => <Cell key={i} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -332,4 +397,76 @@ function timeAgo(iso: string) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+function DateRangeFilter({ range, onChange }: { range: DateRange; onChange: (r: DateRange) => void }) {
+  const [open, setOpen] = useState(false);
+  const presets: { key: Exclude<RangePreset, "custom">; label: string }[] = [
+    { key: "7d", label: "7d" },
+    { key: "30d", label: "30d" },
+    { key: "90d", label: "90d" },
+  ];
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-1 rounded-full border border-border bg-card/50 p-1">
+        {presets.map((p) => {
+          const active = range.preset === p.key;
+          return (
+            <button
+              key={p.key}
+              onClick={() => onChange(defaultRange(p.key))}
+              className={`rounded-full px-3 py-1 text-xs font-bold transition ${
+                active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {p.label}
+            </button>
+          );
+        })}
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition ${
+            range.preset === "custom" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Calendar className="h-3 w-3" /> Custom
+        </button>
+      </div>
+      {open && (
+        <div className="absolute right-0 top-full z-40 mt-2 w-72 rounded-2xl border border-border bg-card p-3 shadow-2xl">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">Custom range</p>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-[10px] text-muted-foreground">
+              From
+              <input
+                type="date"
+                value={range.from}
+                max={range.to}
+                onChange={(e) => onChange({ ...range, preset: "custom", from: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+              />
+            </label>
+            <label className="text-[10px] text-muted-foreground">
+              To
+              <input
+                type="date"
+                value={range.to}
+                min={range.from}
+                max={toYmd(new Date())}
+                onChange={(e) => onChange({ ...range, preset: "custom", to: e.target.value })}
+                className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-xs text-foreground"
+              />
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end gap-2">
+            <button onClick={() => setOpen(false)} className="rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground">Close</button>
+            <button
+              onClick={() => { onChange(defaultRange("30d")); setOpen(false); }}
+              className="rounded-lg bg-muted px-3 py-1.5 text-xs font-bold"
+            >Reset</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
