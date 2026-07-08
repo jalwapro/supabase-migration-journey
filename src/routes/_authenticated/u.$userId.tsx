@@ -19,6 +19,8 @@ import {
   Loader2,
   MapPin,
   Copy,
+  Lock,
+  Images,
 } from "lucide-react";
 import { toast } from "sonner";
 import { levelProgress, tierForLevel } from "@/lib/levels";
