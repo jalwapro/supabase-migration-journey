@@ -68,8 +68,9 @@ export const ADMIN_NAV: NavGroup[] = [
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <div className="flex min-h-screen w-full bg-background text-foreground">
-      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 md:block">
+    <div className="admin-fullscreen flex min-h-screen w-full bg-background text-foreground">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 overflow-y-auto border-r border-border bg-card/40 md:block lg:w-72">
+
         <div className="p-4">
           <Link to="/admin" className="flex items-center gap-2">
             <div className="glow-4d grid h-9 w-9 place-items-center rounded-xl bg-primary text-primary-foreground">
@@ -119,8 +120,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
       </aside>
       <main className="min-w-0 flex-1">
         <MobileNav pathname={pathname} />
-        <div className="mx-auto max-w-6xl p-4 md:p-6">{children}</div>
+        <div className="mx-auto w-full max-w-[1600px] p-4 md:p-6 lg:p-8">{children}</div>
       </main>
+
     </div>
   );
 }

@@ -303,6 +303,15 @@
   }
 }
 
+/* Admin panel takes the full browser width on desktop */
+.app-frame:has(.admin-fullscreen) {
+  max-width: 100%;
+  box-shadow: none;
+}
+.app-frame-outer:has(.admin-fullscreen) {
+  background: var(--background);
+}
+
 /* Constrain fixed bottom nav to the app frame width too */
 .app-frame nav[aria-label="Primary"] {
   left: 50%;
@@ -311,3 +320,4 @@
   width: 100%;
   max-width: 480px;
 }
+
