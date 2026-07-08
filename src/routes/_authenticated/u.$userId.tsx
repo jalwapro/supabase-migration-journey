@@ -532,6 +532,53 @@ function UserProfilePage() {
         </div>
       )}
 
+      {/* Owned shop items (public inventory) */}
+      {(ownedItems.data?.length ?? 0) > 0 && (
+        <div className="mx-4 mt-4">
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <Sparkles className="h-3 w-3 text-[color:var(--gold)]" /> Owned Items ({ownedItems.data!.length})
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {ownedItems.data!.map((row: any) => {
+              const t = row.themes;
+              const cat = t?.theme_categories;
+              const slug = (cat?.slug ?? "").toLowerCase();
+              const media = t.preview_url || t.bg_image || t.animation_url;
+              const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+              return (
+                <div
+                  key={t.id}
+                  className="relative overflow-hidden rounded-xl border border-white/10 bg-gradient-to-br p-2"
+                  style={{
+                    background: `linear-gradient(160deg, ${t.primary_color ?? "#5b21b6"}22, ${t.accent_color ?? "#ec4899"}22)`,
+                  }}
+                >
+                  <div className="aspect-square w-full overflow-hidden rounded-lg bg-black/40">
+                    {media && !isVideo ? (
+                      <img src={media} alt={t.name} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <ItemAnimation
+                        slug={slug}
+                        name={p.username ?? p.full_name ?? "Member"}
+                        primary={t.primary_color ?? "#7c3aed"}
+                        accent={t.accent_color ?? "#ec4899"}
+                        fill
+                      />
+                    )}
+                  </div>
+                  <div className="mt-1.5 truncate text-[10px] font-bold text-white">
+                    {t.name}
+                  </div>
+                  <div className="text-[9px] uppercase tracking-wider text-white/50">
+                    {cat?.name ?? ""}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="h-24" />
       <BottomNav />
     </AppShell>
