@@ -66,6 +66,7 @@ import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
+import { Route as AuthenticatedAdminAgoraSlotsRouteImport } from './routes/_authenticated/admin.agora-slots'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
 
 const SplashRoute = SplashRouteImport.update({
@@ -370,6 +371,12 @@ const AuthenticatedAdminBannersRoute =
     path: '/banners',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAgoraSlotsRoute =
+  AuthenticatedAdminAgoraSlotsRouteImport.update({
+    id: '/agora-slots',
+    path: '/agora-slots',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
   id: '/ads',
   path: '/ads',
@@ -404,6 +411,7 @@ export interface FileRoutesByFullPath {
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/admin/agora-slots': typeof AuthenticatedAdminAgoraSlotsRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
@@ -462,6 +470,7 @@ export interface FileRoutesByTo {
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/admin/agora-slots': typeof AuthenticatedAdminAgoraSlotsRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
@@ -523,6 +532,7 @@ export interface FileRoutesById {
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/_authenticated/admin/agora-slots': typeof AuthenticatedAdminAgoraSlotsRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
@@ -584,6 +594,7 @@ export interface FileRouteTypes {
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
+    | '/admin/agora-slots'
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
@@ -642,6 +653,7 @@ export interface FileRouteTypes {
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
+    | '/admin/agora-slots'
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
@@ -702,6 +714,7 @@ export interface FileRouteTypes {
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
+    | '/_authenticated/admin/agora-slots'
     | '/_authenticated/admin/banners'
     | '/_authenticated/admin/cms'
     | '/_authenticated/admin/coins'
@@ -1149,6 +1162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/agora-slots': {
+      id: '/_authenticated/admin/agora-slots'
+      path: '/agora-slots'
+      fullPath: '/admin/agora-slots'
+      preLoaderRoute: typeof AuthenticatedAdminAgoraSlotsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/ads': {
       id: '/_authenticated/admin/ads'
       path: '/ads'
@@ -1161,6 +1181,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAdsRoute: typeof AuthenticatedAdminAdsRoute
+  AuthenticatedAdminAgoraSlotsRoute: typeof AuthenticatedAdminAgoraSlotsRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
@@ -1193,6 +1214,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAdsRoute: AuthenticatedAdminAdsRoute,
+  AuthenticatedAdminAgoraSlotsRoute: AuthenticatedAdminAgoraSlotsRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,

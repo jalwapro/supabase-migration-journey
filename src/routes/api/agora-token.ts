@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/agora-token")({
           channel?: string;
           uid?: number;
           role?: "publisher" | "audience";
-          kind?: "voice" | "video";
+          kind?: "voice" | "video" | "pk";
         };
         try {
           body = await request.json();
@@ -41,7 +41,8 @@ export const Route = createFileRoute("/api/agora-token")({
         const channel = String(body.channel ?? "").trim();
         const uid = Number(body.uid ?? 0);
         const roleName = body.role === "audience" ? "audience" : "publisher";
-        const kind = body.kind === "video" ? "video" : "voice";
+        const kind: "voice" | "video" | "pk" =
+          body.kind === "video" ? "video" : body.kind === "pk" ? "pk" : "voice";
         if (!channel || !Number.isFinite(uid)) {
           return json({ error: "channel and uid required" }, 400);
         }
@@ -57,29 +58,51 @@ export const Route = createFileRoute("/api/agora-token")({
         const { data: userRes, error: userErr } = await anon.auth.getUser(token);
         if (userErr || !userRes?.user) return json({ error: "unauthorized" }, 401);
 
-        // Load Agora credentials — prefer kind-specific, then legacy "agora"
-        const preferredKey = kind === "video" ? "agora_video" : "agora_voice";
-        const { data: settings, error: sErr } = await anon
-          .from("app_settings")
-          .select("key,value")
-          .in("key", [preferredKey, "agora"]);
-        if (sErr) return json({ error: sErr.message }, 500);
+        // Token lives ~1h, reserve 60 minutes of quota against the pool.
+        const expireSeconds = 3600;
+        const reserveMinutes = 60;
 
-        const byKey = new Map((settings ?? []).map((r) => [r.key, r.value]));
-        const pick = (byKey.get(preferredKey) ?? byKey.get("agora") ?? {}) as {
-          appId?: string;
-          appCertificate?: string;
-        };
-        const appId = pick.appId?.trim();
-        const appCertificate = pick.appCertificate?.trim();
+        let appId: string | undefined;
+        let appCertificate: string | undefined;
+        let poolSlot: number | null = null;
+
+        // 1) Try the auto-rotating slot pool for this kind
+        const { data: slotRows } = await anon.rpc("consume_agora_slot", {
+          _kind: kind,
+          _minutes: reserveMinutes,
+        });
+        const slot = Array.isArray(slotRows) ? slotRows[0] : slotRows;
+        if (slot?.app_id && slot?.app_certificate) {
+          appId = String(slot.app_id).trim();
+          appCertificate = String(slot.app_certificate).trim();
+          poolSlot = Number(slot.slot_index);
+        }
+
+        // 2) Fallback to legacy single-key settings (agora_voice / agora_video / agora)
+        if (!appId || !appCertificate) {
+          const preferredKey =
+            kind === "video" ? "agora_video" : kind === "pk" ? "agora_pk" : "agora_voice";
+          const { data: settings, error: sErr } = await anon
+            .from("app_settings")
+            .select("key,value")
+            .in("key", [preferredKey, "agora"]);
+          if (sErr) return json({ error: sErr.message }, 500);
+          const byKey = new Map((settings ?? []).map((r) => [r.key, r.value]));
+          const pick = (byKey.get(preferredKey) ?? byKey.get("agora") ?? {}) as {
+            appId?: string;
+            appCertificate?: string;
+          };
+          appId = pick.appId?.trim();
+          appCertificate = pick.appCertificate?.trim();
+        }
+
         if (!appId || !appCertificate) {
           return json(
-            { error: `Agora (${kind}) not configured. Ask admin to add App ID + Certificate in Admin Panel.` },
+            { error: `Agora (${kind}) not configured. Admin panel me Agora Slots add karo.` },
             503,
           );
         }
 
-        const expireSeconds = 3600; // 1 hour
         const privilegeExpireTs = Math.floor(Date.now() / 1000) + expireSeconds;
         const rtcToken = RtcTokenBuilder.buildTokenWithUid(
           appId,
@@ -91,7 +114,8 @@ export const Route = createFileRoute("/api/agora-token")({
           privilegeExpireTs,
         );
 
-        return json({ appId, token: rtcToken, uid, channel, expiresAt: privilegeExpireTs });
+        return json({ appId, token: rtcToken, uid, channel, expiresAt: privilegeExpireTs, slot: poolSlot });
+
       },
     },
   },
