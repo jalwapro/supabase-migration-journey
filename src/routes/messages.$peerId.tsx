@@ -314,13 +314,20 @@ function DmThread() {
           )}
           {messages.map((m) => {
             const mine = m.sender_id === user.id;
+            const bubbleSkin = mine ? (myBubble.data ?? null) : (peer.data?.bubble ?? null);
+            const skinStyle = bubbleSkin
+              ? { backgroundImage: `url(${bubbleSkin})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" as const }
+              : undefined;
             return (
               <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
+                  style={skinStyle}
                   className={`max-w-[78%] break-words rounded-2xl px-3 py-2 text-sm ${
-                    mine
-                      ? "bg-primary text-primary-foreground rounded-br-sm"
-                      : "bg-card border border-border rounded-bl-sm"
+                    bubbleSkin
+                      ? "text-white drop-shadow"
+                      : mine
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-card border border-border rounded-bl-sm"
                   }`}
                 >
                   <MessageBody
@@ -328,7 +335,7 @@ function DmThread() {
                     mine={mine}
                     albumSrc={m.gallery_image_id ? albumRefs.data?.[m.gallery_image_id] : undefined}
                   />
-                  <p className={`mt-0.5 text-[9px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                  <p className={`mt-0.5 text-[9px] ${bubbleSkin ? "text-white/80" : mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                     {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </p>
                 </div>
