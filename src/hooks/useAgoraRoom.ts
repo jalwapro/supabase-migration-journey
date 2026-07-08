@@ -4,6 +4,7 @@ import type {
   IAgoraRTCRemoteUser,
   ILocalAudioTrack,
   ILocalVideoTrack,
+  IBufferSourceAudioTrack,
 } from "agora-rtc-sdk-ng";
 import { supabase } from "@/integrations/supabase/client";
 
