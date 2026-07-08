@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
+
 const jalwaLogo = "/__l5e/assets-v1/4d052932-1040-4825-a7d9-cbabb2b9707d/jalwa-logo.png";
 import {
   Dialog,
