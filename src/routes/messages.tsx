@@ -5,18 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { MessageCircle, Search, UserPlus, Check, X, Users, Loader2 } from "lucide-react";
+import { MessageCircle, Search, UserPlus, UserMinus, Users, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/messages")({
   component: MessagesPage,
 });
 
-type Friendship = {
-  requester_id: string;
-  addressee_id: string;
-  status: "pending" | "accepted" | "blocked";
-  peer: { id: string; username: string | null; avatar: string | null } | null;
+type PeerProfile = {
+  id: string;
+  username: string | null;
+  avatar: string | null;
+  user_code?: string | null;
 };
 
 type LastMsg = {
@@ -29,7 +29,7 @@ type LastMsg = {
 function MessagesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<"chats" | "requests" | "add">("chats");
+  const [tab, setTab] = useState<"chats" | "friends" | "add">("chats");
 
   if (!user) {
     return (
@@ -46,31 +46,28 @@ function MessagesPage() {
     );
   }
 
-  const friends = useQuery({
-    queryKey: ["friends", user.id],
+  // People I follow (my "friends" for chat purposes)
+  const following = useQuery({
+    queryKey: ["chat-following", user.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("friendships")
-        .select("requester_id,addressee_id,status");
+      const { data: rows, error } = await supabase
+        .from("follows")
+        .select("following_id, created_at")
+        .eq("follower_id", user.id)
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      const rows = data ?? [];
-      const peerIds = rows.map((r) =>
-        r.requester_id === user.id ? r.addressee_id : r.requester_id,
-      );
-      if (peerIds.length === 0) return [] as Friendship[];
+      const ids = (rows ?? []).map((r: any) => r.following_id);
+      if (!ids.length) return [] as PeerProfile[];
       const { data: profs } = await supabase
         .from("profiles")
-        .select("id,username,avatar")
-        .in("id", peerIds);
-      const byId = new Map((profs ?? []).map((p) => [p.id, p]));
-      return rows.map((r) => ({
-        ...r,
-        peer: byId.get(r.requester_id === user.id ? r.addressee_id : r.requester_id) ?? null,
-      })) as Friendship[];
+        .select("id,username,avatar,user_code")
+        .in("id", ids);
+      return (profs ?? []) as PeerProfile[];
     },
   });
 
-  const lastMessages = useQuery({
+  // DM inbox — all conversations
+  const inbox = useQuery({
     queryKey: ["dm_index", user.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -78,7 +75,7 @@ function MessagesPage() {
         .select("sender_id,recipient_id,message,kind,created_at,read_at")
         .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(300);
       if (error) throw error;
       const map = new Map<string, LastMsg>();
       for (const m of data ?? []) {
@@ -102,51 +99,45 @@ function MessagesPage() {
           existing.unread += 1;
         }
       }
-      return Array.from(map.values());
+      const list = Array.from(map.values());
+      const ids = list.map((m) => m.peer_id);
+      if (!ids.length) return { list, peers: new Map<string, PeerProfile>() };
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id,username,avatar,user_code")
+        .in("id", ids);
+      const peers = new Map<string, PeerProfile>(
+        (profs ?? []).map((p: any) => [p.id, p]),
+      );
+      return { list, peers };
     },
   });
 
-  // Realtime — invalidate on new DM or friendship change
+  // Realtime — invalidate on DM or follow change
   useEffect(() => {
     const ch = supabase
-      .channel(`dm-index-${user.id}`)
-      .on("postgres_changes", {
-        event: "*", schema: "public", table: "direct_messages",
-      }, () => {
+      .channel(`chat-index-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, () => {
         qc.invalidateQueries({ queryKey: ["dm_index", user.id] });
       })
-      .on("postgres_changes", {
-        event: "*", schema: "public", table: "friendships",
-      }, () => {
-        qc.invalidateQueries({ queryKey: ["friends", user.id] });
+      .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, () => {
+        qc.invalidateQueries({ queryKey: ["chat-following", user.id] });
       })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
   }, [user.id, qc]);
 
-  const accepted = (friends.data ?? []).filter((f) => f.status === "accepted");
-  const incoming = (friends.data ?? []).filter(
-    (f) => f.status === "pending" && f.addressee_id === user.id,
+  const chatList = (inbox.data?.list ?? []).sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
   );
-  const outgoing = (friends.data ?? []).filter(
-    (f) => f.status === "pending" && f.requester_id === user.id,
-  );
-
-  const lastByPeer = new Map((lastMessages.data ?? []).map((m) => [m.peer_id, m]));
-  const chatList = accepted
-    .map((f) => ({ friend: f, last: lastByPeer.get(f.peer?.id ?? "") }))
-    .sort((a, b) => {
-      const ta = a.last?.created_at ?? "";
-      const tb = b.last?.created_at ?? "";
-      return tb.localeCompare(ta);
-    });
+  const peers = inbox.data?.peers ?? new Map<string, PeerProfile>();
 
   return (
     <>
       <AppShell title="Messages" subtitle="Friends & DMs">
         <div className="px-4 pt-3">
           <div className="mb-4 flex gap-1 rounded-full bg-card/60 p-1">
-            {(["chats", "requests", "add"] as const).map((t) => (
+            {(["chats", "friends", "add"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -154,22 +145,27 @@ function MessagesPage() {
                   tab === t ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                 }`}
               >
-                {t === "chats" && "Chats"}
-                {t === "requests" && (
-                  <>Requests{incoming.length > 0 && (
-                    <span className="ml-1 rounded-full bg-[color:var(--destructive)] px-1.5 text-[9px]">{incoming.length}</span>
-                  )}</>
-                )}
+                {t === "chats" && `Chats${chatList.length ? ` (${chatList.length})` : ""}`}
+                {t === "friends" && `Friends${(following.data?.length ?? 0) > 0 ? ` (${following.data!.length})` : ""}`}
                 {t === "add" && "Add"}
               </button>
             ))}
           </div>
 
           {tab === "chats" && (
-            <ChatsList list={chatList} loading={friends.isLoading} />
+            <ChatsList
+              list={chatList}
+              peers={peers}
+              loading={inbox.isLoading}
+              onGoFriends={() => setTab("friends")}
+            />
           )}
-          {tab === "requests" && (
-            <RequestsList incoming={incoming} outgoing={outgoing} />
+          {tab === "friends" && (
+            <FriendsList
+              friends={following.data ?? []}
+              loading={following.isLoading}
+              onGoAdd={() => setTab("add")}
+            />
           )}
           {tab === "add" && <AddFriend />}
         </div>
@@ -180,11 +176,12 @@ function MessagesPage() {
 }
 
 function ChatsList({
-  list,
-  loading,
+  list, peers, loading, onGoFriends,
 }: {
-  list: { friend: Friendship; last?: LastMsg }[];
+  list: LastMsg[];
+  peers: Map<string, PeerProfile>;
   loading: boolean;
+  onGoFriends: () => void;
 }) {
   if (loading) {
     return (
@@ -196,39 +193,43 @@ function ChatsList({
   if (list.length === 0) {
     return (
       <div className="py-10 text-center">
-        <Users className="mx-auto h-10 w-10 text-muted-foreground" />
+        <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground" />
         <p className="mt-3 text-sm text-muted-foreground">No chats yet.</p>
-        <p className="text-xs text-muted-foreground">Add friends to start chatting.</p>
+        <p className="text-xs text-muted-foreground">Say hi to a friend to start a conversation.</p>
+        <button
+          onClick={onGoFriends}
+          className="mt-4 rounded-full bg-[color:var(--primary)]/20 px-4 py-2 text-[11px] font-bold text-[color:var(--primary)]"
+        >
+          View friends
+        </button>
       </div>
     );
   }
   return (
     <ul className="space-y-1">
-      {list.map(({ friend, last }) => {
-        if (!friend.peer) return null;
+      {list.map((m) => {
+        const p = peers.get(m.peer_id);
         return (
-          <li key={friend.peer.id}>
+          <li key={m.peer_id}>
             <Link
               to="/messages/$peerId"
-              params={{ peerId: friend.peer.id }}
+              params={{ peerId: m.peer_id }}
               className="flex items-center gap-3 rounded-2xl p-2 hover:bg-card/60"
             >
               <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 font-bold">
-                {friend.peer.avatar ? (
-                  <img src={friend.peer.avatar} alt="" className="h-full w-full object-cover" />
+                {p?.avatar ? (
+                  <img src={p.avatar} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  (friend.peer.username ?? "?").slice(0, 1).toUpperCase()
+                  (p?.username ?? "?").slice(0, 1).toUpperCase()
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-sm">@{friend.peer.username ?? "user"}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {last?.text ?? "Say hi 👋"}
-                </p>
+                <p className="truncate font-semibold text-sm">@{p?.username ?? "user"}</p>
+                <p className="truncate text-xs text-muted-foreground">{m.text || "Say hi 👋"}</p>
               </div>
-              {last?.unread ? (
+              {m.unread ? (
                 <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[color:var(--primary)] px-1.5 text-[10px] font-black text-primary-foreground">
-                  {last.unread}
+                  {m.unread}
                 </span>
               ) : null}
             </Link>
@@ -239,110 +240,89 @@ function ChatsList({
   );
 }
 
-function RequestsList({
-  incoming,
-  outgoing,
+function FriendsList({
+  friends, loading, onGoAdd,
 }: {
-  incoming: Friendship[];
-  outgoing: Friendship[];
+  friends: PeerProfile[];
+  loading: boolean;
+  onGoAdd: () => void;
 }) {
-  const qc = useQueryClient();
   const { user } = useAuth();
+  const qc = useQueryClient();
 
-  const respond = useMutation({
-    mutationFn: async ({ f, accept }: { f: Friendship; accept: boolean }) => {
-      if (accept) {
-        const { error } = await supabase
-          .from("friendships")
-          .update({ status: "accepted" })
-          .eq("requester_id", f.requester_id)
-          .eq("addressee_id", f.addressee_id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("friendships")
-          .delete()
-          .eq("requester_id", f.requester_id)
-          .eq("addressee_id", f.addressee_id);
-        if (error) throw error;
-      }
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["friends", user?.id] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const cancel = useMutation({
-    mutationFn: async (f: Friendship) => {
+  const unfollow = useMutation({
+    mutationFn: async (id: string) => {
+      if (!user) return;
       const { error } = await supabase
-        .from("friendships")
+        .from("follows")
         .delete()
-        .eq("requester_id", f.requester_id)
-        .eq("addressee_id", f.addressee_id);
+        .eq("follower_id", user.id)
+        .eq("following_id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["friends", user?.id] }),
+    onSuccess: () => {
+      toast.success("Removed");
+      qc.invalidateQueries({ queryKey: ["chat-following", user?.id] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  if (loading) {
+    return (
+      <div className="py-8 text-center">
+        <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  if (friends.length === 0) {
+    return (
+      <div className="py-10 text-center">
+        <Users className="mx-auto h-10 w-10 text-muted-foreground" />
+        <p className="mt-3 text-sm text-muted-foreground">You haven't added anyone yet.</p>
+        <button
+          onClick={onGoAdd}
+          className="mt-4 rounded-full bg-[color:var(--primary)] px-5 py-2 text-xs font-bold text-primary-foreground"
+        >
+          Find people
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <div>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Incoming ({incoming.length})
-        </p>
-        {incoming.length === 0 && (
-          <p className="text-xs text-muted-foreground">No pending requests</p>
-        )}
-        <div className="space-y-2">
-          {incoming.map((f) => (
-            <div key={f.requester_id} className="flex items-center gap-2 rounded-2xl border border-border bg-card/40 p-2">
-              <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
-                {f.peer?.avatar ? <img src={f.peer.avatar} className="h-full w-full object-cover" alt="" /> : (f.peer?.username ?? "?").slice(0, 1).toUpperCase()}
-              </div>
-              <p className="flex-1 truncate text-sm">@{f.peer?.username ?? "user"}</p>
-              <button
-                onClick={() => respond.mutate({ f, accept: true })}
-                className="grid h-8 w-8 place-items-center rounded-full bg-emerald-500/90 text-white"
-              >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => respond.mutate({ f, accept: false })}
-                className="grid h-8 w-8 place-items-center rounded-full bg-red-500/90 text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
+    <ul className="space-y-2">
+      {friends.map((p) => (
+        <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/40 p-2">
+          <Link
+            to="/messages/$peerId"
+            params={{ peerId: p.id }}
+            className="flex min-w-0 flex-1 items-center gap-3"
+          >
+            <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 font-bold">
+              {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
             </div>
-          ))}
-        </div>
-      </div>
-      <div>
-        <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          Sent ({outgoing.length})
-        </p>
-        {outgoing.length === 0 && (
-          <p className="text-xs text-muted-foreground">No outgoing requests</p>
-        )}
-        <div className="space-y-2">
-          {outgoing.map((f) => (
-            <div key={f.addressee_id} className="flex items-center gap-2 rounded-2xl border border-border bg-card/40 p-2">
-              <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
-                {f.peer?.avatar ? <img src={f.peer.avatar} className="h-full w-full object-cover" alt="" /> : (f.peer?.username ?? "?").slice(0, 1).toUpperCase()}
-              </div>
-              <p className="flex-1 truncate text-sm">@{f.peer?.username ?? "user"}</p>
-              <button
-                onClick={() => cancel.mutate(f)}
-                className="rounded-full border border-border px-3 py-1 text-[10px] font-bold text-muted-foreground"
-              >
-                Cancel
-              </button>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">@{p.username ?? "user"}</p>
+              <p className="truncate text-[10px] text-muted-foreground">ID {p.user_code ?? "—"}</p>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
+          </Link>
+          <Link
+            to="/messages/$peerId"
+            params={{ peerId: p.id }}
+            className="rounded-full bg-[color:var(--primary)]/20 px-3 py-1.5 text-[11px] font-bold text-[color:var(--primary)]"
+          >
+            Chat
+          </Link>
+          <button
+            onClick={() => unfollow.mutate(p.id)}
+            className="grid h-8 w-8 place-items-center rounded-full border border-border text-muted-foreground"
+            aria-label="Remove"
+          >
+            <UserMinus className="h-3.5 w-3.5" />
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -350,8 +330,9 @@ function AddFriend() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<{ id: string; username: string | null; avatar: string | null; user_code: string | null }[]>([]);
+  const [results, setResults] = useState<PeerProfile[]>([]);
   const [searching, setSearching] = useState(false);
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
 
   async function doSearch() {
     if (!q.trim() || !user) return;
@@ -363,24 +344,41 @@ function AddFriend() {
       .or(`username.ilike.%${term}%,user_code.eq.${term}`)
       .neq("id", user.id)
       .limit(20);
+    if (error) {
+      setSearching(false);
+      toast.error(error.message);
+      return;
+    }
+    const rows = (data ?? []) as PeerProfile[];
+    setResults(rows);
+    // Which of these am I already following?
+    if (rows.length) {
+      const { data: fol } = await supabase
+        .from("follows")
+        .select("following_id")
+        .eq("follower_id", user.id)
+        .in("following_id", rows.map((r) => r.id));
+      setFollowingIds(new Set((fol ?? []).map((f: any) => f.following_id)));
+    } else {
+      setFollowingIds(new Set());
+    }
     setSearching(false);
-    if (error) { toast.error(error.message); return; }
-    setResults(data ?? []);
   }
 
-  const send = useMutation({
+  const follow = useMutation({
     mutationFn: async (peerId: string) => {
       if (!user) throw new Error("Sign in");
-      const { error } = await supabase.from("friendships").insert({
-        requester_id: user.id,
-        addressee_id: peerId,
-        status: "pending",
+      const { error } = await supabase.from("follows").insert({
+        follower_id: user.id,
+        following_id: peerId,
       });
       if (error) throw error;
     },
-    onSuccess: () => {
-      toast.success("Friend request sent");
-      qc.invalidateQueries({ queryKey: ["friends", user?.id] });
+    onSuccess: (_d, peerId) => {
+      toast.success("Added");
+      setFollowingIds((s) => new Set(s).add(peerId));
+      qc.invalidateQueries({ queryKey: ["chat-following", user?.id] });
+      qc.invalidateQueries({ queryKey: ["me-counts"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -411,24 +409,40 @@ function AddFriend() {
             Search by username or 6-digit ID
           </p>
         )}
-        {results.map((p) => (
-          <div key={p.id} className="flex items-center gap-2 rounded-2xl border border-border bg-card/40 p-2">
-            <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
-              {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
+        {results.map((p) => {
+          const isFollowing = followingIds.has(p.id);
+          return (
+            <div key={p.id} className="flex items-center gap-2 rounded-2xl border border-border bg-card/40 p-2">
+              <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
+                {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">@{p.username ?? "user"}</p>
+                <p className="truncate text-[10px] text-muted-foreground">ID {p.user_code ?? "—"}</p>
+              </div>
+              <Link
+                to="/messages/$peerId"
+                params={{ peerId: p.id }}
+                className="rounded-full border border-border px-3 py-1.5 text-[11px] font-bold text-muted-foreground"
+              >
+                Chat
+              </Link>
+              {isFollowing ? (
+                <span className="rounded-full bg-[color:var(--primary)]/10 px-3 py-1.5 text-[11px] font-bold text-[color:var(--primary)]">
+                  Added
+                </span>
+              ) : (
+                <button
+                  onClick={() => follow.mutate(p.id)}
+                  disabled={follow.isPending}
+                  className="flex items-center gap-1 rounded-full bg-[color:var(--primary)] px-3 py-1.5 text-[11px] font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  <UserPlus className="h-3 w-3" /> Add
+                </button>
+              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">@{p.username ?? "user"}</p>
-              <p className="truncate text-[10px] text-muted-foreground">ID {p.user_code ?? "—"}</p>
-            </div>
-            <button
-              onClick={() => send.mutate(p.id)}
-              disabled={send.isPending}
-              className="flex items-center gap-1 rounded-full bg-[color:var(--primary)]/20 px-3 py-1.5 text-[11px] font-bold text-[color:var(--primary)] disabled:opacity-50"
-            >
-              <UserPlus className="h-3 w-3" /> Add
-            </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
