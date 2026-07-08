@@ -112,6 +112,7 @@ function MePage() {
                   level={level}
                   size="xl"
                   showBadge
+                  frame={profile?.frame}
                 />
                 <button
                   onClick={() => fileRef.current?.click()}
