@@ -513,7 +513,7 @@ function RoomPage() {
     const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex }]);
     setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
-    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 1800);
+    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2400);
     setTimeout(() => {
       setGlowSeats((prev) => {
         const next = { ...prev };
