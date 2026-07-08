@@ -331,7 +331,7 @@ function StatLink({ to, value, label, gold }: { to: string; value: number; label
       className="rounded-2xl border border-white/10 bg-white/10 py-2 active:scale-95 transition-transform"
     >
       <p className={`text-base font-black ${gold ? "text-[color:var(--gold)]" : "text-white"}`}>
-        {value.toLocaleString()}
+        <span title={value.toLocaleString()}>{formatCompact(value)}</span>
       </p>
       <p className="text-[10px] uppercase tracking-widest text-white/60">{label}</p>
     </Link>
