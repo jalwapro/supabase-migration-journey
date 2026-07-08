@@ -404,25 +404,7 @@ function Home() {
             )}
           </section>
 
-          {/* Quick actions rail */}
-          <section className="mt-4">
-            <div className="scrollbar-hide -mx-1 flex snap-x gap-2.5 overflow-x-auto px-4">
-              {QUICK_ACTIONS.map(({ to, label, Icon, tint }) => (
-                <Link
-                  key={to}
-                  to={to}
-                  className="group flex w-16 shrink-0 snap-start flex-col items-center gap-1"
-                >
-                  <span className={`grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br ${tint} shadow-[0_8px_24px_-10px_rgba(0,0,0,0.6)] ring-1 ring-white/20 transition group-active:scale-95`}>
-                    <Icon className="h-5 w-5 text-white drop-shadow" />
-                  </span>
-                  <span className="w-full truncate text-center text-[10px] font-medium text-foreground/85">
-                    {label}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </section>
+          {/* (Quick actions removed per request) */}
 
           {/* Live user slider */}
           <section className="mt-5">
