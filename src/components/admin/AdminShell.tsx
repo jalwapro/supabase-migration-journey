@@ -55,7 +55,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { to: "/admin/splash", label: "Splash & Animation", icon: Sparkles },
       { to: "/admin/integrations", label: "Integrations", icon: Plug },
-      { to: "/admin/agora-slots", label: "Agora Slots", icon: Plug },
+      { to: "/admin/agora-slots", label: "Agora Slots", icon: Server },
       { to: "/admin/settings", label: "Settings", icon: Settings },
       { to: "/admin/roles", label: "Admin Roles", icon: ShieldCheck },
       { to: "/admin/themes", label: "Theme Manager", icon: Palette },
