@@ -102,7 +102,20 @@ function MePage() {
             }
           >
             {profile?.data_card && (
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/40" />
+              <>
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/40" />
+                <div className="pointer-events-none absolute right-3 top-3 z-[2] rounded-lg bg-black/60 px-2.5 py-1.5 text-right text-white backdrop-blur">
+                  <div className="text-[9px] font-black uppercase tracking-widest text-[color:var(--gold)]">
+                    Data Card
+                  </div>
+                  <div className="max-w-[140px] truncate text-sm font-black leading-tight">
+                    {profile.username ?? "Member"}
+                  </div>
+                  {profile.user_code && (
+                    <div className="text-[10px] font-bold opacity-80">ID: {profile.user_code}</div>
+                  )}
+                </div>
+              </>
             )}
             {/* Equipped entrance banner */}
             {profile?.entrance && (
