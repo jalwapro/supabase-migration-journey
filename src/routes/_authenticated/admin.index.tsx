@@ -219,13 +219,10 @@ function Dashboard() {
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold md:text-3xl">Dashboard</h1>
-          <p className="mt-0.5 text-xs text-muted-foreground">Live overview of the Jalwa platform</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Live overview · {rangeLabel}</p>
         </div>
         <div className="flex items-center gap-2">
-          <div className="hidden items-center gap-2 rounded-full border border-border bg-card/50 px-3 py-2 text-xs text-muted-foreground md:flex">
-            <Search className="h-3.5 w-3.5" />
-            <input placeholder="Search users, rooms, transactions…" className="w-64 bg-transparent outline-none" />
-          </div>
+          <DateRangeFilter range={range} onChange={setRange} />
           <button className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card/50 text-muted-foreground hover:text-foreground">
             <Bell className="h-4 w-4" />
             {(pendingR.data ?? 0) + (pendingW.data ?? 0) + (reports.data ?? 0) > 0 && (
@@ -246,11 +243,12 @@ function Dashboard() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Total Users" value={users.data ?? 0} icon={Users} tone="bg-primary/15 text-primary" sub="Registered accounts" />
-        <StatCard label="Revenue (PKR)" value={`Rs ${Number(revenue.data ?? 0).toLocaleString()}`} icon={TrendingUp} tone="bg-[color:var(--gold)]/15 text-[color:var(--gold)]" sub="Approved recharges" />
-        <StatCard label="Pending Recharge" value={pendingR.data ?? 0} icon={Wallet} tone="bg-orange-500/15 text-orange-400" sub="Awaiting review" />
-        <StatCard label="Coins in Circulation" value={compact(coinsCirc.data ?? 0)} icon={Coins} tone="bg-purple-500/15 text-purple-400" sub="Across all wallets" />
+        <StatCard label="New Users" value={newUsers.data ?? 0} icon={Users} tone="bg-primary/15 text-primary" sub={rangeLabel} />
+        <StatCard label="Revenue (PKR)" value={`Rs ${Number(revenue.data ?? 0).toLocaleString()}`} icon={TrendingUp} tone="bg-[color:var(--gold)]/15 text-[color:var(--gold)]" sub={`${approvedInRange.data ?? 0} approved`} />
+        <StatCard label="Pending Recharge" value={pendingR.data ?? 0} icon={Wallet} tone="bg-orange-500/15 text-orange-400" sub="All time" />
+        <StatCard label="Coins in Circulation" value={compact(coinsCirc.data ?? 0)} icon={Coins} tone="bg-purple-500/15 text-purple-400" sub={`${users.data ?? 0} wallets`} />
       </div>
+
 
       {/* Chart + Room types */}
       <div className="mt-5 grid gap-4 lg:grid-cols-3">
