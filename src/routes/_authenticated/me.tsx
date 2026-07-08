@@ -93,7 +93,28 @@ function MePage() {
       <AppShell title="Profile">
         <div className="space-y-4 px-4 pb-6 pt-4">
           {/* Premium hero card */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a0b2e] via-[#2d0b4d] to-[#050510] p-5 text-white shadow-2xl">
+          <div
+            className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a0b2e] via-[#2d0b4d] to-[#050510] p-5 text-white shadow-2xl"
+            style={
+              profile?.data_card
+                ? { backgroundImage: `url(${profile.data_card})`, backgroundSize: "cover", backgroundPosition: "center" }
+                : undefined
+            }
+          >
+            {profile?.data_card && (
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-black/40" />
+            )}
+            {/* Equipped entrance banner */}
+            {profile?.entrance && (
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-10 overflow-hidden">
+                {/\.(mp4|webm|mov)($|\?)/i.test(profile.entrance) ? (
+                  <video src={profile.entrance} autoPlay muted loop playsInline className="h-full w-full object-cover" />
+                ) : (
+                  <img src={profile.entrance} alt="" className="h-full w-full object-cover" />
+                )}
+                <div className="entrance-shimmer absolute inset-0" />
+              </div>
+            )}
             {/* ambient glow */}
             <div
               className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full opacity-20"
@@ -103,6 +124,18 @@ function MePage() {
               className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full opacity-15"
               style={{ background: "color-mix(in oklab, var(--primary) 70%, transparent)" }}
             />
+            {/* Equipped car — decorative drive-across */}
+            {profile?.car && (
+              <div className="pointer-events-none absolute inset-x-0 bottom-2 z-[1] h-10">
+                <div className="car-drive absolute inset-y-0 left-0 w-24">
+                  {/\.(mp4|webm|mov)($|\?)/i.test(profile.car) ? (
+                    <video src={profile.car} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+                  ) : (
+                    <img src={profile.car} alt="" className="h-full w-full object-contain" />
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="relative flex items-start gap-4">
               <div className="relative">
@@ -113,7 +146,9 @@ function MePage() {
                   size="xl"
                   showBadge
                   frame={profile?.frame}
+                  ring={profile?.ring}
                 />
+
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
