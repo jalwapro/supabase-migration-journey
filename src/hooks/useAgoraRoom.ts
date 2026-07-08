@@ -24,14 +24,14 @@ export type UseAgoraRoomArgs = {
   publish: boolean;         // true = take mic/camera
   video: boolean;           // true = also publish camera
   enabled: boolean;         // false = don't connect
-  kind?: "voice" | "video"; // which Agora project to use
+  kind?: "voice" | "video" | "pk"; // which Agora pool to draw from
 };
 
 async function fetchToken(
   channel: string,
   uid: number,
   role: "publisher" | "audience",
-  kind: "voice" | "video",
+  kind: "voice" | "video" | "pk",
 ) {
   const { data: sessionRes } = await supabase.auth.getSession();
   const accessToken = sessionRes.session?.access_token;
@@ -50,7 +50,8 @@ async function fetchToken(
 }
 
 export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: UseAgoraRoomArgs) {
-  const resolvedKind: "voice" | "video" = kind ?? (video ? "video" : "voice");
+  const resolvedKind: "voice" | "video" | "pk" = kind ?? (video ? "video" : "voice");
+
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
