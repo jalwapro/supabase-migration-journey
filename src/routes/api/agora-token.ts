@@ -31,6 +31,7 @@ export const Route = createFileRoute("/api/agora-token")({
           channel?: string;
           uid?: number;
           role?: "publisher" | "audience";
+          kind?: "voice" | "video";
         };
         try {
           body = await request.json();
@@ -40,6 +41,7 @@ export const Route = createFileRoute("/api/agora-token")({
         const channel = String(body.channel ?? "").trim();
         const uid = Number(body.uid ?? 0);
         const roleName = body.role === "audience" ? "audience" : "publisher";
+        const kind = body.kind === "video" ? "video" : "voice";
         if (!channel || !Number.isFinite(uid)) {
           return json({ error: "channel and uid required" }, 400);
         }
@@ -55,20 +57,24 @@ export const Route = createFileRoute("/api/agora-token")({
         const { data: userRes, error: userErr } = await anon.auth.getUser(token);
         if (userErr || !userRes?.user) return json({ error: "unauthorized" }, 401);
 
-        // Load Agora credentials from app_settings
-        const { data: setting, error: sErr } = await anon
+        // Load Agora credentials — prefer kind-specific, then legacy "agora"
+        const preferredKey = kind === "video" ? "agora_video" : "agora_voice";
+        const { data: settings, error: sErr } = await anon
           .from("app_settings")
-          .select("value")
-          .eq("key", "agora")
-          .maybeSingle();
+          .select("key,value")
+          .in("key", [preferredKey, "agora"]);
         if (sErr) return json({ error: sErr.message }, 500);
 
-        const v = (setting?.value ?? {}) as { appId?: string; appCertificate?: string };
-        const appId = v.appId?.trim();
-        const appCertificate = v.appCertificate?.trim();
+        const byKey = new Map((settings ?? []).map((r) => [r.key, r.value]));
+        const pick = (byKey.get(preferredKey) ?? byKey.get("agora") ?? {}) as {
+          appId?: string;
+          appCertificate?: string;
+        };
+        const appId = pick.appId?.trim();
+        const appCertificate = pick.appCertificate?.trim();
         if (!appId || !appCertificate) {
           return json(
-            { error: "Agora not configured. Ask admin to add App ID + Certificate in Admin Panel." },
+            { error: `Agora (${kind}) not configured. Ask admin to add App ID + Certificate in Admin Panel.` },
             503,
           );
         }
