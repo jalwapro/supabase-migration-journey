@@ -353,7 +353,7 @@ function Home() {
                   ref={bannerRef}
                   className="scrollbar-hide -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 scroll-smooth"
                 >
-                  {banners.data.map((b) => (
+                  {list.map((b) => (
                     <a
                       key={b.id}
                       href={b.link_url ?? "#"}
@@ -369,9 +369,9 @@ function Home() {
                     </a>
                   ))}
                 </div>
-                {banners.data.length > 1 && (
+                {list.length > 1 && (
                   <div className="mt-2 flex justify-center gap-1.5">
-                    {banners.data.map((_, i) => (
+                    {list.map((_, i) => (
                       <span
                         key={i}
                         className={`h-1.5 rounded-full transition-all ${
