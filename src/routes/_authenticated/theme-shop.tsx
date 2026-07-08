@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Play, Check, Gem, Loader2, Sparkles } from "lucide-react";
+import { Play, Check, Coins, Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/theme-shop")({ component: Page });
@@ -70,7 +70,7 @@ function Page() {
       if (error) throw error;
     },
     onSuccess: async () => {
-      toast.success("Purchased 💎");
+      toast.success("Purchased 🪙");
       await refresh();
       qc.invalidateQueries({ queryKey: ["shop"] });
       setSelected(null);
@@ -97,7 +97,7 @@ function Page() {
         {/* Top diamond balance */}
         <div className="flex items-center justify-between border-b border-[color:var(--gold)]/20 bg-gradient-to-b from-[#3a1a05]/60 to-transparent px-4 py-2">
           <div className="flex items-center gap-1.5 text-sm font-bold text-[color:var(--gold)]">
-            <Gem className="h-4 w-4" /> {profile?.diamonds?.toLocaleString() ?? 0}
+            <Coins className="h-4 w-4" /> {profile?.coins?.toLocaleString() ?? 0}
           </div>
           <div className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--gold)]/80">
             Event-limited rewards
@@ -254,8 +254,8 @@ function Page() {
 
                     {/* Price bar */}
                     <div className="relative z-[1] flex items-center justify-center gap-1 border-t border-[color:var(--gold)]/30 bg-gradient-to-r from-[#5a3a06] to-[#3a2004] py-1.5 text-sm font-black text-white">
-                      <Gem className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                      {it.price_diamonds.toLocaleString()}
+                      <Coins className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+                      {(it.is_free ? 0 : it.price).toLocaleString()}
                     </div>
 
 
@@ -331,7 +331,8 @@ function Page() {
                   </button>
                 );
               }
-              const canAfford = (profile?.diamonds ?? 0) >= selected.price_diamonds;
+              const cost = selected.is_free ? 0 : selected.price;
+              const canAfford = (profile?.coins ?? 0) >= cost;
               return (
                 <button
                   onClick={() => buy.mutate(selected)}
@@ -342,7 +343,7 @@ function Page() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
-                      <Gem className="h-4 w-4" /> {canAfford ? "Purchase" : "Not enough"} · {selected.price_diamonds.toLocaleString()}
+                      <Coins className="h-4 w-4" /> {canAfford ? "Purchase" : "Not enough"} · {cost.toLocaleString()}
                     </>
                   )}
                 </button>
