@@ -198,9 +198,13 @@ function Page() {
                 const isSelected = selectedId === it.id;
                 const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days} day` : "Perm";
                 const cat = cats.find((c) => c.id === it.category_id);
-                const isBackground = cat?.slug === "theme";
-                const media = it.animation_url || it.preview_url || it.bg_image;
-                const isVideo = !!media && /\.mp4($|\?)/i.test(media);
+                const catKey = `${cat?.slug ?? ""} ${cat?.name ?? ""}`.toLowerCase();
+                // Full portrait 3D preview for themes / backgrounds / wallpapers, or any item that ships a bg image
+                const isBackground =
+                  !!it.bg_image ||
+                  /theme|background|wallpaper|bg|skin/.test(catKey);
+                const media = it.animation_url || it.bg_image || it.preview_url;
+                const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
 
                 return (
                   <button
