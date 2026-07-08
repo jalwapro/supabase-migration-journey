@@ -617,3 +617,26 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
   .theme-background-4d-idle { transition: none; transform: scale(1.12); }
 }
 
+
+/* Sparkling animated DP frame ---------------------------------------------- */
+.dp-sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #fff 0%, color-mix(in oklab, var(--gold) 70%, #fff) 40%, transparent 70%);
+  filter: drop-shadow(0 0 6px color-mix(in oklab, var(--gold) 70%, #fff));
+  opacity: 0;
+  animation: dp-sparkle-twinkle 2.4s ease-in-out infinite;
+}
+.dp-sparkle-a { top: 6%;  left: 50%; animation-delay: 0s;   }
+.dp-sparkle-b { top: 50%; right: 4%; animation-delay: .6s;  }
+.dp-sparkle-c { bottom: 8%; left: 30%; animation-delay: 1.2s; }
+.dp-sparkle-d { top: 40%; left: 4%;  animation-delay: 1.8s; }
+@keyframes dp-sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(.6); }
+  50%      { opacity: 1; transform: scale(1.4); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dp-sparkle { animation: none; opacity: .6; }
+}
