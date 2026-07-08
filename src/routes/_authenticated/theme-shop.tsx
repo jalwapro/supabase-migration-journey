@@ -143,6 +143,10 @@ function Page() {
                 const isEquipped = profile?.theme_id === it.id;
                 const badge =
                   it.duration_days && it.duration_days > 0 ? `${it.duration_days} day` : "Permanent";
+                const cat = cats.find((c) => c.id === it.category_id);
+                const isBackground = cat?.slug === "theme";
+                const media = it.animation_url || it.preview_url || it.bg_image;
+                const isVideo = !!media && /\.mp4($|\?)/i.test(media);
                 return (
                   <button
                     key={it.id}
@@ -153,20 +157,42 @@ function Page() {
                         : "border-[color:var(--gold)]/30"
                     }`}
                     style={{
-                      background:
-                        "radial-gradient(ellipse at top, rgba(212,175,55,0.25), rgba(60,30,5,0.75) 55%, rgba(20,10,2,0.95) 100%)",
+                      background: isBackground
+                        ? `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`
+                        : "radial-gradient(ellipse at top, rgba(212,175,55,0.25), rgba(60,30,5,0.75) 55%, rgba(20,10,2,0.95) 100%)",
                     }}
                   >
-                    {/* rays behind */}
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-40"
-                      style={{
-                        background:
-                          "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,215,120,0.18) 0deg 6deg, transparent 6deg 14deg)",
-                      }}
-                    />
+                    {isBackground && media ? (
+                      isVideo ? (
+                        <video
+                          src={media}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={media}
+                          alt={it.name}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      )
+                    ) : (
+                      <div
+                        className="pointer-events-none absolute inset-0 opacity-40"
+                        style={{
+                          background:
+                            "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,215,120,0.18) 0deg 6deg, transparent 6deg 14deg)",
+                        }}
+                      />
+                    )}
+                    {isBackground && (
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
+                    )}
                     {/* Top-left tag */}
-                    <span className="absolute left-2 top-2 z-10 rounded-md bg-black/40 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
+                    <span className="absolute left-2 top-2 z-10 rounded-md bg-black/50 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
                       {badge}
                     </span>
                     {/* Play btn */}
@@ -174,45 +200,64 @@ function Page() {
                       <Play className="h-3 w-3 fill-current" />
                     </span>
 
-                    <div className="relative z-[1] flex aspect-square items-center justify-center p-4">
-                      {it.animation_url ? (
-                        it.animation_url.match(/\.mp4($|\?)/i) ? (
-                          <video
-                            src={it.animation_url}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
+                    {isBackground ? (
+                      <div className="relative z-[1] flex aspect-square flex-col justify-end p-3">
+                        <div className="text-sm font-black text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
+                          {it.name}
+                        </div>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span
+                            className="h-3 w-3 rounded-full border border-white/40"
+                            style={{ background: it.primary_color }}
                           />
-                        ) : (
+                          <span
+                            className="h-3 w-3 rounded-full border border-white/40"
+                            style={{ background: it.accent_color }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="relative z-[1] flex aspect-square items-center justify-center p-4">
+                        {it.animation_url ? (
+                          isVideo ? (
+                            <video
+                              src={it.animation_url}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                              className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
+                            />
+                          ) : (
+                            <img
+                              src={it.animation_url}
+                              alt={it.name}
+                              className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
+                            />
+                          )
+                        ) : it.preview_url || it.bg_image ? (
                           <img
-                            src={it.animation_url}
+                            src={it.preview_url ?? it.bg_image!}
                             alt={it.name}
                             className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
                           />
-                        )
-                      ) : it.preview_url || it.bg_image ? (
-                        <img
-                          src={it.preview_url ?? it.bg_image!}
-                          alt={it.name}
-                          className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
-                        />
-                      ) : (
-                        <div
-                          className="h-24 w-24 rounded-full"
-                          style={{
-                            background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
-                          }}
-                        />
-                      )}
-                    </div>
+                        ) : (
+                          <div
+                            className="h-24 w-24 rounded-full"
+                            style={{
+                              background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
+                            }}
+                          />
+                        )}
+                      </div>
+                    )}
 
                     {/* Price bar */}
                     <div className="relative z-[1] flex items-center justify-center gap-1 border-t border-[color:var(--gold)]/30 bg-gradient-to-r from-[#5a3a06] to-[#3a2004] py-1.5 text-sm font-black text-white">
                       <Gem className="h-3.5 w-3.5 text-[color:var(--gold)]" />
                       {it.price_diamonds.toLocaleString()}
                     </div>
+
 
                     {isEquipped && (
                       <span className="absolute bottom-11 right-2 z-10 flex items-center gap-1 rounded-full bg-[color:var(--gold)] px-1.5 py-0.5 text-[9px] font-bold text-black">
