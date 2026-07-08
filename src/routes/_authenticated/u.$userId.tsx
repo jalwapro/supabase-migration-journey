@@ -384,6 +384,68 @@ function UserProfilePage() {
         </div>
       )}
 
+      {/* Public gallery */}
+      {(publicGallery.data?.length ?? 0) > 0 && (
+        <div className="mx-4 mt-4">
+          <p className="mb-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+            <Images className="h-3 w-3" /> Gallery
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            {publicGallery.data!.map((img) => (
+              <a
+                key={img.id}
+                href={img.path}
+                target="_blank"
+                rel="noreferrer"
+                className="aspect-square overflow-hidden rounded-xl bg-card/60"
+              >
+                <img src={img.path} alt="" className="h-full w-full object-cover" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Private album gate — only for other users */}
+      {!isMe && (
+        <div className="mx-4 mt-4 rounded-2xl border border-[color:var(--gold)]/30 bg-[color:var(--gold)]/5 p-3">
+          <p className="mb-2 flex items-center gap-2 text-xs font-bold text-[color:var(--gold)]">
+            <Lock className="h-3.5 w-3.5" /> Private Album
+          </p>
+          {albumAccess.data === "accepted" ? (
+            (privateGallery.data?.length ?? 0) > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {privateGallery.data!.map((img) => (
+                  <a
+                    key={img.id}
+                    href={img.path}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="aspect-square overflow-hidden rounded-xl bg-card/60"
+                  >
+                    <img src={img.path} alt="" className="h-full w-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Access mila hai — abhi koi private photo nahi</p>
+            )
+          ) : albumAccess.data === "pending" ? (
+            <p className="text-xs text-muted-foreground">Request bheji ja chuki — owner ke approve karne ka intezaar</p>
+          ) : albumAccess.data === "revoked" ? (
+            <p className="text-xs text-red-400">Access revoked kiya gaya hai</p>
+          ) : (
+            <button
+              onClick={() => requestAlbum.mutate()}
+              disabled={requestAlbum.isPending}
+              className="w-full rounded-full bg-gradient-to-r from-[color:var(--gold)] to-amber-500 py-2 text-xs font-bold text-black disabled:opacity-60"
+            >
+              {requestAlbum.isPending ? "Bhej rahe hain…" : "Request access"}
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Live rooms */}
       {(stats.data?.liveRooms ?? 0) > 0 && (
         <div className="mx-4 mt-4 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3">
