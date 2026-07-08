@@ -55,7 +55,7 @@ type FullProfile = {
 
 function UserProfilePage() {
   const { userId } = Route.useParams();
-  const { user: me } = useAuth();
+  const { user: me, isAdmin } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
   const isMe = me?.id === userId;
