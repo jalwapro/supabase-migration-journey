@@ -203,32 +203,15 @@ function Home() {
     },
   });
 
-  // Track banner scroll for pagination dots
-  useEffect(() => {
-    const el = bannerRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const w = el.clientWidth;
-      if (w === 0) return;
-      setBannerIdx(Math.round(el.scrollLeft / (w * 0.88)));
-    };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
-  }, [banners.data]);
-
-  // Auto-advance banners every 3s
+  // Auto-advance banners every 3s (fixed slider, transform-based)
   useEffect(() => {
     const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS;
     if (list.length < 2) return;
     const t = setInterval(() => {
-      const el = bannerRef.current;
-      if (!el) return;
-      const step = el.clientWidth * 0.88 + 12;
-      const next = (bannerIdx + 1) % list.length;
-      el.scrollTo({ left: next * step, behavior: "smooth" });
+      setBannerIdx((i) => (i + 1) % list.length);
     }, 3000);
     return () => clearInterval(t);
-  }, [banners.data, bannerIdx]);
+  }, [banners.data]);
 
   const tabIndex = TABS.findIndex((t) => t.key === tab);
 
