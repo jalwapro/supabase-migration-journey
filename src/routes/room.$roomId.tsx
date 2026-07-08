@@ -246,6 +246,27 @@ function RoomPage() {
         },
         async (payload) => {
           const row = payload.new as Message;
+          if (row.kind === "emoji") {
+            // "😀|3" → seat 3
+            const parts = (row.text ?? "").split("|");
+            const emoji = parts[0] ?? "😀";
+            const seat = Number(parts[1] ?? 0);
+            const id = `${row.id}-${Math.random().toString(36).slice(2, 7)}`;
+            setFlyingEmojis((prev) => [...prev, { id, emoji, seat }]);
+            setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
+            setTimeout(() => {
+              setFlyingEmojis((prev) => prev.filter((e) => e.id !== id));
+            }, 1800);
+            setTimeout(() => {
+              setGlowSeats((prev) => {
+                const next = { ...prev };
+                next[seat] = Math.max(0, (next[seat] ?? 1) - 1);
+                if (!next[seat]) delete next[seat];
+                return next;
+              });
+            }, 2200);
+            return;
+          }
           if (row.user_id) {
             const { data } = await supabase
               .from("profiles")
