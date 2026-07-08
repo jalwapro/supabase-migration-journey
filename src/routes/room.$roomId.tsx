@@ -74,6 +74,7 @@ type Member = {
   seat_index: number | null;
   is_muted: boolean;
   is_video: boolean;
+  is_moderator?: boolean;
   user: { username: string | null; avatar: string | null } | null;
 };
 
