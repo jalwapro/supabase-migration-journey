@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Crown, Trophy, Heart, Coins, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
 
 
 export const Route = createFileRoute("/rank")({
