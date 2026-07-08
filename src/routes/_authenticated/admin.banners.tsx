@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
+import { FileUploader } from "@/components/FileUploader";
 
 export const Route = createFileRoute("/_authenticated/admin/banners")({
   component: BannersAdmin,
@@ -99,7 +100,15 @@ function BannersAdmin() {
         <div className="grid grid-cols-2 gap-2">
           <input placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none" />
           <input placeholder="Order" type="number" value={draft.sort_order} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none" />
-          <input placeholder="Image URL" value={draft.image_url} onChange={(e) => setDraft({ ...draft, image_url: e.target.value })} className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none" />
+          <div className="col-span-2">
+            <FileUploader
+              bucket="banners"
+              accept="image/*"
+              label="Upload banner image"
+              value={draft.image_url}
+              onChange={(url) => setDraft({ ...draft, image_url: url ?? "" })}
+            />
+          </div>
           <input placeholder="Link URL (optional)" value={draft.link_url} onChange={(e) => setDraft({ ...draft, link_url: e.target.value })} className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none" />
         </div>
         <button
