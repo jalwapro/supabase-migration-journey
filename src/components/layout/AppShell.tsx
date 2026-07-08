@@ -45,7 +45,7 @@ export function AppShell({
                   className="flex items-center gap-1 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-semibold"
                 >
                   <WalletIcon className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                  <span>{profile.coins.toLocaleString()}</span>
+                  <span title={profile.coins.toLocaleString()}>{formatCompact(profile.coins)}</span>
                 </Link>
               )}
               {isAdmin && (
