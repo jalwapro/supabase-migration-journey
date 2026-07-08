@@ -162,6 +162,7 @@ function RankPage() {
 }
 
 function Podium({ top3 }: { top3: Entry[] }) {
+  const { isAdmin } = useAuth();
   // Order visually: 2nd, 1st, 3rd
   const [first, second, third] = top3;
   const cells = [
