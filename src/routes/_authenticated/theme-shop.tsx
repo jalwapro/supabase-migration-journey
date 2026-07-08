@@ -151,7 +151,7 @@ function Page() {
         </header>
 
         {/* Body */}
-        <div className="mx-auto flex max-w-md">
+        <div className="flex">
           {/* Sidebar categories */}
           <aside className="w-[78px] shrink-0 space-y-1.5 bg-black/50 px-1.5 py-2">
             {cats.map((c) => {
