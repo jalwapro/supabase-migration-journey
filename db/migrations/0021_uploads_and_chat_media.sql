@@ -93,9 +93,10 @@ end $$;
 
 -- ================================================================
 -- 4) EXTEND direct_messages FOR RICH MEDIA + ALBUM SHARE
+-- Real column names (from 0005_friends_dms.sql): sender_id, receiver_id, text
 -- ================================================================
 alter table public.direct_messages
-  alter column message drop not null;
+  alter column text drop not null;
 
 alter table public.direct_messages
   add column if not exists kind text not null default 'text',
@@ -117,7 +118,7 @@ alter table public.direct_messages
 alter table public.direct_messages
   add constraint direct_messages_payload_check
   check (
-    (kind = 'text'  and message is not null) or
+    (kind = 'text'  and text is not null) or
     (kind = 'album' and gallery_image_id is not null) or
     (kind in ('image','video','file','voice') and media_url is not null)
   );
