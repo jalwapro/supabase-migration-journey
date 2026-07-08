@@ -21,6 +21,7 @@ import { useRef, useState } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { LevelBadge } from "@/components/LevelBadge";
 import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
+import { formatCompact } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/me")({
   component: MePage,
