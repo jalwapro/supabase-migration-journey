@@ -200,7 +200,10 @@ function Page() {
             <div className="grid grid-cols-2 gap-2">
               {items.map((it) => {
                 const owned = isOwned(it.id);
-                const isEquipped = profile?.theme_id === it.id;
+                const frameUrl = it.animation_url || it.preview_url || it.bg_image;
+                const isEquipped =
+                  profile?.theme_id === it.id ||
+                  (!!profile?.frame && !!frameUrl && profile.frame === frameUrl);
                 const isSelected = selectedId === it.id;
                 const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days} day` : "Perm";
                 const cat = cats.find((c) => c.id === it.category_id);
