@@ -294,12 +294,17 @@
   min-height: 100dvh;
   background-color: var(--background);
   position: relative;
+  isolation: isolate;
   overflow-x: hidden;
 }
 body.themed,
 body.themed .app-frame,
 body.themed .app-frame-outer {
   background: transparent !important;
+}
+body.themed .app-frame > .relative.z-10 [class*="min-h-dvh"][class*="bg-background"],
+body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"] {
+  background-color: transparent !important;
 }
 @media (min-width: 481px) {
   .app-frame {
@@ -595,4 +600,73 @@ body.themed .app-frame-outer {
   background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.35) 50%, transparent 60%);
   mix-blend-mode: overlay;
   animation: shop-chip-shimmer 3.4s ease-in-out infinite;
+}
+
+/* Full-screen equipped theme background — stronger 4D depth on mobile */
+.theme-background-root {
+  contain: layout paint;
+}
+.theme-background-stage,
+.theme-background-4d {
+  transform-style: preserve-3d;
+}
+.theme-background-4d {
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+.theme-background-4d-idle {
+  animation: theme-background-idle-4d 5.2s ease-in-out infinite;
+}
+.theme-background-4d-tilt {
+  transform: translate3d(var(--tilt-shift-x), var(--tilt-shift-y), 0) rotateX(var(--tilt-rx)) rotateY(var(--tilt-ry)) scale(1.16);
+  transition: transform 80ms linear;
+}
+.theme-background-depth {
+  opacity: .48;
+  filter: blur(20px) saturate(1.25);
+  transform: translateZ(-52px) scale(1.18);
+}
+.theme-background-gradient-depth {
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255,255,255,.28), transparent 22%),
+    radial-gradient(circle at 82% 22%, color-mix(in oklab, var(--primary) 36%, transparent), transparent 28%),
+    radial-gradient(circle at 50% 85%, color-mix(in oklab, var(--secondary) 34%, transparent), transparent 32%);
+  opacity: .62;
+  transform: translateZ(46px) scale(.94);
+}
+.theme-background-media {
+  filter: saturate(1.18) contrast(1.06) brightness(1.03);
+  transform: translateZ(32px) scale(1.02);
+}
+.theme-background-pixels {
+  background-image:
+    linear-gradient(115deg, transparent 35%, rgba(255,255,255,.24) 50%, transparent 65%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.14) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 1px, transparent 1px 11px);
+  mix-blend-mode: overlay;
+  opacity: .42;
+  transform: translateZ(76px) translate3d(var(--tilt-shift-x-inverse), var(--tilt-shift-y-inverse), 0);
+  animation: theme-background-pixels 3.8s ease-in-out infinite;
+}
+.theme-background-glint {
+  background:
+    radial-gradient(circle at var(--glint-x) var(--glint-y), rgba(255,255,255,.42), transparent 26%),
+    linear-gradient(120deg, transparent 38%, rgba(255,255,255,.20) 48%, transparent 58%);
+  mix-blend-mode: screen;
+  opacity: .72;
+  transform: translateZ(92px);
+}
+.theme-background-dim {
+  background:
+    radial-gradient(110% 80% at 50% 0%, transparent 0%, color-mix(in oklab, var(--background) 18%, transparent) 55%, color-mix(in oklab, var(--background) 50%, transparent) 100%),
+    linear-gradient(180deg, color-mix(in oklab, var(--background) 20%, transparent), color-mix(in oklab, var(--background) 58%, transparent));
+}
+@keyframes theme-background-idle-4d {
+  0%, 100% { transform: translate3d(-14px, -4px, 0) rotateX(6deg) rotateY(-20deg) scale(1.15); }
+  50%      { transform: translate3d(14px, 5px, 0) rotateX(-5deg) rotateY(20deg) scale(1.15); }
+}
+@keyframes theme-background-pixels {
+  0%, 100% { opacity: .34; background-position: 0 0, 0 0, 0 0; }
+  50%      { opacity: .52; background-position: 36px 0, 0 8px, 8px 0; }
 }

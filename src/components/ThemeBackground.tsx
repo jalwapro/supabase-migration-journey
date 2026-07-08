@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceTilt } from "@/hooks/useDeviceTilt";
@@ -62,44 +62,57 @@ function ThemeBackgroundInner({
   gradient: string | undefined;
 }) {
   const { rx, ry, active } = useDeviceTilt(22);
+  const tiltStyle = {
+    background: gradient,
+    "--tilt-rx": `${rx}deg`,
+    "--tilt-ry": `${ry}deg`,
+    "--tilt-shift-x": `${ry * 1.35}px`,
+    "--tilt-shift-y": `${rx * -1.2}px`,
+    "--tilt-shift-x-inverse": `${ry * -0.85}px`,
+    "--tilt-shift-y-inverse": `${rx * 0.75}px`,
+    "--glint-x": `${50 + ry * 1.15}%`,
+    "--glint-y": `${50 - rx * 1.25}%`,
+  } as CSSProperties;
+
+  const renderMedia = (extraClass = "") => {
+    if (!media) return null;
+    return isVideo ? (
+      <video
+        src={media}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className={`h-full w-full object-cover ${extraClass}`}
+      />
+    ) : (
+      <img src={media} alt="" className={`h-full w-full object-cover ${extraClass}`} />
+    );
+  };
+
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      className="theme-background-root pointer-events-none fixed inset-0 z-0 overflow-hidden"
       style={{
         background: gradient,
-        perspective: "1200px",
+        perspective: "760px",
         perspectiveOrigin: "50% 50%",
       }}
     >
-      {media && (
-        <div
-          className={active ? "absolute inset-[-8%] overflow-hidden" : "shop-theme-3d absolute inset-[-8%] overflow-hidden"}
-          style={{
-            background: gradient,
-            willChange: "transform",
-            transform: active
-              ? `translateZ(0) rotateX(${rx}deg) rotateY(${ry}deg)`
-              : undefined,
-            transition: active ? "transform 120ms ease-out" : undefined,
-          }}
-        >
-          {isVideo ? (
-            <video
-              src={media}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <img src={media} alt="" className="h-full w-full object-cover" />
-          )}
-          <div className="pointer-events-none absolute inset-0 shop-theme-shine" />
-        </div>
-      )}
-      <div className="absolute inset-0 bg-background/55" />
+      <div
+        className={`theme-background-stage absolute inset-[-14%] overflow-hidden ${
+          active ? "theme-background-4d theme-background-4d-tilt" : "theme-background-4d theme-background-4d-idle"
+        }`}
+        style={tiltStyle}
+      >
+        <div className="theme-background-depth absolute inset-0">{renderMedia()}</div>
+        <div className="theme-background-media absolute inset-0">{renderMedia()}</div>
+        <div className="theme-background-gradient-depth pointer-events-none absolute inset-0" />
+        <div className="theme-background-pixels pointer-events-none absolute inset-0" />
+        <div className="theme-background-glint pointer-events-none absolute inset-0" />
+      </div>
+      <div className="theme-background-dim absolute inset-0" />
     </div>
   );
 }
