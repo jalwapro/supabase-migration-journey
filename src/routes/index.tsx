@@ -100,7 +100,15 @@ function Home() {
     } catch { /* no-op */ }
   }, [navigate]);
 
+  // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
+  useRealtimeInvalidate("home-live", [
+    { table: "live_rooms", invalidate: [["home-rooms"], ["home-live-users"]] },
+    { table: "follows", invalidate: [["home-mutual-friends-online"]] },
+    { table: "banners", invalidate: [["banners"]] },
+  ]);
+
   const friends = useQuery({
+
     queryKey: ["home-mutual-friends-online", user?.id],
     enabled: !!user?.id && friendsOpen,
     refetchInterval: friendsOpen ? 15_000 : false,
