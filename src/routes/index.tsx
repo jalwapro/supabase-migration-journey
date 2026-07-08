@@ -236,7 +236,12 @@ function Home() {
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
-            <Link to={user ? "/me" : "/auth"} className="relative shrink-0" aria-label="Profile">
+            <Link
+              to={user ? "/me" : "/auth"}
+              disabled={loading}
+              className="relative shrink-0"
+              aria-label="Profile"
+            >
               <span
                 aria-hidden
                 className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"
