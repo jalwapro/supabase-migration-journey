@@ -307,7 +307,7 @@ function RoomPage() {
   }, [roomId]);
 
   useEffect(() => {
-    if (!user || !room.data) return;
+    if (!user || !room.data?.id) return;
     const seatIndex = isHost ? 0 : null;
     void (async () => {
       await supabase
@@ -328,7 +328,11 @@ function RoomPage() {
     return () => {
       void supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
     };
-  }, [user, room.data, roomId, isHost]);
+    // Depend on primitives only — using room.data would re-fire on every
+    // React Query refetch and spam a "joined" message each time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, roomId, isHost, room.data?.id]);
+
 
   const followsHost = useQuery({
     enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
