@@ -138,8 +138,14 @@ function Splash() {
     );
   }
 
+  // Config is still loading — show a plain black screen (no animated fallback)
+  // so users never see two splashes back-to-back before the video appears.
+  if (cfg.isLoading) {
+    return <main className="min-h-[100dvh] bg-black" />;
+  }
 
   return (
+
     <main
       className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-6"
       style={{
