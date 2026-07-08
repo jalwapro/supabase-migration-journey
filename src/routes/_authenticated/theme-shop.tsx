@@ -85,15 +85,37 @@ function Page() {
 
   const equip = useMutation({
     mutationFn: async (item: ShopItem) => {
-      const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
-      if (error) {
-        // Fallback: try updating profile directly if RPC is missing
-        const { error: upErr } = await supabase
-          .from("profiles")
-          .update({ theme_id: item.id })
-          .eq("id", user!.id);
-        if (upErr) throw error; // surface the original RPC error
+      const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
+      const slug = (cat?.slug ?? "").toLowerCase();
+      const name = (cat?.name ?? "").toLowerCase();
+      const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
+      const isFrame = slug === "frame" || slug === "frames" || name === "frame" || name === "frames";
+
+      if (isTheme) {
+        const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
+        if (error) {
+          const { error: upErr } = await supabase
+            .from("profiles")
+            .update({ theme_id: item.id })
+            .eq("id", user!.id);
+          if (upErr) throw error;
+        }
+        return;
       }
+
+      if (isFrame) {
+        const frameUrl = item.animation_url || item.preview_url || item.bg_image;
+        const { error } = await supabase
+          .from("profiles")
+          .update({ frame: frameUrl })
+          .eq("id", user!.id);
+        if (error) throw error;
+        return;
+      }
+
+      // Other categories (car, ring, bubble, entrance, special id, data card…)
+      // — user will define where these render; do not touch theme_id here.
+      toast.info("Applied. Placement for this category is coming soon.");
     },
     onSuccess: async () => {
       toast.success("Applied ✨");
