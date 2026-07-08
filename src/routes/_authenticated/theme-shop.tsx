@@ -349,6 +349,7 @@ function Page() {
         const cat = cats.find((c) => c.id === it.category_id);
         const media = it.animation_url || it.bg_image || it.preview_url;
         const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+        const modalImage = isVideo ? it.bg_image || it.preview_url : media;
         const owned = isOwned(it.id);
         const isEquipped = profile?.theme_id === it.id;
         return (
@@ -375,7 +376,11 @@ function Page() {
                 style={{ background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})` }}
               >
                 {media && (isVideo ? (
-                  <video src={media} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                  modalImage ? (
+                    <img src={modalImage} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <video src={media} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+                  )
                 ) : (
                   <img src={media} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                 ))}
