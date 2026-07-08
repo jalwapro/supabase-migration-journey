@@ -85,15 +85,37 @@ function Page() {
 
   const equip = useMutation({
     mutationFn: async (item: ShopItem) => {
-      const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
-      if (error) {
-        // Fallback: try updating profile directly if RPC is missing
-        const { error: upErr } = await supabase
-          .from("profiles")
-          .update({ theme_id: item.id })
-          .eq("id", user!.id);
-        if (upErr) throw error; // surface the original RPC error
+      const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
+      const slug = (cat?.slug ?? "").toLowerCase();
+      const name = (cat?.name ?? "").toLowerCase();
+      const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
+      const isFrame = slug === "frame" || slug === "frames" || name === "frame" || name === "frames";
+
+      if (isTheme) {
+        const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
+        if (error) {
+          const { error: upErr } = await supabase
+            .from("profiles")
+            .update({ theme_id: item.id })
+            .eq("id", user!.id);
+          if (upErr) throw error;
+        }
+        return;
       }
+
+      if (isFrame) {
+        const frameUrl = item.animation_url || item.preview_url || item.bg_image;
+        const { error } = await supabase
+          .from("profiles")
+          .update({ frame: frameUrl })
+          .eq("id", user!.id);
+        if (error) throw error;
+        return;
+      }
+
+      // Other categories (car, ring, bubble, entrance, special id, data card…)
+      // — user will define where these render; do not touch theme_id here.
+      toast.info("Applied. Placement for this category is coming soon.");
     },
     onSuccess: async () => {
       toast.success("Applied ✨");
@@ -178,7 +200,10 @@ function Page() {
             <div className="grid grid-cols-2 gap-2">
               {items.map((it) => {
                 const owned = isOwned(it.id);
-                const isEquipped = profile?.theme_id === it.id;
+                const frameUrl = it.animation_url || it.preview_url || it.bg_image;
+                const isEquipped =
+                  profile?.theme_id === it.id ||
+                  (!!profile?.frame && !!frameUrl && profile.frame === frameUrl);
                 const isSelected = selectedId === it.id;
                 const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days} day` : "Perm";
                 const cat = cats.find((c) => c.id === it.category_id);
@@ -351,7 +376,10 @@ function Page() {
         const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
         const modalImage = isVideo ? it.bg_image || it.preview_url : media;
         const owned = isOwned(it.id);
-        const isEquipped = profile?.theme_id === it.id;
+        const frameUrl2 = it.animation_url || it.preview_url || it.bg_image;
+        const isEquipped =
+          profile?.theme_id === it.id ||
+          (!!profile?.frame && !!frameUrl2 && profile.frame === frameUrl2);
         return (
           <div
             className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center"

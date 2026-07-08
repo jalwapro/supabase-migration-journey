@@ -40,6 +40,7 @@ type FullProfile = {
   username: string | null;
   full_name: string | null;
   avatar: string | null;
+  frame: string | null;
   bio: string | null;
   gender: string | null;
   country: string | null;
@@ -68,7 +69,7 @@ function UserProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,username,full_name,avatar,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
+          "id,username,full_name,avatar,frame,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
         )
         .eq("id", userId)
         .maybeSingle();
@@ -278,6 +279,7 @@ function UserProfilePage() {
             level={p.level}
             size="xl"
             showBadge
+            frame={p.frame}
           />
           <div className="mt-4 flex items-center gap-2">
             <h1 className="text-xl font-black text-white">

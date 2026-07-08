@@ -1,4 +1,5 @@
 import { useEffect, useState, type CSSProperties } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useDeviceTilt } from "@/hooks/useDeviceTilt";
@@ -17,7 +18,13 @@ type ThemeRow = {
 
 export function ThemeBackground() {
   const { profile, loading: authLoading } = useAuth();
-  const themeId = profile?.theme_id ?? null;
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // Hide the 4D theme background on pages where users are picking / previewing
+  // themes so the default app color shows through.
+  const suppressed =
+    pathname.startsWith("/theme-shop") ||
+    pathname.startsWith("/admin");
+  const themeId = suppressed ? null : profile?.theme_id ?? null;
   const [theme, setTheme] = useState<ThemeRow | null>(null);
   const [loading, setLoading] = useState(true);
 
