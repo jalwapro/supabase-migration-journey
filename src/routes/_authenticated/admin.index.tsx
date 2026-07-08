@@ -272,7 +272,7 @@ function Dashboard() {
             <QuickLink to="/admin/live" label="Live Rooms" badge={liveRooms.data ?? 0} icon={Radio} />
             <QuickLink to="/admin/users" label="Manage Users" icon={Users} />
           </div>
-          <div className="mt-4 rounded-xl border border-border bg-card/40 p-3 text-[11px] text-muted-foreground">
+          <div className="mt-4 rounded-xl emboss-inset p-3 text-[11px] text-muted-foreground">
             <p className="font-bold text-foreground">Money out</p>
             <p className="mt-1">Total withdrawals paid: <span className="font-bold text-red-400">PKR {Number(withdrawn.data ?? 0).toLocaleString()}</span></p>
           </div>
@@ -308,7 +308,7 @@ function MiniStat({ icon: Icon, label, value, tone }: { icon: LucideIcon; label:
 
 function QuickLink({ to, label, badge, icon: Icon }: { to: string; label: string; badge?: number; icon: LucideIcon }) {
   return (
-    <Link to={to} className="flex items-center gap-3 rounded-xl bg-card/40 px-3 py-2.5 text-sm hover:bg-card/70">
+    <Link to={to} className="flex items-center gap-3 rounded-xl emboss-inset px-3 py-2.5 text-sm hover:brightness-125">
       <Icon className="h-4 w-4 text-muted-foreground" />
       <span className="flex-1 truncate">{label}</span>
       {typeof badge === "number" && badge > 0 && (
