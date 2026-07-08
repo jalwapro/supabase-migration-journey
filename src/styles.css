@@ -464,3 +464,67 @@ body.themed .app-frame-outer {
   50%     { opacity: 1;  transform: scale(1.05); }
 }
 .anim-theme-shine { animation: anim-theme-shine 5s ease-in-out infinite; }
+
+/* ============ TikTok-style gift animation (top half of screen) ============ */
+@keyframes gift-anim-emoji-in {
+  0%   { transform: scale(0) rotate(-45deg); opacity: 0; }
+  40%  { transform: scale(1.3) rotate(15deg); opacity: 1; }
+  60%  { transform: scale(0.95) rotate(-8deg); }
+  75%  { transform: scale(1.08) rotate(4deg); }
+  85%  { transform: scale(1) rotate(0deg); }
+  100% { transform: scale(1.1) rotate(0deg); opacity: 0; }
+}
+.gift-anim-emoji {
+  animation: gift-anim-emoji-in 3.8s cubic-bezier(.34,1.56,.64,1) forwards;
+  filter: drop-shadow(0 0 24px rgba(255,215,0,.7));
+}
+
+@keyframes gift-anim-glow-in {
+  0%   { opacity: 0; transform: scale(0.4); }
+  30%  { opacity: 1; transform: scale(1.1); }
+  75%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+.gift-anim-glow {
+  background: radial-gradient(circle at 50% 50%, rgba(255,215,0,.35), rgba(255,50,150,.18) 40%, transparent 70%);
+  animation: gift-anim-glow-in 3.8s ease-out forwards;
+}
+
+@keyframes gift-anim-shimmer-sweep {
+  0%   { transform: translateX(-100%); opacity: 0; }
+  30%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+.gift-anim-shimmer {
+  background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%);
+  animation: gift-anim-shimmer-sweep 2.2s ease-in-out 0.2s forwards;
+}
+
+@keyframes gift-anim-particle-burst {
+  0%   { transform: rotate(var(--angle)) translateX(0) scale(.4); opacity: 0; }
+  20%  { opacity: 1; }
+  100% { transform: rotate(var(--angle)) translateX(180px) scale(1.1); opacity: 0; }
+}
+.gift-anim-particle {
+  top: 50%; left: 50%;
+  transform-origin: 0 0;
+  animation: gift-anim-particle-burst 2.4s ease-out forwards;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,.9));
+}
+
+@keyframes gift-anim-sender-in {
+  0%   { transform: translateX(-120%); opacity: 0; }
+  20%  { transform: translateX(0); opacity: 1; }
+  80%  { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(-30%); opacity: 0; }
+}
+.gift-anim-sender { animation: gift-anim-sender-in 3.8s ease-out forwards; }
+
+@keyframes gift-anim-caption-in {
+  0%   { transform: translateY(20px); opacity: 0; }
+  30%  { transform: translateY(0); opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateY(-10px); opacity: 0; }
+}
+.gift-anim-caption { animation: gift-anim-caption-in 3.8s ease-out forwards; }
