@@ -892,11 +892,19 @@ function RoomPage() {
                 </div>
               </button>
               <div className="grid flex-1 grid-cols-2 gap-2">
-                <MiniAction
-                  icon={<Music className="h-5 w-5" />}
-                  label="Music"
-                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
-                />
+                {isHost ? (
+                  <MiniAction
+                    icon={<Music className="h-5 w-5" />}
+                    label="Music"
+                    onClick={() => setMusicOpen(true)}
+                  />
+                ) : (
+                  <MiniAction
+                    icon={<Smile className="h-5 w-5" />}
+                    label="Reactions"
+                    onClick={() => setEmojiSheetOpen(true)}
+                  />
+                )}
                 <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
               </div>
 
