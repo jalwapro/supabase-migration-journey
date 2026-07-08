@@ -25,6 +25,7 @@ export type Profile = {
   xp: number;
   is_vip: boolean;
   vip_expiry: string | null;
+  vip_level: number;
   status: string;
   theme_id: string | null;
   frame_expires_at: string | null;
