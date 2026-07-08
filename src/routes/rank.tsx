@@ -218,6 +218,7 @@ function Podium({ top3 }: { top3: Entry[] }) {
 }
 
 function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
+  const { isAdmin } = useAuth();
   return (
     <li className="glass flex items-center gap-3 rounded-2xl p-3">
       <div className="w-6 shrink-0 text-center text-sm font-bold text-muted-foreground">
