@@ -41,6 +41,12 @@ type FullProfile = {
   full_name: string | null;
   avatar: string | null;
   frame: string | null;
+  ring: string | null;
+  bubble: string | null;
+  car: string | null;
+  entrance: string | null;
+  special_id: string | null;
+  data_card: string | null;
   bio: string | null;
   gender: string | null;
   country: string | null;
@@ -69,7 +75,7 @@ function UserProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,username,full_name,avatar,frame,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
+          "id,username,full_name,avatar,frame,ring,bubble,car,entrance,special_id,data_card,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
         )
         .eq("id", userId)
         .maybeSingle();
