@@ -220,7 +220,38 @@ function ThemesAdmin() {
             )}
           </button>
 
-          <label className="col-span-2 flex items-center gap-2 text-xs">
+          <textarea
+            placeholder="Description (optional)"
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            className="col-span-2 min-h-[60px] rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+          />
+
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
+            <span className="text-muted-foreground">Primary</span>
+            <input type="color" value={draft.primary_color} onChange={(e) => setDraft({ ...draft, primary_color: e.target.value })} className="h-6 w-8 cursor-pointer rounded bg-transparent" />
+            <span className="ml-auto font-mono text-[10px]">{draft.primary_color}</span>
+          </label>
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
+            <span className="text-muted-foreground">Accent</span>
+            <input type="color" value={draft.accent_color} onChange={(e) => setDraft({ ...draft, accent_color: e.target.value })} className="h-6 w-8 cursor-pointer rounded bg-transparent" />
+            <span className="ml-auto font-mono text-[10px]">{draft.accent_color}</span>
+          </label>
+
+          <input
+            placeholder="Price (coins)"
+            type="number"
+            value={draft.price_coins}
+            onChange={(e) => setDraft({ ...draft, price_coins: Number(e.target.value) })}
+            disabled={draft.is_free}
+            className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none disabled:opacity-40"
+          />
+
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
+            <input type="checkbox" checked={draft.is_free} onChange={(e) => setDraft({ ...draft, is_free: e.target.checked })} />
+            Free
+          </label>
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
             <input type="checkbox" checked={draft.is_premium} onChange={(e) => setDraft({ ...draft, is_premium: e.target.checked })} />
             VIP only
           </label>
