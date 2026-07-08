@@ -132,7 +132,7 @@ function Page() {
           </div>
 
           {/* Promo banner */}
-          <div className="mx-auto max-w-md px-3 pb-2">
+          <div className="px-3 pb-2">
             <div className="relative overflow-hidden rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[#4a1a5c] via-[#5b1e6f] to-[#3a0f4a] px-3 py-1.5 pr-16">
               <div className="flex items-center gap-2 text-[11px] font-bold text-white">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-red-500">
