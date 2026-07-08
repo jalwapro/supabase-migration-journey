@@ -92,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const initialSessionLoadedRef = useRef(false);
 
   const user = session?.user ?? null;
   const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
@@ -118,23 +119,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadInitialSession = useCallback(async () => {
     let nextSession: Session | null = null;
-    try {
-      const { data } = await supabase.auth.getSession();
-      nextSession = data.session;
-    } catch (error) {
-      console.warn("[useAuth] initial session", error);
-    }
-
-    if (!nextSession) {
-      await new Promise((resolve) => setTimeout(resolve, 250));
+    for (const delay of [0, 150, 350, 700, 1200]) {
+      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
       try {
-        const retry = await supabase.auth.getSession();
-        nextSession = retry.data.session;
+        const { data } = await supabase.auth.getSession();
+        nextSession = data.session;
+        if (nextSession?.user) break;
       } catch (error) {
-        console.warn("[useAuth] initial session retry", error);
+        console.warn("[useAuth] initial session", error);
       }
     }
 
+    initialSessionLoadedRef.current = true;
     await hydrate(nextSession);
     setLoading(false);
   }, [hydrate]);
@@ -162,8 +158,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // 1. Subscribe FIRST so we don't miss any events
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
+      // On a hard refresh, Supabase can emit INITIAL_SESSION before slow
+      // mobile/native storage has returned the saved token. Let our retrying
+      // loader decide first so the UI doesn't briefly become signed out.
+      if (event === "INITIAL_SESSION" && !s && !initialSessionLoadedRef.current) return;
       void hydrate(s);
+      if (event !== "SIGNED_OUT") setLoading(false);
     });
     // 2. Then check current session
     void loadInitialSession();
