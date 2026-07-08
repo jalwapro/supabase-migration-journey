@@ -40,6 +40,7 @@ type FullProfile = {
   username: string | null;
   full_name: string | null;
   avatar: string | null;
+  frame: string | null;
   bio: string | null;
   gender: string | null;
   country: string | null;
