@@ -89,7 +89,7 @@ function ThemeBackgroundInner({
   gradient: string | undefined;
   fallbackImage: string | null;
 }) {
-  const { rx, ry, active } = useDeviceTilt(22);
+  const { rx, ry } = useDeviceTilt(18);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
@@ -167,10 +167,7 @@ function ThemeBackgroundInner({
       }}
     >
       <div
-        className={cn(
-          "theme-background-stage absolute inset-[-14%] overflow-hidden",
-          active ? "theme-background-4d theme-background-4d-tilt" : "theme-background-4d theme-background-4d-idle"
-        )}
+        className="theme-background-stage theme-background-4d theme-background-4d-tilt absolute inset-[-14%] overflow-hidden"
         style={tiltStyle}
       >
         <div className="theme-background-media absolute inset-0">{renderMedia(false)}</div>

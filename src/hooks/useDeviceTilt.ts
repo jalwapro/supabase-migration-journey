@@ -19,6 +19,8 @@ export function useDeviceTilt(maxDeg = 22) {
     let baseBeta: number | null = null;
     let baseGamma: number | null = null;
     let raf = 0;
+    let lastTs = 0;
+    let lastTilt = { rx: 0, ry: 0, active: false };
 
     const onOrient = (e: DeviceOrientationEvent) => {
       if (typeof e.gamma !== "number" && typeof e.beta !== "number") return;
@@ -37,6 +39,17 @@ export function useDeviceTilt(maxDeg = 22) {
         rx: clamp(deltaBeta * 0.8, maxDeg * 0.75),
         active: Math.abs(deltaGamma) > 1.5 || Math.abs(deltaBeta) > 1.5,
       };
+
+      const now = performance.now();
+      const changedEnough =
+        Math.abs(nextTilt.rx - lastTilt.rx) > 0.65 ||
+        Math.abs(nextTilt.ry - lastTilt.ry) > 0.65 ||
+        nextTilt.active !== lastTilt.active;
+
+      if (!changedEnough || now - lastTs < 70) return;
+
+      lastTs = now;
+      lastTilt = nextTilt;
 
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => setTilt(nextTilt));
