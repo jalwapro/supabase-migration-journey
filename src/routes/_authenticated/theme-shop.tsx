@@ -265,7 +265,7 @@ function Page() {
                   }}
                   className={`relative flex w-full flex-col items-center gap-1 rounded-2xl py-2.5 transition ${
                     active
-                      ? "bg-gradient-to-b from-[color:var(--gold)]/25 via-white/5 to-transparent shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--gold)_55%,transparent)]"
+                      ? "shop-cat-active"
                       : "hover:bg-white/[0.04]"
                   }`}
                 >
