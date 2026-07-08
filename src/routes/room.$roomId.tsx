@@ -1039,6 +1039,12 @@ function RoomPage() {
         isHost={isHost}
       />
       <HostMusicPlayer open={musicOpen && isHost} onClose={() => setMusicOpen(false)} controller={agora} />
+      <InviteSheet
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        roomUrl={typeof window !== "undefined" ? window.location.href : ""}
+        roomTitle={room.data?.title ?? "Live Room"}
+      />
       {isHost && (
         <SeatsSheet
           open={seatsSheetOpen}
