@@ -323,6 +323,7 @@ function UserProfilePage() {
             size="xl"
             showBadge
             frame={p.frame}
+            ring={p.ring}
           />
           <div className="mt-4 flex items-center gap-2">
             <h1 className="text-xl font-black text-white">
