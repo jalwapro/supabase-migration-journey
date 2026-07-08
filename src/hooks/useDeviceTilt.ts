@@ -30,10 +30,12 @@ export function useDeviceTilt(maxDeg = 22) {
       if (baseGamma === null) baseGamma = gamma;
       if (baseBeta === null) baseBeta = beta;
 
+      const deltaGamma = gamma - baseGamma;
+      const deltaBeta = baseBeta - beta;
       const nextTilt = {
-        ry: clamp((gamma - baseGamma) * 1.15, maxDeg),
-        rx: clamp((baseBeta - beta) * 0.8, maxDeg * 0.75),
-        active: true,
+        ry: clamp(deltaGamma * 1.15, maxDeg),
+        rx: clamp(deltaBeta * 0.8, maxDeg * 0.75),
+        active: Math.abs(deltaGamma) > 1.5 || Math.abs(deltaBeta) > 1.5,
       };
 
       cancelAnimationFrame(raf);
