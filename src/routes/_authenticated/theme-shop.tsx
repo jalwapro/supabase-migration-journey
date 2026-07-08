@@ -293,17 +293,40 @@ function Page() {
             className="w-full max-w-md rounded-t-3xl border-t border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2a1605] to-[#0a0502] p-5"
             style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.25rem)" }}
           >
-            <div className="mb-3 grid h-40 place-items-center rounded-2xl border border-[color:var(--gold)]/30 bg-black/40 p-4">
-              {selected.animation_url ? (
-                selected.animation_url.match(/\.mp4($|\?)/i) ? (
-                  <video src={selected.animation_url} autoPlay loop muted playsInline className="max-h-full" />
-                ) : (
-                  <img src={selected.animation_url} alt={selected.name} className="max-h-full" />
-                )
-              ) : selected.preview_url ? (
-                <img src={selected.preview_url} alt={selected.name} className="max-h-full" />
-              ) : null}
-            </div>
+            {(() => {
+              const selCat = cats.find((c) => c.id === selected.category_id);
+              const selIsBg = selCat?.slug === "theme";
+              const selMedia = selected.animation_url || selected.preview_url || selected.bg_image;
+              const selIsVideo = !!selMedia && /\.mp4($|\?)/i.test(selMedia);
+              return (
+                <div
+                  className="mb-3 overflow-hidden rounded-2xl border border-[color:var(--gold)]/30"
+                  style={{
+                    height: selIsBg ? "18rem" : "10rem",
+                    background: `linear-gradient(135deg, ${selected.primary_color}, ${selected.accent_color})`,
+                  }}
+                >
+                  {selMedia ? (
+                    selIsVideo ? (
+                      <video
+                        src={selMedia}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        className={selIsBg ? "h-full w-full object-cover" : "mx-auto h-full object-contain"}
+                      />
+                    ) : (
+                      <img
+                        src={selMedia}
+                        alt={selected.name}
+                        className={selIsBg ? "h-full w-full object-cover" : "mx-auto h-full object-contain"}
+                      />
+                    )
+                  ) : null}
+                </div>
+              );
+            })()}
             <h3 className="text-center text-lg font-bold text-white">{selected.name}</h3>
             <p className="mb-3 text-center text-[11px] text-white/60">
               {selected.duration_days ? `${selected.duration_days} day access` : "Permanent"}
