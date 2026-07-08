@@ -42,31 +42,41 @@ export function ThemeBackground() {
 
   if (!theme) return null;
   const media = theme.animation_url || theme.bg_image || theme.preview_url;
-  const isVideo = !!media && /\.mp4($|\?)/i.test(media);
+  const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+  const gradient =
+    theme.primary_color && theme.accent_color
+      ? `linear-gradient(160deg, ${theme.primary_color}, ${theme.accent_color})`
+      : undefined;
 
   return (
     <div
       aria-hidden
       className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
       style={{
-        background:
-          theme.primary_color && theme.accent_color
-            ? `linear-gradient(135deg, ${theme.primary_color}, ${theme.accent_color})`
-            : undefined,
+        background: gradient,
+        perspective: "1200px",
+        perspectiveOrigin: "50% 50%",
       }}
     >
-      {media && !isVideo && (
-        <img src={media} alt="" className="h-full w-full object-cover opacity-90" />
-      )}
-      {media && isVideo && (
-        <video
-          src={media}
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="h-full w-full object-cover opacity-90"
-        />
+      {media && (
+        <div
+          className="shop-theme-3d absolute inset-[-8%] overflow-hidden"
+          style={{ background: gradient, willChange: "transform" }}
+        >
+          {isVideo ? (
+            <video
+              src={media}
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <img src={media} alt="" className="h-full w-full object-cover" />
+          )}
+          <div className="pointer-events-none absolute inset-0 shop-theme-shine" />
+        </div>
       )}
       <div className="absolute inset-0 bg-background/55" />
     </div>
