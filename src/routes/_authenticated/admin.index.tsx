@@ -183,6 +183,14 @@ function StatCard({ label, value, icon: Icon, tone, delta, sub }: {
 
 function Dashboard() {
   const { profile } = useAuth();
+  const [range, setRange] = useState<DateRange>(() => defaultRange("30d"));
+  const rangeLabel = useMemo(() => {
+    if (range.preset === "7d") return "Last 7 days";
+    if (range.preset === "30d") return "Last 30 days";
+    if (range.preset === "90d") return "Last 90 days";
+    return `${range.from} → ${range.to}`;
+  }, [range]);
+
   const users = useCount("profiles");
   const rooms = useCount("rooms");
   const liveRooms = useCount("rooms", { col: "is_live", val: "true" });
@@ -193,11 +201,14 @@ function Dashboard() {
   const reports = useCount("user_reports", { col: "status", val: "pending" });
   const vip = useCount("profiles", { col: "is_vip", val: "true" });
 
-  const revenue = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" });
-  const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" });
+  const newUsers = useRangeCount("profiles", undefined, range);
+  const approvedInRange = useRangeCount("recharge_requests", { col: "status", val: "approved" }, range);
+  const revenue = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" }, range);
+  const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" }, range);
   const coinsCirc = useSum("profiles", "coins");
-  const monthly = useMonthlyRevenue();
+  const monthly = useRevenueSeries(range);
   const activity = useRecentActivity();
+
 
   const totalRooms = (voiceRooms.data ?? 0) + (videoRooms.data ?? 0);
   const voicePct = totalRooms ? Math.round(((voiceRooms.data ?? 0) / totalRooms) * 100) : 0;
