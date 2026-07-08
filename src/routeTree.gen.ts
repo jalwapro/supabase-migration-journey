@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
+import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
@@ -37,6 +38,7 @@ import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
@@ -116,6 +118,11 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
 const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   id: '/messages_/$peerId',
   path: '/messages/$peerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
+  id: '/api/send-email',
+  path: '/api/send-email',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
@@ -207,6 +214,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiPublicSmtpVerifyRoute = ApiPublicSmtpVerifyRouteImport.update({
+  id: '/api/public/smtp-verify',
+  path: '/api/public/smtp-verify',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
   id: '/u/$userId',
@@ -408,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/api/send-email': typeof ApiSendEmailRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -441,6 +454,7 @@ export interface FileRoutesByFullPath {
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -467,6 +481,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/api/send-email': typeof ApiSendEmailRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -500,6 +515,7 @@ export interface FileRoutesByTo {
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -529,6 +545,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
+  '/api/send-email': typeof ApiSendEmailRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -562,6 +579,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -591,6 +609,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/withdraw'
     | '/api/agora-token'
+    | '/api/send-email'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -624,6 +643,7 @@ export interface FileRouteTypes {
     | '/admin/withdrawals'
     | '/games/lucky-spin'
     | '/u/$userId'
+    | '/api/public/smtp-verify'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -650,6 +670,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/withdraw'
     | '/api/agora-token'
+    | '/api/send-email'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -683,6 +704,7 @@ export interface FileRouteTypes {
     | '/admin/withdrawals'
     | '/games/lucky-spin'
     | '/u/$userId'
+    | '/api/public/smtp-verify'
     | '/admin'
   id:
     | '__root__'
@@ -711,6 +733,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/api/agora-token'
+    | '/api/send-email'
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
@@ -744,6 +767,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/u/$userId'
+    | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -757,8 +781,10 @@ export interface RootRouteChildren {
   RoomsRoute: typeof RoomsRoute
   SplashRoute: typeof SplashRoute
   ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
+  ApiSendEmailRoute: typeof ApiSendEmailRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
+  ApiPublicSmtpVerifyRoute: typeof ApiPublicSmtpVerifyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -831,6 +857,13 @@ declare module '@tanstack/react-router' {
       path: '/messages/$peerId'
       fullPath: '/messages/$peerId'
       preLoaderRoute: typeof MessagesPeerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/send-email': {
+      id: '/api/send-email'
+      path: '/api/send-email'
+      fullPath: '/api/send-email'
+      preLoaderRoute: typeof ApiSendEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/agora-token': {
@@ -958,6 +991,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/public/smtp-verify': {
+      id: '/api/public/smtp-verify'
+      path: '/api/public/smtp-verify'
+      fullPath: '/api/public/smtp-verify'
+      preLoaderRoute: typeof ApiPublicSmtpVerifyRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/u/$userId': {
       id: '/_authenticated/u/$userId'
@@ -1315,8 +1355,10 @@ const rootRouteChildren: RootRouteChildren = {
   RoomsRoute: RoomsRoute,
   SplashRoute: SplashRoute,
   ApiAgoraTokenRoute: ApiAgoraTokenRoute,
+  ApiSendEmailRoute: ApiSendEmailRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
+  ApiPublicSmtpVerifyRoute: ApiPublicSmtpVerifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
