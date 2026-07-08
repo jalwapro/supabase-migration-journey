@@ -253,6 +253,7 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
 }
 
 function TopGiftersBanner() {
+  const { isAdmin } = useAuth();
   // Daily winners — locked for the full 24h day (UTC).
   const dayKey = new Date().toISOString().slice(0, 10);
 
