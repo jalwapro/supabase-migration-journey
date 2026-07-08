@@ -296,6 +296,10 @@
   position: relative;
   overflow-x: hidden;
 }
+body.themed .app-frame,
+body.themed .app-frame-outer {
+  background: transparent;
+}
 @media (min-width: 481px) {
   .app-frame {
     box-shadow: 0 30px 80px -20px color-mix(in oklab, var(--primary) 35%, transparent),

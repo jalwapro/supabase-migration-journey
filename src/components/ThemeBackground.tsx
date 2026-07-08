@@ -20,6 +20,7 @@ export function ThemeBackground() {
     let cancelled = false;
     if (!themeId) {
       setTheme(null);
+      if (typeof document !== "undefined") document.body.classList.remove("themed");
       return;
     }
     supabase
@@ -28,7 +29,11 @@ export function ThemeBackground() {
       .eq("id", themeId)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled) setTheme((data as ThemeRow | null) ?? null);
+        if (!cancelled) {
+          setTheme((data as ThemeRow | null) ?? null);
+          if (typeof document !== "undefined" && data)
+            document.body.classList.add("themed");
+        }
       });
     return () => {
       cancelled = true;
