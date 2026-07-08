@@ -51,6 +51,8 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
   const [error, setError] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
   const [muted, setMuted] = useState(false);
+  const [speakerMuted, setSpeakerMuted] = useState(false);
+  const speakerMutedRef = useRef(false);
   const [videoOn, setVideoOn] = useState(video);
 
   const musicTrackRef = useRef<IBufferSourceAudioTrack | null>(null);
@@ -107,7 +109,13 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
 
         client.on("user-published", async (user, mediaType) => {
           await client.subscribe(user, mediaType);
-          if (mediaType === "audio") user.audioTrack?.play();
+          if (mediaType === "audio") {
+            if (speakerMutedRef.current) {
+              try { user.audioTrack?.setVolume(0); } catch { /* ignore */ }
+            } else {
+              user.audioTrack?.play();
+            }
+          }
           setRemotes((prev) => {
             const next = new Map(prev);
             const uidNum = Number(user.uid);
@@ -185,6 +193,23 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
     await track.setEnabled(!next);
     setMuted(next);
   }, [muted]);
+
+  const toggleSpeaker = useCallback(() => {
+    setSpeakerMuted((prev) => {
+      const next = !prev;
+      speakerMutedRef.current = next;
+      remotes.forEach((r) => {
+        try {
+          if (next) r.audioTrack?.setVolume(0);
+          else {
+            r.audioTrack?.setVolume(100);
+            r.audioTrack?.play();
+          }
+        } catch { /* ignore */ }
+      });
+      return next;
+    });
+  }, [remotes]);
 
   const toggleVideo = useCallback(async () => {
     const client = clientRef.current;
@@ -269,8 +294,10 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
     error,
     remotes,
     muted,
+    speakerMuted,
     videoOn,
     toggleMute,
+    toggleSpeaker,
     toggleVideo,
     localAudioTrack: localAudioRef,
     localVideoTrack: localVideoRef,
