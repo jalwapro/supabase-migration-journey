@@ -401,7 +401,7 @@ function Home() {
                   </div>
                 </div>
               </div>
-            )}
+            ); })()}
           </section>
 
           {/* (Quick actions removed per request) */}
