@@ -76,7 +76,7 @@ const QUICK_ACTIONS = [
   { to: "/create-room" as const, label: "Go Live", Icon: Rocket, tint: "from-[color:var(--primary)] to-[color:var(--secondary)]" },
   { to: "/pk" as const, label: "PK Battle", Icon: Swords, tint: "from-[color:var(--gold)] to-[color:var(--primary)]" },
   { to: "/rankings" as const, label: "Ranking", Icon: Trophy, tint: "from-amber-400 to-orange-500" },
-  { to: "/theme-shop" as const, label: "Themes", Icon: Palette, tint: "from-fuchsia-500 to-violet-500" },
+  { to: "/theme-shop" as const, label: "Shop", Icon: Palette, tint: "from-fuchsia-500 to-violet-500" },
   { to: "/gifts" as const, label: "Gifts", Icon: Gift, tint: "from-rose-500 to-pink-500" },
   { to: "/vip" as const, label: "VIP", Icon: Crown, tint: "from-yellow-400 to-amber-500" },
 ];
