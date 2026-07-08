@@ -273,8 +273,9 @@ function DmThread() {
   if (!user) return null;
 
   return (
-    <AppShell showHeader={false}>
-      <div className="flex h-[100dvh] flex-col">
+    <div className="fixed inset-0 z-40 flex flex-col bg-background">
+      <div className="mx-auto flex h-full w-full max-w-md flex-col">
+
         <header
           className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/80 px-3 py-3 backdrop-blur-xl"
           style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}
@@ -456,8 +457,10 @@ function DmThread() {
           </div>
         </div>
       )}
-    </AppShell>
+    </div>
+
   );
+
 }
 
 function MessageBody({
