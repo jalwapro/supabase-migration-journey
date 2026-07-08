@@ -59,11 +59,20 @@ function DmThread() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,user_code")
+        .select("id,username,avatar,user_code,bubble")
         .eq("id", peerId)
         .maybeSingle();
       if (error) throw error;
-      return data;
+      return data as { id: string; username: string | null; avatar: string | null; user_code: string | null; bubble: string | null } | null;
+    },
+  });
+
+  const myBubble = useQuery({
+    queryKey: ["my-bubble", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("bubble").eq("id", user!.id).maybeSingle();
+      return (data?.bubble as string | null) ?? null;
     },
   });
 
