@@ -459,8 +459,8 @@ function DmThread() {
       )}
       </div>
     </div>
-
   );
+
 }
 
 function MessageBody({
