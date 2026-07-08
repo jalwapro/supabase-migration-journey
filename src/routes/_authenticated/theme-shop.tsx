@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, Gift, ChevronRight } from "lucide-react";
+import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { toast } from "sonner";
 
@@ -113,54 +113,31 @@ function Page() {
 
   return (
     <>
-      <div className="mx-auto min-h-[100dvh] max-w-md shop-royal pb-28">
+      <div className="mx-auto min-h-[100dvh] max-w-md pb-28">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 border-b border-[color:var(--gold)]/25 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/90 backdrop-blur-xl"
+          className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="flex items-center justify-between px-3 py-2.5">
             <button
               onClick={() => router.history.back()}
-              className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white"
+              className="grid h-9 w-9 place-items-center rounded-full bg-muted text-foreground"
               aria-label="Back"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-lg font-black tracking-wide text-[color:var(--gold)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+            <h1 className="text-lg font-black tracking-wide text-foreground">
               Shop
             </h1>
-            <Link
-              to="/me"
-              className="rounded-full bg-gradient-to-r from-[#7a4a08] to-[#3a1f04] px-3 py-1.5 text-[11px] font-bold text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.55)]"
-            >
-              Mine
-            </Link>
-          </div>
-
-          {/* Promo banner */}
-          <div className="px-3 pb-2">
-            <div className="relative overflow-hidden rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[#4a1a5c] via-[#5b1e6f] to-[#3a0f4a] px-3 py-1.5 pr-16">
-              <div className="flex items-center gap-2 text-[11px] font-bold text-white">
-                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-red-500">
-                  <Gift className="h-3.5 w-3.5 text-white" />
-                </span>
-                <span className="truncate">
-                  Win <span className="text-[color:var(--gold)]">10,000</span> by sending a gift
-                </span>
-              </div>
-              <div className="absolute -right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-600 px-2 py-0.5 text-xs font-black text-red-900 shadow-[0_0_12px_rgba(255,190,60,0.6)]">
-                x250
-                <span className="text-[8px] font-bold text-red-800/80">Times</span>
-              </div>
-            </div>
+            <span className="h-9 w-9" aria-hidden />
           </div>
         </header>
 
         {/* Body */}
         <div className="flex">
           {/* Sidebar categories */}
-          <aside className="w-[78px] shrink-0 space-y-1.5 bg-black/50 px-1.5 py-2">
+          <aside className="w-[78px] shrink-0 space-y-1.5 bg-card/60 px-1.5 py-2">
             {cats.map((c) => {
               const active = c.id === currentCat;
               return (
@@ -172,23 +149,23 @@ function Page() {
                   }}
                   className={`relative flex w-full flex-col items-center gap-1 rounded-xl py-2 transition ${
                     active
-                      ? "bg-gradient-to-b from-[color:var(--gold)]/35 via-[color:var(--gold)]/10 to-transparent shadow-[inset_0_0_0_1px_rgba(212,175,55,0.6)]"
-                      : "hover:bg-white/5"
+                      ? "bg-gradient-to-b from-primary/25 via-primary/10 to-transparent shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
+                      : "hover:bg-muted/50"
                   }`}
                 >
                   {active && (
-                    <span className="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-r bg-[color:var(--gold)]" />
+                    <span className="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-r bg-primary" />
                   )}
-                  <div className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full ${active ? "ring-2 ring-[color:var(--gold)]" : "ring-1 ring-white/10"}`}>
+                  <div className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full ${active ? "ring-2 ring-primary" : "ring-1 ring-border"}`}>
                     {c.icon_url ? (
                       <img src={c.icon_url} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#5b3808] to-[#1a0e02]">
-                        <Sparkles className="h-4 w-4 text-[color:var(--gold)]" />
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-primary/40 to-secondary/40">
+                        <Sparkles className="h-4 w-4 text-primary-foreground" />
                       </div>
                     )}
                   </div>
-                  <span className={`text-[10px] font-bold ${active ? "text-[color:var(--gold)]" : "text-white/60"}`}>
+                  <span className={`text-[10px] font-bold ${active ? "text-primary" : "text-muted-foreground"}`}>
                     {c.name}
                   </span>
                 </button>
@@ -335,16 +312,16 @@ function Page() {
 
         {/* Bottom action bar */}
         <div
-          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-border bg-background/90 backdrop-blur-xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex items-center gap-2 px-3 py-2.5">
             <Link
               to="/wallet"
-              className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 text-sm font-black text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.4)]"
+              className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-sm font-black text-foreground"
             >
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
-                <Coins className="h-3 w-3 text-amber-900" />
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary">
+                <Coins className="h-3 w-3 text-primary-foreground" />
               </span>
               {(profile?.coins ?? 0).toLocaleString()}
               <ChevronRight className="h-3 w-3 opacity-70" />
@@ -353,7 +330,7 @@ function Page() {
             <button
               disabled={!selected}
               onClick={() => selected && toast.info("Choose a friend to send this to (coming soon)")}
-              className="flex-1 rounded-full bg-gradient-to-b from-[#fff3b8] via-[#f5cf5a] to-[#c98a1a] py-2.5 text-sm font-black text-[#3a1e00] shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_10px_rgba(0,0,0,0.35)] disabled:opacity-40"
+              className="flex-1 rounded-full bg-secondary py-2.5 text-sm font-black text-secondary-foreground disabled:opacity-40"
             >
               Send
             </button>
@@ -376,7 +353,7 @@ function Page() {
               <button
                 disabled={!selected || buy.isPending || !canAfford}
                 onClick={() => selected && buy.mutate(selected)}
-                className="flex-1 rounded-full bg-gradient-to-b from-[#b6ff9a] via-[#4fd160] to-[#0f6c2a] py-2.5 text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_10px_rgba(0,0,0,0.35)] disabled:opacity-40"
+                className="flex-1 rounded-full bg-primary py-2.5 text-sm font-black text-primary-foreground disabled:opacity-40"
               >
                 {buy.isPending ? (
                   <Loader2 className="mx-auto h-4 w-4 animate-spin" />
