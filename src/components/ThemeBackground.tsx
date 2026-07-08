@@ -111,8 +111,8 @@ function ThemeBackgroundInner({
   const renderMedia = (isDepth = false) => {
     if (!media) return null;
     
-    // For depth layer of a video, use the fallback image to save performance and prevent sync flicker
-    if (isDepth && isVideo && fallbackImage) {
+    // Use a stable image for video themes when available; mobile GPUs can flicker on fixed autoplay video backgrounds.
+    if (isVideo && fallbackImage) {
       return (
         <img
           src={fallbackImage}
