@@ -132,24 +132,62 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
-// Module-level flag: resets on full page reload / fresh app open, but stays
-// true across in-app client-side navigation. This makes the splash play on
-// every fresh open of the app, then never again during the same session.
+// Splash plays only when the app has been closed/backgrounded for 5+ minutes.
+// A regular refresh, seat change, or brief tab switch will NOT replay it.
+const SPLASH_GAP_MS = 5 * 60 * 1000;
+const SPLASH_TS_KEY = "jalwa_last_active_ts";
 let splashShownThisLoad = false;
+
+function readLastActive(): number {
+  try {
+    const v = localStorage.getItem(SPLASH_TS_KEY);
+    return v ? parseInt(v, 10) || 0 : 0;
+  } catch { return 0; }
+}
+function touchActive() {
+  try { localStorage.setItem(SPLASH_TS_KEY, String(Date.now())); } catch { /* no-op */ }
+}
 
 function SplashGate() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  // Keep a "last active" heartbeat so we can detect long absences.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    touchActive();
+    const interval = window.setInterval(touchActive, 30_000);
+    const onHide = () => touchActive();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") touchActive();
+      else touchActive();
+    };
+    window.addEventListener("pagehide", onHide);
+    window.addEventListener("beforeunload", onHide);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("pagehide", onHide);
+      window.removeEventListener("beforeunload", onHide);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (pathname === "/splash") { splashShownThisLoad = true; return; }
-    if (!splashShownThisLoad) {
-      splashShownThisLoad = true;
+    if (splashShownThisLoad) return;
+    splashShownThisLoad = true;
+    const last = readLastActive();
+    const gap = Date.now() - last;
+    if (last === 0 || gap > SPLASH_GAP_MS) {
       navigate({ to: "/splash", replace: true });
     }
+    touchActive();
   }, [pathname, navigate]);
   return null;
 }
+
 
 
 function RootComponent() {
