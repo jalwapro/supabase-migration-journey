@@ -522,26 +522,58 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
 .gift-anim-caption { animation: gift-anim-caption-in 3.8s ease-out forwards; }
 
 /* =============================================================
- * Royal Gold Shop (theme-shop) — deep amber luxe aesthetic
+ * Royal Gold Shop (theme-shop) — premium amber luxe aesthetic
  * ============================================================= */
-.shop-royal {
+.shop-premium {
   background:
-    radial-gradient(120% 60% at 50% -10%, rgba(212,175,55,0.18), transparent 60%),
-    radial-gradient(80% 50% at 50% 110%, rgba(212,175,55,0.10), transparent 60%),
-    linear-gradient(180deg, #1a0e02 0%, #0a0603 60%, #050301 100%);
+    radial-gradient(120% 50% at 50% -10%, rgba(212,175,55,0.22), transparent 60%),
+    radial-gradient(90% 55% at 50% 105%, rgba(168,85,247,0.12), transparent 65%),
+    linear-gradient(180deg, #150a02 0%, #0a0603 55%, #050301 100%);
+  color: #fff;
 }
-.shop-card-idle {
-  background: rgba(20,10,2,0.55);
+.shop-item-card {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255,215,120,0.08), transparent 60%),
+    linear-gradient(180deg, rgba(30,18,4,0.85), rgba(12,6,2,0.9));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 8px 20px rgba(0,0,0,0.35);
 }
-.shop-card-selected {
-  background: rgba(40,20,4,0.75);
+.shop-item-card:active { transform: scale(0.98); }
+.shop-item-premium {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--gold) 55%, transparent),
+    0 0 22px rgba(212,175,55,0.18),
+    0 8px 22px rgba(0,0,0,0.45);
 }
-.shop-card-shine { display: none; }
+.shop-item-selected {
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    0 0 26px rgba(212,175,55,0.4),
+    0 10px 26px rgba(0,0,0,0.5);
+}
 .shop-chip-shimmer {
   background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,0.25) 50%, transparent 70%);
 }
+.shop-featured {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--gold) 40%, transparent), 0 12px 28px rgba(0,0,0,0.5);
+}
+.shop-featured-shine {
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,0.18) 50%, transparent 60%);
+  transform: translateX(-100%);
+  animation: shop-featured-sweep 4.5s ease-in-out infinite;
+}
+@keyframes shop-featured-sweep {
+  0%, 40% { transform: translateX(-100%); }
+  70%, 100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-featured-shine { animation: none; }
+}
 
-/* 3D theme card — static, no animation (mobile flicker fix) */
+/* Back-compat (legacy classes still referenced elsewhere) */
+.shop-royal { background: linear-gradient(180deg, #150a02 0%, #050301 100%); }
+.shop-card-idle { background: rgba(20,10,2,0.55); }
+.shop-card-selected { background: rgba(40,20,4,0.75); }
+.shop-card-shine { display: none; }
 .shop-theme-3d { transform: none; }
 .shop-theme-3d-active { transform: none; }
 .shop-theme-shine { display: none; }
