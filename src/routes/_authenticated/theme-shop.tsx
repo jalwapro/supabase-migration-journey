@@ -106,13 +106,13 @@ function Page() {
 
   return (
     <>
-      <div className="min-h-[100dvh] shop-royal pb-28">
+      <div className="mx-auto min-h-[100dvh] max-w-md shop-royal pb-28">
         {/* Header */}
         <header
           className="sticky top-0 z-30 border-b border-[color:var(--gold)]/25 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/90 backdrop-blur-xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="mx-auto flex max-w-md items-center justify-between px-3 py-2.5">
+          <div className="flex items-center justify-between px-3 py-2.5">
             <button
               onClick={() => router.history.back()}
               className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white"
@@ -132,7 +132,7 @@ function Page() {
           </div>
 
           {/* Promo banner */}
-          <div className="mx-auto max-w-md px-3 pb-2">
+          <div className="px-3 pb-2">
             <div className="relative overflow-hidden rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[#4a1a5c] via-[#5b1e6f] to-[#3a0f4a] px-3 py-1.5 pr-16">
               <div className="flex items-center gap-2 text-[11px] font-bold text-white">
                 <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-red-500">
@@ -151,7 +151,7 @@ function Page() {
         </header>
 
         {/* Body */}
-        <div className="mx-auto flex max-w-md">
+        <div className="flex">
           {/* Sidebar categories */}
           <aside className="w-[78px] shrink-0 space-y-1.5 bg-black/50 px-1.5 py-2">
             {cats.map((c) => {
@@ -225,21 +225,33 @@ function Page() {
                     </span>
 
                     {/* Media area */}
-                    <div className="relative z-10 grid aspect-square place-items-center px-4 py-3">
+                    <div
+                      className={`relative z-10 grid place-items-center px-3 py-3 ${isBackground ? "aspect-[3/4]" : "aspect-square"}`}
+                      style={{ perspective: "800px" }}
+                    >
                       {isBackground ? (
                         <div
-                          className="relative h-full w-full overflow-hidden rounded-lg"
+                          className={`shop-theme-3d relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
                           style={{
-                            background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
+                            background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
                           }}
                         >
                           {media ? (
                             isVideo ? (
-                              <video src={media} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                              <video src={media} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" />
                             ) : (
-                              <img src={media} alt={it.name} className="h-full w-full object-cover" />
+                              <img src={media} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                             )
                           ) : null}
+                          {/* profile preview overlay so it reads as a real theme */}
+                          <div className="absolute inset-x-0 top-2 flex flex-col items-center">
+                            <div className="h-6 w-6 rounded-full border-2 border-white/80 bg-gradient-to-br from-pink-400 to-fuchsia-600" />
+                            <div className="mt-0.5 text-[9px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
+                              {it.name}
+                            </div>
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/60 to-transparent" />
+                          <div className="pointer-events-none absolute inset-0 shop-theme-shine" />
                         </div>
                       ) : media ? (
                         isVideo ? (
@@ -312,10 +324,10 @@ function Page() {
 
         {/* Bottom action bar */}
         <div
-          className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="mx-auto flex max-w-md items-center gap-2 px-3 py-2.5">
+          <div className="flex items-center gap-2 px-3 py-2.5">
             <Link
               to="/wallet"
               className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 text-sm font-black text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.4)]"
