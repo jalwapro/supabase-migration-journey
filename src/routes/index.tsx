@@ -451,8 +451,8 @@ function Home() {
               {(liveUsers.data ?? []).map((u) => (
                 <Link
                   key={u.id}
-                  to="/messages/$peerId"
-                  params={{ peerId: u.id }}
+                  to="/u/$userId"
+                  params={{ userId: u.id }}
                   className="flex w-16 shrink-0 snap-start flex-col items-center gap-1"
                 >
                   <span className="relative">
@@ -549,7 +549,13 @@ function Home() {
               <p className="py-6 text-center text-xs text-muted-foreground">Loading…</p>
             ) : friends.data && friends.data.length > 0 ? (
               friends.data.map((u) => (
-                <div key={u.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5">
+                <Link
+                  key={u.id}
+                  to="/u/$userId"
+                  params={{ userId: u.id }}
+                  onClick={() => setFriendsOpen(false)}
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5"
+                >
                   <span className="relative shrink-0">
                     <span className="block h-10 w-10 overflow-hidden rounded-full">
                       {u.avatar ? (
@@ -566,16 +572,8 @@ function Home() {
                     <p className="truncate text-sm font-semibold">@{u.username ?? "user"}</p>
                     <p className="text-[11px] text-emerald-500">Online now</p>
                   </div>
-                  <Link
-                    to="/messages/$peerId"
-                    params={{ peerId: u.id }}
-                    onClick={() => setFriendsOpen(false)}
-                    className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
-                    aria-label="Message"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                  </Link>
-                </div>
+                  <MessageCircle className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
+                </Link>
               ))
             ) : (
               <div className="py-8 text-center">

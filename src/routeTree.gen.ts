@@ -37,6 +37,7 @@ import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authentic
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
@@ -205,6 +206,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
+  id: '/u/$userId',
+  path: '/u/$userId',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
@@ -426,6 +432,7 @@ export interface FileRoutesByFullPath {
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -483,6 +490,7 @@ export interface FileRoutesByTo {
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRoutesById {
@@ -543,6 +551,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -603,6 +612,7 @@ export interface FileRouteTypes {
     | '/admin/vip'
     | '/admin/withdrawals'
     | '/games/lucky-spin'
+    | '/u/$userId'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -660,6 +670,7 @@ export interface FileRouteTypes {
     | '/admin/vip'
     | '/admin/withdrawals'
     | '/games/lucky-spin'
+    | '/u/$userId'
     | '/admin'
   id:
     | '__root__'
@@ -719,6 +730,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vip'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/lucky-spin'
+    | '/_authenticated/u/$userId'
     | '/_authenticated/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -932,6 +944,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/u/$userId': {
+      id: '/_authenticated/u/$userId'
+      path: '/u/$userId'
+      fullPath: '/u/$userId'
+      preLoaderRoute: typeof AuthenticatedUUserIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/games/lucky-spin': {
       id: '/_authenticated/games/lucky-spin'
@@ -1237,6 +1256,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
+  AuthenticatedUUserIdRoute: typeof AuthenticatedUUserIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1256,6 +1276,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
+  AuthenticatedUUserIdRoute: AuthenticatedUUserIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
