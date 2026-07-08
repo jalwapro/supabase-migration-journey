@@ -57,8 +57,8 @@ function WalletPage() {
             </p>
             <div className="mt-1 flex items-center gap-2">
               <Coins className="h-8 w-8 text-[color:var(--gold)]" />
-              <span className="text-4xl font-black">
-                {(profile?.coins ?? 0).toLocaleString()}
+              <span className="text-4xl font-black" title={(profile?.coins ?? 0).toLocaleString()}>
+                {formatCompact(profile?.coins ?? 0)}
               </span>
             </div>
             <div className="mt-4 flex items-center gap-2">
