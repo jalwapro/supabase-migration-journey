@@ -4,7 +4,9 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useState } from "react";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/friends")({ component: Page });
