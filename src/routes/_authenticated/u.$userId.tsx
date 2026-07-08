@@ -261,10 +261,24 @@ function UserProfilePage() {
       {/* Hero */}
       <div className="relative overflow-hidden">
         {p.data_card && (
-          <div
-            className="absolute inset-0 -z-10"
-            style={{ backgroundImage: `url(${p.data_card})`, backgroundSize: "cover", backgroundPosition: "center" }}
-          />
+          <>
+            <div
+              className="absolute inset-0 -z-10"
+              style={{ backgroundImage: `url(${p.data_card})`, backgroundSize: "cover", backgroundPosition: "center" }}
+            />
+            {/* Data card label — buyer's name + ID overlay */}
+            <div className="pointer-events-none absolute right-3 top-14 z-[2] rounded-lg bg-black/55 px-2.5 py-1.5 text-right text-white backdrop-blur">
+              <div className="text-[10px] font-black uppercase tracking-widest text-[color:var(--gold)]">
+                Data Card
+              </div>
+              <div className="text-sm font-black leading-tight">
+                {p.username ?? p.full_name ?? "Member"}
+              </div>
+              {p.user_code && (
+                <div className="text-[10px] font-bold opacity-80">ID: {p.user_code}</div>
+              )}
+            </div>
+          </>
         )}
         {p.entrance && (
           <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-12 overflow-hidden">
