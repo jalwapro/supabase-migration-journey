@@ -57,12 +57,17 @@ function ThemesAdmin() {
 
   const [draft, setDraft] = useState({
     name: "",
+    description: "",
     category_id: "",
     animation_url: "",
     preview_url: "",
     price_diamonds: 5000,
+    price_coins: 0,
     duration_days: 7 as number | null,
     is_premium: false,
+    is_free: false,
+    primary_color: "#e94560",
+    accent_color: "#9b72cf",
     sort: 0,
   });
   const [uploading, setUploading] = useState<string | null>(null);
@@ -94,11 +99,16 @@ function ThemesAdmin() {
       if (!draft.category_id) throw new Error("Pick a category");
       const { error } = await supabase.from("themes").insert({
         name: draft.name,
+        description: draft.description || null,
         category_id: draft.category_id,
         animation_url: draft.animation_url || null,
         preview_url: draft.preview_url || null,
-        price_diamonds: draft.price_diamonds,
-        price: 0,
+        bg_image: draft.animation_url || draft.preview_url || null,
+        price_diamonds: draft.is_free ? 0 : draft.price_diamonds,
+        price: draft.is_free ? 0 : draft.price_coins,
+        is_free: draft.is_free,
+        primary_color: draft.primary_color,
+        accent_color: draft.accent_color,
         duration_days: draft.duration_days,
         is_premium: draft.is_premium,
         is_active: true,
@@ -108,7 +118,7 @@ function ThemesAdmin() {
     },
     onSuccess: () => {
       toast.success("Shop item added");
-      setDraft((d) => ({ ...d, name: "", animation_url: "", preview_url: "" }));
+      setDraft((d) => ({ ...d, name: "", description: "", animation_url: "", preview_url: "" }));
       qc.invalidateQueries({ queryKey: ["admin_themes"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -210,7 +220,38 @@ function ThemesAdmin() {
             )}
           </button>
 
-          <label className="col-span-2 flex items-center gap-2 text-xs">
+          <textarea
+            placeholder="Description (optional)"
+            value={draft.description}
+            onChange={(e) => setDraft({ ...draft, description: e.target.value })}
+            className="col-span-2 min-h-[60px] rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+          />
+
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
+            <span className="text-muted-foreground">Primary</span>
+            <input type="color" value={draft.primary_color} onChange={(e) => setDraft({ ...draft, primary_color: e.target.value })} className="h-6 w-8 cursor-pointer rounded bg-transparent" />
+            <span className="ml-auto font-mono text-[10px]">{draft.primary_color}</span>
+          </label>
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
+            <span className="text-muted-foreground">Accent</span>
+            <input type="color" value={draft.accent_color} onChange={(e) => setDraft({ ...draft, accent_color: e.target.value })} className="h-6 w-8 cursor-pointer rounded bg-transparent" />
+            <span className="ml-auto font-mono text-[10px]">{draft.accent_color}</span>
+          </label>
+
+          <input
+            placeholder="Price (coins)"
+            type="number"
+            value={draft.price_coins}
+            onChange={(e) => setDraft({ ...draft, price_coins: Number(e.target.value) })}
+            disabled={draft.is_free}
+            className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none disabled:opacity-40"
+          />
+
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
+            <input type="checkbox" checked={draft.is_free} onChange={(e) => setDraft({ ...draft, is_free: e.target.checked })} />
+            Free
+          </label>
+          <label className="flex items-center gap-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs">
             <input type="checkbox" checked={draft.is_premium} onChange={(e) => setDraft({ ...draft, is_premium: e.target.checked })} />
             VIP only
           </label>
