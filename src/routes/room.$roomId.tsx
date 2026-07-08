@@ -487,19 +487,10 @@ function RoomPage() {
     navigate({ to: "/" });
   }
 
-  async function share() {
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ url, title: room.data?.title ?? "Live Room" });
-        return;
-      } catch {
-        /* cancelled */
-      }
-    }
-    await navigator.clipboard.writeText(url);
-    toast.success("Room link copied");
+  function share() {
+    setInviteOpen(true);
   }
+
 
   const seatsByIndex = useMemo(() => {
     const m = new Map<number, Member>();
