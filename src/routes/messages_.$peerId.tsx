@@ -457,8 +457,8 @@ function DmThread() {
           </div>
         </div>
       )}
-      </div>
     </div>
+
   );
 
 }
