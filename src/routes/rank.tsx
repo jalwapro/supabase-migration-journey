@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Crown, Trophy, Heart, Coins, Sparkles } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useAuth } from "@/hooks/useAuth";
 
 
 export const Route = createFileRoute("/rank")({
@@ -161,6 +162,7 @@ function RankPage() {
 }
 
 function Podium({ top3 }: { top3: Entry[] }) {
+  const { isAdmin } = useAuth();
   // Order visually: 2nd, 1st, 3rd
   const [first, second, third] = top3;
   const cells = [
@@ -192,10 +194,12 @@ function Podium({ top3 }: { top3: Entry[] }) {
           <p className="mt-2 max-w-full truncate text-xs font-bold">
             @{e.username ?? "user"}
           </p>
-          <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[color:var(--gold)]">
-            <Coins className="h-3 w-3" />
-            {(e.coins ?? 0).toLocaleString()}
-          </div>
+          {isAdmin && (
+            <div className="mt-0.5 flex items-center gap-1 text-[10px] text-[color:var(--gold)]">
+              <Coins className="h-3 w-3" />
+              {(e.coins ?? 0).toLocaleString()}
+            </div>
+          )}
           <div
             className={`mt-2 w-full ${h} rounded-t-2xl bg-gradient-to-t ${
               place === 1
@@ -214,6 +218,7 @@ function Podium({ top3 }: { top3: Entry[] }) {
 }
 
 function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
+  const { isAdmin } = useAuth();
   return (
     <li className="glass flex items-center gap-3 rounded-2xl p-3">
       <div className="w-6 shrink-0 text-center text-sm font-bold text-muted-foreground">
@@ -230,10 +235,12 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold">{entry.username ?? "user"}</p>
-        <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-          <Heart className="h-3 w-3 text-[color:var(--primary)]" />
-          {(entry.coins ?? 0).toLocaleString()} points
-        </div>
+        {isAdmin && (
+          <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+            <Heart className="h-3 w-3 text-[color:var(--primary)]" />
+            {(entry.coins ?? 0).toLocaleString()} points
+          </div>
+        )}
       </div>
       <Link
         to="/rank"
@@ -246,6 +253,7 @@ function RankRow({ rank, entry }: { rank: number; entry: Entry }) {
 }
 
 function TopGiftersBanner() {
+  const { isAdmin } = useAuth();
   // Daily winners — locked for the full 24h day (UTC).
   const dayKey = new Date().toISOString().slice(0, 10);
 
@@ -325,12 +333,14 @@ function TopGiftersBanner() {
               <p className="mt-1 truncate text-sm font-extrabold">
                 {e.username ?? "user"}
               </p>
-              <div className="mt-0.5 flex items-center gap-3 text-[11px]">
-                <span className="flex items-center gap-1 text-[color:var(--gold)]">
-                  <Coins className="h-3 w-3" />
-                  {formatCoins(e.coins ?? 0)}
-                </span>
-              </div>
+              {isAdmin && (
+                <div className="mt-0.5 flex items-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1 text-[color:var(--gold)]">
+                    <Coins className="h-3 w-3" />
+                    {formatCoins(e.coins ?? 0)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ))}
