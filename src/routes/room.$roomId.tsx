@@ -143,6 +143,11 @@ function RoomPage() {
     like_count: 0,
     gift_count: 0,
   });
+  const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
+  const [flyingEmojis, setFlyingEmojis] = useState<
+    { id: string; emoji: string; seat: number }[]
+  >([]);
+  const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
 
   const room = useQuery({
     queryKey: ["room", roomId],
@@ -241,6 +246,27 @@ function RoomPage() {
         },
         async (payload) => {
           const row = payload.new as Message;
+          if (row.kind === "emoji") {
+            // "😀|3" → seat 3
+            const parts = (row.text ?? "").split("|");
+            const emoji = parts[0] ?? "😀";
+            const seat = Number(parts[1] ?? 0);
+            const id = `${row.id}-${Math.random().toString(36).slice(2, 7)}`;
+            setFlyingEmojis((prev) => [...prev, { id, emoji, seat }]);
+            setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
+            setTimeout(() => {
+              setFlyingEmojis((prev) => prev.filter((e) => e.id !== id));
+            }, 1800);
+            setTimeout(() => {
+              setGlowSeats((prev) => {
+                const next = { ...prev };
+                next[seat] = Math.max(0, (next[seat] ?? 1) - 1);
+                if (!next[seat]) delete next[seat];
+                return next;
+              });
+            }, 2200);
+            return;
+          }
           if (row.user_id) {
             const { data } = await supabase
               .from("profiles")
@@ -475,6 +501,33 @@ function RoomPage() {
       text: `${g.icon} ${g.name}`,
     });
     if (error) toast.error(error.message);
+  }
+
+  async function sendEmoji(emoji: string, seatIndex: number) {
+    if (!user) {
+      toast.error("Sign in to react");
+      return;
+    }
+    // Local optimistic — even sender sees it fly
+    const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex }]);
+    setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
+    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 1800);
+    setTimeout(() => {
+      setGlowSeats((prev) => {
+        const next = { ...prev };
+        next[seatIndex] = Math.max(0, (next[seatIndex] ?? 1) - 1);
+        if (!next[seatIndex]) delete next[seatIndex];
+        return next;
+      });
+    }, 2200);
+    const { error } = await supabase.from("room_messages").insert({
+      room_id: roomId,
+      user_id: user.id,
+      kind: "emoji",
+      text: `${emoji}|${seatIndex}`,
+    });
+    if (error) console.warn("[emoji]", error.message);
   }
 
   async function leaveRoom() {
@@ -780,6 +833,7 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => likeSeat(i)}
+                        glowing={!!glowSeats[i]}
                       />
                     );
                   })}
@@ -817,7 +871,7 @@ function RoomPage() {
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
@@ -839,11 +893,19 @@ function RoomPage() {
                 </div>
               </button>
               <div className="grid flex-1 grid-cols-2 gap-2">
-                <MiniAction
-                  icon={<Music className="h-5 w-5" />}
-                  label="Music"
-                  onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
-                />
+                {isHost ? (
+                  <MiniAction
+                    icon={<Music className="h-5 w-5" />}
+                    label="Music"
+                    onClick={() => setMusicOpen(true)}
+                  />
+                ) : (
+                  <MiniAction
+                    icon={<Smile className="h-5 w-5" />}
+                    label="Reactions"
+                    onClick={() => setEmojiSheetOpen(true)}
+                  />
+                )}
                 <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
               </div>
 
@@ -869,7 +931,7 @@ function RoomPage() {
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
@@ -966,19 +1028,21 @@ function RoomPage() {
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => void toggleMuteWithSync()}
-              aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-            >
-              {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </button>
+            {shouldPublish ? (
+              <button
+                onClick={() => void toggleMuteWithSync()}
+                aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              >
+                {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+            ) : null}
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
-                aria-label="Emoji"
-                onClick={() => setText((t) => t + "😊")}
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+                aria-label="Emoji reactions"
+                onClick={() => setEmojiSheetOpen(true)}
+                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white"
               >
                 <Smile className="h-3.5 w-3.5" />
               </button>
@@ -1007,20 +1071,24 @@ function RoomPage() {
             >
               <Gift className="h-4 w-4" />
             </button>
-            <button
-              onClick={openLudo}
-              aria-label="Games"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-            >
-              <Gamepad2 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => (isHost ? setSeatsSheetOpen(true) : toast.info("Host only"))}
-              aria-label="More"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
+            {isHost && (
+              <>
+                <button
+                  onClick={openLudo}
+                  aria-label="Games"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => setSeatsSheetOpen(true)}
+                  aria-label="Room seats"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1139,6 +1207,17 @@ function RoomPage() {
           }
         }}
       />
+      <EmojiReactionSheet
+        open={emojiSheetOpen}
+        onClose={() => setEmojiSheetOpen(false)}
+        seatCount={Math.max(4, r.seat_count)}
+        seatsByIndex={seatsByIndex}
+        defaultSeat={
+          myMember?.seat_index != null ? myMember.seat_index : 0
+        }
+        onSend={(emoji, seat) => void sendEmoji(emoji, seat)}
+      />
+      <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
   );
 }
@@ -1596,6 +1675,7 @@ function Seat({
   likeCount,
   onLike,
   videoStyle,
+  glowing,
 }: {
   index: number;
   member?: Member;
@@ -1607,6 +1687,7 @@ function Seat({
   likeCount: number;
   onLike: () => void;
   videoStyle?: boolean;
+  glowing?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -1671,7 +1752,14 @@ function Seat({
   }
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
+    <div
+      data-seat-index={index}
+      className={`relative flex flex-col items-center gap-0.5 rounded-full transition-shadow duration-300 ${
+        glowing
+          ? "shadow-[0_0_28px_6px_color-mix(in_oklab,var(--gold)_65%,transparent)] animate-pulse"
+          : ""
+      }`}
+    >
       <button
         onClick={() => (member ? onLike() : onClaim())}
         className="relative aspect-square w-full"
@@ -2079,5 +2167,143 @@ function SeatActionSheet({
         </div>
       </div>
     </>
+  );
+}
+
+/* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
+const REACTION_EMOJIS = [
+  "❤️", "😂", "🔥", "👏", "😍", "🥰", "😎", "😘",
+  "🤩", "🎉", "🌹", "💖", "💯", "😢", "😡", "👑",
+  "🙏", "😴", "🤡", "🎁", "🍿", "💃", "🕺", "✨",
+];
+
+function EmojiReactionSheet({
+  open,
+  onClose,
+  seatCount,
+  seatsByIndex,
+  defaultSeat,
+  onSend,
+}: {
+  open: boolean;
+  onClose: () => void;
+  seatCount: number;
+  seatsByIndex: Map<number, Member>;
+  defaultSeat: number;
+  onSend: (emoji: string, seat: number) => void;
+}) {
+  const [seat, setSeat] = useState(defaultSeat);
+  useEffect(() => {
+    if (open) setSeat(defaultSeat);
+  }, [open, defaultSeat]);
+  if (!open) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-black">Send reaction</h2>
+          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
+          Target seat
+        </div>
+        <div className="mt-1.5 flex gap-1.5 overflow-x-auto scrollbar-hide pb-1">
+          {Array.from({ length: seatCount }).map((_, i) => {
+            const m = seatsByIndex.get(i);
+            const active = seat === i;
+            return (
+              <button
+                key={i}
+                onClick={() => setSeat(i)}
+                className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-black transition ${
+                  active
+                    ? "border-[color:var(--gold)] bg-[color:var(--gold)]/25 text-[color:var(--gold)]"
+                    : "border-white/15 bg-white/5 text-white/80"
+                }`}
+              >
+                No.{i + 1}
+                {m?.user?.username ? ` · @${m.user.username.slice(0, 8)}` : ""}
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
+          Tap an emoji
+        </div>
+        <div className="mt-2 grid grid-cols-8 gap-1.5">
+          {REACTION_EMOJIS.map((e) => (
+            <button
+              key={e}
+              onClick={() => {
+                onSend(e, seat);
+              }}
+              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 text-2xl transition active:scale-90 hover:bg-white/15"
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Flying emoji layer: bottom → target seat with glow ─── */
+function FlyingEmojiLayer({
+  emojis,
+}: {
+  emojis: { id: string; emoji: string; seat: number }[];
+}) {
+  return (
+    <div className="pointer-events-none fixed inset-0 z-[60]">
+      {emojis.map((e) => (
+        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} />
+      ))}
+    </div>
+  );
+}
+
+function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+  const [target, setTarget] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    // Locate seat rect
+    const el = document.querySelector<HTMLElement>(`[data-seat-index="${seat}"]`);
+    const rect = el?.getBoundingClientRect();
+    const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 60;
+    const startY = window.innerHeight - 60;
+    setPos({ x: startX, y: startY });
+    if (rect) {
+      setTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    } else {
+      setTarget({ x: startX, y: startY - 300 });
+    }
+  }, [seat]);
+
+  if (!pos || !target) return null;
+  return (
+    <span
+      className="absolute text-4xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)]"
+      style={{
+        left: 0,
+        top: 0,
+        willChange: "transform, opacity",
+        animation: "flyEmoji 1.5s ease-out forwards",
+        ["--fx" as never]: `${pos.x - 16}px`,
+        ["--fy" as never]: `${pos.y - 20}px`,
+        ["--tx" as never]: `${target.x - 16}px`,
+        ["--ty" as never]: `${target.y - 20}px`,
+      }}
+    >
+      {emoji}
+    </span>
   );
 }
