@@ -333,12 +333,14 @@ function TopGiftersBanner() {
               <p className="mt-1 truncate text-sm font-extrabold">
                 {e.username ?? "user"}
               </p>
-              <div className="mt-0.5 flex items-center gap-3 text-[11px]">
-                <span className="flex items-center gap-1 text-[color:var(--gold)]">
-                  <Coins className="h-3 w-3" />
-                  {formatCoins(e.coins ?? 0)}
-                </span>
-              </div>
+              {isAdmin && (
+                <div className="mt-0.5 flex items-center gap-3 text-[11px]">
+                  <span className="flex items-center gap-1 text-[color:var(--gold)]">
+                    <Coins className="h-3 w-3" />
+                    {formatCoins(e.coins ?? 0)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         ))}
