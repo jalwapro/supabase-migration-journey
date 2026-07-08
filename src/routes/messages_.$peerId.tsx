@@ -457,7 +457,9 @@ function DmThread() {
           </div>
         </div>
       )}
-    </AppShell>
+      </div>
+    </div>
+
   );
 }
 
