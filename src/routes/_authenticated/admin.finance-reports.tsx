@@ -25,9 +25,9 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }) {
 }
 
 function FinanceReports() {
-  const recharged = useSum("recharge_requests", "amount_paid", { c: "status", v: "approved" });
+  const recharged = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" });
   const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" });
-  const pendingR = useSum("recharge_requests", "amount_paid", { c: "status", v: "pending" });
+  const pendingR = useSum("recharge_requests", "amount_pkr", { c: "status", v: "pending" });
   const pendingW = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "pending" });
 
   return (
