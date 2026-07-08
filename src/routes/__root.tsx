@@ -138,7 +138,9 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeBackground />
-        <Outlet />
+        <div className="relative z-10">
+          <Outlet />
+        </div>
         <Toaster position="top-center" theme="dark" richColors />
       </AuthProvider>
     </QueryClientProvider>

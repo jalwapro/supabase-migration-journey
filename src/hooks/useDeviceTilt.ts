@@ -16,16 +16,28 @@ export function useDeviceTilt(maxDeg = 22) {
     if (typeof window === "undefined") return;
 
     const clamp = (v: number, m: number) => Math.max(-m, Math.min(m, v));
+    let baseBeta: number | null = null;
+    let baseGamma: number | null = null;
+    let raf = 0;
 
     const onOrient = (e: DeviceOrientationEvent) => {
+      if (typeof e.gamma !== "number" && typeof e.beta !== "number") return;
+
       // gamma = left/right tilt (-90..90), beta = front/back (-180..180)
-      const g = e.gamma ?? 0;
-      const b = (e.beta ?? 0) - 40; // rest position ~40deg when holding phone
-      setTilt({
-        ry: clamp(g * 0.9, maxDeg),
-        rx: clamp(-b * 0.5, maxDeg * 0.6),
+      const gamma = e.gamma ?? 0;
+      const beta = e.beta ?? 0;
+
+      if (baseGamma === null) baseGamma = gamma;
+      if (baseBeta === null) baseBeta = beta;
+
+      const nextTilt = {
+        ry: clamp((gamma - baseGamma) * 1.15, maxDeg),
+        rx: clamp((baseBeta - beta) * 0.8, maxDeg * 0.75),
         active: true,
-      });
+      };
+
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => setTilt(nextTilt));
     };
 
     const attach = () => window.addEventListener("deviceorientation", onOrient, true);
@@ -43,13 +55,15 @@ export function useDeviceTilt(maxDeg = 22) {
         window.removeEventListener("touchend", requestOnce);
         window.removeEventListener("click", requestOnce);
       };
-      window.addEventListener("touchend", requestOnce, { once: true });
-      window.addEventListener("click", requestOnce, { once: true });
+      window.addEventListener("pointerdown", requestOnce, { once: true, passive: true });
     } else {
       attach();
     }
 
-    return () => window.removeEventListener("deviceorientation", onOrient, true);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("deviceorientation", onOrient, true);
+    };
   }, [maxDeg]);
 
   return tilt;
