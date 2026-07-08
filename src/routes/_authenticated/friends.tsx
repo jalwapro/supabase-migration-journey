@@ -4,7 +4,9 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { useState } from "react";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/friends")({ component: Page });
@@ -15,8 +17,12 @@ function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("following");
+  useRealtimeInvalidate(`friends-live-${user?.id ?? "anon"}`, [
+    { table: "follows", invalidate: [["friends"], ["me-counts"]] },
+  ]);
 
   const { data: list } = useQuery({
+
     queryKey: ["friends", tab, user?.id],
     enabled: !!user,
     queryFn: async () => {

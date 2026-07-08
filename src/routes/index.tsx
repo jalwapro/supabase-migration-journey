@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
+
 const jalwaLogo = "/__l5e/assets-v1/4d052932-1040-4825-a7d9-cbabb2b9707d/jalwa-logo.png";
 import {
   Dialog,
@@ -98,7 +100,15 @@ function Home() {
     } catch { /* no-op */ }
   }, [navigate]);
 
+  // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
+  useRealtimeInvalidate("home-live", [
+    { table: "live_rooms", invalidate: [["home-rooms"], ["home-live-users"]] },
+    { table: "follows", invalidate: [["home-mutual-friends-online"]] },
+    { table: "banners", invalidate: [["banners"]] },
+  ]);
+
   const friends = useQuery({
+
     queryKey: ["home-mutual-friends-online", user?.id],
     enabled: !!user?.id && friendsOpen,
     refetchInterval: friendsOpen ? 15_000 : false,
