@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { toast } from "sonner";
 
@@ -310,63 +310,130 @@ function Page() {
           </main>
         </div>
 
-        {/* Bottom action bar */}
+        {/* Wallet chip (persistent bottom) */}
         <div
-          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-border bg-background/90 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md items-center justify-between gap-2 border-t border-border bg-background/90 px-3 py-2.5 backdrop-blur-xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div className="flex items-center gap-2 px-3 py-2.5">
-            <Link
-              to="/wallet"
-              className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-sm font-black text-foreground"
-            >
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary">
-                <Coins className="h-3 w-3 text-primary-foreground" />
-              </span>
-              {(profile?.coins ?? 0).toLocaleString()}
-              <ChevronRight className="h-3 w-3 opacity-70" />
-            </Link>
-
-            <button
-              disabled={!selected}
-              onClick={() => selected && toast.info("Choose a friend to send this to (coming soon)")}
-              className="flex-1 rounded-full bg-secondary py-2.5 text-sm font-black text-secondary-foreground disabled:opacity-40"
-            >
-              Send
-            </button>
-
-            {selected && isOwned(selected.id) ? (
-              profile?.theme_id === selected.id ? (
-                <div className="flex-1 rounded-full bg-emerald-500/25 py-2.5 text-center text-sm font-black text-emerald-300">
-                  Wearing
-                </div>
-              ) : (
-                <button
-                  onClick={() => equip.mutate(selected)}
-                  disabled={equip.isPending}
-                  className="flex-1 rounded-full bg-gradient-to-b from-emerald-300 via-emerald-500 to-emerald-700 py-2.5 text-sm font-black text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.35)]"
-                >
-                  {equip.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Wear"}
-                </button>
-              )
-            ) : (
-              <button
-                disabled={!selected || buy.isPending || !canAfford}
-                onClick={() => selected && buy.mutate(selected)}
-                className="flex-1 rounded-full bg-primary py-2.5 text-sm font-black text-primary-foreground disabled:opacity-40"
-              >
-                {buy.isPending ? (
-                  <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-                ) : selected ? (
-                  canAfford ? `Purchase` : "Low coins"
-                ) : (
-                  "Purchase"
-                )}
-              </button>
-            )}
-          </div>
+          <Link
+            to="/wallet"
+            className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-sm font-black text-foreground"
+          >
+            <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary">
+              <Coins className="h-3 w-3 text-primary-foreground" />
+            </span>
+            {(profile?.coins ?? 0).toLocaleString()}
+            <ChevronRight className="h-3 w-3 opacity-70" />
+          </Link>
+          <p className="text-[11px] text-muted-foreground">Tap an item to preview</p>
         </div>
       </div>
+
+      {/* Item preview popup */}
+      {selected && (() => {
+        const it = selected;
+        const cat = cats.find((c) => c.id === it.category_id);
+        const media = it.animation_url || it.bg_image || it.preview_url;
+        const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+        const owned = isOwned(it.id);
+        const isEquipped = profile?.theme_id === it.id;
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+            onClick={() => setSelectedId(null)}
+          >
+            <div
+              className="relative w-full max-w-md overflow-hidden rounded-t-3xl border border-border bg-card shadow-2xl sm:rounded-3xl"
+              onClick={(e) => e.stopPropagation()}
+              style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+            >
+              <button
+                onClick={() => setSelectedId(null)}
+                className="absolute right-3 top-3 z-20 grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              {/* Full preview */}
+              <div
+                className="relative aspect-[3/4] w-full overflow-hidden"
+                style={{ background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})` }}
+              >
+                {media && (isVideo ? (
+                  <video src={media} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                ) : (
+                  <img src={media} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
+                ))}
+                {!media && (
+                  <div className="absolute inset-0 grid place-items-center">
+                    <ItemAnimation slug={cat?.slug} name={it.name} primary={it.primary_color} accent={it.accent_color} fill />
+                  </div>
+                )}
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute inset-x-0 bottom-3 px-4 text-center">
+                  <h3 className="text-lg font-black text-white drop-shadow">{it.name}</h3>
+                  {cat && <p className="text-xs text-white/70">{cat.name}</p>}
+                </div>
+              </div>
+
+              {/* Meta + actions */}
+              <div className="space-y-3 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-base font-black text-foreground">
+                    <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary">
+                      <Coins className="h-3 w-3 text-primary-foreground" />
+                    </span>
+                    {(it.is_free ? 0 : it.price).toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {it.duration_days && it.duration_days > 0 ? `${it.duration_days} days` : "Permanent"}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toast.info("Choose a friend to send this to (coming soon)")}
+                    className="flex-1 rounded-full bg-secondary py-3 text-sm font-black text-secondary-foreground"
+                  >
+                    Send
+                  </button>
+
+                  {owned ? (
+                    isEquipped ? (
+                      <div className="flex flex-1 items-center justify-center gap-1 rounded-full bg-emerald-500/20 py-3 text-sm font-black text-emerald-400">
+                        <Check className="h-4 w-4" /> Wearing
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => equip.mutate(it)}
+                        disabled={equip.isPending}
+                        className="flex-1 rounded-full bg-emerald-500 py-3 text-sm font-black text-emerald-950 disabled:opacity-40"
+                      >
+                        {equip.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Apply"}
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      disabled={buy.isPending || !canAfford}
+                      onClick={() => buy.mutate(it)}
+                      className="flex-1 rounded-full bg-primary py-3 text-sm font-black text-primary-foreground disabled:opacity-40"
+                    >
+                      {buy.isPending ? (
+                        <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                      ) : canAfford ? (
+                        "Buy"
+                      ) : (
+                        "Low coins"
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <BottomNav />
     </>
