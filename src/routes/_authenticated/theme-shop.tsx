@@ -325,7 +325,15 @@ function Page() {
                         className={selIsBg ? "h-full w-full object-cover" : "mx-auto h-full object-contain"}
                       />
                     )
-                  ) : null}
+                  ) : (
+                    <ItemAnimation
+                      slug={selCat?.slug}
+                      name={selected.name}
+                      primary={selected.primary_color}
+                      accent={selected.accent_color}
+                      fill
+                    />
+                  )}
                 </div>
               );
             })()}
