@@ -30,11 +30,12 @@ function useCount(table: string, filter?: { col: string; val: string }) {
 function useSum(table: string, col: string, filter?: { c: string; v: string }) {
   return useQuery({
     queryKey: ["admin_sum", table, col, filter],
-    queryFn: async () => {
+    queryFn: async (): Promise<number> => {
       let q = supabase.from(table).select(col);
       if (filter) q = q.eq(filter.c, filter.v);
       const { data } = await q;
-      return (data ?? []).reduce((s: number, r: Record<string, unknown>) => s + Number(r[col] ?? 0), 0);
+      const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
+      return rows.reduce((s, r) => s + Number(r[col] ?? 0), 0);
     },
   });
 }
