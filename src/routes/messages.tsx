@@ -212,7 +212,7 @@ function ChatsList({
         return (
           <li key={m.peer_id}>
             <Link
-              to="/messages/$peerId"
+              to="/messages_/$peerId"
               params={{ peerId: m.peer_id }}
               className="flex items-center gap-3 rounded-2xl p-2 hover:bg-card/60"
             >
@@ -294,7 +294,7 @@ function FriendsList({
       {friends.map((p) => (
         <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/40 p-2">
           <Link
-            to="/messages/$peerId"
+            to="/messages_/$peerId"
             params={{ peerId: p.id }}
             className="flex min-w-0 flex-1 items-center gap-3"
           >
@@ -307,7 +307,7 @@ function FriendsList({
             </div>
           </Link>
           <Link
-            to="/messages/$peerId"
+            to="/messages_/$peerId"
             params={{ peerId: p.id }}
             className="rounded-full bg-[color:var(--primary)]/20 px-3 py-1.5 text-[11px] font-bold text-[color:var(--primary)]"
           >
@@ -421,7 +421,7 @@ function AddFriend() {
                 <p className="truncate text-[10px] text-muted-foreground">ID {p.user_code ?? "—"}</p>
               </div>
               <Link
-                to="/messages/$peerId"
+                to="/messages_/$peerId"
                 params={{ peerId: p.id }}
                 className="rounded-full border border-border px-3 py-1.5 text-[11px] font-bold text-muted-foreground"
               >
