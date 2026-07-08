@@ -14,6 +14,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatCompact } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   component: WalletPage,
@@ -56,8 +57,8 @@ function WalletPage() {
             </p>
             <div className="mt-1 flex items-center gap-2">
               <Coins className="h-8 w-8 text-[color:var(--gold)]" />
-              <span className="text-4xl font-black">
-                {(profile?.coins ?? 0).toLocaleString()}
+              <span className="text-4xl font-black" title={(profile?.coins ?? 0).toLocaleString()}>
+                {formatCompact(profile?.coins ?? 0)}
               </span>
             </div>
             <div className="mt-4 flex items-center gap-2">
@@ -152,7 +153,7 @@ function WalletPage() {
                             }`}
                           >
                             {t.coins_delta > 0 ? "+" : ""}
-                            {t.coins_delta.toLocaleString()}
+                            {formatCompact(t.coins_delta)}
                           </p>
                         )}
                         {t.diamonds_delta !== 0 && (

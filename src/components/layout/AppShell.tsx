@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { Shield, Wallet as WalletIcon } from "lucide-react";
+import { formatCompact } from "@/lib/utils";
 
 export function AppShell({
   title,
@@ -44,7 +45,7 @@ export function AppShell({
                   className="flex items-center gap-1 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-semibold"
                 >
                   <WalletIcon className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                  <span>{profile.coins.toLocaleString()}</span>
+                  <span title={profile.coins.toLocaleString()}>{formatCompact(profile.coins)}</span>
                 </Link>
               )}
               {isAdmin && (
