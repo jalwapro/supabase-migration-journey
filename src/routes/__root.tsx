@@ -132,20 +132,25 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// Module-level flag: resets on full page reload / fresh app open, but stays
+// true across in-app client-side navigation. This makes the splash play on
+// every fresh open of the app, then never again during the same session.
+let splashShownThisLoad = false;
+
 function SplashGate() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (pathname === "/splash") return;
-    try {
-      if (!sessionStorage.getItem("splash_shown")) {
-        navigate({ to: "/splash", replace: true });
-      }
-    } catch { /* no-op */ }
+    if (pathname === "/splash") { splashShownThisLoad = true; return; }
+    if (!splashShownThisLoad) {
+      splashShownThisLoad = true;
+      navigate({ to: "/splash", replace: true });
+    }
   }, [pathname, navigate]);
   return null;
 }
+
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
