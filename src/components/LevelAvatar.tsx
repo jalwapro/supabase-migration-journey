@@ -12,6 +12,7 @@ export function LevelAvatar({
   size = "md",
   showBadge = true,
   frame,
+  ring,
   className = "",
 }: {
   src?: string | null;
@@ -21,18 +22,31 @@ export function LevelAvatar({
   showBadge?: boolean;
   /** Equipped DP frame media URL (image / gif / webp / mp4). Renders a sparkling overlay around the avatar. */
   frame?: string | null;
+  /** Equipped aura ring media URL. Rotates behind the avatar. */
+  ring?: string | null;
   className?: string;
 }) {
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
   const frameIsVideo = !!frame && /\.(mp4|webm|mov)($|\?)/i.test(frame);
+  const ringIsVideo = !!ring && /\.(mp4|webm|mov)($|\?)/i.test(ring);
 
   return (
     <div
       className={`relative shrink-0 ${className}`}
       style={{ width: px, height: px }}
     >
+      {/* Equipped aura ring behind avatar */}
+      {ring && (
+        <div className="pointer-events-none absolute inset-[-28%] z-0 dp-ring-spin" aria-hidden>
+          {ringIsVideo ? (
+            <video src={ring} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+          ) : (
+            <img src={ring} alt="" className="h-full w-full object-contain" draggable={false} />
+          )}
+        </div>
+      )}
       {/* Gradient ring (static for mobile GPU stability) */}
       <div
         className={`absolute inset-0 rounded-full bg-gradient-to-tr ${tier.ringGradient}`}
