@@ -130,7 +130,8 @@ function Splash() {
         )}
         <button
           onClick={finishVideo}
-          className="absolute bottom-6 right-6 rounded-full bg-white/15 px-3 py-1 text-xs font-bold text-white backdrop-blur"
+          className="absolute bottom-20 right-6 rounded-full bg-white/20 px-5 py-2 text-sm font-bold text-white backdrop-blur"
+          style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         >
           Skip
         </button>
