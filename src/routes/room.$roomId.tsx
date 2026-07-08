@@ -30,6 +30,7 @@ import {
   Home,
   Maximize2,
   Volume2,
+  VolumeX,
   RefreshCcw,
   MoreHorizontal,
   Grid3x3,
