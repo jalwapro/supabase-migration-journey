@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { uploadToUserFolder } from "@/lib/uploads";
 
-export const Route = createFileRoute("/messages/$peerId")({
+export const Route = createFileRoute("/messages_/$peerId")({
   component: DmThread,
 });
 
