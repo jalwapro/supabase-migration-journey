@@ -124,6 +124,7 @@ function RoomPage() {
   const [musicOpen, setMusicOpen] = useState(false);
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
+  const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
     beauty: true,
     mirror: true,
