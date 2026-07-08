@@ -2243,6 +2243,7 @@ function EmojiReactionSheet({
               key={e}
               onClick={() => {
                 onSend(e, seat);
+                onClose();
               }}
               className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 text-2xl transition active:scale-90 hover:bg-white/15"
             >
