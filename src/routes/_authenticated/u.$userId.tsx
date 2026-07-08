@@ -167,6 +167,22 @@ function UserProfilePage() {
     },
   });
 
+  // Owned shop items — visible on every user's profile
+  const ownedItems = useQuery({
+    queryKey: ["user-owned-items", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_themes")
+        .select(
+          "theme_id, expires_at, purchased_price_diamonds, themes:theme_id(id,name,preview_url,bg_image,animation_url,primary_color,accent_color,category_id,theme_categories:category_id(name,slug,icon_url))",
+        )
+        .eq("user_id", userId)
+        .order("expires_at", { ascending: false, nullsFirst: true });
+      if (error) throw error;
+      return (data ?? []).filter((r: any) => r.themes);
+    },
+  });
+
   const requestAlbum = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sign in");
