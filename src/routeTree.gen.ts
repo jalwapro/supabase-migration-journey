@@ -18,7 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
-import { Route as MessagesPeerIdRouteImport } from './routes/messages.$peerId'
+import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
@@ -113,9 +113,9 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
-  id: '/$peerId',
-  path: '/$peerId',
-  getParentRoute: () => MessagesRoute,
+  id: '/messages_/$peerId',
+  path: '/messages/$peerId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
   id: '/api/agora-token',
@@ -379,7 +379,7 @@ const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/messages': typeof MessagesRouteWithChildren
+  '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
@@ -438,7 +438,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/messages': typeof MessagesRouteWithChildren
+  '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
@@ -498,7 +498,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
-  '/messages': typeof MessagesRouteWithChildren
+  '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
@@ -520,7 +520,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
-  '/messages/$peerId': typeof MessagesPeerIdRoute
+  '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
@@ -699,7 +699,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
     | '/api/agora-token'
-    | '/messages/$peerId'
+    | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
     | '/_authenticated/admin/banners'
@@ -738,12 +738,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  MessagesRoute: typeof MessagesRouteWithChildren
+  MessagesRoute: typeof MessagesRoute
   RankRoute: typeof RankRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SplashRoute: typeof SplashRoute
   ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
+  MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
 }
 
@@ -812,12 +813,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RoomRoomIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/messages/$peerId': {
-      id: '/messages/$peerId'
-      path: '/$peerId'
+    '/messages_/$peerId': {
+      id: '/messages_/$peerId'
+      path: '/messages/$peerId'
       fullPath: '/messages/$peerId'
       preLoaderRoute: typeof MessagesPeerIdRouteImport
-      parentRoute: typeof MessagesRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/agora-token': {
       id: '/api/agora-token'
@@ -1282,28 +1283,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface MessagesRouteChildren {
-  MessagesPeerIdRoute: typeof MessagesPeerIdRoute
-}
-
-const MessagesRouteChildren: MessagesRouteChildren = {
-  MessagesPeerIdRoute: MessagesPeerIdRoute,
-}
-
-const MessagesRouteWithChildren = MessagesRoute._addFileChildren(
-  MessagesRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  MessagesRoute: MessagesRouteWithChildren,
+  MessagesRoute: MessagesRoute,
   RankRoute: RankRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SplashRoute: SplashRoute,
   ApiAgoraTokenRoute: ApiAgoraTokenRoute,
+  MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
 }
 export const routeTree = rootRouteImport
