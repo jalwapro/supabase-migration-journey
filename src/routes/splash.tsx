@@ -114,12 +114,21 @@ function Splash() {
           src={videoUrl}
           poster={cfg.data?.splash_video_poster ?? undefined}
           autoPlay
-          muted
           playsInline
           preload="auto"
           onEnded={finishVideo}
           onError={finishVideo}
-          onCanPlay={() => { void videoRef.current?.play().catch(() => {}); }}
+          onCanPlay={() => {
+            const v = videoRef.current;
+            if (!v) return;
+            v.muted = false;
+            v.volume = 1;
+            v.play().catch(() => {
+              // Browser blocked audio autoplay — fall back to muted playback.
+              v.muted = true;
+              v.play().catch(() => {});
+            });
+          }}
           onPlaying={() => setVideoStarted(true)}
           className="h-full max-h-[100dvh] w-full max-w-[480px] object-contain"
         />
