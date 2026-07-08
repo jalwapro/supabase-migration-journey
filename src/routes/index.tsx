@@ -82,7 +82,7 @@ const DEFAULT_BANNERS: Banner[] = [
 ];
 
 function Home() {
-  const { user, profile, isAdmin } = useAuth();
+  const { user, profile, isAdmin, loading } = useAuth();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("video");
   const [q, setQ] = useState("");
@@ -290,7 +290,7 @@ function Home() {
                   <Shield className="h-4 w-4" />
                 </Link>
               )}
-              {!user && (
+              {!loading && !user && (
                 <Link
                   to="/auth"
                   className="glow-4d rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-1.5 text-[11px] font-bold text-primary-foreground"

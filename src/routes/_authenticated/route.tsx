@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated")({
     // If nothing in memory yet (cold nav before hydration finishes), give
     // the SDK a brief window to read localStorage before deciding.
     if (!session) {
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 300));
       const retry = await supabase.auth.getSession();
       session = retry.data.session;
     }
