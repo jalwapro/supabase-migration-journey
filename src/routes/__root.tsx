@@ -132,6 +132,21 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function SplashGate() {
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (pathname === "/splash") return;
+    try {
+      if (!sessionStorage.getItem("splash_shown")) {
+        navigate({ to: "/splash", replace: true });
+      }
+    } catch { /* no-op */ }
+  }, [pathname, navigate]);
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useWakeLock();
@@ -142,6 +157,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeBackground />
+        <SplashGate />
         <div className="relative z-10" suppressHydrationWarning>
           <Outlet />
         </div>
@@ -150,4 +166,5 @@ function RootComponent() {
     </QueryClientProvider>
   );
 }
+
 
