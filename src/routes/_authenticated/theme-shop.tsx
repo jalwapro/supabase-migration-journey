@@ -1,11 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/layout/AppShell";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Play, Check, Coins, Loader2, Sparkles } from "lucide-react";
+import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, Gift, ChevronRight } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { toast } from "sonner";
 
@@ -38,8 +37,9 @@ type OwnedRow = { theme_id: string; expires_at: string | null };
 function Page() {
   const { user, profile, refresh } = useAuth();
   const qc = useQueryClient();
+  const router = useRouter();
   const [activeCat, setActiveCat] = useState<string | null>(null);
-  const [selected, setSelected] = useState<ShopItem | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const { data } = useQuery({
     queryKey: ["shop", user?.id],
@@ -65,6 +65,11 @@ function Page() {
     [data?.items, currentCat],
   );
 
+  const selected = useMemo(
+    () => (selectedId ? (data?.items ?? []).find((i) => i.id === selectedId) ?? null : null),
+    [selectedId, data?.items],
+  );
+
   const buy = useMutation({
     mutationFn: async (item: ShopItem) => {
       const { error } = await supabase.rpc("purchase_shop_item", { _theme_id: item.id });
@@ -74,7 +79,6 @@ function Page() {
       toast.success("Purchased 🪙");
       await refresh();
       qc.invalidateQueries({ queryKey: ["shop"] });
-      setSelected(null);
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -92,42 +96,92 @@ function Page() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const isOwned = (id: string) => {
+    const r = data?.owned.get(id);
+    return !!r && (!r.expires_at || new Date(r.expires_at) > new Date());
+  };
+
+  const selCost = selected ? (selected.is_free ? 0 : selected.price) : 0;
+  const canAfford = (profile?.coins ?? 0) >= selCost;
+
   return (
     <>
-      <AppShell title="Shop">
-        {/* Top diamond balance */}
-        <div className="flex items-center justify-between border-b border-[color:var(--gold)]/20 bg-gradient-to-b from-[#3a1a05]/60 to-transparent px-4 py-2">
-          <div className="flex items-center gap-1.5 text-sm font-bold text-[color:var(--gold)]">
-            <Coins className="h-4 w-4" /> {profile?.coins?.toLocaleString() ?? 0}
+      <div className="min-h-[100dvh] shop-royal pb-28">
+        {/* Header */}
+        <header
+          className="sticky top-0 z-30 border-b border-[color:var(--gold)]/25 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/90 backdrop-blur-xl"
+          style={{ paddingTop: "env(safe-area-inset-top)" }}
+        >
+          <div className="mx-auto flex max-w-md items-center justify-between px-3 py-2.5">
+            <button
+              onClick={() => router.history.back()}
+              className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white"
+              aria-label="Back"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <h1 className="text-lg font-black tracking-wide text-[color:var(--gold)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+              Shop
+            </h1>
+            <Link
+              to="/me"
+              className="rounded-full bg-gradient-to-r from-[#7a4a08] to-[#3a1f04] px-3 py-1.5 text-[11px] font-bold text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.55)]"
+            >
+              Mine
+            </Link>
           </div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-[color:var(--gold)]/80">
-            Event-limited rewards
-          </div>
-        </div>
 
-        <div className="flex min-h-[calc(100vh-140px)]">
+          {/* Promo banner */}
+          <div className="mx-auto max-w-md px-3 pb-2">
+            <div className="relative overflow-hidden rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[#4a1a5c] via-[#5b1e6f] to-[#3a0f4a] px-3 py-1.5 pr-16">
+              <div className="flex items-center gap-2 text-[11px] font-bold text-white">
+                <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-red-500">
+                  <Gift className="h-3.5 w-3.5 text-white" />
+                </span>
+                <span className="truncate">
+                  Win <span className="text-[color:var(--gold)]">10,000</span> by sending a gift
+                </span>
+              </div>
+              <div className="absolute -right-2 top-1/2 flex -translate-y-1/2 items-center gap-0.5 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-orange-600 px-2 py-0.5 text-xs font-black text-red-900 shadow-[0_0_12px_rgba(255,190,60,0.6)]">
+                x250
+                <span className="text-[8px] font-bold text-red-800/80">Times</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Body */}
+        <div className="mx-auto flex max-w-md">
           {/* Sidebar categories */}
-          <aside className="w-[86px] shrink-0 space-y-2 bg-black/40 px-2 py-3">
+          <aside className="w-[78px] shrink-0 space-y-1.5 bg-black/50 px-1.5 py-2">
             {cats.map((c) => {
               const active = c.id === currentCat;
               return (
                 <button
                   key={c.id}
-                  onClick={() => setActiveCat(c.id)}
-                  className={`flex w-full flex-col items-center gap-1 rounded-2xl border py-2 transition ${
+                  onClick={() => {
+                    setActiveCat(c.id);
+                    setSelectedId(null);
+                  }}
+                  className={`relative flex w-full flex-col items-center gap-1 rounded-xl py-2 transition ${
                     active
-                      ? "border-[color:var(--gold)] bg-gradient-to-b from-[color:var(--gold)]/30 to-[color:var(--gold)]/5 shadow-[0_0_20px_rgba(212,175,55,0.35)]"
-                      : "border-transparent bg-white/5"
+                      ? "bg-gradient-to-b from-[color:var(--gold)]/35 via-[color:var(--gold)]/10 to-transparent shadow-[inset_0_0_0_1px_rgba(212,175,55,0.6)]"
+                      : "hover:bg-white/5"
                   }`}
                 >
-                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full border border-[color:var(--gold)]/40 bg-black/60">
+                  {active && (
+                    <span className="absolute left-0 top-1/2 h-8 w-0.5 -translate-y-1/2 rounded-r bg-[color:var(--gold)]" />
+                  )}
+                  <div className={`grid h-10 w-10 place-items-center overflow-hidden rounded-full ${active ? "ring-2 ring-[color:var(--gold)]" : "ring-1 ring-white/10"}`}>
                     {c.icon_url ? (
                       <img src={c.icon_url} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <Sparkles className="h-4 w-4 text-[color:var(--gold)]" />
+                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[#5b3808] to-[#1a0e02]">
+                        <Sparkles className="h-4 w-4 text-[color:var(--gold)]" />
+                      </div>
                     )}
                   </div>
-                  <span className={`text-[10px] font-bold ${active ? "text-[color:var(--gold)]" : "text-white/70"}`}>
+                  <span className={`text-[10px] font-bold ${active ? "text-[color:var(--gold)]" : "text-white/60"}`}>
                     {c.name}
                   </span>
                 </button>
@@ -136,138 +190,111 @@ function Page() {
           </aside>
 
           {/* Items grid */}
-          <main className="flex-1 px-2 py-3">
+          <main className="min-w-0 flex-1 px-2 py-2">
             <div className="grid grid-cols-2 gap-2">
               {items.map((it) => {
-                const ownedRow = data?.owned.get(it.id);
-                const isOwned = !!ownedRow && (!ownedRow.expires_at || new Date(ownedRow.expires_at) > new Date());
+                const owned = isOwned(it.id);
                 const isEquipped = profile?.theme_id === it.id;
-                const badge =
-                  it.duration_days && it.duration_days > 0 ? `${it.duration_days} day` : "Permanent";
+                const isSelected = selectedId === it.id;
+                const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days} day` : "Perm";
                 const cat = cats.find((c) => c.id === it.category_id);
                 const isBackground = cat?.slug === "theme";
                 const media = it.animation_url || it.preview_url || it.bg_image;
                 const isVideo = !!media && /\.mp4($|\?)/i.test(media);
+
                 return (
                   <button
                     key={it.id}
-                    onClick={() => setSelected(it)}
-                    className={`group relative overflow-hidden rounded-2xl border-2 text-left transition ${
-                      isEquipped
-                        ? "border-[color:var(--gold)] shadow-[0_0_24px_rgba(212,175,55,0.5)]"
-                        : "border-[color:var(--gold)]/30"
+                    onClick={() => setSelectedId(it.id)}
+                    className={`group relative overflow-hidden rounded-xl text-left transition ${
+                      isSelected
+                        ? "shop-card-selected"
+                        : "shop-card-idle"
                     }`}
-                    style={{
-                      background: isBackground
-                        ? `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`
-                        : "radial-gradient(ellipse at top, rgba(212,175,55,0.25), rgba(60,30,5,0.75) 55%, rgba(20,10,2,0.95) 100%)",
-                    }}
                   >
-                    {isBackground && media ? (
-                      isVideo ? (
-                        <video
-                          src={media}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      ) : (
-                        <img
-                          src={media}
-                          alt={it.name}
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
-                      )
-                    ) : (
-                      <div
-                        className="pointer-events-none absolute inset-0 opacity-40"
-                        style={{
-                          background:
-                            "repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,215,120,0.18) 0deg 6deg, transparent 6deg 14deg)",
-                        }}
-                      />
-                    )}
-                    {isBackground && (
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/30" />
-                    )}
-                    {/* Top-left tag */}
-                    <span className="absolute left-2 top-2 z-10 rounded-md bg-black/50 px-1.5 py-0.5 text-[10px] font-semibold text-white/90">
+                    {/* Radial gold shine base */}
+                    <div className="pointer-events-none absolute inset-0 shop-card-shine" />
+
+                    {/* Top-left "7 day" tag */}
+                    <span className="absolute left-1.5 top-1.5 z-20 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white/95 backdrop-blur-sm">
                       {badge}
                     </span>
                     {/* Play btn */}
-                    <span className="absolute right-2 top-2 z-10 grid h-5 w-5 place-items-center rounded-full bg-black/50 text-white">
-                      <Play className="h-3 w-3 fill-current" />
+                    <span className="absolute right-1.5 top-1.5 z-20 grid h-5 w-5 place-items-center rounded-full bg-black/55 text-white">
+                      <Play className="h-2.5 w-2.5 fill-current" />
                     </span>
 
-                    {isBackground ? (
-                      <div className="relative z-[1] flex aspect-square flex-col justify-end p-3">
-                        <div className="text-sm font-black text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">
-                          {it.name}
+                    {/* Media area */}
+                    <div className="relative z-10 grid aspect-square place-items-center px-4 py-3">
+                      {isBackground ? (
+                        <div
+                          className="relative h-full w-full overflow-hidden rounded-lg"
+                          style={{
+                            background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
+                          }}
+                        >
+                          {media ? (
+                            isVideo ? (
+                              <video src={media} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                            ) : (
+                              <img src={media} alt={it.name} className="h-full w-full object-cover" />
+                            )
+                          ) : null}
                         </div>
-                        <div className="mt-1 flex items-center gap-1.5">
-                          <span
-                            className="h-3 w-3 rounded-full border border-white/40"
-                            style={{ background: it.primary_color }}
-                          />
-                          <span
-                            className="h-3 w-3 rounded-full border border-white/40"
-                            style={{ background: it.accent_color }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="relative z-[1] flex aspect-square items-center justify-center p-4">
-                        {it.animation_url ? (
-                          isVideo ? (
-                            <video
-                              src={it.animation_url}
-                              autoPlay
-                              loop
-                              muted
-                              playsInline
-                              className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
-                            />
-                          ) : (
-                            <img
-                              src={it.animation_url}
-                              alt={it.name}
-                              className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
-                            />
-                          )
-                        ) : it.preview_url || it.bg_image ? (
-                          <img
-                            src={it.preview_url ?? it.bg_image!}
-                            alt={it.name}
-                            className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
+                      ) : media ? (
+                        isVideo ? (
+                          <video
+                            src={media}
+                            autoPlay
+                            loop
+                            muted
+                            playsInline
+                            className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
                           />
                         ) : (
-                          <ItemAnimation
-                            slug={cat?.slug}
-                            name={it.name}
-                            primary={it.primary_color}
-                            accent={it.accent_color}
-                            size={140}
+                          <img
+                            src={media}
+                            alt={it.name}
+                            className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
                           />
-                        )}
-                      </div>
-                    )}
+                        )
+                      ) : (
+                        // Reference-style colored pill/chip preview
+                        <div
+                          className="relative h-[55%] w-full overflow-hidden rounded-xl shadow-[0_6px_16px_rgba(0,0,0,0.5)]"
+                          style={{
+                            background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
+                          }}
+                        >
+                          <div className="absolute inset-0 opacity-40 shop-chip-shimmer" />
+                          <div className="absolute inset-0 grid place-items-center">
+                            <ItemAnimation
+                              slug={cat?.slug}
+                              name={it.name}
+                              primary={it.primary_color}
+                              accent={it.accent_color}
+                              fill
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
-                    {/* Price bar */}
-                    <div className="relative z-[1] flex items-center justify-center gap-1 border-t border-[color:var(--gold)]/30 bg-gradient-to-r from-[#5a3a06] to-[#3a2004] py-1.5 text-sm font-black text-white">
-                      <Coins className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+                    {/* Price footer */}
+                    <div className="relative z-10 flex items-center justify-center gap-1 pb-2 pt-1 text-sm font-black text-white">
+                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[10px] text-amber-900">
+                        <Coins className="h-2.5 w-2.5" />
+                      </span>
                       {(it.is_free ? 0 : it.price).toLocaleString()}
                     </div>
 
-
                     {isEquipped && (
-                      <span className="absolute bottom-11 right-2 z-10 flex items-center gap-1 rounded-full bg-[color:var(--gold)] px-1.5 py-0.5 text-[9px] font-bold text-black">
-                        <Check className="h-2.5 w-2.5" /> Equipped
+                      <span className="absolute right-1.5 top-8 z-20 flex items-center gap-0.5 rounded-full bg-[color:var(--gold)] px-1.5 py-0.5 text-[9px] font-bold text-black">
+                        <Check className="h-2 w-2" /> Wearing
                       </span>
                     )}
-                    {isOwned && !isEquipped && (
-                      <span className="absolute bottom-11 right-2 z-10 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-black">
+                    {owned && !isEquipped && (
+                      <span className="absolute right-1.5 top-8 z-20 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold text-black">
                         Owned
                       </span>
                     )}
@@ -282,109 +309,64 @@ function Page() {
             </div>
           </main>
         </div>
-      </AppShell>
 
-      {/* Detail sheet */}
-      {selected && (
+        {/* Bottom action bar */}
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
-          onClick={() => setSelected(null)}
+          className="fixed inset-x-0 bottom-0 z-40 border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-md rounded-t-3xl border-t border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2a1605] to-[#0a0502] p-5"
-            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1.25rem)" }}
-          >
-            {(() => {
-              const selCat = cats.find((c) => c.id === selected.category_id);
-              const selIsBg = selCat?.slug === "theme";
-              const selMedia = selected.animation_url || selected.preview_url || selected.bg_image;
-              const selIsVideo = !!selMedia && /\.mp4($|\?)/i.test(selMedia);
-              return (
-                <div
-                  className="mb-3 overflow-hidden rounded-2xl border border-[color:var(--gold)]/30"
-                  style={{
-                    height: selIsBg ? "18rem" : "10rem",
-                    background: `linear-gradient(135deg, ${selected.primary_color}, ${selected.accent_color})`,
-                  }}
-                >
-                  {selMedia ? (
-                    selIsVideo ? (
-                      <video
-                        src={selMedia}
-                        autoPlay
-                        loop
-                        muted
-                        playsInline
-                        className={selIsBg ? "h-full w-full object-cover" : "mx-auto h-full object-contain"}
-                      />
-                    ) : (
-                      <img
-                        src={selMedia}
-                        alt={selected.name}
-                        className={selIsBg ? "h-full w-full object-cover" : "mx-auto h-full object-contain"}
-                      />
-                    )
-                  ) : (
-                    <ItemAnimation
-                      slug={selCat?.slug}
-                      name={selected.name}
-                      primary={selected.primary_color}
-                      accent={selected.accent_color}
-                      fill
-                    />
-                  )}
-                </div>
-              );
-            })()}
-            <h3 className="text-center text-lg font-bold text-white">{selected.name}</h3>
-            <p className="mb-3 text-center text-[11px] text-white/60">
-              {selected.duration_days ? `${selected.duration_days} day access` : "Permanent"}
-            </p>
+          <div className="mx-auto flex max-w-md items-center gap-2 px-3 py-2.5">
+            <Link
+              to="/wallet"
+              className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 text-sm font-black text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.4)]"
+            >
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
+                <Coins className="h-3 w-3 text-amber-900" />
+              </span>
+              {(profile?.coins ?? 0).toLocaleString()}
+              <ChevronRight className="h-3 w-3 opacity-70" />
+            </Link>
 
-            {(() => {
-              const ownedRow = data?.owned.get(selected.id);
-              const isOwned = !!ownedRow && (!ownedRow.expires_at || new Date(ownedRow.expires_at) > new Date());
-              const isEquipped = profile?.theme_id === selected.id;
-              if (isEquipped) {
-                return (
-                  <div className="rounded-full bg-[color:var(--gold)]/20 py-3 text-center text-sm font-bold text-[color:var(--gold)]">
-                    ✓ Currently equipped
-                  </div>
-                );
-              }
-              if (isOwned) {
-                return (
-                  <button
-                    onClick={() => equip.mutate(selected)}
-                    disabled={equip.isPending}
-                    className="w-full rounded-full bg-[color:var(--primary)] py-3 text-sm font-bold text-white disabled:opacity-60"
-                  >
-                    {equip.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Equip"}
-                  </button>
-                );
-              }
-              const cost = selected.is_free ? 0 : selected.price;
-              const canAfford = (profile?.coins ?? 0) >= cost;
-              return (
+            <button
+              disabled={!selected}
+              onClick={() => selected && toast.info("Choose a friend to send this to (coming soon)")}
+              className="flex-1 rounded-full bg-gradient-to-b from-[#fff3b8] via-[#f5cf5a] to-[#c98a1a] py-2.5 text-sm font-black text-[#3a1e00] shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_10px_rgba(0,0,0,0.35)] disabled:opacity-40"
+            >
+              Send
+            </button>
+
+            {selected && isOwned(selected.id) ? (
+              profile?.theme_id === selected.id ? (
+                <div className="flex-1 rounded-full bg-emerald-500/25 py-2.5 text-center text-sm font-black text-emerald-300">
+                  Wearing
+                </div>
+              ) : (
                 <button
-                  onClick={() => buy.mutate(selected)}
-                  disabled={buy.isPending || !canAfford}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-amber-500 py-3 text-sm font-black text-black disabled:opacity-50"
+                  onClick={() => equip.mutate(selected)}
+                  disabled={equip.isPending}
+                  className="flex-1 rounded-full bg-gradient-to-b from-emerald-300 via-emerald-500 to-emerald-700 py-2.5 text-sm font-black text-emerald-950 shadow-[inset_0_1px_0_rgba(255,255,255,0.5),0_4px_10px_rgba(0,0,0,0.35)]"
                 >
-                  {buy.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      <Coins className="h-4 w-4" /> {canAfford ? "Purchase" : "Not enough"} · {cost.toLocaleString()}
-                    </>
-                  )}
+                  {equip.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Wear"}
                 </button>
-              );
-            })()}
+              )
+            ) : (
+              <button
+                disabled={!selected || buy.isPending || !canAfford}
+                onClick={() => selected && buy.mutate(selected)}
+                className="flex-1 rounded-full bg-gradient-to-b from-[#b6ff9a] via-[#4fd160] to-[#0f6c2a] py-2.5 text-sm font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.4),0_4px_10px_rgba(0,0,0,0.35)] disabled:opacity-40"
+              >
+                {buy.isPending ? (
+                  <Loader2 className="mx-auto h-4 w-4 animate-spin" />
+                ) : selected ? (
+                  canAfford ? `Purchase` : "Low coins"
+                ) : (
+                  "Purchase"
+                )}
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       <BottomNav />
     </>
