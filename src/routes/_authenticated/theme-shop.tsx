@@ -312,16 +312,16 @@ function Page() {
 
         {/* Bottom action bar */}
         <div
-          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-[color:var(--gold)]/35 bg-gradient-to-b from-[#3d2408]/95 to-[#1a0e02]/98 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-border bg-background/90 backdrop-blur-xl"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <div className="flex items-center gap-2 px-3 py-2.5">
             <Link
               to="/wallet"
-              className="flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-2 text-sm font-black text-[color:var(--gold)] shadow-[inset_0_0_0_1px_rgba(212,175,55,0.4)]"
+              className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-2 text-sm font-black text-foreground"
             >
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
-                <Coins className="h-3 w-3 text-amber-900" />
+              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-primary to-secondary">
+                <Coins className="h-3 w-3 text-primary-foreground" />
               </span>
               {(profile?.coins ?? 0).toLocaleString()}
               <ChevronRight className="h-3 w-3 opacity-70" />
@@ -330,7 +330,7 @@ function Page() {
             <button
               disabled={!selected}
               onClick={() => selected && toast.info("Choose a friend to send this to (coming soon)")}
-              className="flex-1 rounded-full bg-gradient-to-b from-[#fff3b8] via-[#f5cf5a] to-[#c98a1a] py-2.5 text-sm font-black text-[#3a1e00] shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_10px_rgba(0,0,0,0.35)] disabled:opacity-40"
+              className="flex-1 rounded-full bg-secondary py-2.5 text-sm font-black text-secondary-foreground disabled:opacity-40"
             >
               Send
             </button>
