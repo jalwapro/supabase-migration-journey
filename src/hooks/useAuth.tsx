@@ -16,6 +16,12 @@ export type Profile = {
   full_name: string | null;
   avatar: string | null;
   frame: string | null;
+  ring: string | null;
+  bubble: string | null;
+  car: string | null;
+  entrance: string | null;
+  special_id: string | null;
+  data_card: string | null;
   bio: string | null;
   gender: string | null;
   country: string | null;

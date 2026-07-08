@@ -83,13 +83,23 @@ function Page() {
     onError: (e: Error) => toast.error(`Purchase failed: ${e.message}`),
   });
 
+  // Map category slug/name -> profile column that stores the equipped item URL.
+  const COLUMN_FOR_CATEGORY: Record<string, "frame" | "ring" | "bubble" | "car" | "entrance" | "special_id" | "data_card"> = {
+    frame: "frame", frames: "frame",
+    ring: "ring", rings: "ring",
+    bubble: "bubble", bubbles: "bubble", "chat bubble": "bubble",
+    car: "car", cars: "car", vehicle: "car",
+    entrance: "entrance", entry: "entrance", "entrance effect": "entrance",
+    "special id": "special_id", "special_id": "special_id", specialid: "special_id", id: "special_id",
+    "data card": "data_card", data_card: "data_card", datacard: "data_card", card: "data_card",
+  };
+
   const equip = useMutation({
     mutationFn: async (item: ShopItem) => {
       const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
-      const slug = (cat?.slug ?? "").toLowerCase();
-      const name = (cat?.name ?? "").toLowerCase();
+      const slug = (cat?.slug ?? "").toLowerCase().trim();
+      const name = (cat?.name ?? "").toLowerCase().trim();
       const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
-      const isFrame = slug === "frame" || slug === "frames" || name === "frame" || name === "frames";
 
       if (isTheme) {
         const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
@@ -103,19 +113,17 @@ function Page() {
         return;
       }
 
-      if (isFrame) {
-        const frameUrl = item.animation_url || item.preview_url || item.bg_image;
-        const { error } = await supabase
-          .from("profiles")
-          .update({ frame: frameUrl })
-          .eq("id", user!.id);
-        if (error) throw error;
+      const column = COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name];
+      if (!column) {
+        toast.info("This category doesn't have a placement yet.");
         return;
       }
-
-      // Other categories (car, ring, bubble, entrance, special id, data card…)
-      // — user will define where these render; do not touch theme_id here.
-      toast.info("Applied. Placement for this category is coming soon.");
+      const url = item.animation_url || item.preview_url || item.bg_image;
+      const { error } = await supabase
+        .from("profiles")
+        .update({ [column]: url })
+        .eq("id", user!.id);
+      if (error) throw error;
     },
     onSuccess: async () => {
       toast.success("Applied ✨");
