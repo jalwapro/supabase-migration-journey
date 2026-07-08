@@ -24,9 +24,15 @@ export type UseAgoraRoomArgs = {
   publish: boolean;         // true = take mic/camera
   video: boolean;           // true = also publish camera
   enabled: boolean;         // false = don't connect
+  kind?: "voice" | "video"; // which Agora project to use
 };
 
-async function fetchToken(channel: string, uid: number, role: "publisher" | "audience") {
+async function fetchToken(
+  channel: string,
+  uid: number,
+  role: "publisher" | "audience",
+  kind: "voice" | "video",
+) {
   const { data: sessionRes } = await supabase.auth.getSession();
   const accessToken = sessionRes.session?.access_token;
   if (!accessToken) throw new Error("Sign in first");
@@ -36,14 +42,15 @@ async function fetchToken(channel: string, uid: number, role: "publisher" | "aud
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ channel, uid, role }),
+    body: JSON.stringify({ channel, uid, role, kind }),
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error ?? "token failed");
   return data as { appId: string; token: string; uid: number; channel: string };
 }
 
-export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgoraRoomArgs) {
+export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: UseAgoraRoomArgs) {
+  const resolvedKind: "voice" | "video" = kind ?? (video ? "video" : "voice");
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
@@ -149,7 +156,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled }: UseAgora
           });
         });
 
-        const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience");
+        const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience", resolvedKind);
         if (cancelled) return;
         await client.join(appId, channel, token, uid);
 
