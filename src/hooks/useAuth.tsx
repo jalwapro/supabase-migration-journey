@@ -88,7 +88,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const user = session?.user ?? null;
-  const isAdmin = roles.includes("admin") || roles.includes("super_admin");
+  const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
+  const isAdmin =
+    roles.includes("admin") ||
+    roles.includes("super_admin") ||
+    (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
