@@ -641,21 +641,16 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
 }
 .theme-background-pixels {
   background-image:
-    linear-gradient(115deg, transparent 35%, rgba(255,255,255,.24) 50%, transparent 65%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,.14) 0 1px, transparent 1px 11px),
-    repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 1px, transparent 1px 11px);
-  mix-blend-mode: overlay;
-  opacity: .42;
-  transform: translateZ(76px) translate3d(var(--tilt-shift-x-inverse), var(--tilt-shift-y-inverse), 0);
-  animation: theme-background-pixels 3.8s ease-in-out infinite;
+    repeating-linear-gradient(0deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,.06) 0 1px, transparent 1px 12px);
+  opacity: .35;
+  transform: translateZ(60px) translate3d(var(--tilt-shift-x-inverse), var(--tilt-shift-y-inverse), 0);
 }
 .theme-background-glint {
   background:
-    radial-gradient(circle at var(--glint-x) var(--glint-y), rgba(255,255,255,.42), transparent 26%),
-    linear-gradient(120deg, transparent 38%, rgba(255,255,255,.20) 48%, transparent 58%);
-  mix-blend-mode: screen;
-  opacity: .72;
-  transform: translateZ(92px);
+    radial-gradient(circle at var(--glint-x) var(--glint-y), rgba(255,255,255,.18), transparent 34%);
+  opacity: .5;
+  transform: translateZ(80px);
 }
 .theme-background-dim {
   background:
@@ -663,10 +658,10 @@ body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"
     linear-gradient(180deg, color-mix(in oklab, var(--background) 20%, transparent), color-mix(in oklab, var(--background) 58%, transparent));
 }
 @keyframes theme-background-idle-4d {
-  0%, 100% { transform: translate3d(-14px, -4px, 0) rotateX(6deg) rotateY(-20deg) scale(1.15); }
-  50%      { transform: translate3d(14px, 5px, 0) rotateX(-5deg) rotateY(20deg) scale(1.15); }
+  0%, 100% { transform: translate3d(-10px, -3px, 0) rotateX(4deg) rotateY(-14deg) scale(1.12); }
+  50%      { transform: translate3d(10px, 4px, 0) rotateX(-4deg) rotateY(14deg) scale(1.12); }
 }
-@keyframes theme-background-pixels {
-  0%, 100% { opacity: .34; background-position: 0 0, 0 0, 0 0; }
-  50%      { opacity: .52; background-position: 36px 0, 0 8px, 8px 0; }
+@media (prefers-reduced-motion: reduce) {
+  .theme-background-4d-idle { animation: none; transform: scale(1.12); }
 }
+
