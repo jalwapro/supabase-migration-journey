@@ -14,6 +14,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatCompact } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   component: WalletPage,
