@@ -55,7 +55,7 @@ type FullProfile = {
 
 function UserProfilePage() {
   const { userId } = Route.useParams();
-  const { user: me } = useAuth();
+  const { user: me, isAdmin } = useAuth();
   const nav = useNavigate();
   const qc = useQueryClient();
   const isMe = me?.id === userId;
@@ -305,18 +305,20 @@ function UserProfilePage() {
         />
       </div>
 
-      <div className="mx-4 mt-2 grid grid-cols-2 gap-2">
-        <Stat
-          label="Coins"
-          value={p.coins.toLocaleString()}
-          icon={<Coins className="h-3 w-3 text-[color:var(--gold)]" />}
-        />
-        <Stat
-          label="Diamonds"
-          value={p.diamonds.toLocaleString()}
-          icon={<Gem className="h-3 w-3 text-cyan-400" />}
-        />
-      </div>
+      {(isMe || isAdmin) && (
+        <div className="mx-4 mt-2 grid grid-cols-2 gap-2">
+          <Stat
+            label="Coins"
+            value={p.coins.toLocaleString()}
+            icon={<Coins className="h-3 w-3 text-[color:var(--gold)]" />}
+          />
+          <Stat
+            label="Diamonds"
+            value={p.diamonds.toLocaleString()}
+            icon={<Gem className="h-3 w-3 text-cyan-400" />}
+          />
+        </div>
+      )}
 
       {/* Live rooms */}
       {(stats.data?.liveRooms ?? 0) > 0 && (
