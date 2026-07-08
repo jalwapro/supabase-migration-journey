@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
-import { useDeviceTilt } from "@/hooks/useDeviceTilt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/theme-shop")({ component: Page });
@@ -59,7 +58,6 @@ function Page() {
     },
   });
 
-  const tilt = useDeviceTilt(22);
   const cats = data?.cats ?? [];
   const currentCat = activeCat ?? cats[0]?.id ?? null;
   const items = useMemo(
@@ -118,7 +116,7 @@ function Page() {
       <div className="mx-auto min-h-[100dvh] max-w-md pb-28">
         {/* Header */}
         <header
-          className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur-xl"
+          className="sticky top-0 z-30 border-b border-border bg-background/95"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="flex items-center justify-between px-3 py-2.5">
@@ -191,6 +189,7 @@ function Page() {
                   /theme|background|wallpaper|bg|skin/.test(catKey);
                 const media = it.animation_url || it.bg_image || it.preview_url;
                 const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+                const gridImage = isVideo ? it.bg_image || it.preview_url : media;
 
                 return (
                   <button
@@ -206,7 +205,7 @@ function Page() {
                     <div className="pointer-events-none absolute inset-0 shop-card-shine" />
 
                     {/* Top-left "7 day" tag */}
-                    <span className="absolute left-1.5 top-1.5 z-20 rounded bg-black/55 px-1.5 py-0.5 text-[10px] font-semibold text-white/95 backdrop-blur-sm">
+                    <span className="absolute left-1.5 top-1.5 z-20 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold text-white/95">
                       {badge}
                     </span>
                     {/* Play btn */}
@@ -221,21 +220,20 @@ function Page() {
                     >
                       {isBackground ? (
                         <div
-                          className={`${tilt.active ? "" : "shop-theme-3d"} relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
+                          className={`shop-theme-3d relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
                           style={{
                             background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
-                            willChange: "transform",
-                            transform: tilt.active && !isSelected
-                              ? `translateZ(0) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`
-                              : undefined,
-                            transition: tilt.active ? "transform 120ms ease-out" : undefined,
                           }}
                         >
                           {media ? (
                             isVideo ? (
-                              <video src={media} autoPlay loop muted playsInline className="absolute inset-0 h-full w-full object-cover" />
+                              gridImage ? (
+                                <img src={gridImage} alt={it.name} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                              ) : (
+                                <video src={media} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
+                              )
                             ) : (
-                              <img src={media} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
+                              <img src={media} alt={it.name} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                             )
                           ) : null}
                           {/* profile preview overlay so it reads as a real theme */}
@@ -250,14 +248,23 @@ function Page() {
                         </div>
                       ) : media ? (
                         isVideo ? (
-                          <video
-                            src={media}
-                            autoPlay
-                            loop
-                            muted
-                            playsInline
-                            className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
-                          />
+                          gridImage ? (
+                            <img
+                              src={gridImage}
+                              alt={it.name}
+                              loading="lazy"
+                              decoding="async"
+                              className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+                            />
+                          ) : (
+                            <video
+                              src={media}
+                              muted
+                              playsInline
+                              preload="metadata"
+                              className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]"
+                            />
+                          )
                         ) : (
                           <img
                             src={media}
@@ -319,7 +326,7 @@ function Page() {
 
         {/* Wallet chip (persistent bottom) */}
         <div
-          className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md items-center justify-between gap-2 border-t border-border bg-background/90 px-3 py-2.5 backdrop-blur-xl"
+          className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-md items-center justify-between gap-2 border-t border-border bg-background/95 px-3 py-2.5"
           style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
         >
           <Link
@@ -346,7 +353,7 @@ function Page() {
         const isEquipped = profile?.theme_id === it.id;
         return (
           <div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 sm:items-center"
             onClick={() => setSelectedId(null)}
           >
             <div
