@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Play, Check, Coins, Loader2, Sparkles } from "lucide-react";
+import { ItemAnimation } from "@/components/ItemAnimation";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/theme-shop")({ component: Page });
@@ -242,11 +243,12 @@ function Page() {
                             className="max-h-full max-w-full object-contain drop-shadow-[0_6px_18px_rgba(0,0,0,0.6)]"
                           />
                         ) : (
-                          <div
-                            className="h-24 w-24 rounded-full"
-                            style={{
-                              background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})`,
-                            }}
+                          <ItemAnimation
+                            slug={cat?.slug}
+                            name={it.name}
+                            primary={it.primary_color}
+                            accent={it.accent_color}
+                            size={140}
                           />
                         )}
                       </div>
@@ -323,7 +325,15 @@ function Page() {
                         className={selIsBg ? "h-full w-full object-cover" : "mx-auto h-full object-contain"}
                       />
                     )
-                  ) : null}
+                  ) : (
+                    <ItemAnimation
+                      slug={selCat?.slug}
+                      name={selected.name}
+                      primary={selected.primary_color}
+                      accent={selected.accent_color}
+                      fill
+                    />
+                  )}
                 </div>
               );
             })()}
