@@ -153,7 +153,7 @@ function WalletPage() {
                             }`}
                           >
                             {t.coins_delta > 0 ? "+" : ""}
-                            {t.coins_delta.toLocaleString()}
+                            {formatCompact(t.coins_delta)}
                           </p>
                         )}
                         {t.diamonds_delta !== 0 && (
