@@ -215,13 +215,14 @@ function Page() {
                     {/* Media area */}
                     <div
                       className={`relative z-10 grid place-items-center px-3 py-3 ${isBackground ? "aspect-[3/4]" : "aspect-square"}`}
-                      style={{ perspective: "800px" }}
+                      style={{ perspective: "600px", perspectiveOrigin: "50% 50%" }}
                     >
                       {isBackground ? (
                         <div
                           className={`shop-theme-3d relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)] ${isSelected ? "shop-theme-3d-active" : ""}`}
                           style={{
                             background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
+                            willChange: "transform",
                           }}
                         >
                           {media ? (
