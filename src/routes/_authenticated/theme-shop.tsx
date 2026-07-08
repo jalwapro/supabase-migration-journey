@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
+import { useDeviceTilt } from "@/hooks/useDeviceTilt";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/theme-shop")({ component: Page });
