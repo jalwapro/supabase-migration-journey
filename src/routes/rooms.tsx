@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
+import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { Radio, Users, Mic, Video } from "lucide-react";
+
 
 export const Route = createFileRoute("/rooms")({
   component: RoomsPage,
