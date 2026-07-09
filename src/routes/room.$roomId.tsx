@@ -110,15 +110,9 @@ function shortRoomCode(id: string) {
   return String(num).padStart(8, "0");
 }
 
-const QUICK_GIFTS: { name: string; icon: string; price: number }[] = [
-  { name: "Hot", icon: "🔥", price: 1 },
-  { name: "Rose", icon: "🌹", price: 10 },
-  { name: "Heart", icon: "💖", price: 50 },
-  { name: "Lion", icon: "🦁", price: 100 },
-  { name: "Ferrari", icon: "🏎️", price: 500 },
-  { name: "Castle", icon: "🏰", price: 1000 },
-  { name: "Diamond", icon: "💎", price: 5000 },
-];
+// (Removed unused QUICK_GIFTS strip — it was inserting a chat row with
+// kind:"gift" without charging the sender or crediting the receiver.
+// All real gifts flow through GiftSheet → send_gift RPC.)
 
 function RoomPage() {
   const { roomId } = Route.useParams();
