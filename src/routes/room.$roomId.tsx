@@ -1238,21 +1238,29 @@ function RoomPage() {
                   <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
                 )}
               </button>
-              <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className="grid flex-1 grid-cols-3 gap-1.5">
                 {isHost ? (
                   <MiniAction
-                    icon={<Music className="h-5 w-5" />}
+                    compact
+                    icon={<Music className="h-3.5 w-3.5" />}
                     label="Music"
                     onClick={() => setMusicOpen(true)}
                   />
                 ) : (
                   <MiniAction
-                    icon={<Smile className="h-5 w-5" />}
-                    label="Reactions"
+                    compact
+                    icon={<Smile className="h-3.5 w-3.5" />}
+                    label="React"
                     onClick={() => setEmojiSheetOpen(true)}
                   />
                 )}
-                <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
+                <MiniAction
+                  compact
+                  icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />}
+                  label="Emoji"
+                  onClick={() => setAnimEmojiOpen(true)}
+                />
+                <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
               </div>
 
             </div>
