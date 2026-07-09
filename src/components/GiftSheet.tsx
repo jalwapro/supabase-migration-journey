@@ -110,9 +110,11 @@ export function GiftSheet({
       qc.invalidateQueries({ queryKey: ["wallet_tx"] });
       setSelectedGift(null);
       setQty(1);
+      onClose(); // close sheet so full-screen animation is visible
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   if (!open) return null;
 
