@@ -1275,6 +1275,13 @@ function RoomPage() {
       )}
       <SeatActionSheet
         member={manageMember}
+        canModerate={isHost}
+        canLock={isHost || isModerator}
+        isSeatLocked={
+          manageMember?.seat_index != null
+            ? lockedSeats.includes(manageMember.seat_index)
+            : false
+        }
         onClose={() => setManageMember(null)}
         onToggleModerator={async () => {
           if (!manageMember) return;
@@ -1287,6 +1294,21 @@ function RoomPage() {
           if (error) toast.error(error.message);
           else {
             toast.success(next ? "Made moderator" : "Removed as moderator");
+            setManageMember(null);
+          }
+        }}
+        onToggleLock={async () => {
+          if (!manageMember || manageMember.seat_index == null) return;
+          const seat = manageMember.seat_index;
+          const nextLocked = !lockedSeats.includes(seat);
+          const { error } = await supabase.rpc("toggle_seat_lock", {
+            _room_id: roomId,
+            _seat_index: seat,
+            _locked: nextLocked,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success(nextLocked ? "Seat locked" : "Seat unlocked");
             setManageMember(null);
           }
         }}
@@ -1304,6 +1326,59 @@ function RoomPage() {
           }
         }}
       />
+      <EmptySeatSheet
+        seatIndex={manageEmptySeat}
+        isLocked={
+          manageEmptySeat != null ? lockedSeats.includes(manageEmptySeat) : false
+        }
+        onClose={() => setManageEmptySeat(null)}
+        onToggleLock={async () => {
+          if (manageEmptySeat == null) return;
+          const nextLocked = !lockedSeats.includes(manageEmptySeat);
+          const { error } = await supabase.rpc("toggle_seat_lock", {
+            _room_id: roomId,
+            _seat_index: manageEmptySeat,
+            _locked: nextLocked,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success(nextLocked ? "Seat locked" : "Seat unlocked");
+            setManageEmptySeat(null);
+          }
+        }}
+        onInvite={() => {
+          setManageEmptySeat(null);
+          setViewersSheetOpen(true);
+        }}
+      />
+      <ViewersSheet
+        open={viewersSheetOpen}
+        onClose={() => setViewersSheetOpen(false)}
+        roomId={roomId}
+        members={members}
+        canInvite={isHost || isModerator}
+        userId={user?.id ?? null}
+      />
+      {pendingInvite && (
+        <SeatInvitePopup
+          invite={pendingInvite}
+          onDecline={async () => {
+            await supabase
+              .from("seat_invites")
+              .update({ status: "declined", responded_at: new Date().toISOString() })
+              .eq("id", pendingInvite.id);
+            setPendingInvite(null);
+          }}
+          onAccept={async () => {
+            const { error } = await supabase.rpc("accept_seat_invite", {
+              _invite_id: pendingInvite.id,
+            });
+            if (error) toast.error(error.message);
+            else toast.success("You're on the seat 🎤");
+            setPendingInvite(null);
+          }}
+        />
+      )}
       <EmojiReactionSheet
         open={emojiSheetOpen}
         onClose={() => setEmojiSheetOpen(false)}
