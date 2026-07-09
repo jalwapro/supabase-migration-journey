@@ -412,21 +412,22 @@ function RoomPage() {
     if (!user || !room.data?.id) return;
     const seatIndex = isHost ? 0 : null;
     void (async () => {
-      await supabase
+      const { error: memberErr } = await supabase
         .from("room_members")
         .upsert(
           { room_id: roomId, user_id: user.id, seat_index: seatIndex },
           { onConflict: "room_id,user_id" },
         );
-      if (!isHost) {
-        await supabase.from("room_messages").insert({
-          room_id: roomId,
-          user_id: user.id,
-          kind: "join",
-          text: "entered the room",
-        });
-      }
+      if (memberErr) console.warn("[room-members upsert]", memberErr.message);
+      const { error: msgErr } = await supabase.from("room_messages").insert({
+        room_id: roomId,
+        user_id: user.id,
+        kind: "join",
+        text: isHost ? "started the room" : "entered the room",
+      });
+      if (msgErr) console.warn("[join insert]", msgErr.message);
     })();
+
     return () => {
       void supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
     };
