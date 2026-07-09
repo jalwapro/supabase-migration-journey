@@ -415,8 +415,13 @@ function RoomPage() {
           filter: `id=eq.${roomId}`,
         },
         (payload) => {
-          const row = payload.new as { locked_seats: number[] | null };
+          const row = payload.new as Partial<Room> & { locked_seats: number[] | null };
           setLockedSeats(row.locked_seats ?? []);
+          // Merge new fields (seat_count, status, title, cover, viewer_count, etc.)
+          // into the react-query cache so every viewer updates live without refresh.
+          qc.setQueryData(["room", roomId], (prev: Room | null | undefined) =>
+            prev ? ({ ...prev, ...row } as Room) : prev,
+          );
         },
       )
       .subscribe();
