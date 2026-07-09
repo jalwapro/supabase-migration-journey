@@ -824,11 +824,15 @@ function RoomPage() {
                 </button>
               </>
             )}
-            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur">
+            <button
+              onClick={() => setViewersSheetOpen(true)}
+              className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur"
+              aria-label="View viewers"
+            >
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </div>
+            </button>
           </div>
         </div>
       </div>
