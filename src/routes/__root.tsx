@@ -205,7 +205,7 @@ function RootComponent() {
         <ThemeBackground />
         <SplashGate />
         <InstallPermissionGate />
-        <NotificationSubscriber />
+        
         <div className="relative z-10" suppressHydrationWarning>
 
           <Outlet />
