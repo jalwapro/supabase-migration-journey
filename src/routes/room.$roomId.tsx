@@ -1709,7 +1709,7 @@ function RoomPage() {
         defaultSeat={
           myMember?.seat_index != null ? myMember.seat_index : 0
         }
-        onSend={(emoji, seat) => void sendEmoji(emoji, seat)}
+        onSend={(emoji, seat, clip) => void sendEmoji(emoji, seat, clip)}
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
