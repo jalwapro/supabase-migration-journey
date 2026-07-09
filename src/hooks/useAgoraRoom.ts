@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type {
+  IAgoraRTC,
   IAgoraRTCClient,
   IAgoraRTCRemoteUser,
   ILocalAudioTrack,
@@ -7,6 +8,43 @@ import type {
   IBufferSourceAudioTrack,
 } from "agora-rtc-sdk-ng";
 import { supabase } from "@/integrations/supabase/client";
+
+// Cache the AgoraRTC module at module scope so requestMic() doesn't need to
+// `await import()` inside a click handler — that await can break the
+// user-gesture chain in Safari and cause getUserMedia to reject silently.
+let cachedAgoraRTC: IAgoraRTC | null = null;
+let agoraRTCLoader: Promise<IAgoraRTC> | null = null;
+function loadAgoraRTC(): Promise<IAgoraRTC> {
+  if (cachedAgoraRTC) return Promise.resolve(cachedAgoraRTC);
+  if (!agoraRTCLoader) {
+    agoraRTCLoader = import("agora-rtc-sdk-ng").then((m) => {
+      cachedAgoraRTC = m.default;
+      return m.default;
+    });
+  }
+  return agoraRTCLoader;
+}
+
+async function preflightMicPermission(): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const perms = (navigator as Navigator & {
+      permissions?: { query: (d: { name: PermissionName }) => Promise<PermissionStatus> };
+    }).permissions;
+    if (perms?.query) {
+      const status = await perms.query({ name: "microphone" as PermissionName });
+      if (status.state === "denied") {
+        return {
+          ok: false,
+          error:
+            "Microphone is blocked in browser settings. Tap the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then reload.",
+        };
+      }
+    }
+  } catch {
+    // Firefox/Safari may not support the microphone permission name — that's fine, fall through.
+  }
+  return { ok: true };
+}
 
 export type RemoteUser = {
   uid: number;
