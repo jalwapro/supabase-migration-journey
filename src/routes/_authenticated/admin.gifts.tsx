@@ -121,7 +121,12 @@ function GiftsAdmin() {
         clip_type: draft.clip_type === "none" ? "mp4" : draft.clip_type,
         is_active: true,
         active: true,
+        is_milestone: draft.is_milestone,
       };
+      if (draft.is_milestone) {
+        // Ensure only one milestone gift exists
+        await supabase.from("gifts").update({ is_milestone: false }).eq("is_milestone", true);
+      }
       if (draft.id) {
         const { error } = await supabase.from("gifts").update(row).eq("id", draft.id);
         if (error) throw error;
