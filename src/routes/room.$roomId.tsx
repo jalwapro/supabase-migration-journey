@@ -2364,7 +2364,7 @@ function Seat({
         </div>
         {(member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
-            {member?.is_muted ? (
+            {effectiveMuted ? (
               <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
             ) : (
               <Mic className="h-2 w-2 text-[color:var(--primary)]" />
