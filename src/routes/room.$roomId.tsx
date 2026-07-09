@@ -189,6 +189,12 @@ function RoomPage() {
     setLockedSeats(room.data?.locked_seats ?? []);
   }, [room.data?.locked_seats]);
 
+  // Auto-scroll chat to newest on every new message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    chatEndVideoRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length]);
+
   const agora = useAgoraRoom({
     channel: room.data?.agora_channel ?? null,
     uid: myUid,
