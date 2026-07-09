@@ -698,14 +698,14 @@ function RoomPage() {
 
 
 
-  async function sendEmoji(emoji: string, seatIndex: number) {
+  async function sendEmoji(emoji: string, seatIndex: number, clip?: string | null) {
     if (!user) {
       toast.error("Sign in to react");
       return;
     }
     // Local optimistic — even sender sees it fly
     const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex }]);
+    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex, clip: clip ?? null }]);
     setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
     setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2400);
     setTimeout(() => {
@@ -716,7 +716,9 @@ function RoomPage() {
         return next;
       });
     }, 2600);
-    const emojiText = `${emoji}|${seatIndex}`;
+    const emojiText = clip
+      ? `${emoji}|${seatIndex}|${encodeURIComponent(clip)}`
+      : `${emoji}|${seatIndex}`;
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
@@ -728,21 +730,7 @@ function RoomPage() {
     if (error) console.warn("[emoji]", error.message);
   }
 
-  async function sendAnimatedEmoji(e: ChatEmoji) {
-    if (!user) {
-      toast.error("Sign in to send");
-      return;
-    }
-    const { error } = await supabase.from("chat_emoji_sends").insert({
-      sender_id: user.id,
-      room_id: roomId,
-      emoji_slug: e.slug,
-      emoji_char: e.emoji,
-      emoji_name: e.name,
-      clip_path: e.clip_path,
-    });
-    if (error) toast.error(error.message);
-  }
+
 
 
   async function openMilestoneSheet() {
