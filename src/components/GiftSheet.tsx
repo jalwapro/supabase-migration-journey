@@ -123,7 +123,7 @@ export function GiftSheet({
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/95" onClick={onClose} style={{ contain: "strict" }}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black" onClick={onClose} style={{ contain: "strict", isolation: "isolate" }}>
       <div
         onClick={(e) => e.stopPropagation()}
         className="mx-auto w-full max-w-md rounded-t-3xl border-t border-border bg-background p-4 shadow-2xl"
