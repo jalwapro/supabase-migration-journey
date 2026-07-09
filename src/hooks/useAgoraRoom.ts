@@ -54,20 +54,28 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
+  const localAudioPublishedRef = useRef(false);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
   const [status, setStatus] = useState<AgoraStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const speakerMutedRef = useRef(false);
   const [videoOn, setVideoOn] = useState(video);
   const [micBlocked, setMicBlocked] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
+  const micErrorRef = useRef<string | null>(null);
 
   const musicTrackRef = useRef<IBufferSourceAudioTrack | null>(null);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicTitle, setMusicTitle] = useState<string | null>(null);
+
+  const setMicIssue = useCallback((message: string | null, blocked: boolean) => {
+    micErrorRef.current = message;
+    setMicError(message);
+    setMicBlocked(blocked);
+  }, []);
 
 
   const teardown = useCallback(async () => {
@@ -81,6 +89,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       setMusicTitle(null);
     }
     if (localAudioRef.current) {
+      localAudioPublishedRef.current = false;
       localAudioRef.current.stop();
       localAudioRef.current.close();
       localAudioRef.current = null;
@@ -188,27 +197,10 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
         await client.join(appId, channel, token, uid);
 
         if (publish) {
-          try {
-            const audio = await AgoraRTC.createMicrophoneAudioTrack();
-            localAudioRef.current = audio;
-            await client.publish(audio);
-            setMicBlocked(false);
-            setMicError(null);
-          } catch (e) {
-            const err = e as { name?: string; code?: string; message?: string };
-            const name = err?.name ?? err?.code ?? "";
-            console.warn("[agora] mic denied", err);
-            setMicBlocked(true);
-            setMicError(
-              name === "NotAllowedError" || name === "PERMISSION_DENIED"
-                ? "Microphone permission denied. Enable it in browser settings, then tap the mic to retry."
-                : name === "NotFoundError" || name === "DEVICE_NOT_FOUND"
-                  ? "No microphone found on this device."
-                  : name === "NotReadableError"
-                    ? "Microphone is in use by another app. Close it and retry."
-                    : err?.message ?? "Could not access microphone.",
-            );
-          }
+          // Do not request microphone during room join. Browsers give clearer
+          // permission UX when getUserMedia is triggered by the mic button tap.
+          setMuted(true);
+          setMicIssue(null, false);
           if (video) {
             try {
               const cam = await AgoraRTC.createCameraVideoTrack();
@@ -239,65 +231,88 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, channel, uid, publish, video]);
 
-  const requestMic = useCallback(async () => {
+  const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const client = clientRef.current;
     if (!client) {
-      setMicError("Not connected to room yet");
-      return false;
-    }
-    if ((client.connectionState as string) !== "CONNECTED") {
-      // Wait briefly for connection to complete instead of failing immediately.
-      const start = Date.now();
-      while ((client.connectionState as string) !== "CONNECTED" && Date.now() - start < 5000) {
-        await new Promise((r) => setTimeout(r, 200));
-      }
-      if ((client.connectionState as string) !== "CONNECTED") {
-        setMicError("Still connecting to room, please wait a moment and try again");
-        return false;
-      }
-    }
-    // Already have a track — just ensure unmuted.
-    if (localAudioRef.current) {
-      try {
-        await localAudioRef.current.setMuted(false);
-        setMuted(false);
-        setMicBlocked(false);
-        setMicError(null);
-        return true;
-      } catch (e) {
-        console.warn("[agora] requestMic unmute failed", e);
-      }
+      const message = "Not connected to room yet";
+      setMicIssue(message, false);
+      return { ok: false, error: message };
     }
     try {
       const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
-      const audio = await AgoraRTC.createMicrophoneAudioTrack();
-      localAudioRef.current = audio;
-      await client.publish(audio);
+
+      if (!localAudioRef.current) {
+        try {
+          localAudioRef.current = await AgoraRTC.createMicrophoneAudioTrack();
+        } catch (e) {
+          const err = e as { name?: string; code?: string; message?: string };
+          const name = err?.name ?? err?.code ?? "";
+          const message =
+            name === "NotAllowedError" || name === "PERMISSION_DENIED"
+              ? "Microphone permission denied. Enable it in browser Site Settings, then retry."
+              : name === "NotFoundError" || name === "DEVICE_NOT_FOUND"
+                ? "No microphone found on this device."
+                : name === "NotReadableError" || name === "NOT_READABLE"
+                  ? "Microphone is in use by another app. Close it and retry."
+                  : err?.message ?? "Could not access microphone.";
+          console.warn("[agora] requestMic permission failed", err);
+          setMicIssue(message, true);
+          return { ok: false, error: message };
+        }
+      }
+
+      await localAudioRef.current.setMuted(false);
+
+      if ((client.connectionState as string) !== "CONNECTED") {
+        const start = Date.now();
+        while ((client.connectionState as string) !== "CONNECTED" && Date.now() - start < 8000) {
+          await new Promise((r) => setTimeout(r, 200));
+        }
+        if ((client.connectionState as string) !== "CONNECTED") {
+          const message = "Room is still connecting. Mic permission is allowed — tap again in a moment.";
+          setMicIssue(message, false);
+          return { ok: false, error: message };
+        }
+      }
+
+      if (client.role !== "host") {
+        await client.setClientRole("host");
+      }
+
+      if (!localAudioPublishedRef.current) {
+        try {
+          await client.publish(localAudioRef.current);
+          localAudioPublishedRef.current = true;
+        } catch (e) {
+          const message = e instanceof Error ? e.message : String(e);
+          if (!/already\s+published/i.test(message)) throw e;
+          localAudioPublishedRef.current = true;
+        }
+      }
+
       setMuted(false);
-      setMicBlocked(false);
-      setMicError(null);
-      return true;
+      setMicIssue(null, false);
+      return { ok: true };
     } catch (e) {
       const err = e as { name?: string; code?: string; message?: string };
       const name = err?.name ?? err?.code ?? "";
       console.warn("[agora] requestMic failed", err);
-      setMicBlocked(true);
-      setMicError(
+      const message =
         name === "NotAllowedError" || name === "PERMISSION_DENIED"
           ? "Microphone permission denied. Enable it in browser Site Settings, then retry."
           : name === "NotFoundError" || name === "DEVICE_NOT_FOUND"
             ? "No microphone found on this device."
-            : name === "NotReadableError"
+            : name === "NotReadableError" || name === "NOT_READABLE"
               ? "Microphone is in use by another app. Close it and retry."
-              : err?.message ?? "Could not access microphone.",
-      );
-      return false;
+              : err?.message ?? "Could not access microphone.";
+      setMicIssue(message, name === "NotAllowedError" || name === "PERMISSION_DENIED");
+      return { ok: false, error: message };
     }
-  }, []);
+  }, [setMicIssue]);
 
   const toggleMute = useCallback(async () => {
     const track = localAudioRef.current;
-    if (!track) {
+    if (!track || !localAudioPublishedRef.current) {
       // No track yet — try to acquire it via a user-gesture request.
       await requestMic();
       return;
@@ -308,10 +323,11 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     try {
       await track.setMuted(next);
       setMuted(next);
+      setMicIssue(null, false);
     } catch (e) {
       console.error("[agora] setMuted failed", e);
     }
-  }, [muted, requestMic]);
+  }, [muted, requestMic, setMicIssue]);
 
 
 
@@ -436,6 +452,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     toggleSpeaker,
     toggleVideo,
     localAudioTrack: localAudioRef,
+    localAudioPublished: localAudioPublishedRef,
     localVideoTrack: localVideoRef,
     // music
     musicPlaying,
