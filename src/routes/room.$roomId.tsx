@@ -1018,6 +1018,9 @@ function RoomPage() {
                         onLike={() => onSeatTap(i)}
                         glowing={!!glowSeats[i]}
                         locked={lockedSeats.includes(i)}
+                        giftPoints={m ? giftPoints[m.user_id] ?? 0 : 0}
+                        receivedGift={!!(m && recentGiftUsers[m.user_id])}
+                        isKing={!!(m && kingUserId === m.user_id)}
                         onEmptyManage={
                           isHost || isModerator
                             ? () => setManageEmptySeat(i)
