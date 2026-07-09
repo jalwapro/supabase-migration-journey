@@ -58,7 +58,9 @@ create policy "user deletes own notifs"
   using (auth.uid() = user_id);
 
 -- Realtime
-alter publication supabase_realtime add table public.notifications;
+do $$ begin
+  alter publication supabase_realtime add table public.notifications;
+exception when duplicate_object then null; end $$;
 
 -- ---------- notification_prefs --------------------------------------------
 create table if not exists public.notification_prefs (
