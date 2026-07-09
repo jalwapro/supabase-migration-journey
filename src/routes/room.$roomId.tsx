@@ -1858,12 +1858,23 @@ function Seat({
       }`}
     >
       <button
-        onClick={() => (member ? onLike() : onClaim())}
+        onClick={() => {
+          if (member) return onLike();
+          if (locked && onEmptyManage) return onEmptyManage();
+          if (locked) return;
+          if (onEmptyManage) return onEmptyManage();
+          return onClaim();
+        }}
         className="relative aspect-square w-full"
-        aria-label={member ? `Like seat ${label}` : `Take ${label}`}
+        aria-label={member ? `Manage seat ${label}` : locked ? `Locked ${label}` : `Take ${label}`}
       >
         {isHostSeat && (
           <div className="pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
+        )}
+        {locked && !member && (
+          <div className="pointer-events-none absolute inset-[8%] z-20 grid place-items-center rounded-full bg-black/60 backdrop-blur-sm">
+            <span className="text-lg">🔒</span>
+          </div>
         )}
         <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${ringClass}`}>
           {isHostSeat && !displayAvatar && cover && (
