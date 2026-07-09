@@ -2292,14 +2292,22 @@ function ToolBtn({
 /* ─── Seat Action Sheet (host manages a seated user) ─────────── */
 function SeatActionSheet({
   member,
+  canModerate,
+  canLock,
+  isSeatLocked,
   onClose,
   onToggleModerator,
   onKickFromSeat,
+  onToggleLock,
 }: {
   member: Member | null;
+  canModerate: boolean;
+  canLock: boolean;
+  isSeatLocked: boolean;
   onClose: () => void;
   onToggleModerator: () => void;
   onKickFromSeat: () => void;
+  onToggleLock: () => void;
 }) {
   if (!member) return null;
   const name = member.user?.username ?? "User";
@@ -2324,21 +2332,85 @@ function SeatActionSheet({
             <div className="truncate text-base font-extrabold">@{name}</div>
             <div className="text-[11px] text-muted-foreground">
               {member.is_moderator ? "Moderator" : "On seat"}
+              {isSeatLocked ? " · 🔒 locked" : ""}
             </div>
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-2">
+          {canModerate && (
+            <button
+              onClick={onToggleModerator}
+              className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
+            >
+              {member.is_moderator ? "Remove as Moderator" : "Make Moderator"}
+            </button>
+          )}
+          {canLock && (
+            <button
+              onClick={onToggleLock}
+              className="w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-3 text-sm font-bold text-[color:var(--gold)]"
+            >
+              {isSeatLocked ? "🔓 Unlock Seat" : "🔒 Lock Seat"}
+            </button>
+          )}
+          {canModerate && (
+            <button
+              onClick={onKickFromSeat}
+              className="w-full rounded-2xl bg-[color:var(--destructive)]/80 py-3 text-sm font-bold text-white"
+            >
+              Remove from Seat
+            </button>
+          )}
           <button
-            onClick={onToggleModerator}
+            onClick={onClose}
+            className="mt-1 w-full rounded-2xl border border-border py-3 text-sm font-bold"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Empty Seat Sheet (host/mod: lock or invite) ────────────── */
+function EmptySeatSheet({
+  seatIndex,
+  isLocked,
+  onClose,
+  onToggleLock,
+  onInvite,
+}: {
+  seatIndex: number | null;
+  isLocked: boolean;
+  onClose: () => void;
+  onToggleLock: () => void;
+  onInvite: () => void;
+}) {
+  if (seatIndex == null) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="text-center text-sm font-black">
+          Seat {seatIndex + 1} {isLocked ? "· 🔒 Locked" : ""}
+        </div>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={onInvite}
             className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
           >
-            {member.is_moderator ? "Remove as Moderator" : "Make Moderator"}
+            Invite a viewer
           </button>
           <button
-            onClick={onKickFromSeat}
-            className="w-full rounded-2xl bg-[color:var(--destructive)]/80 py-3 text-sm font-bold text-white"
+            onClick={onToggleLock}
+            className="w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-3 text-sm font-bold text-[color:var(--gold)]"
           >
-            Remove from Seat
+            {isLocked ? "🔓 Unlock Seat" : "🔒 Lock Seat"}
           </button>
           <button
             onClick={onClose}
@@ -2351,6 +2423,174 @@ function SeatActionSheet({
     </>
   );
 }
+
+/* ─── Viewers Sheet (list viewers + invite from host/mod) ────── */
+function ViewersSheet({
+  open,
+  onClose,
+  roomId,
+  members,
+  canInvite,
+  userId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  roomId: string;
+  members: Member[];
+  canInvite: boolean;
+  userId: string | null;
+}) {
+  if (!open) return null;
+  const viewers = members.filter((m) => m.seat_index == null);
+  const seated = members.filter((m) => m.seat_index != null);
+
+  async function invite(toUser: string) {
+    const { error } = await supabase.from("seat_invites").insert({
+      room_id: roomId,
+      from_user: userId!,
+      to_user: toUser,
+      seat_index: null,
+      status: "pending",
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Invite sent");
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 flex max-h-[75vh] w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-black">
+            Viewers <span className="text-white/50">· {viewers.length}</span>
+          </h2>
+          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+          {seated.length > 0 && (
+            <>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-widest text-white/40">
+                On stage · {seated.length}
+              </div>
+              {seated.map((m) => (
+                <ViewerRow key={m.user_id} member={m} showInvite={false} onInvite={() => {}} />
+              ))}
+              <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-white/40">
+                Watching
+              </div>
+            </>
+          )}
+          {viewers.length === 0 && (
+            <p className="py-6 text-center text-[12px] text-white/50">No viewers right now.</p>
+          )}
+          {viewers.map((m) => (
+            <ViewerRow
+              key={m.user_id}
+              member={m}
+              showInvite={canInvite && m.user_id !== userId}
+              onInvite={() => void invite(m.user_id)}
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ViewerRow({
+  member,
+  showInvite,
+  onInvite,
+}: {
+  member: Member;
+  showInvite: boolean;
+  onInvite: () => void;
+}) {
+  const name = member.user?.username ?? "guest";
+  const avatar = member.user?.avatar ?? null;
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-2">
+      {avatar ? (
+        <img src={avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+      ) : (
+        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xs font-black text-white">
+          {initial}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[13px] font-bold text-white">@{name}</div>
+        <div className="text-[10px] text-white/50">
+          {member.is_moderator ? "Moderator" : member.seat_index != null ? `Seat ${member.seat_index + 1}` : "Viewer"}
+        </div>
+      </div>
+      {showInvite && (
+        <button
+          onClick={onInvite}
+          className="rounded-full bg-[color:var(--primary)] px-3 py-1.5 text-[11px] font-black text-white"
+        >
+          + Invite
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Seat invite popup for the recipient ────────────────────── */
+function SeatInvitePopup({
+  invite,
+  onAccept,
+  onDecline,
+}: {
+  invite: { id: string; from_name: string | null; from_avatar: string | null; seat_index: number | null };
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  const name = invite.from_name ?? "Host";
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+        <div className="flex flex-col items-center gap-3 text-center">
+          {invite.from_avatar ? (
+            <img src={invite.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
+          ) : (
+            <div className="grid h-16 w-16 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xl font-black">
+              {initial}
+            </div>
+          )}
+          <p className="text-sm font-bold">
+            <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
+          </p>
+          <p className="text-[11px] text-white/60">
+            {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
+          </p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onDecline}
+            className="flex-1 rounded-full border border-white/20 py-3 text-sm font-bold text-white/80"
+          >
+            Decline
+          </button>
+          <button
+            onClick={onAccept}
+            className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-white shadow-lg"
+          >
+            Accept
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
 const REACTION_EMOJIS = [
