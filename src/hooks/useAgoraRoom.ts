@@ -295,25 +295,38 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       return n === "NotAllowedError" || n === "PERMISSION_DENIED";
     };
 
-    // Proactively check permission state — gives clearer error before we even
-    // touch getUserMedia, and avoids a hanging prompt on already-denied sites.
-    const preflight = await preflightMicPermission();
-    if (!preflight.ok) {
-      setMicIssue(preflight.error!, true);
-      return { ok: false, error: preflight.error };
-    }
-
-    // Acquire mic track. Use cached AgoraRTC (no dynamic import await here) so
-    // Safari keeps the user-gesture context for getUserMedia.
+    // CRITICAL: getUserMedia must be the FIRST await inside the click handler,
+    // otherwise Safari/iOS lose the user-gesture context and the mic prompt
+    // silently fails. Do NOT add awaits (permission query, dynamic import,
+    // network calls) before this line.
     if (!localAudioRef.current) {
-      const AgoraRTC = cachedAgoraRTC ?? (await loadAgoraRTC());
-      try {
-        localAudioRef.current = await AgoraRTC.createMicrophoneAudioTrack();
-      } catch (e) {
-        console.warn("[agora] createMicrophoneAudioTrack failed", e);
-        const message = mapMediaError(e);
-        setMicIssue(message, isPermDenied(e));
-        return { ok: false, error: message };
+      const AgoraRTC = cachedAgoraRTC;
+      if (!AgoraRTC) {
+        // SDK not preloaded yet — fall back to a permission preflight so we
+        // can give a clear error without hanging.
+        const preflight = await preflightMicPermission();
+        if (!preflight.ok) {
+          setMicIssue(preflight.error!, true);
+          return { ok: false, error: preflight.error };
+        }
+        const loaded = await loadAgoraRTC();
+        try {
+          localAudioRef.current = await loaded.createMicrophoneAudioTrack();
+        } catch (e) {
+          console.warn("[agora] createMicrophoneAudioTrack failed", e);
+          const message = mapMediaError(e);
+          setMicIssue(message, isPermDenied(e));
+          return { ok: false, error: message };
+        }
+      } else {
+        try {
+          localAudioRef.current = await AgoraRTC.createMicrophoneAudioTrack();
+        } catch (e) {
+          console.warn("[agora] createMicrophoneAudioTrack failed", e);
+          const message = mapMediaError(e);
+          setMicIssue(message, isPermDenied(e));
+          return { ok: false, error: message };
+        }
       }
     }
 
