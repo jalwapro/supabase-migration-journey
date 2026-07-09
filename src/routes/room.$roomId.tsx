@@ -825,11 +825,19 @@ function RoomPage() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
                   {r.title}
                 </span>
-                <span className="shrink-0 text-[19px] leading-none">💖</span>
+                {!isHost && (
+                  <FollowLoveChip
+                    isFollowing={!!followsHost.data}
+                    onFollow={() => void followHost()}
+                    onLove={() => void sendLove()}
+                    cooling={loveCooling}
+                    blink={loveBlink}
+                  />
+                )}
               </div>
               <div className="truncate text-[10px] font-semibold text-white/60">
                 ID:{roomCode}
