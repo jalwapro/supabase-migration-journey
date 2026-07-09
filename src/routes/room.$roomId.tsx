@@ -2264,7 +2264,12 @@ function Seat({
 
   const label = `No.${index + 1}`;
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
-  const effectiveMuted = isSelf ? !!localMuted : !!member?.is_muted;
+  // Prefer live Agora signal over stale DB `is_muted`.
+  const effectiveMuted = isSelf
+    ? !!localMuted
+    : remote
+      ? !remote.hasAudio
+      : !!member?.is_muted;
   const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
 
 
