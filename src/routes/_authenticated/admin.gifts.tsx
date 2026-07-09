@@ -26,6 +26,7 @@ type GiftRow = {
   is_active: boolean;
   clip_path: string | null;
   clip_type: string | null;
+  is_milestone?: boolean | null;
 };
 
 const CATEGORIES = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
@@ -41,6 +42,7 @@ type Draft = {
   sort_order: number;
   clip_path: string;
   clip_type: (typeof CLIP_TYPES)[number];
+  is_milestone: boolean;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -52,6 +54,7 @@ const EMPTY_DRAFT: Draft = {
   sort_order: 99,
   clip_path: "",
   clip_type: "none",
+  is_milestone: false,
 };
 
 function GiftsAdmin() {
