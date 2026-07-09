@@ -35,8 +35,8 @@ export function NotificationPopup() {
           .update({ read_at: new Date().toISOString() })
           .eq("id", detail.id)
           .then(() => {
-            qc.invalidateQueries({ queryKey: ["notif-unread"] });
-            qc.invalidateQueries({ queryKey: ["notif-feed"] });
+            qc.invalidateQueries({ queryKey: ["notif-unread", detail.user_id] });
+            qc.invalidateQueries({ queryKey: ["notif-feed", detail.user_id] });
           });
       }
     };

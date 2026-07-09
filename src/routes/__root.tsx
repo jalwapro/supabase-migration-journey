@@ -25,6 +25,8 @@ import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { InstallPermissionGate } from "../components/InstallPermissionGate";
+import { NotificationPopup } from "../components/NotificationPopup";
+import { useGlobalRealtime } from "../hooks/useGlobalRealtime";
 
 
 
@@ -187,6 +189,11 @@ function SplashGate() {
   return null;
 }
 
+function GlobalRealtimeBridge() {
+  useGlobalRealtime();
+  return <NotificationPopup />;
+}
+
 
 
 
@@ -205,6 +212,7 @@ function RootComponent() {
         <ThemeBackground />
         <SplashGate />
         <InstallPermissionGate />
+        <GlobalRealtimeBridge />
         
         <div className="relative z-10" suppressHydrationWarning>
 

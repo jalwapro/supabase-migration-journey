@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 
 import jalwaLogo from "@/assets/jalwa-logo.png";
@@ -83,6 +84,8 @@ const DEFAULT_BANNERS: Banner[] = [
 
 function Home() {
   const { user, profile, isAdmin, loading } = useAuth();
+  const unread = useUnreadCount();
+  const unreadCount = user ? (unread.data ?? 0) : 0;
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("video");
   const [q, setQ] = useState("");
@@ -274,15 +277,29 @@ function Home() {
 
             <div className="flex shrink-0 items-center gap-1.5">
               {user && (
-                <button
-                  type="button"
-                  onClick={() => setFriendsOpen(true)}
-                  aria-label="Friends online"
-                  className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
-                >
-                  <UserRound className="h-4 w-4" />
-                  <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
-                </button>
+                <>
+                  <Link
+                    to="/notifications"
+                    aria-label="Notifications"
+                    className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+                  >
+                    <Bell className="h-4 w-4" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -right-1 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[9px] font-black text-primary-foreground ring-2 ring-background">
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setFriendsOpen(true)}
+                    aria-label="Friends online"
+                    className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+                  >
+                    <UserRound className="h-4 w-4" />
+                    <span className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-background" />
+                  </button>
+                </>
               )}
               {profile && (
                 <Link
