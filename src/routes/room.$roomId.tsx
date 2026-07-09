@@ -259,6 +259,12 @@ function RoomPage() {
           gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
         });
       }
+      const pts: Record<string, number> = {};
+      (giftData ?? []).forEach((row: { receiver_id: string | null; diamonds_earned: number | null }) => {
+        if (!row.receiver_id) return;
+        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.diamonds_earned ?? 0);
+      });
+      setGiftPoints(pts);
     })();
     return () => {
       cancel = true;
