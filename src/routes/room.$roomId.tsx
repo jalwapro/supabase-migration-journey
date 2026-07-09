@@ -47,8 +47,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
-import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
-import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
@@ -124,7 +122,7 @@ function RoomPage() {
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
-  const [animEmojiOpen, setAnimEmojiOpen] = useState(false);
+  
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -159,7 +157,7 @@ function RoomPage() {
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
-    { id: string; emoji: string; seat: number }[]
+    { id: string; emoji: string; seat: number; clip?: string | null }[]
   >([]);
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
@@ -309,12 +307,13 @@ function RoomPage() {
           const row = payload.new as Message;
           row.text = row.text ?? row.message ?? null;
           if (row.kind === "emoji") {
-            // "😀|3" → seat 3
+            // "😀|3" or "😀|3|/animations/emojis/heart.svg"
             const parts = (row.text ?? "").split("|");
             const emoji = parts[0] ?? "😀";
             const seat = Number(parts[1] ?? 0);
+            const clip = parts[2] ? decodeURIComponent(parts[2]) : null;
             const id = `${row.id}-${Math.random().toString(36).slice(2, 7)}`;
-            setFlyingEmojis((prev) => [...prev, { id, emoji, seat }]);
+            setFlyingEmojis((prev) => [...prev, { id, emoji, seat, clip }]);
             setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
             setTimeout(() => {
               setFlyingEmojis((prev) => prev.filter((e) => e.id !== id));
@@ -697,14 +696,14 @@ function RoomPage() {
 
 
 
-  async function sendEmoji(emoji: string, seatIndex: number) {
+  async function sendEmoji(emoji: string, seatIndex: number, clip?: string | null) {
     if (!user) {
       toast.error("Sign in to react");
       return;
     }
     // Local optimistic — even sender sees it fly
     const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex }]);
+    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex, clip: clip ?? null }]);
     setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
     setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2400);
     setTimeout(() => {
@@ -715,7 +714,9 @@ function RoomPage() {
         return next;
       });
     }, 2600);
-    const emojiText = `${emoji}|${seatIndex}`;
+    const emojiText = clip
+      ? `${emoji}|${seatIndex}|${encodeURIComponent(clip)}`
+      : `${emoji}|${seatIndex}`;
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
@@ -727,21 +728,7 @@ function RoomPage() {
     if (error) console.warn("[emoji]", error.message);
   }
 
-  async function sendAnimatedEmoji(e: ChatEmoji) {
-    if (!user) {
-      toast.error("Sign in to send");
-      return;
-    }
-    const { error } = await supabase.from("chat_emoji_sends").insert({
-      sender_id: user.id,
-      room_id: roomId,
-      emoji_slug: e.slug,
-      emoji_char: e.emoji,
-      emoji_name: e.name,
-      clip_path: e.clip_path,
-    });
-    if (error) toast.error(error.message);
-  }
+
 
 
   async function openMilestoneSheet() {
@@ -1238,29 +1225,21 @@ function RoomPage() {
                   <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
                 )}
               </button>
-              <div className="grid flex-1 grid-cols-3 gap-1.5">
+              <div className="grid flex-1 grid-cols-2 gap-2">
                 {isHost ? (
                   <MiniAction
-                    compact
-                    icon={<Music className="h-3.5 w-3.5" />}
+                    icon={<Music className="h-5 w-5" />}
                     label="Music"
                     onClick={() => setMusicOpen(true)}
                   />
                 ) : (
                   <MiniAction
-                    compact
-                    icon={<Smile className="h-3.5 w-3.5" />}
-                    label="React"
+                    icon={<Smile className="h-5 w-5" />}
+                    label="Reactions"
                     onClick={() => setEmojiSheetOpen(true)}
                   />
                 )}
-                <MiniAction
-                  compact
-                  icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />}
-                  label="Emoji"
-                  onClick={() => setAnimEmojiOpen(true)}
-                />
-                <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
+                <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
               </div>
 
             </div>
@@ -1284,10 +1263,9 @@ function RoomPage() {
             </div>
 
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-3 gap-1">
-                <MiniAction compact icon={<Music className="h-3.5 w-3.5" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
-                <MiniAction compact icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />} label="Emoji" onClick={() => setAnimEmojiOpen(true)} />
-                <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
+              <div className="grid grid-cols-2 gap-1.5">
+                <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
+                <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
               </div>
 
             </div>
@@ -1370,13 +1348,6 @@ function RoomPage() {
             </div>
 
             <button
-              onClick={() => setAnimEmojiOpen(true)}
-              aria-label="Animated emoji"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-[color:var(--primary)] backdrop-blur-md"
-            >
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
               className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
@@ -1452,13 +1423,6 @@ function RoomPage() {
             </div>
 
             <button
-              onClick={() => setAnimEmojiOpen(true)}
-              aria-label="Animated emoji"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-[color:var(--primary)] backdrop-blur-md"
-            >
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
               className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
@@ -1494,8 +1458,6 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
-      <ChatEmojiSheet open={animEmojiOpen} onClose={() => setAnimEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
-      <ChatEmojiOverlay scope={{ type: "room", roomId }} />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
@@ -1747,7 +1709,7 @@ function RoomPage() {
         defaultSeat={
           myMember?.seat_index != null ? myMember.seat_index : 0
         }
-        onSend={(emoji, seat) => void sendEmoji(emoji, seat)}
+        onSend={(emoji, seat, clip) => void sendEmoji(emoji, seat, clip)}
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
@@ -3084,11 +3046,8 @@ function SeatInvitePopup({
 
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
-const REACTION_EMOJIS = [
-  "❤️", "😂", "🔥", "👏", "😍", "🥰", "😎", "😘",
-  "🤩", "🎉", "🌹", "💖", "💯", "😢", "😡", "👑",
-  "🙏", "😴", "🤡", "🎁", "🍿", "💃", "🕺", "✨",
-];
+/* ─── Emoji reaction sheet: pick seat + emoji (animated 50-set) ─── */
+type ReactionEmoji = { slug: string; emoji: string; name: string; clip_path: string };
 
 function EmojiReactionSheet({
   open,
@@ -3103,12 +3062,23 @@ function EmojiReactionSheet({
   seatCount: number;
   seatsByIndex: Map<number, Member>;
   defaultSeat: number;
-  onSend: (emoji: string, seat: number) => void;
+  onSend: (emoji: string, seat: number, clip?: string | null) => void;
 }) {
   const [seat, setSeat] = useState(defaultSeat);
+  const [emojis, setEmojis] = useState<ReactionEmoji[]>([]);
   useEffect(() => {
     if (open) setSeat(defaultSeat);
   }, [open, defaultSeat]);
+  useEffect(() => {
+    if (!open || emojis.length > 0) return;
+    void supabase
+      .from("chat_emojis")
+      .select("slug,emoji,name,clip_path")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => setEmojis((data ?? []) as ReactionEmoji[]));
+  }, [open, emojis.length]);
+
   if (!open) return null;
   return (
     <>
@@ -3161,21 +3131,25 @@ function EmojiReactionSheet({
           )}
         </div>
         <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
-          Tap an emoji
+          Tap an animated emoji
         </div>
-        <div className="mt-2 grid grid-cols-8 gap-1.5">
-          {REACTION_EMOJIS.map((e) => (
+        <div className="mt-2 grid max-h-[42vh] grid-cols-6 gap-1.5 overflow-y-auto pr-1 scrollbar-hide">
+          {emojis.map((e) => (
             <button
-              key={e}
+              key={e.slug}
               onClick={() => {
                 onClose();
-                setTimeout(() => onSend(e, seat), 0);
+                setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
               }}
-              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 text-2xl transition active:scale-90 hover:bg-white/15"
+              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 p-1 transition active:scale-90 hover:bg-white/15"
+              title={e.name}
             >
-              {e}
+              <img src={e.clip_path} alt={e.name} loading="lazy" className="h-full w-full object-contain" />
             </button>
           ))}
+          {emojis.length === 0 && (
+            <span className="col-span-6 py-6 text-center text-[11px] text-white/50">Loading…</span>
+          )}
         </div>
       </div>
     </>
@@ -3186,23 +3160,22 @@ function EmojiReactionSheet({
 function FlyingEmojiLayer({
   emojis,
 }: {
-  emojis: { id: string; emoji: string; seat: number }[];
+  emojis: { id: string; emoji: string; seat: number; clip?: string | null }[];
 }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]">
       {emojis.map((e) => (
-        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} />
+        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} clip={e.clip ?? null} />
       ))}
     </div>
   );
 }
 
-function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
+function FlyingEmoji({ emoji, seat, clip }: { emoji: string; seat: number; clip: string | null }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [target, setTarget] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    // Locate seat rect
     const el = document.querySelector<HTMLElement>(`[data-seat-index="${seat}"]`);
     const rect = el?.getBoundingClientRect();
     const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 60;
@@ -3216,21 +3189,34 @@ function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
   }, [seat]);
 
   if (!pos || !target) return null;
+  const size = clip ? 72 : 40;
+  const style: React.CSSProperties = {
+    left: 0,
+    top: 0,
+    willChange: "transform, opacity",
+    animation: "flyEmoji 2.2s cubic-bezier(0.22,1,0.36,1) forwards",
+    ["--fx" as never]: `${pos.x - size / 2}px`,
+    ["--fy" as never]: `${pos.y - size / 2}px`,
+    ["--tx" as never]: `${target.x - size / 2}px`,
+    ["--ty" as never]: `${target.y - size / 2}px`,
+  };
+  if (clip) {
+    return (
+      <img
+        src={clip}
+        alt=""
+        className="absolute drop-shadow-[0_0_16px_rgba(255,215,0,0.7)]"
+        style={{ ...style, width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       className="absolute text-4xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)]"
-      style={{
-        left: 0,
-        top: 0,
-        willChange: "transform, opacity",
-        animation: "flyEmoji 2.2s cubic-bezier(0.22,1,0.36,1) forwards",
-        ["--fx" as never]: `${pos.x - 16}px`,
-        ["--fy" as never]: `${pos.y - 20}px`,
-        ["--tx" as never]: `${target.x - 16}px`,
-        ["--ty" as never]: `${target.y - 20}px`,
-      }}
+      style={style}
     >
       {emoji}
     </span>
   );
 }
+
