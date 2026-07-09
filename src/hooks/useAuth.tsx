@@ -141,19 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // 5-hour inactivity auto-logout. If the app hasn't been touched in 5h,
-    // drop the persisted session and force a fresh login.
-    if (nextSession?.user && typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem("jalwa_last_active_ts");
-        const last = raw ? parseInt(raw, 10) || 0 : 0;
-        const FIVE_HOURS = 5 * 60 * 60 * 1000;
-        if (last > 0 && Date.now() - last > FIVE_HOURS) {
-          await supabase.auth.signOut();
-          nextSession = null;
-        }
-      } catch { /* ignore */ }
-    }
+    // Session persists until the user explicitly signs out.
+
 
     initialSessionLoadedRef.current = true;
     await hydrate(nextSession);
