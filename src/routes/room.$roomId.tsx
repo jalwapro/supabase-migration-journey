@@ -2170,7 +2170,28 @@ function Seat({
             {likeCount}
           </span>
         )}
+        {isKing && (
+          <span
+            title="Top gifter"
+            className="pointer-events-none absolute -top-3 left-1/2 z-30 -translate-x-1/2 text-lg leading-none drop-shadow-[0_2px_6px_rgba(255,200,60,0.9)] animate-bounce"
+          >
+            👑
+          </span>
+        )}
       </button>
+      {receivedGift && (
+        <span
+          title="Just received a gift"
+          className="pointer-events-none absolute -bottom-1 left-1/2 z-20 -translate-x-1/2 text-sm leading-none drop-shadow-[0_2px_6px_rgba(255,120,180,0.9)] animate-bounce"
+        >
+          🎁
+        </span>
+      )}
+      {giftPoints > 0 && (
+        <span className="rounded-full bg-black/70 px-1.5 py-[1px] text-[8px] font-black leading-none text-[color:var(--gold)] backdrop-blur">
+          💎 {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
+        </span>
+      )}
       <span className={`text-[10px] font-black leading-tight ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
         {label}
       </span>
