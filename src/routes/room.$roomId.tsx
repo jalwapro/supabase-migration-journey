@@ -137,7 +137,8 @@ function RoomPage() {
     blur: false,
   });
 
-  const [chatTab, setChatTab] = useState<"all" | "chat">("all");
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const chatEndVideoRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
