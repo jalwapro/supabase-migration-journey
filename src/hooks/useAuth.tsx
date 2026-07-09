@@ -92,6 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hydrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hydrateTokenRef = useRef(0);
   const initialSessionLoadedRef = useRef(false);
 
   const user = session?.user ?? null;
@@ -103,6 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
+    // Cancel any in-flight hydrate — otherwise a stale user's roles can
+    // overwrite the freshly-signed-in user's state.
+    if (hydrateTimerRef.current) {
+      clearTimeout(hydrateTimerRef.current);
+      hydrateTimerRef.current = null;
+    }
+    const token = ++hydrateTokenRef.current;
     if (!nextSession?.user) {
       setProfile(null);
       setRoles([]);
@@ -110,8 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const uid = nextSession.user.id;
     // Defer supabase queries to avoid deadlock inside onAuthStateChange callback
-    setTimeout(async () => {
+    hydrateTimerRef.current = setTimeout(async () => {
       const [p, r] = await Promise.all([loadProfile(uid), loadRoles(uid)]);
+      // Only apply if this call is still the latest.
+      if (token !== hydrateTokenRef.current) return;
       setProfile(p);
       setRoles(r);
     }, 0);

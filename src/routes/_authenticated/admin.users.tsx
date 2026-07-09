@@ -59,9 +59,8 @@ function UsersAdmin() {
 
   const adjustCoins = useMutation({
     mutationFn: async ({ id, delta }: { id: string; delta: number }) => {
-      const row = list.data?.find((r) => r.id === id);
-      const next = Math.max(0, (row?.coins ?? 0) + delta);
-      const { error } = await supabase.from("profiles").update({ coins: next }).eq("id", id);
+      // Atomic server-side delta — safe against stale-cache overwrites.
+      const { error } = await supabase.rpc("adjust_coins", { _user_id: id, _delta: delta });
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_users"] }),

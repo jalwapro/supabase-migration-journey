@@ -43,7 +43,7 @@ import {
   X,
 } from "lucide-react";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
@@ -110,15 +110,9 @@ function shortRoomCode(id: string) {
   return String(num).padStart(8, "0");
 }
 
-const QUICK_GIFTS: { name: string; icon: string; price: number }[] = [
-  { name: "Hot", icon: "🔥", price: 1 },
-  { name: "Rose", icon: "🌹", price: 10 },
-  { name: "Heart", icon: "💖", price: 50 },
-  { name: "Lion", icon: "🦁", price: 100 },
-  { name: "Ferrari", icon: "🏎️", price: 500 },
-  { name: "Castle", icon: "🏰", price: 1000 },
-  { name: "Diamond", icon: "💎", price: 5000 },
-];
+// (Removed unused QUICK_GIFTS strip — it was inserting a chat row with
+// kind:"gift" without charging the sender or crediting the receiver.
+// All real gifts flow through GiftSheet → send_gift RPC.)
 
 function RoomPage() {
   const { roomId } = Route.useParams();
@@ -222,70 +216,80 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
+  const loadRoomState = useCallback(async () => {
+    const [
+      { data: mData, error: mErr },
+      { data: msgData, error: msgErr },
+      { data: likeData, error: likeErr },
+      { data: popData, error: popErr },
+      { data: giftData, error: giftErr },
+    ] = await Promise.all([
+      supabase
+        .from("room_members")
+        .select(
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar)",
+        )
+        .eq("room_id", roomId),
+      supabase
+        .from("room_messages")
+        .select(
+          "id,user_id,kind,text,message,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
+        )
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("room_seat_likes")
+        .select("seat_index")
+        .eq("room_id", roomId),
+      supabase
+        .from("room_popularity")
+        .select("coin_score,like_count,gift_count")
+        .eq("room_id", roomId)
+        .maybeSingle(),
+      supabase
+        .from("gift_sends")
+        .select("receiver_id,coins_spent")
+        .eq("room_id", roomId),
+    ]);
+    // Surface real errors instead of silently rendering empty state.
+    const firstErr = mErr ?? msgErr ?? likeErr ?? popErr ?? giftErr;
+    if (firstErr) {
+      console.error("[room load]", firstErr);
+      toast.error(`Room data failed: ${firstErr.message}`);
+    }
+    setMembers((mData ?? []) as unknown as Member[]);
+    setMessages(((msgData ?? []) as unknown as Message[]).reverse());
+    const likeMap: Record<number, number> = {};
+    (likeData ?? []).forEach((row: { seat_index: number }) => {
+      likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
+    });
+    setSeatLikes(likeMap);
+    if (popData) {
+      setPopularity({
+        coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
+        like_count: Number((popData as { like_count: number }).like_count ?? 0),
+        gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
+      });
+    }
+    const pts: Record<string, number> = {};
+    (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
+      if (!row.receiver_id) return;
+      pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
+    });
+    setGiftPoints(pts);
+  }, [roomId]);
+
   useEffect(() => {
     let cancel = false;
-    (async () => {
-      const [
-        { data: mData },
-        { data: msgData },
-        { data: likeData },
-        { data: popData },
-        { data: giftData },
-      ] = await Promise.all([
-        supabase
-          .from("room_members")
-          .select(
-            "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar)",
-          )
-          .eq("room_id", roomId),
-        supabase
-          .from("room_messages")
-          .select(
-            "id,user_id,kind,text,message,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
-          )
-          .eq("room_id", roomId)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase
-          .from("room_seat_likes")
-          .select("seat_index")
-          .eq("room_id", roomId),
-        supabase
-          .from("room_popularity")
-          .select("coin_score,like_count,gift_count")
-          .eq("room_id", roomId)
-          .maybeSingle(),
-        supabase
-          .from("gift_sends")
-          .select("receiver_id,coins_spent")
-          .eq("room_id", roomId),
-      ]);
+    void (async () => {
+      await loadRoomState();
       if (cancel) return;
-      setMembers((mData ?? []) as unknown as Member[]);
-      setMessages(((msgData ?? []) as unknown as Message[]).reverse());
-      const likeMap: Record<number, number> = {};
-      (likeData ?? []).forEach((row: { seat_index: number }) => {
-        likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
-      });
-      setSeatLikes(likeMap);
-      if (popData) {
-        setPopularity({
-          coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
-          like_count: Number((popData as { like_count: number }).like_count ?? 0),
-          gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
-        });
-      }
-      const pts: Record<string, number> = {};
-      (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
-        if (!row.receiver_id) return;
-        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
-      });
-      setGiftPoints(pts);
     })();
     return () => {
       cancel = true;
     };
-  }, [roomId]);
+  }, [loadRoomState]);
 
   useEffect(() => {
     const ch = supabase
@@ -424,11 +428,21 @@ function RoomPage() {
           );
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        // On (re)subscribe — including after a network drop — reconcile any
+        // events that fired while the socket was down. React Query already
+        // refetches the room row on reconnect; do the same for members,
+        // messages, likes, gifts and popularity.
+        if (status === "SUBSCRIBED") {
+          void loadRoomState();
+          void room.refetch();
+        }
+      });
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [roomId, qc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, qc, loadRoomState]);
 
   // Seat invites → popup for recipient
   useEffect(() => {
@@ -676,22 +690,9 @@ function RoomPage() {
     }
   }
 
-  async function sendQuickGift(g: (typeof QUICK_GIFTS)[number]) {
-    if (!user) {
-      toast.error("Sign in to send gifts");
-      return;
-    }
-    const giftText = `${g.icon} ${g.name}`;
-    const { error } = await supabase.from("room_messages").insert({
-      room_id: roomId,
-      user_id: user.id,
-      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
-      kind: "gift",
-      text: giftText,
-      message: giftText,
-    });
-    if (error) toast.error(error.message);
-  }
+  // (sendQuickGift removed — see note above the QUICK_GIFTS deletion.)
+
+
 
   async function sendEmoji(emoji: string, seatIndex: number) {
     if (!user) {
@@ -755,13 +756,25 @@ function RoomPage() {
 
   async function leaveRoom() {
     if (user && isHost) {
-      // Convert accumulated gift points into diamonds for each receiver
-      // before the room is marked as ended.
-      await supabase.rpc("finalize_room_gifts", { _room_id: roomId });
-      await supabase
-        .from("live_rooms")
-        .update({ status: "ended", ended_at: new Date().toISOString() })
-        .eq("id", roomId);
+      try {
+        // Convert accumulated gift points into diamonds for each receiver
+        // before the room is marked as ended.
+        const { error: finErr } = await supabase.rpc("finalize_room_gifts", {
+          _room_id: roomId,
+        });
+        if (finErr) throw finErr;
+        const { error: updErr } = await supabase
+          .from("live_rooms")
+          .update({ status: "ended", ended_at: new Date().toISOString() })
+          .eq("id", roomId);
+        if (updErr) throw updErr;
+      } catch (e) {
+        // Do NOT navigate away on a partial failure — the room would be
+        // stuck as "live" with unpaid diamonds. Surface the error so host
+        // can retry.
+        toast.error(`Couldn't end room: ${(e as Error).message}`);
+        return;
+      }
     }
     navigate({ to: "/" });
   }
@@ -848,8 +861,11 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
-    await agora.toggleMute();
+    // Compute the post-toggle value BEFORE the toggle so the DB write matches
+    // the new state — `agora.muted` is React state that only updates on next
+    // render.
     const nextMuted = !agora.muted;
+    await agora.toggleMute();
     if (user) {
       await supabase
         .from("room_members")
@@ -863,6 +879,24 @@ function RoomPage() {
     return (
       <div className="min-h-dvh grid place-items-center bg-background">
         <div className="text-sm text-muted-foreground">Loading room…</div>
+      </div>
+    );
+  }
+  if (room.isError) {
+    return (
+      <div className="min-h-dvh grid place-items-center bg-background p-6 text-center">
+        <div className="max-w-sm">
+          <p className="text-sm font-semibold text-destructive">Failed to load room</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {(room.error as Error)?.message ?? "Please check your connection."}
+          </p>
+          <button
+            onClick={() => void room.refetch()}
+            className="glow-4d mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }

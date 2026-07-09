@@ -157,6 +157,29 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           });
         });
 
+        // Renew Agora token before it expires — otherwise publishing silently
+        // stops after the token TTL (~1 hour) with no user-visible error.
+        client.on("token-privilege-will-expire", async () => {
+          try {
+            const { token: newToken } = await fetchToken(
+              channel,
+              uid,
+              publish ? "publisher" : "audience",
+              resolvedKind,
+            );
+            await client.renewToken(newToken);
+            console.info("[agora] token renewed");
+          } catch (err) {
+            console.warn("[agora] token renew failed", err);
+          }
+        });
+
+        client.on("connection-state-change", (curState, prevState, reason) => {
+          console.info("[agora] connection", prevState, "→", curState, reason ?? "");
+          if (curState === "DISCONNECTED") setStatus("connecting");
+          if (curState === "CONNECTED") setStatus("connected");
+        });
+
         const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience", resolvedKind);
         if (cancelled) return;
         await client.join(appId, channel, token, uid);

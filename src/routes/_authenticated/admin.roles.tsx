@@ -51,7 +51,10 @@ function RolesAdmin() {
       if (!prof) throw new Error("User not found");
       const { error } = await supabase.from("user_roles").insert({ user_id: prof.id, role: form.role });
       if (error) throw error;
-      await supabase.from("admin_logs").insert({ action: `grant_${form.role}`, target: prof.id });
+      const { error: logErr } = await supabase
+        .from("admin_logs")
+        .insert({ action: `grant_${form.role}`, target: prof.id });
+      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Role granted");
@@ -65,7 +68,10 @@ function RolesAdmin() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("user_roles").delete().eq("id", id);
       if (error) throw error;
-      await supabase.from("admin_logs").insert({ action: "revoke_role", target: id });
+      const { error: logErr } = await supabase
+        .from("admin_logs")
+        .insert({ action: "revoke_role", target: id });
+      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_roles"] }),
   });

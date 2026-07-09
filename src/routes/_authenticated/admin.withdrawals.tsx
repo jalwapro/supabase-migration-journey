@@ -43,12 +43,18 @@ function WithdrawalsAdmin() {
 
   const act = useMutation({
     mutationFn: async ({ id, status, note }: { id: string; status: "approved" | "rejected"; note?: string }) => {
-      const { error } = await supabase
-        .from("withdrawal_requests")
-        .update({ status, admin_note: note ?? null, processed_at: new Date().toISOString() })
-        .eq("id", id);
-      if (error) throw error;
-      await supabase.from("admin_logs").insert({ action: `withdrawal_${status}`, target: id });
+      // Use RPCs so diamonds are actually paid out / refunded atomically.
+      if (status === "approved") {
+        const { error } = await supabase.rpc("approve_withdrawal", { _request_id: id });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("reject_withdrawal", { _request_id: id, _note: note ?? null });
+        if (error) throw error;
+      }
+      const { error: logErr } = await supabase
+        .from("admin_logs")
+        .insert({ action: `withdrawal_${status}`, target: id });
+      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Updated");
