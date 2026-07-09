@@ -173,14 +173,23 @@ function RoomPage() {
   const room = useQuery({
     queryKey: ["room", roomId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const baseCols =
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar)";
+      // Try with milestone column; fall back if migration 0040 not applied yet.
+      let { data, error } = (await supabase
         .from("live_rooms")
-        .select(
-          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,milestone_awarded_at,host:profiles!live_rooms_host_id_fkey(username,avatar)",
-        )
+        .select(`${baseCols},milestone_awarded_at`)
         .eq("id", roomId)
-        .maybeSingle();
-      if (error) throw error;
+        .maybeSingle()) as { data: unknown; error: unknown };
+      if (error) {
+        const retry = await supabase
+          .from("live_rooms")
+          .select(baseCols)
+          .eq("id", roomId)
+          .maybeSingle();
+        if (retry.error) throw retry.error;
+        data = retry.data;
+      }
       return data as unknown as Room | null;
     },
   });
