@@ -2214,6 +2214,8 @@ function Seat({
   giftPoints = 0,
   receivedGift = false,
   isKing = false,
+  currentUserId,
+  localMuted,
 }: {
   index: number;
   member?: Member;
@@ -2231,6 +2233,8 @@ function Seat({
   giftPoints?: number;
   receivedGift?: boolean;
   isKing?: boolean;
+  currentUserId?: string;
+  localMuted?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -2244,7 +2248,10 @@ function Seat({
   }, [remote?.videoTrack]);
 
   const label = `No.${index + 1}`;
-  const speaking = remote?.hasAudio && !member?.is_muted;
+  const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
+  const effectiveMuted = isSelf ? !!localMuted : !!member?.is_muted;
+  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
+
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
