@@ -119,7 +119,7 @@ const QUICK_GIFTS: { name: string; icon: string; price: number }[] = [
 
 function RoomPage() {
   const { roomId } = Route.useParams();
-  const { user, profile } = useAuth();
+  const { user, profile, refresh } = useAuth();
   const navigate = useNavigate();
 
   const [text, setText] = useState("");
