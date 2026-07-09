@@ -514,6 +514,49 @@ function RoomPage() {
     followsHost.refetch();
   }
 
+  // Daily "love" heart — 100 coins/day → host
+  const lastLove = useQuery({
+    enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
+    queryKey: ["host-love", user?.id, room.data?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("host_love_hearts")
+        .select("created_at")
+        .eq("from_user", user!.id)
+        .eq("to_host", room.data!.host_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data?.created_at ? new Date(data.created_at as string) : null;
+    },
+  });
+  const [loveBlink, setLoveBlink] = useState(false);
+  const loveCooling =
+    !!lastLove.data && lastLove.data.getTime() > Date.now() - 24 * 60 * 60 * 1000;
+
+  async function sendLove() {
+    if (!user || !room.data) return;
+    if (loveCooling) {
+      toast.info("Daily heart already sent — come back tomorrow 💤");
+      return;
+    }
+    if ((profile?.coins ?? 0) < 100) {
+      toast.error("Need 100 coins");
+      return;
+    }
+    const { error } = await supabase.rpc("send_host_love", {
+      _host: room.data.host_id,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setLoveBlink(true);
+    setTimeout(() => setLoveBlink(false), 3000);
+    toast.success("💖 Love sent — 100 coins");
+    await Promise.all([lastLove.refetch(), refresh()]);
+  }
+
   async function takeSeat(seatIndex: number) {
     if (!user) {
       toast.error("Sign in first");
