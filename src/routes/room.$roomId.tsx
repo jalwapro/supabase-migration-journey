@@ -239,6 +239,10 @@ function RoomPage() {
           .select("coin_score,like_count,gift_count")
           .eq("room_id", roomId)
           .maybeSingle(),
+        supabase
+          .from("gift_sends")
+          .select("receiver_id,diamonds_earned")
+          .eq("room_id", roomId),
       ]);
       if (cancel) return;
       setMembers((mData ?? []) as unknown as Member[]);
