@@ -124,6 +124,7 @@ function RoomPage() {
   const { roomId } = Route.useParams();
   const { user, profile, refresh } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
