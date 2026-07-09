@@ -726,6 +726,22 @@ function RoomPage() {
     return m;
   }, [members]);
 
+  // Winner of the room = seated user with the highest gift points.
+  // Crown only shows once they hit 1,000 points.
+  const kingUserId = useMemo(() => {
+    let bestId: string | null = null;
+    let bestPts = 0;
+    for (const m of members) {
+      if (m.seat_index == null) continue;
+      const p = giftPoints[m.user_id] ?? 0;
+      if (p > bestPts) {
+        bestPts = p;
+        bestId = m.user_id;
+      }
+    }
+    return bestPts >= 1000 ? bestId : null;
+  }, [members, giftPoints]);
+
   const seatedCount = useMemo(
     () => members.filter((m) => m.seat_index != null).length,
     [members],
