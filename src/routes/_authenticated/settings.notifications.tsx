@@ -241,13 +241,7 @@ function SendTestButton() {
     if (!user) return;
     setBusy(true);
     try {
-      const { error } = await supabase.from("notifications").insert({
-        user_id: user.id,
-        kind: "system_broadcast",
-        title: "Test notification 🔔",
-        body: "Agar aap ko ye dikh raha hai to notifications kaam kar rahi hain.",
-        data: { test: true },
-      });
+      const { error } = await supabase.rpc("send_test_notification");
       if (error) throw error;
       toast.success("Test bhej diya — Notifications tab / push check karo");
     } catch (e) {
