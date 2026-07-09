@@ -1928,6 +1928,12 @@ function Seat({
           {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
           <span>{displayName ? `@${displayName}` : "Solo"}</span>
         </div>
+        {member?.is_moderator && !isHostSeat && (
+          <span
+            title="Moderator"
+            className="absolute right-1.5 bottom-1.5 grid h-2.5 w-2.5 place-items-center rounded-full bg-sky-500 ring-2 ring-black shadow-[0_0_8px_rgba(56,189,248,0.9)]"
+          />
+        )}
       </button>
     );
   }
