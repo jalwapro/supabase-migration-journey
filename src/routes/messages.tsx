@@ -30,30 +30,18 @@ function MessagesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [tab, setTab] = useState<"chats" | "friends" | "add">("chats");
-
-  if (!user) {
-    return (
-      <>
-        <AppShell title="Messages">
-          <div className="px-6 pt-12 text-center">
-            <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground" />
-            <p className="mt-3 text-sm text-muted-foreground">Sign in to chat with friends</p>
-            <Link to="/auth" className="glow-4d mt-4 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground">Sign in</Link>
-          </div>
-        </AppShell>
-        <BottomNav />
-      </>
-    );
-  }
+  const uid = user?.id ?? null;
 
   // People I follow (my "friends" for chat purposes)
   const following = useQuery({
-    queryKey: ["chat-following", user.id],
+    queryKey: ["chat-following", uid],
+    enabled: !!uid,
     queryFn: async () => {
+      if (!uid) return [] as PeerProfile[];
       const { data: rows, error } = await supabase
         .from("follows")
         .select("following_id, created_at")
-        .eq("follower_id", user.id)
+        .eq("follower_id", uid)
         .order("created_at", { ascending: false });
       if (error) throw error;
       const ids = (rows ?? []).map((r: any) => r.following_id);
@@ -68,18 +56,20 @@ function MessagesPage() {
 
   // DM inbox — all conversations
   const inbox = useQuery({
-    queryKey: ["dm_index", user.id],
+    queryKey: ["dm_index", uid],
+    enabled: !!uid,
     queryFn: async () => {
+      if (!uid) return { list: [], peers: new Map<string, PeerProfile>() };
       const { data, error } = await supabase
         .from("direct_messages")
         .select("sender_id,recipient_id,message,kind,created_at,read_at")
-        .or(`sender_id.eq.${user.id},recipient_id.eq.${user.id}`)
+        .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
         .order("created_at", { ascending: false })
         .limit(300);
       if (error) throw error;
       const map = new Map<string, LastMsg>();
       for (const m of data ?? []) {
-        const peer = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        const peer = m.sender_id === uid ? m.recipient_id : m.sender_id;
         const preview =
           m.kind === "image" ? "📷 Photo"
           : m.kind === "video" ? "🎬 Video"
@@ -93,9 +83,9 @@ function MessagesPage() {
             peer_id: peer,
             text: preview,
             created_at: m.created_at,
-            unread: m.recipient_id === user.id && !m.read_at ? 1 : 0,
+            unread: m.recipient_id === uid && !m.read_at ? 1 : 0,
           });
-        } else if (m.recipient_id === user.id && !m.read_at) {
+        } else if (m.recipient_id === uid && !m.read_at) {
           existing.unread += 1;
         }
       }
@@ -115,17 +105,36 @@ function MessagesPage() {
 
   // Realtime — invalidate on DM or follow change
   useEffect(() => {
+    if (!uid) return;
     const ch = supabase
-      .channel(`chat-index-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages" }, () => {
-        qc.invalidateQueries({ queryKey: ["dm_index", user.id] });
+      .channel(`chat-index-${uid}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` }, () => {
+        qc.invalidateQueries({ queryKey: ["dm_index", uid] });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "follows" }, () => {
-        qc.invalidateQueries({ queryKey: ["chat-following", user.id] });
+      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` }, () => {
+        qc.invalidateQueries({ queryKey: ["dm_index", uid] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${uid}` }, () => {
+        qc.invalidateQueries({ queryKey: ["chat-following", uid] });
       })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
-  }, [user.id, qc]);
+  }, [uid, qc]);
+
+  if (!user) {
+    return (
+      <>
+        <AppShell title="Messages">
+          <div className="px-6 pt-12 text-center">
+            <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground" />
+            <p className="mt-3 text-sm text-muted-foreground">Sign in to chat with friends</p>
+            <Link to="/auth" className="glow-4d mt-4 inline-flex rounded-full bg-primary px-5 py-2 text-xs font-bold text-primary-foreground">Sign in</Link>
+          </div>
+        </AppShell>
+        <BottomNav />
+      </>
+    );
+  }
 
   const chatList = (inbox.data?.list ?? []).sort((a, b) =>
     b.created_at.localeCompare(a.created_at),
