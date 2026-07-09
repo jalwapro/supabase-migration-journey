@@ -51,6 +51,7 @@ function DmThread() {
   const [attachBusy, setAttachBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [showAlbum, setShowAlbum] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const mediaRec = useRef<MediaRecorder | null>(null);
