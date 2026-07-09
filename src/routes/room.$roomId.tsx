@@ -1351,6 +1351,62 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      {milestoneOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setMilestoneOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#1a0b2e] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-base font-black text-white">⭐ Award Milestone Gift</p>
+                <p className="text-[11px] text-white/60">Room hit 300k coins — pick the top gifter to receive the milestone gift.</p>
+              </div>
+              <button
+                onClick={() => setMilestoneOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+              {topGifters.length === 0 ? (
+                <p className="py-6 text-center text-xs text-white/60">Loading top gifters…</p>
+              ) : (
+                topGifters.map((g, i) => (
+                  <button
+                    key={g.user_id}
+                    disabled={awarding}
+                    onClick={() => awardMilestone(g.user_id)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-[color:var(--gold)]/60 disabled:opacity-60"
+                  >
+                    <span className="w-5 text-center text-xs font-black text-[color:var(--gold)]">{i + 1}</span>
+                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-white/20">
+                      {g.avatar ? (
+                        <img src={g.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-white">
+                          {(g.username ?? "?").slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-white">@{g.username ?? "user"}</p>
+                      <p className="text-[10px] text-[color:var(--gold)]">🪙 {Number(g.total_coins).toLocaleString()}</p>
+                    </div>
+                    <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[10px] font-black text-black">
+                      Award
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <LudoSheet
         open={ludoOpen}
         onClose={() => setLudoOpen(false)}
