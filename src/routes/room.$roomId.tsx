@@ -898,6 +898,12 @@ function RoomPage() {
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => onSeatTap(i)}
                         glowing={!!glowSeats[i]}
+                        locked={lockedSeats.includes(i)}
+                        onEmptyManage={
+                          isHost || isModerator
+                            ? () => setManageEmptySeat(i)
+                            : undefined
+                        }
                       />
                     );
                   })}
