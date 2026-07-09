@@ -34,7 +34,10 @@ export function GiftSheet({
   const { profile, refresh } = useAuth();
   const qc = useQueryClient();
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
-  const [receiverId, setReceiverId] = useState<string | null>(receivers[0]?.id ?? null);
+  const [receiverId, setReceiverId] = useState<string | null>(
+    receivers[0]?.id ?? null,
+  );
+  const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
 
   const gifts = useQuery({
@@ -54,14 +57,21 @@ export function GiftSheet({
   const send = useMutation({
     mutationFn: async () => {
       if (!selectedGift) throw new Error("Pick a gift");
-      if (!receiverId) throw new Error("Pick a receiver");
-      const { error } = await supabase.rpc("send_gift", {
-        _room_id: roomId,
-        _receiver_id: receiverId,
-        _gift_id: selectedGift.id,
-        _quantity: qty,
-      });
-      if (error) throw error;
+      const targets = sendToAll
+        ? receivers.map((r) => r.id)
+        : receiverId
+          ? [receiverId]
+          : [];
+      if (targets.length === 0) throw new Error("Pick a receiver");
+      for (const rid of targets) {
+        const { error } = await supabase.rpc("send_gift", {
+          _room_id: roomId,
+          _receiver_id: rid,
+          _gift_id: selectedGift.id,
+          _quantity: qty,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: async () => {
       toast.success("Gift sent 🎁");
