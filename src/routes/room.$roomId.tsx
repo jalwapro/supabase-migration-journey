@@ -1274,11 +1274,17 @@ function RoomPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => void toggleMuteWithSync()}
-              aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
+              title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
+              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+                agora.micBlocked
+                  ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
+                  : "border-white/15 bg-black/50 text-white"
+              }`}
             >
-              {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
+
             <button
               onClick={agora.toggleSpeaker}
               aria-label={agora.speakerMuted ? "Unmute room audio" : "Mute room audio"}
