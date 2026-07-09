@@ -1104,6 +1104,8 @@ function RoomPage() {
                   onClaim: () => void takeSeat(i),
                   onLike: () => void onSeatTap(i),
                   likeCount: seatLikes[i] ?? 0,
+                  currentUserId: user?.id,
+                  localMuted: agora.muted,
                 };
               })}
             />
@@ -1717,6 +1719,8 @@ type VideoSeatData = {
   onClaim: () => void;
   onLike: () => void;
   likeCount: number;
+  currentUserId?: string;
+  localMuted?: boolean;
 };
 
 function VideoSeatGrid({
@@ -1791,7 +1795,7 @@ function VideoTile({
   coverUrl: string | null;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
-  const { member, remote, isHostSeat, fallbackUser, onClaim, onLike, index, likeCount } = data;
+  const { member, remote, isHostSeat, fallbackUser, onClaim, onLike, index, likeCount, currentUserId, localMuted } = data;
 
   useEffect(() => {
     if (remote?.videoTrack && videoRef.current) {
@@ -1804,7 +1808,9 @@ function VideoTile({
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
-  const speaking = remote?.hasAudio && !member?.is_muted;
+  const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
+  const effectiveMuted = isSelf ? !!localMuted : !!member?.is_muted;
+  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
   const label = `No.${index + 1}`;
 
   return (
@@ -1844,7 +1850,7 @@ function VideoTile({
       {/* footer chip */}
       <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
         <span className="flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10.5px] font-bold text-white backdrop-blur">
-          {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          {effectiveMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
           <span className="truncate max-w-[90px]">
             {displayName ? `@${displayName}` : "Empty"}
           </span>
