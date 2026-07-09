@@ -123,12 +123,13 @@ export function GiftSheet({
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="glass mx-auto w-full max-w-md rounded-t-3xl border-t border-border bg-background/95 p-4"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+        className="mx-auto w-full max-w-md rounded-t-3xl border-t border-border bg-background p-4 shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)", contain: "layout paint" }}
       >
+
         <div className="mb-3 flex items-center justify-between">
           <h3 className="font-bold">Send a Gift</h3>
           <div className="flex items-center gap-1.5 rounded-full bg-card/60 px-2 py-1 text-[11px] font-bold text-[color:var(--gold)]">
