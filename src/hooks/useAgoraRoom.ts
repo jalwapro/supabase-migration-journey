@@ -239,10 +239,60 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, channel, uid, publish, video]);
 
+  const requestMic = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client) {
+      setMicError("Not connected to room yet");
+      return false;
+    }
+    if (client.connectionState !== "CONNECTED") {
+      setMicError("Still connecting to room, please wait");
+      return false;
+    }
+    // Already have a track — just ensure unmuted.
+    if (localAudioRef.current) {
+      try {
+        await localAudioRef.current.setMuted(false);
+        setMuted(false);
+        setMicBlocked(false);
+        setMicError(null);
+        return true;
+      } catch (e) {
+        console.warn("[agora] requestMic unmute failed", e);
+      }
+    }
+    try {
+      const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
+      const audio = await AgoraRTC.createMicrophoneAudioTrack();
+      localAudioRef.current = audio;
+      await client.publish(audio);
+      setMuted(false);
+      setMicBlocked(false);
+      setMicError(null);
+      return true;
+    } catch (e) {
+      const err = e as { name?: string; code?: string; message?: string };
+      const name = err?.name ?? err?.code ?? "";
+      console.warn("[agora] requestMic failed", err);
+      setMicBlocked(true);
+      setMicError(
+        name === "NotAllowedError" || name === "PERMISSION_DENIED"
+          ? "Microphone permission denied. Enable it in browser Site Settings, then retry."
+          : name === "NotFoundError" || name === "DEVICE_NOT_FOUND"
+            ? "No microphone found on this device."
+            : name === "NotReadableError"
+              ? "Microphone is in use by another app. Close it and retry."
+              : err?.message ?? "Could not access microphone.",
+      );
+      return false;
+    }
+  }, []);
+
   const toggleMute = useCallback(async () => {
     const track = localAudioRef.current;
     if (!track) {
-      console.warn("[agora] toggleMute: no local audio track yet");
+      // No track yet — try to acquire it via a user-gesture request.
+      await requestMic();
       return;
     }
     const next = !muted;
@@ -254,7 +304,8 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     } catch (e) {
       console.error("[agora] setMuted failed", e);
     }
-  }, [muted]);
+  }, [muted, requestMic]);
+
 
 
   const toggleSpeaker = useCallback(() => {
