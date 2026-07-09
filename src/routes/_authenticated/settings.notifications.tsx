@@ -118,6 +118,9 @@ function Page() {
                   <MasterToggle label="Email notifications" value={q.data?.email_enabled ?? true}
                     onChange={(v) => save.mutate({ email_enabled: v })} />
                 </div>
+                <div className="mt-3 border-t border-border pt-3">
+                  <SendTestButton />
+                </div>
               </div>
 
 
