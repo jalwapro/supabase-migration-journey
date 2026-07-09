@@ -62,10 +62,13 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const speakerMutedRef = useRef(false);
   const [videoOn, setVideoOn] = useState(video);
+  const [micBlocked, setMicBlocked] = useState(false);
+  const [micError, setMicError] = useState<string | null>(null);
 
   const musicTrackRef = useRef<IBufferSourceAudioTrack | null>(null);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicTitle, setMusicTitle] = useState<string | null>(null);
+
 
   const teardown = useCallback(async () => {
     const client = clientRef.current;
