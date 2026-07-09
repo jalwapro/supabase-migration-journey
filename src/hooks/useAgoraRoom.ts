@@ -117,30 +117,39 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
 
   const teardown = useCallback(async () => {
+    // Capture refs at the start. Cleanup from the previous join can overlap
+    // with a new join after taking a seat; never let old cleanup close or null
+    // the new client/tracks.
     const client = clientRef.current;
-    if (musicTrackRef.current) {
-      try { musicTrackRef.current.stopProcessAudioBuffer(); } catch { /* ignore */ }
-      try { if (client) await client.unpublish(musicTrackRef.current); } catch { /* ignore */ }
-      try { musicTrackRef.current.close(); } catch { /* ignore */ }
-      musicTrackRef.current = null;
+    const musicTrack = musicTrackRef.current;
+    const audioTrack = localAudioRef.current;
+    const videoTrack = localVideoRef.current;
+
+    if (musicTrack) {
+      try { musicTrack.stopProcessAudioBuffer(); } catch { /* ignore */ }
+      try { if (client) await client.unpublish(musicTrack); } catch { /* ignore */ }
+      try { musicTrack.close(); } catch { /* ignore */ }
+      if (musicTrackRef.current === musicTrack) musicTrackRef.current = null;
       setMusicPlaying(false);
       setMusicTitle(null);
     }
-    if (localAudioRef.current) {
-      localAudioPublishedRef.current = false;
-      localAudioRef.current.stop();
-      localAudioRef.current.close();
-      localAudioRef.current = null;
+    if (audioTrack) {
+      try { audioTrack.stop(); } catch { /* ignore */ }
+      try { audioTrack.close(); } catch { /* ignore */ }
+      if (localAudioRef.current === audioTrack) {
+        localAudioPublishedRef.current = false;
+        localAudioRef.current = null;
+      }
     }
-    if (localVideoRef.current) {
-      localVideoRef.current.stop();
-      localVideoRef.current.close();
-      localVideoRef.current = null;
+    if (videoTrack) {
+      try { videoTrack.stop(); } catch { /* ignore */ }
+      try { videoTrack.close(); } catch { /* ignore */ }
+      if (localVideoRef.current === videoTrack) localVideoRef.current = null;
     }
     if (client) {
       try { await client.leave(); } catch { /* ignore */ }
       client.removeAllListeners();
-      clientRef.current = null;
+      if (clientRef.current === client) clientRef.current = null;
     }
     setRemotes(new Map());
     setStatus("idle");
@@ -299,6 +308,12 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     // otherwise Safari/iOS lose the user-gesture context and the mic prompt
     // silently fails. Do NOT add awaits (permission query, dynamic import,
     // network calls) before this line.
+    if ((client.connectionState as string) !== "CONNECTED") {
+      const message = "Still connecting to room. Tap the mic again in a moment.";
+      setMicIssue(message, false);
+      return { ok: false, error: message };
+    }
+
     if (!localAudioRef.current) {
       const AgoraRTC = cachedAgoraRTC;
       if (!AgoraRTC) {
@@ -334,19 +349,6 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       await localAudioRef.current.setMuted(false);
     } catch (e) {
       console.warn("[agora] setMuted(false) failed", e);
-    }
-
-    // Wait for client to be connected before publish.
-    if ((client.connectionState as string) !== "CONNECTED") {
-      const start = Date.now();
-      while ((client.connectionState as string) !== "CONNECTED" && Date.now() - start < 8000) {
-        await new Promise((r) => setTimeout(r, 150));
-      }
-      if ((client.connectionState as string) !== "CONNECTED") {
-        const message = "Still connecting to room. Mic is ready — tap again in a moment.";
-        setMicIssue(message, false);
-        return { ok: false, error: message };
-      }
     }
 
     if (client.role !== "host") {
