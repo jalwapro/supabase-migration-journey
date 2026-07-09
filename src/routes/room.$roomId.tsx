@@ -365,7 +365,6 @@ function RoomPage() {
             coins_spent: number;
             quantity: number;
             receiver_id: string | null;
-            diamonds_earned: number | null;
           };
           setPopularity((p) => ({
             ...p,
@@ -376,7 +375,7 @@ function RoomPage() {
             const rid = row.receiver_id;
             setGiftPoints((prev) => ({
               ...prev,
-              [rid]: (prev[rid] ?? 0) + Number(row.diamonds_earned ?? 0),
+              [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
             }));
             const stamp = Date.now();
             setRecentGiftUsers((prev) => ({ ...prev, [rid]: stamp }));
