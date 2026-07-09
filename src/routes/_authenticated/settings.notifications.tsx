@@ -177,3 +177,57 @@ function Check3({ v, onChange }: { v: boolean; onChange: (v: boolean) => void })
     </button>
   );
 }
+
+function BrowserPushToggle() {
+  const { user } = useAuth();
+  const [status, setStatus] = useState<"unknown" | "unsupported" | "denied" | "granted" | "default" | "subscribed">("unknown");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { currentPushStatus().then(setStatus).catch(() => setStatus("unsupported")); }, []);
+
+  if (!isWebPushSupported()) {
+    return <div className="text-xs text-muted-foreground">Browser push not supported on this device.</div>;
+  }
+  const subscribed = status === "subscribed";
+  const denied = status === "denied";
+
+  const enable = async () => {
+    if (!user) return;
+    setBusy(true);
+    try { await subscribeToPush(user.id); setStatus("subscribed"); toast.success("Browser notifications enabled"); }
+    catch (e) { toast.error((e as Error).message); setStatus(await currentPushStatus()); }
+    finally { setBusy(false); }
+  };
+  const disable = async () => {
+    if (!user) return;
+    setBusy(true);
+    try { await unsubscribeFromPush(user.id); setStatus("default"); toast("Browser notifications disabled"); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 text-sm font-semibold">
+          {subscribed ? <Bell className="h-4 w-4 text-[color:var(--primary)]" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+          Browser push (this device)
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          {denied ? "Blocked in browser settings — enable in site permissions." :
+            subscribed ? "You'll get notifications even when the tab is closed." :
+            "Get notified in this browser when the tab is closed."}
+        </div>
+      </div>
+      {denied ? null : subscribed ? (
+        <button onClick={disable} disabled={busy} className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50">
+          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Disable"}
+        </button>
+      ) : (
+        <button onClick={enable} disabled={busy} className="rounded-full bg-[color:var(--primary)] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">
+          {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : "Enable"}
+        </button>
+      )}
+    </div>
+  );
+}
+
