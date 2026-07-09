@@ -727,6 +727,23 @@ function RoomPage() {
     if (error) console.warn("[emoji]", error.message);
   }
 
+  async function sendAnimatedEmoji(e: ChatEmoji) {
+    if (!user) {
+      toast.error("Sign in to send");
+      return;
+    }
+    const { error } = await supabase.from("chat_emoji_sends").insert({
+      sender_id: user.id,
+      room_id: roomId,
+      emoji_slug: e.slug,
+      emoji_char: e.emoji,
+      emoji_name: e.name,
+      clip_path: e.clip_path,
+    });
+    if (error) toast.error(error.message);
+  }
+
+
   async function openMilestoneSheet() {
     setMilestoneOpen(true);
     const { data, error } = await supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 20 });
