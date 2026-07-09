@@ -2213,6 +2213,9 @@ function Seat({
     );
   }
 
+  // Host seat (index 0) turns red + locked when the host is NOT sitting on it.
+  const hostAwayFromSeat = isHostSeat && !member;
+
   return (
     <div
       data-seat-index={index}
@@ -2225,48 +2228,46 @@ function Seat({
       <button
         onClick={() => {
           if (member) return onLike();
+          if (hostAwayFromSeat) return; // seat 0 reserved for host
           if (locked && onEmptyManage) return onEmptyManage();
           if (locked) return;
           if (onEmptyManage) return onEmptyManage();
           return onClaim();
         }}
         className="relative aspect-square w-full"
-        aria-label={member ? `Manage seat ${label}` : locked ? `Locked ${label}` : `Take ${label}`}
+        aria-label={member ? `Manage seat ${label}` : hostAwayFromSeat ? "Host seat reserved" : locked ? `Locked ${label}` : `Take ${label}`}
       >
         {isHostSeat && (
-          <div className="pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
+          <div className={`pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed animate-spin-slow ${
+            hostAwayFromSeat ? "border-red-500/80" : "border-[color:var(--gold)]/60"
+          }`} />
         )}
-        {locked && !member && (
+        {locked && !member && !hostAwayFromSeat && (
           <div className="pointer-events-none absolute inset-[8%] z-20 grid place-items-center rounded-full bg-black/60 backdrop-blur-sm">
             <span className="text-lg">🔒</span>
           </div>
         )}
-        <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${ringClass}`}>
-          {isHostSeat && !displayAvatar && cover && (
+        {hostAwayFromSeat && (
+          <div className="pointer-events-none absolute inset-[8%] z-20 grid place-items-center rounded-full bg-red-600/40 backdrop-blur-sm ring-2 ring-red-500">
+            <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">Host</span>
+          </div>
+        )}
+        <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${
+          hostAwayFromSeat ? "ring-2 ring-red-500 shadow-[0_0_18px_-2px_rgba(239,68,68,0.7)]" : ringClass
+        }`}>
+          {isHostSeat && !displayAvatar && cover && !hostAwayFromSeat && (
             <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
           )}
           {displayAvatar && !remote?.videoTrack && (
             <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
           {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
-          {!displayAvatar && !remote?.videoTrack && (
+          {!displayAvatar && !remote?.videoTrack && !hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center">
-              {isHostSeat ? (
-                <div className="relative grid h-full w-full place-items-center">
-                  <Crown className="absolute top-1 h-3 w-3 text-[color:var(--gold)]" />
-                  <Armchair className="h-1/2 w-1/2 text-[color:var(--gold)]/90" strokeWidth={1.5} />
-                </div>
-              ) : (
-                <Armchair className="h-1/2 w-1/2 text-white/60" strokeWidth={1.5} />
-              )}
+              <Armchair className={`h-1/2 w-1/2 ${isHostSeat ? "text-[color:var(--gold)]/90" : "text-white/60"}`} strokeWidth={1.5} />
             </div>
           )}
         </div>
-        {isHostSeat && displayAvatar && (
-          <span className="absolute -top-1 left-1/2 z-10 -translate-x-1/2 rounded bg-gradient-to-r from-[color:var(--gold)] to-amber-500 px-1 py-0.5 text-[8px] font-black uppercase tracking-wider text-black shadow">
-            <Crown className="inline h-2 w-2" />
-          </span>
-        )}
         {(member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             {member?.is_muted ? (
@@ -2288,31 +2289,42 @@ function Seat({
             {likeCount}
           </span>
         )}
+        {/* King crown — bigger, corner-mounted */}
         {isKing && (
           <span
             title="Top gifter"
-            className="pointer-events-none absolute -top-3 left-1/2 z-30 -translate-x-1/2 text-lg leading-none drop-shadow-[0_2px_6px_rgba(255,200,60,0.9)] animate-bounce"
+            className="pointer-events-none absolute -top-2 -right-2 z-30 grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-amber-400 to-orange-500 text-base leading-none shadow-[0_0_14px_rgba(255,200,60,0.95)] ring-2 ring-black animate-bounce"
           >
             👑
           </span>
         )}
+        {/* Gift sparkle burst — lands on user after center gift animation */}
+        {receivedGift && (
+          <>
+            <span className="pointer-events-none absolute inset-0 z-20 grid place-items-center text-3xl animate-ping">✨</span>
+            <span className="pointer-events-none absolute -top-3 -left-2 z-30 text-lg animate-bounce">✨</span>
+            <span className="pointer-events-none absolute -bottom-2 -right-2 z-30 text-lg animate-bounce">💫</span>
+          </>
+        )}
       </button>
-      {receivedGift && (
-        <span
-          title="Just received a gift"
-          className="pointer-events-none absolute -bottom-1 left-1/2 z-20 -translate-x-1/2 text-sm leading-none drop-shadow-[0_2px_6px_rgba(255,120,180,0.9)] animate-bounce"
-        >
-          🎁
-        </span>
-      )}
-      {giftPoints > 0 && (
-        <span className="rounded-full bg-black/70 px-1.5 py-[1px] text-[8px] font-black leading-none text-[color:var(--gold)] backdrop-blur">
+      {/* When occupied, hide "No.X" and show the diamond points box in its place */}
+      {member ? (
+        <span className={`rounded-full px-2 py-[2px] text-[10px] font-black leading-none backdrop-blur transition-transform ${
+          receivedGift ? "scale-125" : ""
+        } ${
+          giftPoints > 0
+            ? "bg-gradient-to-r from-[color:var(--gold)]/90 to-orange-400 text-black shadow-[0_0_10px_rgba(255,200,60,0.7)]"
+            : "bg-black/70 text-white/85"
+        }`}>
           💎 {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
         </span>
+      ) : (
+        <span className={`text-[10px] font-black leading-tight ${
+          hostAwayFromSeat ? "text-red-400" : isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"
+        }`}>
+          {hostAwayFromSeat ? "Host" : label}
+        </span>
       )}
-      <span className={`text-[10px] font-black leading-tight ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
-        {label}
-      </span>
     </div>
   );
 }

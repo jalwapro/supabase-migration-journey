@@ -356,7 +356,7 @@ function Home() {
           <section className="px-4 pt-3">
             {(() => { const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS; return list.length > 0 ? (
               <>
-                <div className="glow-4d relative aspect-[16/8] w-full overflow-hidden rounded-3xl border border-white/10">
+                <div className="glow-4d relative aspect-[11/4] w-full overflow-hidden rounded-3xl border border-white/10 bg-black">
                   <div
                     ref={bannerRef}
                     className="flex h-full w-full transition-transform duration-500 ease-out"
@@ -368,8 +368,16 @@ function Home() {
                         href={b.link_url ?? "#"}
                         className="relative block h-full w-full shrink-0"
                       >
-                        <img src={b.image_url} alt={b.title ?? ""} className="h-full w-full object-cover" loading="lazy" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                        <img
+                          src={b.image_url}
+                          alt={b.title ?? ""}
+                          className="h-full w-full object-cover object-center"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                         {b.title && (
                           <div className="absolute inset-x-4 bottom-3">
                             <p className="text-sm font-bold text-white drop-shadow">{b.title}</p>
