@@ -245,9 +245,16 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       setMicError("Not connected to room yet");
       return false;
     }
-    if (client.connectionState !== "CONNECTED") {
-      setMicError("Still connecting to room, please wait");
-      return false;
+    if ((client.connectionState as string) !== "CONNECTED") {
+      // Wait briefly for connection to complete instead of failing immediately.
+      const start = Date.now();
+      while ((client.connectionState as string) !== "CONNECTED" && Date.now() - start < 5000) {
+        await new Promise((r) => setTimeout(r, 200));
+      }
+      if ((client.connectionState as string) !== "CONNECTED") {
+        setMicError("Still connecting to room, please wait a moment and try again");
+        return false;
+      }
     }
     // Already have a track — just ensure unmuted.
     if (localAudioRef.current) {
