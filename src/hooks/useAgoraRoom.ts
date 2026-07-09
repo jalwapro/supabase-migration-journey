@@ -247,10 +247,18 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     if (!client) return;
     if (localVideoRef.current) {
       localVideoRef.current.stop();
-      await client.unpublish(localVideoRef.current);
+      try { await client.unpublish(localVideoRef.current); } catch { /* ignore */ }
       localVideoRef.current.close();
       localVideoRef.current = null;
       setVideoOn(false);
+      return;
+    }
+    if (client.connectionState !== "CONNECTED") {
+      console.warn("[agora] cannot publish video, not connected:", client.connectionState);
+      return;
+    }
+    if (client.role !== "host") {
+      console.warn("[agora] cannot publish video, role is audience");
       return;
     }
     try {
@@ -263,6 +271,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       console.warn("[agora] camera failed", e);
     }
   }, []);
+
 
   const playMusicFile = useCallback(async (file: Blob, title: string) => {
     const client = clientRef.current;
