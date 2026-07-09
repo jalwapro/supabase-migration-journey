@@ -1150,6 +1150,8 @@ function RoomPage() {
                             ? () => setManageEmptySeat(i)
                             : undefined
                         }
+                        currentUserId={user?.id}
+                        localMuted={agora.muted}
                       />
                     );
                   })}
@@ -2214,6 +2216,8 @@ function Seat({
   giftPoints = 0,
   receivedGift = false,
   isKing = false,
+  currentUserId,
+  localMuted,
 }: {
   index: number;
   member?: Member;
@@ -2231,6 +2235,8 @@ function Seat({
   giftPoints?: number;
   receivedGift?: boolean;
   isKing?: boolean;
+  currentUserId?: string;
+  localMuted?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -2244,7 +2250,10 @@ function Seat({
   }, [remote?.videoTrack]);
 
   const label = `No.${index + 1}`;
-  const speaking = remote?.hasAudio && !member?.is_muted;
+  const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
+  const effectiveMuted = isSelf ? !!localMuted : !!member?.is_muted;
+  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
+
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
@@ -2287,7 +2296,7 @@ function Seat({
           )}
         </div>
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
-          {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          {effectiveMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
           <span>{displayName ? `@${displayName}` : "Solo"}</span>
         </div>
         {member?.is_moderator && !isHostSeat && (
@@ -2357,7 +2366,7 @@ function Seat({
         </div>
         {(member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
-            {member?.is_muted ? (
+            {effectiveMuted ? (
               <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
             ) : (
               <Mic className="h-2 w-2 text-[color:var(--primary)]" />
