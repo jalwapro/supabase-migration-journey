@@ -863,10 +863,10 @@ function RoomPage() {
     }
     // If browser blocked mic earlier, try to re-request permission on this
     // user gesture. Show the exact reason if it fails again.
-    if (agora.micBlocked || !agora.localAudioTrack.current) {
-      const ok = await agora.requestMic();
-      if (!ok) {
-        toast.error(agora.micError ?? "Microphone unavailable", {
+    if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
+      const result = await agora.requestMic();
+      if (!result.ok) {
+        toast.error(result.error ?? agora.micError ?? "Microphone unavailable", {
           description:
             "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again.",
           duration: 8000,
