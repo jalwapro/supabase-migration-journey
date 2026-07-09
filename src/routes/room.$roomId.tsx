@@ -159,7 +159,7 @@ function RoomPage() {
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
-    { id: string; emoji: string; seat: number }[]
+    { id: string; emoji: string; seat: number; clip?: string | null }[]
   >([]);
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
