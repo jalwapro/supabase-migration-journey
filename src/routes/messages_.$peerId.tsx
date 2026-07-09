@@ -170,11 +170,15 @@ function DmThread() {
 
   async function insertMsg(row: Partial<DM>) {
     if (!user) return;
-    const { error } = await supabase.from("direct_messages").insert({
-      sender_id: user.id,
-      recipient_id: peerId,
-      ...row,
-    });
+    const { data, error } = await supabase
+      .from("direct_messages")
+      .insert({
+        sender_id: user.id,
+        recipient_id: peerId,
+        ...row,
+      })
+      .select("id,sender_id,recipient_id,message,kind,media_url,media_mime,duration_seconds,gallery_image_id,read_at,created_at")
+      .single();
     if (error) {
       if (error.message.includes("row-level")) {
         toast.error("Friends banne ke baad hi DM bhej sakte ho");
@@ -182,6 +186,10 @@ function DmThread() {
         toast.error(error.message);
       }
       return false;
+    }
+    if (data) {
+      setMessages((prev) => (prev.some((m) => m.id === data.id) ? prev : [...prev, data as DM]));
+      qc.invalidateQueries({ queryKey: ["dm_index", user.id] });
     }
     return true;
   }
