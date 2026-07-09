@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAgoraRoom, type RemoteUser } from "@/hooks/useAgoraRoom";
@@ -124,6 +124,7 @@ function RoomPage() {
   const { roomId } = Route.useParams();
   const { user, profile, refresh } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
@@ -414,15 +415,20 @@ function RoomPage() {
           filter: `id=eq.${roomId}`,
         },
         (payload) => {
-          const row = payload.new as { locked_seats: number[] | null };
+          const row = payload.new as Partial<Room> & { locked_seats: number[] | null };
           setLockedSeats(row.locked_seats ?? []);
+          // Merge new fields (seat_count, status, title, cover, viewer_count, etc.)
+          // into the react-query cache so every viewer updates live without refresh.
+          qc.setQueryData(["room", roomId], (prev: Room | null | undefined) =>
+            prev ? ({ ...prev, ...row } as Room) : prev,
+          );
         },
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [roomId]);
+  }, [roomId, qc]);
 
   // Seat invites → popup for recipient
   useEffect(() => {
