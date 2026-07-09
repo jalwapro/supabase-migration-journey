@@ -232,7 +232,10 @@ function GiftsAdmin() {
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold">{g.name}</p>
+                    <p className="truncate font-bold">
+                      {g.is_milestone && <span title="Milestone gift">⭐ </span>}
+                      {g.name}
+                    </p>
                     <p className="truncate text-[10px] text-[color:var(--gold)]">
                       {g.price?.toLocaleString()} · {g.category}
                       {g.clip_type ? ` · ${g.clip_type}` : ""}
