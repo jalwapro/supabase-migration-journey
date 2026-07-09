@@ -216,70 +216,80 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
+  const loadRoomState = useCallback(async () => {
+    const [
+      { data: mData, error: mErr },
+      { data: msgData, error: msgErr },
+      { data: likeData, error: likeErr },
+      { data: popData, error: popErr },
+      { data: giftData, error: giftErr },
+    ] = await Promise.all([
+      supabase
+        .from("room_members")
+        .select(
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar)",
+        )
+        .eq("room_id", roomId),
+      supabase
+        .from("room_messages")
+        .select(
+          "id,user_id,kind,text,message,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
+        )
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("room_seat_likes")
+        .select("seat_index")
+        .eq("room_id", roomId),
+      supabase
+        .from("room_popularity")
+        .select("coin_score,like_count,gift_count")
+        .eq("room_id", roomId)
+        .maybeSingle(),
+      supabase
+        .from("gift_sends")
+        .select("receiver_id,coins_spent")
+        .eq("room_id", roomId),
+    ]);
+    // Surface real errors instead of silently rendering empty state.
+    const firstErr = mErr ?? msgErr ?? likeErr ?? popErr ?? giftErr;
+    if (firstErr) {
+      console.error("[room load]", firstErr);
+      toast.error(`Room data failed: ${firstErr.message}`);
+    }
+    setMembers((mData ?? []) as unknown as Member[]);
+    setMessages(((msgData ?? []) as unknown as Message[]).reverse());
+    const likeMap: Record<number, number> = {};
+    (likeData ?? []).forEach((row: { seat_index: number }) => {
+      likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
+    });
+    setSeatLikes(likeMap);
+    if (popData) {
+      setPopularity({
+        coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
+        like_count: Number((popData as { like_count: number }).like_count ?? 0),
+        gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
+      });
+    }
+    const pts: Record<string, number> = {};
+    (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
+      if (!row.receiver_id) return;
+      pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
+    });
+    setGiftPoints(pts);
+  }, [roomId]);
+
   useEffect(() => {
     let cancel = false;
-    (async () => {
-      const [
-        { data: mData },
-        { data: msgData },
-        { data: likeData },
-        { data: popData },
-        { data: giftData },
-      ] = await Promise.all([
-        supabase
-          .from("room_members")
-          .select(
-            "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar)",
-          )
-          .eq("room_id", roomId),
-        supabase
-          .from("room_messages")
-          .select(
-            "id,user_id,kind,text,message,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
-          )
-          .eq("room_id", roomId)
-          .order("created_at", { ascending: false })
-          .limit(50),
-        supabase
-          .from("room_seat_likes")
-          .select("seat_index")
-          .eq("room_id", roomId),
-        supabase
-          .from("room_popularity")
-          .select("coin_score,like_count,gift_count")
-          .eq("room_id", roomId)
-          .maybeSingle(),
-        supabase
-          .from("gift_sends")
-          .select("receiver_id,coins_spent")
-          .eq("room_id", roomId),
-      ]);
+    void (async () => {
+      await loadRoomState();
       if (cancel) return;
-      setMembers((mData ?? []) as unknown as Member[]);
-      setMessages(((msgData ?? []) as unknown as Message[]).reverse());
-      const likeMap: Record<number, number> = {};
-      (likeData ?? []).forEach((row: { seat_index: number }) => {
-        likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
-      });
-      setSeatLikes(likeMap);
-      if (popData) {
-        setPopularity({
-          coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
-          like_count: Number((popData as { like_count: number }).like_count ?? 0),
-          gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
-        });
-      }
-      const pts: Record<string, number> = {};
-      (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
-        if (!row.receiver_id) return;
-        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
-      });
-      setGiftPoints(pts);
     })();
     return () => {
       cancel = true;
     };
-  }, [roomId]);
+  }, [loadRoomState]);
 
   useEffect(() => {
     const ch = supabase
