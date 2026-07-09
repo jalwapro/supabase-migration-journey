@@ -183,6 +183,7 @@ function GiftsAdmin() {
           ? "svg"
           : "mp4"
         : "none") as Draft["clip_type"],
+      is_milestone: Boolean(g.is_milestone),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
