@@ -1,5 +1,13 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
+import { useNotificationRealtime } from "@/hooks/useNotifications";
+
+function AuthedShell() {
+  useGlobalRealtime();
+  useNotificationRealtime();
+  return <Outlet />;
+}
 
 async function waitForStoredSession() {
   for (const delay of [0, 150, 350, 700, 1200]) {
@@ -24,5 +32,5 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { user: session.user };
   },
-  component: () => <Outlet />,
+  component: AuthedShell,
 });
