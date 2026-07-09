@@ -47,8 +47,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
-import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
-import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
