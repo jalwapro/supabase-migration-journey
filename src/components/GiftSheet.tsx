@@ -206,7 +206,7 @@ export function GiftSheet({
           </div>
           <button
             onClick={() => send.mutate()}
-            disabled={!selectedGift || !receiverId || !canAfford || send.isPending}
+            disabled={!selectedGift || (!sendToAll && !receiverId) || !canAfford || send.isPending}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
             {send.isPending ? (
