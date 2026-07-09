@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="crg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffe27a"/><stop offset="60%" stop-color="#e0a900"/><stop offset="100%" stop-color="#6b4a00"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0%" stop-color="#fff9c9" stop-opacity="0.9"/><stop offset="100%" stop-color="#fff9c9" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="100" cy="105" r="80" fill="url(#glow)">
+    <animate attributeName="r" values="60;90;60" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <g transform="translate(100 110)">
+    <path d="M-60 20 L-60 -10 L-30 10 L0 -30 L30 10 L60 -10 L60 20 Z" fill="url(#crg)" stroke="#6b4a00" stroke-width="2"/>
+    <rect x="-62" y="22" width="124" height="16" rx="4" fill="url(#crg)" stroke="#6b4a00" stroke-width="2"/>
+    <circle cx="-30" cy="10" r="6" fill="#ff4d8f"/>
+    <circle cx="0" cy="-30" r="7" fill="#4dd0ff"/>
+    <circle cx="30" cy="10" r="6" fill="#9b5cff"/>
+  </g>
+  <g fill="#fff">
+    <path d="M40 60 l3 -6 l3 6 l6 3 l-6 3 l-3 6 l-3 -6 l-6 -3 z"><animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite"/></path>
+    <path d="M160 70 l2 -4 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 z"><animate attributeName="opacity" values="1;0;1" dur="1.6s" repeatCount="indefinite"/></path>
+    <path d="M150 40 l2 -4 l2 4 l4 2 l-4 2 l-2 4 l-2 -4 l-4 -2 z"><animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/></path>
+  </g>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="rk" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e8ecff"/><stop offset="100%" stop-color="#8792d6"/></linearGradient>
+    <radialGradient id="fl"><stop offset="0%" stop-color="#fff2a8"/><stop offset="60%" stop-color="#ff8a00"/><stop offset="100%" stop-color="#ff2a2a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 40;0 -20;0 40" dur="2.4s" repeatCount="indefinite"/>
+    <ellipse cx="100" cy="150" rx="18" ry="30" fill="url(#fl)">
+      <animate attributeName="ry" values="20;40;20" dur="0.35s" repeatCount="indefinite"/>
+    </ellipse>
+    <path d="M100 40 C 80 60 78 100 78 120 L 122 120 C 122 100 120 60 100 40 Z" fill="url(#rk)" stroke="#4b5da8" stroke-width="2"/>
+    <circle cx="100" cy="80" r="8" fill="#3fb8ff" stroke="#0a3d70" stroke-width="2"/>
+    <path d="M78 110 L 60 130 L 78 128 Z" fill="#e63946"/>
+    <path d="M122 110 L 140 130 L 122 128 Z" fill="#e63946"/>
+  </g>
+  <g fill="#fff">
+    <circle cx="30" cy="30" r="1.5"><animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite"/></circle>
+    <circle cx="170" cy="45" r="2"><animate attributeName="opacity" values="1;0;1" dur="1.8s" repeatCount="indefinite"/></circle>
+    <circle cx="160" cy="90" r="1.5"><animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/></circle>
+    <circle cx="30" cy="120" r="1.5"><animate attributeName="opacity" values="1;0;1" dur="1.6s" repeatCount="indefinite"/></circle>
+  </g>
+</svg>
