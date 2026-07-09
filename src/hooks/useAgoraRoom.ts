@@ -188,9 +188,27 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
         await client.join(appId, channel, token, uid);
 
         if (publish) {
-          const audio = await AgoraRTC.createMicrophoneAudioTrack();
-          localAudioRef.current = audio;
-          await client.publish(audio);
+          try {
+            const audio = await AgoraRTC.createMicrophoneAudioTrack();
+            localAudioRef.current = audio;
+            await client.publish(audio);
+            setMicBlocked(false);
+            setMicError(null);
+          } catch (e) {
+            const err = e as { name?: string; code?: string; message?: string };
+            const name = err?.name ?? err?.code ?? "";
+            console.warn("[agora] mic denied", err);
+            setMicBlocked(true);
+            setMicError(
+              name === "NotAllowedError" || name === "PERMISSION_DENIED"
+                ? "Microphone permission denied. Enable it in browser settings, then tap the mic to retry."
+                : name === "NotFoundError" || name === "DEVICE_NOT_FOUND"
+                  ? "No microphone found on this device."
+                  : name === "NotReadableError"
+                    ? "Microphone is in use by another app. Close it and retry."
+                    : err?.message ?? "Could not access microphone.",
+            );
+          }
           if (video) {
             try {
               const cam = await AgoraRTC.createCameraVideoTrack();
@@ -203,6 +221,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
             }
           }
         }
+
 
         if (!cancelled) setStatus("connected");
       } catch (e) {
