@@ -122,7 +122,7 @@ function RoomPage() {
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
-  const [animEmojiOpen, setAnimEmojiOpen] = useState(false);
+  
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
