@@ -7,6 +7,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Bell, Check, CheckCheck, Loader2, Settings2, UserPlus, MessageCircle, Gift, Wallet, Radio, Shield, AlertTriangle } from "lucide-react";
 import type { NotificationRow, NotificationKind } from "@/hooks/useNotifications";
+import { openNotification } from "@/components/NotificationPopup";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notifications")({ component: Page });
@@ -134,8 +136,8 @@ function Page() {
                 return (
                   <li
                     key={n.id}
-                    onClick={() => unread && markRead.mutate([n.id])}
-                    className={`glass flex gap-3 rounded-2xl p-3 transition ${unread ? "ring-1 ring-[color:var(--primary)]/40" : "opacity-80"}`}
+                    onClick={() => openNotification(n)}
+                    className={`glass flex cursor-pointer gap-3 rounded-2xl p-3 transition active:scale-[0.99] ${unread ? "ring-1 ring-[color:var(--primary)]/40" : "opacity-80"}`}
                   >
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--primary)]/15 text-[color:var(--primary)]">
                       <Icon className="h-4 w-4" />

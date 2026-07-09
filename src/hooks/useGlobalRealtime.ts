@@ -3,6 +3,9 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { openNotification } from "@/components/NotificationPopup";
+import type { NotificationRow } from "@/hooks/useNotifications";
+
 
 
 /**
@@ -180,12 +183,18 @@ export function useGlobalRealtime() {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-        (payload: { new: { title?: string | null; body?: string | null } }) => {
+        (payload: { new: NotificationRow }) => {
           qc.invalidateQueries({ queryKey: ["notif-unread"] });
           qc.invalidateQueries({ queryKey: ["notif-feed"] });
           const row = payload.new;
-          if (row?.title) toast(row.title, { description: row.body ?? undefined });
+          if (row?.title) {
+            toast(row.title, {
+              description: row.body ?? undefined,
+              action: { label: "Open", onClick: () => openNotification(row) },
+            });
+          }
         },
+
       )
       .subscribe();
 
