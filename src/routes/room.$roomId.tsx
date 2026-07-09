@@ -173,7 +173,7 @@ function RoomPage() {
       const { data, error } = await supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar)",
+          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,milestone_awarded_at,host:profiles!live_rooms_host_id_fkey(username,avatar)",
         )
         .eq("id", roomId)
         .maybeSingle();
