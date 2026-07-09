@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="rp" cx="50%" cy="50%"><stop offset="0%" stop-color="#ff5b7a"/><stop offset="100%" stop-color="#8b0025"/></radialGradient>
+    <linearGradient id="stem" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2f8f3a"/><stop offset="100%" stop-color="#0d3a12"/></linearGradient>
+  </defs>
+  <path d="M100 180 Q105 130 100 90" stroke="url(#stem)" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M100 140 Q75 130 65 145 Q85 155 100 145" fill="#2f8f3a"/>
+  <g transform="translate(100 80)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0;360" dur="12s" repeatCount="indefinite"/>
+      <ellipse rx="34" ry="34" fill="url(#rp)"/>
+      <g fill="#ff8fa8" opacity="0.9">
+        <ellipse cx="0" cy="-16" rx="14" ry="18"/>
+        <ellipse cx="15" cy="-8" rx="14" ry="18" transform="rotate(72 15 -8)"/>
+        <ellipse cx="9" cy="14" rx="14" ry="18" transform="rotate(144 9 14)"/>
+        <ellipse cx="-9" cy="14" rx="14" ry="18" transform="rotate(216 -9 14)"/>
+        <ellipse cx="-15" cy="-8" rx="14" ry="18" transform="rotate(288 -15 -8)"/>
+      </g>
+      <circle r="8" fill="#ffd166"/>
+    </g>
+    <animateTransform attributeName="transform" type="scale" additive="sum" values="0.6;1.05;1" dur="1.2s" fill="freeze"/>
+  </g>
+</svg>

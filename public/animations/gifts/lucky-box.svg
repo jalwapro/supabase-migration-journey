@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="lb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff5a6e"/><stop offset="100%" stop-color="#7a0018"/></linearGradient>
+    <linearGradient id="rib" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#ffe27a"/><stop offset="100%" stop-color="#c48600"/></linearGradient>
+  </defs>
+  <g transform="translate(100 110)">
+    <rect x="-55" y="-30" width="110" height="80" rx="6" fill="url(#lb)" stroke="#4a000c" stroke-width="2"/>
+    <rect x="-8" y="-30" width="16" height="80" fill="url(#rib)"/>
+    <rect x="-55" y="6" width="110" height="10" fill="url(#rib)"/>
+    <g transform="translate(0 -30)">
+      <animateTransform attributeName="transform" type="translate" values="0 -30;0 -60;0 -30" dur="1.6s" repeatCount="indefinite"/>
+      <path d="M-14 0 C -20 -10 -10 -18 0 -8 C 10 -18 20 -10 14 0 C 8 8 -8 8 -14 0 Z" fill="url(#rib)" stroke="#4a000c" stroke-width="1.5"/>
+    </g>
+    <g fill="#fff9c9">
+      <circle cx="-40" cy="-50" r="2"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></circle>
+      <circle cx="40" cy="-55" r="2.5"><animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"/></circle>
+      <circle cx="50" cy="-25" r="2"><animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite"/></circle>
+    </g>
+  </g>
+</svg>
