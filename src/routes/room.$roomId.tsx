@@ -166,6 +166,9 @@ function RoomPage() {
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
+  const [milestoneOpen, setMilestoneOpen] = useState(false);
+  const [topGifters, setTopGifters] = useState<TopGifter[]>([]);
+  const [awarding, setAwarding] = useState(false);
 
   const room = useQuery({
     queryKey: ["room", roomId],
