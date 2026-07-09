@@ -2350,7 +2350,7 @@ function EmojiReactionSheet({
                 </button>
               );
             })}
-          {seatedCountUI(seatsByIndex, seatCount) === 0 && (
+          {Array.from({ length: seatCount }).every((_, i) => !seatsByIndex.get(i)) && (
             <span className="text-[11px] text-white/50">No one on stage yet.</span>
           )}
         </div>
