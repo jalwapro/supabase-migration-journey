@@ -4,10 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Bell, BellOff } from "lucide-react";
 import type { NotificationKind } from "@/hooks/useNotifications";
+import { useEffect, useState } from "react";
+import { currentPushStatus, isWebPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/webpush";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/settings/notifications")({ component: Page });
+
 
 const GROUPS: { label: string; kinds: { key: NotificationKind; label: string }[] }[] = [
   { label: "Social", kinds: [
