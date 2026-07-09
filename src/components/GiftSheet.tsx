@@ -85,10 +85,6 @@ export function GiftSheet({
 
   if (!open) return null;
 
-  const totalCost = (selectedGift?.price_coins ?? 0) * qty;
-  const canAfford = (profile?.coins ?? 0) >= totalCost;
-
-  return (
   const totalCost =
     (selectedGift?.price_coins ?? 0) *
     qty *
