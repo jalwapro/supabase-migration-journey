@@ -997,27 +997,18 @@ function RoomPage() {
         ) : (
           <div className="flex min-h-0 flex-1 gap-2">
             <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-              <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
-                {(["all", "chat"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setChatTab(t)}
-                    className={`text-[12px] font-black capitalize ${chatTab === t ? "text-white" : "text-white/40"}`}
-                  >
-                    {t}
-                    {chatTab === t && (
-                      <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
-                    )}
-                  </button>
-                ))}
+              <div className="mb-1 flex items-center justify-between border-b border-white/10 px-1 pb-1.5">
+                <span className="text-[12px] font-black text-white">Chat</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-white/50">Live</span>
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji")
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
+                <div ref={chatEndVideoRef} />
               </div>
             </div>
 
