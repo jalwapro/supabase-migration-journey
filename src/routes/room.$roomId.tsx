@@ -2385,12 +2385,14 @@ function EmptySeatSheet({
   onClose,
   onToggleLock,
   onInvite,
+  onSitHere,
 }: {
   seatIndex: number | null;
   isLocked: boolean;
   onClose: () => void;
   onToggleLock: () => void;
   onInvite: () => void;
+  onSitHere: () => void;
 }) {
   if (seatIndex == null) return null;
   return (
@@ -2405,6 +2407,12 @@ function EmptySeatSheet({
           Seat {seatIndex + 1} {isLocked ? "· 🔒 Locked" : ""}
         </div>
         <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={onSitHere}
+            className="w-full rounded-2xl bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-white shadow-lg"
+          >
+            Sit here
+          </button>
           <button
             onClick={onInvite}
             className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
