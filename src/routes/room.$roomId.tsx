@@ -180,6 +180,11 @@ function RoomPage() {
   const iAmOnSeat = myMember?.seat_index != null;
   const shouldPublish = isHost || iAmOnSeat;
   const isVideo = room.data?.room_type === "video";
+  const isModerator = !!myMember?.is_moderator;
+
+  useEffect(() => {
+    setLockedSeats(room.data?.locked_seats ?? []);
+  }, [room.data?.locked_seats]);
 
   const agora = useAgoraRoom({
     channel: room.data?.agora_channel ?? null,
