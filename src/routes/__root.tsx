@@ -25,6 +25,8 @@ import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { InstallPermissionGate } from "../components/InstallPermissionGate";
+import { useNotificationRealtime } from "../hooks/useNotifications";
+
 
 function NotFoundComponent() {
   return (

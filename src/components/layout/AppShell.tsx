@@ -44,6 +44,21 @@ export function AppShell({
             </div>
             <div className="flex shrink-0 items-center gap-2">
               {right}
+              {user && (
+                <Link
+                  to="/notifications"
+                  aria-label="Notifications"
+                  className="relative grid h-9 w-9 place-items-center rounded-full border border-border bg-card/60"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[9px] font-bold text-primary-foreground">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+
               {profile && (
                 <Link
                   to="/wallet"
