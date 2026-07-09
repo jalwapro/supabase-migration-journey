@@ -1940,26 +1940,29 @@ function MiniAction({
   label,
   onClick,
   active,
+  compact,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   active?: boolean;
+  compact?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-xl border py-2 backdrop-blur transition ${
+      className={`flex ${compact ? "min-h-[52px] gap-0.5 py-1.5" : "min-h-[70px] gap-1 py-2"} flex-col items-center justify-center rounded-xl border backdrop-blur transition ${
         active
           ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-emerald-300"
           : "border-violet-300/25 bg-black/30 text-white/88"
       }`}
     >
       {icon}
-      <span className="text-[11px] font-medium">{label}</span>
+      <span className={`${compact ? "text-[9px]" : "text-[11px]"} font-medium`}>{label}</span>
     </button>
   );
 }
+
 
 function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   const body = m.text ?? m.message ?? "";
