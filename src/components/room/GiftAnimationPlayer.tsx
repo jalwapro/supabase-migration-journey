@@ -132,15 +132,22 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, [roomId, enqueue]);
 
-  // player loop
+  // Advance queue → current when idle.
   useEffect(() => {
     if (current || queue.length === 0) return;
-    const [next, ...rest] = queue;
-    setQueue(rest);
-    setCurrent(next);
+    setCurrent(queue[0]);
+    setQueue((q) => q.slice(1));
+  }, [queue, current]);
+
+  // Auto-clear current after PLAY_MS. Kept in a separate effect so the
+  // cleanup only fires when `current` itself changes — not on every
+  // queue mutation, which was cancelling the timer and leaving the
+  // full-screen overlay stuck on screen ("room frozen until refresh").
+  useEffect(() => {
+    if (!current) return;
     const t = setTimeout(() => setCurrent(null), PLAY_MS);
     return () => clearTimeout(t);
-  }, [queue, current]);
+  }, [current]);
 
   if (!current) return null;
 
