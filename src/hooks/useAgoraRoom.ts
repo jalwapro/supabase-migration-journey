@@ -422,6 +422,9 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     muted,
     speakerMuted,
     videoOn,
+    micBlocked,
+    micError,
+    requestMic,
     toggleMute,
     toggleSpeaker,
     toggleVideo,
@@ -436,5 +439,6 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     stopMusic,
     setMusicVolume,
   };
+
 
 }
