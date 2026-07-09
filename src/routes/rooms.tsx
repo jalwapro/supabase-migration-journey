@@ -19,11 +19,15 @@ type Room = {
   viewer_count: number;
   is_locked: boolean;
   host: { username: string | null; avatar: string | null } | null;
+  coin_score?: number;
 };
+
+const RANK_THRESHOLD = 300_000;
 
 function RoomsPage() {
   useRealtimeInvalidate("rooms-list-live", [
     { table: "live_rooms", invalidate: [["rooms", "all"]] },
+    { table: "gift_sends", invalidate: [["rooms", "all"]] },
   ]);
   const rooms = useQuery({
 
@@ -35,10 +39,24 @@ function RoomsPage() {
           "id,title,cover_url,room_type,viewer_count,is_locked,host:profiles!live_rooms_host_id_fkey(username,avatar)",
         )
         .eq("status", "live")
-        .order("viewer_count", { ascending: false })
-        .limit(100);
+        .limit(200);
       if (error) throw error;
-      return (data ?? []) as unknown as Room[];
+      const list = (data ?? []) as unknown as Room[];
+      if (list.length === 0) return list;
+      const { data: pop } = await supabase
+        .from("room_popularity")
+        .select("room_id,coin_score")
+        .in(
+          "room_id",
+          list.map((r) => r.id),
+        );
+      const map = new Map<string, number>();
+      (pop ?? []).forEach((p: { room_id: string; coin_score: number }) =>
+        map.set(p.room_id, Number(p.coin_score ?? 0)),
+      );
+      return list
+        .map((r) => ({ ...r, coin_score: map.get(r.id) ?? 0 }))
+        .sort((a, b) => (b.coin_score ?? 0) - (a.coin_score ?? 0));
     },
   });
 
