@@ -833,8 +833,10 @@ function RoomPage() {
 
   const r = room.data;
   const roomCode = shortRoomCode(r.id);
-  const popScore = popularity.coin_score + popularity.like_count;
-  const popularityPct = Math.min(100, Math.round((popScore / 2000) * 100));
+  const popScore = popularity.coin_score;
+  // 3,000 coins = 1%. 300,000 coins = ranked (100%).
+  const popularityPct = Math.min(100, Math.round((popScore / 3000)));
+  const isRanked = popScore >= 300_000;
   const popScoreLabel =
     popScore >= 1_000_000
       ? `${(popScore / 1_000_000).toFixed(1)}M`
