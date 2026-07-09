@@ -282,6 +282,20 @@ function DmThread() {
     await insertMsg({ kind: "album", gallery_image_id: img.id });
   }
 
+  async function sendAnimatedEmoji(e: ChatEmoji) {
+    if (!user) return;
+    const { error } = await supabase.from("chat_emoji_sends").insert({
+      sender_id: user.id,
+      recipient_id: peerId,
+      emoji_slug: e.slug,
+      emoji_char: e.emoji,
+      emoji_name: e.name,
+      clip_path: e.clip_path,
+    });
+    if (error) toast.error(error.message);
+  }
+
+
   if (!user) return null;
 
   return (
