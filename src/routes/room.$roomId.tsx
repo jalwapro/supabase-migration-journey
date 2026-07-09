@@ -428,7 +428,7 @@ function RoomPage() {
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [roomId]);
+  }, [roomId, qc]);
 
   // Seat invites → popup for recipient
   useEffect(() => {
