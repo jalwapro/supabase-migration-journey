@@ -203,6 +203,7 @@ function RootComponent() {
       <AuthProvider>
         <ThemeBackground />
         <SplashGate />
+        <InstallPermissionGate />
         <div className="relative z-10" suppressHydrationWarning>
           <Outlet />
         </div>
