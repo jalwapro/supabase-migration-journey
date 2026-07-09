@@ -704,6 +704,9 @@ function RoomPage() {
 
   async function leaveRoom() {
     if (user && isHost) {
+      // Convert accumulated gift points into diamonds for each receiver
+      // before the room is marked as ended.
+      await supabase.rpc("finalize_room_gifts", { _room_id: roomId });
       await supabase
         .from("live_rooms")
         .update({ status: "ended", ended_at: new Date().toISOString() })
