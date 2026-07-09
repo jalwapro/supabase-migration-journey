@@ -176,11 +176,11 @@ function RoomPage() {
       const baseCols =
         "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar)";
       // Try with milestone column; fall back if migration 0040 not applied yet.
-      let { data, error } = await supabase
+      let { data, error } = (await supabase
         .from("live_rooms")
         .select(`${baseCols},milestone_awarded_at`)
         .eq("id", roomId)
-        .maybeSingle();
+        .maybeSingle()) as { data: unknown; error: unknown };
       if (error) {
         const retry = await supabase
           .from("live_rooms")
