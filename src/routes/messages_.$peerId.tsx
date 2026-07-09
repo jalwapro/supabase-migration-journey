@@ -403,6 +403,16 @@ function DmThread() {
             >
               <Lock className="h-4 w-4" />
             </button>
+            <button
+              type="button"
+              onClick={() => setEmojiOpen(true)}
+              disabled={attachBusy || recording}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/60 text-[color:var(--primary)] disabled:opacity-40"
+              aria-label="Animated emoji"
+              title="Animated emoji bhejo"
+            >
+              <Smile className="h-4 w-4" />
+            </button>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
