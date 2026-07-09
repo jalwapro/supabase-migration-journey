@@ -331,6 +331,14 @@ function GiftsAdmin() {
               onChange={(e) => setDraft((d) => ({ ...d, animation: e.target.value }))}
               className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
             />
+            <label className="col-span-2 flex items-center gap-2 rounded-lg border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 px-2 py-1.5 text-[11px] font-bold">
+              <input
+                type="checkbox"
+                checked={draft.is_milestone}
+                onChange={(e) => setDraft((d) => ({ ...d, is_milestone: e.target.checked }))}
+              />
+              ⭐ Milestone gift (played when a room hits 300k coins). Only one gift can be milestone.
+            </label>
           </div>
 
           {/* Clip section */}
