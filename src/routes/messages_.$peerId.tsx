@@ -152,7 +152,7 @@ function DmThread() {
           (m.sender_id === user.id && m.recipient_id === peerId) ||
           (m.sender_id === peerId && m.recipient_id === user.id);
         if (!pair) return;
-        setMessages((prev) => [...prev, m]);
+        setMessages((prev) => (prev.some((item) => item.id === m.id) ? prev : [...prev, m]));
         if (m.recipient_id === user.id) {
           void supabase
             .from("direct_messages")
