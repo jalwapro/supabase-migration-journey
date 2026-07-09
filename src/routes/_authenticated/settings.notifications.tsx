@@ -109,13 +109,17 @@ function Page() {
           ) : (
             <>
               <div className="glass mb-4 rounded-2xl p-4">
-                <MasterToggle label="Push notifications (mobile/browser)" value={q.data?.push_enabled ?? true}
-                  onChange={(v) => save.mutate({ push_enabled: v })} />
+                <BrowserPushToggle />
+                <div className="mt-3 border-t border-border pt-3">
+                  <MasterToggle label="Push notifications (mobile/browser)" value={q.data?.push_enabled ?? true}
+                    onChange={(v) => save.mutate({ push_enabled: v })} />
+                </div>
                 <div className="mt-3 border-t border-border pt-3">
                   <MasterToggle label="Email notifications" value={q.data?.email_enabled ?? true}
                     onChange={(v) => save.mutate({ email_enabled: v })} />
                 </div>
               </div>
+
 
               {GROUPS.map((g) => (
                 <div key={g.label} className="glass mb-4 rounded-2xl p-4">
