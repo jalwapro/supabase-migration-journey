@@ -53,40 +53,34 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const navigate = useNavigate();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    // Silently self-heal so users never see the "Something went wrong"
+    // screen mid-session. Try invalidating first; if the same error persists
+    // we'll fall back to home.
+    let cancelled = false;
+    const t1 = window.setTimeout(() => {
+      if (cancelled) return;
+      try { router.invalidate(); } catch { /* no-op */ }
+      try { reset(); } catch { /* no-op */ }
+    }, 50);
+    const t2 = window.setTimeout(() => {
+      if (cancelled) return;
+      try { navigate({ to: "/", replace: true }); } catch { /* no-op */ }
+      try { reset(); } catch { /* no-op */ }
+    }, 800);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [error, router, navigate, reset]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Something went wrong
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Try refreshing, or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="glow-4d inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-full border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+  // Render nothing visible — recovery happens in the effect above.
+  return <div className="min-h-screen bg-background" aria-hidden />;
 }
+
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
