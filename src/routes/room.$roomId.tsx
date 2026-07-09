@@ -3046,11 +3046,8 @@ function SeatInvitePopup({
 
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
-const REACTION_EMOJIS = [
-  "❤️", "😂", "🔥", "👏", "😍", "🥰", "😎", "😘",
-  "🤩", "🎉", "🌹", "💖", "💯", "😢", "😡", "👑",
-  "🙏", "😴", "🤡", "🎁", "🍿", "💃", "🕺", "✨",
-];
+/* ─── Emoji reaction sheet: pick seat + emoji (animated 50-set) ─── */
+type ReactionEmoji = { slug: string; emoji: string; name: string; clip_path: string };
 
 function EmojiReactionSheet({
   open,
@@ -3065,12 +3062,23 @@ function EmojiReactionSheet({
   seatCount: number;
   seatsByIndex: Map<number, Member>;
   defaultSeat: number;
-  onSend: (emoji: string, seat: number) => void;
+  onSend: (emoji: string, seat: number, clip?: string | null) => void;
 }) {
   const [seat, setSeat] = useState(defaultSeat);
+  const [emojis, setEmojis] = useState<ReactionEmoji[]>([]);
   useEffect(() => {
     if (open) setSeat(defaultSeat);
   }, [open, defaultSeat]);
+  useEffect(() => {
+    if (!open || emojis.length > 0) return;
+    void supabase
+      .from("chat_emojis")
+      .select("slug,emoji,name,clip_path")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => setEmojis((data ?? []) as ReactionEmoji[]));
+  }, [open, emojis.length]);
+
   if (!open) return null;
   return (
     <>
@@ -3123,21 +3131,25 @@ function EmojiReactionSheet({
           )}
         </div>
         <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
-          Tap an emoji
+          Tap an animated emoji
         </div>
-        <div className="mt-2 grid grid-cols-8 gap-1.5">
-          {REACTION_EMOJIS.map((e) => (
+        <div className="mt-2 grid max-h-[42vh] grid-cols-6 gap-1.5 overflow-y-auto pr-1 scrollbar-hide">
+          {emojis.map((e) => (
             <button
-              key={e}
+              key={e.slug}
               onClick={() => {
                 onClose();
-                setTimeout(() => onSend(e, seat), 0);
+                setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
               }}
-              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 text-2xl transition active:scale-90 hover:bg-white/15"
+              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 p-1 transition active:scale-90 hover:bg-white/15"
+              title={e.name}
             >
-              {e}
+              <img src={e.clip_path} alt={e.name} loading="lazy" className="h-full w-full object-contain" />
             </button>
           ))}
+          {emojis.length === 0 && (
+            <span className="col-span-6 py-6 text-center text-[11px] text-white/50">Loading…</span>
+          )}
         </div>
       </div>
     </>
@@ -3148,23 +3160,22 @@ function EmojiReactionSheet({
 function FlyingEmojiLayer({
   emojis,
 }: {
-  emojis: { id: string; emoji: string; seat: number }[];
+  emojis: { id: string; emoji: string; seat: number; clip?: string | null }[];
 }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]">
       {emojis.map((e) => (
-        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} />
+        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} clip={e.clip ?? null} />
       ))}
     </div>
   );
 }
 
-function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
+function FlyingEmoji({ emoji, seat, clip }: { emoji: string; seat: number; clip: string | null }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [target, setTarget] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    // Locate seat rect
     const el = document.querySelector<HTMLElement>(`[data-seat-index="${seat}"]`);
     const rect = el?.getBoundingClientRect();
     const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 60;
@@ -3178,21 +3189,34 @@ function FlyingEmoji({ emoji, seat }: { emoji: string; seat: number }) {
   }, [seat]);
 
   if (!pos || !target) return null;
+  const size = clip ? 72 : 40;
+  const style: React.CSSProperties = {
+    left: 0,
+    top: 0,
+    willChange: "transform, opacity",
+    animation: "flyEmoji 2.2s cubic-bezier(0.22,1,0.36,1) forwards",
+    ["--fx" as never]: `${pos.x - size / 2}px`,
+    ["--fy" as never]: `${pos.y - size / 2}px`,
+    ["--tx" as never]: `${target.x - size / 2}px`,
+    ["--ty" as never]: `${target.y - size / 2}px`,
+  };
+  if (clip) {
+    return (
+      <img
+        src={clip}
+        alt=""
+        className="absolute drop-shadow-[0_0_16px_rgba(255,215,0,0.7)]"
+        style={{ ...style, width: size, height: size }}
+      />
+    );
+  }
   return (
     <span
       className="absolute text-4xl drop-shadow-[0_0_12px_rgba(255,215,0,0.9)]"
-      style={{
-        left: 0,
-        top: 0,
-        willChange: "transform, opacity",
-        animation: "flyEmoji 2.2s cubic-bezier(0.22,1,0.36,1) forwards",
-        ["--fx" as never]: `${pos.x - 16}px`,
-        ["--fy" as never]: `${pos.y - 20}px`,
-        ["--tx" as never]: `${target.x - 16}px`,
-        ["--ty" as never]: `${target.y - 20}px`,
-      }}
+      style={style}
     >
       {emoji}
     </span>
   );
 }
+
