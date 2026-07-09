@@ -34,7 +34,10 @@ export function GiftSheet({
   const { profile, refresh } = useAuth();
   const qc = useQueryClient();
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
-  const [receiverId, setReceiverId] = useState<string | null>(receivers[0]?.id ?? null);
+  const [receiverId, setReceiverId] = useState<string | null>(
+    receivers[0]?.id ?? null,
+  );
+  const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
 
   const gifts = useQuery({
@@ -54,14 +57,21 @@ export function GiftSheet({
   const send = useMutation({
     mutationFn: async () => {
       if (!selectedGift) throw new Error("Pick a gift");
-      if (!receiverId) throw new Error("Pick a receiver");
-      const { error } = await supabase.rpc("send_gift", {
-        _room_id: roomId,
-        _receiver_id: receiverId,
-        _gift_id: selectedGift.id,
-        _quantity: qty,
-      });
-      if (error) throw error;
+      const targets = sendToAll
+        ? receivers.map((r) => r.id)
+        : receiverId
+          ? [receiverId]
+          : [];
+      if (targets.length === 0) throw new Error("Pick a receiver");
+      for (const rid of targets) {
+        const { error } = await supabase.rpc("send_gift", {
+          _room_id: roomId,
+          _receiver_id: rid,
+          _gift_id: selectedGift.id,
+          _quantity: qty,
+        });
+        if (error) throw error;
+      }
     },
     onSuccess: async () => {
       toast.success("Gift sent 🎁");
@@ -75,7 +85,10 @@ export function GiftSheet({
 
   if (!open) return null;
 
-  const totalCost = (selectedGift?.price_coins ?? 0) * qty;
+  const totalCost =
+    (selectedGift?.price_coins ?? 0) *
+    qty *
+    (sendToAll ? Math.max(1, receivers.length) : 1);
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
   return (
@@ -92,21 +105,39 @@ export function GiftSheet({
           </button>
         </div>
 
-        {/* Receiver picker */}
+        {/* Receiver picker — DP-only chips + All */}
         <div className="mb-3">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            To
+            To {sendToAll ? `· All (${receivers.length})` : ""}
           </p>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {receivers.length === 0 && (
               <p className="text-xs text-muted-foreground">No one on stage to gift.</p>
             )}
+            {receivers.length > 1 && (
+              <button
+                onClick={() => setSendToAll((v) => !v)}
+                aria-label="All"
+                className={`shrink-0 rounded-full p-[2px] transition ${
+                  sendToAll
+                    ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                    : "bg-white/10"
+                }`}
+              >
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-card text-[10px] font-black">
+                  ALL
+                </div>
+              </button>
+            )}
             {receivers.map((r) => {
-              const active = receiverId === r.id;
+              const active = !sendToAll && receiverId === r.id;
               return (
                 <button
                   key={r.id}
-                  onClick={() => setReceiverId(r.id)}
+                  onClick={() => {
+                    setSendToAll(false);
+                    setReceiverId(r.id);
+                  }}
                   aria-label={r.username ?? "user"}
                   className={`shrink-0 rounded-full p-[2px] transition ${
                     active
@@ -175,7 +206,7 @@ export function GiftSheet({
           </div>
           <button
             onClick={() => send.mutate()}
-            disabled={!selectedGift || !receiverId || !canAfford || send.isPending}
+            disabled={!selectedGift || (!sendToAll && !receiverId) || !canAfford || send.isPending}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
             {send.isPending ? (

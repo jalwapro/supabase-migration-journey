@@ -67,6 +67,7 @@ type Room = {
   seat_count: number;
   host_id: string;
   agora_channel: string;
+  locked_seats: number[] | null;
   host: { username: string | null; avatar: string | null } | null;
 };
 
@@ -145,6 +146,15 @@ function RoomPage() {
     gift_count: 0,
   });
   const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
+  const [viewersSheetOpen, setViewersSheetOpen] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState<{
+    id: string;
+    from_name: string | null;
+    from_avatar: string | null;
+    seat_index: number | null;
+  } | null>(null);
+  const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
+  const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
     { id: string; emoji: string; seat: number }[]
   >([]);
@@ -156,7 +166,7 @@ function RoomPage() {
       const { data, error } = await supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,host:profiles!live_rooms_host_id_fkey(username,avatar)",
+          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar)",
         )
         .eq("id", roomId)
         .maybeSingle();
@@ -171,6 +181,11 @@ function RoomPage() {
   const iAmOnSeat = myMember?.seat_index != null;
   const shouldPublish = isHost || iAmOnSeat;
   const isVideo = room.data?.room_type === "video";
+  const isModerator = !!myMember?.is_moderator;
+
+  useEffect(() => {
+    setLockedSeats(room.data?.locked_seats ?? []);
+  }, [room.data?.locked_seats]);
 
   const agora = useAgoraRoom({
     channel: room.data?.agora_channel ?? null,
@@ -332,11 +347,66 @@ function RoomPage() {
           }));
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "live_rooms",
+          filter: `id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as { locked_seats: number[] | null };
+          setLockedSeats(row.locked_seats ?? []);
+        },
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
     };
   }, [roomId]);
+
+  // Seat invites → popup for recipient
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`seat-invites-${user.id}-${roomId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "seat_invites",
+          filter: `to_user=eq.${user.id}`,
+        },
+        async (payload) => {
+          const row = payload.new as {
+            id: string;
+            room_id: string;
+            from_user: string;
+            seat_index: number | null;
+            status: string;
+          };
+          if (row.room_id !== roomId || row.status !== "pending") return;
+          const { data } = await supabase
+            .from("profiles")
+            .select("username,avatar")
+            .eq("id", row.from_user)
+            .maybeSingle();
+          const p = data as { username: string | null; avatar: string | null } | null;
+          setPendingInvite({
+            id: row.id,
+            from_name: p?.username ?? null,
+            from_avatar: p?.avatar ?? null,
+            seat_index: row.seat_index,
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [user, roomId]);
 
   useEffect(() => {
     if (!user || !room.data?.id) return;
@@ -442,6 +512,10 @@ function RoomPage() {
       toast.error("Sign in first");
       return;
     }
+    if (!isHost && lockedSeats.includes(seatIndex)) {
+      toast.error("This seat is locked");
+      return;
+    }
     if (seatIndex === 0 && !isHost) {
       toast.error("Seat 1 is for the host");
       return;
@@ -452,12 +526,10 @@ function RoomPage() {
       });
       return;
     }
-    const { error } = await supabase
-      .from("room_members")
-      .upsert(
-        { room_id: roomId, user_id: user.id, seat_index: seatIndex },
-        { onConflict: "room_id,user_id" },
-      );
+    const { error } = await supabase.rpc("take_seat", {
+      _room_id: roomId,
+      _seat_index: seatIndex,
+    });
     if (error) toast.error(error.message);
   }
 
@@ -583,33 +655,24 @@ function RoomPage() {
     setLudoOpen(true);
   }
 
-  async function likeSeat(i: number) {
+  function onSeatTap(i: number) {
     if (!user) {
-      toast.error("Sign in to like");
+      toast.error("Sign in first");
       return;
     }
-    // Host tapping a seated (non-self) user → open manage sheet instead of liking
     const seated = members.find((m) => m.seat_index === i);
-    if (isHost && seated && seated.user_id !== user.id) {
+    if (!seated) return;
+    // Host / moderator taps someone else's seat → manage sheet
+    if ((isHost || isModerator) && seated.user_id !== user.id) {
       setManageMember(seated);
       return;
     }
-    // optimistic bump
-    setSeatLikes((prev) => ({ ...prev, [i]: (prev[i] ?? 0) + 1 }));
-    setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
-    const { data, error } = await supabase.rpc("like_room_seat", {
-      _room_id: roomId,
-      _seat_index: i,
-    });
-    if (error) {
-      toast.error(error.message);
-      setSeatLikes((prev) => ({ ...prev, [i]: Math.max(0, (prev[i] ?? 1) - 1) }));
-      setPopularity((p) => ({ ...p, like_count: Math.max(0, p.like_count - 1) }));
+    // Self tap → open manage self (leave seat option)
+    if (seated.user_id === user.id) {
+      setManageMember(seated);
       return;
     }
-    if (typeof data === "number") {
-      setSeatLikes((prev) => ({ ...prev, [i]: data }));
-    }
+    // Regular viewers tapping others: no-op (points only from gifts)
   }
 
   async function toggleMuteWithSync() {
@@ -761,11 +824,15 @@ function RoomPage() {
                 </button>
               </>
             )}
-            <div className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur">
+            <button
+              onClick={() => setViewersSheetOpen(true)}
+              className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur"
+              aria-label="View viewers"
+            >
               <Users className="h-4 w-4 text-white/80" />
               <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </div>
+            </button>
           </div>
         </div>
       </div>
@@ -797,7 +864,7 @@ function RoomPage() {
                   remote,
                   fallbackUser: fallback,
                   onClaim: () => void takeSeat(i),
-                  onLike: () => void likeSeat(i),
+                  onLike: () => void onSeatTap(i),
                   likeCount: seatLikes[i] ?? 0,
                 };
               })}
@@ -834,8 +901,14 @@ function RoomPage() {
                         fallbackUser={fallbackHost}
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
-                        onLike={() => likeSeat(i)}
+                        onLike={() => onSeatTap(i)}
                         glowing={!!glowSeats[i]}
+                        locked={lockedSeats.includes(i)}
+                        onEmptyManage={
+                          isHost || isModerator
+                            ? () => setManageEmptySeat(i)
+                            : undefined
+                        }
                       />
                     );
                   })}
@@ -1202,6 +1275,13 @@ function RoomPage() {
       )}
       <SeatActionSheet
         member={manageMember}
+        canModerate={isHost}
+        canLock={isHost || isModerator}
+        isSeatLocked={
+          manageMember?.seat_index != null
+            ? lockedSeats.includes(manageMember.seat_index)
+            : false
+        }
         onClose={() => setManageMember(null)}
         onToggleModerator={async () => {
           if (!manageMember) return;
@@ -1214,6 +1294,21 @@ function RoomPage() {
           if (error) toast.error(error.message);
           else {
             toast.success(next ? "Made moderator" : "Removed as moderator");
+            setManageMember(null);
+          }
+        }}
+        onToggleLock={async () => {
+          if (!manageMember || manageMember.seat_index == null) return;
+          const seat = manageMember.seat_index;
+          const nextLocked = !lockedSeats.includes(seat);
+          const { error } = await supabase.rpc("toggle_seat_lock", {
+            _room_id: roomId,
+            _seat_index: seat,
+            _locked: nextLocked,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success(nextLocked ? "Seat locked" : "Seat unlocked");
             setManageMember(null);
           }
         }}
@@ -1231,6 +1326,64 @@ function RoomPage() {
           }
         }}
       />
+      <EmptySeatSheet
+        seatIndex={manageEmptySeat}
+        isLocked={
+          manageEmptySeat != null ? lockedSeats.includes(manageEmptySeat) : false
+        }
+        onClose={() => setManageEmptySeat(null)}
+        onSitHere={() => {
+          if (manageEmptySeat == null) return;
+          void takeSeat(manageEmptySeat);
+          setManageEmptySeat(null);
+        }}
+        onToggleLock={async () => {
+          if (manageEmptySeat == null) return;
+          const nextLocked = !lockedSeats.includes(manageEmptySeat);
+          const { error } = await supabase.rpc("toggle_seat_lock", {
+            _room_id: roomId,
+            _seat_index: manageEmptySeat,
+            _locked: nextLocked,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success(nextLocked ? "Seat locked" : "Seat unlocked");
+            setManageEmptySeat(null);
+          }
+        }}
+        onInvite={() => {
+          setManageEmptySeat(null);
+          setViewersSheetOpen(true);
+        }}
+      />
+      <ViewersSheet
+        open={viewersSheetOpen}
+        onClose={() => setViewersSheetOpen(false)}
+        roomId={roomId}
+        members={members}
+        canInvite={isHost || isModerator}
+        userId={user?.id ?? null}
+      />
+      {pendingInvite && (
+        <SeatInvitePopup
+          invite={pendingInvite}
+          onDecline={async () => {
+            await supabase
+              .from("seat_invites")
+              .update({ status: "declined", responded_at: new Date().toISOString() })
+              .eq("id", pendingInvite.id);
+            setPendingInvite(null);
+          }}
+          onAccept={async () => {
+            const { error } = await supabase.rpc("accept_seat_invite", {
+              _invite_id: pendingInvite.id,
+            });
+            if (error) toast.error(error.message);
+            else toast.success("You're on the seat 🎤");
+            setPendingInvite(null);
+          }}
+        />
+      )}
       <EmojiReactionSheet
         open={emojiSheetOpen}
         onClose={() => setEmojiSheetOpen(false)}
@@ -1700,6 +1853,8 @@ function Seat({
   onLike,
   videoStyle,
   glowing,
+  locked,
+  onEmptyManage,
 }: {
   index: number;
   member?: Member;
@@ -1712,6 +1867,8 @@ function Seat({
   onLike: () => void;
   videoStyle?: boolean;
   glowing?: boolean;
+  locked?: boolean;
+  onEmptyManage?: () => void;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -1785,12 +1942,23 @@ function Seat({
       }`}
     >
       <button
-        onClick={() => (member ? onLike() : onClaim())}
+        onClick={() => {
+          if (member) return onLike();
+          if (locked && onEmptyManage) return onEmptyManage();
+          if (locked) return;
+          if (onEmptyManage) return onEmptyManage();
+          return onClaim();
+        }}
         className="relative aspect-square w-full"
-        aria-label={member ? `Like seat ${label}` : `Take ${label}`}
+        aria-label={member ? `Manage seat ${label}` : locked ? `Locked ${label}` : `Take ${label}`}
       >
         {isHostSeat && (
           <div className="pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin-slow" />
+        )}
+        {locked && !member && (
+          <div className="pointer-events-none absolute inset-[8%] z-20 grid place-items-center rounded-full bg-black/60 backdrop-blur-sm">
+            <span className="text-lg">🔒</span>
+          </div>
         )}
         <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${ringClass}`}>
           {isHostSeat && !displayAvatar && cover && (
@@ -1837,11 +2005,6 @@ function Seat({
       <span className={`text-[10px] font-black leading-tight ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
         {label}
       </span>
-      {displayName && (
-        <span className="max-w-full truncate text-[8px] font-semibold leading-tight text-white/55">
-          @{displayName}
-        </span>
-      )}
     </div>
   );
 }
@@ -2134,14 +2297,22 @@ function ToolBtn({
 /* ─── Seat Action Sheet (host manages a seated user) ─────────── */
 function SeatActionSheet({
   member,
+  canModerate,
+  canLock,
+  isSeatLocked,
   onClose,
   onToggleModerator,
   onKickFromSeat,
+  onToggleLock,
 }: {
   member: Member | null;
+  canModerate: boolean;
+  canLock: boolean;
+  isSeatLocked: boolean;
   onClose: () => void;
   onToggleModerator: () => void;
   onKickFromSeat: () => void;
+  onToggleLock: () => void;
 }) {
   if (!member) return null;
   const name = member.user?.username ?? "User";
@@ -2166,21 +2337,93 @@ function SeatActionSheet({
             <div className="truncate text-base font-extrabold">@{name}</div>
             <div className="text-[11px] text-muted-foreground">
               {member.is_moderator ? "Moderator" : "On seat"}
+              {isSeatLocked ? " · 🔒 locked" : ""}
             </div>
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-2">
+          {canModerate && (
+            <button
+              onClick={onToggleModerator}
+              className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
+            >
+              {member.is_moderator ? "Remove as Moderator" : "Make Moderator"}
+            </button>
+          )}
+          {canLock && (
+            <button
+              onClick={onToggleLock}
+              className="w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-3 text-sm font-bold text-[color:var(--gold)]"
+            >
+              {isSeatLocked ? "🔓 Unlock Seat" : "🔒 Lock Seat"}
+            </button>
+          )}
+          {canModerate && (
+            <button
+              onClick={onKickFromSeat}
+              className="w-full rounded-2xl bg-[color:var(--destructive)]/80 py-3 text-sm font-bold text-white"
+            >
+              Remove from Seat
+            </button>
+          )}
           <button
-            onClick={onToggleModerator}
-            className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
+            onClick={onClose}
+            className="mt-1 w-full rounded-2xl border border-border py-3 text-sm font-bold"
           >
-            {member.is_moderator ? "Remove as Moderator" : "Make Moderator"}
+            Cancel
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ─── Empty Seat Sheet (host/mod: lock or invite) ────────────── */
+function EmptySeatSheet({
+  seatIndex,
+  isLocked,
+  onClose,
+  onToggleLock,
+  onInvite,
+  onSitHere,
+}: {
+  seatIndex: number | null;
+  isLocked: boolean;
+  onClose: () => void;
+  onToggleLock: () => void;
+  onInvite: () => void;
+  onSitHere: () => void;
+}) {
+  if (seatIndex == null) return null;
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="text-center text-sm font-black">
+          Seat {seatIndex + 1} {isLocked ? "· 🔒 Locked" : ""}
+        </div>
+        <div className="mt-5 flex flex-col gap-2">
+          <button
+            onClick={onSitHere}
+            className="w-full rounded-2xl bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-white shadow-lg"
+          >
+            Sit here
           </button>
           <button
-            onClick={onKickFromSeat}
-            className="w-full rounded-2xl bg-[color:var(--destructive)]/80 py-3 text-sm font-bold text-white"
+            onClick={onInvite}
+            className="w-full rounded-2xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/15 py-3 text-sm font-bold text-white"
           >
-            Remove from Seat
+            Invite a viewer
+          </button>
+          <button
+            onClick={onToggleLock}
+            className="w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-3 text-sm font-bold text-[color:var(--gold)]"
+          >
+            {isLocked ? "🔓 Unlock Seat" : "🔒 Lock Seat"}
           </button>
           <button
             onClick={onClose}
@@ -2193,6 +2436,174 @@ function SeatActionSheet({
     </>
   );
 }
+
+/* ─── Viewers Sheet (list viewers + invite from host/mod) ────── */
+function ViewersSheet({
+  open,
+  onClose,
+  roomId,
+  members,
+  canInvite,
+  userId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  roomId: string;
+  members: Member[];
+  canInvite: boolean;
+  userId: string | null;
+}) {
+  if (!open) return null;
+  const viewers = members.filter((m) => m.seat_index == null);
+  const seated = members.filter((m) => m.seat_index != null);
+
+  async function invite(toUser: string) {
+    const { error } = await supabase.from("seat_invites").insert({
+      room_id: roomId,
+      from_user: userId!,
+      to_user: toUser,
+      seat_index: null,
+      status: "pending",
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Invite sent");
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 flex max-h-[75vh] w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="mb-2 flex items-center justify-between">
+          <h2 className="text-base font-black">
+            Viewers <span className="text-white/50">· {viewers.length}</span>
+          </h2>
+          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/10">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
+          {seated.length > 0 && (
+            <>
+              <div className="mt-1 text-[10px] font-black uppercase tracking-widest text-white/40">
+                On stage · {seated.length}
+              </div>
+              {seated.map((m) => (
+                <ViewerRow key={m.user_id} member={m} showInvite={false} onInvite={() => {}} />
+              ))}
+              <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-white/40">
+                Watching
+              </div>
+            </>
+          )}
+          {viewers.length === 0 && (
+            <p className="py-6 text-center text-[12px] text-white/50">No viewers right now.</p>
+          )}
+          {viewers.map((m) => (
+            <ViewerRow
+              key={m.user_id}
+              member={m}
+              showInvite={canInvite && m.user_id !== userId}
+              onInvite={() => void invite(m.user_id)}
+            />
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ViewerRow({
+  member,
+  showInvite,
+  onInvite,
+}: {
+  member: Member;
+  showInvite: boolean;
+  onInvite: () => void;
+}) {
+  const name = member.user?.username ?? "guest";
+  const avatar = member.user?.avatar ?? null;
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/5 p-2">
+      {avatar ? (
+        <img src={avatar} alt="" className="h-9 w-9 rounded-full object-cover" />
+      ) : (
+        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xs font-black text-white">
+          {initial}
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[13px] font-bold text-white">@{name}</div>
+        <div className="text-[10px] text-white/50">
+          {member.is_moderator ? "Moderator" : member.seat_index != null ? `Seat ${member.seat_index + 1}` : "Viewer"}
+        </div>
+      </div>
+      {showInvite && (
+        <button
+          onClick={onInvite}
+          className="rounded-full bg-[color:var(--primary)] px-3 py-1.5 text-[11px] font-black text-white"
+        >
+          + Invite
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ─── Seat invite popup for the recipient ────────────────────── */
+function SeatInvitePopup({
+  invite,
+  onAccept,
+  onDecline,
+}: {
+  invite: { id: string; from_name: string | null; from_avatar: string | null; seat_index: number | null };
+  onAccept: () => void;
+  onDecline: () => void;
+}) {
+  const name = invite.from_name ?? "Host";
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+        <div className="flex flex-col items-center gap-3 text-center">
+          {invite.from_avatar ? (
+            <img src={invite.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
+          ) : (
+            <div className="grid h-16 w-16 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xl font-black">
+              {initial}
+            </div>
+          )}
+          <p className="text-sm font-bold">
+            <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
+          </p>
+          <p className="text-[11px] text-white/60">
+            {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
+          </p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onDecline}
+            className="flex-1 rounded-full border border-white/20 py-3 text-sm font-bold text-white/80"
+          >
+            Decline
+          </button>
+          <button
+            onClick={onAccept}
+            className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-white shadow-lg"
+          >
+            Accept
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
 const REACTION_EMOJIS = [
@@ -2239,32 +2650,37 @@ function EmojiReactionSheet({
           Target seat
         </div>
         <div className="mt-1.5 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {Array.from({ length: seatCount }).map((_, i) => {
-            const m = seatsByIndex.get(i);
-            const active = seat === i;
-            const avatar = m?.user?.avatar ?? null;
-            const initial = (m?.user?.username ?? String(i + 1)).slice(0, 1).toUpperCase();
-            return (
-              <button
-                key={i}
-                onClick={() => setSeat(i)}
-                aria-label={`Seat ${i + 1}`}
-                className={`shrink-0 rounded-full p-[2px] transition ${
-                  active
-                    ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                    : "bg-white/10"
-                }`}
-              >
-                <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-black/40">
-                  {avatar ? (
-                    <img src={avatar} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-[13px] font-black text-white/85">{initial}</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {Array.from({ length: seatCount })
+            .map((_, i) => ({ i, m: seatsByIndex.get(i) }))
+            .filter((x) => !!x.m)
+            .map(({ i, m }) => {
+              const active = seat === i;
+              const avatar = m!.user?.avatar ?? null;
+              const initial = (m!.user?.username ?? String(i + 1)).slice(0, 1).toUpperCase();
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSeat(i)}
+                  aria-label={`Seat ${i + 1}`}
+                  className={`shrink-0 rounded-full p-[2px] transition ${
+                    active
+                      ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                      : "bg-white/10"
+                  }`}
+                >
+                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-black/40">
+                    {avatar ? (
+                      <img src={avatar} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-[13px] font-black text-white/85">{initial}</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          {Array.from({ length: seatCount }).every((_, i) => !seatsByIndex.get(i)) && (
+            <span className="text-[11px] text-white/50">No one on stage yet.</span>
+          )}
         </div>
         <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
           Tap an emoji
