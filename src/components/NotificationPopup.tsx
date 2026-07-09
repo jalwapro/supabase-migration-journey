@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { NotificationRow } from "@/hooks/useNotifications";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Loader2, Send, MessageCircle, ExternalLink } from "lucide-react";
+import { Loader2, Send, MessageCircle, ExternalLink, X } from "lucide-react";
 import { toast } from "sonner";
 
 const EVT = "jalwa:open-notification";
@@ -109,21 +109,27 @@ export function NotificationPopup() {
   }
 
   return (
-    <Dialog open={!!notif} onOpenChange={(o) => !o && close()}>
-      <DialogContent className="max-w-sm">
+    <DialogPrimitive.Root open={!!notif} onOpenChange={(o) => !o && close()}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[1px] data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Content className="fixed left-1/2 top-[55%] z-50 grid w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-background/95 p-5 shadow-2xl outline-none backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95">
+          <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 text-muted-foreground transition hover:bg-white/10 hover:text-foreground">
+            <X className="h-4 w-4" />
+            <span className="sr-only">Close</span>
+          </DialogPrimitive.Close>
         {notif && (
           <>
-            <DialogHeader>
-              <DialogTitle className="text-base">{notif.title}</DialogTitle>
+            <div className="flex flex-col space-y-1.5 pr-7 text-left">
+              <DialogPrimitive.Title className="text-base font-semibold leading-snug">{notif.title}</DialogPrimitive.Title>
               {notif.body && (
-                <DialogDescription className="whitespace-pre-wrap text-sm">
+                <DialogPrimitive.Description className="whitespace-pre-wrap text-sm text-muted-foreground">
                   {notif.body}
-                </DialogDescription>
+                </DialogPrimitive.Description>
               )}
               <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
                 {new Date(notif.created_at).toLocaleString()}
               </p>
-            </DialogHeader>
+            </div>
 
             {isDM && peerId && (
               <div className="mt-2 space-y-2">
@@ -154,13 +160,14 @@ export function NotificationPopup() {
               </div>
             )}
 
-            <DialogFooter className="mt-2 flex-row justify-between gap-2 sm:justify-between">
+            <div className="mt-2 flex flex-row justify-between gap-2">
               {actionButton() ?? <span />}
               <Button variant="ghost" onClick={close}>Close</Button>
-            </DialogFooter>
+            </div>
           </>
         )}
-      </DialogContent>
-    </Dialog>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
