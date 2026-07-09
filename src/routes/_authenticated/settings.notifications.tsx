@@ -118,6 +118,9 @@ function Page() {
                   <MasterToggle label="Email notifications" value={q.data?.email_enabled ?? true}
                     onChange={(v) => save.mutate({ email_enabled: v })} />
                 </div>
+                <div className="mt-3 border-t border-border pt-3">
+                  <SendTestButton />
+                </div>
               </div>
 
 
@@ -228,6 +231,39 @@ function BrowserPushToggle() {
         </button>
       )}
     </div>
+  );
+}
+
+function SendTestButton() {
+  const { user } = useAuth();
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    if (!user) return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.from("notifications").insert({
+        user_id: user.id,
+        kind: "system_broadcast",
+        title: "Test notification 🔔",
+        body: "Agar aap ko ye dikh raha hai to notifications kaam kar rahi hain.",
+        data: { test: true },
+      });
+      if (error) throw error;
+      toast.success("Test bhej diya — Notifications tab / push check karo");
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <button
+      onClick={send}
+      disabled={busy}
+      className="w-full rounded-full bg-[color:var(--primary)] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+    >
+      {busy ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Send test notification"}
+    </button>
   );
 }
 
