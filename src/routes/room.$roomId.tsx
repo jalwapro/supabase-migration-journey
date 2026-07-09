@@ -428,11 +428,21 @@ function RoomPage() {
           );
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        // On (re)subscribe — including after a network drop — reconcile any
+        // events that fired while the socket was down. React Query already
+        // refetches the room row on reconnect; do the same for members,
+        // messages, likes, gifts and popularity.
+        if (status === "SUBSCRIBED") {
+          void loadRoomState();
+          void room.refetch();
+        }
+      });
     return () => {
       void supabase.removeChannel(ch);
     };
-  }, [roomId, qc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId, qc, loadRoomState]);
 
   // Seat invites → popup for recipient
   useEffect(() => {
