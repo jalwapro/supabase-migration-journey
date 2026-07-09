@@ -708,6 +708,36 @@ function RoomPage() {
     if (error) console.warn("[emoji]", error.message);
   }
 
+  async function openMilestoneSheet() {
+    setMilestoneOpen(true);
+    const { data, error } = await supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 20 });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setTopGifters((data ?? []) as TopGifter[]);
+  }
+
+  async function awardMilestone(receiverId: string) {
+    if (awarding) return;
+    setAwarding(true);
+    try {
+      const { error } = await supabase.rpc("award_milestone_gift", {
+        _room_id: roomId,
+        _receiver_id: receiverId,
+      });
+      if (error) throw error;
+      toast.success("Milestone gift awarded 🎉");
+      setMilestoneOpen(false);
+      await room.refetch();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setAwarding(false);
+    }
+  }
+
+
   async function leaveRoom() {
     if (user && isHost) {
       // Convert accumulated gift points into diamonds for each receiver
