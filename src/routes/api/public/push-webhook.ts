@@ -57,13 +57,20 @@ export const Route = createFileRoute("/api/public/push-webhook")({
 
         const { data: subs } = await admin
           .from("push_subscriptions")
-          .select("id, endpoint, p256dh, auth")
-          .eq("user_id", row.user_id)
-          .not("endpoint", "is", null);
-        const subList = (subs ?? []) as Array<{ id: string; endpoint: string; p256dh: string; auth: string }>;
+          .select("id, platform, endpoint, p256dh, auth, fcm_token")
+          .eq("user_id", row.user_id);
+        const subList = (subs ?? []) as Array<{
+          id: string;
+          platform: string | null;
+          endpoint: string | null;
+          p256dh: string | null;
+          auth: string | null;
+          fcm_token: string | null;
+        }>;
         if (subList.length === 0) return Response.json({ delivered: 0 });
 
-        configureVapid();
+        const webSubs = subList.filter((s) => s.endpoint && s.p256dh && s.auth);
+        const fcmSubs = subList.filter((s) => s.fcm_token);
 
         const message = JSON.stringify({
           title: row.title,
@@ -72,30 +79,76 @@ export const Route = createFileRoute("/api/public/push-webhook")({
           data: { url: "/notifications", notifId: row.id, kind: row.kind, ...(row.data ?? {}) },
         });
 
-        const results = await Promise.allSettled(
-          subList.map((s) =>
-            webpush.sendNotification(
-              { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-              message,
-            ),
-          ),
-        );
-
         const dead: string[] = [];
-        results.forEach((r, i) => {
-          if (r.status === "rejected") {
-            const status = (r.reason as { statusCode?: number })?.statusCode;
-            if (status === 404 || status === 410) dead.push(subList[i].id);
+        let delivered = 0;
+        let failed = 0;
+
+        if (webSubs.length > 0) {
+          configureVapid();
+          const results = await Promise.allSettled(
+            webSubs.map((s) =>
+              webpush.sendNotification(
+                { endpoint: s.endpoint as string, keys: { p256dh: s.p256dh as string, auth: s.auth as string } },
+                message,
+              ),
+            ),
+          );
+          results.forEach((r, i) => {
+            if (r.status === "fulfilled") delivered++;
+            else {
+              failed++;
+              const status = (r.reason as { statusCode?: number })?.statusCode;
+              if (status === 404 || status === 410) dead.push(webSubs[i].id);
+            }
+          });
+        }
+
+        if (fcmSubs.length > 0) {
+          try {
+            const { sendFcmMessage, isDeadFcmError } = await import("@/lib/fcm.server");
+            const dataMap: Record<string, string> = {
+              url: "/notifications",
+              notifId: row.id,
+              kind: row.kind,
+            };
+            for (const [k, v] of Object.entries(row.data ?? {})) {
+              dataMap[k] = typeof v === "string" ? v : JSON.stringify(v);
+            }
+            const results = await Promise.allSettled(
+              fcmSubs.map((s) =>
+                sendFcmMessage({
+                  token: s.fcm_token as string,
+                  title: row.title,
+                  body: row.body ?? "",
+                  data: dataMap,
+                }),
+              ),
+            );
+            results.forEach((r, i) => {
+              if (r.status === "fulfilled" && r.value.ok) delivered++;
+              else {
+                failed++;
+                if (r.status === "fulfilled" && isDeadFcmError(r.value.status, r.value.error)) {
+                  dead.push(fcmSubs[i].id);
+                }
+              }
+            });
+          } catch (e) {
+            failed += fcmSubs.length;
+            console.error("FCM dispatch error:", e);
           }
-        });
+        }
+
         if (dead.length) {
           await admin.from("push_subscriptions").delete().in("id", dead);
         }
 
         return Response.json({
-          delivered: results.filter((r) => r.status === "fulfilled").length,
-          failed: results.filter((r) => r.status === "rejected").length,
+          delivered,
+          failed,
           pruned: dead.length,
+          web: webSubs.length,
+          fcm: fcmSubs.length,
         });
 
       },
