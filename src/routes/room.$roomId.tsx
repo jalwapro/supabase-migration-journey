@@ -1899,11 +1899,6 @@ function Seat({
       <span className={`text-[10px] font-black leading-tight ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
         {label}
       </span>
-      {displayName && (
-        <span className="max-w-full truncate text-[8px] font-semibold leading-tight text-white/55">
-          @{displayName}
-        </span>
-      )}
     </div>
   );
 }
