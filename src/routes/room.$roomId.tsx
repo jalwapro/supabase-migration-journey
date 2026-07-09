@@ -872,23 +872,14 @@ function RoomPage() {
           </Link>
           <div className="flex items-center gap-1.5">
             {!isHost && (
-              <>
-                <button
-                  onClick={() => void followHost()}
-                  disabled={!!followsHost.data}
-                  className="rounded-full bg-[color:var(--primary)] px-2.5 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
-                >
-                  {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
-                </button>
-                <button
-                  onClick={() => void joinFamily()}
-                  disabled={!!familyMember.data}
-                  className="rounded-full border border-[color:var(--gold)]/50 bg-gradient-to-r from-[color:var(--gold)]/20 to-amber-400/10 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/20 disabled:opacity-60"
-                  aria-label="Join family"
-                >
-                  {familyMember.data ? "👑 JOINED" : "👑 FAMILY"}
-                </button>
-              </>
+              <button
+                onClick={() => void joinFamily()}
+                disabled={!!familyMember.data}
+                className="rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
+                aria-label="Join premium family"
+              >
+                {familyMember.data ? "👑 PREMIUM" : "👑 PREMIUM"}
+              </button>
             )}
             <button
               onClick={() => setViewersSheetOpen(true)}
