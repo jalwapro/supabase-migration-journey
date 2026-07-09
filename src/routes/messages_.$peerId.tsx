@@ -493,6 +493,9 @@ function DmThread() {
           </div>
         </div>
       )}
+
+      <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
+      <ChatEmojiOverlay scope={{ type: "dm", selfId: user.id, peerId }} />
     </div>
 
   );
