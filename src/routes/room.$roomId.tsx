@@ -1711,6 +1711,55 @@ function EmptyChat() {
   );
 }
 
+/* ─── Follow + daily love heart chip (next to host name) ─── */
+function FollowLoveChip({
+  isFollowing,
+  onFollow,
+  onLove,
+  cooling,
+  blink,
+}: {
+  isFollowing: boolean;
+  onFollow: () => void;
+  onLove: () => void;
+  cooling: boolean;
+  blink: boolean;
+}) {
+  if (!isFollowing) {
+    return (
+      <button
+        onClick={onFollow}
+        aria-label="Follow host"
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_0_10px_-2px_color-mix(in_oklab,var(--primary)_60%,transparent)] transition active:scale-90"
+      >
+        <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onLove}
+      aria-label="Send daily love (100 coins)"
+      title={cooling ? "Come back tomorrow" : "Daily love · 100 coins"}
+      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition active:scale-90 ${
+        blink
+          ? "animate-pulse border-rose-400 bg-rose-500/30 text-rose-300 shadow-[0_0_14px_-2px_rgba(244,63,94,0.9)]"
+          : cooling
+            ? "border-white/15 bg-black/60 text-white/40"
+            : "border-white/20 bg-black/70 text-white hover:bg-black/90"
+      }`}
+    >
+      <Heart
+        className="h-3.5 w-3.5"
+        fill={blink ? "currentColor" : cooling ? "rgba(255,255,255,0.35)" : "#111"}
+        strokeWidth={2}
+      />
+    </button>
+  );
+}
+
+
+
 
 function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
   const [visible, setVisible] = useState(false);
