@@ -1074,18 +1074,31 @@ function RoomPage() {
             </div>
 
             <div className="flex min-h-0 flex-col gap-2">
-              <button className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md">
+              <button
+                onClick={() => isHost && isRanked && openMilestoneSheet()}
+                className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md"
+              >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[13px] font-bold text-white/90">🔥 Room Popularity</span>
+                  <span className="truncate text-[13px] font-bold text-white/90">
+                    🔥 Room Popularity {isRanked && <span className="ml-1 rounded-full bg-[color:var(--gold)]/25 px-1.5 py-0.5 text-[9px] font-black uppercase text-[color:var(--gold)]">Ranked</span>}
+                  </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
                 </div>
                 <div className="mt-2 text-2xl font-semibold leading-none">{popScoreLabel}</div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300"
-                    style={{ width: `${Math.max(56, popularityPct)}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300 transition-all"
+                    style={{ width: `${Math.max(2, popularityPct)}%` }}
                   />
                 </div>
+                {isHost && isRanked && !r.milestone_awarded_at && (
+                  <div className="mt-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-3 py-1 text-center text-[10px] font-black uppercase tracking-wider text-black">
+                    ⭐ Award Milestone Gift
+                  </div>
+                )}
+                {r.milestone_awarded_at && (
+                  <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
+                )}
               </button>
               <div className="grid flex-1 grid-cols-2 gap-2">
                 {isHost ? (
