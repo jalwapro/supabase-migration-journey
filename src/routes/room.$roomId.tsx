@@ -1241,12 +1241,6 @@ function RoomPage() {
                     onClick={() => setEmojiSheetOpen(true)}
                   />
                 )}
-                <MiniAction
-                  compact
-                  icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />}
-                  label="Emoji"
-                  onClick={() => setAnimEmojiOpen(true)}
-                />
                 <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
               </div>
 
