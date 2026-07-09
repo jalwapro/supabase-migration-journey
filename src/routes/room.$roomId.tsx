@@ -670,22 +670,9 @@ function RoomPage() {
     }
   }
 
-  async function sendQuickGift(g: (typeof QUICK_GIFTS)[number]) {
-    if (!user) {
-      toast.error("Sign in to send gifts");
-      return;
-    }
-    const giftText = `${g.icon} ${g.name}`;
-    const { error } = await supabase.from("room_messages").insert({
-      room_id: roomId,
-      user_id: user.id,
-      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
-      kind: "gift",
-      text: giftText,
-      message: giftText,
-    });
-    if (error) toast.error(error.message);
-  }
+  // (sendQuickGift removed — see note above the QUICK_GIFTS deletion.)
+
+
 
   async function sendEmoji(emoji: string, seatIndex: number) {
     if (!user) {
