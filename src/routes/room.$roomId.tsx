@@ -654,33 +654,24 @@ function RoomPage() {
     setLudoOpen(true);
   }
 
-  async function likeSeat(i: number) {
+  function onSeatTap(i: number) {
     if (!user) {
-      toast.error("Sign in to like");
+      toast.error("Sign in first");
       return;
     }
-    // Host tapping a seated (non-self) user → open manage sheet instead of liking
     const seated = members.find((m) => m.seat_index === i);
-    if (isHost && seated && seated.user_id !== user.id) {
+    if (!seated) return;
+    // Host / moderator taps someone else's seat → manage sheet
+    if ((isHost || isModerator) && seated.user_id !== user.id) {
       setManageMember(seated);
       return;
     }
-    // optimistic bump
-    setSeatLikes((prev) => ({ ...prev, [i]: (prev[i] ?? 0) + 1 }));
-    setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
-    const { data, error } = await supabase.rpc("like_room_seat", {
-      _room_id: roomId,
-      _seat_index: i,
-    });
-    if (error) {
-      toast.error(error.message);
-      setSeatLikes((prev) => ({ ...prev, [i]: Math.max(0, (prev[i] ?? 1) - 1) }));
-      setPopularity((p) => ({ ...p, like_count: Math.max(0, p.like_count - 1) }));
+    // Self tap → open manage self (leave seat option)
+    if (seated.user_id === user.id) {
+      setManageMember(seated);
       return;
     }
-    if (typeof data === "number") {
-      setSeatLikes((prev) => ({ ...prev, [i]: data }));
-    }
+    // Regular viewers tapping others: no-op (points only from gifts)
   }
 
   async function toggleMuteWithSync() {
