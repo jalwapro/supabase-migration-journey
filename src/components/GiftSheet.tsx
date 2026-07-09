@@ -260,12 +260,9 @@ export function GiftSheet({
                   }`}
                 >
                   <div className="grid h-12 w-12 place-items-center">
-                    {g.clip_path && g.clip_type === "svg" ? (
-                      <img src={g.clip_path} alt="" className="h-full w-full object-contain" loading="lazy" />
-                    ) : (
-                      <span className="text-3xl leading-none">{g.icon ?? g.emoji ?? "🎁"}</span>
-                    )}
+                    <span className="text-3xl leading-none">{g.icon ?? g.emoji ?? "🎁"}</span>
                   </div>
+
                   <span className="truncate text-[10px] font-semibold">{g.name}</span>
                   <span className="flex items-center gap-0.5 text-[10px] text-[color:var(--gold)]">
                     <Coins className="h-2.5 w-2.5" />
