@@ -1332,6 +1332,11 @@ function RoomPage() {
           manageEmptySeat != null ? lockedSeats.includes(manageEmptySeat) : false
         }
         onClose={() => setManageEmptySeat(null)}
+        onSitHere={() => {
+          if (manageEmptySeat == null) return;
+          void takeSeat(manageEmptySeat);
+          setManageEmptySeat(null);
+        }}
         onToggleLock={async () => {
           if (manageEmptySeat == null) return;
           const nextLocked = !lockedSeats.includes(manageEmptySeat);
