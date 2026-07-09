@@ -1809,7 +1809,14 @@ function VideoTile({
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
-  const effectiveMuted = isSelf ? !!localMuted : !!member?.is_muted;
+  // Prefer live Agora signal over stale DB `is_muted`:
+  // - self: local mute flag from Agora hook
+  // - others: if we have a remote entry, use its live hasAudio; else fall back to DB
+  const effectiveMuted = isSelf
+    ? !!localMuted
+    : remote
+      ? !remote.hasAudio
+      : !!member?.is_muted;
   const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
   const label = `No.${index + 1}`;
 
