@@ -13,10 +13,13 @@ import {
   Square,
   Image as ImageIcon,
   Lock,
+  Smile,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadToUserFolder } from "@/lib/uploads";
+import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
+import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 
 export const Route = createFileRoute("/messages_/$peerId")({
   component: DmThread,
