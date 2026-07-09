@@ -882,6 +882,24 @@ function RoomPage() {
       </div>
     );
   }
+  if (room.isError) {
+    return (
+      <div className="min-h-dvh grid place-items-center bg-background p-6 text-center">
+        <div className="max-w-sm">
+          <p className="text-sm font-semibold text-destructive">Failed to load room</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {(room.error as Error)?.message ?? "Please check your connection."}
+          </p>
+          <button
+            onClick={() => void room.refetch()}
+            className="glow-4d mt-4 inline-flex rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (!room.data) {
     return (
       <div className="min-h-dvh grid place-items-center bg-background p-6 text-center">
