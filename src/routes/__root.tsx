@@ -24,6 +24,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
 import { useWakeLock } from "../hooks/useWakeLock";
+import { InstallPermissionGate } from "../components/InstallPermissionGate";
 
 function NotFoundComponent() {
   return (
@@ -107,6 +108,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/favicon.png", type: "image/png" },
       { rel: "apple-touch-icon", href: "/favicon.png" },
     ],
@@ -202,6 +204,7 @@ function RootComponent() {
       <AuthProvider>
         <ThemeBackground />
         <SplashGate />
+        <InstallPermissionGate />
         <div className="relative z-10" suppressHydrationWarning>
           <Outlet />
         </div>
