@@ -859,7 +859,7 @@ function RoomPage() {
                   remote,
                   fallbackUser: fallback,
                   onClaim: () => void takeSeat(i),
-                  onLike: () => void likeSeat(i),
+                  onLike: () => void onSeatTap(i),
                   likeCount: seatLikes[i] ?? 0,
                 };
               })}
@@ -896,7 +896,7 @@ function RoomPage() {
                         fallbackUser={fallbackHost}
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
-                        onLike={() => likeSeat(i)}
+                        onLike={() => onSeatTap(i)}
                         glowing={!!glowSeats[i]}
                       />
                     );
