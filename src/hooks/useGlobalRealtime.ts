@@ -65,15 +65,11 @@ export function useGlobalRealtime() {
         keys: ["wallet", "wallet_tx", "me-counts"],
       },
       {
-        table: "notifications",
-        filter: `user_id=eq.${uid}`,
-        keys: ["notif-feed", "notif-unread"],
-      },
-      {
         table: "notification_prefs",
         filter: `user_id=eq.${uid}`,
         keys: ["notification_prefs"],
       },
+
       {
         table: "push_subscriptions",
         filter: `user_id=eq.${uid}`,
