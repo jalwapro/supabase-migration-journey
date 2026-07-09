@@ -1150,6 +1150,8 @@ function RoomPage() {
                             ? () => setManageEmptySeat(i)
                             : undefined
                         }
+                        currentUserId={user?.id}
+                        localMuted={agora.muted}
                       />
                     );
                   })}
