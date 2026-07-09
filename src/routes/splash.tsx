@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Mic, Video, Gift } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import logo from "@/assets/jalwa-logo.png.asset.json";
+import logo from "@/assets/jalwa-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/splash")({
@@ -193,7 +193,7 @@ function Splash() {
           className="relative h-32 w-32 overflow-hidden rounded-[28px] border border-border shadow-[0_20px_60px_-20px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
           style={{ background: "linear-gradient(135deg, var(--gold), var(--primary), var(--secondary))" }}
         >
-          <img src={cfg.data?.splash_image || logo.url} alt="Jalwa" className="h-full w-full object-cover" draggable={false} />
+          <img src={cfg.data?.splash_image || logo} alt="Jalwa" className="h-full w-full object-cover" draggable={false} />
         </div>
 
         <h1 className="mt-6 text-5xl font-black tracking-tight text-gradient">Jalwa</h1>
