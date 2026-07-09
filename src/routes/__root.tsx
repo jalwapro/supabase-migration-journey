@@ -187,10 +187,8 @@ function SplashGate() {
   return null;
 }
 
-function NotificationSubscriber() {
-  useNotificationRealtime();
-  return null;
-}
+
+
 
 
 
