@@ -158,7 +158,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       setStatus("connecting");
       setError(null);
       try {
-        const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
+        const AgoraRTC = await loadAgoraRTC();
         AgoraRTC.setLogLevel(3);
         const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
         clientRef.current = client;
