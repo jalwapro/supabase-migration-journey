@@ -67,6 +67,7 @@ type Room = {
   seat_count: number;
   host_id: string;
   agora_channel: string;
+  locked_seats: number[] | null;
   host: { username: string | null; avatar: string | null } | null;
 };
 
