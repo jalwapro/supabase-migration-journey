@@ -756,13 +756,25 @@ function RoomPage() {
 
   async function leaveRoom() {
     if (user && isHost) {
-      // Convert accumulated gift points into diamonds for each receiver
-      // before the room is marked as ended.
-      await supabase.rpc("finalize_room_gifts", { _room_id: roomId });
-      await supabase
-        .from("live_rooms")
-        .update({ status: "ended", ended_at: new Date().toISOString() })
-        .eq("id", roomId);
+      try {
+        // Convert accumulated gift points into diamonds for each receiver
+        // before the room is marked as ended.
+        const { error: finErr } = await supabase.rpc("finalize_room_gifts", {
+          _room_id: roomId,
+        });
+        if (finErr) throw finErr;
+        const { error: updErr } = await supabase
+          .from("live_rooms")
+          .update({ status: "ended", ended_at: new Date().toISOString() })
+          .eq("id", roomId);
+        if (updErr) throw updErr;
+      } catch (e) {
+        // Do NOT navigate away on a partial failure — the room would be
+        // stuck as "live" with unpaid diamonds. Surface the error so host
+        // can retry.
+        toast.error(`Couldn't end room: ${(e as Error).message}`);
+        return;
+      }
     }
     navigate({ to: "/" });
   }
