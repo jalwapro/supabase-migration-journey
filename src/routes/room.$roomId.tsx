@@ -2006,6 +2006,9 @@ function Seat({
   glowing,
   locked,
   onEmptyManage,
+  giftPoints = 0,
+  receivedGift = false,
+  isKing = false,
 }: {
   index: number;
   member?: Member;
@@ -2020,6 +2023,9 @@ function Seat({
   glowing?: boolean;
   locked?: boolean;
   onEmptyManage?: () => void;
+  giftPoints?: number;
+  receivedGift?: boolean;
+  isKing?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
