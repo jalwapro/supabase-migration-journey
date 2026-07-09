@@ -174,6 +174,21 @@ export function useGlobalRealtime() {
       },
     ]);
 
+    // Dedicated notifications channel with toast + cache refresh.
+    const chNotif = supabase
+      .channel(`notif:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
+        (payload: { new: { title?: string | null; body?: string | null } }) => {
+          qc.invalidateQueries({ queryKey: ["notif-unread"] });
+          qc.invalidateQueries({ queryKey: ["notif-feed"] });
+          const row = payload.new;
+          if (row?.title) toast(row.title, { description: row.body ?? undefined });
+        },
+      )
+      .subscribe();
+
     return () => {
       void supabase.removeChannel(ch1);
       void supabase.removeChannel(ch2);
@@ -181,6 +196,8 @@ export function useGlobalRealtime() {
       void supabase.removeChannel(ch3b);
       void supabase.removeChannel(ch3c);
       void supabase.removeChannel(ch4);
+      void supabase.removeChannel(chNotif);
     };
   }, [user, qc]);
 }
+
