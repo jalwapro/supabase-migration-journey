@@ -145,6 +145,14 @@ function RoomPage() {
     gift_count: 0,
   });
   const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
+  const [viewersSheetOpen, setViewersSheetOpen] = useState(false);
+  const [pendingInvite, setPendingInvite] = useState<{
+    id: string;
+    from_name: string | null;
+    from_avatar: string | null;
+    seat_index: number | null;
+  } | null>(null);
+  const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
     { id: string; emoji: string; seat: number }[]
   >([]);
