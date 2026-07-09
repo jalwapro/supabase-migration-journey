@@ -861,8 +861,11 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
-    await agora.toggleMute();
+    // Compute the post-toggle value BEFORE the toggle so the DB write matches
+    // the new state — `agora.muted` is React state that only updates on next
+    // render.
     const nextMuted = !agora.muted;
+    await agora.toggleMute();
     if (user) {
       await supabase
         .from("room_members")
