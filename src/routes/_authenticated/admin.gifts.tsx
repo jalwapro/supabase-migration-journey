@@ -69,7 +69,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,price,category,animation,sort_order,is_active,clip_path,clip_type")
+        .select("id,name,emoji,price,category,animation,sort_order,is_active,clip_path,clip_type,is_milestone")
         .order("category")
         .order("sort_order");
       if (error) throw error;
