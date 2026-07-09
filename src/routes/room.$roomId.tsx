@@ -1238,21 +1238,29 @@ function RoomPage() {
                   <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
                 )}
               </button>
-              <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className="grid flex-1 grid-cols-3 gap-1.5">
                 {isHost ? (
                   <MiniAction
-                    icon={<Music className="h-5 w-5" />}
+                    compact
+                    icon={<Music className="h-3.5 w-3.5" />}
                     label="Music"
                     onClick={() => setMusicOpen(true)}
                   />
                 ) : (
                   <MiniAction
-                    icon={<Smile className="h-5 w-5" />}
-                    label="Reactions"
+                    compact
+                    icon={<Smile className="h-3.5 w-3.5" />}
+                    label="React"
                     onClick={() => setEmojiSheetOpen(true)}
                   />
                 )}
-                <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
+                <MiniAction
+                  compact
+                  icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />}
+                  label="Emoji"
+                  onClick={() => setAnimEmojiOpen(true)}
+                />
+                <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
               </div>
 
             </div>
@@ -1276,9 +1284,10 @@ function RoomPage() {
             </div>
 
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-2 gap-1.5">
-                <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
-                <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
+              <div className="grid grid-cols-3 gap-1">
+                <MiniAction compact icon={<Music className="h-3.5 w-3.5" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
+                <MiniAction compact icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />} label="Emoji" onClick={() => setAnimEmojiOpen(true)} />
+                <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
               </div>
 
             </div>
@@ -1940,26 +1949,29 @@ function MiniAction({
   label,
   onClick,
   active,
+  compact,
 }: {
   icon: React.ReactNode;
   label: string;
   onClick: () => void;
   active?: boolean;
+  compact?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex min-h-[70px] flex-col items-center justify-center gap-1 rounded-xl border py-2 backdrop-blur transition ${
+      className={`flex ${compact ? "min-h-[52px] gap-0.5 py-1.5" : "min-h-[70px] gap-1 py-2"} flex-col items-center justify-center rounded-xl border backdrop-blur transition ${
         active
           ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/20 text-emerald-300"
           : "border-violet-300/25 bg-black/30 text-white/88"
       }`}
     >
       {icon}
-      <span className="text-[11px] font-medium">{label}</span>
+      <span className={`${compact ? "text-[9px]" : "text-[11px]"} font-medium`}>{label}</span>
     </button>
   );
 }
+
 
 function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   const body = m.text ?? m.message ?? "";
