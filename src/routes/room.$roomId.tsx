@@ -2322,32 +2322,37 @@ function EmojiReactionSheet({
           Target seat
         </div>
         <div className="mt-1.5 flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-          {Array.from({ length: seatCount }).map((_, i) => {
-            const m = seatsByIndex.get(i);
-            const active = seat === i;
-            const avatar = m?.user?.avatar ?? null;
-            const initial = (m?.user?.username ?? String(i + 1)).slice(0, 1).toUpperCase();
-            return (
-              <button
-                key={i}
-                onClick={() => setSeat(i)}
-                aria-label={`Seat ${i + 1}`}
-                className={`shrink-0 rounded-full p-[2px] transition ${
-                  active
-                    ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                    : "bg-white/10"
-                }`}
-              >
-                <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-black/40">
-                  {avatar ? (
-                    <img src={avatar} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="text-[13px] font-black text-white/85">{initial}</span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {Array.from({ length: seatCount })
+            .map((_, i) => ({ i, m: seatsByIndex.get(i) }))
+            .filter((x) => !!x.m)
+            .map(({ i, m }) => {
+              const active = seat === i;
+              const avatar = m!.user?.avatar ?? null;
+              const initial = (m!.user?.username ?? String(i + 1)).slice(0, 1).toUpperCase();
+              return (
+                <button
+                  key={i}
+                  onClick={() => setSeat(i)}
+                  aria-label={`Seat ${i + 1}`}
+                  className={`shrink-0 rounded-full p-[2px] transition ${
+                    active
+                      ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                      : "bg-white/10"
+                  }`}
+                >
+                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-black/40">
+                    {avatar ? (
+                      <img src={avatar} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-[13px] font-black text-white/85">{initial}</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          {seatedCountUI(seatsByIndex, seatCount) === 0 && (
+            <span className="text-[11px] text-white/50">No one on stage yet.</span>
+          )}
         </div>
         <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
           Tap an emoji
