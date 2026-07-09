@@ -54,7 +54,10 @@ function RoomsAdmin() {
         .update({ status: "ended", ended_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
-      await supabase.from("admin_logs").insert({ action: "force_end_room", target: id }).throwOnError().then(() => {}, () => {});
+      const { error: logErr } = await supabase
+        .from("admin_logs")
+        .insert({ action: "force_end_room", target: id });
+      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Room ended");
@@ -67,7 +70,10 @@ function RoomsAdmin() {
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("live_rooms").delete().eq("id", id);
       if (error) throw error;
-      await supabase.from("admin_logs").insert({ action: "delete_room", target: id }).throwOnError().then(() => {}, () => {});
+      const { error: logErr } = await supabase
+        .from("admin_logs")
+        .insert({ action: "delete_room", target: id });
+      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Room deleted");
