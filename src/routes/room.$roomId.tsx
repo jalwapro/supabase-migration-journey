@@ -1481,8 +1481,6 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
-      <ChatEmojiSheet open={animEmojiOpen} onClose={() => setAnimEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
-      <ChatEmojiOverlay scope={{ type: "room", roomId }} />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
