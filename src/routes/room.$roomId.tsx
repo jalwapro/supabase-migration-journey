@@ -1348,13 +1348,6 @@ function RoomPage() {
             </div>
 
             <button
-              onClick={() => setAnimEmojiOpen(true)}
-              aria-label="Animated emoji"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-[color:var(--primary)] backdrop-blur-md"
-            >
-              <Sparkles className="h-4 w-4" />
-            </button>
-            <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
               className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
