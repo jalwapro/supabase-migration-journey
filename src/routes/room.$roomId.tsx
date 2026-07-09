@@ -241,7 +241,7 @@ function RoomPage() {
           .maybeSingle(),
         supabase
           .from("gift_sends")
-          .select("receiver_id,diamonds_earned")
+          .select("receiver_id,coins_spent")
           .eq("room_id", roomId),
       ]);
       if (cancel) return;
@@ -260,9 +260,9 @@ function RoomPage() {
         });
       }
       const pts: Record<string, number> = {};
-      (giftData ?? []).forEach((row: { receiver_id: string | null; diamonds_earned: number | null }) => {
+      (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
         if (!row.receiver_id) return;
-        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.diamonds_earned ?? 0);
+        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
       });
       setGiftPoints(pts);
     })();
@@ -365,7 +365,6 @@ function RoomPage() {
             coins_spent: number;
             quantity: number;
             receiver_id: string | null;
-            diamonds_earned: number | null;
           };
           setPopularity((p) => ({
             ...p,
@@ -376,7 +375,7 @@ function RoomPage() {
             const rid = row.receiver_id;
             setGiftPoints((prev) => ({
               ...prev,
-              [rid]: (prev[rid] ?? 0) + Number(row.diamonds_earned ?? 0),
+              [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
             }));
             const stamp = Date.now();
             setRecentGiftUsers((prev) => ({ ...prev, [rid]: stamp }));
@@ -705,6 +704,9 @@ function RoomPage() {
 
   async function leaveRoom() {
     if (user && isHost) {
+      // Convert accumulated gift points into diamonds for each receiver
+      // before the room is marked as ended.
+      await supabase.rpc("finalize_room_gifts", { _room_id: roomId });
       await supabase
         .from("live_rooms")
         .update({ status: "ended", ended_at: new Date().toISOString() })
