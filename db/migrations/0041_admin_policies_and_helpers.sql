@@ -49,8 +49,8 @@ begin
 
   if not found then raise exception 'user not found'; end if;
 
-  insert into public.admin_logs (action, target, metadata)
-    values ('adjust_coins', _user_id::text,
+  insert into public.admin_logs (admin_id, action, target, details)
+    values (me, 'adjust_coins', _user_id::text,
             jsonb_build_object('delta', _delta, 'new_balance', new_balance));
 
   return new_balance;
