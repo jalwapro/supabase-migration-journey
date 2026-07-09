@@ -1,46 +1,74 @@
-# Full Port: jalwa1-main → current project
+## Voice Room — Multi-part Upgrade Plan
 
-Reference zip has **55+ routes**, **30 SQL migrations**, full admin panel, VIP, PK battles, partner program, theme shop, splash, etc. Ye ek turn mein possible nahi — phases mein karna hoga taake har phase compile ho, test ho, aur aap review kar sako.
+Aap ne 8 changes maange hain. Yeh plan har ek ko cover karta hai.
 
-## Approach
+### 1. Viewer count → Viewers popup
+- Header ka viewer count clickable → bottom sheet khulega
+- List me sirf **viewers** (jo seat pe nahi hain) with dp + frame + name
+- Agar current user **host ya moderator** hai → har viewer row pe **"Invite to seat"** button
+- Click karne pe DB me `seat_invites` row insert hoti hai (naya table)
 
-Ref project already Lovable Cloud (Supabase) use karta hai. Hum uske migrations replay karenge (existing tables merge honge) aur routes ko `src/routes/` mein copy karenge phase-by-phase.
+### 2. Seat invite → viewer accept popup
+- Naya table `seat_invites (id, room_id, from_user, to_user, seat_index NULL, status, created_at)`
+- Realtime subscribe: jab viewer ko invite aaye → modal popup "Host aap ko seat pe bula raha hai — Accept / Decline"
+- Accept → auto seat pe baith jata hai (first free seat, ya nominated seat_index)
 
-## Phases
+### 3. Seat lock by host/moderator
+- Har seat ke long-press / manage sheet me **"Lock seat"** toggle (host + moderator only)
+- New column `room_seats.locked` (ya `live_rooms.locked_seats jsonb`) — chhota table `room_seat_locks(room_id, seat_index, locked_by)` cleaner
+- Locked seat pe koi apply nahi kar sakta
 
-### Phase A — DB foundation (schema port)
-- 30 reference migrations ko is project ke Lovable Cloud pe apply karna (conflicting tables ke liye `IF NOT EXISTS` / merge)
-- Grants + RLS policies verify
-- `src/integrations/supabase/types.ts` regenerate
+### 4. Points sirf gifting se, DP tap se nahi
+- Current: DP press → like/point increment
+- Change: DP tap handler se popularity/like RPC hata do
+- `send_room_gift` already popularity + diamonds update karta hai — verify
 
-### Phase B — Core user routes
-- `splash`, `onboarding`, `auth`, `reset-password`, `profile`, `settings`, `wallet`, `withdraw`, `rank`, `vip`, `theme-shop`, `gallery`, `partner`, `blocked-users`, `friends`, `inbox`, `chat.$uid`, `user.$uid`, `live-history`, `pk-history`, `privacy-policy`
-- Har route ke supporting components + hooks port
+### 5. Gifts → diamonds to receiver
+- `send_room_gift` mein already `diamonds_earned = price * hostGiftShare` hota hai aur `profiles.diamonds` me add hota hai
+- Verify wallet screen mein "Diamonds" tab dikhata hai — agar nahi, add
 
-### Phase C — Live/Room stack
-- `room.tsx`, `room.$id.tsx` (replace current `room.$roomId`)
-- Agora integration + PK battle + gifts + room backgrounds
+### 6. Host seat rules
+- Seat 0 = host-only (already convention)
+- Enforce: 
+  - Sirf host `seat_index = 0` claim kar sakta hai (RLS + client check)
+  - Agar host koi aur seat pe jaye → seat 0 automatically khali (server-side trigger ya client cleanup)
+  - Host wapas aana chahe to seat 0 hamesha reserved
+- Client: dusri seat pe "Sit here" tab pe host ke case me pehle seat 0 se hata do
 
-### Phase D — Games
-- `games.tsx` (lucky spin + others jo ref mein hain)
+### 7. Seats me sirf DP + frame, name hide
+- Current SeatTile me username text hai — remove kar do
+- DP + equipped avatar frame render karo, username sirf manage sheet me
 
-### Phase E — Admin panel (26 sub-routes)
-- `admin.tsx` shell + all `admin.*` children:
-  users, rooms, live, gifts, vip, pk, rankings, recharge, withdrawals, reports, support, logs, settings, cms, ads, banners, splash, themes, theme-categories, room-backgrounds, roles, accounts, free-accounts, partners, integrations, economy, finance-reports, profile-admin
-- Admin guard via `has_role('admin')`
+### 8. Emoji reaction bar — user count hatao, seated user DPs dikhao
+- Current: emoji picker ke saath viewer count badge
+- Change: horizontal strip of seated members' DPs (jaise gift box mein hota hai)
+- Jese-jese seat fill ho, DP add hota jaye
 
-### Phase F — Polish
-- Nav/layout updates for new routes
-- Capacitor config check (already done)
-- Publish
+### 9. Gift box redesign
+- Existing `GiftSheet` me receiver row already hai; refactor:
+  - DP-based avatar chips (name hataao, sirf DP + frame)
+  - **"All"** chip + har seated user ka DP chip
+  - Multi-select ya single toggle (default single; "All" broadcasts)
 
-## Technical notes
-- Reference uses `.tsx` extension in `src/routes/` — current project same convention
-- Migration numbering: ref uses timestamps `2026070...`; hum bhi wahi timestamps use karenge to avoid collision with existing `0001–0005`
-- Existing project ke routes (jaisa current `wallet.tsx`, `admin.tsx`, `room.$roomId.tsx`) — ref versions se **replace** honge (aap ne "pura port" kaha hai)
-- Assets (images, logos) ref se copy honge
+---
 
-## Aaj is turn mein: Phase A only
-Bara scope hai — main abhi Phase A (DB migrations port + types regen) start karta hoon. Phir aap `next` bolo to Phase B, etc.
+### Files to change
+- `db/migrations/0033_seat_invites_and_locks.sql` — naya migration (seat_invites table + seat_locks column + RLS)
+- `src/routes/room.$roomId.tsx` — SeatTile, ViewersSheet, InviteAcceptModal, emoji bar, DP-tap handler
+- `src/components/GiftSheet.tsx` — receiver chips redesign
+- `src/hooks/useRealtimeInvalidate.ts` ya inline realtime for `seat_invites`
 
-Confirm karein ya changes suggest karein.
+### Order of work
+1. SQL migration (aap apply karo ge Supabase pe)
+2. Points-from-DP-tap remove (chhota, safe)
+3. Seat rules + seat 0 host-only enforcement
+4. SeatTile — hide name, DP-only
+5. Emoji bar → seated DP strip
+6. Viewers sheet + invite flow (biggest piece)
+7. Seat lock UI
+8. GiftSheet receiver chip redesign
+
+### Confirm before I start
+- Migration file main likhu — aap khud Supabase pe apply karo ge (per your Core rule)?
+- Seat 0 = host convention theek hai, ya aap chahtay ho host ke liye alag "host chair" upar center?
+- Invite accept popup timeout (e.g. 30s auto-decline) chahiye?
