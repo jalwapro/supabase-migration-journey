@@ -861,6 +861,29 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
+    // If browser blocked mic earlier, try to re-request permission on this
+    // user gesture. Show the exact reason if it fails again.
+    if (agora.micBlocked || !agora.localAudioTrack.current) {
+      const ok = await agora.requestMic();
+      if (!ok) {
+        toast.error(agora.micError ?? "Microphone unavailable", {
+          description:
+            "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again.",
+          duration: 8000,
+        });
+        return;
+      }
+      // Just enabled mic — reflect in DB and stop here (already unmuted).
+      if (user) {
+        await supabase
+          .from("room_members")
+          .update({ is_muted: false })
+          .eq("room_id", roomId)
+          .eq("user_id", user.id);
+      }
+      toast.success("Microphone enabled");
+      return;
+    }
     // Compute the post-toggle value BEFORE the toggle so the DB write matches
     // the new state — `agora.muted` is React state that only updates on next
     // render.
@@ -874,6 +897,18 @@ function RoomPage() {
         .eq("user_id", user.id);
     }
   }
+
+  // One-time toast when the initial mic acquisition on join gets denied.
+  useEffect(() => {
+    if (agora.micBlocked && agora.micError && shouldPublish) {
+      toast.error(agora.micError, {
+        id: "mic-blocked",
+        description: "Tap the mic button to retry after allowing access.",
+        duration: 8000,
+      });
+    }
+  }, [agora.micBlocked, agora.micError, shouldPublish]);
+
 
   if (room.isLoading) {
     return (
@@ -1239,11 +1274,17 @@ function RoomPage() {
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => void toggleMuteWithSync()}
-              aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
+              title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
+              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+                agora.micBlocked
+                  ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
+                  : "border-white/15 bg-black/50 text-white"
+              }`}
             >
-              {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
+
             <button
               onClick={agora.toggleSpeaker}
               aria-label={agora.speakerMuted ? "Unmute room audio" : "Mute room audio"}
@@ -1320,12 +1361,18 @@ function RoomPage() {
             {shouldPublish ? (
               <button
                 onClick={() => void toggleMuteWithSync()}
-                aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
+                title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
+                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+                  agora.micBlocked
+                    ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
+                    : "border-white/15 bg-black/50 text-white"
+                }`}
               >
-                {agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </button>
             ) : null}
+
             <button
               onClick={agora.toggleSpeaker}
               aria-label={agora.speakerMuted ? "Unmute room audio" : "Mute room audio"}
