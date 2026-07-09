@@ -2294,7 +2294,7 @@ function Seat({
           )}
         </div>
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
-          {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          {effectiveMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
           <span>{displayName ? `@${displayName}` : "Solo"}</span>
         </div>
         {member?.is_moderator && !isHostSeat && (
