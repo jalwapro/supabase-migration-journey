@@ -161,6 +161,8 @@ function RoomPage() {
     { id: string; emoji: string; seat: number }[]
   >([]);
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
+  const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
+  const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
 
   const room = useQuery({
     queryKey: ["room", roomId],
@@ -212,6 +214,7 @@ function RoomPage() {
         { data: msgData },
         { data: likeData },
         { data: popData },
+        { data: giftData },
       ] = await Promise.all([
         supabase
           .from("room_members")
@@ -236,6 +239,10 @@ function RoomPage() {
           .select("coin_score,like_count,gift_count")
           .eq("room_id", roomId)
           .maybeSingle(),
+        supabase
+          .from("gift_sends")
+          .select("receiver_id,diamonds_earned")
+          .eq("room_id", roomId),
       ]);
       if (cancel) return;
       setMembers((mData ?? []) as unknown as Member[]);
@@ -252,6 +259,12 @@ function RoomPage() {
           gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
         });
       }
+      const pts: Record<string, number> = {};
+      (giftData ?? []).forEach((row: { receiver_id: string | null; diamonds_earned: number | null }) => {
+        if (!row.receiver_id) return;
+        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.diamonds_earned ?? 0);
+      });
+      setGiftPoints(pts);
     })();
     return () => {
       cancel = true;
@@ -348,12 +361,34 @@ function RoomPage() {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          const row = payload.new as { coins_spent: number; quantity: number };
+          const row = payload.new as {
+            coins_spent: number;
+            quantity: number;
+            receiver_id: string | null;
+            diamonds_earned: number | null;
+          };
           setPopularity((p) => ({
             ...p,
             coin_score: p.coin_score + Number(row.coins_spent ?? 0),
             gift_count: p.gift_count + Number(row.quantity ?? 0),
           }));
+          if (row.receiver_id) {
+            const rid = row.receiver_id;
+            setGiftPoints((prev) => ({
+              ...prev,
+              [rid]: (prev[rid] ?? 0) + Number(row.diamonds_earned ?? 0),
+            }));
+            const stamp = Date.now();
+            setRecentGiftUsers((prev) => ({ ...prev, [rid]: stamp }));
+            setTimeout(() => {
+              setRecentGiftUsers((prev) => {
+                if (prev[rid] !== stamp) return prev;
+                const next = { ...prev };
+                delete next[rid];
+                return next;
+              });
+            }, 4500);
+          }
         },
       )
       .on(
@@ -691,6 +726,22 @@ function RoomPage() {
     return m;
   }, [members]);
 
+  // Winner of the room = seated user with the highest gift points.
+  // Crown only shows once they hit 1,000 points.
+  const kingUserId = useMemo(() => {
+    let bestId: string | null = null;
+    let bestPts = 0;
+    for (const m of members) {
+      if (m.seat_index == null) continue;
+      const p = giftPoints[m.user_id] ?? 0;
+      if (p > bestPts) {
+        bestPts = p;
+        bestId = m.user_id;
+      }
+    }
+    return bestPts >= 1000 ? bestId : null;
+  }, [members, giftPoints]);
+
   const seatedCount = useMemo(
     () => members.filter((m) => m.seat_index != null).length,
     [members],
@@ -967,6 +1018,9 @@ function RoomPage() {
                         onLike={() => onSeatTap(i)}
                         glowing={!!glowSeats[i]}
                         locked={lockedSeats.includes(i)}
+                        giftPoints={m ? giftPoints[m.user_id] ?? 0 : 0}
+                        receivedGift={!!(m && recentGiftUsers[m.user_id])}
+                        isKing={!!(m && kingUserId === m.user_id)}
                         onEmptyManage={
                           isHost || isModerator
                             ? () => setManageEmptySeat(i)
@@ -1952,6 +2006,9 @@ function Seat({
   glowing,
   locked,
   onEmptyManage,
+  giftPoints = 0,
+  receivedGift = false,
+  isKing = false,
 }: {
   index: number;
   member?: Member;
@@ -1966,6 +2023,9 @@ function Seat({
   glowing?: boolean;
   locked?: boolean;
   onEmptyManage?: () => void;
+  giftPoints?: number;
+  receivedGift?: boolean;
+  isKing?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -2110,7 +2170,28 @@ function Seat({
             {likeCount}
           </span>
         )}
+        {isKing && (
+          <span
+            title="Top gifter"
+            className="pointer-events-none absolute -top-3 left-1/2 z-30 -translate-x-1/2 text-lg leading-none drop-shadow-[0_2px_6px_rgba(255,200,60,0.9)] animate-bounce"
+          >
+            👑
+          </span>
+        )}
       </button>
+      {receivedGift && (
+        <span
+          title="Just received a gift"
+          className="pointer-events-none absolute -bottom-1 left-1/2 z-20 -translate-x-1/2 text-sm leading-none drop-shadow-[0_2px_6px_rgba(255,120,180,0.9)] animate-bounce"
+        >
+          🎁
+        </span>
+      )}
+      {giftPoints > 0 && (
+        <span className="rounded-full bg-black/70 px-1.5 py-[1px] text-[8px] font-black leading-none text-[color:var(--gold)] backdrop-blur">
+          💎 {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
+        </span>
+      )}
       <span className={`text-[10px] font-black leading-tight ${isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"}`}>
         {label}
       </span>
