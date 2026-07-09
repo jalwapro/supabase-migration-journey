@@ -119,7 +119,7 @@ function AuthPage() {
         <div className="glass rounded-3xl p-8 shadow-2xl">
           <div className="flex flex-col items-center text-center">
             <img
-              src={jalwaLogo.url}
+              src={jalwaLogo}
               alt="Jalwa"
               className="h-16 w-16 rounded-2xl object-cover shadow-lg"
             />
