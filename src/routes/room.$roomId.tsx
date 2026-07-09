@@ -1738,8 +1738,8 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
               {name}
             </span>
           </div>
-          <div className="truncate text-[10px] font-medium text-white/75">
-            has entered the room
+          <div className="truncate text-[10px] font-medium text-white/85">
+            🎉 Welcome to the room — enjoy your stay!
           </div>
         </div>
 
@@ -1928,6 +1928,12 @@ function Seat({
           {member?.is_muted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
           <span>{displayName ? `@${displayName}` : "Solo"}</span>
         </div>
+        {member?.is_moderator && !isHostSeat && (
+          <span
+            title="Moderator"
+            className="absolute right-1.5 bottom-1.5 grid h-2.5 w-2.5 place-items-center rounded-full bg-sky-500 ring-2 ring-black shadow-[0_0_8px_rgba(56,189,248,0.9)]"
+          />
+        )}
       </button>
     );
   }
@@ -1994,6 +2000,12 @@ function Seat({
               <Mic className="h-2 w-2 text-[color:var(--primary)]" />
             )}
           </span>
+        )}
+        {member?.is_moderator && !isHostSeat && (
+          <span
+            title="Moderator"
+            className="absolute -top-0.5 -right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full bg-sky-500 ring-2 ring-black shadow-[0_0_8px_rgba(56,189,248,0.9)]"
+          />
         )}
         {likeCount > 0 && (
           <span className="absolute -bottom-0.5 left-0.5 z-10 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[8px] font-bold text-white/80 backdrop-blur">
