@@ -73,17 +73,28 @@ export const Route = createFileRoute("/api/agora-token")({
         let appCertificate: string | undefined;
         let poolSlot: number | null = null;
 
-        // 1) Try the auto-rotating slot pool for this kind
-        const { data: slotRows } = await anon.rpc("consume_agora_slot", {
-          _kind: kind,
-          _minutes: reserveMinutes,
-        });
-        const slot = Array.isArray(slotRows) ? slotRows[0] : slotRows;
-        if (slot?.app_id && slot?.app_certificate) {
-          appId = String(slot.app_id).trim();
-          appCertificate = String(slot.app_certificate).trim();
-          poolSlot = Number(slot.slot_index);
+        // 0) Env-var override (highest priority) — set for voice via AGORA_APP_ID_NEW / AGORA_APP_CERT_NEW
+        const envId = process.env.AGORA_APP_ID_NEW?.trim();
+        const envCert = process.env.AGORA_APP_CERT_NEW?.trim();
+        if (envId && envCert) {
+          appId = envId;
+          appCertificate = envCert;
         }
+
+        // 1) Try the auto-rotating slot pool for this kind
+        if (!appId || !appCertificate) {
+          const { data: slotRows } = await anon.rpc("consume_agora_slot", {
+            _kind: kind,
+            _minutes: reserveMinutes,
+          });
+          const slot = Array.isArray(slotRows) ? slotRows[0] : slotRows;
+          if (slot?.app_id && slot?.app_certificate) {
+            appId = String(slot.app_id).trim();
+            appCertificate = String(slot.app_certificate).trim();
+            poolSlot = Number(slot.slot_index);
+          }
+        }
+
 
         // 2) Fallback to legacy single-key settings (agora_voice / agora_video / agora)
         if (!appId || !appCertificate) {
