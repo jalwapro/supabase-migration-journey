@@ -1284,9 +1284,10 @@ function RoomPage() {
             </div>
 
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-2 gap-1.5">
-                <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
-                <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
+              <div className="grid grid-cols-3 gap-1">
+                <MiniAction compact icon={<Music className="h-3.5 w-3.5" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
+                <MiniAction compact icon={<Sparkles className="h-3.5 w-3.5 text-[color:var(--primary)]" />} label="Emoji" onClick={() => setAnimEmojiOpen(true)} />
+                <MiniAction compact icon={<UserPlus className="h-3.5 w-3.5" />} label="Invite" onClick={share} />
               </div>
 
             </div>
