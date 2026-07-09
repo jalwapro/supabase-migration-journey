@@ -93,6 +93,11 @@ function RoomsPage() {
                     <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[10px]">
                       <Users className="h-2.5 w-2.5" /> {r.viewer_count}
                     </div>
+                    {(r.coin_score ?? 0) >= RANK_THRESHOLD && (
+                      <div className="absolute left-2 top-8 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-black shadow-lg">
+                        🔥 Ranked
+                      </div>
+                    )}
                     <div className="absolute inset-x-2 bottom-2">
                       <div className="flex items-center gap-1 text-[10px] text-white/80">
                         <TypeIcon className="h-3 w-3" /> @{r.host?.username ?? "host"}
