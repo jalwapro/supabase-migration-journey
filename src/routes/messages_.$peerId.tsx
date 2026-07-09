@@ -13,10 +13,13 @@ import {
   Square,
   Image as ImageIcon,
   Lock,
+  Smile,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadToUserFolder } from "@/lib/uploads";
+import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
+import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 
 export const Route = createFileRoute("/messages_/$peerId")({
   component: DmThread,
@@ -48,6 +51,7 @@ function DmThread() {
   const [attachBusy, setAttachBusy] = useState(false);
   const [recording, setRecording] = useState(false);
   const [showAlbum, setShowAlbum] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const mediaRec = useRef<MediaRecorder | null>(null);
@@ -278,6 +282,20 @@ function DmThread() {
     await insertMsg({ kind: "album", gallery_image_id: img.id });
   }
 
+  async function sendAnimatedEmoji(e: ChatEmoji) {
+    if (!user) return;
+    const { error } = await supabase.from("chat_emoji_sends").insert({
+      sender_id: user.id,
+      recipient_id: peerId,
+      emoji_slug: e.slug,
+      emoji_char: e.emoji,
+      emoji_name: e.name,
+      clip_path: e.clip_path,
+    });
+    if (error) toast.error(error.message);
+  }
+
+
   if (!user) return null;
 
   return (
@@ -385,6 +403,16 @@ function DmThread() {
             >
               <Lock className="h-4 w-4" />
             </button>
+            <button
+              type="button"
+              onClick={() => setEmojiOpen(true)}
+              disabled={attachBusy || recording}
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/60 text-[color:var(--primary)] disabled:opacity-40"
+              aria-label="Animated emoji"
+              title="Animated emoji bhejo"
+            >
+              <Smile className="h-4 w-4" />
+            </button>
             <input
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -465,6 +493,9 @@ function DmThread() {
           </div>
         </div>
       )}
+
+      <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
+      <ChatEmojiOverlay scope={{ type: "dm", selfId: user.id, peerId }} />
     </div>
 
   );

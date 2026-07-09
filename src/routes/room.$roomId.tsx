@@ -47,6 +47,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
+import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
+import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
@@ -122,6 +124,7 @@ function RoomPage() {
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
+  const [animEmojiOpen, setAnimEmojiOpen] = useState(false);
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
@@ -723,6 +726,23 @@ function RoomPage() {
     });
     if (error) console.warn("[emoji]", error.message);
   }
+
+  async function sendAnimatedEmoji(e: ChatEmoji) {
+    if (!user) {
+      toast.error("Sign in to send");
+      return;
+    }
+    const { error } = await supabase.from("chat_emoji_sends").insert({
+      sender_id: user.id,
+      room_id: roomId,
+      emoji_slug: e.slug,
+      emoji_char: e.emoji,
+      emoji_name: e.name,
+      clip_path: e.clip_path,
+    });
+    if (error) toast.error(error.message);
+  }
+
 
   async function openMilestoneSheet() {
     setMilestoneOpen(true);
@@ -1341,6 +1361,13 @@ function RoomPage() {
             </div>
 
             <button
+              onClick={() => setAnimEmojiOpen(true)}
+              aria-label="Animated emoji"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-[color:var(--primary)] backdrop-blur-md"
+            >
+              <Sparkles className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
               className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
@@ -1416,6 +1443,13 @@ function RoomPage() {
             </div>
 
             <button
+              onClick={() => setAnimEmojiOpen(true)}
+              aria-label="Animated emoji"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-[color:var(--primary)] backdrop-blur-md"
+            >
+              <Sparkles className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
               className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
@@ -1451,6 +1485,8 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <ChatEmojiSheet open={animEmojiOpen} onClose={() => setAnimEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
+      <ChatEmojiOverlay scope={{ type: "room", roomId }} />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
