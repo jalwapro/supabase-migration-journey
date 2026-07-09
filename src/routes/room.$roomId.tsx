@@ -241,7 +241,7 @@ function RoomPage() {
           .maybeSingle(),
         supabase
           .from("gift_sends")
-          .select("receiver_id,diamonds_earned")
+          .select("receiver_id,coins_spent")
           .eq("room_id", roomId),
       ]);
       if (cancel) return;
@@ -260,9 +260,9 @@ function RoomPage() {
         });
       }
       const pts: Record<string, number> = {};
-      (giftData ?? []).forEach((row: { receiver_id: string | null; diamonds_earned: number | null }) => {
+      (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
         if (!row.receiver_id) return;
-        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.diamonds_earned ?? 0);
+        pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
       });
       setGiftPoints(pts);
     })();
