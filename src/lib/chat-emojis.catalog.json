@@ -1,0 +1,402 @@
+[
+  {
+    "slug": "hammer",
+    "emoji": "🔨",
+    "name": "Hammer",
+    "category": "action",
+    "action": "swing",
+    "clip_path": "/animations/emojis/hammer.svg"
+  },
+  {
+    "slug": "heart",
+    "emoji": "❤️",
+    "name": "Heart",
+    "category": "love",
+    "action": "pulse",
+    "clip_path": "/animations/emojis/heart.svg"
+  },
+  {
+    "slug": "slap",
+    "emoji": "🖐️",
+    "name": "Slap",
+    "category": "action",
+    "action": "shake",
+    "clip_path": "/animations/emojis/slap.svg"
+  },
+  {
+    "slug": "kiss",
+    "emoji": "💋",
+    "name": "Kiss",
+    "category": "love",
+    "action": "float",
+    "clip_path": "/animations/emojis/kiss.svg"
+  },
+  {
+    "slug": "rose",
+    "emoji": "🌹",
+    "name": "Rose",
+    "category": "love",
+    "action": "bloom",
+    "clip_path": "/animations/emojis/rose.svg"
+  },
+  {
+    "slug": "laugh",
+    "emoji": "😂",
+    "name": "Laugh",
+    "category": "funny",
+    "action": "bounce",
+    "clip_path": "/animations/emojis/laugh.svg"
+  },
+  {
+    "slug": "cry",
+    "emoji": "😭",
+    "name": "Cry",
+    "category": "funny",
+    "action": "shake",
+    "clip_path": "/animations/emojis/cry.svg"
+  },
+  {
+    "slug": "angry",
+    "emoji": "😡",
+    "name": "Angry",
+    "category": "funny",
+    "action": "shake",
+    "clip_path": "/animations/emojis/angry.svg"
+  },
+  {
+    "slug": "love-eyes",
+    "emoji": "😍",
+    "name": "Love Eyes",
+    "category": "love",
+    "action": "pulse",
+    "clip_path": "/animations/emojis/love-eyes.svg"
+  },
+  {
+    "slug": "wink",
+    "emoji": "😉",
+    "name": "Wink",
+    "category": "funny",
+    "action": "rotate",
+    "clip_path": "/animations/emojis/wink.svg"
+  },
+  {
+    "slug": "cool",
+    "emoji": "😎",
+    "name": "Cool",
+    "category": "funny",
+    "action": "slide",
+    "clip_path": "/animations/emojis/cool.svg"
+  },
+  {
+    "slug": "crown",
+    "emoji": "👑",
+    "name": "Crown",
+    "category": "magic",
+    "action": "shine",
+    "clip_path": "/animations/emojis/crown.svg"
+  },
+  {
+    "slug": "fire",
+    "emoji": "🔥",
+    "name": "Fire",
+    "category": "action",
+    "action": "flicker",
+    "clip_path": "/animations/emojis/fire.svg"
+  },
+  {
+    "slug": "star",
+    "emoji": "⭐",
+    "name": "Star",
+    "category": "magic",
+    "action": "twinkle",
+    "clip_path": "/animations/emojis/star.svg"
+  },
+  {
+    "slug": "clap",
+    "emoji": "👏",
+    "name": "Clap",
+    "category": "action",
+    "action": "bounce",
+    "clip_path": "/animations/emojis/clap.svg"
+  },
+  {
+    "slug": "thumbs-up",
+    "emoji": "👍",
+    "name": "Thumbs Up",
+    "category": "action",
+    "action": "pop",
+    "clip_path": "/animations/emojis/thumbs-up.svg"
+  },
+  {
+    "slug": "thumbs-down",
+    "emoji": "👎",
+    "name": "Thumbs Down",
+    "category": "funny",
+    "action": "shake",
+    "clip_path": "/animations/emojis/thumbs-down.svg"
+  },
+  {
+    "slug": "muscle",
+    "emoji": "💪",
+    "name": "Muscle",
+    "category": "action",
+    "action": "flex",
+    "clip_path": "/animations/emojis/muscle.svg"
+  },
+  {
+    "slug": "pray",
+    "emoji": "🙏",
+    "name": "Pray",
+    "category": "cute",
+    "action": "pulse",
+    "clip_path": "/animations/emojis/pray.svg"
+  },
+  {
+    "slug": "wave",
+    "emoji": "👋",
+    "name": "Wave",
+    "category": "cute",
+    "action": "wave",
+    "clip_path": "/animations/emojis/wave.svg"
+  },
+  {
+    "slug": "peace",
+    "emoji": "✌️",
+    "name": "Peace",
+    "category": "cute",
+    "action": "pop",
+    "clip_path": "/animations/emojis/peace.svg"
+  },
+  {
+    "slug": "ok",
+    "emoji": "👌",
+    "name": "OK",
+    "category": "cute",
+    "action": "pop",
+    "clip_path": "/animations/emojis/ok.svg"
+  },
+  {
+    "slug": "rocket",
+    "emoji": "🚀",
+    "name": "Rocket",
+    "category": "action",
+    "action": "launch",
+    "clip_path": "/animations/emojis/rocket.svg"
+  },
+  {
+    "slug": "boom",
+    "emoji": "💥",
+    "name": "Boom",
+    "category": "action",
+    "action": "burst",
+    "clip_path": "/animations/emojis/boom.svg"
+  },
+  {
+    "slug": "princess",
+    "emoji": "👸",
+    "name": "Princess",
+    "category": "magic",
+    "action": "shine",
+    "clip_path": "/animations/emojis/princess.svg"
+  },
+  {
+    "slug": "diamond",
+    "emoji": "💎",
+    "name": "Diamond",
+    "category": "magic",
+    "action": "sparkle",
+    "clip_path": "/animations/emojis/diamond.svg"
+  },
+  {
+    "slug": "money",
+    "emoji": "💰",
+    "name": "Money",
+    "category": "party",
+    "action": "shake",
+    "clip_path": "/animations/emojis/money.svg"
+  },
+  {
+    "slug": "gift",
+    "emoji": "🎁",
+    "name": "Gift",
+    "category": "party",
+    "action": "shake",
+    "clip_path": "/animations/emojis/gift.svg"
+  },
+  {
+    "slug": "cake",
+    "emoji": "🎂",
+    "name": "Cake",
+    "category": "party",
+    "action": "pop",
+    "clip_path": "/animations/emojis/cake.svg"
+  },
+  {
+    "slug": "balloon",
+    "emoji": "🎈",
+    "name": "Balloon",
+    "category": "party",
+    "action": "float",
+    "clip_path": "/animations/emojis/balloon.svg"
+  },
+  {
+    "slug": "party",
+    "emoji": "🥳",
+    "name": "Party",
+    "category": "party",
+    "action": "shake",
+    "clip_path": "/animations/emojis/party.svg"
+  },
+  {
+    "slug": "confetti",
+    "emoji": "🎉",
+    "name": "Confetti",
+    "category": "party",
+    "action": "burst",
+    "clip_path": "/animations/emojis/confetti.svg"
+  },
+  {
+    "slug": "music",
+    "emoji": "🎵",
+    "name": "Music",
+    "category": "magic",
+    "action": "float",
+    "clip_path": "/animations/emojis/music.svg"
+  },
+  {
+    "slug": "mic",
+    "emoji": "🎤",
+    "name": "Mic",
+    "category": "magic",
+    "action": "pulse",
+    "clip_path": "/animations/emojis/mic.svg"
+  },
+  {
+    "slug": "ghost",
+    "emoji": "👻",
+    "name": "Ghost",
+    "category": "funny",
+    "action": "float",
+    "clip_path": "/animations/emojis/ghost.svg"
+  },
+  {
+    "slug": "skull",
+    "emoji": "💀",
+    "name": "Skull",
+    "category": "funny",
+    "action": "shake",
+    "clip_path": "/animations/emojis/skull.svg"
+  },
+  {
+    "slug": "devil",
+    "emoji": "😈",
+    "name": "Devil",
+    "category": "funny",
+    "action": "pulse",
+    "clip_path": "/animations/emojis/devil.svg"
+  },
+  {
+    "slug": "angel",
+    "emoji": "😇",
+    "name": "Angel",
+    "category": "cute",
+    "action": "float",
+    "clip_path": "/animations/emojis/angel.svg"
+  },
+  {
+    "slug": "sleepy",
+    "emoji": "😴",
+    "name": "Sleepy",
+    "category": "cute",
+    "action": "float",
+    "clip_path": "/animations/emojis/sleepy.svg"
+  },
+  {
+    "slug": "thinking",
+    "emoji": "🤔",
+    "name": "Thinking",
+    "category": "funny",
+    "action": "rotate",
+    "clip_path": "/animations/emojis/thinking.svg"
+  },
+  {
+    "slug": "shock",
+    "emoji": "😱",
+    "name": "Shock",
+    "category": "funny",
+    "action": "shake",
+    "clip_path": "/animations/emojis/shock.svg"
+  },
+  {
+    "slug": "sick",
+    "emoji": "🤢",
+    "name": "Sick",
+    "category": "funny",
+    "action": "shake",
+    "clip_path": "/animations/emojis/sick.svg"
+  },
+  {
+    "slug": "mask",
+    "emoji": "😷",
+    "name": "Mask",
+    "category": "cute",
+    "action": "float",
+    "clip_path": "/animations/emojis/mask.svg"
+  },
+  {
+    "slug": "sun",
+    "emoji": "🌞",
+    "name": "Sun",
+    "category": "magic",
+    "action": "rotate",
+    "clip_path": "/animations/emojis/sun.svg"
+  },
+  {
+    "slug": "moon",
+    "emoji": "🌙",
+    "name": "Moon",
+    "category": "magic",
+    "action": "float",
+    "clip_path": "/animations/emojis/moon.svg"
+  },
+  {
+    "slug": "rainbow",
+    "emoji": "🌈",
+    "name": "Rainbow",
+    "category": "magic",
+    "action": "float",
+    "clip_path": "/animations/emojis/rainbow.svg"
+  },
+  {
+    "slug": "cloud",
+    "emoji": "☁️",
+    "name": "Cloud",
+    "category": "cute",
+    "action": "float",
+    "clip_path": "/animations/emojis/cloud.svg"
+  },
+  {
+    "slug": "flower",
+    "emoji": "🌸",
+    "name": "Flower",
+    "category": "love",
+    "action": "bloom",
+    "clip_path": "/animations/emojis/flower.svg"
+  },
+  {
+    "slug": "clover",
+    "emoji": "🍀",
+    "name": "Clover",
+    "category": "magic",
+    "action": "rotate",
+    "clip_path": "/animations/emojis/clover.svg"
+  },
+  {
+    "slug": "cat",
+    "emoji": "😺",
+    "name": "Cat",
+    "category": "cute",
+    "action": "bounce",
+    "clip_path": "/animations/emojis/cat.svg"
+  }
+]
