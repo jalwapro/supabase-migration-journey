@@ -68,8 +68,11 @@ type Room = {
   host_id: string;
   agora_channel: string;
   locked_seats: number[] | null;
+  milestone_awarded_at?: string | null;
   host: { username: string | null; avatar: string | null } | null;
 };
+
+type TopGifter = { user_id: string; username: string | null; avatar: string | null; total_coins: number };
 
 type Member = {
   room_id: string;
