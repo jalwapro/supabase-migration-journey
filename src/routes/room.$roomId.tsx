@@ -442,6 +442,10 @@ function RoomPage() {
       toast.error("Sign in first");
       return;
     }
+    if (!isHost && lockedSeats.includes(seatIndex)) {
+      toast.error("This seat is locked");
+      return;
+    }
     if (seatIndex === 0 && !isHost) {
       toast.error("Seat 1 is for the host");
       return;
@@ -452,12 +456,10 @@ function RoomPage() {
       });
       return;
     }
-    const { error } = await supabase
-      .from("room_members")
-      .upsert(
-        { room_id: roomId, user_id: user.id, seat_index: seatIndex },
-        { onConflict: "room_id,user_id" },
-      );
+    const { error } = await supabase.rpc("take_seat", {
+      _room_id: roomId,
+      _seat_index: seatIndex,
+    });
     if (error) toast.error(error.message);
   }
 
