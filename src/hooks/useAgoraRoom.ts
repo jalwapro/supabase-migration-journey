@@ -219,11 +219,21 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
   const toggleMute = useCallback(async () => {
     const track = localAudioRef.current;
-    if (!track) return;
+    if (!track) {
+      console.warn("[agora] toggleMute: no local audio track yet");
+      return;
+    }
     const next = !muted;
-    await track.setEnabled(!next);
-    setMuted(next);
+    // Use setMuted (not setEnabled) — setEnabled disposes the track and
+    // re-enabling is slow / can fail. setMuted only stops sending data.
+    try {
+      await track.setMuted(next);
+      setMuted(next);
+    } catch (e) {
+      console.error("[agora] setMuted failed", e);
+    }
   }, [muted]);
+
 
   const toggleSpeaker = useCallback(() => {
     setSpeakerMuted((prev) => {
