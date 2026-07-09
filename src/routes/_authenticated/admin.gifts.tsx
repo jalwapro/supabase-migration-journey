@@ -26,6 +26,7 @@ type GiftRow = {
   is_active: boolean;
   clip_path: string | null;
   clip_type: string | null;
+  is_milestone?: boolean | null;
 };
 
 const CATEGORIES = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
@@ -41,6 +42,7 @@ type Draft = {
   sort_order: number;
   clip_path: string;
   clip_type: (typeof CLIP_TYPES)[number];
+  is_milestone: boolean;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -52,6 +54,7 @@ const EMPTY_DRAFT: Draft = {
   sort_order: 99,
   clip_path: "",
   clip_type: "none",
+  is_milestone: false,
 };
 
 function GiftsAdmin() {
@@ -66,7 +69,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,price,category,animation,sort_order,is_active,clip_path,clip_type")
+        .select("id,name,emoji,price,category,animation,sort_order,is_active,clip_path,clip_type,is_milestone")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -118,7 +121,12 @@ function GiftsAdmin() {
         clip_type: draft.clip_type === "none" ? "mp4" : draft.clip_type,
         is_active: true,
         active: true,
+        is_milestone: draft.is_milestone,
       };
+      if (draft.is_milestone) {
+        // Ensure only one milestone gift exists
+        await supabase.from("gifts").update({ is_milestone: false }).eq("is_milestone", true);
+      }
       if (draft.id) {
         const { error } = await supabase.from("gifts").update(row).eq("id", draft.id);
         if (error) throw error;
@@ -175,6 +183,7 @@ function GiftsAdmin() {
           ? "svg"
           : "mp4"
         : "none") as Draft["clip_type"],
+      is_milestone: Boolean(g.is_milestone),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -223,7 +232,10 @@ function GiftsAdmin() {
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-bold">{g.name}</p>
+                    <p className="truncate font-bold">
+                      {g.is_milestone && <span title="Milestone gift">⭐ </span>}
+                      {g.name}
+                    </p>
                     <p className="truncate text-[10px] text-[color:var(--gold)]">
                       {g.price?.toLocaleString()} · {g.category}
                       {g.clip_type ? ` · ${g.clip_type}` : ""}
@@ -319,6 +331,14 @@ function GiftsAdmin() {
               onChange={(e) => setDraft((d) => ({ ...d, animation: e.target.value }))}
               className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
             />
+            <label className="col-span-2 flex items-center gap-2 rounded-lg border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 px-2 py-1.5 text-[11px] font-bold">
+              <input
+                type="checkbox"
+                checked={draft.is_milestone}
+                onChange={(e) => setDraft((d) => ({ ...d, is_milestone: e.target.checked }))}
+              />
+              ⭐ Milestone gift (played when a room hits 300k coins). Only one gift can be milestone.
+            </label>
           </div>
 
           {/* Clip section */}

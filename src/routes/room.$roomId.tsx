@@ -68,8 +68,11 @@ type Room = {
   host_id: string;
   agora_channel: string;
   locked_seats: number[] | null;
+  milestone_awarded_at?: string | null;
   host: { username: string | null; avatar: string | null } | null;
 };
+
+type TopGifter = { user_id: string; username: string | null; avatar: string | null; total_coins: number };
 
 type Member = {
   room_id: string;
@@ -163,6 +166,9 @@ function RoomPage() {
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
+  const [milestoneOpen, setMilestoneOpen] = useState(false);
+  const [topGifters, setTopGifters] = useState<TopGifter[]>([]);
+  const [awarding, setAwarding] = useState(false);
 
   const room = useQuery({
     queryKey: ["room", roomId],
@@ -170,7 +176,7 @@ function RoomPage() {
       const { data, error } = await supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar)",
+          "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,milestone_awarded_at,host:profiles!live_rooms_host_id_fkey(username,avatar)",
         )
         .eq("id", roomId)
         .maybeSingle();
@@ -702,6 +708,36 @@ function RoomPage() {
     if (error) console.warn("[emoji]", error.message);
   }
 
+  async function openMilestoneSheet() {
+    setMilestoneOpen(true);
+    const { data, error } = await supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 20 });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setTopGifters((data ?? []) as TopGifter[]);
+  }
+
+  async function awardMilestone(receiverId: string) {
+    if (awarding) return;
+    setAwarding(true);
+    try {
+      const { error } = await supabase.rpc("award_milestone_gift", {
+        _room_id: roomId,
+        _receiver_id: receiverId,
+      });
+      if (error) throw error;
+      toast.success("Milestone gift awarded 🎉");
+      setMilestoneOpen(false);
+      await room.refetch();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setAwarding(false);
+    }
+  }
+
+
   async function leaveRoom() {
     if (user && isHost) {
       // Convert accumulated gift points into diamonds for each receiver
@@ -833,8 +869,10 @@ function RoomPage() {
 
   const r = room.data;
   const roomCode = shortRoomCode(r.id);
-  const popScore = popularity.coin_score + popularity.like_count;
-  const popularityPct = Math.min(100, Math.round((popScore / 2000) * 100));
+  const popScore = popularity.coin_score;
+  // 3,000 coins = 1%. 300,000 coins = ranked (100%).
+  const popularityPct = Math.min(100, Math.round((popScore / 3000)));
+  const isRanked = popScore >= 300_000;
   const popScoreLabel =
     popScore >= 1_000_000
       ? `${(popScore / 1_000_000).toFixed(1)}M`
@@ -1066,18 +1104,31 @@ function RoomPage() {
             </div>
 
             <div className="flex min-h-0 flex-col gap-2">
-              <button className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md">
+              <button
+                onClick={() => isHost && isRanked && openMilestoneSheet()}
+                className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md"
+              >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[13px] font-bold text-white/90">🔥 Room Popularity</span>
+                  <span className="truncate text-[13px] font-bold text-white/90">
+                    🔥 Room Popularity {isRanked && <span className="ml-1 rounded-full bg-[color:var(--gold)]/25 px-1.5 py-0.5 text-[9px] font-black uppercase text-[color:var(--gold)]">Ranked</span>}
+                  </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
                 </div>
                 <div className="mt-2 text-2xl font-semibold leading-none">{popScoreLabel}</div>
                 <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300"
-                    style={{ width: `${Math.max(56, popularityPct)}%` }}
+                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300 transition-all"
+                    style={{ width: `${Math.max(2, popularityPct)}%` }}
                   />
                 </div>
+                {isHost && isRanked && !r.milestone_awarded_at && (
+                  <div className="mt-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-3 py-1 text-center text-[10px] font-black uppercase tracking-wider text-black">
+                    ⭐ Award Milestone Gift
+                  </div>
+                )}
+                {r.milestone_awarded_at && (
+                  <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
+                )}
               </button>
               <div className="grid flex-1 grid-cols-2 gap-2">
                 {isHost ? (
@@ -1300,6 +1351,62 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      {milestoneOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
+          onClick={() => setMilestoneOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#1a0b2e] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-base font-black text-white">⭐ Award Milestone Gift</p>
+                <p className="text-[11px] text-white/60">Room hit 300k coins — pick the top gifter to receive the milestone gift.</p>
+              </div>
+              <button
+                onClick={() => setMilestoneOpen(false)}
+                className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+              {topGifters.length === 0 ? (
+                <p className="py-6 text-center text-xs text-white/60">Loading top gifters…</p>
+              ) : (
+                topGifters.map((g, i) => (
+                  <button
+                    key={g.user_id}
+                    disabled={awarding}
+                    onClick={() => awardMilestone(g.user_id)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-[color:var(--gold)]/60 disabled:opacity-60"
+                  >
+                    <span className="w-5 text-center text-xs font-black text-[color:var(--gold)]">{i + 1}</span>
+                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-white/20">
+                      {g.avatar ? (
+                        <img src={g.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-bold text-white">
+                          {(g.username ?? "?").slice(0, 1).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-white">@{g.username ?? "user"}</p>
+                      <p className="text-[10px] text-[color:var(--gold)]">🪙 {Number(g.total_coins).toLocaleString()}</p>
+                    </div>
+                    <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[10px] font-black text-black">
+                      Award
+                    </span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <LudoSheet
         open={ludoOpen}
         onClose={() => setLudoOpen(false)}
