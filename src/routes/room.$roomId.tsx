@@ -861,6 +861,29 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
+    // If browser blocked mic earlier, try to re-request permission on this
+    // user gesture. Show the exact reason if it fails again.
+    if (agora.micBlocked || !agora.localAudioTrack.current) {
+      const ok = await agora.requestMic();
+      if (!ok) {
+        toast.error(agora.micError ?? "Microphone unavailable", {
+          description:
+            "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again.",
+          duration: 8000,
+        });
+        return;
+      }
+      // Just enabled mic — reflect in DB and stop here (already unmuted).
+      if (user) {
+        await supabase
+          .from("room_members")
+          .update({ is_muted: false })
+          .eq("room_id", roomId)
+          .eq("user_id", user.id);
+      }
+      toast.success("Microphone enabled");
+      return;
+    }
     // Compute the post-toggle value BEFORE the toggle so the DB write matches
     // the new state — `agora.muted` is React state that only updates on next
     // render.
@@ -874,6 +897,18 @@ function RoomPage() {
         .eq("user_id", user.id);
     }
   }
+
+  // One-time toast when the initial mic acquisition on join gets denied.
+  useEffect(() => {
+    if (agora.micBlocked && agora.micError && shouldPublish) {
+      toast.error(agora.micError, {
+        id: "mic-blocked",
+        description: "Tap the mic button to retry after allowing access.",
+        duration: 8000,
+      });
+    }
+  }, [agora.micBlocked, agora.micError, shouldPublish]);
+
 
   if (room.isLoading) {
     return (
