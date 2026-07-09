@@ -7,6 +7,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { Bell, Check, CheckCheck, Loader2, Settings2, UserPlus, MessageCircle, Gift, Wallet, Radio, Shield, AlertTriangle } from "lucide-react";
 import type { NotificationRow, NotificationKind } from "@/hooks/useNotifications";
+import { openNotification } from "@/components/NotificationPopup";
+
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/notifications")({ component: Page });
