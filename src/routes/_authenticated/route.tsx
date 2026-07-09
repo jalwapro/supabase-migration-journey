@@ -1,16 +1,8 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { useGlobalRealtime } from "@/hooks/useGlobalRealtime";
-import { NotificationPopup } from "@/components/NotificationPopup";
 
 function AuthedShell() {
-  useGlobalRealtime();
-  return (
-    <>
-      <Outlet />
-      <NotificationPopup />
-    </>
-  );
+  return <Outlet />;
 }
 
 

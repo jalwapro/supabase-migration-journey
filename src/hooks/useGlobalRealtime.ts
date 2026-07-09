@@ -184,8 +184,8 @@ export function useGlobalRealtime() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
         (payload: { new: NotificationRow }) => {
-          qc.invalidateQueries({ queryKey: ["notif-unread"] });
-          qc.invalidateQueries({ queryKey: ["notif-feed"] });
+          qc.invalidateQueries({ queryKey: ["notif-unread", uid] });
+          qc.invalidateQueries({ queryKey: ["notif-feed", uid] });
           const row = payload.new;
           if (row?.title) {
             toast(row.title, {
