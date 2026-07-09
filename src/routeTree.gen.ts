@@ -29,6 +29,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedPrivacyRouteImport } from './routes/_authenticated/privacy'
 import { Route as AuthenticatedPkHistoryRouteImport } from './routes/_authenticated/pk-history'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyRoomsRouteImport } from './routes/_authenticated/my-rooms'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
@@ -40,6 +41,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
@@ -59,6 +61,7 @@ import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
+import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
 import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
@@ -170,6 +173,12 @@ const AuthenticatedPkHistoryRoute = AuthenticatedPkHistoryRouteImport.update({
   path: '/pk-history',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMyRoomsRoute = AuthenticatedMyRoomsRouteImport.update({
   id: '/my-rooms',
   path: '/my-rooms',
@@ -225,6 +234,12 @@ const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
   path: '/u/$userId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
     id: '/lucky-spin',
@@ -334,6 +349,12 @@ const AuthenticatedAdminPartnersRoute =
     path: '/partners',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminNotificationsRoute =
+  AuthenticatedAdminNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -411,10 +432,11 @@ export interface FileRoutesByFullPath {
   '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/pk-history': typeof AuthenticatedPkHistoryRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -434,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
@@ -453,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -472,10 +496,11 @@ export interface FileRoutesByTo {
   '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/pk-history': typeof AuthenticatedPkHistoryRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
-  '/settings': typeof AuthenticatedSettingsRoute
+  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -495,6 +520,7 @@ export interface FileRoutesByTo {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
@@ -514,6 +540,7 @@ export interface FileRoutesByTo {
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -536,10 +563,11 @@ export interface FileRoutesById {
   '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/my-rooms': typeof AuthenticatedMyRoomsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/pk-history': typeof AuthenticatedPkHistoryRoute
   '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
@@ -559,6 +587,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
@@ -578,6 +607,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -600,6 +630,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/me'
     | '/my-rooms'
+    | '/notifications'
     | '/pk-history'
     | '/privacy'
     | '/recharge'
@@ -623,6 +654,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/notifications'
     | '/admin/partners'
     | '/admin/payment-accounts'
     | '/admin/pk'
@@ -642,6 +674,7 @@ export interface FileRouteTypes {
     | '/admin/vip'
     | '/admin/withdrawals'
     | '/games/lucky-spin'
+    | '/settings/notifications'
     | '/u/$userId'
     | '/api/public/smtp-verify'
     | '/admin/'
@@ -661,6 +694,7 @@ export interface FileRouteTypes {
     | '/games'
     | '/me'
     | '/my-rooms'
+    | '/notifications'
     | '/pk-history'
     | '/privacy'
     | '/recharge'
@@ -684,6 +718,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/notifications'
     | '/admin/partners'
     | '/admin/payment-accounts'
     | '/admin/pk'
@@ -703,6 +738,7 @@ export interface FileRouteTypes {
     | '/admin/vip'
     | '/admin/withdrawals'
     | '/games/lucky-spin'
+    | '/settings/notifications'
     | '/u/$userId'
     | '/api/public/smtp-verify'
     | '/admin'
@@ -724,6 +760,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games'
     | '/_authenticated/me'
     | '/_authenticated/my-rooms'
+    | '/_authenticated/notifications'
     | '/_authenticated/pk-history'
     | '/_authenticated/privacy'
     | '/_authenticated/recharge'
@@ -747,6 +784,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/live'
     | '/_authenticated/admin/logs'
+    | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/partners'
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/pk'
@@ -766,6 +804,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vip'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/lucky-spin'
+    | '/_authenticated/settings/notifications'
     | '/_authenticated/u/$userId'
     | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
@@ -929,6 +968,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPkHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/my-rooms': {
       id: '/_authenticated/my-rooms'
       path: '/my-rooms'
@@ -1005,6 +1051,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/u/$userId'
       preLoaderRoute: typeof AuthenticatedUUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/games/lucky-spin': {
       id: '/_authenticated/games/lucky-spin'
@@ -1139,6 +1192,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPartnersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/notifications': {
+      id: '/_authenticated/admin/notifications'
+      path: '/notifications'
+      fullPath: '/admin/notifications'
+      preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/logs': {
       id: '/_authenticated/admin/logs'
       path: '/logs'
@@ -1231,6 +1291,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
   AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
+  AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
@@ -1264,6 +1325,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,
   AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
+  AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
@@ -1302,6 +1364,20 @@ const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
 const AuthenticatedGamesRouteWithChildren =
   AuthenticatedGamesRoute._addFileChildren(AuthenticatedGamesRouteChildren)
 
+interface AuthenticatedSettingsRouteChildren {
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
+}
+
+const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRoute,
+}
+
+const AuthenticatedSettingsRouteWithChildren =
+  AuthenticatedSettingsRoute._addFileChildren(
+    AuthenticatedSettingsRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
@@ -1311,10 +1387,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRouteWithChildren
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedMyRoomsRoute: typeof AuthenticatedMyRoomsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPkHistoryRoute: typeof AuthenticatedPkHistoryRoute
   AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
@@ -1331,10 +1408,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGamesRoute: AuthenticatedGamesRouteWithChildren,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedMyRoomsRoute: AuthenticatedMyRoomsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPkHistoryRoute: AuthenticatedPkHistoryRoute,
   AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
