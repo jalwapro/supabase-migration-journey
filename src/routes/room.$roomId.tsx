@@ -346,11 +346,66 @@ function RoomPage() {
           }));
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "live_rooms",
+          filter: `id=eq.${roomId}`,
+        },
+        (payload) => {
+          const row = payload.new as { locked_seats: number[] | null };
+          setLockedSeats(row.locked_seats ?? []);
+        },
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
     };
   }, [roomId]);
+
+  // Seat invites → popup for recipient
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`seat-invites-${user.id}-${roomId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "seat_invites",
+          filter: `to_user=eq.${user.id}`,
+        },
+        async (payload) => {
+          const row = payload.new as {
+            id: string;
+            room_id: string;
+            from_user: string;
+            seat_index: number | null;
+            status: string;
+          };
+          if (row.room_id !== roomId || row.status !== "pending") return;
+          const { data } = await supabase
+            .from("profiles")
+            .select("username,avatar")
+            .eq("id", row.from_user)
+            .maybeSingle();
+          const p = data as { username: string | null; avatar: string | null } | null;
+          setPendingInvite({
+            id: row.id,
+            from_name: p?.username ?? null,
+            from_avatar: p?.avatar ?? null,
+            seat_index: row.seat_index,
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [user, roomId]);
 
   useEffect(() => {
     if (!user || !room.data?.id) return;
