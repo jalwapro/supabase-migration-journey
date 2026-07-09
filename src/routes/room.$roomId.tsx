@@ -161,6 +161,8 @@ function RoomPage() {
     { id: string; emoji: string; seat: number }[]
   >([]);
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
+  const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
+  const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
 
   const room = useQuery({
     queryKey: ["room", roomId],
