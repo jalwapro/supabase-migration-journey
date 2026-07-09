@@ -109,17 +109,23 @@ export function useGlobalRealtime() {
       },
     ]);
 
-    const ch3 = subscribe(qc, `dm:${uid}`, [
+    const ch3 = subscribe(qc, `dm-received:${uid}`, [
       {
         table: "direct_messages",
         filter: `recipient_id=eq.${uid}`,
-        keys: ["dm", "dm-thread", "dm-threads", "messages", "conversations"],
+        keys: ["dm", "dm_index", "dm-thread", "dm-threads", "messages", "conversations"],
       },
+    ]);
+
+    const ch3b = subscribe(qc, `dm-sent:${uid}`, [
       {
         table: "direct_messages",
         filter: `sender_id=eq.${uid}`,
-        keys: ["dm", "dm-thread", "dm-threads", "messages", "conversations"],
+        keys: ["dm", "dm_index", "dm-thread", "dm-threads", "messages", "conversations"],
       },
+    ]);
+
+    const ch3c = subscribe(qc, `gifts:${uid}`, [
       {
         table: "gift_sends",
         filter: `receiver_id=eq.${uid}`,
@@ -174,6 +180,8 @@ export function useGlobalRealtime() {
       void supabase.removeChannel(ch1);
       void supabase.removeChannel(ch2);
       void supabase.removeChannel(ch3);
+      void supabase.removeChannel(ch3b);
+      void supabase.removeChannel(ch3c);
       void supabase.removeChannel(ch4);
     };
   }, [user, qc]);

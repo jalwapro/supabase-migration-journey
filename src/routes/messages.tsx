@@ -103,22 +103,33 @@ function MessagesPage() {
     },
   });
 
-  // Realtime — invalidate on DM or follow change
+  // Realtime — invalidate on DM or follow change. DM sender/recipient filters
+  // stay on separate channels so both directions keep the inbox live.
   useEffect(() => {
     if (!uid) return;
-    const ch = supabase
-      .channel(`chat-index-${uid}`)
+    const sentCh = supabase
+      .channel(`chat-index-sent-${uid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` }, () => {
         qc.invalidateQueries({ queryKey: ["dm_index", uid] });
       })
+      .subscribe();
+    const receivedCh = supabase
+      .channel(`chat-index-received-${uid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` }, () => {
         qc.invalidateQueries({ queryKey: ["dm_index", uid] });
       })
+      .subscribe();
+    const followsCh = supabase
+      .channel(`chat-index-follows-${uid}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `follower_id=eq.${uid}` }, () => {
         qc.invalidateQueries({ queryKey: ["chat-following", uid] });
       })
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    return () => {
+      void supabase.removeChannel(sentCh);
+      void supabase.removeChannel(receivedCh);
+      void supabase.removeChannel(followsCh);
+    };
   }, [uid, qc]);
 
   if (!user) {
