@@ -1,74 +1,98 @@
-## Voice Room — Multi-part Upgrade Plan
+## Room upgrade — 8 changes
 
-Aap ne 8 changes maange hain. Yeh plan har ek ko cover karta hai.
+### 1. Chat: single feed (no tabs)
+- Header title row se `All / Chat` tabs hata do (dono jagah — main chat & bottom sheet)
+- Ek hi feed jisme sab kuch aaye: welcome/join, chat, gift, system
+- Emoji reactions abhi bhi feed se filtered rahengi (screen pe animate hoti hain)
 
-### 1. Viewer count → Viewers popup
-- Header ka viewer count clickable → bottom sheet khulega
-- List me sirf **viewers** (jo seat pe nahi hain) with dp + frame + name
-- Agar current user **host ya moderator** hai → har viewer row pe **"Invite to seat"** button
-- Click karne pe DB me `seat_invites` row insert hoti hai (naya table)
+### 2. Auto-scroll on new message
+- `useEffect` + `messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })` jab bhi `messages.length` change ho
+- Chat list ko `flex-col` (top-down) rakhna — naya message niche
+- Entry banner already screen ke top-left overlay hai, wo top pe hi rahega
 
-### 2. Seat invite → viewer accept popup
-- Naya table `seat_invites (id, room_id, from_user, to_user, seat_index NULL, status, created_at)`
-- Realtime subscribe: jab viewer ko invite aaye → modal popup "Host aap ko seat pe bula raha hai — Accept / Decline"
-- Accept → auto seat pe baith jata hai (first free seat, ya nominated seat_index)
+### 3. Host title ke aage ❤ hata do → Follow button
+- Line 788 ka `💖` remove
+- Uski jagah chhota `+` follow chip: not-following → gradient `+` icon (click = follow), following → **black heart** icon
+- Alag "+ FOLLOW" button (right side, line 824) bhi hata do — ek hi jagah rahega
 
-### 3. Seat lock by host/moderator
-- Har seat ke long-press / manage sheet me **"Lock seat"** toggle (host + moderator only)
-- New column `room_seats.locked` (ya `live_rooms.locked_seats jsonb`) — chhota table `room_seat_locks(room_id, seat_index, locked_by)` cleaner
-- Locked seat pe koi apply nahi kar sakta
+### 4. Black heart → daily 100-coin love (premium)
+- Follow ke baad: black heart button
+- Click → 100 coins deduct, host ki popularity +1, host ko notification, heart **red blink 3s** phir back to black-with-timer
+- Same din dobara click block; **24hr baad** automatically dobara available (black heart re-enabled)
+- Tooltip: "Daily love · 100 coins"
 
-### 4. Points sirf gifting se, DP tap se nahi
-- Current: DP press → like/point increment
-- Change: DP tap handler se popularity/like RPC hata do
-- `send_room_gift` already popularity + diamonds update karta hai — verify
+### 5. Family = Premium (badge)
+- Existing "👑 FAMILY" button ko "👑 PREMIUM" label + gold gradient border stronger
+- Family members ko room me name ke aage 👑 badge
 
-### 5. Gifts → diamonds to receiver
-- `send_room_gift` mein already `diamonds_earned = price * hostGiftShare` hota hai aur `profiles.diamonds` me add hota hai
-- Verify wallet screen mein "Diamonds" tab dikhata hai — agar nahi, add
+### 6. Emoji bar: hide empty seats
+- Current bar sab 8 seats dikhata hai
+- Only seated members (`seats.filter(s => s.user_id)`) ki DP chip render karo
 
-### 6. Host seat rules
-- Seat 0 = host-only (already convention)
-- Enforce: 
-  - Sirf host `seat_index = 0` claim kar sakta hai (RLS + client check)
-  - Agar host koi aur seat pe jaye → seat 0 automatically khali (server-side trigger ya client cleanup)
-  - Host wapas aana chahe to seat 0 hamesha reserved
-- Client: dusri seat pe "Sit here" tab pe host ke case me pehle seat 0 se hata do
+### 7. GiftSheet: only seated DPs (already done) — verify
+- `receivers` prop already sirf seated users pass hota hai. Confirm and ensure "All" chip visible jab >1 seated ho ✅ (already implemented)
 
-### 7. Seats me sirf DP + frame, name hide
-- Current SeatTile me username text hai — remove kar do
-- DP + equipped avatar frame render karo, username sirf manage sheet me
-
-### 8. Emoji reaction bar — user count hatao, seated user DPs dikhao
-- Current: emoji picker ke saath viewer count badge
-- Change: horizontal strip of seated members' DPs (jaise gift box mein hota hai)
-- Jese-jese seat fill ho, DP add hota jaye
-
-### 9. Gift box redesign
-- Existing `GiftSheet` me receiver row already hai; refactor:
-  - DP-based avatar chips (name hataao, sirf DP + frame)
-  - **"All"** chip + har seated user ka DP chip
-  - Multi-select ya single toggle (default single; "All" broadcasts)
+### 8. Gift to All + selected
+- Already `sendToAll` toggle hai. UI polish: "All" chip pehli position pe, active state gold ring — already OK
 
 ---
 
-### Files to change
-- `db/migrations/0033_seat_invites_and_locks.sql` — naya migration (seat_invites table + seat_locks column + RLS)
-- `src/routes/room.$roomId.tsx` — SeatTile, ViewersSheet, InviteAcceptModal, emoji bar, DP-tap handler
-- `src/components/GiftSheet.tsx` — receiver chips redesign
-- `src/hooks/useRealtimeInvalidate.ts` ya inline realtime for `seat_invites`
+### DB migration (`db/migrations/0036_daily_host_love.sql`)
+```sql
+create table if not exists public.host_love_hearts (
+  id uuid primary key default gen_random_uuid(),
+  from_user uuid not null references auth.users(id) on delete cascade,
+  to_host  uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index on public.host_love_hearts(from_user, to_host, created_at desc);
 
-### Order of work
-1. SQL migration (aap apply karo ge Supabase pe)
-2. Points-from-DP-tap remove (chhota, safe)
-3. Seat rules + seat 0 host-only enforcement
-4. SeatTile — hide name, DP-only
-5. Emoji bar → seated DP strip
-6. Viewers sheet + invite flow (biggest piece)
-7. Seat lock UI
-8. GiftSheet receiver chip redesign
+grant select, insert on public.host_love_hearts to authenticated;
+grant all on public.host_love_hearts to service_role;
+alter table public.host_love_hearts enable row level security;
+create policy "love read own or host"
+  on public.host_love_hearts for select to authenticated
+  using (from_user = auth.uid() or to_host = auth.uid());
+create policy "love insert self"
+  on public.host_love_hearts for insert to authenticated
+  with check (from_user = auth.uid());
 
-### Confirm before I start
-- Migration file main likhu — aap khud Supabase pe apply karo ge (per your Core rule)?
-- Seat 0 = host convention theek hai, ya aap chahtay ho host ke liye alag "host chair" upar center?
-- Invite accept popup timeout (e.g. 30s auto-decline) chahiye?
+create or replace function public.send_host_love(_host uuid)
+returns table(next_available_at timestamptz)
+language plpgsql security definer set search_path=public
+as $$
+declare
+  me uuid := auth.uid();
+  last timestamptz;
+  cost int := 100;
+begin
+  if me is null then raise exception 'auth required'; end if;
+  if me = _host then raise exception 'cannot love self'; end if;
+
+  select max(created_at) into last
+    from host_love_hearts
+    where from_user = me and to_host = _host;
+  if last is not null and last > now() - interval '24 hours' then
+    raise exception 'already loved today';
+  end if;
+
+  update profiles set coins = coins - cost
+    where id = me and coins >= cost;
+  if not found then raise exception 'insufficient coins'; end if;
+
+  update profiles set diamonds = diamonds + 1, popularity = coalesce(popularity,0) + 1
+    where id = _host;
+
+  insert into host_love_hearts(from_user, to_host) values (me, _host);
+  return query select (now() + interval '24 hours');
+end;
+$$;
+grant execute on function public.send_host_love(uuid) to authenticated;
+```
+
+### Files touched
+- `db/migrations/0036_daily_host_love.sql` (new)
+- `src/routes/room.$roomId.tsx` — chat tabs remove, auto-scroll, heart-follow button, emoji bar filter, header polish
+- Confirm no changes needed in `GiftSheet.tsx` (already DP-only + All)
+
+Shuru karun?

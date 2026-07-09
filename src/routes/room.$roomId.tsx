@@ -119,7 +119,7 @@ const QUICK_GIFTS: { name: string; icon: string; price: number }[] = [
 
 function RoomPage() {
   const { roomId } = Route.useParams();
-  const { user, profile } = useAuth();
+  const { user, profile, refresh } = useAuth();
   const navigate = useNavigate();
 
   const [text, setText] = useState("");
@@ -137,7 +137,8 @@ function RoomPage() {
     blur: false,
   });
 
-  const [chatTab, setChatTab] = useState<"all" | "chat">("all");
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const chatEndVideoRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
@@ -187,6 +188,12 @@ function RoomPage() {
   useEffect(() => {
     setLockedSeats(room.data?.locked_seats ?? []);
   }, [room.data?.locked_seats]);
+
+  // Auto-scroll chat to newest on every new message
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    chatEndVideoRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages.length]);
 
   const agora = useAgoraRoom({
     channel: room.data?.agora_channel ?? null,
@@ -513,6 +520,49 @@ function RoomPage() {
     followsHost.refetch();
   }
 
+  // Daily "love" heart — 100 coins/day → host
+  const lastLove = useQuery({
+    enabled: !!user && !!room.data?.host_id && user?.id !== room.data?.host_id,
+    queryKey: ["host-love", user?.id, room.data?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("host_love_hearts")
+        .select("created_at")
+        .eq("from_user", user!.id)
+        .eq("to_host", room.data!.host_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data?.created_at ? new Date(data.created_at as string) : null;
+    },
+  });
+  const [loveBlink, setLoveBlink] = useState(false);
+  const loveCooling =
+    !!lastLove.data && lastLove.data.getTime() > Date.now() - 24 * 60 * 60 * 1000;
+
+  async function sendLove() {
+    if (!user || !room.data) return;
+    if (loveCooling) {
+      toast.info("Daily heart already sent — come back tomorrow 💤");
+      return;
+    }
+    if ((profile?.coins ?? 0) < 100) {
+      toast.error("Need 100 coins");
+      return;
+    }
+    const { error } = await supabase.rpc("send_host_love", {
+      _host: room.data.host_id,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setLoveBlink(true);
+    setTimeout(() => setLoveBlink(false), 3000);
+    toast.success("💖 Love sent — 100 coins");
+    await Promise.all([lastLove.refetch(), refresh()]);
+  }
+
   async function takeSeat(seatIndex: number) {
     if (!user) {
       toast.error("Sign in first");
@@ -781,11 +831,19 @@ function RoomPage() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
                   {r.title}
                 </span>
-                <span className="shrink-0 text-[19px] leading-none">💖</span>
+                {!isHost && (
+                  <FollowLoveChip
+                    isFollowing={!!followsHost.data}
+                    onFollow={() => void followHost()}
+                    onLove={() => void sendLove()}
+                    cooling={loveCooling}
+                    blink={loveBlink}
+                  />
+                )}
               </div>
               <div className="truncate text-[10px] font-semibold text-white/60">
                 ID:{roomCode}
@@ -820,23 +878,14 @@ function RoomPage() {
           </Link>
           <div className="flex items-center gap-1.5">
             {!isHost && (
-              <>
-                <button
-                  onClick={() => void followHost()}
-                  disabled={!!followsHost.data}
-                  className="rounded-full bg-[color:var(--primary)] px-2.5 py-1 text-[10px] font-black tracking-wider text-white shadow-lg shadow-[color:var(--primary)]/30 disabled:bg-white/10 disabled:text-white/50"
-                >
-                  {followsHost.data ? "FOLLOWING" : "+ FOLLOW"}
-                </button>
-                <button
-                  onClick={() => void joinFamily()}
-                  disabled={!!familyMember.data}
-                  className="rounded-full border border-[color:var(--gold)]/50 bg-gradient-to-r from-[color:var(--gold)]/20 to-amber-400/10 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/20 disabled:opacity-60"
-                  aria-label="Join family"
-                >
-                  {familyMember.data ? "👑 JOINED" : "👑 FAMILY"}
-                </button>
-              </>
+              <button
+                onClick={() => void joinFamily()}
+                disabled={!!familyMember.data}
+                className="rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
+                aria-label="Join premium family"
+              >
+                {familyMember.data ? "👑 PREMIUM" : "👑 PREMIUM"}
+              </button>
             )}
             <button
               onClick={() => setViewersSheetOpen(true)}
@@ -943,27 +992,20 @@ function RoomPage() {
         {!isVideo ? (
           <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_39%] gap-2">
             <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
-              <div className="mb-2 flex items-center gap-7 border-b border-white/10 px-1 pb-2">
-                {(["all", "chat"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setChatTab(t)}
-                    className={`relative text-sm font-bold capitalize ${chatTab === t ? "text-white" : "text-white/60"}`}
-                  >
-                    {t}
-                    {chatTab === t && (
-                      <span className="absolute -bottom-2 left-0 h-0.5 w-full rounded-full bg-[color:var(--primary)]" />
-                    )}
-                  </button>
-                ))}
+              <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
+                <span className="text-sm font-bold text-white">Room Chat</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
+                  Live
+                </span>
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji")
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
+                <div ref={chatEndRef} />
               </div>
             </div>
 
@@ -1003,27 +1045,18 @@ function RoomPage() {
         ) : (
           <div className="flex min-h-0 flex-1 gap-2">
             <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-              <div className="mb-1 flex items-center gap-3 border-b border-white/10 px-1 pb-1.5">
-                {(["all", "chat"] as const).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setChatTab(t)}
-                    className={`text-[12px] font-black capitalize ${chatTab === t ? "text-white" : "text-white/40"}`}
-                  >
-                    {t}
-                    {chatTab === t && (
-                      <span className="mx-auto mt-1 block h-0.5 w-4 rounded-full bg-[color:var(--primary)]" />
-                    )}
-                  </button>
-                ))}
+              <div className="mb-1 flex items-center justify-between border-b border-white/10 px-1 pb-1.5">
+                <span className="text-[12px] font-black text-white">Chat</span>
+                <span className="text-[9px] font-semibold uppercase tracking-wider text-white/50">Live</span>
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
                 {messages
-                  .filter((m) => m.kind !== "emoji" && (chatTab === "chat" ? m.kind === "chat" : true))
+                  .filter((m) => m.kind !== "emoji")
                   .map((m) => (
                     <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
                   ))}
+                <div ref={chatEndVideoRef} />
               </div>
             </div>
 
@@ -1677,6 +1710,55 @@ function EmptyChat() {
     </div>
   );
 }
+
+/* ─── Follow + daily love heart chip (next to host name) ─── */
+function FollowLoveChip({
+  isFollowing,
+  onFollow,
+  onLove,
+  cooling,
+  blink,
+}: {
+  isFollowing: boolean;
+  onFollow: () => void;
+  onLove: () => void;
+  cooling: boolean;
+  blink: boolean;
+}) {
+  if (!isFollowing) {
+    return (
+      <button
+        onClick={onFollow}
+        aria-label="Follow host"
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_0_10px_-2px_color-mix(in_oklab,var(--primary)_60%,transparent)] transition active:scale-90"
+      >
+        <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+      </button>
+    );
+  }
+  return (
+    <button
+      onClick={onLove}
+      aria-label="Send daily love (100 coins)"
+      title={cooling ? "Come back tomorrow" : "Daily love · 100 coins"}
+      className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition active:scale-90 ${
+        blink
+          ? "animate-pulse border-rose-400 bg-rose-500/30 text-rose-300 shadow-[0_0_14px_-2px_rgba(244,63,94,0.9)]"
+          : cooling
+            ? "border-white/15 bg-black/60 text-white/40"
+            : "border-white/20 bg-black/70 text-white hover:bg-black/90"
+      }`}
+    >
+      <Heart
+        className="h-3.5 w-3.5"
+        fill={blink ? "currentColor" : cooling ? "rgba(255,255,255,0.35)" : "#111"}
+        strokeWidth={2}
+      />
+    </button>
+  );
+}
+
+
 
 
 function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
