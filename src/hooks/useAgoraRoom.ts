@@ -276,6 +276,9 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
   const playMusicFile = useCallback(async (file: Blob, title: string) => {
     const client = clientRef.current;
     if (!client) throw new Error("Not connected to room yet");
+    if (client.connectionState !== "CONNECTED") throw new Error("Still connecting to room, please wait");
+    if (client.role !== "host") throw new Error("Only host can play music");
+
     const AgoraRTC = (await import("agora-rtc-sdk-ng")).default;
     // Stop previous
     if (musicTrackRef.current) {
