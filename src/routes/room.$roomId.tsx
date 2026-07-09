@@ -1738,8 +1738,8 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
               {name}
             </span>
           </div>
-          <div className="truncate text-[10px] font-medium text-white/75">
-            has entered the room
+          <div className="truncate text-[10px] font-medium text-white/85">
+            🎉 Welcome to the room — enjoy your stay!
           </div>
         </div>
 
