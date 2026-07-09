@@ -86,6 +86,7 @@ type Message = {
   user_id: string | null;
   kind: string;
   text: string | null;
+  message?: string | null;
   created_at: string;
   user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
@@ -118,7 +119,7 @@ const QUICK_GIFTS: { name: string; icon: string; price: number }[] = [
 
 function RoomPage() {
   const { roomId } = Route.useParams();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   const [text, setText] = useState("");
@@ -214,7 +215,7 @@ function RoomPage() {
         supabase
           .from("room_messages")
           .select(
-            "id,user_id,kind,text,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
+            "id,user_id,kind,text,message,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
           )
           .eq("room_id", roomId)
           .order("created_at", { ascending: false })
@@ -263,6 +264,7 @@ function RoomPage() {
         },
         async (payload) => {
           const row = payload.new as Message;
+          row.text = row.text ?? row.message ?? null;
           if (row.kind === "emoji") {
             // "😀|3" → seat 3
             const parts = (row.text ?? "").split("|");
@@ -419,11 +421,14 @@ function RoomPage() {
           { onConflict: "room_id,user_id" },
         );
       if (memberErr) console.warn("[room-members upsert]", memberErr.message);
+      const joinText = isHost ? "started the room" : "entered the room";
       const { error: msgErr } = await supabase.from("room_messages").insert({
         room_id: roomId,
         user_id: user.id,
+        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
         kind: "join",
-        text: isHost ? "started the room" : "entered the room",
+        text: joinText,
+        message: joinText,
       });
       if (msgErr) console.warn("[join insert]", msgErr.message);
     })();
@@ -555,8 +560,10 @@ function RoomPage() {
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
+      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
       kind: "chat",
       text: v,
+      message: v,
     });
     if (error) {
       toast.error(error.message);
@@ -569,11 +576,14 @@ function RoomPage() {
       toast.error("Sign in to send gifts");
       return;
     }
+    const giftText = `${g.icon} ${g.name}`;
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
+      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
       kind: "gift",
-      text: `${g.icon} ${g.name}`,
+      text: giftText,
+      message: giftText,
     });
     if (error) toast.error(error.message);
   }
@@ -596,11 +606,14 @@ function RoomPage() {
         return next;
       });
     }, 2600);
+    const emojiText = `${emoji}|${seatIndex}`;
     const { error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
+      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
       kind: "emoji",
-      text: `${emoji}|${seatIndex}`,
+      text: emojiText,
+      message: emojiText,
     });
     if (error) console.warn("[emoji]", error.message);
   }
@@ -1606,11 +1619,12 @@ function MiniAction({
 }
 
 function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
+  const body = m.text ?? m.message ?? "";
   if (m.kind === "gift") {
     return (
       <div className="inline-flex max-w-[95%] items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/10 px-2.5 py-1 text-[11px] font-bold text-[color:var(--gold)]">
         🎁 <span className="text-white/80">@{m.user?.username ?? "user"}</span> sent{" "}
-        {m.text}
+        {body}
       </div>
     );
   }
@@ -1620,7 +1634,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
         <span className="mr-1 rounded bg-white/10 px-1 py-0.5 text-[9px] font-black uppercase text-white/70">
           {m.kind}
         </span>
-        {m.text ?? (m.kind === "join" ? "joined the room" : "left the room")}
+        {body || (m.kind === "join" ? "joined the room" : "left the room")}
       </div>
     );
   }
@@ -1649,7 +1663,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
           @{m.user?.username ?? "user"}:
         </span>
         <span className="break-words text-[11.5px] leading-snug text-white/95">
-          {m.text}
+          {body}
         </span>
       </div>
     </div>
