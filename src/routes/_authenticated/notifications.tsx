@@ -136,7 +136,7 @@ function Page() {
                 return (
                   <li
                     key={n.id}
-                    onClick={() => unread && markRead.mutate([n.id])}
+                    onClick={() => openNotification(n)}
                     className={`glass flex gap-3 rounded-2xl p-3 transition ${unread ? "ring-1 ring-[color:var(--primary)]/40" : "opacity-80"}`}
                   >
                     <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[color:var(--primary)]/15 text-[color:var(--primary)]">
