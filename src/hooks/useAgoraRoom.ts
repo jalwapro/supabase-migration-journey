@@ -146,13 +146,16 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       try { videoTrack.close(); } catch { /* ignore */ }
       if (localVideoRef.current === videoTrack) localVideoRef.current = null;
     }
+    const canResetRoomState = client ? clientRef.current === client : !clientRef.current;
     if (client) {
       try { await client.leave(); } catch { /* ignore */ }
       client.removeAllListeners();
-      if (clientRef.current === client) clientRef.current = null;
+      if (canResetRoomState) clientRef.current = null;
     }
-    setRemotes(new Map());
-    setStatus("idle");
+    if (canResetRoomState) {
+      setRemotes(new Map());
+      setStatus("idle");
+    }
   }, []);
 
 
