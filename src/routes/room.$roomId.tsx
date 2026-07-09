@@ -1857,7 +1857,7 @@ function VideoTile({
       {/* footer chip */}
       <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
         <span className="flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10.5px] font-bold text-white backdrop-blur">
-          {effectiveMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          {effectiveMuted && <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />}
           <span className="truncate max-w-[90px]">
             {displayName ? `@${displayName}` : "Empty"}
           </span>
@@ -2314,7 +2314,7 @@ function Seat({
           )}
         </div>
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
-          {effectiveMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          {effectiveMuted && <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />}
           <span>{displayName ? `@${displayName}` : "Solo"}</span>
         </div>
         {member?.is_moderator && !isHostSeat && (
@@ -2382,13 +2382,9 @@ function Seat({
             </div>
           )}
         </div>
-        {(member || (isHostSeat && displayAvatar)) && (
+        {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
-            {effectiveMuted ? (
-              <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
-            ) : (
-              <Mic className="h-2 w-2 text-[color:var(--primary)]" />
-            )}
+            <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
           </span>
         )}
         {member?.is_moderator && !isHostSeat && (
