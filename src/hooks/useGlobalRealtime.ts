@@ -3,6 +3,9 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { openNotification } from "@/components/NotificationPopup";
+import type { NotificationRow } from "@/hooks/useNotifications";
+
 
 
 /**
