@@ -361,12 +361,34 @@ function RoomPage() {
           filter: `room_id=eq.${roomId}`,
         },
         (payload) => {
-          const row = payload.new as { coins_spent: number; quantity: number };
+          const row = payload.new as {
+            coins_spent: number;
+            quantity: number;
+            receiver_id: string | null;
+            diamonds_earned: number | null;
+          };
           setPopularity((p) => ({
             ...p,
             coin_score: p.coin_score + Number(row.coins_spent ?? 0),
             gift_count: p.gift_count + Number(row.quantity ?? 0),
           }));
+          if (row.receiver_id) {
+            const rid = row.receiver_id;
+            setGiftPoints((prev) => ({
+              ...prev,
+              [rid]: (prev[rid] ?? 0) + Number(row.diamonds_earned ?? 0),
+            }));
+            const stamp = Date.now();
+            setRecentGiftUsers((prev) => ({ ...prev, [rid]: stamp }));
+            setTimeout(() => {
+              setRecentGiftUsers((prev) => {
+                if (prev[rid] !== stamp) return prev;
+                const next = { ...prev };
+                delete next[rid];
+                return next;
+              });
+            }, 4500);
+          }
         },
       )
       .on(
