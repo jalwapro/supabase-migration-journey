@@ -1769,6 +1769,8 @@ function Seat({
   onLike,
   videoStyle,
   glowing,
+  locked,
+  onEmptyManage,
 }: {
   index: number;
   member?: Member;
@@ -1781,6 +1783,8 @@ function Seat({
   onLike: () => void;
   videoStyle?: boolean;
   glowing?: boolean;
+  locked?: boolean;
+  onEmptyManage?: () => void;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
