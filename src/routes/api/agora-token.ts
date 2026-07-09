@@ -24,8 +24,15 @@ export const Route = createFileRoute("/api/agora-token")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
       POST: async ({ request }) => {
-        const serviceKey = process.env.SB_SERVICE_ROLE_KEY;
-        if (!serviceKey) return json({ error: "server misconfigured" }, 500);
+        const serviceKey =
+          process.env.SB_SERVICE_ROLE_KEY ??
+          process.env.SUPABASE_SERVICE_ROLE_KEY ??
+          process.env.SB_SECRET_KEY;
+        if (!serviceKey) {
+          console.error("[agora-token] no service key env var found");
+          return json({ error: "server misconfigured: service key missing" }, 500);
+        }
+
 
         let body: {
           channel?: string;
