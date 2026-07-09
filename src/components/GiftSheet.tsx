@@ -89,6 +89,13 @@ export function GiftSheet({
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
   return (
+  const totalCost =
+    (selectedGift?.price_coins ?? 0) *
+    qty *
+    (sendToAll ? Math.max(1, receivers.length) : 1);
+  const canAfford = (profile?.coins ?? 0) >= totalCost;
+
+  return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
         onClick={(e) => e.stopPropagation()}
@@ -102,21 +109,39 @@ export function GiftSheet({
           </button>
         </div>
 
-        {/* Receiver picker */}
+        {/* Receiver picker — DP-only chips + All */}
         <div className="mb-3">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            To
+            To {sendToAll ? `· All (${receivers.length})` : ""}
           </p>
           <div className="flex gap-2 overflow-x-auto pb-1">
             {receivers.length === 0 && (
               <p className="text-xs text-muted-foreground">No one on stage to gift.</p>
             )}
+            {receivers.length > 1 && (
+              <button
+                onClick={() => setSendToAll((v) => !v)}
+                aria-label="All"
+                className={`shrink-0 rounded-full p-[2px] transition ${
+                  sendToAll
+                    ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                    : "bg-white/10"
+                }`}
+              >
+                <div className="grid h-11 w-11 place-items-center rounded-full bg-card text-[10px] font-black">
+                  ALL
+                </div>
+              </button>
+            )}
             {receivers.map((r) => {
-              const active = receiverId === r.id;
+              const active = !sendToAll && receiverId === r.id;
               return (
                 <button
                   key={r.id}
-                  onClick={() => setReceiverId(r.id)}
+                  onClick={() => {
+                    setSendToAll(false);
+                    setReceiverId(r.id);
+                  }}
                   aria-label={r.username ?? "user"}
                   className={`shrink-0 rounded-full p-[2px] transition ${
                     active
