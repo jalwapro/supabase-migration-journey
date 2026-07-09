@@ -193,6 +193,12 @@ function SplashGate() {
   return null;
 }
 
+function NotificationSubscriber() {
+  useNotificationRealtime();
+  return null;
+}
+
+
 
 
 function RootComponent() {
@@ -207,7 +213,9 @@ function RootComponent() {
         <ThemeBackground />
         <SplashGate />
         <InstallPermissionGate />
+        <NotificationSubscriber />
         <div className="relative z-10" suppressHydrationWarning>
+
           <Outlet />
         </div>
         <Toaster position="top-center" theme="dark" richColors />
