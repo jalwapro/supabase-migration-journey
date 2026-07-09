@@ -214,6 +214,7 @@ function RoomPage() {
         { data: msgData },
         { data: likeData },
         { data: popData },
+        { data: giftData },
       ] = await Promise.all([
         supabase
           .from("room_members")
