@@ -1143,19 +1143,23 @@ function RoomPage() {
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
       style={roomStyle}
     >
-      {/* Host theme background (visible to everyone in the room) */}
-      {hostBg && (
-        <>
-          <img
-            src={hostBg}
-            alt=""
-            aria-hidden
-            draggable={false}
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-black/55" />
-        </>
-      )}
+      {/* Host theme background if set, else the default Jalwa branded bg */}
+      {(() => {
+        const bg = hostBg || "/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+        return (
+          <>
+            <img
+              src={bg}
+              alt=""
+              aria-hidden
+              draggable={false}
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-black/55" />
+          </>
+        );
+      })()}
+
 
       {/* Ambient blurs */}
       <div className="pointer-events-none absolute -top-24 -left-24 h-[400px] w-[400px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px]" />
