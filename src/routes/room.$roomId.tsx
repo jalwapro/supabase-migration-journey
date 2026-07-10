@@ -2361,7 +2361,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
   const name = shown.user.username ?? "guest";
   const level = shown.user.level ?? 1;
   const avatar = shown.user.avatar;
-  const tier = tierForLevel(level);
+  const tier = vipTierForLevel(level);
 
   return (
     <div
