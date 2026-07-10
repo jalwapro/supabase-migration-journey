@@ -142,7 +142,7 @@ export function ThemeBackground() {
           decoding="async"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black" style={{ opacity: 1 - bgVisibility / 100 }} />
       </div>
     );
   }
