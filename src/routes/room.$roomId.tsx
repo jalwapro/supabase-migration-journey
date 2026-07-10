@@ -2706,7 +2706,9 @@ function Seat({
             <span className="pointer-events-none absolute inset-[-4%] z-0 rounded-full ring-2 ring-cyan-300/60 animate-ping" style={{ animationDelay: "300ms" }} />
           </>
         )}
-        <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${
+        <div className={`absolute overflow-hidden rounded-full bg-white/5 ${
+          displayFrame ? "inset-[22%]" : "inset-[8%]"
+        } ${
           hostAwayFromSeat ? "ring-2 ring-red-500 shadow-[0_0_18px_-2px_rgba(239,68,68,0.7)]" : ringClass
         }`}>
           {isHostSeat && !displayAvatar && cover && !hostAwayFromSeat && (
@@ -2724,8 +2726,8 @@ function Seat({
         </div>
         {displayFrame && (
           <div
-            className="pointer-events-none absolute inset-[-38%] z-[15]"
-            style={{ transform: "translateY(-8%)" }}
+            className="pointer-events-none absolute inset-[-2%] z-[15]"
+            style={{ transform: "translateY(-3%)" }}
             aria-hidden
           >
             {frameIsVideo ? (
@@ -2735,6 +2737,7 @@ function Seat({
             )}
           </div>
         )}
+
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
