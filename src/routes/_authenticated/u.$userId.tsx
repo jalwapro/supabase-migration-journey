@@ -27,7 +27,7 @@ import {
   Images,
 } from "lucide-react";
 import { toast } from "sonner";
-import { levelProgress, tierForLevel } from "@/lib/levels";
+
 
 export const Route = createFileRoute("/_authenticated/u/$userId")({
   component: UserProfilePage,
