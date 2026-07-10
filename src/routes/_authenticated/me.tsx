@@ -292,6 +292,11 @@ function MePage() {
               />
             </div>
 
+            {/* VIP Milestone Rewards */}
+            <div className="mt-3">
+              <VipRewardsGrid currentLevel={vip?.row.vip_level ?? 0} />
+            </div>
+
             {/* Following / Followers / Diamonds / Coins */}
             <div className="relative mt-4 grid grid-cols-4 gap-2 text-center">
               <StatLink to="/friends" value={counts?.following ?? 0} label="Following" />
