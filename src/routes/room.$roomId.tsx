@@ -2628,6 +2628,19 @@ function Seat({
                 📹
               </span>
             )}
+            {displayFrame && (
+              <div
+                className="pointer-events-none absolute inset-[-55%] z-10"
+                style={{ transform: "translateY(-6%)" }}
+                aria-hidden
+              >
+                {frameIsVideo ? (
+                  <video src={displayFrame} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+                ) : (
+                  <img src={displayFrame} alt="" className="h-full w-full object-contain" draggable={false} />
+                )}
+              </div>
+            )}
           </div>
         </div>
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
