@@ -39,6 +39,7 @@ import { Route as AuthenticatedCustomThemeRouteImport } from './routes/_authenti
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedGamesIndexRouteImport } from './routes/_authenticated/games.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
@@ -230,6 +231,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGamesIndexRoute = AuthenticatedGamesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedGamesRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
@@ -527,6 +533,7 @@ export interface FileRoutesByFullPath {
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
+  '/games/': typeof AuthenticatedGamesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -541,7 +548,6 @@ export interface FileRoutesByTo {
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/gallery': typeof AuthenticatedGalleryRoute
-  '/games': typeof AuthenticatedGamesRouteWithChildren
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -597,6 +603,7 @@ export interface FileRoutesByTo {
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
+  '/games': typeof AuthenticatedGamesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -670,6 +677,7 @@ export interface FileRoutesById {
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
+  '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -743,6 +751,7 @@ export interface FileRouteTypes {
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/admin/'
+    | '/games/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -757,7 +766,6 @@ export interface FileRouteTypes {
     | '/custom-theme'
     | '/friends'
     | '/gallery'
-    | '/games'
     | '/me'
     | '/my-rooms'
     | '/notifications'
@@ -813,6 +821,7 @@ export interface FileRouteTypes {
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/admin'
+    | '/games'
   id:
     | '__root__'
     | '/'
@@ -885,6 +894,7 @@ export interface FileRouteTypes {
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
+    | '/_authenticated/games/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1115,6 +1125,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/games/': {
+      id: '/_authenticated/games/'
+      path: '/'
+      fullPath: '/games/'
+      preLoaderRoute: typeof AuthenticatedGamesIndexRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
     }
     '/_authenticated/admin/': {
       id: '/_authenticated/admin/'
@@ -1482,11 +1499,13 @@ const AuthenticatedAdminRouteWithChildren =
 interface AuthenticatedGamesRouteChildren {
   AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
+  AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
 }
 
 const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
   AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
+  AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
 }
 
 const AuthenticatedGamesRouteWithChildren =
@@ -1572,13 +1591,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
