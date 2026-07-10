@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
+import { DailySpinPopup } from "@/components/DailySpinPopup";
 
 import jalwaLogo from "@/assets/jalwa-logo.png";
 import {
@@ -541,6 +542,7 @@ function Home() {
         </div>
       </div>
       <BottomNav />
+      <DailySpinPopup />
 
       <Dialog open={friendsOpen} onOpenChange={setFriendsOpen}>
         <DialogContent className="max-w-sm">
