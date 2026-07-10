@@ -31,8 +31,29 @@ export function ThemeBackground() {
     pathname.startsWith("/admin") ||
     pathname.startsWith("/room/");
   const themeId = suppressed ? null : profile?.theme_id ?? null;
+  const userId = suppressed ? null : profile?.id ?? null;
   const [theme, setTheme] = useState<ThemeRow | null>(null);
+  const [customBg, setCustomBg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Check for active custom theme (approved + not expired)
+  useEffect(() => {
+    let cancelled = false;
+    if (!userId) {
+      setCustomBg(null);
+      return;
+    }
+    supabase
+      .rpc("get_active_custom_theme", { _user: userId })
+      .then(({ data }) => {
+        if (cancelled) return;
+        const row = (Array.isArray(data) ? data[0] : data) as { image_url?: string } | null;
+        setCustomBg(row?.image_url ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -98,7 +119,10 @@ export function ThemeBackground() {
     };
   }, [themeId, authLoading]);
 
-  if (loading || !theme) return null;
+  // Custom uploaded background takes precedence over shop theme image
+  const media = customBg || theme?.bg_image || theme?.preview_url || theme?.animation_url;
+  if (loading && !customBg) return null;
+  if (!media) return null;
 
   const media = theme.bg_image || theme.preview_url || theme.animation_url;
   if (!media) return null;
