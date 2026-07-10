@@ -73,13 +73,25 @@ export function RoyalBadge({
   return (
     <div
       className={`relative shrink-0 ${className}`}
-      style={{ width: px, height: px }}
+      style={{ width: px, height: px, color: t.accent }}
     >
-      {/* Wings for King & Queen */}
+      {/* Rotating aura ring behind everything */}
+      <div
+        className="pointer-events-none absolute rounded-full royal-ring-spin"
+        style={{
+          inset: -px * 0.18,
+          background: `conic-gradient(from 0deg, transparent 0deg, ${t.accent} 40deg, transparent 90deg, ${t.accent} 200deg, transparent 260deg, ${t.accent} 320deg, transparent 360deg)`,
+          filter: "blur(6px)",
+          opacity: 0.55,
+        }}
+        aria-hidden
+      />
+
+      {/* Wings for King & Queen — animated flap */}
       {t.wings && (
         <svg
           viewBox="0 0 200 100"
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          className="pointer-events-none absolute left-1/2 top-1/2 royal-wing-flap"
           style={{ width: px * 1.85, height: px * 0.95, filter: `drop-shadow(${t.glow})` }}
           aria-hidden
         >
@@ -89,28 +101,22 @@ export function RoyalBadge({
               <stop offset="100%" stopColor={t.accent} stopOpacity=".55" />
             </linearGradient>
           </defs>
-          {/* Left wing */}
           <path
             d="M100 50 C 70 30, 40 32, 12 48 C 40 52, 60 58, 82 66 C 60 60, 42 62, 22 72 C 50 72, 72 68, 96 62 Z"
             fill={`url(#wg-${rank})`}
-            stroke={t.crownStroke}
-            strokeOpacity=".35"
-            strokeWidth="1"
+            stroke={t.crownStroke} strokeOpacity=".35" strokeWidth="1"
           />
-          {/* Right wing (mirror) */}
           <path
             d="M100 50 C 130 30, 160 32, 188 48 C 160 52, 140 58, 118 66 C 140 60, 158 62, 178 72 C 150 72, 128 68, 104 62 Z"
             fill={`url(#wg-${rank})`}
-            stroke={t.crownStroke}
-            strokeOpacity=".35"
-            strokeWidth="1"
+            stroke={t.crownStroke} strokeOpacity=".35" strokeWidth="1"
           />
         </svg>
       )}
 
-      {/* Ring frame */}
+      {/* Ring frame with pulsing glow */}
       <div
-        className="absolute inset-0 rounded-full"
+        className="absolute inset-0 rounded-full royal-glow-pulse"
         style={{
           background: t.ring,
           boxShadow: t.glow,
@@ -130,24 +136,42 @@ export function RoyalBadge({
         )}
       </div>
 
-      {/* Crown on top */}
+      {/* Sparkles */}
+      {[
+        { sx: "-40%", sy: "-30%", delay: "0s"   },
+        { sx: "45%",  sy: "-25%", delay: ".4s"  },
+        { sx: "-30%", sy: "40%",  delay: ".9s"  },
+        { sx: "40%",  sy: "35%",  delay: "1.3s" },
+      ].map((s, i) => (
+        <span
+          key={i}
+          className="pointer-events-none absolute left-1/2 top-1/2 h-1.5 w-1.5 rounded-full royal-sparkle"
+          style={{
+            background: t.accent,
+            boxShadow: `0 0 8px ${t.accent}`,
+            // @ts-expect-error CSS var
+            "--sx": s.sx, "--sy": s.sy,
+            animationDelay: s.delay,
+          }}
+          aria-hidden
+        />
+      ))}
+
+      {/* Crown on top — floating */}
       <svg
         viewBox="0 0 100 60"
-        className="pointer-events-none absolute left-1/2 -translate-x-1/2"
+        className="pointer-events-none absolute left-1/2 royal-crown-float"
         style={{
           width: px * 0.7,
           height: px * 0.42,
           top: -px * 0.28,
-          filter: `drop-shadow(0 2px 4px rgba(0,0,0,.55))`,
+          filter: `drop-shadow(0 2px 4px rgba(0,0,0,.55)) drop-shadow(0 0 6px ${t.accent})`,
         }}
         aria-hidden
       >
         <path
           d="M10 50 L18 20 L34 40 L50 10 L66 40 L82 20 L90 50 Z"
-          fill={t.crown}
-          stroke={t.crownStroke}
-          strokeWidth="2.5"
-          strokeLinejoin="round"
+          fill={t.crown} stroke={t.crownStroke} strokeWidth="2.5" strokeLinejoin="round"
         />
         <rect x="10" y="48" width="80" height="8" rx="2" fill={t.crown} stroke={t.crownStroke} strokeWidth="2" />
         <circle cx="50" cy="12" r="3.5" fill="#fff" stroke={t.crownStroke} strokeWidth="1.5" />
@@ -159,10 +183,7 @@ export function RoyalBadge({
       {showLabel && (
         <div
           className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded-md px-2.5 py-[3px] text-[10px] font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40"
-          style={{
-            background: t.ribbon,
-            bottom: -px * 0.12,
-          }}
+          style={{ background: t.ribbon, bottom: -px * 0.12 }}
         >
           {t.label}
         </div>
@@ -170,3 +191,4 @@ export function RoyalBadge({
     </div>
   );
 }
+
