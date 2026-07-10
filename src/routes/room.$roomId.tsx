@@ -71,7 +71,19 @@ type Room = {
   agora_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
-  host: { username: string | null; avatar: string | null; frame: string | null } | null;
+  host: {
+    username: string | null;
+    avatar: string | null;
+    frame: string | null;
+    theme: {
+      bg_image: string | null;
+      preview_url: string | null;
+      primary_color: string | null;
+      accent_color: string | null;
+      category_id: string | null;
+      theme_categories: { slug: string | null } | null;
+    } | null;
+  } | null;
 };
 
 type TopGifter = { user_id: string; username: string | null; avatar: string | null; total_coins: number };
@@ -177,7 +189,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame)";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone column; fall back if migration 0040 not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -1103,17 +1115,52 @@ function RoomPage() {
 
   const hostRemote = agora.remotes.get(uidFromUuid(r.host_id));
 
+  // Host's shop theme (only when it belongs to the "theme" category)
+  const hostTheme = r.host?.theme ?? null;
+  const hostThemeSlug = (hostTheme?.theme_categories?.slug ?? "").toLowerCase();
+  const hostBg =
+    hostTheme &&
+    (!hostTheme.category_id || hostThemeSlug === "theme" || hostThemeSlug === "themes")
+      ? hostTheme.bg_image || hostTheme.preview_url
+      : null;
+  const hostPrimary = hostBg ? hostTheme?.primary_color : null;
+  const hostAccent = hostBg ? hostTheme?.accent_color : null;
+
+  const roomStyle: React.CSSProperties = hostBg
+    ? {
+        background:
+          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
+        ...(hostPrimary ? { ["--primary" as string]: hostPrimary } : {}),
+        ...(hostAccent ? { ["--secondary" as string]: hostAccent } : {}),
+      }
+    : {
+        background:
+          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
+      };
+
   return (
     <div
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
-      style={{
-        background:
-          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
-      }}
+      style={roomStyle}
     >
+      {/* Host theme background (visible to everyone in the room) */}
+      {hostBg && (
+        <>
+          <img
+            src={hostBg}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-black/55" />
+        </>
+      )}
+
       {/* Ambient blurs */}
       <div className="pointer-events-none absolute -top-24 -left-24 h-[400px] w-[400px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 -right-16 h-[300px] w-[300px] rounded-full bg-[color:var(--primary)]/15 blur-[100px]" />
+
 
       {/* ─── Header ─────────────────────────────────────────────── */}
       <div
