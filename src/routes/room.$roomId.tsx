@@ -2531,6 +2531,7 @@ function Seat({
   isKing = false,
   currentUserId,
   localMuted,
+  onOpenGifters,
 }: {
   index: number;
   member?: Member;
@@ -2550,6 +2551,7 @@ function Seat({
   isKing?: boolean;
   currentUserId?: string;
   localMuted?: boolean;
+  onOpenGifters?: () => void;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
