@@ -1227,12 +1227,14 @@ function RoomPage() {
                   <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
                 )}
               </button>
-              <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className="grid flex-1 grid-cols-3 gap-1.5">
                 {isHost ? (
-                  <MiniAction
-                    icon={<Music className="h-5 w-5" />}
-                    label="Music"
-                    onClick={() => setMusicOpen(true)}
+                  <MusicMiniButton
+                    compact={false}
+                    title={agora.musicTitle}
+                    playing={agora.musicPlaying}
+                    onOpen={() => setMusicOpen(true)}
+                    onToggle={() => (agora.musicPlaying ? agora.pauseMusic() : agora.resumeMusic())}
                   />
                 ) : (
                   <MiniAction
@@ -1241,8 +1243,14 @@ function RoomPage() {
                     onClick={() => setEmojiSheetOpen(true)}
                   />
                 )}
+                <MiniAction
+                  icon={<MoreHorizontal className="h-5 w-5" />}
+                  label="More"
+                  onClick={() => setVideoSettingsOpen(true)}
+                />
                 <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
               </div>
+
 
             </div>
           </div>
