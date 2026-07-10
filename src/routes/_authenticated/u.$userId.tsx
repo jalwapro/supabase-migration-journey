@@ -353,7 +353,7 @@ function UserProfilePage() {
           <LevelAvatar
             src={p.avatar}
             name={p.username ?? p.full_name ?? "User"}
-            level={p.level}
+            level={p.vip_level ?? 0}
             size="xl"
             showBadge
             frame={p.frame}
