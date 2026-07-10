@@ -160,7 +160,7 @@ function WalletPage() {
                         {t.diamonds_delta !== 0 && (
                           <p className="text-xs font-bold text-[color:var(--secondary)]">
                             {t.diamonds_delta > 0 ? "+" : ""}
-                            {t.diamonds_delta.toLocaleString()} 💎
+                            {t.diamonds_delta.toLocaleString()} pts
                           </p>
                         )}
                         <p className="text-[9px] text-muted-foreground">
