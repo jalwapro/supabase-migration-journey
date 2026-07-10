@@ -71,7 +71,7 @@ type Room = {
   agora_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
-  host: { username: string | null; avatar: string | null } | null;
+  host: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
 type TopGifter = { user_id: string; username: string | null; avatar: string | null; total_coins: number };
@@ -83,7 +83,7 @@ type Member = {
   is_muted: boolean;
   is_video: boolean;
   is_moderator?: boolean;
-  user: { username: string | null; avatar: string | null } | null;
+  user: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
 type Message = {
@@ -177,7 +177,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar)";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame)";
       // Try with milestone column; fall back if migration 0040 not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -235,7 +235,7 @@ function RoomPage() {
       supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
         )
         .eq("room_id", roomId),
       supabase
@@ -361,7 +361,7 @@ function RoomPage() {
           const { data } = await supabase
             .from("room_members")
             .select(
-              "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar)",
+              "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
             )
             .eq("room_id", roomId);
           setMembers((data ?? []) as unknown as Member[]);
@@ -1218,7 +1218,7 @@ function RoomPage() {
                 const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
                 const fallback =
                   isHostSeat && !m
-                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
                     : null;
                 return {
                   index: i,
@@ -1253,7 +1253,7 @@ function RoomPage() {
                     const isHostSeat = i === 0;
                     const fallbackHost =
                       isHostSeat && !m
-                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
                         : null;
                     return (
                       <Seat
@@ -1967,7 +1967,7 @@ type VideoSeatData = {
   isHostSeat: boolean;
   member?: Member;
   remote?: RemoteUser;
-  fallbackUser: { username: string | null; avatar: string | null } | null;
+  fallbackUser: { username: string | null; avatar: string | null; frame?: string | null } | null;
   onClaim: () => void;
   onLike: () => void;
   likeCount: number;
@@ -2543,7 +2543,7 @@ function Seat({
   remote?: RemoteUser;
   isHostSeat: boolean;
   cover: string | null;
-  fallbackUser?: { username: string | null; avatar: string | null } | null;
+  fallbackUser?: { username: string | null; avatar: string | null; frame?: string | null } | null;
   onClaim: () => void;
   likeCount: number;
   onLike: () => void;
@@ -2582,6 +2582,8 @@ function Seat({
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
+  const displayFrame = member?.user?.frame ?? fallbackUser?.frame ?? null;
+  const frameIsVideo = !!displayFrame && /\.(mp4|webm|mov)($|\?)/i.test(displayFrame);
 
   const ringClass = isHostSeat
     ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
@@ -2625,6 +2627,19 @@ function Seat({
               <span className="relative text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
                 📹
               </span>
+            )}
+            {displayFrame && (
+              <div
+                className="pointer-events-none absolute inset-[-55%] z-10"
+                style={{ transform: "translateY(-6%)" }}
+                aria-hidden
+              >
+                {frameIsVideo ? (
+                  <video src={displayFrame} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+                ) : (
+                  <img src={displayFrame} alt="" className="h-full w-full object-contain" draggable={false} />
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -2706,6 +2721,19 @@ function Seat({
             </div>
           )}
         </div>
+        {displayFrame && (
+          <div
+            className="pointer-events-none absolute inset-[-34%] z-[15]"
+            style={{ transform: "translateY(-5%)" }}
+            aria-hidden
+          >
+            {frameIsVideo ? (
+              <video src={displayFrame} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+            ) : (
+              <img src={displayFrame} alt="" className="h-full w-full object-contain" draggable={false} />
+            )}
+          </div>
+        )}
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
