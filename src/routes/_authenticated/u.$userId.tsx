@@ -252,8 +252,7 @@ function UserProfilePage() {
   }
 
   const p = prof.data;
-  const tier = tierForLevel(p.level);
-  const prog = levelProgress(p.level, p.xp);
+  const tier = vipTierForLevel(p.vip_level ?? 0);
   const online =
     !!p.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000;
   const joined = new Date(p.created_at).toLocaleDateString(undefined, {
