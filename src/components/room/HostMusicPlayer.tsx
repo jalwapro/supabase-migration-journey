@@ -109,34 +109,8 @@ export function HostMusicPlayer({
 
   return (
     <>
-      {/* Floating mini-player pill */}
-      {!open && activeTitle && (
-        <div
-          className="fixed left-1/2 z-40 flex w-[calc(100%-24px)] max-w-[460px] -translate-x-1/2 items-center gap-2 rounded-full border border-[color:var(--primary)]/40 bg-black/80 p-2 shadow-2xl backdrop-blur-md"
-          style={{ bottom: "calc(env(safe-area-inset-bottom) + 84px)" }}
-        >
-          <div className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)]">
-            <Music className="h-4 w-4 text-white" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-xs font-bold text-white">{activeTitle}</div>
-            <div className="truncate text-[10px] text-white/60">Playing for everyone</div>
-          </div>
-          <button
-            onClick={handleToggle}
-            className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white"
-          >
-            {controller.musicPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-          </button>
-          <button
-            onClick={handleStop}
-            aria-label="Stop music"
-            className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-white/10 text-white"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+      {/* Floating mini-player pill removed — music controls live inside More sheet */}
+
 
       {open && (
         <>
