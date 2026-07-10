@@ -2608,7 +2608,7 @@ function Seat({
           </span>
         )}
         <div className="absolute inset-x-0 top-[28%] grid place-items-center">
-          <div className="relative h-10 w-10">
+          <div className={`relative ${displayFrame ? "h-8 w-8" : "h-10 w-10"}`}>
             {speaking && (
               <>
                 <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-cyan-400/80 animate-ping" />
@@ -2619,10 +2619,10 @@ function Seat({
               <img
                 src={displayAvatar}
                 alt=""
-                className="relative h-10 w-10 rounded-full border border-white/30 object-cover shadow-lg"
+                className={`relative rounded-full border border-white/30 object-cover shadow-lg h-full w-full`}
               />
             ) : remote?.videoTrack ? (
-              <div ref={videoRef} className="relative h-11 w-11 overflow-hidden rounded-full" />
+              <div ref={videoRef} className="relative h-full w-full overflow-hidden rounded-full" />
             ) : (
               <span className="relative text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
                 📹
@@ -2630,8 +2630,8 @@ function Seat({
             )}
             {displayFrame && (
               <div
-                className="pointer-events-none absolute inset-[-38%] z-10"
-                style={{ transform: "translateY(-8%)" }}
+                className="pointer-events-none absolute inset-[-30%] z-10"
+                style={{ transform: "translateY(-6%)" }}
                 aria-hidden
               >
                 {frameIsVideo ? (
@@ -2643,6 +2643,7 @@ function Seat({
             )}
           </div>
         </div>
+
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
           {effectiveMuted && <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />}
           <span>{displayName ? `@${displayName}` : "Solo"}</span>
@@ -2705,7 +2706,9 @@ function Seat({
             <span className="pointer-events-none absolute inset-[-4%] z-0 rounded-full ring-2 ring-cyan-300/60 animate-ping" style={{ animationDelay: "300ms" }} />
           </>
         )}
-        <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${
+        <div className={`absolute overflow-hidden rounded-full bg-white/5 ${
+          displayFrame ? "inset-[22%]" : "inset-[8%]"
+        } ${
           hostAwayFromSeat ? "ring-2 ring-red-500 shadow-[0_0_18px_-2px_rgba(239,68,68,0.7)]" : ringClass
         }`}>
           {isHostSeat && !displayAvatar && cover && !hostAwayFromSeat && (
@@ -2723,8 +2726,8 @@ function Seat({
         </div>
         {displayFrame && (
           <div
-            className="pointer-events-none absolute inset-[-38%] z-[15]"
-            style={{ transform: "translateY(-8%)" }}
+            className="pointer-events-none absolute inset-[-2%] z-[15]"
+            style={{ transform: "translateY(-3%)" }}
             aria-hidden
           >
             {frameIsVideo ? (
@@ -2734,6 +2737,7 @@ function Seat({
             )}
           </div>
         )}
+
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
