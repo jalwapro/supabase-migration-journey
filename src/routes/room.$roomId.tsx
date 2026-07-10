@@ -2658,6 +2658,12 @@ function Seat({
             <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">Host</span>
           </div>
         )}
+        {speaking && !hostAwayFromSeat && (
+          <>
+            <span className="pointer-events-none absolute inset-[2%] z-10 rounded-full ring-2 ring-cyan-400/80 animate-ping" />
+            <span className="pointer-events-none absolute inset-[-4%] z-0 rounded-full ring-2 ring-cyan-300/60 animate-ping" style={{ animationDelay: "300ms" }} />
+          </>
+        )}
         <div className={`absolute inset-[8%] overflow-hidden rounded-full bg-white/5 ${
           hostAwayFromSeat ? "ring-2 ring-red-500 shadow-[0_0_18px_-2px_rgba(239,68,68,0.7)]" : ringClass
         }`}>
