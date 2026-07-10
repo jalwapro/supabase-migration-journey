@@ -124,8 +124,6 @@ export function ThemeBackground() {
   if (loading && !customBg) return null;
   if (!media) return null;
 
-  const media = theme.bg_image || theme.preview_url || theme.animation_url;
-  if (!media) return null;
 
   return (
     <div
