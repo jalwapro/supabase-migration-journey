@@ -35,6 +35,7 @@ import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedGalleryRouteImport } from './routes/_authenticated/gallery'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
+import { Route as AuthenticatedCustomThemeRouteImport } from './routes/_authenticated/custom-theme'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -44,6 +45,7 @@ import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/pu
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
+import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authenticated/admin.vip-levels'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
@@ -52,6 +54,7 @@ import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenticated/admin.splash'
+import { Route as AuthenticatedAdminSpinPrizesRouteImport } from './routes/_authenticated/admin.spin-prizes'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminRoomsRouteImport } from './routes/_authenticated/admin.rooms'
 import { Route as AuthenticatedAdminRoomBackgroundsRouteImport } from './routes/_authenticated/admin.room-backgrounds'
@@ -70,6 +73,7 @@ import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
 import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
+import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
@@ -206,6 +210,12 @@ const AuthenticatedFriendsRoute = AuthenticatedFriendsRouteImport.update({
   path: '/friends',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCustomThemeRoute =
+  AuthenticatedCustomThemeRouteImport.update({
+    id: '/custom-theme',
+    path: '/custom-theme',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
@@ -253,6 +263,12 @@ const AuthenticatedGamesLuckySpinRoute =
     path: '/lucky-spin',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
+const AuthenticatedGamesDailySpinRoute =
+  AuthenticatedGamesDailySpinRouteImport.update({
+    id: '/daily-spin',
+    path: '/daily-spin',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 const AuthenticatedAdminWithdrawalsRoute =
   AuthenticatedAdminWithdrawalsRouteImport.update({
     id: '/withdrawals',
@@ -297,6 +313,12 @@ const AuthenticatedAdminSplashRoute =
   AuthenticatedAdminSplashRouteImport.update({
     id: '/splash',
     path: '/splash',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSpinPrizesRoute =
+  AuthenticatedAdminSpinPrizesRouteImport.update({
+    id: '/spin-prizes',
+    path: '/spin-prizes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -401,6 +423,12 @@ const AuthenticatedAdminFinanceReportsRoute =
     path: '/finance-reports',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCustomThemesRoute =
+  AuthenticatedAdminCustomThemesRouteImport.update({
+    id: '/custom-themes',
+    path: '/custom-themes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCoinsRoute = AuthenticatedAdminCoinsRouteImport.update({
   id: '/coins',
   path: '/coins',
@@ -440,6 +468,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
+  '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/gallery': typeof AuthenticatedGalleryRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
@@ -463,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -481,6 +511,7 @@ export interface FileRoutesByFullPath {
   '/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
   '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
@@ -489,6 +520,7 @@ export interface FileRoutesByFullPath {
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
+  '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -506,6 +538,7 @@ export interface FileRoutesByTo {
   '/splash': typeof SplashRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
+  '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/gallery': typeof AuthenticatedGalleryRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
@@ -529,6 +562,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -547,6 +581,7 @@ export interface FileRoutesByTo {
   '/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
   '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
@@ -555,6 +590,7 @@ export interface FileRoutesByTo {
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
+  '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -575,6 +611,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
+  '/_authenticated/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/gallery': typeof AuthenticatedGalleryRoute
   '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
@@ -598,6 +635,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/_authenticated/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -616,6 +654,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
   '/_authenticated/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/_authenticated/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
@@ -624,6 +663,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
   '/_authenticated/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
+  '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -644,6 +684,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blocked'
     | '/create-room'
+    | '/custom-theme'
     | '/friends'
     | '/gallery'
     | '/games'
@@ -667,6 +708,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
+    | '/admin/custom-themes'
     | '/admin/finance-reports'
     | '/admin/free-accounts'
     | '/admin/gifts'
@@ -685,6 +727,7 @@ export interface FileRouteTypes {
     | '/admin/room-backgrounds'
     | '/admin/rooms'
     | '/admin/settings'
+    | '/admin/spin-prizes'
     | '/admin/splash'
     | '/admin/support'
     | '/admin/theme-categories'
@@ -693,6 +736,7 @@ export interface FileRouteTypes {
     | '/admin/vip'
     | '/admin/vip-levels'
     | '/admin/withdrawals'
+    | '/games/daily-spin'
     | '/games/lucky-spin'
     | '/settings/notifications'
     | '/u/$userId'
@@ -710,6 +754,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/blocked'
     | '/create-room'
+    | '/custom-theme'
     | '/friends'
     | '/gallery'
     | '/games'
@@ -733,6 +778,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
+    | '/admin/custom-themes'
     | '/admin/finance-reports'
     | '/admin/free-accounts'
     | '/admin/gifts'
@@ -751,6 +797,7 @@ export interface FileRouteTypes {
     | '/admin/room-backgrounds'
     | '/admin/rooms'
     | '/admin/settings'
+    | '/admin/spin-prizes'
     | '/admin/splash'
     | '/admin/support'
     | '/admin/theme-categories'
@@ -759,6 +806,7 @@ export interface FileRouteTypes {
     | '/admin/vip'
     | '/admin/vip-levels'
     | '/admin/withdrawals'
+    | '/games/daily-spin'
     | '/games/lucky-spin'
     | '/settings/notifications'
     | '/u/$userId'
@@ -778,6 +826,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/blocked'
     | '/_authenticated/create-room'
+    | '/_authenticated/custom-theme'
     | '/_authenticated/friends'
     | '/_authenticated/gallery'
     | '/_authenticated/games'
@@ -801,6 +850,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/banners'
     | '/_authenticated/admin/cms'
     | '/_authenticated/admin/coins'
+    | '/_authenticated/admin/custom-themes'
     | '/_authenticated/admin/finance-reports'
     | '/_authenticated/admin/free-accounts'
     | '/_authenticated/admin/gifts'
@@ -819,6 +869,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/room-backgrounds'
     | '/_authenticated/admin/rooms'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/spin-prizes'
     | '/_authenticated/admin/splash'
     | '/_authenticated/admin/support'
     | '/_authenticated/admin/theme-categories'
@@ -827,6 +878,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vip'
     | '/_authenticated/admin/vip-levels'
     | '/_authenticated/admin/withdrawals'
+    | '/_authenticated/games/daily-spin'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/u/$userId'
@@ -1036,6 +1088,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFriendsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/custom-theme': {
+      id: '/_authenticated/custom-theme'
+      path: '/custom-theme'
+      fullPath: '/custom-theme'
+      preLoaderRoute: typeof AuthenticatedCustomThemeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create-room': {
       id: '/_authenticated/create-room'
       path: '/create-room'
@@ -1099,6 +1158,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesLuckySpinRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/games/daily-spin': {
+      id: '/_authenticated/games/daily-spin'
+      path: '/daily-spin'
+      fullPath: '/games/daily-spin'
+      preLoaderRoute: typeof AuthenticatedGamesDailySpinRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
     '/_authenticated/admin/withdrawals': {
       id: '/_authenticated/admin/withdrawals'
       path: '/withdrawals'
@@ -1153,6 +1219,13 @@ declare module '@tanstack/react-router' {
       path: '/splash'
       fullPath: '/admin/splash'
       preLoaderRoute: typeof AuthenticatedAdminSplashRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/spin-prizes': {
+      id: '/_authenticated/admin/spin-prizes'
+      path: '/spin-prizes'
+      fullPath: '/admin/spin-prizes'
+      preLoaderRoute: typeof AuthenticatedAdminSpinPrizesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/settings': {
@@ -1281,6 +1354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFinanceReportsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/custom-themes': {
+      id: '/_authenticated/admin/custom-themes'
+      path: '/custom-themes'
+      fullPath: '/admin/custom-themes'
+      preLoaderRoute: typeof AuthenticatedAdminCustomThemesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/coins': {
       id: '/_authenticated/admin/coins'
       path: '/coins'
@@ -1325,6 +1405,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
+  AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
   AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
   AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
@@ -1343,6 +1424,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRoomBackgroundsRoute: typeof AuthenticatedAdminRoomBackgroundsRoute
   AuthenticatedAdminRoomsRoute: typeof AuthenticatedAdminRoomsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminSpinPrizesRoute: typeof AuthenticatedAdminSpinPrizesRoute
   AuthenticatedAdminSplashRoute: typeof AuthenticatedAdminSplashRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
@@ -1360,6 +1442,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
+  AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
   AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
   AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
@@ -1380,6 +1463,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminRoomBackgroundsRoute,
   AuthenticatedAdminRoomsRoute: AuthenticatedAdminRoomsRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminSpinPrizesRoute: AuthenticatedAdminSpinPrizesRoute,
   AuthenticatedAdminSplashRoute: AuthenticatedAdminSplashRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedAdminThemeCategoriesRoute:
@@ -1396,10 +1480,12 @@ const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedGamesRouteChildren {
+  AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
 }
 
 const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
+  AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
 }
 
@@ -1424,6 +1510,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
+  AuthenticatedCustomThemeRoute: typeof AuthenticatedCustomThemeRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedGalleryRoute: typeof AuthenticatedGalleryRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRouteWithChildren
@@ -1445,6 +1532,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
+  AuthenticatedCustomThemeRoute: AuthenticatedCustomThemeRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedGalleryRoute: AuthenticatedGalleryRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRouteWithChildren,
