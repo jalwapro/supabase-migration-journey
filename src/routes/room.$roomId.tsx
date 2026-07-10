@@ -2738,15 +2738,19 @@ function Seat({
       </button>
       {/* When occupied, hide "No.X" and show the diamond points box in its place */}
       {member ? (
-        <span className={`rounded-full px-2 py-[2px] text-[10px] font-black leading-none backdrop-blur transition-transform ${
-          receivedGift ? "scale-125" : ""
-        } ${
-          giftPoints > 0
-            ? "bg-gradient-to-r from-[color:var(--gold)]/90 to-orange-400 text-black shadow-[0_0_10px_rgba(255,200,60,0.7)]"
-            : "bg-black/70 text-white/85"
-        }`}>
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onOpenGifters?.(); }}
+          className={`rounded-full px-2 py-[2px] text-[10px] font-black leading-none backdrop-blur transition-transform active:scale-95 ${
+            receivedGift ? "scale-125" : ""
+          } ${
+            giftPoints > 0
+              ? "bg-gradient-to-r from-[color:var(--gold)]/90 to-orange-400 text-black shadow-[0_0_10px_rgba(255,200,60,0.7)]"
+              : "bg-black/70 text-white/85"
+          }`}
+        >
           {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
-        </span>
+        </button>
       ) : (
         <span className={`text-[10px] font-black leading-tight ${
           hostAwayFromSeat ? "text-red-400" : isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"
