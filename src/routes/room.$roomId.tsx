@@ -1558,40 +1558,42 @@ function RoomPage() {
           }}
         />
       )}
-      {isVideo && (
-        <VideoSettingsSheet
-          open={videoSettingsOpen}
-          onClose={() => setVideoSettingsOpen(false)}
-          isHost={isHost}
-          fx={videoFx}
-          onFxChange={(k, v) => setVideoFx((s) => ({ ...s, [k]: v }))}
-          videoOn={agora.videoOn}
-          onToggleVideo={() => void agora.toggleVideo()}
-          muted={agora.muted}
-          onToggleMute={() => void toggleMuteWithSync()}
-          onOpenSeats={() => {
-            setVideoSettingsOpen(false);
-            setSeatsSheetOpen(true);
-          }}
-          onOpenMusic={() => {
-            setVideoSettingsOpen(false);
-            setMusicOpen(true);
-          }}
-          onOpenGames={() => {
-            setVideoSettingsOpen(false);
-            openLudo();
-          }}
-          onShare={() => {
-            setVideoSettingsOpen(false);
-            void share();
-          }}
-          onEndLive={() => {
-            setVideoSettingsOpen(false);
-            void leaveRoom();
-          }}
-          onPk={() => toast.info("PK Battle — coming soon")}
-        />
-      )}
+      <VideoSettingsSheet
+        open={videoSettingsOpen}
+        onClose={() => setVideoSettingsOpen(false)}
+        isHost={isHost}
+        fx={videoFx}
+        onFxChange={(k, v) => setVideoFx((s) => ({ ...s, [k]: v }))}
+        videoOn={agora.videoOn}
+        onToggleVideo={() => void agora.toggleVideo()}
+        muted={agora.muted}
+        onToggleMute={() => void toggleMuteWithSync()}
+        speakerMuted={agora.speakerMuted}
+        onToggleSpeaker={agora.toggleSpeaker}
+        isVideo={isVideo}
+        onOpenSeats={() => {
+          setVideoSettingsOpen(false);
+          setSeatsSheetOpen(true);
+        }}
+        onOpenMusic={() => {
+          setVideoSettingsOpen(false);
+          setMusicOpen(true);
+        }}
+        onOpenGames={() => {
+          setVideoSettingsOpen(false);
+          openLudo();
+        }}
+        onShare={() => {
+          setVideoSettingsOpen(false);
+          void share();
+        }}
+        onEndLive={() => {
+          setVideoSettingsOpen(false);
+          void leaveRoom();
+        }}
+        onPk={() => toast.info("PK Battle — coming soon")}
+      />
+
       <SeatActionSheet
         member={manageMember}
         canModerate={isHost}
