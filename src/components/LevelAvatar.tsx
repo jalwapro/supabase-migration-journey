@@ -71,11 +71,15 @@ export function LevelAvatar({
         )}
       </div>
 
-      {/* Equipped DP frame overlay with sparkles */}
+      {/* Equipped DP frame overlay with sparkles.
+          Frame art (crown+wings) has its transparent hole roughly centered but
+          content extends outward — use a larger inset so the hole matches the
+          avatar disc, and a small upward shift so crown-style frames align. */}
       {frame && (
         <>
           <div
-            className="pointer-events-none absolute inset-[-22%] z-[5]"
+            className="pointer-events-none absolute inset-[-42%] z-[5]"
+            style={{ transform: "translateY(-6%)" }}
             aria-hidden
           >
             {frameIsVideo ? (
