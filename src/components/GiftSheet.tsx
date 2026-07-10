@@ -67,6 +67,17 @@ export function GiftSheet({
     enabled: open,
   });
 
+  // Top gifter in THIS room — refreshed each time the sheet opens.
+  const topGifter = useQuery({
+    queryKey: ["room_top_gifter", roomId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 1 });
+      if (error) throw error;
+      return (data?.[0] ?? null) as { user_id: string; username: string | null; avatar: string | null; total_coins: number } | null;
+    },
+    enabled: open,
+  });
+
   const categories = useMemo(() => {
     const set = new Set<string>();
     (gifts.data ?? []).forEach((g) => g.category && set.add(g.category));
@@ -140,6 +151,30 @@ export function GiftSheet({
             <X className="h-4 w-4" />
           </button>
         </div>
+
+        {/* Top gifter of this room */}
+        {topGifter.data && (
+          <div className="mb-3 flex items-center gap-2 rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/15 to-transparent p-2">
+            <span className="text-base leading-none">🏆</span>
+            <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-[color:var(--gold)]/40">
+              {topGifter.data.avatar ? (
+                <img src={topGifter.data.avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">
+                  {(topGifter.data.username ?? "?").slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--gold)]/80">
+                Top Gifter in this room
+              </p>
+              <p className="truncate text-xs font-bold text-white">
+                @{topGifter.data.username ?? "user"}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Receiver picker — DP-only chips + All */}
         <div className="mb-3">

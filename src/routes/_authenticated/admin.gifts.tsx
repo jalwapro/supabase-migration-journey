@@ -123,10 +123,7 @@ function GiftsAdmin() {
         active: true,
         is_milestone: draft.is_milestone,
       };
-      if (draft.is_milestone) {
-        // Ensure only one milestone gift exists
-        await supabase.from("gifts").update({ is_milestone: false }).eq("is_milestone", true);
-      }
+      // Multiple milestone gifts allowed (host picks one on 100%).
       if (draft.id) {
         const { error } = await supabase.from("gifts").update(row).eq("id", draft.id);
         if (error) throw error;
@@ -337,7 +334,7 @@ function GiftsAdmin() {
                 checked={draft.is_milestone}
                 onChange={(e) => setDraft((d) => ({ ...d, is_milestone: e.target.checked }))}
               />
-              ⭐ Milestone gift (played when a room hits 300k coins). Only one gift can be milestone.
+              ⭐ Milestone gift — mark up to 3. Host picks one when a room hits 100%.
             </label>
           </div>
 
