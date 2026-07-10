@@ -1302,18 +1302,8 @@ function RoomPage() {
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1.5 bg-[color:var(--secondary)]/10" />
               </button>
 
-              <div className="grid flex-1 grid-cols-1 gap-2">
-                <MiniAction
-                  icon={<MoreHorizontal className="h-5 w-5" />}
-                  label="More"
-                  onClick={() => setVideoSettingsOpen(true)}
-                />
-              </div>
-
-
-
-
             </div>
+
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 gap-2">
