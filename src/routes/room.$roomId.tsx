@@ -342,7 +342,18 @@ function RoomPage() {
           table: "room_members",
           filter: `room_id=eq.${roomId}`,
         },
-        async () => {
+        async (payload) => {
+          // If host/mod kicked me out, bounce me back to home.
+          if (
+            payload.eventType === "DELETE" &&
+            user &&
+            (payload.old as { user_id?: string })?.user_id === user.id &&
+            !isHost
+          ) {
+            toast.error("You were removed from this room");
+            navigate({ to: "/" });
+            return;
+          }
           const { data } = await supabase
             .from("room_members")
             .select(
@@ -351,6 +362,7 @@ function RoomPage() {
             .eq("room_id", roomId);
           setMembers((data ?? []) as unknown as Member[]);
         },
+
       )
       .on(
         "postgres_changes",
