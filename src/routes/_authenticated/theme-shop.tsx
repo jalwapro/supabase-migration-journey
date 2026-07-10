@@ -193,8 +193,16 @@ function Page() {
     return !!r && (!r.expires_at || new Date(r.expires_at) > new Date());
   };
 
-  const selCost = selected ? (selected.is_free ? 0 : selected.price) : 0;
-  const canAfford = (profile?.coins ?? 0) >= selCost;
+  // Diamonds take precedence when price_diamonds is set; else fall back to coins.
+  const currencyFor = (it: ShopItem): "diamonds" | "coins" =>
+    it.price_diamonds > 0 ? "diamonds" : "coins";
+  const priceFor = (it: ShopItem): number =>
+    it.is_free ? 0 : it.price_diamonds > 0 ? it.price_diamonds : it.price;
+  const selCost = selected ? priceFor(selected) : 0;
+  const selCurrency = selected ? currencyFor(selected) : "coins";
+  const canAfford = selected
+    ? (selCurrency === "diamonds" ? (profile?.diamonds ?? 0) : (profile?.coins ?? 0)) >= selCost
+    : true;
   const activeCatObj = cats.find((c) => c.id === currentCat) ?? null;
 
   return (
