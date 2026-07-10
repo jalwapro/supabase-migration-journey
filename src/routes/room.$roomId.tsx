@@ -1047,15 +1047,10 @@ function RoomPage() {
   const r = room.data;
   const roomCode = shortRoomCode(r.id);
   const popScore = popularity.coin_score;
-  // 3,000 coins = 1%. 300,000 coins = ranked (100%).
-  const popularityPct = Math.min(100, Math.round((popScore / 3000)));
+  // Progress 0..100 — 300,000 coins = 100% (ranked). Never surface the raw formula.
+  const popularityPct = Math.min(100, Math.round((popScore / 300_000) * 100));
   const isRanked = popScore >= 300_000;
-  const popScoreLabel =
-    popScore >= 1_000_000
-      ? `${(popScore / 1_000_000).toFixed(1)}M`
-      : popScore >= 1000
-        ? `${(popScore / 1000).toFixed(1)}K`
-        : String(popScore);
+  const remainingPct = Math.max(0, 100 - popularityPct);
   const giftReceivers: GiftReceiver[] = [
     ...(r.host && r.host_id !== user?.id
       ? [{ id: r.host_id, username: r.host.username, avatar: r.host.avatar }]
