@@ -15,6 +15,7 @@ type Settings = {
   splash_duration: number;
   splash_image: string | null;
   splash_video: string | null;
+  default_bg_opacity: number;
 };
 
 function SettingsAdmin() {
@@ -33,6 +34,7 @@ function SettingsAdmin() {
     splash_duration: 3,
     splash_image: null,
     splash_video: null,
+    default_bg_opacity: 60,
   });
 
   useEffect(() => {
@@ -42,8 +44,10 @@ function SettingsAdmin() {
       splash_duration: Number(q.data.splash_duration ?? 3),
       splash_image: (q.data.splash_image as string | null) ?? null,
       splash_video: (q.data.splash_video as string | null) ?? null,
+      default_bg_opacity: Number(q.data.default_bg_opacity ?? 60),
     });
   }, [q.data]);
+
 
   const save = useMutation({
     mutationFn: async () => {
@@ -54,9 +58,11 @@ function SettingsAdmin() {
       toast.success("Settings saved");
       qc.invalidateQueries({ queryKey: ["admin_settings"] });
       qc.invalidateQueries({ queryKey: ["splash_cfg"] });
+      qc.invalidateQueries({ queryKey: ["default_bg_opacity"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   return (
     <>
@@ -81,6 +87,22 @@ function SettingsAdmin() {
             <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Splash video URL</p>
             <input value={form.splash_video ?? ""} onChange={(e) => setForm({ ...form, splash_video: e.target.value || null })} className="w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
             <p className="mt-1 text-[10px] text-muted-foreground">Upload via Admin → Splash & Animation. Portrait 9:16, ≤ 8 MB recommended.</p>
+          </div>
+          <div>
+            <div className="mb-1 flex items-center justify-between">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Default background visibility</p>
+              <span className="text-xs font-bold text-primary">{form.default_bg_opacity}%</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={form.default_bg_opacity}
+              onChange={(e) => setForm({ ...form, default_bg_opacity: Number(e.target.value) })}
+              className="w-full accent-[color:var(--primary)]"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">0% = fully dark overlay (bg hidden), 100% = full brightness (no overlay). Applies to Jalwa default theme on home & voice rooms.</p>
           </div>
           <button onClick={() => save.mutate()} disabled={save.isPending} className="glow-4d mt-2 inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-60">
             <Save className="h-3 w-3" /> Save settings
