@@ -2723,8 +2723,8 @@ function Seat({
         </div>
         {displayFrame && (
           <div
-            className="pointer-events-none absolute inset-[-12%] z-[15]"
-            style={{ transform: "translateY(-5%)" }}
+            className="pointer-events-none absolute inset-[2%] z-[15]"
+            style={{ transform: "translateY(-2%)" }}
             aria-hidden
           >
             {frameIsVideo ? (
