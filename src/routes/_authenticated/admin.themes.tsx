@@ -41,7 +41,7 @@ function ThemesAdmin() {
   const [filterCat, setFilterCat] = useState<string>("all");
   const [editing, setEditing] = useState<Theme | null>(null);
 
-  const qc = useQueryClient();
+
   const list = useQuery({
     queryKey: ["admin_themes"],
     queryFn: async () => {
