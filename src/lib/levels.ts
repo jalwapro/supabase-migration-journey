@@ -171,13 +171,18 @@ export function tierForLevel(level: number): LevelTier {
   );
 }
 
-// XP needed to reach the next level (simple curve).
-export function xpForNextLevel(level: number): number {
-  return 100 * (Math.max(0, Math.floor(level)) + 1);
+// Gifter progression: every 1,000,000 coins gifted = +1 level (cap 100).
+// `xp` on the profile stores coins-into-current-level (0..999,999).
+export const COINS_PER_LEVEL = 1_000_000;
+export const MAX_GIFTER_LEVEL = 100;
+
+export function xpForNextLevel(_level: number): number {
+  return COINS_PER_LEVEL;
 }
 
 export function levelProgress(level: number, xp: number) {
-  const need = xpForNextLevel(level);
+  const need = COINS_PER_LEVEL;
   const have = Math.max(0, Math.min(need, xp));
-  return { have, need, pct: Math.round((have / need) * 100) };
+  const capped = Math.max(0, Math.floor(level)) >= MAX_GIFTER_LEVEL;
+  return { have: capped ? need : have, need, pct: capped ? 100 : Math.round((have / need) * 100) };
 }
