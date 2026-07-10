@@ -152,6 +152,30 @@ export function GiftSheet({
           </button>
         </div>
 
+        {/* Top gifter of this room */}
+        {topGifter.data && (
+          <div className="mb-3 flex items-center gap-2 rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/15 to-transparent p-2">
+            <span className="text-base leading-none">🏆</span>
+            <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-[color:var(--gold)]/40">
+              {topGifter.data.avatar ? (
+                <img src={topGifter.data.avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-xs font-bold text-white">
+                  {(topGifter.data.username ?? "?").slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--gold)]/80">
+                Top Gifter in this room
+              </p>
+              <p className="truncate text-xs font-bold text-white">
+                @{topGifter.data.username ?? "user"}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Receiver picker — DP-only chips + All */}
         <div className="mb-3">
           <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
