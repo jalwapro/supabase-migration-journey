@@ -2961,6 +2961,15 @@ function SeatActionSheet({
               Remove from Seat
             </button>
           )}
+          {canModerate && (
+            <button
+              onClick={onKickFromRoom}
+              className="w-full rounded-2xl bg-[color:var(--destructive)] py-3 text-sm font-bold text-white"
+            >
+              Kick from Room · 30 min ban
+            </button>
+          )}
+
           <button
             onClick={onClose}
             className="mt-1 w-full rounded-2xl border border-border py-3 text-sm font-bold"
