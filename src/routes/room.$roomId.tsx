@@ -1299,50 +1299,60 @@ function RoomPage() {
                 {/* background glow */}
                 <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
 
-                {/* Header: icon + rank chip */}
-                <div className="z-10 mb-3 flex w-full items-center justify-between">
-                  <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_15px_color-mix(in_oklab,var(--primary)_40%,transparent)]">
-                    <span className="text-sm leading-none">🔥</span>
-                  </div>
+                {/* Header: rank chip only (no title, no emoji) */}
+                <div className="z-10 mb-3 flex w-full items-center justify-end">
                   {isRanked && (
-                    <div className="rounded-full border border-[color:var(--secondary)]/40 bg-[color:var(--secondary)]/20 px-2 py-0.5">
-                      <span className="text-[9px] font-extrabold uppercase tracking-tighter text-[color:var(--secondary)]">
+                    <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-2 py-0.5">
+                      <span className="text-[9px] font-extrabold uppercase tracking-tighter text-emerald-300">
                         Ranked
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Progress */}
+                {/* Percentage only */}
                 <div className="z-10 mb-3 text-center">
-                  <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-white/60">
-                    Progress
-                  </p>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-3xl font-extrabold leading-none text-[color:var(--gold)]">
+                    <span
+                      className="text-4xl font-extrabold leading-none"
+                      style={{
+                        color: isRanked
+                          ? "#34d399"
+                          : `hsl(${Math.round((popularityPct / 100) * 120)} 90% 55%)`,
+                      }}
+                    >
                       {popularityPct}%
                     </span>
                   </div>
-                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-widest text-white/50">
-                    {isRanked ? "Ranked" : `${remainingPct}% to go`}
-                  </p>
                 </div>
 
-                {/* Segmented energy meter (10 rungs, filled from bottom) */}
-                <div className="mb-4 flex w-full flex-1 flex-col-reverse gap-1.5 px-4">
-                  {Array.from({ length: 10 }).map((_, i) => {
-                    const filledCount = Math.round((popularityPct / 100) * 10);
+                {/* Volume-style meter — 14 vertical rungs; each rung's color
+                    interpolates red → orange → yellow → green as fill grows.
+                    At 100% all rungs are green. */}
+                <div className="mb-4 flex w-full flex-1 flex-col-reverse gap-1 px-6">
+                  {Array.from({ length: 14 }).map((_, i) => {
+                    const filledCount = Math.round((popularityPct / 100) * 14);
                     const isFilled = i < filledCount;
-                    const opacity = isFilled ? Math.max(0.6, 1 - (filledCount - 1 - i) * 0.08) : 0;
+                    // Rung hue: at 100% force green (120); otherwise scale hue
+                    // by this rung's position so lower rungs skew red and
+                    // higher rungs skew green as the meter fills.
+                    const rungPct = ((i + 1) / 14) * 100;
+                    const hue = isRanked ? 140 : Math.round((rungPct / 100) * 120);
+                    // Rung height grows with position (volume-bar look).
+                    const heightPx = 6 + Math.round((i / 13) * 10);
                     return (
                       <div
                         key={i}
-                        className={`h-3 w-full rounded-sm ${
-                          isFilled
-                            ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_50%,transparent)]"
-                            : "bg-white/5"
-                        }`}
-                        style={isFilled ? { opacity } : undefined}
+                        className="w-full rounded-[3px]"
+                        style={{
+                          height: `${heightPx}px`,
+                          background: isFilled
+                            ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
+                            : "rgba(255,255,255,0.06)",
+                          boxShadow: isFilled
+                            ? `0 0 10px hsl(${hue} 95% 55% / 0.55)`
+                            : undefined,
+                        }}
                       />
                     );
                   })}
