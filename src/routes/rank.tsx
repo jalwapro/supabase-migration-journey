@@ -175,22 +175,18 @@ function Podium({ top3 }: { top3: Entry[] }) {
 
   return (
     <div className="grid grid-cols-3 items-end gap-2">
-      {cells.map(({ e, place, h, ring }) => (
+      {cells.map(({ e, place, h }) => (
         <Link key={place} to="/u/$userId" params={{ userId: e.user_id }}
           className="flex min-w-0 flex-col items-center">
-          <div className="relative">
-            {place === 1 && (
-              <Crown className="absolute -top-5 left-1/2 h-6 w-6 -translate-x-1/2 text-[color:var(--gold)] drop-shadow" />
-            )}
-            <div className={`grid h-16 w-16 place-items-center overflow-hidden rounded-full bg-card ring-2 ${ring} ring-offset-2 ring-offset-background`}>
-              {e.avatar ? (
-                <img src={e.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-lg font-bold">{(e.username ?? "?").slice(0, 1).toUpperCase()}</span>
-              )}
-            </div>
+          <div className="relative mb-3 pt-5">
+            <RoyalBadge
+              rank={place as 1 | 2 | 3}
+              src={e.avatar}
+              name={e.username}
+              size={place === 1 ? "lg" : "md"}
+            />
           </div>
-          <p className="mt-2 max-w-full truncate text-xs font-bold">@{e.username ?? "user"}</p>
+          <p className="mt-3 max-w-full truncate text-xs font-bold">@{e.username ?? "user"}</p>
           <VipBadge level={e.vip_level ?? 0} size="xs" className="mt-1" />
           <p className="mt-1 text-[10px] font-black text-[color:var(--gold)]">{formatCoins(e.total_coins)}</p>
           <div className={`mt-2 w-full ${h} rounded-t-2xl bg-gradient-to-t ${
