@@ -106,7 +106,7 @@ function CustomThemesAdmin() {
             <div className="space-y-2 p-3 text-xs">
               <div className="flex items-center justify-between">
                 <p className="font-bold">
-                  {r.profiles?.username ?? r.user_id.slice(0, 8)}
+                  {(Array.isArray(r.profiles) ? r.profiles[0]?.username : r.profiles?.username) ?? r.user_id.slice(0, 8)}
                 </p>
                 <span className="rounded-full bg-card/60 px-2 py-0.5 text-[10px] capitalize">
                   {r.status}
