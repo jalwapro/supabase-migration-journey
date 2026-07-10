@@ -3713,7 +3713,7 @@ function GifterListSheet({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">@{r.username ?? "user"}</p>
                   <p className="text-[11px] text-muted-foreground">
-                    {r.gift_count} gift{r.gift_count === 1 ? "" : "s"} · 🪙 {r.total_coins.toLocaleString()}
+                    {r.gift_count} gift{r.gift_count === 1 ? "" : "s"}
                   </p>
                 </div>
                 <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[11px] font-black text-black">
