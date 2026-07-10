@@ -20,7 +20,7 @@ type Row = {
   expires_at: string | null;
   approved_at: string | null;
   created_at: string;
-  profiles?: { username: string | null; avatar_url: string | null } | null;
+  profiles?: { username: string | null; avatar_url: string | null }[] | { username: string | null; avatar_url: string | null } | null;
 };
 
 function CustomThemesAdmin() {
