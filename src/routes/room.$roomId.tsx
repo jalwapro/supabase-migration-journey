@@ -1707,7 +1707,21 @@ function RoomPage() {
             setManageMember(null);
           }
         }}
+        onKickFromRoom={async () => {
+          if (!manageMember) return;
+          const { error } = await supabase.rpc("kick_from_room", {
+            _room_id: roomId,
+            _user_id: manageMember.user_id,
+            _minutes: 30,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success("Removed from room · 30 min ban");
+            setManageMember(null);
+          }
+        }}
       />
+
       <EmptySeatSheet
         seatIndex={manageEmptySeat}
         isLocked={
