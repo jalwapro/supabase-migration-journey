@@ -38,6 +38,10 @@ async function uploadToShop(file: File, folder: string) {
 
 function ThemesAdmin() {
   const qc = useQueryClient();
+  const [filterCat, setFilterCat] = useState<string>("all");
+  const [editing, setEditing] = useState<Theme | null>(null);
+
+  const qc = useQueryClient();
   const list = useQuery({
     queryKey: ["admin_themes"],
     queryFn: async () => {
