@@ -617,9 +617,9 @@ function Page() {
                       {buy.isPending ? (
                         <Loader2 className="mx-auto h-4 w-4 animate-spin" />
                       ) : canAfford ? (
-                        "Buy Now"
+                        `Buy · ${priceFor(it).toLocaleString()} ${currencyFor(it) === "diamonds" ? "💎" : "🪙"}`
                       ) : (
-                        "Low coins"
+                        currencyFor(it) === "diamonds" ? "Low diamonds" : "Low coins"
                       )}
                     </button>
                   )}
