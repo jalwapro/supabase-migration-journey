@@ -1314,17 +1314,8 @@ function RoomPage() {
               {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
-            <button
-              onClick={agora.toggleSpeaker}
-              aria-label={agora.speakerMuted ? "Unmute room audio" : "Mute room audio"}
-              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
-                agora.speakerMuted
-                  ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white"
-                  : "border-white/15 bg-black/50 text-white"
-              }`}
-            >
-              {agora.speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
+
+
             {isHost || iAmOnSeat ? (
               <button
                 onClick={() => void agora.toggleVideo()}
@@ -1402,17 +1393,8 @@ function RoomPage() {
               </button>
             ) : null}
 
-            <button
-              onClick={agora.toggleSpeaker}
-              aria-label={agora.speakerMuted ? "Unmute room audio" : "Mute room audio"}
-              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
-                agora.speakerMuted
-                  ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white"
-                  : "border-white/15 bg-black/50 text-white"
-              }`}
-            >
-              {agora.speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </button>
+
+
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
@@ -1448,23 +1430,15 @@ function RoomPage() {
               <Gift className="h-4 w-4" />
             </button>
             {isHost && (
-              <>
-                <button
-                  onClick={openLudo}
-                  aria-label="Games"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-                >
-                  <Gamepad2 className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setSeatsSheetOpen(true)}
-                  aria-label="Room seats"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-              </>
+              <button
+                onClick={openLudo}
+                aria-label="Games"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              >
+                <Gamepad2 className="h-4 w-4" />
+              </button>
             )}
+
           </div>
         </div>
       )}
