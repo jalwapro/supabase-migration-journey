@@ -4,6 +4,8 @@ import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
+
 import { useAgoraRoom, type RemoteUser } from "@/hooks/useAgoraRoom";
 import {
   Flag,
@@ -133,6 +135,9 @@ function RoomPage() {
   const { user, profile, refresh } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const defaultBgVisibility = useDefaultBgOpacity();
+
+
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
