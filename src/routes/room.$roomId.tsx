@@ -3717,7 +3717,7 @@ function GifterListSheet({
                   </p>
                 </div>
                 <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[11px] font-black text-black">
-                  {r.total_diamonds.toLocaleString()} pts
+                  {r.total_coins.toLocaleString()} pts
                 </span>
               </div>
             );
