@@ -116,12 +116,14 @@ function LuckySpin() {
                 return (
                   <div
                     key={i}
-                    className="absolute left-1/2 top-1/2 origin-left text-[11px] font-black text-white"
-                    style={{
-                      transform: `rotate(${angle}deg) translate(30%, -50%)`,
-                    }}
+                    className="pointer-events-none absolute inset-0"
+                    style={{ transform: `rotate(${angle}deg)` }}
                   >
-                    {s.label}
+                    <div
+                      className="absolute left-1/2 top-[14%] -translate-x-1/2 text-[12px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                    >
+                      {s.label}
+                    </div>
                   </div>
                 );
               })}
