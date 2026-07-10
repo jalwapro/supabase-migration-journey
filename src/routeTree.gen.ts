@@ -45,6 +45,7 @@ import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
+import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authenticated/admin.vip-levels'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
@@ -256,6 +257,12 @@ const AuthenticatedAdminWithdrawalsRoute =
   AuthenticatedAdminWithdrawalsRouteImport.update({
     id: '/withdrawals',
     path: '/withdrawals',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminVipLevelsRoute =
+  AuthenticatedAdminVipLevelsRouteImport.update({
+    id: '/vip-levels',
+    path: '/vip-levels',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminVipRoute = AuthenticatedAdminVipRouteImport.update({
@@ -480,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
+  '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -545,6 +553,7 @@ export interface FileRoutesByTo {
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
+  '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -613,6 +622,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
+  '/_authenticated/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -681,6 +691,7 @@ export interface FileRouteTypes {
     | '/admin/themes'
     | '/admin/users'
     | '/admin/vip'
+    | '/admin/vip-levels'
     | '/admin/withdrawals'
     | '/games/lucky-spin'
     | '/settings/notifications'
@@ -746,6 +757,7 @@ export interface FileRouteTypes {
     | '/admin/themes'
     | '/admin/users'
     | '/admin/vip'
+    | '/admin/vip-levels'
     | '/admin/withdrawals'
     | '/games/lucky-spin'
     | '/settings/notifications'
@@ -813,6 +825,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/themes'
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/vip'
+    | '/_authenticated/admin/vip-levels'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/settings/notifications'
@@ -1093,6 +1106,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWithdrawalsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/vip-levels': {
+      id: '/_authenticated/admin/vip-levels'
+      path: '/vip-levels'
+      fullPath: '/admin/vip-levels'
+      preLoaderRoute: typeof AuthenticatedAdminVipLevelsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/vip': {
       id: '/_authenticated/admin/vip'
       path: '/vip'
@@ -1329,6 +1349,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
+  AuthenticatedAdminVipLevelsRoute: typeof AuthenticatedAdminVipLevelsRoute
   AuthenticatedAdminWithdrawalsRoute: typeof AuthenticatedAdminWithdrawalsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1366,6 +1387,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
+  AuthenticatedAdminVipLevelsRoute: AuthenticatedAdminVipLevelsRoute,
   AuthenticatedAdminWithdrawalsRoute: AuthenticatedAdminWithdrawalsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }

@@ -62,6 +62,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/themes", label: "Theme Manager", icon: Palette },
       { to: "/admin/theme-categories", label: "Theme Categories", icon: FolderTree },
       { to: "/admin/vip", label: "VIP Tiers", icon: Crown },
+      { to: "/admin/vip-levels", label: "VIP Levels (100)", icon: Crown },
       { to: "/admin/profile-admin", label: "Profile Admin", icon: UserCog },
     ],
   },
