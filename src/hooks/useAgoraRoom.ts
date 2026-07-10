@@ -282,9 +282,17 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
   }, [enabled, channel, uid, publish, video]);
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
-    const client = clientRef.current;
+    // Wait briefly for the join effect to create the client if this is the
+    // very first mic tap right after entering the room.
+    let client = clientRef.current;
     if (!client) {
-      const message = "Not connected to room yet. Take a seat and try again.";
+      for (let i = 0; i < 20 && !clientRef.current; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      client = clientRef.current;
+    }
+    if (!client) {
+      const message = "Room connection not ready yet. Please try again in a moment.";
       setMicIssue(message, false);
       return { ok: false, error: message };
     }
@@ -307,15 +315,18 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       return n === "NotAllowedError" || n === "PERMISSION_DENIED";
     };
 
-    // CRITICAL: getUserMedia must be the FIRST await inside the click handler,
-    // otherwise Safari/iOS lose the user-gesture context and the mic prompt
-    // silently fails. Do NOT add awaits (permission query, dynamic import,
-    // network calls) before this line.
+    // Wait up to 5s for the channel to reach CONNECTED before publishing.
     if ((client.connectionState as string) !== "CONNECTED") {
-      const message = "Still connecting to room. Tap the mic again in a moment.";
+      for (let i = 0; i < 50 && (client.connectionState as string) !== "CONNECTED"; i++) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if ((client.connectionState as string) !== "CONNECTED") {
+      const message = "Still connecting to room. Please try the mic again in a moment.";
       setMicIssue(message, false);
       return { ok: false, error: message };
     }
+
 
     if (!localAudioRef.current) {
       const AgoraRTC = cachedAgoraRTC;
