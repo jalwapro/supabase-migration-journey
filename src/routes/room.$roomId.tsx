@@ -1181,7 +1181,7 @@ function RoomPage() {
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
         {!isVideo ? (
-          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_30%] gap-2">
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_20%] gap-2">
             <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
               <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
                 <span className="text-sm font-bold text-white">Room Chat</span>
