@@ -2439,7 +2439,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
 
         {/* Rank badge */}
         <div className="relative shrink-0">
-          <LevelBadge level={level} size="sm" showLabel={false} />
+          <VipBadge level={level} size="sm" />
         </div>
       </div>
     </div>
