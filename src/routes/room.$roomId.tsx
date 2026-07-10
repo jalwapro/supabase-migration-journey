@@ -1323,15 +1323,8 @@ function RoomPage() {
               </div>
             </div>
 
-            <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-1 gap-1.5">
-                <MiniAction compact icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setVideoSettingsOpen(true)} />
-              </div>
+            <div className="w-[38%] shrink-0" />
 
-
-
-
-            </div>
           </div>
         )}
       </div>
