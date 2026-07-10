@@ -3588,3 +3588,144 @@ function FlyingEmoji({
   );
 }
 
+/* ─── Gifter list sheet: shows who gifted this seat's user & how much ─── */
+type GifterRow = {
+  sender_id: string;
+  username: string | null;
+  avatar: string | null;
+  total_coins: number;
+  total_diamonds: number;
+  gift_count: number;
+};
+
+function GifterListSheet({
+  roomId,
+  receiver,
+  onClose,
+}: {
+  roomId: string;
+  receiver: { id: string; name: string } | null;
+  onClose: () => void;
+}) {
+  const [rows, setRows] = useState<GifterRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const open = !!receiver;
+
+  useEffect(() => {
+    if (!receiver) return;
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from("gift_sends")
+        .select("sender_id, coins_spent, diamonds_earned")
+        .eq("room_id", roomId)
+        .eq("receiver_id", receiver.id);
+      const map = new Map<string, { coins: number; diamonds: number; count: number }>();
+      (data ?? []).forEach((r) => {
+        const s = r as { sender_id: string; coins_spent: number; diamonds_earned: number };
+        const cur = map.get(s.sender_id) ?? { coins: 0, diamonds: 0, count: 0 };
+        cur.coins += s.coins_spent ?? 0;
+        cur.diamonds += s.diamonds_earned ?? 0;
+        cur.count += 1;
+        map.set(s.sender_id, cur);
+      });
+      const ids = [...map.keys()];
+      let profiles: Array<{ id: string; username: string | null; avatar: string | null }> = [];
+      if (ids.length) {
+        const { data: p } = await supabase
+          .from("profiles")
+          .select("id, username, avatar")
+          .in("id", ids);
+        profiles = (p as typeof profiles) ?? [];
+      }
+      const nameById = new Map(profiles.map((p) => [p.id, p]));
+      const list: GifterRow[] = ids.map((id) => {
+        const v = map.get(id)!;
+        const p = nameById.get(id);
+        return {
+          sender_id: id,
+          username: p?.username ?? null,
+          avatar: p?.avatar ?? null,
+          total_coins: v.coins,
+          total_diamonds: v.diamonds,
+          gift_count: v.count,
+        };
+      }).sort((a, b) => b.total_diamonds - a.total_diamonds);
+      if (!cancelled) {
+        setRows(list);
+        setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [roomId, receiver]);
+
+  if (!open || !receiver) return null;
+  const totalDiamonds = rows.reduce((s, r) => s + r.total_diamonds, 0);
+  return (
+    <>
+      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl max-h-[75vh] overflow-y-auto"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-extrabold">Gifters for @{receiver.name}</h2>
+            <p className="text-xs text-muted-foreground">
+              {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalDiamonds.toLocaleString()} pts
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/80"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-4 space-y-2">
+          {loading && <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>}
+          {!loading && rows.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">No gifts yet in this room.</p>
+          )}
+          {!loading && rows.map((r, i) => {
+            const initial = (r.username ?? "?").slice(0, 1).toUpperCase();
+            const rank = i + 1;
+            const rankBadge =
+              rank === 1 ? "bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-black"
+              : rank === 2 ? "bg-gradient-to-br from-zinc-300 to-zinc-500 text-black"
+              : rank === 3 ? "bg-gradient-to-br from-orange-400 to-amber-700 text-black"
+              : "bg-white/10 text-white/80";
+            return (
+              <div key={r.sender_id} className="flex items-center gap-3 rounded-2xl border border-border/60 bg-background/40 p-2.5">
+                <span className={`grid h-7 w-7 place-items-center rounded-full text-xs font-black ${rankBadge}`}>
+                  {rank}
+                </span>
+                {r.avatar ? (
+                  <img src={r.avatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                ) : (
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-bold text-white">
+                    {initial}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold">@{r.username ?? "user"}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {r.gift_count} gift{r.gift_count === 1 ? "" : "s"} · 🪙 {r.total_coins.toLocaleString()}
+                  </p>
+                </div>
+                <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[11px] font-black text-black">
+                  {r.total_diamonds.toLocaleString()} pts
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
+
