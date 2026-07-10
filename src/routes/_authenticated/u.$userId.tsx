@@ -454,8 +454,9 @@ function UserProfilePage() {
             icon={<Coins className="h-3 w-3 text-[color:var(--gold)]" />}
           />
           <Stat
-            label="Diamonds"
+            label="Points"
             value={p.diamonds.toLocaleString()}
+
             icon={<Gem className="h-3 w-3 text-cyan-400" />}
           />
         </div>
