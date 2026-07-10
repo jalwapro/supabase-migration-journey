@@ -3,7 +3,9 @@ import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
+
 
 type ThemeRow = {
   id: string;
@@ -26,6 +28,8 @@ type ThemeRow = {
  */
 export function ThemeBackground() {
   const { profile, loading: authLoading } = useAuth();
+  const bgVisibility = useDefaultBgOpacity();
+
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const suppressed =
     pathname.startsWith("/theme-shop") ||
@@ -138,7 +142,7 @@ export function ThemeBackground() {
           decoding="async"
           className="h-full w-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black" style={{ opacity: 1 - bgVisibility / 100 }} />
       </div>
     );
   }

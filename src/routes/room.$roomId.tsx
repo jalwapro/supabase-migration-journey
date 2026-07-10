@@ -4,6 +4,8 @@ import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
+
 import { useAgoraRoom, type RemoteUser } from "@/hooks/useAgoraRoom";
 import {
   Flag,
@@ -133,6 +135,9 @@ function RoomPage() {
   const { user, profile, refresh } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const defaultBgVisibility = useDefaultBgOpacity();
+
+
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
@@ -1146,6 +1151,7 @@ function RoomPage() {
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
         const bg = hostBg || "/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+        const overlay = hostBg ? 0.55 : 1 - defaultBgVisibility / 100;
         return (
           <>
             <img
@@ -1155,10 +1161,11 @@ function RoomPage() {
               draggable={false}
               className="pointer-events-none absolute inset-0 h-full w-full object-cover"
             />
-            <div className="pointer-events-none absolute inset-0 bg-black/55" />
+            <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: overlay }} />
           </>
         );
       })()}
+
 
 
       {/* Ambient blurs */}
