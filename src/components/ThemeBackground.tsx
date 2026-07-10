@@ -3,7 +3,9 @@ import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
+
 
 type ThemeRow = {
   id: string;
