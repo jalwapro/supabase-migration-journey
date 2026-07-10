@@ -1574,8 +1574,8 @@ function RoomPage() {
           >
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="text-base font-black text-white">⭐ Award Milestone Gift</p>
-                <p className="text-[11px] text-white/60">Room hit 300k coins — pick the top gifter to receive the milestone gift.</p>
+                <p className="text-base font-black text-white">⭐ 100% Reached!</p>
+                <p className="text-[11px] text-white/60">Pick a gift, then choose who to send it to.</p>
               </div>
               <button
                 onClick={() => setMilestoneOpen(false)}
@@ -1584,16 +1584,61 @@ function RoomPage() {
                 ✕
               </button>
             </div>
-            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+
+            {/* Step 1 — pick one of the admin-configured milestone gifts */}
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50">
+              Choose a gift
+            </p>
+            {milestoneGifts.length === 0 ? (
+              <p className="mb-3 rounded-xl border border-white/10 bg-white/5 py-4 text-center text-[11px] text-white/60">
+                No milestone gifts configured. Ask admin to mark up to 3 gifts as milestone.
+              </p>
+            ) : (
+              <div className="mb-4 grid grid-cols-3 gap-2">
+                {milestoneGifts.map((g) => {
+                  const picked = pickedMilestoneGift === g.id;
+                  return (
+                    <button
+                      key={g.id}
+                      onClick={() => setPickedMilestoneGift(g.id)}
+                      className={`flex flex-col items-center gap-1 rounded-2xl border p-2 transition ${
+                        picked
+                          ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                          : "border-white/10 bg-white/5"
+                      }`}
+                    >
+                      <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-xl bg-black/40">
+                        {g.clip_path && g.clip_type === "svg" ? (
+                          <img src={g.clip_path} alt="" className="h-full w-full object-contain" />
+                        ) : g.clip_path && g.clip_type === "mp4" ? (
+                          <video src={g.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-3xl leading-none">{g.emoji ?? g.icon ?? "🎁"}</span>
+                        )}
+                      </div>
+                      <span className="w-full truncate text-center text-[10px] font-bold text-white">
+                        {g.name}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Step 2 — pick a receiver from top gifters */}
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50">
+              Send to
+            </p>
+            <div className="max-h-[40vh] space-y-2 overflow-y-auto">
               {topGifters.length === 0 ? (
                 <p className="py-6 text-center text-xs text-white/60">Loading top gifters…</p>
               ) : (
                 topGifters.map((g, i) => (
                   <button
                     key={g.user_id}
-                    disabled={awarding}
+                    disabled={awarding || !pickedMilestoneGift}
                     onClick={() => awardMilestone(g.user_id)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-[color:var(--gold)]/60 disabled:opacity-60"
+                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-[color:var(--gold)]/60 disabled:opacity-40"
                   >
                     <span className="w-5 text-center text-xs font-black text-[color:var(--gold)]">{i + 1}</span>
                     <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-white/20">
@@ -1607,7 +1652,9 @@ function RoomPage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold text-white">@{g.username ?? "user"}</p>
-                      <p className="text-[10px] text-[color:var(--gold)]">🪙 {Number(g.total_coins).toLocaleString()}</p>
+                      {i === 0 && (
+                        <p className="text-[10px] font-bold text-[color:var(--gold)]">🏆 Top gifter</p>
+                      )}
                     </div>
                     <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[10px] font-black text-black">
                       Award
