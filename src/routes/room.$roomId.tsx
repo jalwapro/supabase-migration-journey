@@ -1302,18 +1302,8 @@ function RoomPage() {
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1.5 bg-[color:var(--secondary)]/10" />
               </button>
 
-              <div className="grid flex-1 grid-cols-1 gap-2">
-                <MiniAction
-                  icon={<MoreHorizontal className="h-5 w-5" />}
-                  label="More"
-                  onClick={() => setVideoSettingsOpen(true)}
-                />
-              </div>
-
-
-
-
             </div>
+
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 gap-2">
@@ -1333,15 +1323,8 @@ function RoomPage() {
               </div>
             </div>
 
-            <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-1 gap-1.5">
-                <MiniAction compact icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setVideoSettingsOpen(true)} />
-              </div>
+            <div className="w-[38%] shrink-0" />
 
-
-
-
-            </div>
           </div>
         )}
       </div>
@@ -1492,6 +1475,14 @@ function RoomPage() {
             >
               <Gift className="h-4 w-4" />
             </button>
+            <button
+              onClick={() => setVideoSettingsOpen(true)}
+              aria-label="More"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+
 
           </div>
         </div>
