@@ -67,6 +67,17 @@ export function GiftSheet({
     enabled: open,
   });
 
+  // Top gifter in THIS room — refreshed each time the sheet opens.
+  const topGifter = useQuery({
+    queryKey: ["room_top_gifter", roomId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 1 });
+      if (error) throw error;
+      return (data?.[0] ?? null) as { user_id: string; username: string | null; avatar: string | null; total_coins: number } | null;
+    },
+    enabled: open,
+  });
+
   const categories = useMemo(() => {
     const set = new Set<string>();
     (gifts.data ?? []).forEach((g) => g.category && set.add(g.category));
