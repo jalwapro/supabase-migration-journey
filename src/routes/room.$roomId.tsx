@@ -40,6 +40,8 @@ import {
   FlipHorizontal,
   Swords,
   Radio,
+  Play,
+  Pause,
   X,
 } from "lucide-react";
 
