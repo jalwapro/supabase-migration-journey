@@ -193,8 +193,16 @@ function Page() {
     return !!r && (!r.expires_at || new Date(r.expires_at) > new Date());
   };
 
-  const selCost = selected ? (selected.is_free ? 0 : selected.price) : 0;
-  const canAfford = (profile?.coins ?? 0) >= selCost;
+  // Diamonds take precedence when price_diamonds is set; else fall back to coins.
+  const currencyFor = (it: ShopItem): "diamonds" | "coins" =>
+    it.price_diamonds > 0 ? "diamonds" : "coins";
+  const priceFor = (it: ShopItem): number =>
+    it.is_free ? 0 : it.price_diamonds > 0 ? it.price_diamonds : it.price;
+  const selCost = selected ? priceFor(selected) : 0;
+  const selCurrency = selected ? currencyFor(selected) : "coins";
+  const canAfford = selected
+    ? (selCurrency === "diamonds" ? (profile?.diamonds ?? 0) : (profile?.coins ?? 0)) >= selCost
+    : true;
   const activeCatObj = cats.find((c) => c.id === currentCat) ?? null;
 
   return (
@@ -326,10 +334,16 @@ function Page() {
                     </span>
                     <h2 className="text-lg font-black text-white drop-shadow">{featured.name}</h2>
                     <div className="flex items-center gap-1 text-xs font-bold text-white/90">
-                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[9px] text-amber-950">
-                        <Coins className="h-2.5 w-2.5" />
-                      </span>
-                      {(featured.is_free ? 0 : featured.price).toLocaleString()}
+                      {currencyFor(featured) === "diamonds" ? (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500 text-[9px] text-white">
+                          <Gem className="h-2.5 w-2.5" />
+                        </span>
+                      ) : (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[9px] text-amber-950">
+                          <Coins className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                      {priceFor(featured).toLocaleString()}
                       <span className="mx-1 opacity-40">·</span>
                       <span className="text-[10px] uppercase tracking-wide text-amber-200/90">
                         {featured.duration_days && featured.duration_days > 0 ? `${featured.duration_days} days` : "Permanent"}
@@ -447,10 +461,16 @@ function Page() {
 
                     {/* Price footer */}
                     <div className="relative z-10 flex items-center justify-center gap-1 pb-2 pt-1 text-sm font-black text-white">
-                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[10px] text-amber-950">
-                        <Coins className="h-2.5 w-2.5" />
-                      </span>
-                      {(it.is_free ? 0 : it.price).toLocaleString()}
+                      {currencyFor(it) === "diamonds" ? (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500 text-[10px] text-white">
+                          <Gem className="h-2.5 w-2.5" />
+                        </span>
+                      ) : (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[10px] text-amber-950">
+                          <Coins className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                      {priceFor(it).toLocaleString()}
                     </div>
 
                     {isEquipped && (
@@ -543,10 +563,19 @@ function Page() {
               <div className="space-y-3 p-4">
                 <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2.5 ring-1 ring-white/10">
                   <div className="flex items-center gap-1.5 text-base font-black text-white">
-                    <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
-                      <Coins className="h-3.5 w-3.5 text-amber-950" />
+                    {currencyFor(it) === "diamonds" ? (
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500">
+                        <Gem className="h-3.5 w-3.5 text-white" />
+                      </span>
+                    ) : (
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
+                        <Coins className="h-3.5 w-3.5 text-amber-950" />
+                      </span>
+                    )}
+                    {priceFor(it).toLocaleString()}
+                    <span className="ml-1 text-[10px] font-bold uppercase tracking-wider text-white/50">
+                      {currencyFor(it)}
                     </span>
-                    {(it.is_free ? 0 : it.price).toLocaleString()}
                   </div>
                   <div className="text-[11px] font-bold uppercase tracking-wider text-white/60">
                     {it.duration_days && it.duration_days > 0 ? `${it.duration_days} days` : "Permanent"}
@@ -588,9 +617,9 @@ function Page() {
                       {buy.isPending ? (
                         <Loader2 className="mx-auto h-4 w-4 animate-spin" />
                       ) : canAfford ? (
-                        "Buy Now"
+                        `Buy · ${priceFor(it).toLocaleString()} ${currencyFor(it) === "diamonds" ? "💎" : "🪙"}`
                       ) : (
-                        "Low coins"
+                        currencyFor(it) === "diamonds" ? "Low diamonds" : "Low coins"
                       )}
                     </button>
                   )}
