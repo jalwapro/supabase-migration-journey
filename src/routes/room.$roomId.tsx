@@ -1115,17 +1115,52 @@ function RoomPage() {
 
   const hostRemote = agora.remotes.get(uidFromUuid(r.host_id));
 
+  // Host's shop theme (only when it belongs to the "theme" category)
+  const hostTheme = r.host?.theme ?? null;
+  const hostThemeSlug = (hostTheme?.theme_categories?.slug ?? "").toLowerCase();
+  const hostBg =
+    hostTheme &&
+    (!hostTheme.category_id || hostThemeSlug === "theme" || hostThemeSlug === "themes")
+      ? hostTheme.bg_image || hostTheme.preview_url
+      : null;
+  const hostPrimary = hostBg ? hostTheme?.primary_color : null;
+  const hostAccent = hostBg ? hostTheme?.accent_color : null;
+
+  const roomStyle: React.CSSProperties = hostBg
+    ? {
+        background:
+          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
+        ...(hostPrimary ? { ["--primary" as string]: hostPrimary } : {}),
+        ...(hostAccent ? { ["--secondary" as string]: hostAccent } : {}),
+      }
+    : {
+        background:
+          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
+      };
+
   return (
     <div
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
-      style={{
-        background:
-          "linear-gradient(180deg, #1a0b2e 0%, #2d0b4d 45%, #050505 100%)",
-      }}
+      style={roomStyle}
     >
+      {/* Host theme background (visible to everyone in the room) */}
+      {hostBg && (
+        <>
+          <img
+            src={hostBg}
+            alt=""
+            aria-hidden
+            draggable={false}
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-black/55" />
+        </>
+      )}
+
       {/* Ambient blurs */}
       <div className="pointer-events-none absolute -top-24 -left-24 h-[400px] w-[400px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 -right-16 h-[300px] w-[300px] rounded-full bg-[color:var(--primary)]/15 blur-[100px]" />
+
 
       {/* ─── Header ─────────────────────────────────────────────── */}
       <div
