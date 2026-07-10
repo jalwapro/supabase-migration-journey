@@ -64,6 +64,7 @@ type FullProfile = {
   user_code: string | null;
   last_seen: string | null;
   created_at: string;
+  total_gifted_coins: number | null;
 };
 
 function UserProfilePage() {
