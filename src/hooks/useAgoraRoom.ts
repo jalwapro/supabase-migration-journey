@@ -91,6 +91,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
   const resolvedKind: "voice" | "video" | "pk" = kind ?? (video ? "video" : "voice");
 
   const clientRef = useRef<IAgoraRTCClient | null>(null);
+  const joinSeqRef = useRef(0);
   const localAudioRef = useRef<ILocalAudioTrack | null>(null);
   const localAudioPublishedRef = useRef(false);
   const localVideoRef = useRef<ILocalVideoTrack | null>(null);
@@ -161,21 +162,32 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
   useEffect(() => {
     if (!enabled || !channel || uid == null) {
+      joinSeqRef.current += 1;
       void teardown();
       return;
     }
     let cancelled = false;
+    const joinSeq = ++joinSeqRef.current;
+    const isCurrentJoin = () => !cancelled && joinSeqRef.current === joinSeq;
 
     (async () => {
       setStatus("connecting");
       setError(null);
+      let client: IAgoraRTCClient | null = null;
       try {
         const AgoraRTC = await loadAgoraRTC();
+        if (!isCurrentJoin()) return;
         AgoraRTC.setLogLevel(3);
-        const client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
+        client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
         clientRef.current = client;
 
         await client.setClientRole(publish ? "host" : "audience");
+        if (!isCurrentJoin()) {
+          client.removeAllListeners();
+          try { await client.leave(); } catch { /* ignore */ }
+          if (clientRef.current === client) clientRef.current = null;
+          return;
+        }
 
         client.on("user-published", async (user, mediaType) => {
           await client.subscribe(user, mediaType);
@@ -243,8 +255,19 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
         });
 
         const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience", resolvedKind);
-        if (cancelled) return;
+        if (!isCurrentJoin()) {
+          client.removeAllListeners();
+          try { await client.leave(); } catch { /* ignore */ }
+          if (clientRef.current === client) clientRef.current = null;
+          return;
+        }
         await client.join(appId, channel, token, uid);
+        if (!isCurrentJoin()) {
+          client.removeAllListeners();
+          try { await client.leave(); } catch { /* ignore */ }
+          if (clientRef.current === client) clientRef.current = null;
+          return;
+        }
 
         if (publish) {
           // Do not request microphone during room join. Browsers give clearer
@@ -267,6 +290,14 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
         if (!cancelled) setStatus("connected");
       } catch (e) {
+        if (!isCurrentJoin()) {
+          if (client) {
+            client.removeAllListeners();
+            try { await client.leave(); } catch { /* ignore */ }
+            if (clientRef.current === client) clientRef.current = null;
+          }
+          return;
+        }
         console.error("[agora] join failed", e);
         const msg = e instanceof Error ? e.message : String(e);
         setError(msg);
@@ -276,6 +307,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
     return () => {
       cancelled = true;
+      joinSeqRef.current += 1;
       void teardown();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -315,9 +347,16 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       return n === "NotAllowedError" || n === "PERMISSION_DENIED";
     };
 
-    // Wait up to 5s for the channel to reach CONNECTED before publishing.
+    // Wait for the latest room client to reach CONNECTED before publishing.
+    // If the user taps mic immediately after taking a seat, the hook may still
+    // be replacing the old audience client with a publisher client.
     if ((client.connectionState as string) !== "CONNECTED") {
-      for (let i = 0; i < 50 && (client.connectionState as string) !== "CONNECTED"; i++) {
+      for (let i = 0; i < 80; i++) {
+        const latest = clientRef.current;
+        if (latest && (latest.connectionState as string) === "CONNECTED") {
+          client = latest;
+          break;
+        }
         await new Promise((r) => setTimeout(r, 100));
       }
     }
@@ -365,12 +404,25 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       console.warn("[agora] setMuted(false) failed", e);
     }
 
-    if (client.role !== "host") {
-      try {
-        await client.setClientRole("host");
-      } catch (e) {
-        console.warn("[agora] setClientRole(host) failed", e);
-      }
+    if (!channel || uid == null) {
+      const message = "Room connection not ready yet. Please try again in a moment.";
+      setMicIssue(message, false);
+      return { ok: false, error: message };
+    }
+
+    try {
+      // Re-apply a publisher token before publishing. This fixes the race where
+      // a viewer taps mic while their old audience connection is still being
+      // upgraded after taking a seat.
+      const { token } = await fetchToken(channel, uid, "publisher", resolvedKind);
+      await client.renewToken(token);
+      if (client.role !== "host") await client.setClientRole("host");
+    } catch (e) {
+      console.warn("[agora] publisher upgrade failed", e);
+      const raw = e instanceof Error ? e.message : String(e);
+      const message = `Mic connection is still upgrading. Please tap the mic again in a moment.${raw ? ` (${raw})` : ""}`;
+      setMicIssue(message, false);
+      return { ok: false, error: message };
     }
 
     if (!localAudioPublishedRef.current) {
@@ -393,7 +445,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     setMuted(false);
     setMicIssue(null, false);
     return { ok: true };
-  }, [setMicIssue]);
+  }, [channel, resolvedKind, setMicIssue, uid]);
 
 
   const toggleMute = useCallback(async () => {
