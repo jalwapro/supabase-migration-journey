@@ -71,7 +71,19 @@ type Room = {
   agora_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
-  host: { username: string | null; avatar: string | null; frame: string | null } | null;
+  host: {
+    username: string | null;
+    avatar: string | null;
+    frame: string | null;
+    theme: {
+      bg_image: string | null;
+      preview_url: string | null;
+      primary_color: string | null;
+      accent_color: string | null;
+      category_id: string | null;
+      theme_categories: { slug: string | null } | null;
+    } | null;
+  } | null;
 };
 
 type TopGifter = { user_id: string; username: string | null; avatar: string | null; total_coins: number };
