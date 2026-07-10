@@ -2492,14 +2492,17 @@ function Seat({
       <button
         onClick={() => {
           if (member) return onLike();
-          if (hostAwayFromSeat) return; // seat 0 reserved for host
           if (locked && onEmptyManage) return onEmptyManage();
           if (locked) return;
           if (onEmptyManage) return onEmptyManage();
+          // For seat 0 (host seat) the take_seat RPC and takeSeat() guard
+          // will reject non-hosts with a clear toast — the host themselves
+          // must be able to tap to return here.
           return onClaim();
         }}
         className="relative aspect-square w-full"
-        aria-label={member ? `Manage seat ${label}` : hostAwayFromSeat ? "Host seat reserved" : locked ? `Locked ${label}` : `Take ${label}`}
+        aria-label={member ? `Manage seat ${label}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked ${label}` : `Take ${label}`}
+
       >
         {isHostSeat && (
           <div className={`pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed animate-spin-slow ${
