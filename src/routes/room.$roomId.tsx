@@ -2733,7 +2733,7 @@ function Seat({
             ? "bg-gradient-to-r from-[color:var(--gold)]/90 to-orange-400 text-black shadow-[0_0_10px_rgba(255,200,60,0.7)]"
             : "bg-black/70 text-white/85"
         }`}>
-          💎 {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
+          {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
         </span>
       ) : (
         <span className={`text-[10px] font-black leading-tight ${
