@@ -705,10 +705,11 @@ function RoomPage() {
       if (firstId) playedEmojiIdsRef.current.delete(firstId);
     }
     setFlyingEmojis((prev) => [...prev, { id, emoji, fromSeat, toSeat, clip: clip ?? null }]);
+    // Arrival at target ~= 38% of 2.6s ≈ 990ms
     setTimeout(() => {
       setGlowSeats((prev) => ({ ...prev, [toSeat]: (prev[toSeat] ?? 0) + 1 }));
-    }, 2000);
-    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2300);
+    }, 1000);
+    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2700);
     setTimeout(() => {
       setGlowSeats((prev) => {
         const next = { ...prev };
@@ -716,7 +717,7 @@ function RoomPage() {
         if (!next[toSeat]) delete next[toSeat];
         return next;
       });
-    }, 2800);
+    }, 3100);
   }
 
   async function sendEmoji(emoji: string, seatIndex: number, clip?: string | null) {
