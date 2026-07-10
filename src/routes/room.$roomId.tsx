@@ -2582,6 +2582,8 @@ function Seat({
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
+  const displayFrame = member?.user?.frame ?? fallbackUser?.frame ?? null;
+  const frameIsVideo = !!displayFrame && /\.(mp4|webm|mov)($|\?)/i.test(displayFrame);
 
   const ringClass = isHostSeat
     ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
