@@ -2214,6 +2214,24 @@ function MiniAction({
 }
 
 
+function LevelChip({ level }: { level: number }) {
+  const tier = tierForLevel(level);
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-[1px] text-[9px] font-black uppercase leading-none tracking-wide ring-1"
+      style={{
+        color: tier.color,
+        background: `linear-gradient(90deg, ${tier.color}33, transparent)`,
+        borderColor: `${tier.color}80`,
+      }}
+      title={`${tier.label} · Level ${level}`}
+    >
+      <span>Lv</span>
+      <span className="text-white">{level}</span>
+    </span>
+  );
+}
+
 function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   const body = m.text ?? m.message ?? "";
   if (m.kind === "gift") {
