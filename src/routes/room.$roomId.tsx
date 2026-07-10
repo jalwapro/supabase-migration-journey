@@ -3326,7 +3326,7 @@ function FlyingEmoji({
     left: 0,
     top: 0,
     willChange: "transform, opacity",
-    animation: "flyEmoji 2s cubic-bezier(0.22,1,0.36,1) forwards",
+    animation: "flyEmoji 2.6s cubic-bezier(0.22,1,0.36,1) forwards",
     ["--fx" as never]: `${pos.x - size / 2}px`,
     ["--fy" as never]: `${pos.y - size / 2}px`,
     ["--tx" as never]: `${target.x - size / 2}px`,
