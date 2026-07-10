@@ -265,7 +265,8 @@ function MePage() {
               </SheetContent>
             </Sheet>
 
-            {/* Following / Followers / Diamonds / Coins */}
+            {/* Following / Followers / Points / Coins */}
+
             <div className="relative mt-4 grid grid-cols-4 gap-2 text-center">
               <StatLink to="/friends" value={counts?.following ?? 0} label="Following" />
               <StatLink to="/friends" value={counts?.followers ?? 0} label="Followers" />
