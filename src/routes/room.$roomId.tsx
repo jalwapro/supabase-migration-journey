@@ -1744,6 +1744,11 @@ function RoomPage() {
         players={ludoPlayers}
         isHost={isHost}
       />
+      <GifterListSheet
+        roomId={roomId}
+        receiver={gifterListReceiver}
+        onClose={() => setGifterListReceiver(null)}
+      />
       <HostMusicPlayer open={musicOpen && isHost} onClose={() => setMusicOpen(false)} controller={agora} />
       <InviteSheet
         open={inviteOpen}
