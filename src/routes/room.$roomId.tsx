@@ -708,10 +708,13 @@ function RoomPage() {
       toast.error("Sign in to react");
       return;
     }
-    // Local optimistic — even sender sees it fly
+    // Local optimistic — even sender sees it fly, once
     const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex, clip: clip ?? null }]);
-    setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
+    // Glow only when emoji reaches the DP (~2.1s animation)
+    setTimeout(() => {
+      setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
+    }, 2100);
     setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2400);
     setTimeout(() => {
       setGlowSeats((prev) => {
@@ -720,7 +723,7 @@ function RoomPage() {
         if (!next[seatIndex]) delete next[seatIndex];
         return next;
       });
-    }, 2600);
+    }, 2800);
     const emojiText = clip
       ? `${emoji}|${seatIndex}|${encodeURIComponent(clip)}`
       : `${emoji}|${seatIndex}`;
