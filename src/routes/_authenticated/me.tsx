@@ -22,6 +22,8 @@ import { LevelAvatar } from "@/components/LevelAvatar";
 import { LevelBadge } from "@/components/LevelBadge";
 import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 import { formatCompact } from "@/lib/utils";
+import { VipProgressBar } from "@/components/vip/VipProgressBar";
+import { useVipProfile } from "@/hooks/useVipProfile";
 
 export const Route = createFileRoute("/_authenticated/me")({
   component: MePage,
@@ -44,6 +46,7 @@ function useCounts(userId: string | undefined) {
 function MePage() {
   const { user, profile, isAdmin, signOut, refresh } = useAuth();
   const { data: counts } = useCounts(user?.id);
+  const { data: vip } = useVipProfile(user?.id);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [frameSheetOpen, setFrameSheetOpen] = useState(false);
@@ -279,6 +282,14 @@ function MePage() {
                 />
               </div>
             </button>
+
+            {/* VIP Gifting progress */}
+            <div className="mt-4">
+              <VipProgressBar
+                totalGifted={Number(vip?.row.total_gifted_coins ?? 0)}
+                storedLevel={vip?.row.vip_level ?? 0}
+              />
+            </div>
 
             {/* Following / Followers / Diamonds / Coins */}
             <div className="relative mt-4 grid grid-cols-4 gap-2 text-center">

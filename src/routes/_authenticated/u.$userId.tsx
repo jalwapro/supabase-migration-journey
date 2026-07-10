@@ -4,6 +4,9 @@ import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { LevelBadge } from "@/components/LevelBadge";
+import { VipBadge } from "@/components/vip/VipBadge";
+import { VipProgressBar } from "@/components/vip/VipProgressBar";
+import { useVipProfile } from "@/hooks/useVipProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -61,6 +64,7 @@ type FullProfile = {
   user_code: string | null;
   last_seen: string | null;
   created_at: string;
+  total_gifted_coins: number | null;
 };
 
 function UserProfilePage() {
@@ -76,7 +80,7 @@ function UserProfilePage() {
       const { data, error } = await supabase
         .from("profiles")
         .select(
-          "id,username,full_name,avatar,frame,ring,bubble,car,entrance,special_id,data_card,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at",
+          "id,username,full_name,avatar,frame,ring,bubble,car,entrance,special_id,data_card,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at,total_gifted_coins",
         )
         .eq("id", userId)
         .maybeSingle();
@@ -371,7 +375,7 @@ function UserProfilePage() {
             />
           </div>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-white/70">
-            <LevelBadge level={p.level} />
+            <VipBadge level={p.vip_level ?? 0} size="sm" showLabel />
             {p.country && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> {p.country}
@@ -400,6 +404,16 @@ function UserProfilePage() {
           />
         </div>
       </div>
+
+      {/* VIP Gifting progress */}
+      <div className="mx-4 mt-3">
+        <VipProgressBar
+          totalGifted={Number(p.total_gifted_coins ?? 0)}
+          storedLevel={p.vip_level ?? 0}
+        />
+      </div>
+
+
 
       {/* Actions */}
       {!isMe && (
