@@ -47,12 +47,9 @@ function MePage() {
   const { data: vip } = useVipProfile(user?.id);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [frameSheetOpen, setFrameSheetOpen] = useState(false);
 
-  const level = profile?.level ?? 0;
-  const xp = profile?.xp ?? 0;
-  const tier = tierForLevel(level);
-  const prog = levelProgress(level, xp);
+  const vipLevel = vip?.row.vip_level ?? 0;
+  const tier = vipTierForLevel(vipLevel);
 
   async function onPickAvatar(file: File) {
     if (!user) return;
