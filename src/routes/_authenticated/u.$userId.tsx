@@ -375,7 +375,7 @@ function UserProfilePage() {
             />
           </div>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-white/70">
-            <LevelBadge level={p.level} />
+            <VipBadge level={p.vip_level ?? 0} size="sm" showLabel />
             {p.country && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> {p.country}
