@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { LevelBadge } from "@/components/LevelBadge";
+import { vipTierForLevel } from "@/lib/vip-levels";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useVipProfile } from "@/hooks/useVipProfile";
@@ -27,7 +27,7 @@ import {
   Images,
 } from "lucide-react";
 import { toast } from "sonner";
-import { levelProgress, tierForLevel } from "@/lib/levels";
+
 
 export const Route = createFileRoute("/_authenticated/u/$userId")({
   component: UserProfilePage,
@@ -252,8 +252,7 @@ function UserProfilePage() {
   }
 
   const p = prof.data;
-  const tier = tierForLevel(p.level);
-  const prog = levelProgress(p.level, p.xp);
+  const tier = vipTierForLevel(p.vip_level ?? 0);
   const online =
     !!p.last_seen && Date.now() - new Date(p.last_seen).getTime() < 3 * 60 * 1000;
   const joined = new Date(p.created_at).toLocaleDateString(undefined, {
@@ -354,7 +353,7 @@ function UserProfilePage() {
           <LevelAvatar
             src={p.avatar}
             name={p.username ?? p.full_name ?? "User"}
-            level={p.level}
+            level={p.vip_level ?? 0}
             size="xl"
             showBadge
             frame={p.frame}
@@ -391,19 +390,6 @@ function UserProfilePage() {
         </div>
       </div>
 
-      {/* XP progress */}
-      <div className="mx-4 -mt-2 rounded-2xl border border-white/10 bg-card/80 p-3 backdrop-blur">
-        <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-          <span>Level {p.level}</span>
-          <span>{prog.have.toLocaleString()} / {prog.need.toLocaleString()} XP</span>
-        </div>
-        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)]"
-            style={{ width: `${Math.round(prog.pct * 100)}%` }}
-          />
-        </div>
-      </div>
 
       {/* VIP Gifting progress */}
       <div className="mx-4 mt-3">

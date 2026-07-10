@@ -97,7 +97,7 @@ function Page() {
     setPw("");
   }
 
-  const level = profile?.level ?? 0;
+  const level = profile?.vip_level ?? 0;
 
   return (
     <>

@@ -12,19 +12,16 @@ import {
   Shield,
   Camera,
   Loader2,
-  Sparkles,
   Pencil,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { LevelBadge } from "@/components/LevelBadge";
-import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 import { formatCompact } from "@/lib/utils";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { VipRewardsGrid } from "@/components/vip/VipRewardsGrid";
 import { useVipProfile } from "@/hooks/useVipProfile";
+import { vipTierForLevel } from "@/lib/vip-levels";
 
 export const Route = createFileRoute("/_authenticated/me")({
   component: MePage,
@@ -50,12 +47,9 @@ function MePage() {
   const { data: vip } = useVipProfile(user?.id);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [frameSheetOpen, setFrameSheetOpen] = useState(false);
 
-  const level = profile?.level ?? 0;
-  const xp = profile?.xp ?? 0;
-  const tier = tierForLevel(level);
-  const prog = levelProgress(level, xp);
+  const vipLevel = vip?.row.vip_level ?? 0;
+  const tier = vipTierForLevel(vipLevel);
 
   async function onPickAvatar(file: File) {
     if (!user) return;
@@ -160,7 +154,7 @@ function MePage() {
                 <LevelAvatar
                   src={profile?.avatar}
                   name={profile?.username}
-                  level={level}
+                  level={vipLevel}
                   size="xl"
                   showBadge
                   frame={profile?.frame}
@@ -234,55 +228,6 @@ function MePage() {
               </div>
             </div>
 
-            {/* Ranking badge */}
-            <button
-              onClick={() => setFrameSheetOpen(true)}
-              className="relative mt-5 flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left"
-              style={{
-                borderColor: `${tier.color}80`,
-                background: `linear-gradient(90deg, ${tier.color}22 0%, #0a011477 100%)`,
-                boxShadow: `0 0 24px -6px ${tier.color}`,
-              }}
-            >
-              <LevelBadge level={level} size="md" showLabel={false} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                  Your Rank
-                </p>
-                <p
-                  className="truncate text-lg font-black uppercase"
-                  style={{ color: tier.color, textShadow: `0 0 10px ${tier.color}` }}
-                >
-                  {tier.label}
-                </p>
-                <p className="text-[11px] font-bold text-white/75">
-                  Level {level} · Tap to view all tiers
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-white/60" />
-            </button>
-
-            {/* Level progress bar */}
-            <button
-              onClick={() => setFrameSheetOpen(true)}
-              className="relative mt-5 block w-full text-left"
-            >
-              <div className="mb-1.5 flex items-center justify-between text-[11px] font-bold">
-                <span className="flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-[color:var(--gold)]" />
-                  <span className="text-white/85">{tier.label} Frame</span>
-                </span>
-                <span className="text-white/60">
-                  {prog.have} / {prog.need} XP → Lv {level + 1}
-                </span>
-              </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className={`h-full rounded-full bg-gradient-to-r ${tier.ringGradient}`}
-                  style={{ width: `${Math.max(4, prog.pct)}%` }}
-                />
-              </div>
-            </button>
 
             {/* VIP Gifting progress */}
             <div className="mt-4">
@@ -329,12 +274,6 @@ function MePage() {
         </div>
       </AppShell>
 
-      {frameSheetOpen && (
-        <FrameCollectionSheet
-          currentLevel={level}
-          onClose={() => setFrameSheetOpen(false)}
-        />
-      )}
 
       <BottomNav />
     </>
@@ -378,78 +317,5 @@ function Row({ to, icon, title, sub, gold }: { to: string; icon: string; title: 
         <ChevronRight className="h-4 w-4 text-muted-foreground" />
       )}
     </Link>
-  );
-}
-
-function FrameCollectionSheet({
-  currentLevel,
-  onClose,
-}: {
-  currentLevel: number;
-  onClose: () => void;
-}) {
-  return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/75" onClick={onClose} />
-      <div
-        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-white/10 bg-gradient-to-b from-[#1a0b2e] via-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
-      >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/25" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-extrabold">
-            <span className="bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] bg-clip-text text-transparent">
-              Level Frames
-            </span>
-          </h2>
-          <button
-            onClick={onClose}
-            aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/10"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <p className="mb-4 text-[11.5px] text-white/60">
-          Level up to unlock premium avatar frames. Your current frame is highlighted.
-        </p>
-        <div className="grid max-h-[65dvh] grid-cols-3 gap-3 overflow-y-auto pr-1 scrollbar-hide">
-          {LEVEL_TIERS.map((t) => {
-            const unlocked = currentLevel >= t.minLevel;
-            const current = currentLevel >= t.minLevel && currentLevel <= t.maxLevel;
-            return (
-              <div
-                key={t.key}
-                className={`relative flex flex-col items-center gap-2 rounded-2xl border p-3 text-center ${
-                  current
-                    ? "border-[color:var(--gold)]/60 bg-white/10 shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
-                    : "border-white/10 bg-white/5"
-                }`}
-              >
-                <LevelBadge level={t.minLevel} size="md" showLabel={false} />
-                <div>
-                  <p className="text-[11px] font-black">{t.label}</p>
-                  <p className="text-[10px] text-white/60">
-                    Lv {t.minLevel}
-                    {t.maxLevel < 9999 ? `–${t.maxLevel}` : "+"}
-                  </p>
-                </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
-                    current
-                      ? "bg-[color:var(--gold)] text-black"
-                      : unlocked
-                        ? "bg-emerald-500/25 text-emerald-300"
-                        : "bg-white/10 text-white/50"
-                  }`}
-                >
-                  {current ? "Current" : unlocked ? "Unlocked" : "Locked"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </>
   );
 }

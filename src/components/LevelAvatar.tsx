@@ -1,4 +1,4 @@
-import { tierForLevel } from "@/lib/levels";
+import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
 
 type Size = "sm" | "md" | "lg" | "xl";
@@ -109,7 +109,7 @@ export function LevelAvatar({
       {/* Level chip */}
       {showBadge && (
         <span
-          className={`absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full bg-gradient-to-r ${tier.badgeGradient} px-2 py-[1px] text-[9px] font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40`}
+          className={`absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full bg-gradient-to-r ${tier.gradient} px-2 py-[1px] text-[9px] font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40`}
         >
           <span className="mr-0.5">{tier.icon}</span>
           Lv {level}
