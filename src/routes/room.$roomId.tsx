@@ -54,8 +54,6 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
-import { LevelBadge } from "@/components/LevelBadge";
-import { tierForLevel } from "@/lib/levels";
 
 export const Route = createFileRoute("/room/$roomId")({
   component: RoomPage,
