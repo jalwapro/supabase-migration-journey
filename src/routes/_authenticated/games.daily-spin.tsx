@@ -2,10 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, Loader2, Sparkles, Trophy } from "lucide-react";
+import { ArrowLeft, Loader2, Trophy, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/games/daily-spin")({
@@ -29,12 +28,38 @@ type SpinResult = {
   prize_id: string;
 };
 
+// Casino alternating palette (overrides DB color for consistent Vegas look)
+const CASINO_COLORS = ["#b91c1c", "#f5c542", "#7f1d1d", "#eab308"];
+
 function fmtLeft(ms: number) {
   if (ms <= 0) return "Ready!";
   const h = Math.floor(ms / 3600000);
   const m = Math.floor((ms % 3600000) / 60000);
   const s = Math.floor((ms % 60000) / 1000);
-  return `${String(h).padStart(2, "0")}h ${String(m).padStart(2, "0")}m ${String(s).padStart(2, "0")}s`;
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+function LedRim({ count = 24 }: { count?: number }) {
+  return (
+    <div className="pointer-events-none absolute inset-0">
+      {Array.from({ length: count }).map((_, i) => {
+        const angle = (360 / count) * i;
+        return (
+          <div
+            key={i}
+            className="absolute left-1/2 top-1/2"
+            style={{ transform: `rotate(${angle}deg) translateY(-49%)` }}
+          >
+            <div
+              className="h-2 w-2 -translate-x-1/2 rounded-full bg-[#fff2a8] shadow-[0_0_8px_2px_rgba(255,220,120,0.9)]"
+              style={{ animation: `ledBlink 1.4s ${i * 0.08}s infinite ease-in-out` }}
+            />
+          </div>
+        );
+      })}
+      <style>{`@keyframes ledBlink { 0%,100%{opacity:1} 50%{opacity:.35} }`}</style>
+    </div>
+  );
 }
 
 function DailySpin() {
@@ -103,22 +128,86 @@ function DailySpin() {
 
   return (
     <>
-      <AppShell
-        title="Daily Spin"
-        subtitle="Free reward every 24 hours"
-        right={
-          <Link to="/games" aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full bg-card/60">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        }
+      <div
+        className="min-h-screen pb-24"
+        style={{
+          background:
+            "radial-gradient(circle at 50% 20%, #4a0d10 0%, #1a0405 55%, #050101 100%)",
+        }}
       >
-        <div className="px-4 pt-4">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-4 pt-4">
+          <Link
+            to="/games"
+            aria-label="Back"
+            className="grid h-10 w-10 place-items-center rounded-full border border-[#f5c542]/40 bg-black/40 text-[#f5c542]"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <div className="rounded-full border border-[#f5c542]/40 bg-black/60 px-3 py-1 text-xs font-bold text-[#f5c542]">
+            🪙 Daily Bonus
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="mt-4 text-center">
+          <h1
+            className="font-serif text-5xl font-black leading-none tracking-tight"
+            style={{
+              background: "linear-gradient(180deg,#fff2a8 0%,#f5c542 45%,#a06a10 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 2px 12px rgba(245,197,66,0.35)",
+            }}
+          >
+            LUCKY
+          </h1>
+          <h1
+            className="-mt-1 font-serif text-5xl font-black leading-none tracking-tight"
+            style={{
+              background: "linear-gradient(180deg,#fff2a8 0%,#f5c542 45%,#a06a10 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              textShadow: "0 2px 12px rgba(245,197,66,0.35)",
+            }}
+          >
+            WHEEL
+          </h1>
+          <div className="mx-auto mt-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[#f5c542]/80">
+            <span>✦</span>
+            <span>Spin daily · Win big</span>
+            <span>✦</span>
+          </div>
+        </div>
+
+        {/* Wheel */}
+        <div className="mt-6 px-4">
           <div className="relative mx-auto aspect-square w-80 max-w-full">
-            <div className="absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-1">
-              <div className="h-0 w-0 border-x-[12px] border-t-[20px] border-x-transparent border-t-[color:var(--gold)]" />
-            </div>
+            {/* Outer gold ring w/ LED bulbs */}
             <div
-              className="relative h-full w-full rounded-full border-4 border-[color:var(--gold)] shadow-[0_0_80px_-10px_color-mix(in_oklab,var(--gold)_60%,transparent)] transition-transform"
+              className="absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, #8a5a10, #f5c542, #8a5a10, #f5c542, #8a5a10, #f5c542, #8a5a10)",
+                boxShadow:
+                  "0 0 80px -10px rgba(245,197,66,0.6), inset 0 0 20px rgba(0,0,0,0.4)",
+              }}
+            />
+            <div className="absolute inset-[4%] rounded-full bg-[#1a0405]" />
+            <LedRim count={24} />
+
+            {/* Pointer */}
+            <div className="absolute left-1/2 top-[2%] z-20 -translate-x-1/2">
+              <div
+                className="h-0 w-0 border-x-[14px] border-t-[24px] border-x-transparent"
+                style={{ borderTopColor: "#f5c542", filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.6))" }}
+              />
+              <div className="mx-auto -mt-1 h-3 w-3 rounded-full bg-[#dc2626] shadow-[0_0_8px_rgba(220,38,38,0.9)]" />
+            </div>
+
+            {/* Segments */}
+            <div
+              className="absolute inset-[9%] rounded-full border-2 border-[#f5c542]/60 transition-transform"
               style={{
                 transform: `rotate(${rotation}deg)`,
                 transitionDuration: spinning ? "4s" : "0.4s",
@@ -126,76 +215,120 @@ function DailySpin() {
                 background:
                   list.length > 0
                     ? `conic-gradient(${list
-                        .map((p, i) => {
+                        .map((_, i) => {
                           const seg = 360 / list.length;
-                          return `${p.color} ${i * seg}deg ${(i + 1) * seg}deg`;
+                          const c = CASINO_COLORS[i % CASINO_COLORS.length];
+                          return `${c} ${i * seg}deg ${(i + 1) * seg}deg`;
                         })
                         .join(",")})`
                     : "conic-gradient(#333 0deg 360deg)",
+                boxShadow: "inset 0 0 30px rgba(0,0,0,0.5)",
               }}
             >
+              {/* segment dividers */}
+              {list.map((_, i) => {
+                const seg = 360 / list.length;
+                return (
+                  <div
+                    key={`div-${i}`}
+                    className="pointer-events-none absolute inset-0"
+                    style={{ transform: `rotate(${i * seg}deg)` }}
+                  >
+                    <div className="absolute left-1/2 top-0 h-1/2 w-px -translate-x-1/2 bg-[#f5c542]/70" />
+                  </div>
+                );
+              })}
+
+              {/* labels — radial center */}
               {list.map((p, i) => {
                 const seg = 360 / list.length;
                 const angle = i * seg + seg / 2;
                 return (
                   <div
                     key={p.id}
-                    className="absolute left-1/2 top-1/2 origin-left text-[10px] font-black text-white drop-shadow"
-                    style={{ transform: `rotate(${angle}deg) translate(20%, -50%)` }}
+                    className="pointer-events-none absolute inset-0"
+                    style={{ transform: `rotate(${angle}deg)` }}
                   >
-                    {p.label}
+                    <div
+                      className="absolute left-1/2 top-[10%] -translate-x-1/2 text-center text-[11px] font-black uppercase leading-tight tracking-wide text-[#fff8dc] drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                      style={{ maxWidth: "70px" }}
+                    >
+                      {p.label}
+                    </div>
                   </div>
                 );
               })}
-              <div className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-background text-3xl shadow-inner">
-                🎁
+
+              {/* Center hub */}
+              <div
+                className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border-4 border-[#f5c542] text-2xl shadow-[0_0_20px_rgba(245,197,66,0.6)]"
+                style={{
+                  background: "radial-gradient(circle,#7f1d1d 0%,#3a0808 100%)",
+                }}
+              >
+                ⭐
               </div>
             </div>
           </div>
 
           {last && (
-            <p className="mt-3 text-center text-sm">
-              <span className="font-bold text-[color:var(--gold)]">Won: {last.reward_label}</span>
+            <p className="mt-4 text-center text-sm font-bold text-[#f5c542]">
+              🎉 You won: {last.reward_label}
             </p>
           )}
 
-          <div className="mt-5 glass rounded-2xl p-4 text-center">
+          {/* Spin CTA */}
+          <div className="mt-6">
             {ready ? (
               <button
                 onClick={() => spin.mutate()}
                 disabled={spinning || spin.isPending || list.length === 0}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] py-3 text-sm font-black uppercase tracking-widest text-primary-foreground disabled:opacity-50"
+                className="relative flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#f5c542] py-4 text-lg font-black uppercase tracking-[0.3em] text-[#fff8dc] shadow-[0_6px_0_#5a0808,0_10px_30px_rgba(220,38,38,0.5)] transition-all active:translate-y-1 active:shadow-[0_2px_0_#5a0808] disabled:opacity-50"
+                style={{
+                  background:
+                    "linear-gradient(180deg,#dc2626 0%,#991b1b 50%,#7f1d1d 100%)",
+                  textShadow: "0 2px 4px rgba(0,0,0,0.6)",
+                }}
               >
-                {spinning || spin.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                Spin now
+                {spinning || spin.isPending ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : null}
+                Spin
               </button>
             ) : (
-              <>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  Next spin in
+              <div className="rounded-2xl border border-[#f5c542]/40 bg-black/60 px-4 py-3 text-center">
+                <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-[#f5c542]/80">
+                  <Clock className="h-3 w-3" /> Next free spin in
                 </p>
-                <p className="mt-1 font-mono text-2xl font-black text-[color:var(--gold)]">
+                <p className="mt-1 font-mono text-2xl font-black text-[#f5c542]">
                   {fmtLeft(remaining)}
                 </p>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="mt-4 glass rounded-2xl p-4">
-            <p className="mb-2 flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              <Trophy className="h-3 w-3" /> Possible prizes
+          {/* Prizes */}
+          <div className="mt-5 rounded-2xl border border-[#f5c542]/30 bg-black/50 p-4">
+            <p className="mb-3 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.3em] text-[#f5c542]">
+              <Trophy className="h-3 w-3" /> Prizes on the wheel
             </p>
-            <div className="grid grid-cols-2 gap-1.5 text-[11px]">
-              {list.map((p) => (
-                <div key={p.id} className="flex items-center gap-2 rounded-lg bg-card/40 px-2 py-1.5">
-                  <span className="h-3 w-3 rounded-full" style={{ background: p.color }} />
-                  <span className="truncate">{p.label}</span>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              {list.map((p, i) => (
+                <div
+                  key={p.id}
+                  className="flex items-center gap-2 rounded-lg border border-[#f5c542]/20 bg-gradient-to-r from-[#2a0708] to-[#1a0405] px-2.5 py-2"
+                >
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full border border-[#f5c542]/50"
+                    style={{ background: CASINO_COLORS[i % CASINO_COLORS.length] }}
+                  />
+                  <span className="truncate font-bold text-[#fff8dc]">{p.label}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
-      </AppShell>
+      </div>
       <BottomNav />
     </>
   );
