@@ -1430,23 +1430,15 @@ function RoomPage() {
               <Gift className="h-4 w-4" />
             </button>
             {isHost && (
-              <>
-                <button
-                  onClick={openLudo}
-                  aria-label="Games"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-                >
-                  <Gamepad2 className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setSeatsSheetOpen(true)}
-                  aria-label="Room seats"
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
-                >
-                  <MoreHorizontal className="h-4 w-4" />
-                </button>
-              </>
+              <button
+                onClick={openLudo}
+                aria-label="Games"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              >
+                <Gamepad2 className="h-4 w-4" />
+              </button>
             )}
+
           </div>
         </div>
       )}
