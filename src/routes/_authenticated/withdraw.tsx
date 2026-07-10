@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: Page });
 
-const RATE = 0.5; // 1 diamond = 0.5 PKR (adjust as needed)
+const RATE = 0.5; // 1 point = 0.5 PKR (adjust as needed)
 
 function Page() {
   const { user, profile } = useAuth();
