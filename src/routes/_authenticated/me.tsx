@@ -279,7 +279,7 @@ function MePage() {
           {isAdmin && <Row to="/admin" icon="🛡️" title="Admin Panel" sub="Manage the whole app" gold />}
           <Row to="/gallery" icon="📸" title="Gallery" sub="Manage your photos" />
           <Row to="/wallet" icon="💰" title="Wallet & Coins" sub="Recharge your balance" />
-          <Row to="/withdraw" icon="💎" title="Withdraw Diamonds" sub="Cash out your earnings" />
+          <Row to="/withdraw" icon="💎" title="Withdraw Points" sub="Cash out your earnings" />
           <Row to="/theme-shop" icon="🛍️" title="Shop" sub="Cars, frames, rings, entrances & more" />
           <Row to="/vip" icon="👑" title="VIP Membership" sub="Upgrade to VIP" />
           <Row to="/my-rooms" icon="🏠" title="My Rooms" sub="Room history, points & active time" />
