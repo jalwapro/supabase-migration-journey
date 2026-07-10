@@ -461,10 +461,16 @@ function Page() {
 
                     {/* Price footer */}
                     <div className="relative z-10 flex items-center justify-center gap-1 pb-2 pt-1 text-sm font-black text-white">
-                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[10px] text-amber-950">
-                        <Coins className="h-2.5 w-2.5" />
-                      </span>
-                      {(it.is_free ? 0 : it.price).toLocaleString()}
+                      {currencyFor(it) === "diamonds" ? (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500 text-[10px] text-white">
+                          <Gem className="h-2.5 w-2.5" />
+                        </span>
+                      ) : (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[10px] text-amber-950">
+                          <Coins className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                      {priceFor(it).toLocaleString()}
                     </div>
 
                     {isEquipped && (
