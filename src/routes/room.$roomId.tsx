@@ -316,7 +316,7 @@ function RoomPage() {
             const firstSeat = Number(parts[1] ?? 0);
             const secondSeat = parts[2] != null ? Number(parts[2]) : NaN;
             const hasFromSeat = Number.isFinite(secondSeat);
-            const fromSeat = hasFromSeat ? firstSeat : firstSeat;
+            const fromSeat = firstSeat;
             const toSeat = hasFromSeat ? secondSeat : firstSeat;
             const clipPart = hasFromSeat ? parts[3] : parts[2];
             const clip = clipPart ? decodeURIComponent(clipPart) : null;
@@ -700,6 +700,10 @@ function RoomPage() {
   ) {
     if (playedEmojiIdsRef.current.has(id)) return;
     playedEmojiIdsRef.current.add(id);
+    if (playedEmojiIdsRef.current.size > 200) {
+      const firstId = playedEmojiIdsRef.current.values().next().value;
+      if (firstId) playedEmojiIdsRef.current.delete(firstId);
+    }
     setFlyingEmojis((prev) => [...prev, { id, emoji, fromSeat, toSeat, clip: clip ?? null }]);
     setTimeout(() => {
       setGlowSeats((prev) => ({ ...prev, [toSeat]: (prev[toSeat] ?? 0) + 1 }));
@@ -712,7 +716,6 @@ function RoomPage() {
         if (!next[toSeat]) delete next[toSeat];
         return next;
       });
-      playedEmojiIdsRef.current.delete(id);
     }, 2800);
   }
 
