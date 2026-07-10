@@ -2613,6 +2613,9 @@ function VideoSettingsSheet({
   onToggleVideo,
   muted,
   onToggleMute,
+  speakerMuted,
+  onToggleSpeaker,
+  isVideo,
   onOpenSeats,
   onOpenMusic,
   onOpenGames,
@@ -2629,6 +2632,9 @@ function VideoSettingsSheet({
   onToggleVideo: () => void;
   muted: boolean;
   onToggleMute: () => void;
+  speakerMuted: boolean;
+  onToggleSpeaker: () => void;
+  isVideo: boolean;
   onOpenSeats: () => void;
   onOpenMusic: () => void;
   onOpenGames: () => void;
