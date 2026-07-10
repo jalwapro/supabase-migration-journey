@@ -3674,7 +3674,7 @@ function GifterListSheet({
           <div>
             <h2 className="text-lg font-extrabold">Gifters for @{receiver.name}</h2>
             <p className="text-xs text-muted-foreground">
-              {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalDiamonds.toLocaleString()} pts
+              {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalPts.toLocaleString()} pts
             </p>
           </div>
           <button
