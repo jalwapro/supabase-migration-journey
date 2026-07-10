@@ -309,6 +309,8 @@ function RoomPage() {
           const row = payload.new as Message;
           row.text = row.text ?? row.message ?? null;
           if (row.kind === "emoji") {
+            // Skip echo for sender — already shown optimistically
+            if (user?.id && row.user_id === user.id) return;
             // "😀|3" or "😀|3|/animations/emojis/heart.svg"
             const parts = (row.text ?? "").split("|");
             const emoji = parts[0] ?? "😀";
@@ -316,7 +318,10 @@ function RoomPage() {
             const clip = parts[2] ? decodeURIComponent(parts[2]) : null;
             const id = `${row.id}-${Math.random().toString(36).slice(2, 7)}`;
             setFlyingEmojis((prev) => [...prev, { id, emoji, seat, clip }]);
-            setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
+            // Trigger seat glow only when emoji reaches the DP (~2.1s)
+            setTimeout(() => {
+              setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
+            }, 2100);
             setTimeout(() => {
               setFlyingEmojis((prev) => prev.filter((e) => e.id !== id));
             }, 2400);
@@ -327,7 +332,7 @@ function RoomPage() {
                 if (!next[seat]) delete next[seat];
                 return next;
               });
-            }, 2600);
+            }, 2800);
             return;
           }
           if (row.user_id) {
