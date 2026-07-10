@@ -541,6 +541,7 @@ function Home() {
         </div>
       </div>
       <BottomNav />
+      <DailySpinPopup />
 
       <Dialog open={friendsOpen} onOpenChange={setFriendsOpen}>
         <DialogContent className="max-w-sm">
