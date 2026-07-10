@@ -564,37 +564,46 @@ function Page() {
 
               {/* Meta + actions */}
               <div className="space-y-3 p-4">
-                <div className="flex items-center justify-between rounded-2xl bg-white/5 px-3 py-2.5 ring-1 ring-white/10">
-                  <div className="flex items-center gap-1.5 text-base font-black text-white">
-                    {currencyFor(it) === "diamonds" ? (
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500">
-                        <Gem className="h-3.5 w-3.5 text-white" />
-                      </span>
-                    ) : (
-                      <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
-                        <Coins className="h-3.5 w-3.5 text-amber-950" />
+                <div className="rounded-2xl bg-white/5 px-3 py-2.5 ring-1 ring-white/10">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-white/60">Price</p>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-white/60">
+                      {it.duration_days && it.duration_days > 0 ? `${it.duration_days} days` : "Permanent"}
+                    </p>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-3 text-base font-black text-white">
+                    {hasCoinPrice(it) && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
+                          <Coins className="h-3.5 w-3.5 text-amber-950" />
+                        </span>
+                        {it.price.toLocaleString()}
                       </span>
                     )}
-                    {priceFor(it).toLocaleString()}
-                    <span className="ml-1 text-[10px] font-bold uppercase tracking-wider text-white/50">
-                      {currencyFor(it)}
-                    </span>
-                  </div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-white/60">
-                    {it.duration_days && it.duration_days > 0 ? `${it.duration_days} days` : "Permanent"}
+                    {hasCoinPrice(it) && hasDiamondPrice(it) && (
+                      <span className="text-xs font-bold text-white/40">or</span>
+                    )}
+                    {hasDiamondPrice(it) && (
+                      <span className="flex items-center gap-1.5">
+                        <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500">
+                          <Gem className="h-3.5 w-3.5 text-white" />
+                        </span>
+                        {it.price_diamonds.toLocaleString()}
+                      </span>
+                    )}
+                    {it.is_free && <span className="text-emerald-300">Free</span>}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toast.info("Choose a friend to send this to (coming soon)")}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white/8 py-3 text-sm font-black text-white ring-1 ring-white/15"
-                  >
-                    <Gift className="h-4 w-4" /> Send
-                  </button>
-
-                  {owned ? (
-                    isEquipped ? (
+                {owned ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => toast.info("Choose a friend to send this to (coming soon)")}
+                      className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white/8 py-3 text-sm font-black text-white ring-1 ring-white/15"
+                    >
+                      <Gift className="h-4 w-4" /> Send
+                    </button>
+                    {isEquipped ? (
                       <button
                         onClick={() => unequip.mutate(it)}
                         disabled={unequip.isPending}
@@ -610,23 +619,56 @@ function Page() {
                       >
                         {equip.isPending ? <Loader2 className="mx-auto h-4 w-4 animate-spin" /> : "Apply"}
                       </button>
-                    )
-                  ) : (
-                    <button
-                      disabled={buy.isPending || !canAfford}
-                      onClick={() => buy.mutate(it)}
-                      className="flex-1 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-600 py-3 text-sm font-black text-amber-950 shadow-[0_6px_20px_rgba(212,175,55,0.4)] disabled:opacity-40"
-                    >
-                      {buy.isPending ? (
-                        <Loader2 className="mx-auto h-4 w-4 animate-spin" />
-                      ) : canAfford ? (
-                        `Buy · ${priceFor(it).toLocaleString()} ${currencyFor(it) === "diamonds" ? "💎" : "🪙"}`
-                      ) : (
-                        currencyFor(it) === "diamonds" ? "Low diamonds" : "Low coins"
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {hasCoinPrice(it) && (
+                        <button
+                          disabled={buy.isPending || !canAffordCurrency(it, "coins")}
+                          onClick={() => buy.mutate({ item: it, currency: "coins" })}
+                          className="flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-amber-300 via-amber-400 to-amber-600 py-3 text-sm font-black text-amber-950 shadow-[0_6px_20px_rgba(212,175,55,0.4)] disabled:opacity-40"
+                        >
+                          {buy.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                            <>
+                              <Coins className="h-4 w-4" />
+                              {canAffordCurrency(it, "coins") ? it.price.toLocaleString() : "Low coins"}
+                            </>
+                          )}
+                        </button>
                       )}
+                      {hasDiamondPrice(it) && (
+                        <button
+                          disabled={buy.isPending || !canAffordCurrency(it, "diamonds")}
+                          onClick={() => buy.mutate({ item: it, currency: "diamonds" })}
+                          className="flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-cyan-300 via-fuchsia-400 to-fuchsia-600 py-3 text-sm font-black text-white shadow-[0_6px_20px_rgba(217,70,239,0.4)] disabled:opacity-40"
+                        >
+                          {buy.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+                            <>
+                              <Gem className="h-4 w-4" />
+                              {canAffordCurrency(it, "diamonds") ? it.price_diamonds.toLocaleString() : "Low 💎"}
+                            </>
+                          )}
+                        </button>
+                      )}
+                      {!hasCoinPrice(it) && !hasDiamondPrice(it) && (
+                        <button
+                          onClick={() => buy.mutate({ item: it, currency: "coins" })}
+                          className="col-span-2 rounded-full bg-emerald-500 py-3 text-sm font-black text-emerald-950"
+                        >
+                          Claim Free
+                        </button>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => toast.info("Choose a friend to send this to (coming soon)")}
+                      className="flex w-full items-center justify-center gap-1.5 rounded-full bg-white/8 py-2.5 text-xs font-black text-white ring-1 ring-white/15"
+                    >
+                      <Gift className="h-3.5 w-3.5" /> Send as gift
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
