@@ -2723,7 +2723,7 @@ function Seat({
         </div>
         {displayFrame && (
           <div
-            className="pointer-events-none absolute inset-[-34%] z-[15]"
+            className="pointer-events-none absolute inset-[-12%] z-[15]"
             style={{ transform: "translateY(-5%)" }}
             aria-hidden
           >
