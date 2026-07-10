@@ -789,21 +789,39 @@ function RoomPage() {
 
   async function openMilestoneSheet() {
     setMilestoneOpen(true);
-    const { data, error } = await supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 20 });
-    if (error) {
-      toast.error(error.message);
-      return;
+    const [gifters, gifts] = await Promise.all([
+      supabase.rpc("room_top_gifters", { _room_id: roomId, _limit: 20 }),
+      supabase
+        .from("gifts")
+        .select("id,name,emoji,icon,clip_path,clip_type,is_active,active")
+        .eq("is_milestone", true)
+        .limit(3),
+    ]);
+    if (gifters.error) toast.error(gifters.error.message);
+    else setTopGifters((gifters.data ?? []) as TopGifter[]);
+    if (gifts.error) toast.error(gifts.error.message);
+    else {
+      const rows = (gifts.data ?? []).filter(
+        (g: { is_active?: boolean | null; active?: boolean | null }) =>
+          g.is_active !== false && g.active !== false,
+      );
+      setMilestoneGifts(rows as typeof milestoneGifts);
+      setPickedMilestoneGift((rows[0] as { id: string } | undefined)?.id ?? null);
     }
-    setTopGifters((data ?? []) as TopGifter[]);
   }
 
   async function awardMilestone(receiverId: string) {
     if (awarding) return;
+    if (!pickedMilestoneGift) {
+      toast.error("Pick a gift first");
+      return;
+    }
     setAwarding(true);
     try {
       const { error } = await supabase.rpc("award_milestone_gift", {
         _room_id: roomId,
         _receiver_id: receiverId,
+        _gift_id: pickedMilestoneGift,
       });
       if (error) throw error;
       toast.success("Milestone gift awarded 🎉");
