@@ -405,6 +405,16 @@ function UserProfilePage() {
         </div>
       </div>
 
+      {/* VIP Gifting progress */}
+      <div className="mx-4 mt-3">
+        <VipProgressBar
+          totalGifted={Number(p.total_gifted_coins ?? 0)}
+          storedLevel={p.vip_level ?? 0}
+        />
+      </div>
+
+
+
       {/* Actions */}
       {!isMe && (
         <div className="mt-3 grid grid-cols-2 gap-2 px-4">
