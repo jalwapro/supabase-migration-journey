@@ -478,10 +478,14 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       }
     });
     track.startProcessAudioBuffer({ loop: false });
+    // Play locally so the host also hears their own music (remote users hear
+    // it via the published track).
+    try { track.play(); } catch (e) { console.warn("[agora] music local play failed", e); }
     await client.publish(track);
     setMusicTitle(title);
     setMusicPlaying(true);
   }, []);
+
 
   const pauseMusic = useCallback(() => {
     const t = musicTrackRef.current;
