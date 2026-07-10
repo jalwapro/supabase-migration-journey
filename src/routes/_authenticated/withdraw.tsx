@@ -116,7 +116,7 @@ function Page() {
               {(history ?? []).map((h) => (
                 <div key={h.id} className="flex items-center justify-between rounded-xl border border-border bg-card/60 p-3">
                   <div>
-                    <p className="text-sm font-bold">💎 {h.diamonds.toLocaleString()} → Rs. {Number(h.amount_pkr).toLocaleString()}</p>
+                    <p className="text-sm font-bold">{h.diamonds.toLocaleString()} pts → Rs. {Number(h.amount_pkr).toLocaleString()}</p>
                     <p className="text-[11px] text-muted-foreground">{h.method} · {new Date(h.created_at).toLocaleDateString()}</p>
                   </div>
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${statusColor(h.status)}`}>
