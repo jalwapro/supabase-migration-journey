@@ -123,7 +123,41 @@ export function ThemeBackground() {
   // Custom uploaded background takes precedence over shop theme image
   const media = customBg || theme?.bg_image || theme?.preview_url || theme?.animation_url;
   if (loading && !customBg) return null;
-  if (!media) return null;
+
+  // No custom/shop theme active → render DEFAULT Jalwa theme:
+  // deep violet gradient + centered Jalwa logo watermark + gold glow.
+  if (!media) {
+    return (
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at top, #2d0b4d 0%, #1a0b2e 45%, #05010a 100%)",
+          }}
+        />
+        <div
+          className="absolute -top-24 -left-24 h-80 w-80 rounded-full opacity-40 blur-3xl"
+          style={{ background: "radial-gradient(closest-side, #ff2d95, transparent)" }}
+        />
+        <div
+          className="absolute -bottom-32 -right-24 h-96 w-96 rounded-full opacity-30 blur-3xl"
+          style={{ background: "radial-gradient(closest-side, #f5c542, transparent)" }}
+        />
+        <img
+          src={jalwaLogo}
+          alt=""
+          draggable={false}
+          decoding="async"
+          className="absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] max-h-[520px] max-w-[520px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.07] mix-blend-screen"
+        />
+      </div>
+    );
+  }
+
 
 
   return (
