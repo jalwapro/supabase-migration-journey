@@ -110,52 +110,39 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicTitle, setMusicTitle] = useState<string | null>(null);
 
+  // Serialize Agora client leaves so a new join always waits for the previous
+  // client to fully disconnect. Without this, two clients with the same uid
+  // briefly overlap during a role change (viewer → seat) and the old audience
+  // client subscribes to the new publisher — the user hears their own voice.
+  const leaveQueueRef = useRef<Promise<void>>(Promise.resolve());
+
   const setMicIssue = useCallback((message: string | null, blocked: boolean) => {
     micErrorRef.current = message;
     setMicError(message);
     setMicBlocked(blocked);
   }, []);
 
-
-  const teardown = useCallback(async () => {
-    // Capture refs at the start. Cleanup from the previous join can overlap
-    // with a new join after taking a seat; never let old cleanup close or null
-    // the new client/tracks.
-    const client = clientRef.current;
-    const musicTrack = musicTrackRef.current;
-    const audioTrack = localAudioRef.current;
+  const closeLocalTracks = useCallback(() => {
+    const audio = localAudioRef.current;
+    if (audio) {
+      try { audio.stop(); } catch { /* ignore */ }
+      try { audio.close(); } catch { /* ignore */ }
+      localAudioRef.current = null;
+      localAudioPublishedRef.current = false;
+    }
     const videoTrack = localVideoRef.current;
-
-    if (musicTrack) {
-      try { musicTrack.stopProcessAudioBuffer(); } catch { /* ignore */ }
-      try { if (client) await client.unpublish(musicTrack); } catch { /* ignore */ }
-      try { musicTrack.close(); } catch { /* ignore */ }
-      if (musicTrackRef.current === musicTrack) musicTrackRef.current = null;
-      setMusicPlaying(false);
-      setMusicTitle(null);
-    }
-    if (audioTrack) {
-      try { audioTrack.stop(); } catch { /* ignore */ }
-      try { audioTrack.close(); } catch { /* ignore */ }
-      if (localAudioRef.current === audioTrack) {
-        localAudioPublishedRef.current = false;
-        localAudioRef.current = null;
-      }
-    }
     if (videoTrack) {
       try { videoTrack.stop(); } catch { /* ignore */ }
       try { videoTrack.close(); } catch { /* ignore */ }
-      if (localVideoRef.current === videoTrack) localVideoRef.current = null;
+      localVideoRef.current = null;
     }
-    const canResetRoomState = client ? clientRef.current === client : !clientRef.current;
-    if (client) {
-      try { await client.leave(); } catch { /* ignore */ }
-      client.removeAllListeners();
-      if (canResetRoomState) clientRef.current = null;
-    }
-    if (canResetRoomState) {
-      setRemotes(new Map());
-      setStatus("idle");
+    const music = musicTrackRef.current;
+    if (music) {
+      try { music.stopProcessAudioBuffer(); } catch { /* ignore */ }
+      try { music.close(); } catch { /* ignore */ }
+      musicTrackRef.current = null;
+      setMusicPlaying(false);
+      setMusicTitle(null);
     }
   }, []);
 
@@ -163,34 +150,47 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
   useEffect(() => {
     if (!enabled || !channel || uid == null) {
       joinSeqRef.current += 1;
-      void teardown();
+      const stale = clientRef.current;
+      clientRef.current = null;
+      if (stale) {
+        try { stale.remoteUsers?.forEach((u) => u.audioTrack?.setVolume(0)); } catch { /* ignore */ }
+        try { stale.removeAllListeners(); } catch { /* ignore */ }
+        leaveQueueRef.current = leaveQueueRef.current
+          .then(() => stale.leave())
+          .catch(() => {});
+      }
+      closeLocalTracks();
+      setRemotes(new Map());
+      setStatus("idle");
       return;
     }
     let cancelled = false;
     const joinSeq = ++joinSeqRef.current;
     const isCurrentJoin = () => !cancelled && joinSeqRef.current === joinSeq;
+    let myClient: IAgoraRTCClient | null = null;
 
     (async () => {
+      // Wait for any previously queued leave to finish so we never have two
+      // clients with the same uid connected simultaneously (root cause of the
+      // "hear my own voice" echo when a viewer takes a seat).
+      try { await leaveQueueRef.current; } catch { /* ignore */ }
+      if (!isCurrentJoin()) return;
+
       setStatus("connecting");
       setError(null);
-      let client: IAgoraRTCClient | null = null;
       try {
         const AgoraRTC = await loadAgoraRTC();
         if (!isCurrentJoin()) return;
         AgoraRTC.setLogLevel(3);
-        client = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
-        clientRef.current = client;
+        myClient = AgoraRTC.createClient({ mode: "live", codec: "vp8" });
+        clientRef.current = myClient;
+        const activeClient = myClient;
 
-        await client.setClientRole(publish ? "host" : "audience");
-        if (!isCurrentJoin()) {
-          client.removeAllListeners();
-          try { await client.leave(); } catch { /* ignore */ }
-          if (clientRef.current === client) clientRef.current = null;
-          return;
-        }
-        const activeClient = client;
+        await activeClient.setClientRole(publish ? "host" : "audience");
+        if (!isCurrentJoin()) return;
 
         activeClient.on("user-published", async (user, mediaType) => {
+          if (!isCurrentJoin()) return;
           await activeClient.subscribe(user, mediaType);
           if (mediaType === "audio") {
             if (speakerMutedRef.current) {
@@ -210,7 +210,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           });
         });
 
-        client.on("user-unpublished", (user, mediaType) => {
+        activeClient.on("user-unpublished", (user, mediaType) => {
           setRemotes((prev) => {
             const next = new Map(prev);
             const uidNum = Number(user.uid);
@@ -224,7 +224,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           });
         });
 
-        client.on("user-left", (user) => {
+        activeClient.on("user-left", (user) => {
           setRemotes((prev) => {
             const next = new Map(prev);
             next.delete(Number(user.uid));
@@ -232,8 +232,6 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           });
         });
 
-        // Renew Agora token before it expires — otherwise publishing silently
-        // stops after the token TTL (~1 hour) with no user-visible error.
         activeClient.on("token-privilege-will-expire", async () => {
           try {
             const { token: newToken } = await fetchToken(
@@ -249,37 +247,25 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           }
         });
 
-        client.on("connection-state-change", (curState, prevState, reason) => {
+        activeClient.on("connection-state-change", (curState, prevState, reason) => {
           console.info("[agora] connection", prevState, "→", curState, reason ?? "");
           if (curState === "DISCONNECTED") setStatus("connecting");
           if (curState === "CONNECTED") setStatus("connected");
         });
 
         const { appId, token } = await fetchToken(channel, uid, publish ? "publisher" : "audience", resolvedKind);
-        if (!isCurrentJoin()) {
-          client.removeAllListeners();
-          try { await client.leave(); } catch { /* ignore */ }
-          if (clientRef.current === client) clientRef.current = null;
-          return;
-        }
-        await client.join(appId, channel, token, uid);
-        if (!isCurrentJoin()) {
-          client.removeAllListeners();
-          try { await client.leave(); } catch { /* ignore */ }
-          if (clientRef.current === client) clientRef.current = null;
-          return;
-        }
+        if (!isCurrentJoin()) return;
+        await activeClient.join(appId, channel, token, uid);
+        if (!isCurrentJoin()) return;
 
         if (publish) {
-          // Do not request microphone during room join. Browsers give clearer
-          // permission UX when getUserMedia is triggered by the mic button tap.
           setMuted(true);
           setMicIssue(null, false);
           if (video) {
             try {
               const cam = await AgoraRTC.createCameraVideoTrack();
               localVideoRef.current = cam;
-              await client.publish(cam);
+              await activeClient.publish(cam);
               setVideoOn(true);
             } catch (e) {
               console.warn("[agora] camera denied", e);
@@ -288,17 +274,9 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           }
         }
 
-
-        if (!cancelled) setStatus("connected");
+        if (isCurrentJoin()) setStatus("connected");
       } catch (e) {
-        if (!isCurrentJoin()) {
-          if (client) {
-            client.removeAllListeners();
-            try { await client.leave(); } catch { /* ignore */ }
-            if (clientRef.current === client) clientRef.current = null;
-          }
-          return;
-        }
+        if (!isCurrentJoin()) return;
         console.error("[agora] join failed", e);
         const msg = e instanceof Error ? e.message : String(e);
         setError(msg);
@@ -308,11 +286,27 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
     return () => {
       cancelled = true;
-      joinSeqRef.current += 1;
-      void teardown();
+      const c = myClient;
+      // Immediately silence and detach the outgoing client so during the
+      // handoff to the next join it cannot subscribe/play the new publisher.
+      if (c) {
+        try { c.remoteUsers?.forEach((u) => u.audioTrack?.setVolume(0)); } catch { /* ignore */ }
+        try { c.removeAllListeners(); } catch { /* ignore */ }
+      }
+      if (c && clientRef.current === c) clientRef.current = null;
+      closeLocalTracks();
+      setRemotes(new Map());
+      // Queue the actual leave so the next join can await it before joining
+      // the same channel/uid again.
+      if (c) {
+        leaveQueueRef.current = leaveQueueRef.current
+          .then(() => c.leave())
+          .catch(() => {});
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, channel, uid, publish, video]);
+
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     // Wait briefly for the join effect to create the client if this is the
