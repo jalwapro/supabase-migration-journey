@@ -1227,7 +1227,7 @@ function RoomPage() {
                   <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
                 )}
               </button>
-              <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className={`grid flex-1 ${isHost ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
                 {!isHost && (
                   <MiniAction
                     icon={<Smile className="h-5 w-5" />}
@@ -1240,8 +1240,8 @@ function RoomPage() {
                   label="More"
                   onClick={() => setVideoSettingsOpen(true)}
                 />
-                <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
               </div>
+
 
 
 
@@ -1266,10 +1266,10 @@ function RoomPage() {
             </div>
 
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-1 gap-1.5">
                 <MiniAction compact icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setVideoSettingsOpen(true)} />
-                <MiniAction compact icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
               </div>
+
 
 
 
