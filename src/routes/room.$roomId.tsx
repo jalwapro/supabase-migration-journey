@@ -3651,7 +3651,7 @@ function GifterListSheet({
           total_diamonds: v.diamonds,
           gift_count: v.count,
         };
-      }).sort((a, b) => b.total_diamonds - a.total_diamonds);
+      }).sort((a, b) => b.total_coins - a.total_coins);
       if (!cancelled) {
         setRows(list);
         setLoading(false);
@@ -3661,7 +3661,7 @@ function GifterListSheet({
   }, [roomId, receiver]);
 
   if (!open || !receiver) return null;
-  const totalDiamonds = rows.reduce((s, r) => s + r.total_diamonds, 0);
+  const totalPts = rows.reduce((s, r) => s + r.total_coins, 0);
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
