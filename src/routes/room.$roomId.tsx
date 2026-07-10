@@ -1279,6 +1279,15 @@ function RoomPage() {
                         }
                         currentUserId={user?.id}
                         localMuted={agora.muted}
+                        onOpenGifters={
+                          m
+                            ? () =>
+                                setGifterListReceiver({
+                                  id: m.user_id,
+                                  name: m.user?.username ?? (isHostSeat ? (r.host?.username ?? "Host") : `Seat ${i + 1}`),
+                                })
+                            : undefined
+                        }
                       />
                     );
                   })}
