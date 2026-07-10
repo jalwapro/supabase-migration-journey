@@ -123,10 +123,7 @@ function GiftsAdmin() {
         active: true,
         is_milestone: draft.is_milestone,
       };
-      if (draft.is_milestone) {
-        // Ensure only one milestone gift exists
-        await supabase.from("gifts").update({ is_milestone: false }).eq("is_milestone", true);
-      }
+      // Multiple milestone gifts allowed (host picks one on 100%).
       if (draft.id) {
         const { error } = await supabase.from("gifts").update(row).eq("id", draft.id);
         if (error) throw error;
