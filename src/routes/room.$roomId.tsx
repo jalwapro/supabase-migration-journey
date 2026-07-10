@@ -1253,7 +1253,7 @@ function RoomPage() {
                     const isHostSeat = i === 0;
                     const fallbackHost =
                       isHostSeat && !m
-                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
                         : null;
                     return (
                       <Seat
