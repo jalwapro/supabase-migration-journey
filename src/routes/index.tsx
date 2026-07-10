@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
+import { DailySpinFloatingButton } from "@/components/DailySpinFloatingButton";
 
 import jalwaLogo from "@/assets/jalwa-logo.png";
 import {
