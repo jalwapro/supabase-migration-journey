@@ -3,7 +3,7 @@ import { useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import jalwaLogo from "@/assets/jalwa-logo.png";
+import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 
 type ThemeRow = {
   id: string;
@@ -124,39 +124,25 @@ export function ThemeBackground() {
   const media = customBg || theme?.bg_image || theme?.preview_url || theme?.animation_url;
   if (loading && !customBg) return null;
 
-  // No custom/shop theme active → render DEFAULT Jalwa theme:
-  // deep violet gradient + centered Jalwa logo watermark + gold glow.
+  // No custom/shop theme active → render DEFAULT Jalwa branded background.
   if (!media) {
     return (
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       >
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse at top, #2d0b4d 0%, #1a0b2e 45%, #05010a 100%)",
-          }}
-        />
-        <div
-          className="absolute -top-24 -left-24 h-80 w-80 rounded-full opacity-40 blur-3xl"
-          style={{ background: "radial-gradient(closest-side, #ff2d95, transparent)" }}
-        />
-        <div
-          className="absolute -bottom-32 -right-24 h-96 w-96 rounded-full opacity-30 blur-3xl"
-          style={{ background: "radial-gradient(closest-side, #f5c542, transparent)" }}
-        />
         <img
-          src={jalwaLogo}
+          src={defaultBgAsset.url}
           alt=""
           draggable={false}
           decoding="async"
-          className="absolute left-1/2 top-1/2 h-[70vmin] w-[70vmin] max-h-[520px] max-w-[520px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.07] mix-blend-screen"
+          className="h-full w-full object-cover"
         />
+        <div className="absolute inset-0 bg-black/40" />
       </div>
     );
   }
+
 
 
 
