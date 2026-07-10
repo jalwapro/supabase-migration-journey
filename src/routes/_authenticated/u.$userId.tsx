@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { LevelBadge } from "@/components/LevelBadge";
+import { vipTierForLevel } from "@/lib/vip-levels";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useVipProfile } from "@/hooks/useVipProfile";
