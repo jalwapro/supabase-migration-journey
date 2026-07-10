@@ -274,12 +274,6 @@ function MePage() {
         </div>
       </AppShell>
 
-      {frameSheetOpen && (
-        <FrameCollectionSheet
-          currentLevel={level}
-          onClose={() => setFrameSheetOpen(false)}
-        />
-      )}
 
       <BottomNav />
     </>
