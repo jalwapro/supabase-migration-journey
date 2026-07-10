@@ -259,6 +259,19 @@ function Page() {
               Top up
             </Link>
           </div>
+
+          {/* Custom theme upload CTA */}
+          <div className="px-3 pb-2">
+            <Link
+              to="/custom-theme"
+              className="flex items-center justify-between rounded-full bg-gradient-to-r from-fuchsia-500/20 via-purple-500/15 to-transparent px-3 py-1.5 text-xs ring-1 ring-fuchsia-400/40"
+            >
+              <span className="flex items-center gap-1.5 font-bold text-white">
+                <Sparkles className="h-3 w-3 text-fuchsia-300" /> Upload your own background
+              </span>
+              <span className="text-[10px] text-fuchsia-200">24h · admin approval</span>
+            </Link>
+          </div>
         </header>
 
         {/* Body */}
