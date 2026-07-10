@@ -1301,17 +1301,19 @@ function RoomPage() {
                   )}
                 </div>
 
-                {/* Score */}
+                {/* Progress */}
                 <div className="z-10 mb-3 text-center">
                   <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-white/60">
-                    Popularity
+                    Progress
                   </p>
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-2xl font-extrabold leading-none text-[color:var(--gold)]">
-                      {popScoreLabel}
+                    <span className="text-3xl font-extrabold leading-none text-[color:var(--gold)]">
+                      {popularityPct}%
                     </span>
-                    <span className="text-[10px] font-bold text-[color:var(--gold)]/60">/3k</span>
                   </div>
+                  <p className="mt-1 text-[9px] font-semibold uppercase tracking-widest text-white/50">
+                    {isRanked ? "Ranked" : `${remainingPct}% to go`}
+                  </p>
                 </div>
 
                 {/* Segmented energy meter (10 rungs, filled from bottom) */}
