@@ -334,10 +334,16 @@ function Page() {
                     </span>
                     <h2 className="text-lg font-black text-white drop-shadow">{featured.name}</h2>
                     <div className="flex items-center gap-1 text-xs font-bold text-white/90">
-                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[9px] text-amber-950">
-                        <Coins className="h-2.5 w-2.5" />
-                      </span>
-                      {(featured.is_free ? 0 : featured.price).toLocaleString()}
+                      {currencyFor(featured) === "diamonds" ? (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500 text-[9px] text-white">
+                          <Gem className="h-2.5 w-2.5" />
+                        </span>
+                      ) : (
+                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[9px] text-amber-950">
+                          <Coins className="h-2.5 w-2.5" />
+                        </span>
+                      )}
+                      {priceFor(featured).toLocaleString()}
                       <span className="mx-1 opacity-40">·</span>
                       <span className="text-[10px] uppercase tracking-wide text-amber-200/90">
                         {featured.duration_days && featured.duration_days > 0 ? `${featured.duration_days} days` : "Permanent"}
