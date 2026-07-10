@@ -22,6 +22,8 @@ import { LevelAvatar } from "@/components/LevelAvatar";
 import { LevelBadge } from "@/components/LevelBadge";
 import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 import { formatCompact } from "@/lib/utils";
+import { VipProgressBar } from "@/components/vip/VipProgressBar";
+import { useVipProfile } from "@/hooks/useVipProfile";
 
 export const Route = createFileRoute("/_authenticated/me")({
   component: MePage,
