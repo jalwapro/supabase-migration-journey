@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Swords, Trophy, Coins, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Server, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, PiggyBank, UserPlus, Bell } from "lucide-react";
+import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Swords, Trophy, Coins, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Server, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, PiggyBank, UserPlus, Bell, ImagePlus, Dices } from "lucide-react";
 import type { ReactNode } from "react";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
@@ -60,6 +60,8 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/settings", label: "Settings", icon: Settings },
       { to: "/admin/roles", label: "Admin Roles", icon: ShieldCheck },
       { to: "/admin/themes", label: "Theme Manager", icon: Palette },
+      { to: "/admin/custom-themes", label: "Custom Themes", icon: ImagePlus },
+      { to: "/admin/spin-prizes", label: "Daily Spin", icon: Dices },
       { to: "/admin/theme-categories", label: "Theme Categories", icon: FolderTree },
       { to: "/admin/vip", label: "VIP Tiers", icon: Crown },
       { to: "/admin/vip-levels", label: "VIP Levels (100)", icon: Crown },
