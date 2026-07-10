@@ -1372,14 +1372,18 @@ function RoomPage() {
                           height: `${heightPx}px`,
                           background: isFilled
                             ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
-                            : "rgba(255,255,255,0.06)",
+                            : `linear-gradient(90deg, hsl(${hue} 70% 45% / 0.18), hsl(${Math.min(hue + 20, 140)} 70% 55% / 0.18))`,
                           boxShadow: isFilled
                             ? `0 0 10px hsl(${hue} 95% 55% / 0.55)`
                             : undefined,
+                          border: isFilled
+                            ? undefined
+                            : `1px solid hsl(${hue} 70% 50% / 0.25)`,
                         }}
                       />
                     );
                   })}
+
                 </div>
 
                 {/* CTA */}
