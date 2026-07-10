@@ -1925,6 +1925,54 @@ function StageBtn({
     </button>
   );
 }
+function MusicMiniButton({
+  title,
+  playing,
+  onOpen,
+  onToggle,
+  compact,
+}: {
+  title: string | null;
+  playing: boolean;
+  onOpen: () => void;
+  onToggle: () => void;
+  compact?: boolean;
+}) {
+  const iconSize = compact ? "h-4 w-4" : "h-5 w-5";
+  const active = !!title;
+  return (
+    <button
+      onClick={onOpen}
+      className={`relative flex ${compact ? "min-h-[52px] gap-0.5 py-1.5" : "min-h-[70px] gap-1 py-2"} flex-col items-center justify-center rounded-xl border backdrop-blur transition ${
+        active
+          ? "border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20 text-white shadow-[0_0_16px_-6px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
+          : "border-violet-300/25 bg-black/30 text-white/88"
+      }`}
+    >
+      <Music className={iconSize} />
+      <span className={`${compact ? "text-[9px]" : "text-[11px]"} max-w-full truncate px-1 font-medium`}>
+        {active ? title : "Music"}
+      </span>
+      {active && (
+        <span
+          role="button"
+          aria-label={playing ? "Pause music" : "Resume music"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          className="glow-4d absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow ring-2 ring-black/60"
+        >
+          {playing ? <Pause className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}
+        </span>
+      )}
+      {active && playing && (
+        <span className="absolute left-1.5 top-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--gold)]" />
+      )}
+    </button>
+  );
+}
+
 
 function MiniAction({
   icon,
