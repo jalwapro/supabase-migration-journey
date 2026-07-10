@@ -1475,6 +1475,14 @@ function RoomPage() {
             >
               <Gift className="h-4 w-4" />
             </button>
+            <button
+              onClick={() => setVideoSettingsOpen(true)}
+              aria-label="More"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+
 
           </div>
         </div>
