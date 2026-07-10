@@ -1603,8 +1603,16 @@ function RoomPage() {
           >
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="text-base font-black text-white">⭐ 100% Reached!</p>
-                <p className="text-[11px] text-white/60">Pick a gift, then choose who to send it to.</p>
+                <p className="text-base font-black text-white">
+                  {isHost && isRanked && !r.milestone_awarded_at
+                    ? "⭐ 100% Reached!"
+                    : "🏆 Top Gifters"}
+                </p>
+                <p className="text-[11px] text-white/60">
+                  {isHost && isRanked && !r.milestone_awarded_at
+                    ? "Pick a gift, then choose who to send it to."
+                    : "Is room main sab say ziyada gifting kis nay ki hai."}
+                </p>
               </div>
               <button
                 onClick={() => setMilestoneOpen(false)}
@@ -1614,45 +1622,50 @@ function RoomPage() {
               </button>
             </div>
 
-            {/* Step 1 — pick one of the admin-configured milestone gifts */}
-            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50">
-              Choose a gift
-            </p>
-            {milestoneGifts.length === 0 ? (
-              <p className="mb-3 rounded-xl border border-white/10 bg-white/5 py-4 text-center text-[11px] text-white/60">
-                No milestone gifts configured. Ask admin to mark up to 3 gifts as milestone.
-              </p>
-            ) : (
-              <div className="mb-4 grid grid-cols-3 gap-2">
-                {milestoneGifts.map((g) => {
-                  const picked = pickedMilestoneGift === g.id;
-                  return (
-                    <button
-                      key={g.id}
-                      onClick={() => setPickedMilestoneGift(g.id)}
-                      className={`flex flex-col items-center gap-1 rounded-2xl border p-2 transition ${
-                        picked
-                          ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                          : "border-white/10 bg-white/5"
-                      }`}
-                    >
-                      <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-xl bg-black/40">
-                        {g.clip_path && g.clip_type === "svg" ? (
-                          <img src={g.clip_path} alt="" className="h-full w-full object-contain" />
-                        ) : g.clip_path && g.clip_type === "mp4" ? (
-                          <video src={g.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />
-                        ) : (
-                          <span className="text-3xl leading-none">{g.emoji ?? g.icon ?? "🎁"}</span>
-                        )}
-                      </div>
-                      <span className="w-full truncate text-center text-[10px] font-bold text-white">
-                        {g.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Step 1 — pick one of the admin-configured milestone gifts (host only, at 100%) */}
+            {isHost && isRanked && !r.milestone_awarded_at && (
+              <>
+                <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50">
+                  Choose a gift
+                </p>
+                {milestoneGifts.length === 0 ? (
+                  <p className="mb-3 rounded-xl border border-white/10 bg-white/5 py-4 text-center text-[11px] text-white/60">
+                    No milestone gifts configured. Ask admin to mark up to 3 gifts as milestone.
+                  </p>
+                ) : (
+                  <div className="mb-4 grid grid-cols-3 gap-2">
+                    {milestoneGifts.map((g) => {
+                      const picked = pickedMilestoneGift === g.id;
+                      return (
+                        <button
+                          key={g.id}
+                          onClick={() => setPickedMilestoneGift(g.id)}
+                          className={`flex flex-col items-center gap-1 rounded-2xl border p-2 transition ${
+                            picked
+                              ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
+                              : "border-white/10 bg-white/5"
+                          }`}
+                        >
+                          <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-xl bg-black/40">
+                            {g.clip_path && g.clip_type === "svg" ? (
+                              <img src={g.clip_path} alt="" className="h-full w-full object-contain" />
+                            ) : g.clip_path && g.clip_type === "mp4" ? (
+                              <video src={g.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                            ) : (
+                              <span className="text-3xl leading-none">{g.emoji ?? g.icon ?? "🎁"}</span>
+                            )}
+                          </div>
+                          <span className="w-full truncate text-center text-[10px] font-bold text-white">
+                            {g.name}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
             )}
+
 
             {/* Step 2 — pick a receiver from top gifters */}
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50">
