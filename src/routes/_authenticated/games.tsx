@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Gamepad2, ArrowRight } from "lucide-react";
+import { Gamepad2, ArrowRight, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/games")({
   component: GamesPage,
@@ -36,6 +36,25 @@ function GamesPage() {
     <>
       <AppShell title="Games" subtitle="Play & win coins">
         <div className="space-y-3 px-4 pt-4">
+          <Link
+            to="/games/daily-spin"
+            className="glass flex items-center gap-3 rounded-2xl border border-[color:var(--gold)]/40 p-4"
+          >
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-3xl">
+              🎁
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold">Daily Spin</p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                Free reward every 24 hours — coins, diamonds, frames & themes
+              </p>
+              <p className="mt-0.5 flex items-center gap-1 text-[10px] text-[color:var(--gold)]">
+                <Sparkles className="h-3 w-3" /> Free to spin
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </Link>
+
           {games.isLoading && (
             <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
           )}
