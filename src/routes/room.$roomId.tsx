@@ -1218,7 +1218,7 @@ function RoomPage() {
                 const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
                 const fallback =
                   isHostSeat && !m
-                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null }
+                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
                     : null;
                 return {
                   index: i,
