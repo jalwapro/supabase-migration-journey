@@ -28,6 +28,8 @@ type ThemeRow = {
  */
 export function ThemeBackground() {
   const { profile, loading: authLoading } = useAuth();
+  const bgVisibility = useDefaultBgOpacity();
+
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const suppressed =
     pathname.startsWith("/theme-shop") ||
