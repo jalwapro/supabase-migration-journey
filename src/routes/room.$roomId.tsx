@@ -1317,96 +1317,87 @@ function RoomPage() {
 
             <div className="flex min-h-0 flex-col gap-2">
               <button
-                onClick={() => isHost && isRanked && openMilestoneSheet()}
-                className="relative flex h-[300px] w-full flex-col items-center overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] p-3 shadow-2xl"
+                onClick={() => openMilestoneSheet()}
+                className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
               >
                 {/* background glow */}
                 <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
 
-                {/* Header: rank chip only (no title, no emoji) */}
-                <div className="z-10 mb-3 flex w-full items-center justify-end">
+                {/* Header: rank chip (right) */}
+                <div className="z-10 flex w-full items-center justify-end">
                   {isRanked && (
-                    <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-2 py-0.5">
-                      <span className="text-[9px] font-extrabold uppercase tracking-tighter text-emerald-300">
+                    <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1.5 py-0.5">
+                      <span className="text-[8px] font-extrabold uppercase tracking-tight text-emerald-300">
                         Ranked
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Percentage only */}
-                <div className="z-10 mb-3 text-center">
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span
-                      className="text-4xl font-extrabold leading-none"
-                      style={{
-                        color: isRanked
-                          ? "#34d399"
-                          : `hsl(${Math.round((popularityPct / 100) * 120)} 90% 55%)`,
-                      }}
-                    >
-                      {popularityPct}%
-                    </span>
-                  </div>
+                {/* Percentage */}
+                <div className="z-10 mt-1 text-center">
+                  <span
+                    className="text-3xl font-extrabold leading-none tabular-nums"
+                    style={{
+                      color: isRanked
+                        ? "#34d399"
+                        : `hsl(${Math.round((popularityPct / 100) * 120)} 90% 55%)`,
+                    }}
+                  >
+                    {popularityPct}%
+                  </span>
                 </div>
 
-                {/* Volume-style meter — 14 vertical rungs; each rung's color
-                    interpolates red → orange → yellow → green as fill grows.
-                    At 100% all rungs are green. */}
-                <div className="mb-4 flex w-full flex-1 flex-col-reverse gap-1 px-6">
-                  {Array.from({ length: 14 }).map((_, i) => {
-                    const filledCount = Math.round((popularityPct / 100) * 14);
+                {/* Volume-style meter — always-visible red→green gradient;
+                    filled rungs light up as the room progresses. */}
+                <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-3">
+                  {Array.from({ length: 12 }).map((_, i) => {
+                    const filledCount = Math.round((popularityPct / 100) * 12);
                     const isFilled = i < filledCount;
-                    // Rung hue: at 100% force green (120); otherwise scale hue
-                    // by this rung's position so lower rungs skew red and
-                    // higher rungs skew green as the meter fills.
-                    const rungPct = ((i + 1) / 14) * 100;
+                    const rungPct = ((i + 1) / 12) * 100;
                     const hue = isRanked ? 140 : Math.round((rungPct / 100) * 120);
-                    // Rung height grows with position (volume-bar look).
-                    const heightPx = 6 + Math.round((i / 13) * 10);
                     return (
                       <div
                         key={i}
-                        className="w-full rounded-[3px]"
+                        className="w-full flex-1 rounded-[3px]"
                         style={{
-                          height: `${heightPx}px`,
                           background: isFilled
                             ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
                             : `linear-gradient(90deg, hsl(${hue} 70% 45% / 0.18), hsl(${Math.min(hue + 20, 140)} 70% 55% / 0.18))`,
                           boxShadow: isFilled
-                            ? `0 0 10px hsl(${hue} 95% 55% / 0.55)`
+                            ? `0 0 8px hsl(${hue} 95% 55% / 0.5)`
                             : undefined,
                           border: isFilled
                             ? undefined
-                            : `1px solid hsl(${hue} 70% 50% / 0.25)`,
+                            : `1px solid hsl(${hue} 70% 50% / 0.22)`,
                         }}
                       />
                     );
                   })}
-
                 </div>
 
                 {/* CTA */}
                 {isHost && isRanked && !r.milestone_awarded_at ? (
-                  <div className="z-10 flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl bg-[color:var(--gold)] px-2 py-3 text-[color:#1a0b2e] shadow-[0_8px_20px_-4px_color-mix(in_oklab,var(--gold)_40%,transparent)]">
+                  <div className="z-10 flex w-full flex-col items-center justify-center rounded-xl bg-[color:var(--gold)] px-2 py-1.5 text-[color:#1a0b2e] shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--gold)_40%,transparent)]">
                     <span className="text-[10px] font-extrabold uppercase leading-none tracking-tight">
                       Award Milestone
                     </span>
-                    <span className="text-[9px] font-bold leading-none opacity-80">Claim Gift</span>
                   </div>
                 ) : r.milestone_awarded_at ? (
-                  <div className="z-10 w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-2 text-center text-[10px] font-bold text-[color:var(--gold)]">
+                  <div className="z-10 w-full rounded-xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-1.5 text-center text-[9px] font-bold text-[color:var(--gold)]">
                     Milestone awarded ✓
                   </div>
                 ) : (
-                  <div className="z-10 w-full rounded-2xl border border-white/10 bg-white/5 py-2 text-center text-[10px] font-semibold text-white/60">
-                    Tap for details
+                  <div className="z-10 w-full rounded-xl border border-white/10 bg-white/5 py-1.5 text-center text-[9px] font-semibold text-white/70">
+                    🏆 Top Gifters
                   </div>
                 )}
 
                 {/* bottom accent */}
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1.5 bg-[color:var(--secondary)]/10" />
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1 bg-[color:var(--secondary)]/10" />
               </button>
+
+
 
             </div>
 
