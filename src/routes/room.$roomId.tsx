@@ -897,9 +897,12 @@ function RoomPage() {
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
       const result = await agora.requestMic();
       if (!result.ok) {
+        const message = result.error ?? agora.micError ?? "Microphone unavailable";
+        const permissionIssue = /permission|blocked|allow|browser settings|site settings/i.test(message);
         toast.error(result.error ?? agora.micError ?? "Microphone unavailable", {
-          description:
-            "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again.",
+          description: permissionIssue
+            ? "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again."
+            : "Seat connect ho rahi hai — 1 second baad mic dobara tap karein.",
           duration: 8000,
         });
         return;
