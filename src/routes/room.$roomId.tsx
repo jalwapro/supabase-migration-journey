@@ -823,9 +823,18 @@ function RoomPage() {
         toast.error(`Couldn't end room: ${(e as Error).message}`);
         return;
       }
+    } else if (user) {
+      // Non-host viewer explicitly leaving — remove membership so the
+      // seat/audience count updates and their seat frees for others.
+      await supabase
+        .from("room_members")
+        .delete()
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
     }
     navigate({ to: "/" });
   }
+
 
   function share() {
     setInviteOpen(true);
