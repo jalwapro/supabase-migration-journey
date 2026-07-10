@@ -38,8 +38,9 @@ function Page() {
 
   async function submit() {
     if (!user) return;
-    if (diamonds < 100) return toast.error("Minimum 100 diamonds");
-    if (diamonds > balance) return toast.error("Not enough diamonds");
+    if (diamonds < 100) return toast.error("Minimum 100 points");
+    if (diamonds > balance) return toast.error("Not enough points");
+
     if (!accNum || !accName) return toast.error("Fill account details");
     const { error } = await supabase.from("withdrawal_requests").insert({
       user_id: user.id,
