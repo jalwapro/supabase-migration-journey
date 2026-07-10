@@ -188,9 +188,10 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
           if (clientRef.current === client) clientRef.current = null;
           return;
         }
+        const activeClient = client;
 
-        client.on("user-published", async (user, mediaType) => {
-          await client.subscribe(user, mediaType);
+        activeClient.on("user-published", async (user, mediaType) => {
+          await activeClient.subscribe(user, mediaType);
           if (mediaType === "audio") {
             if (speakerMutedRef.current) {
               try { user.audioTrack?.setVolume(0); } catch { /* ignore */ }
@@ -233,7 +234,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
         // Renew Agora token before it expires — otherwise publishing silently
         // stops after the token TTL (~1 hour) with no user-visible error.
-        client.on("token-privilege-will-expire", async () => {
+        activeClient.on("token-privilege-will-expire", async () => {
           try {
             const { token: newToken } = await fetchToken(
               channel,
@@ -241,7 +242,7 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
               publish ? "publisher" : "audience",
               resolvedKind,
             );
-            await client.renewToken(newToken);
+            await activeClient.renewToken(newToken);
             console.info("[agora] token renewed");
           } catch (err) {
             console.warn("[agora] token renew failed", err);
