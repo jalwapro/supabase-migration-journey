@@ -487,13 +487,31 @@ function RoomPage() {
     if (!user || !room.data?.id) return;
     const seatIndex = isHost ? 0 : null;
     void (async () => {
+      // Preserve existing seat_index on refresh — only insert a fresh row
+      // when this user is not already a member of the room. An upsert with
+      // seat_index: null would drop a seated viewer back to the audience on
+      // every page refresh.
+      const { data: existing } = await supabase
+        .from("room_members")
+        .select("user_id")
+        .eq("room_id", roomId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existing) return; // already in the room, keep current seat state
+
       const { error: memberErr } = await supabase
         .from("room_members")
-        .upsert(
-          { room_id: roomId, user_id: user.id, seat_index: seatIndex },
-          { onConflict: "room_id,user_id" },
-        );
-      if (memberErr) console.warn("[room-members upsert]", memberErr.message);
+        .insert({ room_id: roomId, user_id: user.id, seat_index: seatIndex });
+      if (memberErr) {
+        if (/BANNED/i.test(memberErr.message)) {
+          toast.error(memberErr.message.replace(/^BANNED:\s*/i, ""));
+          navigate({ to: "/" });
+          return;
+        }
+        console.warn("[room-members insert]", memberErr.message);
+        return;
+      }
       const joinText = isHost ? "started the room" : "entered the room";
       const { error: msgErr } = await supabase.from("room_messages").insert({
         room_id: roomId,
@@ -506,13 +524,12 @@ function RoomPage() {
       if (msgErr) console.warn("[join insert]", msgErr.message);
     })();
 
-    return () => {
-      void supabase.from("room_members").delete().eq("room_id", roomId).eq("user_id", user.id);
-    };
-    // Depend on primitives only — using room.data would re-fire on every
-    // React Query refetch and spam a "joined" message each time.
+    // No cleanup delete: users only leave via the Exit button or when
+    // host/moderator removes them. This lets a seated user survive a
+    // page refresh without dropping to the audience.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roomId, isHost, room.data?.id]);
+
 
 
   const followsHost = useQuery({
