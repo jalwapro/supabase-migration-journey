@@ -46,6 +46,7 @@ function useCounts(userId: string | undefined) {
 function MePage() {
   const { user, profile, isAdmin, signOut, refresh } = useAuth();
   const { data: counts } = useCounts(user?.id);
+  const { data: vip } = useVipProfile(user?.id);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [frameSheetOpen, setFrameSheetOpen] = useState(false);
