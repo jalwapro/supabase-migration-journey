@@ -1203,30 +1203,80 @@ function RoomPage() {
             <div className="flex min-h-0 flex-col gap-2">
               <button
                 onClick={() => isHost && isRanked && openMilestoneSheet()}
-                className="rounded-2xl border border-violet-300/30 bg-black/35 p-3 text-left backdrop-blur-md"
+                className="relative flex h-[300px] w-full flex-col items-center overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] p-3 shadow-2xl"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-[13px] font-bold text-white/90">
-                    🔥 Room Popularity {isRanked && <span className="ml-1 rounded-full bg-[color:var(--gold)]/25 px-1.5 py-0.5 text-[9px] font-black uppercase text-[color:var(--gold)]">Ranked</span>}
-                  </span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
+                {/* background glow */}
+                <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
+
+                {/* Header: icon + rank chip */}
+                <div className="z-10 mb-3 flex w-full items-center justify-between">
+                  <div className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_15px_color-mix(in_oklab,var(--primary)_40%,transparent)]">
+                    <span className="text-sm leading-none">🔥</span>
+                  </div>
+                  {isRanked && (
+                    <div className="rounded-full border border-[color:var(--secondary)]/40 bg-[color:var(--secondary)]/20 px-2 py-0.5">
+                      <span className="text-[9px] font-extrabold uppercase tracking-tighter text-[color:var(--secondary)]">
+                        Ranked
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-2 text-2xl font-semibold leading-none">{popScoreLabel}</div>
-                <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-[color:var(--secondary)] via-[color:var(--primary)] to-orange-300 transition-all"
-                    style={{ width: `${Math.max(2, popularityPct)}%` }}
-                  />
+
+                {/* Score */}
+                <div className="z-10 mb-3 text-center">
+                  <p className="mb-0.5 text-[10px] font-bold uppercase tracking-widest text-white/60">
+                    Popularity
+                  </p>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-2xl font-extrabold leading-none text-[color:var(--gold)]">
+                      {popScoreLabel}
+                    </span>
+                    <span className="text-[10px] font-bold text-[color:var(--gold)]/60">/3k</span>
+                  </div>
                 </div>
-                {isHost && isRanked && !r.milestone_awarded_at && (
-                  <div className="mt-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-3 py-1 text-center text-[10px] font-black uppercase tracking-wider text-black">
-                    ⭐ Award Milestone Gift
+
+                {/* Segmented energy meter (10 rungs, filled from bottom) */}
+                <div className="mb-4 flex w-full flex-1 flex-col-reverse gap-1.5 px-4">
+                  {Array.from({ length: 10 }).map((_, i) => {
+                    const filledCount = Math.round((popularityPct / 100) * 10);
+                    const isFilled = i < filledCount;
+                    const opacity = isFilled ? Math.max(0.6, 1 - (filledCount - 1 - i) * 0.08) : 0;
+                    return (
+                      <div
+                        key={i}
+                        className={`h-3 w-full rounded-sm ${
+                          isFilled
+                            ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_8px_color-mix(in_oklab,var(--primary)_50%,transparent)]"
+                            : "bg-white/5"
+                        }`}
+                        style={isFilled ? { opacity } : undefined}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* CTA */}
+                {isHost && isRanked && !r.milestone_awarded_at ? (
+                  <div className="z-10 flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl bg-[color:var(--gold)] px-2 py-3 text-[color:#1a0b2e] shadow-[0_8px_20px_-4px_color-mix(in_oklab,var(--gold)_40%,transparent)]">
+                    <span className="text-[10px] font-extrabold uppercase leading-none tracking-tight">
+                      Award Milestone
+                    </span>
+                    <span className="text-[9px] font-bold leading-none opacity-80">Claim Gift</span>
+                  </div>
+                ) : r.milestone_awarded_at ? (
+                  <div className="z-10 w-full rounded-2xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-2 text-center text-[10px] font-bold text-[color:var(--gold)]">
+                    Milestone awarded ✓
+                  </div>
+                ) : (
+                  <div className="z-10 w-full rounded-2xl border border-white/10 bg-white/5 py-2 text-center text-[10px] font-semibold text-white/60">
+                    Tap for details
                   </div>
                 )}
-                {r.milestone_awarded_at && (
-                  <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
-                )}
+
+                {/* bottom accent */}
+                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1.5 bg-[color:var(--secondary)]/10" />
               </button>
+
               <div className={`grid flex-1 ${isHost ? "grid-cols-1" : "grid-cols-2"} gap-2`}>
                 {!isHost && (
                   <MiniAction
