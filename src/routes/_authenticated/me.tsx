@@ -154,7 +154,7 @@ function MePage() {
                 <LevelAvatar
                   src={profile?.avatar}
                   name={profile?.username}
-                  level={level}
+                  level={vipLevel}
                   size="xl"
                   showBadge
                   frame={profile?.frame}
