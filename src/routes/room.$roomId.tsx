@@ -2721,6 +2721,19 @@ function Seat({
             </div>
           )}
         </div>
+        {displayFrame && (
+          <div
+            className="pointer-events-none absolute inset-[-34%] z-[15]"
+            style={{ transform: "translateY(-5%)" }}
+            aria-hidden
+          >
+            {frameIsVideo ? (
+              <video src={displayFrame} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+            ) : (
+              <img src={displayFrame} alt="" className="h-full w-full object-contain" draggable={false} />
+            )}
+          </div>
+        )}
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
