@@ -1,4 +1,4 @@
-import { tierForLevel } from "@/lib/levels";
+import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
 
 type Size = "sm" | "md" | "lg" | "xl";
