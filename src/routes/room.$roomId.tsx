@@ -71,7 +71,7 @@ type Room = {
   agora_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
-  host: { username: string | null; avatar: string | null } | null;
+  host: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
 type TopGifter = { user_id: string; username: string | null; avatar: string | null; total_coins: number };
@@ -83,7 +83,7 @@ type Member = {
   is_muted: boolean;
   is_video: boolean;
   is_moderator?: boolean;
-  user: { username: string | null; avatar: string | null } | null;
+  user: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
 type Message = {
