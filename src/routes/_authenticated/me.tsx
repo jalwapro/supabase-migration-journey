@@ -23,6 +23,7 @@ import { LevelBadge } from "@/components/LevelBadge";
 import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 import { formatCompact } from "@/lib/utils";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
+import { VipRewardsGrid } from "@/components/vip/VipRewardsGrid";
 import { useVipProfile } from "@/hooks/useVipProfile";
 
 export const Route = createFileRoute("/_authenticated/me")({
@@ -289,6 +290,11 @@ function MePage() {
                 totalGifted={Number(vip?.row.total_gifted_coins ?? 0)}
                 storedLevel={vip?.row.vip_level ?? 0}
               />
+            </div>
+
+            {/* VIP Milestone Rewards */}
+            <div className="mt-3">
+              <VipRewardsGrid currentLevel={vip?.row.vip_level ?? 0} />
             </div>
 
             {/* Following / Followers / Diamonds / Coins */}

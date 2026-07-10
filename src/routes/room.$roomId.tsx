@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { VipBadge } from "@/components/vip/VipBadge";
+import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -2360,7 +2361,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
   const name = shown.user.username ?? "guest";
   const level = shown.user.level ?? 1;
   const avatar = shown.user.avatar;
-  const tier = tierForLevel(level);
+  const tier = vipTierForLevel(level);
 
   return (
     <div
@@ -2438,7 +2439,7 @@ function EnterRoomBanner({ latestEnter }: { latestEnter: Message | null }) {
 
         {/* Rank badge */}
         <div className="relative shrink-0">
-          <LevelBadge level={level} size="sm" showLabel={false} />
+          <VipBadge level={level} size="sm" />
         </div>
       </div>
     </div>
