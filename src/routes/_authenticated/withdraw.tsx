@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: Page });
 
-const RATE = 0.5; // 1 diamond = 0.5 PKR (adjust as needed)
+const RATE = 0.5; // 1 point = 0.5 PKR (adjust as needed)
 
 function Page() {
   const { user, profile } = useAuth();
@@ -38,8 +38,9 @@ function Page() {
 
   async function submit() {
     if (!user) return;
-    if (diamonds < 100) return toast.error("Minimum 100 diamonds");
-    if (diamonds > balance) return toast.error("Not enough diamonds");
+    if (diamonds < 100) return toast.error("Minimum 100 points");
+    if (diamonds > balance) return toast.error("Not enough points");
+
     if (!accNum || !accName) return toast.error("Fill account details");
     const { error } = await supabase.from("withdrawal_requests").insert({
       user_id: user.id,
@@ -56,15 +57,16 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Withdraw Diamonds">
+      <AppShell title="Withdraw Points">
         <div className="space-y-4 px-4 pt-4">
           <div className="glass rounded-3xl p-4 text-center">
             <p className="text-xs text-muted-foreground">Available balance</p>
-            <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">💎 {balance.toLocaleString()}</p>
+            <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">{balance.toLocaleString()} pts</p>
           </div>
 
           <div className="space-y-3 rounded-2xl border border-border bg-card/60 p-4">
-            <Field label="Diamonds to withdraw">
+            <Field label="Points to withdraw">
+
               <input
                 type="number"
                 min={100}
@@ -114,7 +116,7 @@ function Page() {
               {(history ?? []).map((h) => (
                 <div key={h.id} className="flex items-center justify-between rounded-xl border border-border bg-card/60 p-3">
                   <div>
-                    <p className="text-sm font-bold">💎 {h.diamonds.toLocaleString()} → Rs. {Number(h.amount_pkr).toLocaleString()}</p>
+                    <p className="text-sm font-bold">{h.diamonds.toLocaleString()} pts → Rs. {Number(h.amount_pkr).toLocaleString()}</p>
                     <p className="text-[11px] text-muted-foreground">{h.method} · {new Date(h.created_at).toLocaleDateString()}</p>
                   </div>
                   <span className={`rounded-full px-2 py-1 text-[10px] font-bold uppercase ${statusColor(h.status)}`}>

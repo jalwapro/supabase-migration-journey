@@ -49,7 +49,7 @@ function WalletPage() {
 
   return (
     <>
-      <AppShell title="Wallet" subtitle="Coins & diamonds">
+      <AppShell title="Wallet" subtitle="Coins & points">
         <div className="space-y-4 px-4 pt-4 pb-8">
           <div className="glass rounded-3xl bg-gradient-to-br from-[color:var(--gold)]/20 via-[color:var(--primary)]/15 to-transparent p-5">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -84,7 +84,7 @@ function WalletPage() {
 
           <div className="glass rounded-3xl bg-gradient-to-br from-[color:var(--secondary)]/25 via-[color:var(--primary)]/10 to-transparent p-5">
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Diamonds earned
+              Points earned
             </p>
             <div className="mt-1 flex items-center gap-2">
               <Diamond className="h-8 w-8 text-[color:var(--secondary)]" />
@@ -102,8 +102,9 @@ function WalletPage() {
           </div>
 
           <p className="pt-1 text-center text-[10px] text-muted-foreground">
-            60% of every gift you receive as a host → diamonds
+            Earn points from every gift you receive as a host
           </p>
+
 
           <section id="wallet-history">
             <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -159,7 +160,7 @@ function WalletPage() {
                         {t.diamonds_delta !== 0 && (
                           <p className="text-xs font-bold text-[color:var(--secondary)]">
                             {t.diamonds_delta > 0 ? "+" : ""}
-                            {t.diamonds_delta.toLocaleString()} 💎
+                            {t.diamonds_delta.toLocaleString()} pts
                           </p>
                         )}
                         <p className="text-[9px] text-muted-foreground">
