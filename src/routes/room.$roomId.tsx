@@ -1667,44 +1667,64 @@ function RoomPage() {
             )}
 
 
-            {/* Step 2 — pick a receiver from top gifters */}
+            {/* Top gifters list */}
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50">
-              Send to
+              {isHost && isRanked && !r.milestone_awarded_at ? "Send to" : "Leaderboard"}
             </p>
-            <div className="max-h-[40vh] space-y-2 overflow-y-auto">
+            <div className="max-h-[50vh] space-y-2 overflow-y-auto">
               {topGifters.length === 0 ? (
-                <p className="py-6 text-center text-xs text-white/60">Loading top gifters…</p>
+                <p className="py-6 text-center text-xs text-white/60">
+                  Abhi tak koi gifting nahi hui.
+                </p>
               ) : (
-                topGifters.map((g, i) => (
-                  <button
-                    key={g.user_id}
-                    disabled={awarding || !pickedMilestoneGift}
-                    onClick={() => awardMilestone(g.user_id)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-[color:var(--gold)]/60 disabled:opacity-40"
-                  >
-                    <span className="w-5 text-center text-xs font-black text-[color:var(--gold)]">{i + 1}</span>
-                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-white/20">
-                      {g.avatar ? (
-                        <img src={g.avatar} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="text-sm font-bold text-white">
-                          {(g.username ?? "?").slice(0, 1).toUpperCase()}
+                topGifters.map((g, i) => {
+                  const canAward = isHost && isRanked && !r.milestone_awarded_at;
+                  const Row = (
+                    <>
+                      <span className="w-5 text-center text-xs font-black text-[color:var(--gold)]">{i + 1}</span>
+                      <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-white/20">
+                        {g.avatar ? (
+                          <img src={g.avatar} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-bold text-white">
+                            {(g.username ?? "?").slice(0, 1).toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-white">@{g.username ?? "user"}</p>
+                        <p className="text-[10px] font-bold text-[color:var(--gold)]">
+                          {i === 0 ? "🏆 " : ""}{(g.total_coins ?? 0).toLocaleString()} coins
+                        </p>
+                      </div>
+                      {canAward && (
+                        <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[10px] font-black text-black">
+                          Award
                         </span>
                       )}
+                    </>
+                  );
+                  return canAward ? (
+                    <button
+                      key={g.user_id}
+                      disabled={awarding || !pickedMilestoneGift}
+                      onClick={() => awardMilestone(g.user_id)}
+                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5 text-left transition hover:border-[color:var(--gold)]/60 disabled:opacity-40"
+                    >
+                      {Row}
+                    </button>
+                  ) : (
+                    <div
+                      key={g.user_id}
+                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5"
+                    >
+                      {Row}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-white">@{g.username ?? "user"}</p>
-                      {i === 0 && (
-                        <p className="text-[10px] font-bold text-[color:var(--gold)]">🏆 Top gifter</p>
-                      )}
-                    </div>
-                    <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[10px] font-black text-black">
-                      Award
-                    </span>
-                  </button>
-                ))
+                  );
+                })
               )}
             </div>
+
           </div>
         </div>
       )}
