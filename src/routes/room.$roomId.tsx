@@ -2274,7 +2274,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
         }`}
       >
         <span className="mr-1 inline-flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
-          <LevelChip level={m.user?.level ?? 0} />
+          <VipBadge level={m.user?.level ?? 0} size="xs" />
           @{m.user?.username ?? "user"}:
         </span>
         <span className="break-words text-[11.5px] leading-snug text-white/95">
