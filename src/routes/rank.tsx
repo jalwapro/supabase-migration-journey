@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { Crown, Trophy, Sparkles, Globe2, Users } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { VipBadge } from "@/components/vip/VipBadge";
+import { RoyalBadge } from "@/components/vip/RoyalBadge";
 import { formatCoins } from "@/lib/vip-levels";
 
 export const Route = createFileRoute("/rank")({
