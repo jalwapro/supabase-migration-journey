@@ -151,8 +151,8 @@ function MePage() {
               </div>
             )}
 
-            <div className="relative flex items-start gap-4">
-              <div className="relative">
+            <div className="relative flex items-start gap-3">
+              <div className="relative w-[132px] shrink-0 pl-3 pt-3">
                 <LevelAvatar
                   src={profile?.avatar}
                   name={profile?.username}
@@ -167,7 +167,7 @@ function MePage() {
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                   aria-label="Change photo"
-                  className="glow-4d absolute -right-1 -top-1 grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-lg ring-2 ring-black/60 disabled:opacity-60"
+                  className="glow-4d absolute right-0 top-2 z-20 grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-lg ring-2 ring-black/60 disabled:opacity-60"
                 >
                   {uploading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -187,7 +187,8 @@ function MePage() {
                 />
               </div>
 
-              <div className="min-w-0 flex-1 pt-1">
+              <div className="min-w-0 flex-1 pt-3">
+
                 <div className="flex items-center gap-2">
                   <h2 className="truncate text-xl font-black">
                     @{profile?.username ?? "you"}
