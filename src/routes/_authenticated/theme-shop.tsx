@@ -86,12 +86,12 @@ function Page() {
   );
 
   const buy = useMutation({
-    mutationFn: async (item: ShopItem) => {
-      const { error } = await supabase.rpc("purchase_shop_item", { _theme_id: item.id });
+    mutationFn: async ({ item, currency }: { item: ShopItem; currency: "coins" | "diamonds" }) => {
+      const { error } = await supabase.rpc("purchase_shop_item", { _theme_id: item.id, _currency: currency });
       if (error) throw error;
     },
-    onSuccess: async () => {
-      toast.success("Purchased 🪙");
+    onSuccess: async (_d, vars) => {
+      toast.success(`Purchased with ${vars.currency === "diamonds" ? "💎" : "🪙"}`);
       await refresh();
       qc.invalidateQueries({ queryKey: ["shop"] });
     },
@@ -193,16 +193,19 @@ function Page() {
     return !!r && (!r.expires_at || new Date(r.expires_at) > new Date());
   };
 
-  // Diamonds take precedence when price_diamonds is set; else fall back to coins.
+  // Every item can be bought with either currency when both prices are set.
   const currencyFor = (it: ShopItem): "diamonds" | "coins" =>
     it.price_diamonds > 0 ? "diamonds" : "coins";
   const priceFor = (it: ShopItem): number =>
     it.is_free ? 0 : it.price_diamonds > 0 ? it.price_diamonds : it.price;
-  const selCost = selected ? priceFor(selected) : 0;
-  const selCurrency = selected ? currencyFor(selected) : "coins";
-  const canAfford = selected
-    ? (selCurrency === "diamonds" ? (profile?.diamonds ?? 0) : (profile?.coins ?? 0)) >= selCost
-    : true;
+  const hasCoinPrice = (it: ShopItem) => !it.is_free && it.price > 0;
+  const hasDiamondPrice = (it: ShopItem) => !it.is_free && it.price_diamonds > 0;
+  const canAffordCurrency = (it: ShopItem, cur: "coins" | "diamonds") => {
+    if (it.is_free) return true;
+    return cur === "diamonds"
+      ? (profile?.diamonds ?? 0) >= it.price_diamonds
+      : (profile?.coins ?? 0) >= it.price;
+  };
   const activeCatObj = cats.find((c) => c.id === currentCat) ?? null;
 
   return (
