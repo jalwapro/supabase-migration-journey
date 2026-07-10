@@ -456,6 +456,18 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, qc, loadRoomState]);
 
+  // Auto-open milestone picker for the host the moment the room hits 100%.
+  useEffect(() => {
+    if (!isHost) return;
+    if (milestoneAutoOpenedRef.current) return;
+    if (room.data?.milestone_awarded_at) return;
+    if (popularity.coin_score < 300_000) return;
+    milestoneAutoOpenedRef.current = true;
+    void openMilestoneSheet();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, popularity.coin_score, room.data?.milestone_awarded_at]);
+
+
   // Seat invites → popup for recipient
   useEffect(() => {
     if (!user) return;
