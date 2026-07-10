@@ -159,8 +159,9 @@ function RoomPage() {
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
-    { id: string; emoji: string; seat: number; clip?: string | null }[]
+    { id: string; emoji: string; fromSeat: number; toSeat: number; clip?: string | null }[]
   >([]);
+  const playedEmojiIdsRef = useRef<Set<string>>(new Set());
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
@@ -309,30 +310,17 @@ function RoomPage() {
           const row = payload.new as Message;
           row.text = row.text ?? row.message ?? null;
           if (row.kind === "emoji") {
-            // Skip echo for sender — already shown optimistically
-            if (user?.id && row.user_id === user.id) return;
-            // "😀|3" or "😀|3|/animations/emojis/heart.svg"
+            // New: "😀|fromSeat|toSeat|clip". Old fallback: "😀|toSeat|clip".
             const parts = (row.text ?? "").split("|");
             const emoji = parts[0] ?? "😀";
-            const seat = Number(parts[1] ?? 0);
-            const clip = parts[2] ? decodeURIComponent(parts[2]) : null;
-            const id = `${row.id}-${Math.random().toString(36).slice(2, 7)}`;
-            setFlyingEmojis((prev) => [...prev, { id, emoji, seat, clip }]);
-            // Trigger seat glow only when emoji reaches the DP (~2.1s)
-            setTimeout(() => {
-              setGlowSeats((prev) => ({ ...prev, [seat]: (prev[seat] ?? 0) + 1 }));
-            }, 2100);
-            setTimeout(() => {
-              setFlyingEmojis((prev) => prev.filter((e) => e.id !== id));
-            }, 2400);
-            setTimeout(() => {
-              setGlowSeats((prev) => {
-                const next = { ...prev };
-                next[seat] = Math.max(0, (next[seat] ?? 1) - 1);
-                if (!next[seat]) delete next[seat];
-                return next;
-              });
-            }, 2800);
+            const firstSeat = Number(parts[1] ?? 0);
+            const secondSeat = parts[2] != null ? Number(parts[2]) : NaN;
+            const hasFromSeat = Number.isFinite(secondSeat);
+            const fromSeat = firstSeat;
+            const toSeat = hasFromSeat ? secondSeat : firstSeat;
+            const clipPart = hasFromSeat ? parts[3] : parts[2];
+            const clip = clipPart ? decodeURIComponent(clipPart) : null;
+            playEmojiAnimation(row.id, emoji, fromSeat, toSeat, clip);
             return;
           }
           if (row.user_id) {
@@ -703,39 +691,64 @@ function RoomPage() {
 
 
 
+  function playEmojiAnimation(
+    id: string,
+    emoji: string,
+    fromSeat: number,
+    toSeat: number,
+    clip?: string | null,
+  ) {
+    if (playedEmojiIdsRef.current.has(id)) return;
+    playedEmojiIdsRef.current.add(id);
+    if (playedEmojiIdsRef.current.size > 200) {
+      const firstId = playedEmojiIdsRef.current.values().next().value;
+      if (firstId) playedEmojiIdsRef.current.delete(firstId);
+    }
+    setFlyingEmojis((prev) => [...prev, { id, emoji, fromSeat, toSeat, clip: clip ?? null }]);
+    setTimeout(() => {
+      setGlowSeats((prev) => ({ ...prev, [toSeat]: (prev[toSeat] ?? 0) + 1 }));
+    }, 2000);
+    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2300);
+    setTimeout(() => {
+      setGlowSeats((prev) => {
+        const next = { ...prev };
+        next[toSeat] = Math.max(0, (next[toSeat] ?? 1) - 1);
+        if (!next[toSeat]) delete next[toSeat];
+        return next;
+      });
+    }, 2800);
+  }
+
   async function sendEmoji(emoji: string, seatIndex: number, clip?: string | null) {
     if (!user) {
       toast.error("Sign in to react");
       return;
     }
-    // Local optimistic — even sender sees it fly, once
-    const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    setFlyingEmojis((prev) => [...prev, { id, emoji, seat: seatIndex, clip: clip ?? null }]);
-    // Glow only when emoji reaches the DP (~2.1s animation)
-    setTimeout(() => {
-      setGlowSeats((prev) => ({ ...prev, [seatIndex]: (prev[seatIndex] ?? 0) + 1 }));
-    }, 2100);
-    setTimeout(() => setFlyingEmojis((prev) => prev.filter((e) => e.id !== id)), 2400);
-    setTimeout(() => {
-      setGlowSeats((prev) => {
-        const next = { ...prev };
-        next[seatIndex] = Math.max(0, (next[seatIndex] ?? 1) - 1);
-        if (!next[seatIndex]) delete next[seatIndex];
-        return next;
-      });
-    }, 2800);
+    const fromSeat = myMember?.seat_index;
+    if (fromSeat == null) {
+      toast.error("Take a seat to react");
+      return;
+    }
+    if (!seatsByIndex.get(seatIndex)) {
+      toast.error("Pick an occupied seat");
+      return;
+    }
     const emojiText = clip
-      ? `${emoji}|${seatIndex}|${encodeURIComponent(clip)}`
-      : `${emoji}|${seatIndex}`;
-    const { error } = await supabase.from("room_messages").insert({
+      ? `${emoji}|${fromSeat}|${seatIndex}|${encodeURIComponent(clip)}`
+      : `${emoji}|${fromSeat}|${seatIndex}`;
+    const { data, error } = await supabase.from("room_messages").insert({
       room_id: roomId,
       user_id: user.id,
       username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
       kind: "emoji",
       text: emojiText,
       message: emojiText,
-    });
-    if (error) console.warn("[emoji]", error.message);
+    }).select("id").single();
+    if (error) {
+      console.warn("[emoji]", error.message);
+      return;
+    }
+    playEmojiAnimation(data.id, emoji, fromSeat, seatIndex, clip ?? null);
   }
 
 
@@ -1437,8 +1450,16 @@ function RoomPage() {
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
                 aria-label="Emoji reactions"
-                onClick={() => setEmojiSheetOpen(true)}
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white"
+                onClick={() => {
+                  if (!iAmOnSeat) {
+                    toast.error("Take a seat to react");
+                    return;
+                  }
+                  setEmojiSheetOpen(true);
+                }}
+                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white ${
+                  iAmOnSeat ? "" : "opacity-50"
+                }`}
               >
                 <Smile className="h-3.5 w-3.5" />
               </button>
@@ -1852,6 +1873,7 @@ function VideoTile({
 
   return (
     <button
+      data-seat-index={index}
       onClick={() => (member ? onLike() : onClaim())}
       className={`relative h-full w-full overflow-hidden rounded-2xl border bg-black/60 ${
         isHostSeat
@@ -3255,33 +3277,47 @@ function EmojiReactionSheet({
 function FlyingEmojiLayer({
   emojis,
 }: {
-  emojis: { id: string; emoji: string; seat: number; clip?: string | null }[];
+  emojis: { id: string; emoji: string; fromSeat: number; toSeat: number; clip?: string | null }[];
 }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-[60]">
       {emojis.map((e) => (
-        <FlyingEmoji key={e.id} emoji={e.emoji} seat={e.seat} clip={e.clip ?? null} />
+        <FlyingEmoji key={e.id} emoji={e.emoji} fromSeat={e.fromSeat} toSeat={e.toSeat} clip={e.clip ?? null} />
       ))}
     </div>
   );
 }
 
-function FlyingEmoji({ emoji, seat, clip }: { emoji: string; seat: number; clip: string | null }) {
+function FlyingEmoji({
+  emoji,
+  fromSeat,
+  toSeat,
+  clip,
+}: {
+  emoji: string;
+  fromSeat: number;
+  toSeat: number;
+  clip: string | null;
+}) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const [target, setTarget] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    const el = document.querySelector<HTMLElement>(`[data-seat-index="${seat}"]`);
-    const rect = el?.getBoundingClientRect();
-    const startX = window.innerWidth / 2 + (Math.random() - 0.5) * 60;
-    const startY = window.innerHeight - 60;
-    setPos({ x: startX, y: startY });
-    if (rect) {
-      setTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    const fromEl = document.querySelector<HTMLElement>(`[data-seat-index="${fromSeat}"]`);
+    const toEl = document.querySelector<HTMLElement>(`[data-seat-index="${toSeat}"]`);
+    const fromRect = fromEl?.getBoundingClientRect();
+    const toRect = toEl?.getBoundingClientRect();
+    if (fromRect) {
+      setPos({ x: fromRect.left + fromRect.width / 2, y: fromRect.top + fromRect.height / 2 });
     } else {
-      setTarget({ x: startX, y: startY - 300 });
+      setPos({ x: window.innerWidth / 2, y: window.innerHeight - 60 });
     }
-  }, [seat]);
+    if (toRect) {
+      setTarget({ x: toRect.left + toRect.width / 2, y: toRect.top + toRect.height / 2 });
+    } else {
+      setTarget({ x: window.innerWidth / 2, y: window.innerHeight - 320 });
+    }
+  }, [fromSeat, toSeat]);
 
   if (!pos || !target) return null;
   const size = clip ? 72 : 40;
@@ -3289,7 +3325,7 @@ function FlyingEmoji({ emoji, seat, clip }: { emoji: string; seat: number; clip:
     left: 0,
     top: 0,
     willChange: "transform, opacity",
-    animation: "flyEmoji 2.2s cubic-bezier(0.22,1,0.36,1) forwards",
+    animation: "flyEmoji 2s cubic-bezier(0.22,1,0.36,1) forwards",
     ["--fx" as never]: `${pos.x - size / 2}px`,
     ["--fy" as never]: `${pos.y - size / 2}px`,
     ["--tx" as never]: `${target.x - size / 2}px`,
