@@ -3651,7 +3651,7 @@ function GifterListSheet({
           total_diamonds: v.diamonds,
           gift_count: v.count,
         };
-      }).sort((a, b) => b.total_diamonds - a.total_diamonds);
+      }).sort((a, b) => b.total_coins - a.total_coins);
       if (!cancelled) {
         setRows(list);
         setLoading(false);
@@ -3661,7 +3661,7 @@ function GifterListSheet({
   }, [roomId, receiver]);
 
   if (!open || !receiver) return null;
-  const totalDiamonds = rows.reduce((s, r) => s + r.total_diamonds, 0);
+  const totalPts = rows.reduce((s, r) => s + r.total_coins, 0);
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
@@ -3674,7 +3674,7 @@ function GifterListSheet({
           <div>
             <h2 className="text-lg font-extrabold">Gifters for @{receiver.name}</h2>
             <p className="text-xs text-muted-foreground">
-              {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalDiamonds.toLocaleString()} pts
+              {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalPts.toLocaleString()} pts
             </p>
           </div>
           <button
@@ -3717,7 +3717,7 @@ function GifterListSheet({
                   </p>
                 </div>
                 <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-orange-400 px-2.5 py-1 text-[11px] font-black text-black">
-                  {r.total_diamonds.toLocaleString()} pts
+                  {r.total_coins.toLocaleString()} pts
                 </span>
               </div>
             );
