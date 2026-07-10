@@ -2895,6 +2895,7 @@ function SeatActionSheet({
   onClose,
   onToggleModerator,
   onKickFromSeat,
+  onKickFromRoom,
   onToggleLock,
 }: {
   member: Member | null;
@@ -2904,8 +2905,10 @@ function SeatActionSheet({
   onClose: () => void;
   onToggleModerator: () => void;
   onKickFromSeat: () => void;
+  onKickFromRoom: () => void;
   onToggleLock: () => void;
 }) {
+
   if (!member) return null;
   const name = member.user?.username ?? "User";
   const avatar = member.user?.avatar ?? null;
