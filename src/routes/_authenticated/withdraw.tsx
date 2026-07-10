@@ -57,15 +57,16 @@ function Page() {
 
   return (
     <>
-      <AppShell title="Withdraw Diamonds">
+      <AppShell title="Withdraw Points">
         <div className="space-y-4 px-4 pt-4">
           <div className="glass rounded-3xl p-4 text-center">
             <p className="text-xs text-muted-foreground">Available balance</p>
-            <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">💎 {balance.toLocaleString()}</p>
+            <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">{balance.toLocaleString()} pts</p>
           </div>
 
           <div className="space-y-3 rounded-2xl border border-border bg-card/60 p-4">
-            <Field label="Diamonds to withdraw">
+            <Field label="Points to withdraw">
+
               <input
                 type="number"
                 min={100}
