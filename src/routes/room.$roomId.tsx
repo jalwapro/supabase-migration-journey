@@ -1147,7 +1147,7 @@ function RoomPage() {
           >
             <span className="text-lg leading-none">🏆</span>
             <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">
-              {popScore > 0 ? `${popularityPct}% ranked` : "Unranked"}
+              {`${popularityPct}%`}
             </span>
             <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
           </Link>
