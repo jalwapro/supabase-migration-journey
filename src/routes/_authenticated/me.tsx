@@ -228,55 +228,6 @@ function MePage() {
               </div>
             </div>
 
-            {/* Ranking badge */}
-            <button
-              onClick={() => setFrameSheetOpen(true)}
-              className="relative mt-5 flex w-full items-center gap-3 overflow-hidden rounded-2xl border p-3 text-left"
-              style={{
-                borderColor: `${tier.color}80`,
-                background: `linear-gradient(90deg, ${tier.color}22 0%, #0a011477 100%)`,
-                boxShadow: `0 0 24px -6px ${tier.color}`,
-              }}
-            >
-              <LevelBadge level={level} size="md" showLabel={false} />
-              <div className="min-w-0 flex-1">
-                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">
-                  Your Rank
-                </p>
-                <p
-                  className="truncate text-lg font-black uppercase"
-                  style={{ color: tier.color, textShadow: `0 0 10px ${tier.color}` }}
-                >
-                  {tier.label}
-                </p>
-                <p className="text-[11px] font-bold text-white/75">
-                  Level {level} · Tap to view all tiers
-                </p>
-              </div>
-              <ChevronRight className="h-5 w-5 text-white/60" />
-            </button>
-
-            {/* Level progress bar */}
-            <button
-              onClick={() => setFrameSheetOpen(true)}
-              className="relative mt-5 block w-full text-left"
-            >
-              <div className="mb-1.5 flex items-center justify-between text-[11px] font-bold">
-                <span className="flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-[color:var(--gold)]" />
-                  <span className="text-white/85">{tier.label} Frame</span>
-                </span>
-                <span className="text-white/60">
-                  {prog.have} / {prog.need} XP → Lv {level + 1}
-                </span>
-              </div>
-              <div className="h-2.5 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className={`h-full rounded-full bg-gradient-to-r ${tier.ringGradient}`}
-                  style={{ width: `${Math.max(4, prog.pct)}%` }}
-                />
-              </div>
-            </button>
 
             {/* VIP Gifting progress */}
             <div className="mt-4">
