@@ -40,6 +40,8 @@ import {
   FlipHorizontal,
   Swords,
   Radio,
+  Play,
+  Pause,
   X,
 } from "lucide-react";
 
@@ -1225,12 +1227,14 @@ function RoomPage() {
                   <div className="mt-2 text-center text-[10px] font-bold text-[color:var(--gold)]">Milestone awarded ✓</div>
                 )}
               </button>
-              <div className="grid flex-1 grid-cols-2 gap-2">
+              <div className="grid flex-1 grid-cols-3 gap-1.5">
                 {isHost ? (
-                  <MiniAction
-                    icon={<Music className="h-5 w-5" />}
-                    label="Music"
-                    onClick={() => setMusicOpen(true)}
+                  <MusicMiniButton
+                    compact={false}
+                    title={agora.musicTitle}
+                    playing={agora.musicPlaying}
+                    onOpen={() => setMusicOpen(true)}
+                    onToggle={() => (agora.musicPlaying ? agora.pauseMusic() : agora.resumeMusic())}
                   />
                 ) : (
                   <MiniAction
@@ -1239,8 +1243,14 @@ function RoomPage() {
                     onClick={() => setEmojiSheetOpen(true)}
                   />
                 )}
+                <MiniAction
+                  icon={<MoreHorizontal className="h-5 w-5" />}
+                  label="More"
+                  onClick={() => setVideoSettingsOpen(true)}
+                />
                 <MiniAction icon={<UserPlus className="h-5 w-5" />} label="Invite" onClick={share} />
               </div>
+
 
             </div>
           </div>
@@ -1263,10 +1273,18 @@ function RoomPage() {
             </div>
 
             <div className="flex w-[38%] shrink-0 flex-col gap-2">
-              <div className="grid grid-cols-2 gap-1.5">
-                <MiniAction icon={<Music className="h-4 w-4" />} label="Music" onClick={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))} />
-                <MiniAction icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
+              <div className="grid grid-cols-3 gap-1.5">
+                <MusicMiniButton
+                  compact
+                  title={agora.musicTitle}
+                  playing={agora.musicPlaying}
+                  onOpen={() => (isHost ? setMusicOpen(true) : toast.info("Host only"))}
+                  onToggle={() => (agora.musicPlaying ? agora.pauseMusic() : agora.resumeMusic())}
+                />
+                <MiniAction compact icon={<MoreHorizontal className="h-4 w-4" />} label="More" onClick={() => setVideoSettingsOpen(true)} />
+                <MiniAction compact icon={<UserPlus className="h-4 w-4" />} label="Invite" onClick={share} />
               </div>
+
 
             </div>
           </div>
@@ -1556,40 +1574,42 @@ function RoomPage() {
           }}
         />
       )}
-      {isVideo && (
-        <VideoSettingsSheet
-          open={videoSettingsOpen}
-          onClose={() => setVideoSettingsOpen(false)}
-          isHost={isHost}
-          fx={videoFx}
-          onFxChange={(k, v) => setVideoFx((s) => ({ ...s, [k]: v }))}
-          videoOn={agora.videoOn}
-          onToggleVideo={() => void agora.toggleVideo()}
-          muted={agora.muted}
-          onToggleMute={() => void toggleMuteWithSync()}
-          onOpenSeats={() => {
-            setVideoSettingsOpen(false);
-            setSeatsSheetOpen(true);
-          }}
-          onOpenMusic={() => {
-            setVideoSettingsOpen(false);
-            setMusicOpen(true);
-          }}
-          onOpenGames={() => {
-            setVideoSettingsOpen(false);
-            openLudo();
-          }}
-          onShare={() => {
-            setVideoSettingsOpen(false);
-            void share();
-          }}
-          onEndLive={() => {
-            setVideoSettingsOpen(false);
-            void leaveRoom();
-          }}
-          onPk={() => toast.info("PK Battle — coming soon")}
-        />
-      )}
+      <VideoSettingsSheet
+        open={videoSettingsOpen}
+        onClose={() => setVideoSettingsOpen(false)}
+        isHost={isHost}
+        fx={videoFx}
+        onFxChange={(k, v) => setVideoFx((s) => ({ ...s, [k]: v }))}
+        videoOn={agora.videoOn}
+        onToggleVideo={() => void agora.toggleVideo()}
+        muted={agora.muted}
+        onToggleMute={() => void toggleMuteWithSync()}
+        speakerMuted={agora.speakerMuted}
+        onToggleSpeaker={agora.toggleSpeaker}
+        isVideo={isVideo}
+        onOpenSeats={() => {
+          setVideoSettingsOpen(false);
+          setSeatsSheetOpen(true);
+        }}
+        onOpenMusic={() => {
+          setVideoSettingsOpen(false);
+          setMusicOpen(true);
+        }}
+        onOpenGames={() => {
+          setVideoSettingsOpen(false);
+          openLudo();
+        }}
+        onShare={() => {
+          setVideoSettingsOpen(false);
+          void share();
+        }}
+        onEndLive={() => {
+          setVideoSettingsOpen(false);
+          void leaveRoom();
+        }}
+        onPk={() => toast.info("PK Battle — coming soon")}
+      />
+
       <SeatActionSheet
         member={manageMember}
         canModerate={isHost}
@@ -1905,6 +1925,54 @@ function StageBtn({
     </button>
   );
 }
+function MusicMiniButton({
+  title,
+  playing,
+  onOpen,
+  onToggle,
+  compact,
+}: {
+  title: string | null;
+  playing: boolean;
+  onOpen: () => void;
+  onToggle: () => void;
+  compact?: boolean;
+}) {
+  const iconSize = compact ? "h-4 w-4" : "h-5 w-5";
+  const active = !!title;
+  return (
+    <button
+      onClick={onOpen}
+      className={`relative flex ${compact ? "min-h-[52px] gap-0.5 py-1.5" : "min-h-[70px] gap-1 py-2"} flex-col items-center justify-center rounded-xl border backdrop-blur transition ${
+        active
+          ? "border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20 text-white shadow-[0_0_16px_-6px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
+          : "border-violet-300/25 bg-black/30 text-white/88"
+      }`}
+    >
+      <Music className={iconSize} />
+      <span className={`${compact ? "text-[9px]" : "text-[11px]"} max-w-full truncate px-1 font-medium`}>
+        {active ? title : "Music"}
+      </span>
+      {active && (
+        <span
+          role="button"
+          aria-label={playing ? "Pause music" : "Resume music"}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggle();
+          }}
+          className="glow-4d absolute -right-1.5 -top-1.5 grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow ring-2 ring-black/60"
+        >
+          {playing ? <Pause className="h-2.5 w-2.5" /> : <Play className="h-2.5 w-2.5" />}
+        </span>
+      )}
+      {active && playing && (
+        <span className="absolute left-1.5 top-1.5 h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--gold)]" />
+      )}
+    </button>
+  );
+}
+
 
 function MiniAction({
   icon,
@@ -2545,6 +2613,9 @@ function VideoSettingsSheet({
   onToggleVideo,
   muted,
   onToggleMute,
+  speakerMuted,
+  onToggleSpeaker,
+  isVideo,
   onOpenSeats,
   onOpenMusic,
   onOpenGames,
@@ -2561,6 +2632,9 @@ function VideoSettingsSheet({
   onToggleVideo: () => void;
   muted: boolean;
   onToggleMute: () => void;
+  speakerMuted: boolean;
+  onToggleSpeaker: () => void;
+  isVideo: boolean;
   onOpenSeats: () => void;
   onOpenMusic: () => void;
   onOpenGames: () => void;
@@ -2595,8 +2669,8 @@ function VideoSettingsSheet({
           </button>
         </div>
 
-        {/* Video FX row */}
-        {(isHost || videoOn) && (
+        {/* Video FX row (video rooms only) */}
+        {isVideo && (isHost || videoOn) && (
           <>
             <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
               Video Effects
@@ -2627,33 +2701,51 @@ function VideoSettingsSheet({
                 onClick={() => onFxChange("blur", !fx.blur)}
               />
             </div>
-
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <button
-                onClick={onToggleVideo}
-                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
-                  videoOn
-                    ? "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
-                    : "border-white/15 bg-white/5 text-white/80"
-                }`}
-              >
-                {videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-                {videoOn ? "Camera On" : "Camera Off"}
-              </button>
-              <button
-                onClick={onToggleMute}
-                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
-                  muted
-                    ? "border-white/15 bg-white/5 text-white/80"
-                    : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
-                }`}
-              >
-                {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                {muted ? "Mic Off" : "Mic On"}
-              </button>
-            </div>
           </>
         )}
+
+        {/* Audio row — always shown */}
+        <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
+          Audio
+        </div>
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            onClick={onToggleMute}
+            className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+              muted
+                ? "border-white/15 bg-white/5 text-white/80"
+                : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+            }`}
+          >
+            {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {muted ? "Mic Off" : "Mic On"}
+          </button>
+          <button
+            onClick={onToggleSpeaker}
+            className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+              speakerMuted
+                ? "border-white/15 bg-white/5 text-white/80"
+                : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+            }`}
+          >
+            {speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            {speakerMuted ? "Speaker Off" : "Speaker On"}
+          </button>
+          {isVideo && (isHost || videoOn) && (
+            <button
+              onClick={onToggleVideo}
+              className={`col-span-2 flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+                videoOn
+                  ? "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                  : "border-white/15 bg-white/5 text-white/80"
+              }`}
+            >
+              {videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+              {videoOn ? "Camera On" : "Camera Off"}
+            </button>
+          )}
+        </div>
+
 
         {/* Actions grid */}
         <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
