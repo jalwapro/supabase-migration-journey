@@ -167,7 +167,10 @@ function RoomPage() {
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
   const [milestoneOpen, setMilestoneOpen] = useState(false);
   const [topGifters, setTopGifters] = useState<TopGifter[]>([]);
+  const [milestoneGifts, setMilestoneGifts] = useState<Array<{ id: string; name: string; emoji: string | null; icon: string | null; clip_path: string | null; clip_type: string | null }>>([]);
+  const [pickedMilestoneGift, setPickedMilestoneGift] = useState<string | null>(null);
   const [awarding, setAwarding] = useState(false);
+  const milestoneAutoOpenedRef = useRef(false);
 
   const room = useQuery({
     queryKey: ["room", roomId],
