@@ -2588,19 +2588,27 @@ function Seat({
           </span>
         )}
         <div className="absolute inset-x-0 top-[28%] grid place-items-center">
-          {displayAvatar && !remote?.videoTrack ? (
-            <img
-              src={displayAvatar}
-              alt=""
-              className="h-10 w-10 rounded-full border border-white/30 object-cover shadow-lg"
-            />
-          ) : remote?.videoTrack ? (
-            <div ref={videoRef} className="h-11 w-11 overflow-hidden rounded-full" />
-          ) : (
-            <span className="text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
-              📹
-            </span>
-          )}
+          <div className="relative h-10 w-10">
+            {speaking && (
+              <>
+                <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-cyan-400/80 animate-ping" />
+                <span className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-cyan-300/60 animate-ping" style={{ animationDelay: "300ms" }} />
+              </>
+            )}
+            {displayAvatar && !remote?.videoTrack ? (
+              <img
+                src={displayAvatar}
+                alt=""
+                className="relative h-10 w-10 rounded-full border border-white/30 object-cover shadow-lg"
+              />
+            ) : remote?.videoTrack ? (
+              <div ref={videoRef} className="relative h-11 w-11 overflow-hidden rounded-full" />
+            ) : (
+              <span className="relative text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
+                📹
+              </span>
+            )}
+          </div>
         </div>
         <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
           {effectiveMuted && <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />}
