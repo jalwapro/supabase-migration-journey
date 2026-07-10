@@ -13,9 +13,11 @@ import {
   Camera,
   Loader2,
   Pencil,
+  Gift,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { formatCompact } from "@/lib/utils";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
@@ -237,10 +239,31 @@ function MePage() {
               />
             </div>
 
-            {/* VIP Milestone Rewards */}
-            <div className="mt-3">
-              <VipRewardsGrid currentLevel={vip?.row.vip_level ?? 0} />
-            </div>
+            {/* VIP Milestone Rewards — button opens sheet */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <button className="mt-3 flex w-full items-center justify-between rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/15 via-white/5 to-[color:var(--primary)]/15 px-4 py-3 text-left active:scale-[0.98] transition-transform">
+                  <div className="flex items-center gap-2">
+                    <div className="grid h-9 w-9 place-items-center rounded-xl bg-[color:var(--gold)]/25 text-lg">
+                      <Gift className="h-4 w-4 text-[color:var(--gold)]" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-white">Milestone Rewards</p>
+                      <p className="text-[10px] text-white/60">View all 10 VIP milestone bundles</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-white/60" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto border-white/10 bg-[#0a0614] text-white">
+                <SheetHeader>
+                  <SheetTitle className="text-white">Milestone Rewards</SheetTitle>
+                </SheetHeader>
+                <div className="mt-3">
+                  <VipRewardsGrid currentLevel={vip?.row.vip_level ?? 0} />
+                </div>
+              </SheetContent>
+            </Sheet>
 
             {/* Following / Followers / Diamonds / Coins */}
             <div className="relative mt-4 grid grid-cols-4 gap-2 text-center">
