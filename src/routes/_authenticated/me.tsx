@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
+import { Gift } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { formatCompact } from "@/lib/utils";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
