@@ -56,6 +56,7 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
+import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 
 export const Route = createFileRoute("/room/$roomId")({
   component: RoomPage,
@@ -1150,7 +1151,7 @@ function RoomPage() {
     >
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
-        const bg = hostBg || "/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+        const bg = hostBg || defaultBgAsset.url;
         const overlay = hostBg ? 0.55 : 1 - defaultBgVisibility / 100;
         return (
           <>
