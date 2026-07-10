@@ -2669,8 +2669,8 @@ function VideoSettingsSheet({
           </button>
         </div>
 
-        {/* Video FX row */}
-        {(isHost || videoOn) && (
+        {/* Video FX row (video rooms only) */}
+        {isVideo && (isHost || videoOn) && (
           <>
             <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
               Video Effects
@@ -2701,33 +2701,51 @@ function VideoSettingsSheet({
                 onClick={() => onFxChange("blur", !fx.blur)}
               />
             </div>
-
-            <div className="mb-4 grid grid-cols-2 gap-2">
-              <button
-                onClick={onToggleVideo}
-                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
-                  videoOn
-                    ? "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
-                    : "border-white/15 bg-white/5 text-white/80"
-                }`}
-              >
-                {videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-                {videoOn ? "Camera On" : "Camera Off"}
-              </button>
-              <button
-                onClick={onToggleMute}
-                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
-                  muted
-                    ? "border-white/15 bg-white/5 text-white/80"
-                    : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
-                }`}
-              >
-                {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                {muted ? "Mic Off" : "Mic On"}
-              </button>
-            </div>
           </>
         )}
+
+        {/* Audio row — always shown */}
+        <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
+          Audio
+        </div>
+        <div className="mb-4 grid grid-cols-2 gap-2">
+          <button
+            onClick={onToggleMute}
+            className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+              muted
+                ? "border-white/15 bg-white/5 text-white/80"
+                : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+            }`}
+          >
+            {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {muted ? "Mic Off" : "Mic On"}
+          </button>
+          <button
+            onClick={onToggleSpeaker}
+            className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+              speakerMuted
+                ? "border-white/15 bg-white/5 text-white/80"
+                : "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+            }`}
+          >
+            {speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            {speakerMuted ? "Speaker Off" : "Speaker On"}
+          </button>
+          {isVideo && (isHost || videoOn) && (
+            <button
+              onClick={onToggleVideo}
+              className={`col-span-2 flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
+                videoOn
+                  ? "border-[color:var(--primary)]/50 bg-[color:var(--primary)]/20 text-white"
+                  : "border-white/15 bg-white/5 text-white/80"
+              }`}
+            >
+              {videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+              {videoOn ? "Camera On" : "Camera Off"}
+            </button>
+          )}
+        </div>
+
 
         {/* Actions grid */}
         <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
