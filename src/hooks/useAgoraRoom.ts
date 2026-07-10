@@ -146,6 +146,21 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
     }
   }, []);
 
+  const stopMicTrack = useCallback(async (client?: IAgoraRTCClient | null) => {
+    const audio = localAudioRef.current;
+    if (audio) {
+      try { await audio.setMuted(true); } catch { /* ignore */ }
+      try {
+        if (client && localAudioPublishedRef.current) await client.unpublish(audio);
+      } catch { /* ignore */ }
+      try { audio.stop(); } catch { /* ignore */ }
+      try { audio.close(); } catch { /* ignore */ }
+    }
+    localAudioRef.current = null;
+    localAudioPublishedRef.current = false;
+    setMuted(true);
+  }, []);
+
 
   useEffect(() => {
     if (!enabled || !channel || uid == null) {
@@ -191,6 +206,14 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
 
         activeClient.on("user-published", async (user, mediaType) => {
           if (!isCurrentJoin()) return;
+          const publishedUid = Number(user.uid);
+          if (publishedUid === uid) {
+            if (mediaType === "audio") {
+              try { user.audioTrack?.setVolume(0); } catch { /* ignore */ }
+              try { user.audioTrack?.stop(); } catch { /* ignore */ }
+            }
+            return;
+          }
           await activeClient.subscribe(user, mediaType);
           if (mediaType === "audio") {
             if (speakerMutedRef.current) {
@@ -451,16 +474,22 @@ export function useAgoraRoom({ channel, uid, publish, video, enabled, kind }: Us
       return;
     }
     const next = !muted;
-    // Use setMuted (not setEnabled) — setEnabled disposes the track and
-    // re-enabling is slow / can fail. setMuted only stops sending data.
+    if (next) {
+      // On mobile, setMuted(true) can leave the capture/playback pipeline alive
+      // and the user may still hear themselves. Fully unpublish + close the
+      // mic track so the local device audio stops immediately.
+      await stopMicTrack(clientRef.current);
+      setMicIssue(null, false);
+      return;
+    }
     try {
-      await track.setMuted(next);
-      setMuted(next);
+      await track.setMuted(false);
+      setMuted(false);
       setMicIssue(null, false);
     } catch (e) {
       console.error("[agora] setMuted failed", e);
     }
-  }, [muted, requestMic, setMicIssue]);
+  }, [muted, requestMic, setMicIssue, stopMicTrack]);
 
 
 
