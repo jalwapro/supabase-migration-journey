@@ -12,19 +12,16 @@ import {
   Shield,
   Camera,
   Loader2,
-  Sparkles,
   Pencil,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRef, useState } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { LevelBadge } from "@/components/LevelBadge";
-import { LEVEL_TIERS, levelProgress, tierForLevel } from "@/lib/levels";
 import { formatCompact } from "@/lib/utils";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { VipRewardsGrid } from "@/components/vip/VipRewardsGrid";
 import { useVipProfile } from "@/hooks/useVipProfile";
+import { vipTierForLevel } from "@/lib/vip-levels";
 
 export const Route = createFileRoute("/_authenticated/me")({
   component: MePage,
