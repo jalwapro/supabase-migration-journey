@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { useAuth } from "@/hooks/useAuth";
+
 import {
   ArrowLeft, Coins, Loader2, CheckCircle2, Smartphone, Building2,
   CreditCard, Wallet, Sparkles, Crown, Gem, Flame,
