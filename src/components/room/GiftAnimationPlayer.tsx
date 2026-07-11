@@ -40,7 +40,8 @@ const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b10
 const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
 
 function isRoyalRoseGift(name: string | null | undefined) {
-  return (name ?? "").trim().toLowerCase() === "royal rose";
+  const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
 }
 
 
@@ -51,7 +52,7 @@ function resolveGiftClipUrl(url: string | null) {
 }
 
 function getEffectiveGiftClip(p: Play) {
-  if (isRoyalRoseGift(p.giftName)) {
+  if (isRoyalRoseGift(p.giftName) || p.giftClipUrl?.includes("royal-rose")) {
     return {
       url: ROYAL_ROSE_MP4_URL,
       type: "mp4",
