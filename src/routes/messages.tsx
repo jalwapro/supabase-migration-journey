@@ -62,7 +62,7 @@ function MessagesPage() {
       if (!uid) return { list: [], peers: new Map<string, PeerProfile>() };
       const { data, error } = await supabase
         .from("direct_messages")
-        .select("sender_id,recipient_id,message,kind,created_at,read_at")
+        .select("sender_id,recipient_id,message,kind,created_at,read_at,deleted_at")
         .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
         .order("created_at", { ascending: false })
         .limit(300);
@@ -71,7 +71,8 @@ function MessagesPage() {
       for (const m of data ?? []) {
         const peer = m.sender_id === uid ? m.recipient_id : m.sender_id;
         const preview =
-          m.kind === "image" ? "📷 Photo"
+          m.deleted_at ? "🚫 Message deleted"
+          : m.kind === "image" ? "📷 Photo"
           : m.kind === "video" ? "🎬 Video"
           : m.kind === "voice" ? "🎙️ Voice message"
           : m.kind === "album" ? "🖼️ Shared from gallery"
