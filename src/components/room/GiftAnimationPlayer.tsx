@@ -345,6 +345,21 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }
   }, [current?.key, current, hasVideo, hasSvg]);
 
+  // Play gift sound when a new gift starts
+  useEffect(() => {
+    if (!current?.soundUrl) return;
+    const src = resolveSoundUrl(current.soundUrl);
+    if (!src) return;
+    const audio = new Audio(src);
+    audio.volume = 0.85;
+    audio.play().catch(() => {});
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, [current?.key, current?.soundUrl]);
+
+
   // Auto-clear current after PLAY_MS. Kept in a separate effect so the
   // cleanup only fires when `current` itself changes — not on every
   // queue mutation, which was cancelling the timer and leaving the
