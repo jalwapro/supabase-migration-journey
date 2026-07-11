@@ -56,6 +56,10 @@ export function useGlobalRealtime() {
     if (!user) return;
     const uid = user.id;
 
+    // Silently register FCM token if permission is already granted.
+    void import("@/lib/fcm-client").then((m) => m.initFcmIfGranted(uid)).catch(() => {});
+
+
     // Split into a few channels so a single bad filter can't kill everything.
     const ch1 = subscribe(qc, `me:${uid}`, [
       {
