@@ -1730,6 +1730,18 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <PkIncomingInvite />
+      {room.data?.active_pk_match_id && (
+        <PkMatchOverlay
+          matchId={room.data.active_pk_match_id}
+          meHostId={isHost ? user?.id ?? null : null}
+        />
+      )}
+      <PkBattleSheet
+        open={pkOpen}
+        onClose={() => setPkOpen(false)}
+        currentRoomId={roomId}
+      />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
