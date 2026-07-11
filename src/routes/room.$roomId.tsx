@@ -2829,14 +2829,7 @@ function Seat({
             👑
           </span>
         )}
-        {/* Gift sparkle burst — lands on user after center gift animation */}
-        {receivedGift && (
-          <>
-            <span className="pointer-events-none absolute inset-0 z-20 grid place-items-center text-3xl animate-ping">✨</span>
-            <span className="pointer-events-none absolute -top-3 -left-2 z-30 text-lg animate-bounce">✨</span>
-            <span className="pointer-events-none absolute -bottom-2 -right-2 z-30 text-lg animate-bounce">💫</span>
-          </>
-        )}
+        {/* Gift sparkle burst removed per user request */}
       </button>
       {/* When occupied, hide "No.X" and show the diamond points box in its place */}
       {member ? (
