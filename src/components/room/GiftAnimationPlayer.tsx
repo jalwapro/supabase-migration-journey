@@ -114,7 +114,7 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
         }}
         onError={() => setFailed(true)}
         onEnded={onDone}
-        className="gift-anim-video h-[36vh] max-h-[360px] w-auto max-w-[92vw] bg-transparent object-contain opacity-0 transition-opacity duration-150 drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        className="gift-anim-video h-[30vh] max-h-[300px] w-auto max-w-[92vw] bg-transparent object-contain opacity-0 transition-opacity duration-150"
         style={{ opacity: ready ? 1 : 0 }}
       >
         {webmSrc && <source src={webmSrc} type="video/webm" />}
