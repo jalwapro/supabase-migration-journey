@@ -102,6 +102,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     setQueue((q) => [...q, p]);
   }, []);
 
+  useEffect(() => {
+    const onLocalGift = (event: Event) => {
+      const detail = (event as CustomEvent<Play>).detail;
+      if (!detail?.key) return;
+      enqueue(detail);
+    };
+    window.addEventListener("jalwa:gift-sent", onLocalGift);
+    return () => window.removeEventListener("jalwa:gift-sent", onLocalGift);
+  }, [enqueue]);
+
   // realtime subscriptions
   useEffect(() => {
     const ch = supabase

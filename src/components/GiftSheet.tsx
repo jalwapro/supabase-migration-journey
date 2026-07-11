@@ -114,9 +114,35 @@ export function GiftSheet({
         });
         if (error) throw error;
       }
+      const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
+      return {
+        gift: selectedGift,
+        receiver: firstReceiver,
+        quantity: qty,
+        coins: price(selectedGift) * qty,
+      };
     },
-    onSuccess: async () => {
+    onSuccess: async (sent) => {
       toast.success("Gift sent 🎁");
+      window.dispatchEvent(
+        new CustomEvent("jalwa:gift-sent", {
+          detail: {
+            key: `local-${sent.gift.id}-${Date.now()}`,
+            senderName: profile?.username ?? "Guest",
+            senderAvatar: profile?.avatar ?? null,
+            receiverName: sent.receiver?.username ?? "Host",
+            receiverAvatar: sent.receiver?.avatar ?? null,
+            giftName: sent.gift.name,
+            giftEmoji: sent.gift.emoji ?? sent.gift.icon ?? "🎁",
+            giftClipUrl: sent.gift.clip_path ?? null,
+            giftClipType: sent.gift.clip_type ?? null,
+            coins: sent.coins,
+            diamonds: sent.gift.diamonds_value * sent.quantity,
+            quantity: sent.quantity,
+            animation: sent.gift.animation ?? "pop",
+          },
+        }),
+      );
       await refresh();
       qc.invalidateQueries({ queryKey: ["wallet_tx"] });
       setSelectedGift(null);
