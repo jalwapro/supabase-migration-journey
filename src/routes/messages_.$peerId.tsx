@@ -953,16 +953,7 @@ function MessageBody({
     return <video src={m.media_url ?? ""} controls className="max-h-64 rounded-lg" />;
   }
   if (m.kind === "voice") {
-    return (
-      <div className="flex items-center gap-2">
-        <audio controls src={m.media_url ?? ""} className="h-8" />
-        {m.duration_seconds && (
-          <span className={`text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-            {m.duration_seconds}s
-          </span>
-        )}
-      </div>
-    );
+    return <VoiceMessage url={m.media_url ?? ""} mine={mine} duration={m.duration_seconds} />;
   }
   if (m.kind === "file") {
     return (
