@@ -19,6 +19,7 @@ type GiftRow = {
   id: string;
   name: string;
   emoji: string;
+  icon?: string | null;
   price: number;
   category: string;
   animation: string;
@@ -26,6 +27,7 @@ type GiftRow = {
   is_active: boolean;
   clip_path: string | null;
   clip_type: string | null;
+  image_url?: string | null;
   is_milestone?: boolean | null;
 };
 
@@ -57,6 +59,70 @@ const EMPTY_DRAFT: Draft = {
   is_milestone: false,
 };
 
+const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4";
+const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
+
+function isRoyalRoseGift(name: string | null | undefined) {
+  const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
+}
+
+function resolveGiftMediaUrl(url: string | null | undefined) {
+  const value = (url ?? "").trim();
+  if (!value) return null;
+  if (/^(https?:|data:|blob:|\/)/i.test(value)) return value;
+  if (value.includes("__l5e/assets-v1/")) return `/${value.slice(value.indexOf("__l5e/assets-v1/"))}`;
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\//i.test(value)) {
+    return `/__l5e/assets-v1/${value}`;
+  }
+  return value;
+}
+
+function GiftMediaPreview({
+  name,
+  clipPath,
+  clipType,
+  imageUrl,
+  emoji,
+}: {
+  name: string;
+  clipPath: string | null | undefined;
+  clipType: string | null | undefined;
+  imageUrl?: string | null;
+  emoji?: string | null;
+}) {
+  const royalRose = isRoyalRoseGift(name) || (clipPath ?? "").includes("royal-rose");
+  const src = royalRose ? ROYAL_ROSE_THUMB_URL : resolveGiftMediaUrl(clipPath);
+  const fallbackImage = royalRose ? ROYAL_ROSE_THUMB_URL : resolveGiftMediaUrl(imageUrl);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  if (src && (royalRose || clipType === "svg" || videoFailed)) {
+    return <img src={src} alt={name} className="h-full w-full object-contain" />;
+  }
+
+  if (src && clipType === "mp4") {
+    return (
+      <video
+        src={src}
+        poster={fallbackImage ?? undefined}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        onError={() => setVideoFailed(true)}
+        className="h-full w-full object-contain"
+      />
+    );
+  }
+
+  if (fallbackImage) {
+    return <img src={fallbackImage} alt={name} className="h-full w-full object-contain" />;
+  }
+
+  return <span className="text-4xl">{emoji ?? "🎁"}</span>;
+}
+
 function GiftsAdmin() {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -69,7 +135,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,price,category,animation,sort_order,is_active,clip_path,clip_type,is_milestone")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -108,6 +174,7 @@ function GiftsAdmin() {
   const save = useMutation({
     mutationFn: async () => {
       if (!draft.name.trim()) throw new Error("Name required");
+      const royalRose = isRoyalRoseGift(draft.name);
       const row = {
         name: draft.name.trim(),
         emoji: draft.emoji || "🎁",
@@ -117,8 +184,9 @@ function GiftsAdmin() {
         category: draft.category,
         animation: draft.animation || "pop",
         sort_order: draft.sort_order,
-        clip_path: draft.clip_type === "none" ? null : draft.clip_path.trim() || null,
-        clip_type: draft.clip_type === "none" ? "mp4" : draft.clip_type,
+        clip_path: royalRose ? ROYAL_ROSE_MP4_URL : draft.clip_type === "none" ? null : resolveGiftMediaUrl(draft.clip_path) || null,
+        clip_type: royalRose ? "mp4" : draft.clip_type === "none" ? "mp4" : draft.clip_type,
+        ...(royalRose ? { image_url: ROYAL_ROSE_THUMB_URL } : {}),
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
@@ -166,6 +234,7 @@ function GiftsAdmin() {
   });
 
   const editGift = (g: GiftRow) => {
+    const royalRose = isRoyalRoseGift(g.name);
     setDraft({
       id: g.id,
       name: g.name,
@@ -174,8 +243,8 @@ function GiftsAdmin() {
       category: g.category,
       animation: g.animation || "pop",
       sort_order: g.sort_order,
-      clip_path: g.clip_path ?? "",
-      clip_type: (g.clip_path
+      clip_path: royalRose ? ROYAL_ROSE_MP4_URL : resolveGiftMediaUrl(g.clip_path) ?? "",
+      clip_type: (royalRose || g.clip_path
         ? g.clip_type === "svg"
           ? "svg"
           : "mp4"
@@ -212,20 +281,13 @@ function GiftsAdmin() {
                 className={`glass flex flex-col gap-1.5 rounded-xl p-2 text-xs ${draft.id === g.id ? "ring-2 ring-[color:var(--primary)]" : ""}`}
               >
                 <div className="grid h-20 w-full place-items-center overflow-hidden rounded-lg bg-black/40">
-                  {g.clip_path && g.clip_type === "mp4" ? (
-                    <video
-                      src={g.clip_path}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="h-full w-full object-cover"
-                    />
-                  ) : g.clip_path ? (
-                    <img src={g.clip_path} alt="" className="h-full w-full object-contain" />
-                  ) : (
-                    <span className="text-4xl">{g.emoji ?? "🎁"}</span>
-                  )}
+                  <GiftMediaPreview
+                    name={g.name}
+                    clipPath={g.clip_path}
+                    clipType={g.clip_type}
+                    imageUrl={g.image_url}
+                    emoji={g.emoji ?? g.icon}
+                  />
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="min-w-0 flex-1">
@@ -388,11 +450,12 @@ function GiftsAdmin() {
                 )}
                 {draft.clip_path && (
                   <div className="mt-2 grid h-24 w-full place-items-center overflow-hidden rounded-lg bg-black/40">
-                    {draft.clip_type === "mp4" ? (
-                      <video src={draft.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />
-                    ) : (
-                      <img src={draft.clip_path} alt="" className="h-full w-full object-contain" />
-                    )}
+                    <GiftMediaPreview
+                      name={draft.name}
+                      clipPath={draft.clip_path}
+                      clipType={draft.clip_type}
+                      emoji={draft.emoji}
+                    />
                   </div>
                 )}
               </>
