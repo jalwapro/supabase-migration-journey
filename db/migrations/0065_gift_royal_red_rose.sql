@@ -6,8 +6,8 @@ VALUES
     'Royal Red Rose', '🌹', '🌹',
     99, 99, 99,
     'love', 'bloom',
-    'https://cloud-to-soul.lovable.app/__l5e/assets-v1/7dc9b77b-203c-4d76-9457-deab9b46ae59/royal_red_rose.mp4',
-    'mp4',
+    'https://cloud-to-soul.lovable.app/__l5e/assets-v1/42dd4376-6726-47f1-95a3-6a8629f4ceb2/royal_red_rose.alpha.webm',
+    'webm',
     'https://cloud-to-soul.lovable.app/__l5e/assets-v1/c314a60b-ae3c-4392-a4eb-2259f16913ba/royal_red_rose.png',
     1, true, true
   )
