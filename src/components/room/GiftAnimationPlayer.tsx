@@ -125,8 +125,18 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (!p.local && localUntil > Date.now()) return;
     if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
-    setQueue((q) => [...q, p]);
+    // If nothing is playing, show it right away — don't wait for the
+    // queue-effect roundtrip (which used to swallow the very first gift
+    // in some render orderings). Otherwise append to the queue.
+    setCurrent((cur) => {
+      if (cur) {
+        setQueue((q) => [...q, p]);
+        return cur;
+      }
+      return p;
+    });
   }, []);
+
 
   useEffect(() => {
     const onLocalGift = (event: Event) => {
