@@ -124,6 +124,7 @@ export function GiftSheet({
     },
     onSuccess: async (sent) => {
       toast.success("Gift sent 🎁");
+      onClose(); // close sheet so full-screen animation is visible
       window.dispatchEvent(
         new CustomEvent("jalwa:gift-sent", {
           detail: {
@@ -148,7 +149,6 @@ export function GiftSheet({
       qc.invalidateQueries({ queryKey: ["wallet_tx"] });
       setSelectedGift(null);
       setQty(1);
-      onClose(); // close sheet so full-screen animation is visible
     },
     onError: (e: Error) => toast.error(e.message),
   });
