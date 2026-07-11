@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import royalRedRoseAlphaAsset from "@/assets/gifts/royal_red_rose.alpha.webm.asset.json";
 
 /**
  * TikTok-style full-screen gift animation player.
@@ -28,6 +29,7 @@ type Play = {
 
 const PLAY_MS = 4200;
 const VIDEO_PLAY_MS = 12000;
+const ROYAL_RED_ROSE_ALPHA_URL = royalRedRoseAlphaAsset.url;
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
@@ -35,12 +37,26 @@ function resolveGiftClipUrl(url: string | null) {
   return url;
 }
 
+function getEffectiveGiftClip(p: Play) {
+  if (p.giftName.trim().toLowerCase() === "royal red rose") {
+    return {
+      url: resolveGiftClipUrl(ROYAL_RED_ROSE_ALPHA_URL),
+      type: "webm",
+    };
+  }
+
+  return {
+    url: resolveGiftClipUrl(p.giftClipUrl),
+    type: p.giftClipType,
+  };
+}
+
 
 function giftSignature(p: Play) {
   return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void }) {
+function AnimatedGiftVideo({ src, type, onDone }: { src: string; type: string | null; onDone: () => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -96,9 +112,9 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
         onError={() => setFailed(true)}
         onEnded={onDone}
         className="gift-anim-video h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150"
-        style={{ opacity: ready ? 1 : 0, mixBlendMode: "screen" }}
+        style={{ opacity: ready ? 1 : 0 }}
       >
-        <source src={src} type="video/mp4" />
+        <source src={src} type={type === "webm" ? "video/webm" : "video/mp4"} />
       </video>
     </div>
   );
@@ -239,7 +255,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (!current) return;
     const t = setTimeout(
       () => setCurrent(null),
-      current.giftClipUrl && current.giftClipType === "mp4" ? VIDEO_PLAY_MS : PLAY_MS,
+      current.giftClipUrl && ["mp4", "webm"].includes(current.giftClipType ?? "") ? VIDEO_PLAY_MS : PLAY_MS,
     );
     return () => clearTimeout(t);
   }, [current]);
@@ -250,9 +266,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
   const isBig = current.coins >= 5000;
   const particles = Array.from({ length: isBig ? 24 : 14 });
-  const giftClipUrl = resolveGiftClipUrl(current.giftClipUrl);
-  const hasVideo = giftClipUrl && current.giftClipType === "mp4";
-  const hasSvg = giftClipUrl && current.giftClipType !== "mp4";
+  const giftClip = getEffectiveGiftClip(current);
+  const giftClipUrl = giftClip.url;
+  const hasVideo = giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
+  const hasSvg = giftClipUrl && !hasVideo;
 
   return (
     <div
@@ -303,7 +320,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       {/* bottom: big clip / emoji, TikTok-style above footer */}
       <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center px-2">
         {hasVideo ? (
-          <AnimatedGiftVideo src={giftClipUrl} onDone={() => setCurrent(null)} />
+          <AnimatedGiftVideo src={giftClipUrl} type={giftClip.type} onDone={() => setCurrent(null)} />
         ) : hasSvg ? (
           <img
             src={giftClipUrl}
