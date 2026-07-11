@@ -59,8 +59,9 @@ const EMPTY_DRAFT: Draft = {
   is_milestone: false,
 };
 
-const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4";
-const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
+const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
+const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
+const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
@@ -70,10 +71,11 @@ function isRoyalRoseGift(name: string | null | undefined) {
 function resolveGiftMediaUrl(url: string | null | undefined) {
   const value = (url ?? "").trim();
   if (!value) return null;
+  if (value.startsWith("/__l5e/")) return `${LOVABLE_ASSET_ORIGIN}${value}`;
   if (/^(https?:|data:|blob:|\/)/i.test(value)) return value;
-  if (value.includes("__l5e/assets-v1/")) return `/${value.slice(value.indexOf("__l5e/assets-v1/"))}`;
+  if (value.includes("__l5e/assets-v1/")) return `${LOVABLE_ASSET_ORIGIN}/${value.slice(value.indexOf("__l5e/assets-v1/"))}`;
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\//i.test(value)) {
-    return `/__l5e/assets-v1/${value}`;
+    return `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/${value}`;
   }
   return value;
 }
