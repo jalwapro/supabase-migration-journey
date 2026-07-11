@@ -36,6 +36,40 @@ const CATEGORY_LABEL: Record<string, string> = {
   mythic: "🏰 Mythic",
 };
 
+const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4";
+const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
+
+function isRoyalRoseGift(name: string | null | undefined) {
+  const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
+}
+
+function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
+  if (isRoyalRoseGift(gift.name)) {
+    return (
+      <video
+        src={ROYAL_ROSE_MP4_URL}
+        poster={ROYAL_ROSE_THUMB_URL}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="h-full w-full object-cover"
+      />
+    );
+  }
+  if (gift.clip_path && gift.clip_type === "svg") {
+    return <img src={gift.clip_path} alt="" className="h-full w-full object-contain" />;
+  }
+  if (gift.clip_path && gift.clip_type === "mp4") {
+    return <video src={gift.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />;
+  }
+  if (gift.image_url) {
+    return <img src={gift.image_url} alt="" className="h-full w-full object-contain" />;
+  }
+  return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
+}
+
 export function GiftSheet({
   open,
   onClose,
@@ -279,13 +313,7 @@ export function GiftSheet({
         {selectedGift && (
           <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-[color:var(--primary)]/10 via-[color:var(--secondary)]/10 to-[color:var(--gold)]/10 p-3">
             <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-black/40">
-              {selectedGift.clip_path && selectedGift.clip_type === "svg" ? (
-                <img src={selectedGift.clip_path} alt="" className="h-full w-full object-contain" />
-              ) : selectedGift.clip_path && selectedGift.clip_type === "mp4" ? (
-                <video src={selectedGift.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-5xl leading-none">{selectedGift.icon ?? selectedGift.emoji ?? "🎁"}</span>
-              )}
+              <GiftPreview gift={selectedGift} large />
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold">{selectedGift.name}</p>
@@ -340,8 +368,8 @@ export function GiftSheet({
                       : "border-border bg-card/40"
                   }`}
                 >
-                  <div className="grid h-12 w-12 place-items-center">
-                    <span className="text-3xl leading-none">{g.icon ?? g.emoji ?? "🎁"}</span>
+                  <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-black/20">
+                    <GiftPreview gift={g} />
                   </div>
 
                   <span className="truncate text-[10px] font-semibold">{g.name}</span>

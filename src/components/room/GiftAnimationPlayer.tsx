@@ -39,6 +39,11 @@ const VIDEO_PLAY_MS = 3800;
 const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4";
 const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
 
+function isRoyalRoseGift(name: string | null | undefined) {
+  const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
+  return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
+}
+
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
@@ -47,7 +52,7 @@ function resolveGiftClipUrl(url: string | null) {
 }
 
 function getEffectiveGiftClip(p: Play) {
-  if (p.giftName.trim().toLowerCase() === "royal rose") {
+  if (isRoyalRoseGift(p.giftName) || p.giftClipUrl?.includes("royal-rose")) {
     return {
       url: ROYAL_ROSE_MP4_URL,
       type: "mp4",
@@ -73,6 +78,7 @@ function AnimatedGiftVideo({
   onDone,
   fallbackEmoji,
   fallbackImage,
+  videoOnly = false,
 }: {
   src: string;
   type: string | null;
@@ -80,6 +86,7 @@ function AnimatedGiftVideo({
   onDone: () => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
+  videoOnly?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -89,14 +96,18 @@ function AnimatedGiftVideo({
 
   useEffect(() => {
     readyOnceRef.current = false;
-    setReady(false);
+    setReady(videoOnly);
     setFailed(false);
     const video = videoRef.current;
     if (!video) return;
     video.pause();
     video.currentTime = 0;
     video.load();
-  }, [src]);
+    if (videoOnly) {
+      onReady();
+      void video.play().catch(() => {});
+    }
+  }, [src, videoOnly, onReady]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -123,22 +134,25 @@ function AnimatedGiftVideo({
     tryPlay();
   }, [onReady, tryPlay]);
 
-  if (failed) {
+  if (failed && !videoOnly) {
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />;
   }
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
-      {!ready && (
+      {!ready && !videoOnly && (
         <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />
       )}
       <video
+        key={src}
         ref={videoRef}
+        src={src}
         autoPlay
         muted
         playsInline
         disablePictureInPicture
         preload="auto"
+        onLoadedMetadata={markReady}
         onLoadedData={markReady}
         onCanPlay={markReady}
         onError={() => {
@@ -146,11 +160,9 @@ function AnimatedGiftVideo({
           onReady();
         }}
         onEnded={onDone}
-        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
-        style={{ opacity: ready ? 1 : 0, mixBlendMode: "screen" }}
-      >
-        <source src={src} type={type === "webm" ? "video/webm" : "video/mp4"} />
-      </video>
+        className={`${ready || videoOnly ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
+        style={{ opacity: ready || videoOnly ? 1 : 0, mixBlendMode: "screen" }}
+      />
     </div>
   );
 }
@@ -407,7 +419,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const giftClipUrl = giftClip.url;
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
   const hasSvg = !!giftClipUrl && !hasVideo;
-  const fallbackImage = current?.giftName.trim().toLowerCase() === "royal rose"
+  const isRoyalRose = isRoyalRoseGift(current?.giftName);
+  const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
     : current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
 
@@ -506,6 +519,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onDone={clearCurrent}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
+            videoOnly={isRoyalRose}
           />
         ) : hasSvg ? (
           <AnimatedGiftImage
