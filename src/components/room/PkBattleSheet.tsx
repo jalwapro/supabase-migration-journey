@@ -55,11 +55,15 @@ export function PkBattleSheet({
   currentRoomId: string;
 }) {
   const { user } = useAuth();
+  const qc = useQueryClient();
+  const [tab, setTab] = useState<"random" | "pick">("random");
   const [duration, setDuration] = useState<180 | 300 | 600>(180);
   const [busy, setBusy] = useState<string | null>(null);
+  const [searching, setSearching] = useState(false);
+  const [waitedSec, setWaitedSec] = useState(0);
 
   const hosts = useQuery({
-    enabled: open && !!user,
+    enabled: open && !!user && tab === "pick",
     queryKey: ["pk_live_hosts", currentRoomId],
     refetchInterval: 8000,
     queryFn: async () => {
@@ -89,6 +93,80 @@ export function PkBattleSheet({
     onClose();
   }
 
+  // ---------- Random matchmaking ----------
+  async function findRandom() {
+    if (searching) return;
+    setSearching(true);
+    setWaitedSec(0);
+    const { data, error } = await supabase.rpc("pk_join_random_queue", {
+      _duration_sec: duration,
+    });
+    if (error) {
+      setSearching(false);
+      return toast.error(error.message);
+    }
+    const match = (Array.isArray(data) ? data[0] : data) as Match | null;
+    if (match) {
+      // Instantly paired — seed cache, close sheet, overlay mounts.
+      qc.setQueryData(["room", currentRoomId], (prev: any) =>
+        prev ? { ...prev, active_pk_match_id: match.id } : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["room", currentRoomId] });
+      qc.invalidateQueries({ queryKey: ["pk_active_match", match.id] });
+      setSearching(false);
+      toast.success("Matched! PK is live!");
+      onClose();
+    }
+    // else: waiting in queue — realtime on live_rooms will fire when paired.
+  }
+
+  async function cancelSearch() {
+    await supabase.rpc("pk_leave_queue");
+    setSearching(false);
+    toast.message("Search cancelled");
+  }
+
+  // While searching: tick + poll own live room for active_pk_match_id.
+  useEffect(() => {
+    if (!searching || !user) return;
+    const t = setInterval(() => setWaitedSec((n) => n + 1), 1000);
+    const poll = setInterval(async () => {
+      const { data } = await supabase
+        .from("live_rooms")
+        .select("active_pk_match_id")
+        .eq("id", currentRoomId)
+        .maybeSingle();
+      if (data?.active_pk_match_id) {
+        qc.setQueryData(["room", currentRoomId], (prev: any) =>
+          prev ? { ...prev, active_pk_match_id: data.active_pk_match_id } : prev,
+        );
+        qc.invalidateQueries({ queryKey: ["room", currentRoomId] });
+        setSearching(false);
+        toast.success("Matched! PK is live!");
+        onClose();
+      }
+    }, 2500);
+    // auto-timeout after 60s
+    const stop = setTimeout(() => {
+      void supabase.rpc("pk_leave_queue");
+      setSearching(false);
+      toast.message("No opponent found. Try again!");
+    }, 60_000);
+    return () => {
+      clearInterval(t);
+      clearInterval(poll);
+      clearTimeout(stop);
+    };
+  }, [searching, user, currentRoomId, qc, onClose]);
+
+  // Clean up queue if the sheet closes while searching.
+  useEffect(() => {
+    if (!open && searching) {
+      void supabase.rpc("pk_leave_queue");
+      setSearching(false);
+    }
+  }, [open, searching]);
+
   if (!open) return null;
   return (
     <>
@@ -110,6 +188,30 @@ export function PkBattleSheet({
           </button>
         </div>
 
+        {/* Tabs */}
+        <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-white/5 p-1">
+          <button
+            onClick={() => setTab("random")}
+            className={`flex items-center justify-center gap-1 rounded-full py-2 text-xs font-bold transition ${
+              tab === "random"
+                ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] text-white"
+                : "text-white/60"
+            }`}
+          >
+            <Shuffle className="h-3.5 w-3.5" /> Random
+          </button>
+          <button
+            onClick={() => setTab("pick")}
+            className={`flex items-center justify-center gap-1 rounded-full py-2 text-xs font-bold transition ${
+              tab === "pick"
+                ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] text-white"
+                : "text-white/60"
+            }`}
+          >
+            <Users className="h-3.5 w-3.5" /> Pick Host
+          </button>
+        </div>
+
         <label className="mb-1.5 block text-xs font-semibold text-white/60">
           Match duration
         </label>
@@ -119,8 +221,9 @@ export function PkBattleSheet({
             return (
               <button
                 key={sec}
+                disabled={searching}
                 onClick={() => setDuration(sec)}
-                className={`rounded-full py-2 text-xs font-bold transition ${
+                className={`rounded-full py-2 text-xs font-bold transition disabled:opacity-40 ${
                   active
                     ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] text-white"
                     : "border border-white/15 bg-white/5 text-white/80"
@@ -133,60 +236,103 @@ export function PkBattleSheet({
           })}
         </div>
 
-        <p className="mb-2 text-xs font-semibold text-white/60">
-          Pick a live host to challenge
-        </p>
-        <div className="scrollbar-hide max-h-[45vh] space-y-2 overflow-y-auto pr-1">
-          {hosts.isLoading && (
-            <div className="grid h-24 place-items-center">
-              <Loader2 className="h-5 w-5 animate-spin text-white/40" />
-            </div>
-          )}
-          {!hosts.isLoading && (hosts.data?.length ?? 0) === 0 && (
-            <p className="py-8 text-center text-xs text-white/50">
-              No other live hosts right now.
-            </p>
-          )}
-          {hosts.data?.map((h) => {
-            const inPk = !!h.active_pk_match_id;
-            return (
-              <div
-                key={h.id}
-                className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5"
-              >
-                <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-black/30">
-                  {h.cover_url || h.host?.avatar ? (
-                    <img
-                      src={h.cover_url ?? h.host?.avatar ?? ""}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Radio className="h-4 w-4 text-red-400" />
-                  )}
+        {tab === "random" ? (
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            {searching ? (
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="relative">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-[color:var(--destructive)]/40" />
+                  <div className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--gold)]">
+                    <Shuffle className="h-7 w-7 text-white" />
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">{h.title}</p>
-                  <p className="truncate text-[11px] text-white/50">
-                    @{h.host?.username ?? "host"} · {h.viewer_count} watching
-                  </p>
-                </div>
+                <p className="text-sm font-extrabold text-white">
+                  Searching for opponent…
+                </p>
+                <p className="text-[11px] text-white/60">
+                  Waited {waitedSec}s · auto-cancels at 60s
+                </p>
                 <button
-                  disabled={inPk || busy === h.host_id}
-                  onClick={() => challenge(h.host_id)}
-                  className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] px-3.5 py-1.5 text-xs font-extrabold text-white disabled:opacity-40"
+                  onClick={cancelSearch}
+                  className="mt-1 rounded-full bg-white/10 px-4 py-2 text-xs font-bold text-white/90"
                 >
-                  {busy === h.host_id ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Swords className="h-3 w-3" />
-                  )}
-                  {inPk ? "In PK" : "Challenge"}
+                  Cancel search
                 </button>
               </div>
-            );
-          })}
-        </div>
+            ) : (
+              <>
+                <p className="mb-3 text-center text-xs text-white/70">
+                  Get instantly paired with another random live host who's also
+                  looking for a PK battle.
+                </p>
+                <button
+                  onClick={findRandom}
+                  className="glow-4d flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-pink-500 to-[color:var(--gold)] py-3 text-sm font-extrabold text-white"
+                >
+                  <Shuffle className="h-4 w-4" />
+                  Find Random Opponent
+                </button>
+              </>
+            )}
+          </div>
+        ) : (
+          <>
+            <p className="mb-2 text-xs font-semibold text-white/60">
+              Pick a live host to challenge
+            </p>
+            <div className="scrollbar-hide max-h-[45vh] space-y-2 overflow-y-auto pr-1">
+              {hosts.isLoading && (
+                <div className="grid h-24 place-items-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+                </div>
+              )}
+              {!hosts.isLoading && (hosts.data?.length ?? 0) === 0 && (
+                <p className="py-8 text-center text-xs text-white/50">
+                  No other live hosts right now.
+                </p>
+              )}
+              {hosts.data?.map((h) => {
+                const inPk = !!h.active_pk_match_id;
+                return (
+                  <div
+                    key={h.id}
+                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5"
+                  >
+                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-black/30">
+                      {h.cover_url || h.host?.avatar ? (
+                        <img
+                          src={h.cover_url ?? h.host?.avatar ?? ""}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Radio className="h-4 w-4 text-red-400" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold">{h.title}</p>
+                      <p className="truncate text-[11px] text-white/50">
+                        @{h.host?.username ?? "host"} · {h.viewer_count} watching
+                      </p>
+                    </div>
+                    <button
+                      disabled={inPk || busy === h.host_id}
+                      onClick={() => challenge(h.host_id)}
+                      className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] px-3.5 py-1.5 text-xs font-extrabold text-white disabled:opacity-40"
+                    >
+                      {busy === h.host_id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Swords className="h-3 w-3" />
+                      )}
+                      {inPk ? "In PK" : "Challenge"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
     </>
   );
