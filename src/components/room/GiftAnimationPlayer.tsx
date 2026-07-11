@@ -23,20 +23,105 @@ type Play = {
   diamonds: number;
   quantity: number;
   animation: string;
+  local?: boolean;
 };
 
 const PLAY_MS = 4200;
+const VIDEO_PLAY_MS = 6800;
+
+function resolveGiftClipUrl(url: string | null) {
+  if (!url) return null;
+  if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
+  return url;
+}
+
+function giftSignature(p: Play) {
+  return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
+}
+
+function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  const tryPlay = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.play().catch(() => {
+      // Some browsers need canplay/loadeddata first; those events call this again.
+    });
+  }, []);
+
+  if (failed) {
+    return (
+      <span
+        className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        style={{ fontSize: "10rem" }}
+      >
+        {emoji}
+      </span>
+    );
+  }
+
+  return (
+    <div className="relative grid place-items-center">
+      {!ready && (
+        <span
+          className="absolute block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+          style={{ fontSize: "10rem" }}
+        >
+          {emoji}
+        </span>
+      )}
+      <video
+        ref={videoRef}
+        src={src}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        onLoadedData={() => {
+          setReady(true);
+          tryPlay();
+        }}
+        onCanPlay={() => {
+          setReady(true);
+          tryPlay();
+        }}
+        onError={() => setFailed(true)}
+        className="gift-anim-emoji gift-anim-video h-[42vh] max-h-[420px] w-auto max-w-[90vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        style={{ visibility: ready ? "visible" : "hidden" }}
+      />
+    </div>
+  );
+}
 
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
+  const localGiftRef = useRef<Map<string, number>>(new Map());
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
+    const signature = giftSignature(p);
+    const localUntil = localGiftRef.current.get(signature) ?? 0;
+    if (!p.local && localUntil > Date.now()) return;
+    if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
     setQueue((q) => [...q, p]);
   }, []);
+
+  useEffect(() => {
+    const onLocalGift = (event: Event) => {
+      const detail = (event as CustomEvent<Play>).detail;
+      if (!detail?.key) return;
+      enqueue(detail);
+    };
+    window.addEventListener("jalwa:gift-sent", onLocalGift);
+    return () => window.removeEventListener("jalwa:gift-sent", onLocalGift);
+  }, [enqueue]);
 
   // realtime subscriptions
   useEffect(() => {
@@ -145,7 +230,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // full-screen overlay stuck on screen ("room frozen until refresh").
   useEffect(() => {
     if (!current) return;
-    const t = setTimeout(() => setCurrent(null), PLAY_MS);
+    const t = setTimeout(
+      () => setCurrent(null),
+      current.giftClipUrl && current.giftClipType === "mp4" ? VIDEO_PLAY_MS : PLAY_MS,
+    );
     return () => clearTimeout(t);
   }, [current]);
 
@@ -155,8 +243,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
   const isBig = current.coins >= 5000;
   const particles = Array.from({ length: isBig ? 24 : 14 });
-  const hasVideo = current.giftClipUrl && current.giftClipType === "mp4";
-  const hasSvg = current.giftClipUrl && current.giftClipType !== "mp4";
+  const giftClipUrl = resolveGiftClipUrl(current.giftClipUrl);
+  const hasVideo = giftClipUrl && current.giftClipType === "mp4";
+  const hasSvg = giftClipUrl && current.giftClipType !== "mp4";
 
   return (
     <div
@@ -209,17 +298,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       {/* center: big clip / emoji */}
       <div className="relative z-10 flex flex-col items-center">
         {hasVideo ? (
-          <video
-            src={current.giftClipUrl!}
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="gift-anim-emoji h-[42vh] max-h-[420px] w-auto max-w-[90vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
-          />
+          <AnimatedGiftVideo src={giftClipUrl} emoji={current.giftEmoji} />
         ) : hasSvg ? (
           <img
-            src={current.giftClipUrl!}
+            src={giftClipUrl}
             alt=""
             className="gift-anim-emoji h-[38vh] max-h-[360px] w-auto max-w-[80vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
           />
