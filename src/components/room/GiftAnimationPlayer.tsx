@@ -259,6 +259,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             diamonds: 0,
             quantity: 1,
             animation: g.animation ?? "pop",
+            soundUrl: g.sound_url ?? null,
           });
         },
       )
