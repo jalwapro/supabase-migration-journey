@@ -27,7 +27,7 @@ type Play = {
 };
 
 const PLAY_MS = 4200;
-const VIDEO_PLAY_MS = 6800;
+const VIDEO_PLAY_MS = 12000;
 
 const WEBM_FALLBACKS: Record<string, string> = {
   "01_love_balloons.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/475fb727-1a63-4622-aa38-d2ae6b217cff/01_love_balloons.webm",
@@ -59,7 +59,7 @@ function giftSignature(p: Play) {
   return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
+function AnimatedGiftVideo({ src, emoji, onDone }: { src: string; emoji: string; onDone: () => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -103,20 +103,13 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
   }
 
   return (
-    <div className="relative grid place-items-center">
-      {!ready && (
-        <span
-          className="absolute block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
-          style={{ fontSize: "10rem" }}
-        >
-          {emoji}
-        </span>
-      )}
+    <div className="relative grid place-items-center bg-transparent">
       <video
         ref={videoRef}
         autoPlay
         muted
         playsInline
+        disablePictureInPicture
         preload="auto"
         onLoadedData={() => {
           setReady(true);
@@ -127,8 +120,9 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
           tryPlay();
         }}
         onError={() => setFailed(true)}
-        className="gift-anim-video h-[38vh] max-h-[380px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
-        style={{ visibility: ready ? "visible" : "hidden" }}
+        onEnded={onDone}
+        className="gift-anim-video h-[36vh] max-h-[360px] w-auto max-w-[92vw] bg-transparent object-contain opacity-0 transition-opacity duration-150 drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        style={{ opacity: ready ? 1 : 0 }}
       >
         {webmSrc && <source src={webmSrc} type="video/webm" />}
         <source src={src} type="video/mp4" />
@@ -289,15 +283,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-end overflow-hidden pb-28"
+      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
       aria-live="polite"
     >
-      {/* near-transparent dim so room stays visible behind the gift */}
-      <div className="absolute inset-0 bg-black/5" />
-      <div className="absolute inset-0 gift-anim-glow" />
-      <div className="absolute inset-0 gift-anim-shimmer" />
-
-
       {/* particles */}
       {particles.map((_, i) => {
         const angle = (360 / particles.length) * i;
@@ -307,6 +295,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             className="absolute text-2xl gift-anim-particle"
             style={{
               ["--angle" as string]: `${angle}deg`,
+              top: "auto",
+              bottom: "calc(env(safe-area-inset-bottom) + 13.5rem)",
+              left: "50%",
               animationDelay: `${(i % 5) * 40}ms`,
             } as React.CSSProperties}
           >
@@ -336,10 +327,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         </div>
       </div>
 
-      {/* center: big clip / emoji */}
-      <div className="relative z-10 flex flex-col items-center">
+      {/* bottom: big clip / emoji, TikTok-style above footer */}
+      <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center px-2">
         {hasVideo ? (
-          <AnimatedGiftVideo src={giftClipUrl} emoji={current.giftEmoji} />
+          <AnimatedGiftVideo src={giftClipUrl} emoji={current.giftEmoji} onDone={() => setCurrent(null)} />
         ) : hasSvg ? (
           <img
             src={giftClipUrl}
