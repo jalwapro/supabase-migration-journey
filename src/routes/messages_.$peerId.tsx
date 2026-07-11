@@ -10,7 +10,6 @@ import {
   Loader2,
   Paperclip,
   Mic,
-  Square,
   Image as ImageIcon,
   Lock,
   Smile,
@@ -26,6 +25,8 @@ import { toast } from "sonner";
 import { uploadToUserFolder } from "@/lib/uploads";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
+import { VoiceRecordingTray } from "@/components/chat/VoiceRecordingTray";
+import { VoiceMessage } from "@/components/chat/VoiceMessage";
 
 export const Route = createFileRoute("/messages_/$peerId")({
   component: DmThread,
@@ -72,6 +73,11 @@ function DmThread() {
   const mediaRec = useRef<MediaRecorder | null>(null);
   const recordChunks = useRef<Blob[]>([]);
   const recordStart = useRef<number>(0);
+  const recordStream = useRef<MediaStream | null>(null);
+  const recordCancelled = useRef<boolean>(false);
+  const recordPointerStart = useRef<{ x: number; y: number } | null>(null);
+  const [recordDrag, setRecordDrag] = useState(0); // negative = slide-left toward cancel
+  const [recordStartTs, setRecordStartTs] = useState(0);
   const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastTypingSent = useRef<number>(0);
   const peerTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -368,18 +374,27 @@ function DmThread() {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       const { mime, ext } = pickRecorderMime();
       const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       recordChunks.current = [];
       recordStart.current = Date.now();
+      recordCancelled.current = false;
+      recordStream.current = stream;
+      setRecordStartTs(Date.now());
+      setRecordDrag(0);
+      try { navigator.vibrate?.(30); } catch { /* noop */ }
       rec.ondataavailable = (ev) => { if (ev.data.size > 0) recordChunks.current.push(ev.data); };
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        recordStream.current = null;
+        if (recordCancelled.current) return; // discarded
         const outType = rec.mimeType || mime || "audio/webm";
         const blob = new Blob(recordChunks.current, { type: outType });
         const duration = Math.max(1, Math.round((Date.now() - recordStart.current) / 1000));
-        if (blob.size < 800) {
+        if (blob.size < 1200 || duration < 1) {
           toast.error("Recording bahut choti thi — thoda lamba dabaye rakho");
           setAttachBusy(false);
           return;
@@ -408,13 +423,24 @@ function DmThread() {
     }
   }
 
-  function stopRecord() {
+  function stopRecord(cancel = false) {
+    if (cancel) recordCancelled.current = true;
     if (mediaRec.current && mediaRec.current.state !== "inactive") {
-      mediaRec.current.stop();
+      try { mediaRec.current.stop(); } catch { /* noop */ }
+    }
+    // If cancelled, ensure tracks stopped even if onstop hasn't fired.
+    if (cancel && recordStream.current) {
+      recordStream.current.getTracks().forEach((t) => t.stop());
+      recordStream.current = null;
     }
     mediaRec.current = null;
+    recordPointerStart.current = null;
+    setRecordDrag(0);
     setRecording(false);
+    if (cancel) { try { navigator.vibrate?.(15); } catch { /* noop */ } }
   }
+
+
 
 
   async function shareAlbumImage(img: Img) {
@@ -653,81 +679,116 @@ function DmThread() {
             className="hidden"
             onChange={pickAttachment}
           />
-          <div className="flex items-end gap-2">
-            {/* Premium pill wrapper with emoji + input + attach icons inside */}
-            <div className="relative flex min-w-0 flex-1 items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-card/70 pl-1.5 pr-1 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)] focus-within:border-[color:var(--primary)]/70 focus-within:shadow-[0_0_0_3px_rgba(236,72,153,0.15)] transition-all">
+          {recording ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="flex-1"
+                style={{ transform: `translateX(${Math.min(0, recordDrag)}px)`, opacity: Math.max(0.4, 1 - Math.abs(Math.min(0, recordDrag)) / 220) }}
+              >
+                <VoiceRecordingTray
+                  stream={recordStream.current}
+                  startTs={recordStartTs}
+                  onCancel={() => stopRecord(true)}
+                />
+              </div>
               <button
                 type="button"
-                onClick={() => setEmojiOpen(true)}
-                disabled={attachBusy || recording}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 disabled:opacity-40 transition"
-                aria-label="Animated emoji"
+                onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId); recordPointerStart.current = { x: e.clientX, y: e.clientY }; }}
+                onPointerMove={(e) => {
+                  const s = recordPointerStart.current;
+                  if (!s) return;
+                  const dx = e.clientX - s.x;
+                  setRecordDrag(dx < 0 ? dx : 0);
+                  if (dx < -140) stopRecord(true);
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault();
+                  const s = recordPointerStart.current;
+                  const dx = s ? e.clientX - s.x : 0;
+                  stopRecord(dx < -80);
+                }}
+                onPointerCancel={() => stopRecord(true)}
+                aria-label="Release to send, slide left to cancel"
+                className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-red-500 via-[color:var(--primary)] to-red-500 text-white shadow-[0_6px_20px_-4px_rgba(239,68,68,0.6)] transition"
               >
-                <Smile className="h-[18px] w-[18px]" />
-              </button>
-              <input
-                value={text}
-                onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
-                onKeyDown={(e) => e.key === "Enter" && sendText()}
-                placeholder={recording ? "Recording…" : "Message"}
-                disabled={recording}
-                className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[15px] placeholder:text-muted-foreground/70 outline-none disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={() => setShowAlbum(true)}
-                disabled={attachBusy || recording}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--gold)] hover:bg-[color:var(--gold)]/10 disabled:opacity-40 transition"
-                aria-label="Private album"
-                title="Private album se share karo"
-              >
-                <Lock className="h-[16px] w-[16px]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={attachBusy || recording}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40 transition"
-                aria-label="Attach"
-              >
-                {attachBusy ? <Loader2 className="h-[16px] w-[16px] animate-spin" /> : <Paperclip className="h-[16px] w-[16px]" />}
-              </button>
-            </div>
-
-            {/* Premium send / mic button */}
-            {text.trim() ? (
-              <button
-                onClick={sendText}
-                aria-label="Send"
-                className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)] text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.6)] active:scale-95 transition"
-              >
-                <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                <span className="absolute inset-0 rounded-full ring-2 ring-inset ring-white/30 animate-pulse" />
                 <Send className="h-[18px] w-[18px] translate-x-[1px]" />
               </button>
-            ) : (
-              <button
-                type="button"
-                onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId); void startRecord(); }}
-                onPointerUp={(e) => { e.preventDefault(); stopRecord(); }}
-                onPointerCancel={() => stopRecord()}
-                onPointerLeave={() => { if (recording) stopRecord(); }}
-                aria-label={recording ? "Release to send" : "Hold to record"}
-                className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition ${
-                  recording
-                    ? "bg-red-500 animate-pulse"
-                    : "bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)]"
-                }`}
-              >
-                <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
-                {recording ? <Square className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
-              </button>
-            )}
-          </div>
-          {recording && (
+            </div>
+          ) : (
+            <div className="flex items-end gap-2">
+              {/* Premium pill wrapper with emoji + input + attach icons inside */}
+              <div className="relative flex min-w-0 flex-1 items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-card/70 pl-1.5 pr-1 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)] focus-within:border-[color:var(--primary)]/70 focus-within:shadow-[0_0_0_3px_rgba(236,72,153,0.15)] transition-all">
+                <button
+                  type="button"
+                  onClick={() => setEmojiOpen(true)}
+                  disabled={attachBusy}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 disabled:opacity-40 transition"
+                  aria-label="Animated emoji"
+                >
+                  <Smile className="h-[18px] w-[18px]" />
+                </button>
+                <input
+                  value={text}
+                  onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
+                  onKeyDown={(e) => e.key === "Enter" && sendText()}
+                  placeholder="Message"
+                  className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[15px] placeholder:text-muted-foreground/70 outline-none disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAlbum(true)}
+                  disabled={attachBusy}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--gold)] hover:bg-[color:var(--gold)]/10 disabled:opacity-40 transition"
+                  aria-label="Private album"
+                  title="Private album se share karo"
+                >
+                  <Lock className="h-[16px] w-[16px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={attachBusy}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40 transition"
+                  aria-label="Attach"
+                >
+                  {attachBusy ? <Loader2 className="h-[16px] w-[16px] animate-spin" /> : <Paperclip className="h-[16px] w-[16px]" />}
+                </button>
+              </div>
+
+              {text.trim() ? (
+                <button
+                  onClick={sendText}
+                  aria-label="Send"
+                  className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)] text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.6)] active:scale-95 transition"
+                >
+                  <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                  <Send className="h-[18px] w-[18px] translate-x-[1px]" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId);
+                    recordPointerStart.current = { x: e.clientX, y: e.clientY };
+                    void startRecord();
+                  }}
+                  aria-label="Hold to record"
+                  className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)]"
+                >
+                  <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                  <Mic className="h-[18px] w-[18px]" />
+                </button>
+              )}
+            </div>
+          )}
+          {recording && recordDrag < -20 && (
             <p className="mt-1 text-center text-[10px] font-semibold text-red-400">
-              ● Recording… release to send
+              ← Slide to cancel
             </p>
           )}
+
         </div>
 
       </div>
@@ -891,16 +952,7 @@ function MessageBody({
     return <video src={m.media_url ?? ""} controls className="max-h-64 rounded-lg" />;
   }
   if (m.kind === "voice") {
-    return (
-      <div className="flex items-center gap-2">
-        <audio controls src={m.media_url ?? ""} className="h-8" />
-        {m.duration_seconds && (
-          <span className={`text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-            {m.duration_seconds}s
-          </span>
-        )}
-      </div>
-    );
+    return <VoiceMessage url={m.media_url ?? ""} mine={mine} duration={m.duration_seconds} />;
   }
   if (m.kind === "file") {
     return (
