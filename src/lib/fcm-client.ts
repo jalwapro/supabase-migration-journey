@@ -140,3 +140,32 @@ export async function initFcmIfGranted(userId: string): Promise<void> {
     console.warn("FCM init failed", e);
   }
 }
+
+const AUTO_PROMPT_KEY = "jalwa_fcm_auto_prompted_v1";
+
+/**
+ * Auto-enable notifications on login:
+ * - If already granted → silently register token
+ * - If denied → skip (user must re-enable from browser settings)
+ * - If default → prompt ONCE per user (tracked in localStorage), after a
+ *   short delay so it doesn't collide with other startup prompts.
+ */
+export async function autoEnableFcm(userId: string): Promise<void> {
+  if (!isFcmSupported()) return;
+  const perm = Notification.permission;
+  if (perm === "granted") {
+    try { await enableFcmForUser(userId); } catch (e) { console.warn("FCM auto-init failed", e); }
+    return;
+  }
+  if (perm === "denied") return;
+  try {
+    const key = `${AUTO_PROMPT_KEY}:${userId}`;
+    if (localStorage.getItem(key) === "1") return;
+    localStorage.setItem(key, "1");
+  } catch { /* noop */ }
+  // Delay to avoid clashing with mic/camera install gate.
+  window.setTimeout(() => {
+    void enableFcmForUser(userId).catch((e) => console.warn("FCM auto-enable failed", e));
+  }, 2500);
+}
+
