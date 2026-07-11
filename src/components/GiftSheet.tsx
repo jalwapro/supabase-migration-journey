@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -98,6 +98,13 @@ export function GiftSheet({
 
   const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
+  useEffect(() => {
+    if (!open) return;
+    if (sendToAll) return;
+    if (receiverId && receivers.some((r) => r.id === receiverId)) return;
+    setReceiverId(receivers[0]?.id ?? null);
+  }, [open, receiverId, receivers, sendToAll]);
+
   const send = useMutation({
     mutationFn: async ({ gift, targets, quantity }: { gift: Gift; targets: string[]; quantity: number }) => {
       if (targets.length === 0) throw new Error("Pick a receiver");
@@ -173,10 +180,10 @@ export function GiftSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black" onClick={onClose} style={{ contain: "strict", isolation: "isolate" }}>
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/80" onClick={onClose} style={{ contain: "strict", isolation: "isolate" }}>
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto w-full max-w-md rounded-t-3xl border-t border-border bg-background p-4 shadow-2xl"
+        className="mx-auto flex max-h-[88dvh] w-full max-w-md flex-col rounded-t-3xl border-t border-border bg-background p-4 shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)", contain: "layout paint" }}
       >
 
@@ -314,7 +321,7 @@ export function GiftSheet({
         </div>
 
         {/* Gifts grid */}
-        <div className="mb-3 max-h-[36vh] overflow-y-auto">
+        <div className="mb-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
           {gifts.isLoading && (
             <div className="py-8 text-center">
               <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
@@ -352,7 +359,7 @@ export function GiftSheet({
         </div>
 
         {/* Qty + Send */}
-        <div className="flex items-center gap-2">
+        <div className="sticky bottom-0 -mx-4 -mb-4 flex shrink-0 items-center gap-2 border-t border-border bg-background/95 px-4 pb-4 pt-3 backdrop-blur">
           <div className="flex items-center gap-1 rounded-full border border-border bg-card/60 p-1">
             {[1, 5, 10, 99].map((n) => (
               <button
