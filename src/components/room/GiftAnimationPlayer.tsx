@@ -157,6 +157,7 @@ function GiftFallbackVisual({
 }) {
   const readyOnceRef = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const markReady = useCallback(() => {
     if (readyOnceRef.current) return;
     readyOnceRef.current = true;
@@ -166,29 +167,35 @@ function GiftFallbackVisual({
   useEffect(() => {
     readyOnceRef.current = false;
     setImageFailed(false);
+    setImageLoaded(false);
     if (!image) markReady();
   }, [image, markReady]);
 
   if (image && !imageFailed) {
     return (
-      <span className="relative grid min-h-[34vh] place-items-center">
-        <span
-          className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
-          style={{ fontSize: "10rem" }}
-        >
-          {emoji || "🎁"}
-        </span>
+      <div className="relative grid min-h-[42vh] place-items-center">
+        {!imageLoaded && (
+          <span
+            className="absolute gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+            style={{ fontSize: "8rem" }}
+          >
+            {emoji || "🎁"}
+          </span>
+        )}
         <img
           src={image}
           alt=""
-          onLoad={markReady}
+          onLoad={() => {
+            setImageLoaded(true);
+            markReady();
+          }}
           onError={() => {
             setImageFailed(true);
             markReady();
           }}
-          className="gift-anim-emoji absolute h-[34vh] max-h-[330px] w-auto max-w-[76vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+          className="gift-anim-emoji relative h-[46vh] max-h-[460px] w-auto max-w-[86vw] object-contain drop-shadow-[0_10px_40px_rgba(255,180,60,0.75)]"
         />
-      </span>
+      </div>
     );
   }
 
@@ -213,44 +220,16 @@ function AnimatedGiftImage({
   fallbackEmoji: string;
   fallbackImage: string | null;
 }) {
-  const readyOnceRef = useRef(false);
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    readyOnceRef.current = false;
-    setReady(false);
-    setFailed(false);
-  }, [src]);
-
-  const markReady = useCallback(() => {
-    setReady(true);
-    if (!readyOnceRef.current) {
-      readyOnceRef.current = true;
-      onReady();
-    }
-  }, [onReady]);
-
-  if (failed) {
-    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />;
-  }
-
+  // Route straight through the fallback visual so we get one clean
+  // image render with the emoji only shown while the image is loading
+  // (or if it fails). Prefer the explicit image_url when available.
+  const primary = src || fallbackImage;
   return (
-    <div className="relative grid min-h-[42vh] place-items-center">
-      {!ready && (
-        <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={markReady} />
-      )}
-      <img
-        src={src}
-        alt=""
-        onLoad={markReady}
-        onError={() => {
-          setFailed(true);
-          markReady();
-        }}
-        className={`${ready ? "gift-anim-emoji" : "absolute opacity-0"} h-[52vh] max-h-[520px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]`}
-      />
-    </div>
+    <GiftFallbackVisual
+      emoji={fallbackEmoji}
+      image={primary}
+      onReady={onReady}
+    />
   );
 }
 
