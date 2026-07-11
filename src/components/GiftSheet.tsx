@@ -23,15 +23,16 @@ export type Gift = {
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
 
-const CATEGORY_ORDER = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
+const CATEGORY_ORDER = ["love", "party", "fun", "luxury", "vip", "magic", "legendary", "mythic"] as const;
 const CATEGORY_LABEL: Record<string, string> = {
-  popular: "🔥 Popular",
-  classic: "✨ Classic",
   love: "💖 Love",
+  party: "🎉 Party",
+  fun: "🍦 Fun",
   luxury: "💎 Luxury",
   vip: "👑 VIP",
-  lucky: "🎁 Lucky",
-  premium: "👑 Premium",
+  magic: "✨ Magic",
+  legendary: "🐉 Legendary",
+  mythic: "🏰 Mythic",
 };
 
 export function GiftSheet({
