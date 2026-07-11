@@ -6,10 +6,15 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 
 import {
-  ArrowLeft, Coins, Loader2, CheckCircle2, Smartphone, Building2,
+  ArrowLeft, Loader2, CheckCircle2, Smartphone, Building2,
   CreditCard, Wallet, Sparkles, Crown, Gem, Flame,
 } from "lucide-react";
 import { toast } from "sonner";
+import jalwaCoin from "@/assets/jalwa-coin.png.asset.json";
+
+const CoinIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
+  <img src={jalwaCoin.url} alt="Jalwa coin" className={`${className} drop-shadow-[0_0_6px_rgba(255,200,60,0.6)]`} />
+);
 
 export const Route = createFileRoute("/_authenticated/recharge")({
   component: RechargePage,
