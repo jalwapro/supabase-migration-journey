@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { Mic, Video, Lock, Loader2, ArrowLeft, Radio, Plus, X } from "lucide-react";
+import { Mic, Video, Lock, Loader2, ArrowLeft, Radio, Plus, X, Swords } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/create-room")({
@@ -126,50 +126,65 @@ function CreateRoom() {
         </div>
 
         {/* Type selector cards */}
-        <div className="mt-5 grid grid-cols-2 gap-3 px-4">
+        <div className="mt-5 grid grid-cols-3 gap-3 px-4">
           <button
             onClick={() => {
               setRoomType("voice");
               setSheetOpen(true);
             }}
-            className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
+            className={`relative overflow-hidden rounded-2xl border p-3 text-left transition ${
               type === "voice"
                 ? "border-[color:var(--primary)]/60 bg-gradient-to-br from-[color:var(--primary)]/25 via-card to-card shadow-lg shadow-[color:var(--primary)]/10"
                 : "border-border bg-card/60"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <span className="glow-4d grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground">
-                <Mic className="h-5 w-5" />
-              </span>
-              <div>
-                <div className="text-sm font-bold">Voice Room</div>
-                <div className="text-[11px] text-muted-foreground">Audio party</div>
-              </div>
-            </div>
+            <span className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground">
+              <Mic className="h-4 w-4" />
+            </span>
+            <div className="mt-2 text-xs font-bold">Voice Room</div>
+            <div className="text-[10px] text-muted-foreground">Audio party</div>
           </button>
           <button
             onClick={() => {
               setRoomType("video");
               setSheetOpen(true);
             }}
-            className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
-              type === "video"
+            className={`relative overflow-hidden rounded-2xl border p-3 text-left transition ${
+              type === "video" && seatCount !== 2
                 ? "border-[color:var(--gold)]/60 bg-gradient-to-br from-[color:var(--gold)]/25 via-card to-card shadow-lg shadow-[color:var(--gold)]/10"
                 : "border-border bg-card/60"
             }`}
           >
-            <div className="flex items-center gap-3">
-              <span className="glow-4d grid h-10 w-10 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground">
-                <Video className="h-5 w-5" />
-              </span>
-              <div>
-                <div className="text-sm font-bold">Live Video Room</div>
-                <div className="text-[11px] text-muted-foreground">Camera live</div>
-              </div>
-            </div>
+            <span className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground">
+              <Video className="h-4 w-4" />
+            </span>
+            <div className="mt-2 text-xs font-bold">Live Video</div>
+            <div className="text-[10px] text-muted-foreground">Camera live</div>
+          </button>
+          <button
+            onClick={() => {
+              setType("video");
+              setSeatCount(2);
+              const pk = categoryList.find(
+                (c) => c.slug === "pk" || c.slug === "pk-battle" || /pk/i.test(c.name),
+              );
+              if (pk) setCategoryId(pk.id);
+              setSheetOpen(true);
+            }}
+            className={`relative overflow-hidden rounded-2xl border p-3 text-left transition ${
+              type === "video" && seatCount === 2
+                ? "border-[color:var(--destructive)]/60 bg-gradient-to-br from-[color:var(--destructive)]/25 via-card to-card shadow-lg shadow-[color:var(--destructive)]/10"
+                : "border-border bg-card/60"
+            }`}
+          >
+            <span className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--gold)] text-primary-foreground">
+              <Swords className="h-4 w-4" />
+            </span>
+            <div className="mt-2 text-xs font-bold">PK Battle</div>
+            <div className="text-[10px] text-muted-foreground">Solo camera 1v1</div>
           </button>
         </div>
+
 
         {/* Empty state */}
         <div className="mt-4 px-4">
