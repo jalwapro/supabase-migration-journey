@@ -187,7 +187,21 @@ export function GiftSheet({
     }
     const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
     const royalRose = isRoyalRoseGift(selectedGift.name);
+
+    // Play gift sound INSIDE this click handler so the browser autoplay policy
+    // allows it. Unlocks the audio context for subsequent gift sounds too.
+    if (selectedGift.sound_url) {
+      try {
+        const a = new Audio(selectedGift.sound_url);
+        a.volume = 0.9;
+        void a.play().catch(() => {});
+      } catch {
+        /* noop */
+      }
+    }
+
     window.dispatchEvent(
+
       new CustomEvent("jalwa:gift-sent", {
         detail: {
           key: `local-${selectedGift.id}-${Date.now()}`,
