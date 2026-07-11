@@ -115,8 +115,13 @@ function AnimatedGiftVideo({ src, type, onDone }: { src: string; type: string | 
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
+  const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
@@ -125,16 +130,15 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (!p.local && localUntil > Date.now()) return;
     if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
-    // If nothing is playing, show it right away — don't wait for the
-    // queue-effect roundtrip (which used to swallow the very first gift
-    // in some render orderings). Otherwise append to the queue.
-    setCurrent((cur) => {
-      if (cur) {
-        setQueue((q) => [...q, p]);
-        return cur;
-      }
-      return p;
-    });
+    // If nothing is playing, show it immediately (synchronously via ref
+    // so a rapid-fire second call in the same tick still queues correctly).
+    // Otherwise append to the pending queue.
+    if (currentRef.current) {
+      setQueue((q) => [...q, p]);
+    } else {
+      currentRef.current = p;
+      setCurrent(p);
+    }
   }, []);
 
 
