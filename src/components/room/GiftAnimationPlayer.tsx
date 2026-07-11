@@ -241,10 +241,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               ? supabase.from("profiles").select("avatar").eq("id", r.sender_id).maybeSingle()
               : Promise.resolve({ data: null }),
             r.gift_id
-              ? supabase.from("gifts").select("animation,clip_path,clip_type").eq("id", r.gift_id).maybeSingle()
+              ? supabase.from("gifts").select("animation,clip_path,clip_type,sound_url").eq("id", r.gift_id).maybeSingle()
               : Promise.resolve({ data: null }),
           ]);
-          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null };
+          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null; sound_url?: string | null };
           enqueue({
             key: `ev-${r.id}`,
             senderName: r.sender_name ?? "Guest",
