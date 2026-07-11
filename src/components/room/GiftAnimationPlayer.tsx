@@ -44,7 +44,7 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
-  const webmSrc = resolveWebmFallback(src);
+  
 
   useEffect(() => {
     setReady(false);
@@ -98,7 +98,6 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
         className="gift-anim-video h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150"
         style={{ opacity: ready ? 1 : 0 }}
       >
-        {webmSrc && <source src={webmSrc} type="video/webm" />}
         <source src={src} type="video/mp4" />
       </video>
     </div>
