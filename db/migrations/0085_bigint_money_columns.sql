@@ -132,4 +132,17 @@ BEGIN
   RETURN send_row;
 END $$;
 
+-- Recreate dependent views
+CREATE OR REPLACE VIEW public.room_popularity AS
+SELECT r.id AS room_id,
+       COALESCE(sum(gs.coins_spent), 0::bigint) AS coin_score,
+       COALESCE(sum(gs.quantity), 0::bigint)    AS gift_count,
+       (SELECT count(*) FROM public.room_seat_likes sl WHERE sl.room_id = r.id) AS like_count
+  FROM public.live_rooms r
+  LEFT JOIN public.gift_sends gs ON gs.room_id = r.id
+ GROUP BY r.id;
+
+GRANT SELECT ON public.room_popularity TO anon, authenticated;
+GRANT ALL ON public.room_popularity TO service_role;
+
 COMMIT;
