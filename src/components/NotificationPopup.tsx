@@ -81,7 +81,7 @@ export function NotificationPopup() {
     if (!notif) return null;
     if (isDM && peerId) {
       return (
-        <Button variant="outline" onClick={() => goto("/messages_/$peerId", { peerId })}>
+        <Button variant="outline" onClick={() => goto("/messages/$peerId", { peerId })}>
           <MessageCircle className="mr-1 h-4 w-4" /> Open chat
         </Button>
       );
