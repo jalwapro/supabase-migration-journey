@@ -279,7 +279,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           const [{ data: gift }, { data: sender }, { data: receiver }] = await Promise.all([
             supabase
               .from("gifts")
-              .select("name,emoji,icon,animation,clip_path,clip_type")
+              .select("name,emoji,icon,animation,clip_path,clip_type,sound_url")
               .eq("id", r.gift_id)
               .maybeSingle(),
             supabase.from("profiles").select("username,avatar").eq("id", r.sender_id).maybeSingle(),
@@ -287,7 +287,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           ]);
           const g = (gift ?? {}) as {
             name?: string; emoji?: string; icon?: string; animation?: string;
-            clip_path?: string | null; clip_type?: string | null;
+            clip_path?: string | null; clip_type?: string | null; sound_url?: string | null;
           };
           const s = (sender ?? {}) as { username?: string; avatar?: string | null };
           const rc = (receiver ?? {}) as { username?: string; avatar?: string | null };
@@ -305,6 +305,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             diamonds: r.diamonds_earned ?? 0,
             quantity: r.quantity ?? 1,
             animation: g.animation ?? "pop",
+            soundUrl: g.sound_url ?? null,
           });
         },
       )
