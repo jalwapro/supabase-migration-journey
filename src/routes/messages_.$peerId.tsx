@@ -26,6 +26,8 @@ import { toast } from "sonner";
 import { uploadToUserFolder } from "@/lib/uploads";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
+import { VoiceRecordingTray } from "@/components/chat/VoiceRecordingTray";
+import { VoiceMessage } from "@/components/chat/VoiceMessage";
 
 export const Route = createFileRoute("/messages_/$peerId")({
   component: DmThread,
@@ -72,6 +74,11 @@ function DmThread() {
   const mediaRec = useRef<MediaRecorder | null>(null);
   const recordChunks = useRef<Blob[]>([]);
   const recordStart = useRef<number>(0);
+  const recordStream = useRef<MediaStream | null>(null);
+  const recordCancelled = useRef<boolean>(false);
+  const recordPointerStart = useRef<{ x: number; y: number } | null>(null);
+  const [recordDrag, setRecordDrag] = useState(0); // negative = slide-left toward cancel
+  const [recordStartTs, setRecordStartTs] = useState(0);
   const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const lastTypingSent = useRef<number>(0);
   const peerTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
