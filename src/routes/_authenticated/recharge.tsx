@@ -56,7 +56,7 @@ const METHODS: {
 ];
 
 function RechargePage() {
-  const { user } = useAuth();
+  
   const navigate = useNavigate();
   const qc = useQueryClient();
 
