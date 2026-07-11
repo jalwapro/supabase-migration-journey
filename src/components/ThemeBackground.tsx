@@ -40,6 +40,15 @@ export function ThemeBackground() {
   const [theme, setTheme] = useState<ThemeRow | null>(null);
   const [customBg, setCustomBg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const backgroundReady = !suppressed && (!loading || !!customBg);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.body.classList.toggle("theme-background-active", backgroundReady);
+    return () => {
+      document.body.classList.remove("theme-background-active");
+    };
+  }, [backgroundReady]);
 
   // Check for active custom theme (approved + not expired)
   useEffect(() => {
@@ -126,6 +135,7 @@ export function ThemeBackground() {
 
   // Custom uploaded background takes precedence over shop theme image
   const media = customBg || theme?.bg_image || theme?.preview_url || theme?.animation_url;
+  if (suppressed) return null;
   if (loading && !customBg) return null;
 
   // No custom/shop theme active → render DEFAULT Jalwa branded background.
