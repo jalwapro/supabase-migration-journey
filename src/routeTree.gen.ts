@@ -26,6 +26,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedPrivacyRouteImport } from './routes/_authenticated/privacy'
 import { Route as AuthenticatedPkHistoryRouteImport } from './routes/_authenticated/pk-history'
@@ -166,6 +167,12 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRechargeHistoryRoute =
+  AuthenticatedRechargeHistoryRouteImport.update({
+    id: '/recharge-history',
+    path: '/recharge-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRechargeRoute = AuthenticatedRechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
@@ -491,6 +498,7 @@ export interface FileRoutesByFullPath {
   '/pk-history': typeof AuthenticatedPkHistoryRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
+  '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
@@ -562,6 +570,7 @@ export interface FileRoutesByTo {
   '/pk-history': typeof AuthenticatedPkHistoryRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
+  '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
@@ -637,6 +646,7 @@ export interface FileRoutesById {
   '/_authenticated/pk-history': typeof AuthenticatedPkHistoryRoute
   '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
+  '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
@@ -712,6 +722,7 @@ export interface FileRouteTypes {
     | '/pk-history'
     | '/privacy'
     | '/recharge'
+    | '/recharge-history'
     | '/settings'
     | '/theme-shop'
     | '/vip'
@@ -783,6 +794,7 @@ export interface FileRouteTypes {
     | '/pk-history'
     | '/privacy'
     | '/recharge'
+    | '/recharge-history'
     | '/settings'
     | '/theme-shop'
     | '/vip'
@@ -857,6 +869,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pk-history'
     | '/_authenticated/privacy'
     | '/_authenticated/recharge'
+    | '/_authenticated/recharge-history'
     | '/_authenticated/settings'
     | '/_authenticated/theme-shop'
     | '/_authenticated/vip'
@@ -1045,6 +1058,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recharge-history': {
+      id: '/_authenticated/recharge-history'
+      path: '/recharge-history'
+      fullPath: '/recharge-history'
+      preLoaderRoute: typeof AuthenticatedRechargeHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/recharge': {
@@ -1559,6 +1579,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPkHistoryRoute: typeof AuthenticatedPkHistoryRoute
   AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
+  AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
@@ -1582,6 +1603,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPkHistoryRoute: AuthenticatedPkHistoryRoute,
   AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
+  AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
