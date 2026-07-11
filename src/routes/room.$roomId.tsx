@@ -1334,8 +1334,6 @@ function RoomPage() {
                         onLike={() => onSeatTap(i)}
                         glowing={!!glowSeats[i]}
                         locked={lockedSeats.includes(i)}
-                        giftPoints={m ? giftPoints[m.user_id] ?? 0 : 0}
-                        receivedGift={!!(m && recentGiftUsers[m.user_id])}
                         isKing={!!(m && kingUserId === m.user_id)}
                         onEmptyManage={
                           isHost || isModerator
@@ -2596,8 +2594,6 @@ function Seat({
   glowing,
   locked,
   onEmptyManage,
-  giftPoints = 0,
-  receivedGift = false,
   isKing = false,
   currentUserId,
   localMuted,
@@ -2616,8 +2612,6 @@ function Seat({
   glowing?: boolean;
   locked?: boolean;
   onEmptyManage?: () => void;
-  giftPoints?: number;
-  receivedGift?: boolean;
   isKing?: boolean;
   currentUserId?: string;
   localMuted?: boolean;
@@ -2831,22 +2825,7 @@ function Seat({
         )}
         {/* Gift sparkle burst removed per user request */}
       </button>
-      {/* When occupied, hide "No.X" and show the diamond points box in its place */}
-      {member ? (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onOpenGifters?.(); }}
-          className={`rounded-full px-2 py-[2px] text-[10px] font-black leading-none backdrop-blur transition-transform active:scale-95 ${
-            receivedGift ? "scale-125" : ""
-          } ${
-            giftPoints > 0
-              ? "bg-gradient-to-r from-[color:var(--gold)]/90 to-orange-400 text-black shadow-[0_0_10px_rgba(255,200,60,0.7)]"
-              : "bg-black/70 text-white/85"
-          }`}
-        >
-          {giftPoints >= 1000 ? `${(giftPoints / 1000).toFixed(1)}k` : giftPoints}
-        </button>
-      ) : (
+      {member ? null : (
         <span className={`text-[10px] font-black leading-tight ${
           hostAwayFromSeat ? "text-red-400" : isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"
         }`}>
