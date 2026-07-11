@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 
+const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+
 
 type ThemeRow = {
   id: string;
@@ -146,10 +148,14 @@ export function ThemeBackground() {
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       >
         <img
-          src={defaultBgAsset.url}
+          src={DEFAULT_BG_URL}
           alt=""
           draggable={false}
           decoding="async"
+          onError={(e) => {
+            const img = e.currentTarget;
+            if (img.src !== defaultBgAsset.url) img.src = defaultBgAsset.url;
+          }}
           className="h-full w-full object-cover"
         />
         <div className="absolute inset-0 bg-black" style={{ opacity: 1 - bgVisibility / 100 }} />

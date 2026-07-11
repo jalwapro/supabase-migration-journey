@@ -58,6 +58,8 @@ import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 
+const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+
 export const Route = createFileRoute("/room/$roomId")({
   component: RoomPage,
 });
@@ -1151,7 +1153,7 @@ function RoomPage() {
     >
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
-        const bg = hostBg || defaultBgAsset.url;
+        const bg = hostBg || DEFAULT_BG_URL;
         const overlay = hostBg ? 0.55 : 1 - defaultBgVisibility / 100;
         return (
           <>
@@ -1160,6 +1162,10 @@ function RoomPage() {
               alt=""
               aria-hidden
               draggable={false}
+              onError={(e) => {
+                const img = e.currentTarget;
+                if (!hostBg && img.src !== defaultBgAsset.url) img.src = defaultBgAsset.url;
+              }}
               className="pointer-events-none absolute inset-0 h-full w-full object-cover"
             />
             <div className="pointer-events-none absolute inset-0 bg-black" style={{ opacity: overlay }} />
