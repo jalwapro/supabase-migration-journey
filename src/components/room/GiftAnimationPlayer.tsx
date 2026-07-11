@@ -488,8 +488,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
       aria-live="polite"
     >
-      {/* Full-screen backdrop so seats/room UI don't show through the gift */}
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
+      {/* Subtle vignette only — keep the room visible behind the gift */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
       {/* particles removed */}
 
       {/* sender chip */}
