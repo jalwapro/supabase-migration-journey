@@ -23,8 +23,15 @@ type Play = {
   diamonds: number;
   quantity: number;
   animation: string;
+  soundUrl?: string | null;
   local?: boolean;
 };
+
+function resolveSoundUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
+  return url;
+}
 
 const PLAY_MS = 4200;
 const VIDEO_PLAY_MS = 12000;
