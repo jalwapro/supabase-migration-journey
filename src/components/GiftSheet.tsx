@@ -185,6 +185,7 @@ export function GiftSheet({
       return;
     }
     const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
+    const royalRose = isRoyalRoseGift(selectedGift.name);
     window.dispatchEvent(
       new CustomEvent("jalwa:gift-sent", {
         detail: {
@@ -196,10 +197,10 @@ export function GiftSheet({
           receiverName: firstReceiver?.username ?? "Host",
           receiverAvatar: firstReceiver?.avatar ?? null,
           giftName: selectedGift.name,
-          giftEmoji: selectedGift.emoji ?? selectedGift.icon ?? "🎁",
-          giftImageUrl: selectedGift.image_url ?? null,
-          giftClipUrl: selectedGift.clip_path ?? selectedGift.image_url ?? null,
-          giftClipType: selectedGift.clip_path ? selectedGift.clip_type : selectedGift.image_url ? "image" : null,
+          giftEmoji: royalRose ? "" : selectedGift.emoji ?? selectedGift.icon ?? "🎁",
+          giftImageUrl: royalRose ? ROYAL_ROSE_THUMB_URL : selectedGift.image_url ?? null,
+          giftClipUrl: royalRose ? ROYAL_ROSE_MP4_URL : selectedGift.clip_path ?? selectedGift.image_url ?? null,
+          giftClipType: royalRose ? "mp4" : selectedGift.clip_path ? selectedGift.clip_type : selectedGift.image_url ? "image" : null,
           coins: price(selectedGift) * qty,
           diamonds: selectedGift.diamonds_value * qty,
           quantity: qty,

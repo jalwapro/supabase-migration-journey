@@ -78,6 +78,7 @@ function AnimatedGiftVideo({
   onDone,
   fallbackEmoji,
   fallbackImage,
+  suppressEmojiFallback = false,
 }: {
   src: string;
   type: string | null;
@@ -85,6 +86,7 @@ function AnimatedGiftVideo({
   onDone: () => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
+  suppressEmojiFallback?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -130,13 +132,13 @@ function AnimatedGiftVideo({
   }, [onReady, tryPlay]);
 
   if (failed) {
-    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />;
+    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />;
   }
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
       {!ready && (
-        <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />
+        <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />
       )}
       <video
         key={src}
@@ -166,10 +168,12 @@ function GiftFallbackVisual({
   emoji,
   image,
   onReady,
+  suppressEmoji = false,
 }: {
   emoji: string;
   image: string | null;
   onReady: () => void;
+  suppressEmoji?: boolean;
 }) {
   const readyOnceRef = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
@@ -207,6 +211,10 @@ function GiftFallbackVisual({
     );
   }
 
+  if (suppressEmoji) {
+    return null;
+  }
+
   return (
     <span
       className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
@@ -222,11 +230,13 @@ function AnimatedGiftImage({
   onReady,
   fallbackEmoji,
   fallbackImage,
+  suppressEmojiFallback = false,
 }: {
   src: string;
   onReady: () => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
+  suppressEmojiFallback?: boolean;
 }) {
   // Route straight through the fallback visual so we get one clean
   // image render with the emoji only shown while the image is loading
@@ -237,6 +247,7 @@ function AnimatedGiftImage({
       emoji={fallbackEmoji}
       image={primary}
       onReady={onReady}
+      suppressEmoji={suppressEmojiFallback}
     />
   );
 }
@@ -506,6 +517,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onDone={clearCurrent}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
+            suppressEmojiFallback={isRoyalRose}
           />
         ) : hasSvg ? (
           <AnimatedGiftImage
@@ -513,9 +525,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onReady={markCurrentReady}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
+            suppressEmojiFallback={isRoyalRose}
           />
         ) : (
-          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} />
+          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} />
         )}
         <div className="mt-2 flex items-center gap-2 gift-anim-caption">
           <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
