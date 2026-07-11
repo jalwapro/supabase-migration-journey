@@ -56,6 +56,7 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
+import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay } from "@/components/room/PkBattleSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
