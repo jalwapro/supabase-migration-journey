@@ -1730,7 +1730,8 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
-      <PkIncomingInvite />
+      <PkIncomingInvite currentRoomId={roomId} />
+      <PkChallengerToasts currentRoomId={roomId} />
       {room.data?.active_pk_match_id && (
         <PkMatchOverlay
           matchId={room.data.active_pk_match_id}
