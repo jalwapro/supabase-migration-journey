@@ -302,12 +302,19 @@ function MePage() {
           )}
           <Row to="/gallery" icon="📸" title="Gallery" sub="Manage your photos" />
           <Row to="/wallet" icon="💰" title="Wallet & Coins" sub="Recharge your balance" />
+          <Row to="/recharge" icon="🧾" title="Recharge History" sub="Your top-up requests & status" />
           <Row to="/withdraw" icon="💎" title="Withdraw Points" sub="Cash out your earnings" />
           <Row to="/theme-shop" icon="🛍️" title="Shop" sub="Cars, frames, rings, entrances & more" />
-          <Row to="/vip" icon="👑" title="VIP Membership" sub="Upgrade to VIP" />
+          <Row to="/custom-theme" icon="🎨" title="Custom Theme" sub="Design your own room background" />
+          <Row to="/vip" icon="👑" title="VIP Membership" sub="Upgrade & unlock milestone rewards" />
+          <Row to="/rank" icon="🏆" title="Rankings" sub="Top hosts, gifters & wealth" />
+          <Row to="/games" icon="🎮" title="Games" sub="Daily spin, lucky spin & more" />
           <Row to="/my-rooms" icon="🏠" title="My Rooms" sub="Room history, points & active time" />
+          <Row to="/create-room" icon="🎙️" title="Go Live" sub="Start a voice room now" />
           <Row to="/pk-history" icon="⚔️" title="PK History" sub="Battle wins & losses" />
           <Row to="/friends" icon="👥" title="Friends" sub="Followers & following" />
+          <Row to="/notifications" icon="🔔" title="Notifications" sub="Gifts, follows & room alerts" />
+          <Row to="/settings/notifications" icon="🎚️" title="Notification Settings" sub="Choose what alerts you get" />
           <Row to="/blocked" icon="🚫" title="Blocked Users" sub="Manage blocked list" />
           <Row to="/settings" icon="⚙️" title="Settings" sub="Profile, password, privacy" />
           <Row to="/privacy" icon="🔒" title="Privacy Policy" sub="How we protect your data" />
