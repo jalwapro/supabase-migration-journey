@@ -180,8 +180,9 @@ function CreateRoom() {
             <span className="glow-4d grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--gold)] text-primary-foreground">
               <Swords className="h-4 w-4" />
             </span>
-            <div className="mt-2 text-xs font-bold">PK Battle</div>
-            <div className="text-[10px] text-muted-foreground">Solo camera 1v1</div>
+            <div className="mt-2 text-xs font-bold">Live Match</div>
+            <div className="text-[10px] text-muted-foreground">PK camera 1v1</div>
+
           </button>
         </div>
 
