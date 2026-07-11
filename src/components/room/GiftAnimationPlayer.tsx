@@ -29,12 +29,13 @@ type Play = {
 
 function resolveSoundUrl(url: string | null | undefined) {
   if (!url) return null;
-  if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
+  // Use relative URL so it works on preview + published origins alike.
   return url;
 }
 
-const PLAY_MS = 4200;
-const VIDEO_PLAY_MS = 12000;
+const PLAY_MS = 3200;
+const VIDEO_PLAY_MS = 6000;
+
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
