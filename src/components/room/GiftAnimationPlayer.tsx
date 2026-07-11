@@ -127,7 +127,7 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
           tryPlay();
         }}
         onError={() => setFailed(true)}
-        className="gift-anim-video h-[72vh] max-h-[760px] w-auto max-w-[100vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        className="gift-anim-video h-[38vh] max-h-[380px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
         style={{ visibility: ready ? "visible" : "hidden" }}
       >
         {webmSrc && <source src={webmSrc} type="video/webm" />}
