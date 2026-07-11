@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import royalRedRoseAlphaAsset from "@/assets/gifts/royal_red_rose.alpha.webm.asset.json";
 
 /**
  * TikTok-style full-screen gift animation player.
@@ -29,7 +28,6 @@ type Play = {
 
 const PLAY_MS = 4200;
 const VIDEO_PLAY_MS = 12000;
-const ROYAL_RED_ROSE_ALPHA_URL = royalRedRoseAlphaAsset.url;
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
@@ -38,18 +36,12 @@ function resolveGiftClipUrl(url: string | null) {
 }
 
 function getEffectiveGiftClip(p: Play) {
-  if (p.giftName.trim().toLowerCase() === "royal red rose") {
-    return {
-      url: resolveGiftClipUrl(ROYAL_RED_ROSE_ALPHA_URL),
-      type: "webm",
-    };
-  }
-
   return {
     url: resolveGiftClipUrl(p.giftClipUrl),
     type: p.giftClipType,
   };
 }
+
 
 
 function giftSignature(p: Play) {
