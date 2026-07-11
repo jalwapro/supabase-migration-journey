@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#00e5ff" stop-opacity="1"/>
+      <stop offset="45%" stop-color="#00e5ff" stop-opacity="0.55"/>
+      <stop offset="80%" stop-color="#c084fc" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#c084fc" stop-opacity="0"/>
+      <stop offset="85%" stop-color="#c084fc" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#c084fc" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="b1"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  
+  <circle cx="200" cy="200" r="180" fill="url(#g1)"/>
+  <g transform="translate(200 200)" stroke="#c084fc" stroke-width="2" opacity="0.85">
+    <animateTransform attributeName="transform" type="rotate" from="0 0 0" to="360 0 0" dur="10s" repeatCount="indefinite" additive="sum"/>
+    <line x1="0" y1="-160" x2="0" y2="-100"/>
+    <line x1="113" y1="-113" x2="70" y2="-70"/>
+    <line x1="160" y1="0" x2="100" y2="0"/>
+    <line x1="113" y1="113" x2="70" y2="70"/>
+    <line x1="0" y1="160" x2="0" y2="100"/>
+    <line x1="-113" y1="113" x2="-70" y2="70"/>
+    <line x1="-160" y1="0" x2="-100" y2="0"/>
+    <line x1="-113" y1="-113" x2="-70" y2="-70"/>
+  </g>
+  
+  
+  
+  <text x="200" y="245" font-size="196" text-anchor="middle" dominant-baseline="middle">🕰️
+    <animateTransform attributeName="transform" type="scale" values="1;1.08;1" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+    <animate attributeName="y" values="245;235;245" dur="1.6s" repeatCount="indefinite"/>
+  </text>
+</svg>
