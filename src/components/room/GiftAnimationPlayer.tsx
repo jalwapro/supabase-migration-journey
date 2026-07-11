@@ -36,6 +36,8 @@ function resolveSoundUrl(url: string | null | undefined) {
 
 const PLAY_MS = 3200;
 const VIDEO_PLAY_MS = 3800;
+const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4";
+const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
 
 
 function resolveGiftClipUrl(url: string | null) {
@@ -45,6 +47,13 @@ function resolveGiftClipUrl(url: string | null) {
 }
 
 function getEffectiveGiftClip(p: Play) {
+  if (p.giftName.trim().toLowerCase() === "royal rose") {
+    return {
+      url: ROYAL_ROSE_MP4_URL,
+      type: "mp4",
+    };
+  }
+
   return {
     url: resolveGiftClipUrl(p.giftClipUrl),
     type: p.giftClipType,
@@ -398,7 +407,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const giftClipUrl = giftClip.url;
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
   const hasSvg = !!giftClipUrl && !hasVideo;
-  const fallbackImage = current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
+  const fallbackImage = current?.giftName.trim().toLowerCase() === "royal rose"
+    ? ROYAL_ROSE_THUMB_URL
+    : current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
 
   const clearCurrent = useCallback(() => {
     currentRef.current = null;
