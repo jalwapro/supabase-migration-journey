@@ -1946,7 +1946,14 @@ function RoomPage() {
           setVideoSettingsOpen(false);
           void leaveRoom();
         }}
-        onPk={() => toast.info("PK Battle — coming soon")}
+        onPk={() => {
+          setVideoSettingsOpen(false);
+          if (!isHost) {
+            toast.info("Only the host can start a PK match");
+            return;
+          }
+          setPkOpen(true);
+        }}
       />
 
       <SeatActionSheet
