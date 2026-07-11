@@ -56,8 +56,9 @@ export function useGlobalRealtime() {
     if (!user) return;
     const uid = user.id;
 
-    // Silently register FCM token if permission is already granted.
-    void import("@/lib/fcm-client").then((m) => m.initFcmIfGranted(uid)).catch(() => {});
+    // Auto-enable notifications on first login (prompts permission if needed).
+    void import("@/lib/fcm-client").then((m) => m.autoEnableFcm(uid)).catch(() => {});
+
 
 
     // Split into a few channels so a single bad filter can't kill everything.
