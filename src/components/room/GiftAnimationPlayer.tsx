@@ -293,7 +293,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               animationDelay: `${(i % 5) * 40}ms`,
             } as React.CSSProperties}
           >
-            {i % 3 === 0 ? "✨" : i % 3 === 1 ? "⭐" : "💫"}
+            {i % 2 === 0 ? "✨" : "💫"}
           </span>
         );
       })}
