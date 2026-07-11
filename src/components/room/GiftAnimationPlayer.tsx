@@ -120,6 +120,9 @@ function AnimatedGiftVideo({
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
+      {!ready && (
+        <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />
+      )}
       <video
         ref={videoRef}
         autoPlay
@@ -168,16 +171,24 @@ function GiftFallbackVisual({
 
   if (image && !imageFailed) {
     return (
-      <img
-        src={image}
-        alt=""
-        onLoad={markReady}
-        onError={() => {
-          setImageFailed(true);
-          markReady();
-        }}
-        className="gift-anim-emoji h-[34vh] max-h-[330px] w-auto max-w-[76vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
-      />
+      <span className="relative grid min-h-[34vh] place-items-center">
+        <span
+          className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+          style={{ fontSize: "10rem" }}
+        >
+          {emoji || "🎁"}
+        </span>
+        <img
+          src={image}
+          alt=""
+          onLoad={markReady}
+          onError={() => {
+            setImageFailed(true);
+            markReady();
+          }}
+          className="gift-anim-emoji absolute h-[34vh] max-h-[330px] w-auto max-w-[76vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+        />
+      </span>
     );
   }
 
