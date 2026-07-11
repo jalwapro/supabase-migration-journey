@@ -190,14 +190,6 @@ function GiftFallbackVisual({
   if (image && !imageFailed) {
     return (
       <div className="relative grid min-h-[42vh] place-items-center">
-        {!imageLoaded && (
-          <span
-            className="absolute gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
-            style={{ fontSize: "8rem" }}
-          >
-            {emoji || "🎁"}
-          </span>
-        )}
         <img
           src={image}
           alt=""
