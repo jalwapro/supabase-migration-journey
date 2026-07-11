@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="deGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff6a8" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#ffb300" stop-opacity="0.7"/>
+      <stop offset="80%" stop-color="#7a3b00" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="deRing" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#00d4ff" stop-opacity="0"/>
+      <stop offset="85%" stop-color="#00d4ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#00d4ff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="deBlur"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <!-- pulsing gold aura -->
+  <circle cx="200" cy="200" r="190" fill="url(#deGlow)">
+    <animate attributeName="opacity" values="0.55;1;0.55" dur="2.2s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="scale" values="0.9;1.05;0.9" dur="2.2s" repeatCount="indefinite" additive="sum"/>
+  </circle>
+
+  <!-- rotating rune ring -->
+  <g transform="translate(200 200)">
+    <circle r="150" fill="none" stroke="url(#deRing)" stroke-width="6" filter="url(#deBlur)">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="10s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="120" fill="none" stroke="#ffd54a" stroke-width="1.5" stroke-dasharray="4 10" opacity="0.85">
+      <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="14s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="90" fill="none" stroke="#fff2b0" stroke-width="1" stroke-dasharray="2 8" opacity="0.7">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="7s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <!-- lightning bolts -->
+  <g stroke="#fff6c0" stroke-width="2" fill="none" opacity="0.9" filter="url(#deBlur)">
+    <polyline points="90,80 120,140 100,160 140,220">
+      <animate attributeName="opacity" values="0;1;0" dur="0.6s" repeatCount="indefinite"/>
+    </polyline>
+    <polyline points="310,90 285,150 305,170 270,230">
+      <animate attributeName="opacity" values="0;1;0" dur="0.7s" begin="0.3s" repeatCount="indefinite"/>
+    </polyline>
+  </g>
+
+  <!-- dragon emperor -->
+  <text x="200" y="245" font-size="200" text-anchor="middle" dominant-baseline="middle">
+    🐉
+    <animateTransform attributeName="transform" type="scale" values="1;1.06;1" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+    <animate attributeName="y" values="245;238;245" dur="1.6s" repeatCount="indefinite"/>
+  </text>
+
+  <!-- floating diamonds & coins -->
+  <g font-size="22" text-anchor="middle">
+    <text x="60" y="120">💎<animate attributeName="y" values="120;90;120" dur="3s" repeatCount="indefinite"/></text>
+    <text x="340" y="140">💎<animate attributeName="y" values="140;110;140" dur="3.4s" repeatCount="indefinite"/></text>
+    <text x="70" y="290">🪙<animate attributeName="y" values="290;260;290" dur="2.8s" repeatCount="indefinite"/></text>
+    <text x="330" y="300">🪙<animate attributeName="y" values="300;270;300" dur="3.2s" repeatCount="indefinite"/></text>
+    <text x="200" y="60">✨<animate attributeName="opacity" values="0.3;1;0.3" dur="1.6s" repeatCount="indefinite"/></text>
+    <text x="120" y="360">✨<animate attributeName="opacity" values="1;0.3;1" dur="1.4s" repeatCount="indefinite"/></text>
+    <text x="280" y="360">✨<animate attributeName="opacity" values="0.3;1;0.3" dur="1.8s" repeatCount="indefinite"/></text>
+  </g>
+</svg>
