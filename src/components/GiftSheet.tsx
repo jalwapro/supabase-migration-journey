@@ -150,6 +150,8 @@ export function GiftSheet({
           key: `local-${selectedGift.id}-${Date.now()}`,
           senderName: profile?.username ?? "Guest",
           senderAvatar: profile?.avatar ?? null,
+          receiverId: firstReceiver?.id ?? null,
+          receiverIds: targets,
           receiverName: firstReceiver?.username ?? "Host",
           receiverAvatar: firstReceiver?.avatar ?? null,
           giftName: selectedGift.name,
