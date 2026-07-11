@@ -680,81 +680,116 @@ function DmThread() {
             className="hidden"
             onChange={pickAttachment}
           />
-          <div className="flex items-end gap-2">
-            {/* Premium pill wrapper with emoji + input + attach icons inside */}
-            <div className="relative flex min-w-0 flex-1 items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-card/70 pl-1.5 pr-1 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)] focus-within:border-[color:var(--primary)]/70 focus-within:shadow-[0_0_0_3px_rgba(236,72,153,0.15)] transition-all">
+          {recording ? (
+            <div className="flex items-center gap-2">
+              <div
+                className="flex-1"
+                style={{ transform: `translateX(${Math.min(0, recordDrag)}px)`, opacity: Math.max(0.4, 1 - Math.abs(Math.min(0, recordDrag)) / 220) }}
+              >
+                <VoiceRecordingTray
+                  stream={recordStream.current}
+                  startTs={recordStartTs}
+                  onCancel={() => stopRecord(true)}
+                />
+              </div>
               <button
                 type="button"
-                onClick={() => setEmojiOpen(true)}
-                disabled={attachBusy || recording}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 disabled:opacity-40 transition"
-                aria-label="Animated emoji"
+                onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId); recordPointerStart.current = { x: e.clientX, y: e.clientY }; }}
+                onPointerMove={(e) => {
+                  const s = recordPointerStart.current;
+                  if (!s) return;
+                  const dx = e.clientX - s.x;
+                  setRecordDrag(dx < 0 ? dx : 0);
+                  if (dx < -140) stopRecord(true);
+                }}
+                onPointerUp={(e) => {
+                  e.preventDefault();
+                  const s = recordPointerStart.current;
+                  const dx = s ? e.clientX - s.x : 0;
+                  stopRecord(dx < -80);
+                }}
+                onPointerCancel={() => stopRecord(true)}
+                aria-label="Release to send, slide left to cancel"
+                className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-red-500 via-[color:var(--primary)] to-red-500 text-white shadow-[0_6px_20px_-4px_rgba(239,68,68,0.6)] transition"
               >
-                <Smile className="h-[18px] w-[18px]" />
-              </button>
-              <input
-                value={text}
-                onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
-                onKeyDown={(e) => e.key === "Enter" && sendText()}
-                placeholder={recording ? "Recording…" : "Message"}
-                disabled={recording}
-                className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[15px] placeholder:text-muted-foreground/70 outline-none disabled:opacity-60"
-              />
-              <button
-                type="button"
-                onClick={() => setShowAlbum(true)}
-                disabled={attachBusy || recording}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--gold)] hover:bg-[color:var(--gold)]/10 disabled:opacity-40 transition"
-                aria-label="Private album"
-                title="Private album se share karo"
-              >
-                <Lock className="h-[16px] w-[16px]" />
-              </button>
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={attachBusy || recording}
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40 transition"
-                aria-label="Attach"
-              >
-                {attachBusy ? <Loader2 className="h-[16px] w-[16px] animate-spin" /> : <Paperclip className="h-[16px] w-[16px]" />}
-              </button>
-            </div>
-
-            {/* Premium send / mic button */}
-            {text.trim() ? (
-              <button
-                onClick={sendText}
-                aria-label="Send"
-                className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)] text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.6)] active:scale-95 transition"
-              >
-                <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                <span className="absolute inset-0 rounded-full ring-2 ring-inset ring-white/30 animate-pulse" />
                 <Send className="h-[18px] w-[18px] translate-x-[1px]" />
               </button>
-            ) : (
-              <button
-                type="button"
-                onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId); void startRecord(); }}
-                onPointerUp={(e) => { e.preventDefault(); stopRecord(); }}
-                onPointerCancel={() => stopRecord()}
-                onPointerLeave={() => { if (recording) stopRecord(); }}
-                aria-label={recording ? "Release to send" : "Hold to record"}
-                className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition ${
-                  recording
-                    ? "bg-red-500 animate-pulse"
-                    : "bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)]"
-                }`}
-              >
-                <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
-                {recording ? <Square className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
-              </button>
-            )}
-          </div>
-          {recording && (
+            </div>
+          ) : (
+            <div className="flex items-end gap-2">
+              {/* Premium pill wrapper with emoji + input + attach icons inside */}
+              <div className="relative flex min-w-0 flex-1 items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-card/70 pl-1.5 pr-1 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)] focus-within:border-[color:var(--primary)]/70 focus-within:shadow-[0_0_0_3px_rgba(236,72,153,0.15)] transition-all">
+                <button
+                  type="button"
+                  onClick={() => setEmojiOpen(true)}
+                  disabled={attachBusy}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 disabled:opacity-40 transition"
+                  aria-label="Animated emoji"
+                >
+                  <Smile className="h-[18px] w-[18px]" />
+                </button>
+                <input
+                  value={text}
+                  onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
+                  onKeyDown={(e) => e.key === "Enter" && sendText()}
+                  placeholder="Message"
+                  className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[15px] placeholder:text-muted-foreground/70 outline-none disabled:opacity-60"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowAlbum(true)}
+                  disabled={attachBusy}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--gold)] hover:bg-[color:var(--gold)]/10 disabled:opacity-40 transition"
+                  aria-label="Private album"
+                  title="Private album se share karo"
+                >
+                  <Lock className="h-[16px] w-[16px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={attachBusy}
+                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40 transition"
+                  aria-label="Attach"
+                >
+                  {attachBusy ? <Loader2 className="h-[16px] w-[16px] animate-spin" /> : <Paperclip className="h-[16px] w-[16px]" />}
+                </button>
+              </div>
+
+              {text.trim() ? (
+                <button
+                  onClick={sendText}
+                  aria-label="Send"
+                  className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)] text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.6)] active:scale-95 transition"
+                >
+                  <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                  <Send className="h-[18px] w-[18px] translate-x-[1px]" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId);
+                    recordPointerStart.current = { x: e.clientX, y: e.clientY };
+                    void startRecord();
+                  }}
+                  aria-label="Hold to record"
+                  className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)]"
+                >
+                  <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                  <Mic className="h-[18px] w-[18px]" />
+                </button>
+              )}
+            </div>
+          )}
+          {recording && recordDrag < -20 && (
             <p className="mt-1 text-center text-[10px] font-semibold text-red-400">
-              ● Recording… release to send
+              ← Slide to cancel
             </p>
           )}
+
         </div>
 
       </div>
