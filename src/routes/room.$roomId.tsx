@@ -129,6 +129,13 @@ function shortRoomCode(id: string) {
   return String(num).padStart(8, "0");
 }
 
+function formatGiftPoints(points: number) {
+  const safe = Math.max(0, Math.floor(Number(points) || 0));
+  if (safe >= 1_000_000) return `${(safe / 1_000_000).toFixed(safe >= 10_000_000 ? 0 : 1)}M`;
+  if (safe >= 1_000) return `${(safe / 1_000).toFixed(safe >= 10_000 ? 0 : 1)}K`;
+  return safe.toLocaleString();
+}
+
 // (Removed unused QUICK_GIFTS strip — it was inserting a chat row with
 // kind:"gift" without charging the sender or crediting the receiver.
 // All real gifts flow through GiftSheet → send_gift RPC.)
@@ -1343,6 +1350,7 @@ function RoomPage() {
                   member: m,
                   remote,
                   fallbackUser: fallback,
+                  giftPoints: giftPoints[m?.user_id ?? (isHostSeat ? r.host_id : "")] ?? 0,
                   onClaim: () => void takeSeat(i),
                   onLike: () => void onSeatTap(i),
                   likeCount: seatLikes[i] ?? 0,
@@ -1384,6 +1392,8 @@ function RoomPage() {
                         onClaim={() => takeSeat(i)}
                         likeCount={seatLikes[i] ?? 0}
                         onLike={() => onSeatTap(i)}
+                        giftPoints={giftPoints[m?.user_id ?? (isHostSeat ? r.host_id : "")] ?? 0}
+                        recentlyGifted={!!recentGiftUsers[m?.user_id ?? (isHostSeat ? r.host_id : "")]}
                         glowing={!!glowSeats[i]}
                         locked={lockedSeats.includes(i)}
                         isKing={!!(m && kingUserId === m.user_id)}
@@ -2083,6 +2093,7 @@ type VideoSeatData = {
   member?: Member;
   remote?: RemoteUser;
   fallbackUser: { username: string | null; avatar: string | null; frame?: string | null } | null;
+  giftPoints: number;
   onClaim: () => void;
   onLike: () => void;
   likeCount: number;
@@ -2162,7 +2173,7 @@ function VideoTile({
   coverUrl: string | null;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
-  const { member, remote, isHostSeat, fallbackUser, onClaim, onLike, index, likeCount, currentUserId, localMuted } = data;
+  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted } = data;
 
   useEffect(() => {
     if (remote?.videoTrack && videoRef.current) {
@@ -2231,8 +2242,13 @@ function VideoTile({
           </span>
         </span>
         {member && (
-          <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white/90 backdrop-blur">
-            <Heart className="h-2.5 w-2.5 text-rose-400" /> {likeCount}
+          <span className="flex items-center gap-1">
+            <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white/90 backdrop-blur">
+              <Gift className="h-2.5 w-2.5 text-[color:var(--gold)]" /> {formatGiftPoints(giftPoints)}
+            </span>
+            <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white/90 backdrop-blur">
+              <Heart className="h-2.5 w-2.5 text-rose-400" /> {likeCount}
+            </span>
           </span>
         )}
       </div>
@@ -2642,6 +2658,8 @@ function Seat({
   onClaim,
   likeCount,
   onLike,
+  giftPoints,
+  recentlyGifted,
   videoStyle,
   glowing,
   locked,
@@ -2660,6 +2678,8 @@ function Seat({
   onClaim: () => void;
   likeCount: number;
   onLike: () => void;
+  giftPoints?: number;
+  recentlyGifted?: boolean;
   videoStyle?: boolean;
   glowing?: boolean;
   locked?: boolean;
@@ -2877,11 +2897,27 @@ function Seat({
         )}
         {/* Gift sparkle burst removed per user request */}
       </button>
-      {member ? null : (
+      {member ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpenGifters?.();
+          }}
+          className={`max-w-full rounded-full border px-1.5 py-[1px] text-[9px] font-black leading-tight shadow-sm backdrop-blur ${
+            recentlyGifted
+              ? "animate-pulse border-[color:var(--gold)]/70 bg-[color:var(--gold)]/25 text-[color:var(--gold)]"
+              : "border-[color:var(--gold)]/35 bg-black/55 text-[color:var(--gold)]"
+          }`}
+          aria-label={`Gift points ${formatGiftPoints(giftPoints ?? 0)}`}
+        >
+          🎁 {formatGiftPoints(giftPoints ?? 0)}
+        </button>
+      ) : (
         <span className={`text-[10px] font-black leading-tight ${
           hostAwayFromSeat ? "text-red-400" : isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"
         }`}>
-          {hostAwayFromSeat ? "Host" : label}
+          {hostAwayFromSeat && (giftPoints ?? 0) > 0 ? `🎁 ${formatGiftPoints(giftPoints ?? 0)}` : hostAwayFromSeat ? "Host" : label}
         </span>
       )}
     </div>
