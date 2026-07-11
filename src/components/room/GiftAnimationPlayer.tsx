@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
  * Plays incoming gifts one-by-one as a rich full-screen animation with:
  *  - Sender chip (top-left)
  *  - Big gift clip (SVG/MP4) or emoji in the center
- *  - Receiver DP with a +diamonds "points" badge below
+ *  - Receiver DP below the gift
  */
 
 type Play = {
@@ -48,13 +48,25 @@ function giftSignature(p: Play) {
   return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-function AnimatedGiftVideo({ src, type, onDone }: { src: string; type: string | null; onDone: () => void }) {
+function AnimatedGiftVideo({
+  src,
+  type,
+  onReady,
+  onDone,
+}: {
+  src: string;
+  type: string | null;
+  onReady: () => void;
+  onDone: () => void;
+}) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const readyOnceRef = useRef(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   
 
   useEffect(() => {
+    readyOnceRef.current = false;
     setReady(false);
     setFailed(false);
     const video = videoRef.current;
@@ -80,6 +92,15 @@ function AnimatedGiftVideo({ src, type, onDone }: { src: string; type: string | 
     });
   }, []);
 
+  const markReady = useCallback(() => {
+    setReady(true);
+    if (!readyOnceRef.current) {
+      readyOnceRef.current = true;
+      onReady();
+    }
+    tryPlay();
+  }, [onReady, tryPlay]);
+
   if (failed) {
     return null;
   }
@@ -93,22 +114,47 @@ function AnimatedGiftVideo({ src, type, onDone }: { src: string; type: string | 
         playsInline
         disablePictureInPicture
         preload="auto"
-        onLoadedData={() => {
-          setReady(true);
-          tryPlay();
+        onLoadedData={markReady}
+        onCanPlay={markReady}
+        onError={() => {
+          setFailed(true);
+          onReady();
         }}
-        onCanPlay={() => {
-          setReady(true);
-          tryPlay();
-        }}
-        onError={() => setFailed(true)}
         onEnded={onDone}
-        className="gift-anim-video h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150"
+        className={`${ready ? "gift-anim-video" : ""} h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
         style={{ opacity: ready ? 1 : 0 }}
       >
         <source src={src} type={type === "webm" ? "video/webm" : "video/mp4"} />
       </video>
     </div>
+  );
+}
+
+function AnimatedGiftImage({ src, onReady }: { src: string; onReady: () => void }) {
+  const readyOnceRef = useRef(false);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    readyOnceRef.current = false;
+    setReady(false);
+  }, [src]);
+
+  const markReady = useCallback(() => {
+    setReady(true);
+    if (!readyOnceRef.current) {
+      readyOnceRef.current = true;
+      onReady();
+    }
+  }, [onReady]);
+
+  return (
+    <img
+      src={src}
+      alt=""
+      onLoad={markReady}
+      onError={markReady}
+      className={`${ready ? "gift-anim-emoji" : "opacity-0"} h-[38vh] max-h-[360px] w-auto max-w-[80vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]`}
+    />
   );
 }
 
@@ -118,18 +164,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
+  const [readyKey, setReadyKey] = useState<string | null>(null);
 
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
 
-  const enqueue = useCallback((p: Play) => {
-    if (seenRef.current.has(p.key)) return;
-    const signature = giftSignature(p);
-    const localUntil = localGiftRef.current.get(signature) ?? 0;
-    if (!p.local && localUntil > Date.now()) return;
-    if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
-    seenRef.current.add(p.key);
+  const enqueueOne = useCallback((p: Play) => {
     // If nothing is playing, show it immediately (synchronously via ref
     // so a rapid-fire second call in the same tick still queues correctly).
     // Otherwise append to the pending queue.
@@ -140,6 +181,25 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       setCurrent(p);
     }
   }, []);
+
+  const enqueue = useCallback((p: Play) => {
+    if (seenRef.current.has(p.key)) return;
+    const signature = giftSignature(p);
+    const localUntil = localGiftRef.current.get(signature) ?? 0;
+    if (!p.local && localUntil > Date.now()) return;
+    if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
+    seenRef.current.add(p.key);
+
+    const repeatCount = Math.max(1, Math.min(50, Math.floor(Number(p.quantity) || 1)));
+    for (let i = 0; i < repeatCount; i += 1) {
+      enqueueOne({
+        ...p,
+        key: repeatCount === 1 ? p.key : `${p.key}-x${i + 1}`,
+        diamonds: repeatCount > 1 ? Math.round((p.diamonds ?? 0) / repeatCount) : p.diamonds,
+        quantity: 1,
+      });
+    }
+  }, [enqueueOne]);
 
 
   useEffect(() => {
@@ -249,33 +309,51 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // Advance queue → current when idle.
   useEffect(() => {
     if (current || queue.length === 0) return;
+    currentRef.current = queue[0];
     setCurrent(queue[0]);
     setQueue((q) => q.slice(1));
   }, [queue, current]);
+
+  const giftClip = current ? getEffectiveGiftClip(current) : { url: null, type: null };
+  const giftClipUrl = giftClip.url;
+  const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
+  const hasSvg = !!giftClipUrl && !hasVideo;
+
+  const clearCurrent = useCallback(() => {
+    currentRef.current = null;
+    setCurrent(null);
+  }, []);
+
+  const markCurrentReady = useCallback(() => {
+    if (!currentRef.current) return;
+    setReadyKey(currentRef.current.key);
+  }, []);
+
+  useEffect(() => {
+    setReadyKey(null);
+    if (current && !hasVideo && !hasSvg) {
+      setReadyKey(current.key);
+    }
+  }, [current?.key, current, hasVideo, hasSvg]);
 
   // Auto-clear current after PLAY_MS. Kept in a separate effect so the
   // cleanup only fires when `current` itself changes — not on every
   // queue mutation, which was cancelling the timer and leaving the
   // full-screen overlay stuck on screen ("room frozen until refresh").
   useEffect(() => {
-    if (!current) return;
+    if (!current || readyKey !== current.key) return;
     const t = setTimeout(
-      () => setCurrent(null),
-      current.giftClipUrl && ["mp4", "webm"].includes(current.giftClipType ?? "") ? VIDEO_PLAY_MS : PLAY_MS,
+      clearCurrent,
+      hasVideo ? VIDEO_PLAY_MS : PLAY_MS,
     );
     return () => clearTimeout(t);
-  }, [current]);
+  }, [current, readyKey, hasVideo, clearCurrent]);
 
   if (!current) return null;
 
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
   const isBig = current.coins >= 5000;
-  const particles = Array.from({ length: isBig ? 24 : 14 });
-  const giftClip = getEffectiveGiftClip(current);
-  const giftClipUrl = giftClip.url;
-  const hasVideo = giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
-  const hasSvg = giftClipUrl && !hasVideo;
 
   return (
     <div
@@ -308,13 +386,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       {/* bottom: big clip / emoji, TikTok-style above footer */}
       <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center px-2">
         {hasVideo ? (
-          <AnimatedGiftVideo src={giftClipUrl} type={giftClip.type} onDone={() => setCurrent(null)} />
+          <AnimatedGiftVideo src={giftClipUrl} type={giftClip.type} onReady={markCurrentReady} onDone={clearCurrent} />
         ) : hasSvg ? (
-          <img
-            src={giftClipUrl}
-            alt=""
-            className="gift-anim-emoji h-[38vh] max-h-[360px] w-auto max-w-[80vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
-          />
+          <AnimatedGiftImage src={giftClipUrl} onReady={markCurrentReady} />
         ) : (
           <span
             className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
@@ -360,13 +434,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           <p className="mt-2 rounded-full bg-black/70 px-3 py-0.5 text-[11px] font-bold text-white">
             @{current.receiverName}
           </p>
-          {current.diamonds > 0 && (
-            <div className="mt-1.5 flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black text-black shadow-lg">
-              <span>💎</span>
-              <span>+{current.diamonds.toLocaleString()}</span>
-              <span className="text-[10px] font-bold opacity-80">pts</span>
-            </div>
-          )}
         </div>
       )}
     </div>
