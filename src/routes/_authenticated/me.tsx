@@ -47,6 +47,19 @@ function MePage() {
   const { user, profile, isAdmin, signOut, refresh } = useAuth();
   const { data: counts } = useCounts(user?.id);
   const { data: vip } = useVipProfile(user?.id);
+  const { data: partnerRow } = useQuery({
+    queryKey: ["is-partner", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("partners")
+        .select("id,is_active,percentage")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const isPartner = !!partnerRow?.is_active;
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -278,6 +291,15 @@ function MePage() {
 
           {/* Menu */}
           {isAdmin && <Row to="/admin" icon="🛡️" title="Admin Panel" sub="Manage the whole app" gold />}
+          {isPartner && (
+            <Row
+              to="/partner"
+              icon="🤝"
+              title="Partner Dashboard"
+              sub={`Your ${partnerRow?.percentage ?? 0}% revenue share`}
+              gold
+            />
+          )}
           <Row to="/gallery" icon="📸" title="Gallery" sub="Manage your photos" />
           <Row to="/wallet" icon="💰" title="Wallet & Coins" sub="Recharge your balance" />
           <Row to="/withdraw" icon="💎" title="Withdraw Points" sub="Cash out your earnings" />

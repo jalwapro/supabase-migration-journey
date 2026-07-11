@@ -29,6 +29,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
 import { Route as AuthenticatedPrivacyRouteImport } from './routes/_authenticated/privacy'
 import { Route as AuthenticatedPkHistoryRouteImport } from './routes/_authenticated/pk-history'
+import { Route as AuthenticatedPartnerRouteImport } from './routes/_authenticated/partner'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyRoomsRouteImport } from './routes/_authenticated/my-rooms'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
@@ -178,6 +179,11 @@ const AuthenticatedPrivacyRoute = AuthenticatedPrivacyRouteImport.update({
 const AuthenticatedPkHistoryRoute = AuthenticatedPkHistoryRouteImport.update({
   id: '/pk-history',
   path: '/pk-history',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPartnerRoute = AuthenticatedPartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedNotificationsRoute =
@@ -481,6 +487,7 @@ export interface FileRoutesByFullPath {
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/partner': typeof AuthenticatedPartnerRoute
   '/pk-history': typeof AuthenticatedPkHistoryRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
@@ -551,6 +558,7 @@ export interface FileRoutesByTo {
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
+  '/partner': typeof AuthenticatedPartnerRoute
   '/pk-history': typeof AuthenticatedPkHistoryRoute
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
@@ -625,6 +633,7 @@ export interface FileRoutesById {
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/partner': typeof AuthenticatedPartnerRoute
   '/_authenticated/pk-history': typeof AuthenticatedPkHistoryRoute
   '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
@@ -699,6 +708,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/my-rooms'
     | '/notifications'
+    | '/partner'
     | '/pk-history'
     | '/privacy'
     | '/recharge'
@@ -769,6 +779,7 @@ export interface FileRouteTypes {
     | '/me'
     | '/my-rooms'
     | '/notifications'
+    | '/partner'
     | '/pk-history'
     | '/privacy'
     | '/recharge'
@@ -842,6 +853,7 @@ export interface FileRouteTypes {
     | '/_authenticated/me'
     | '/_authenticated/my-rooms'
     | '/_authenticated/notifications'
+    | '/_authenticated/partner'
     | '/_authenticated/pk-history'
     | '/_authenticated/privacy'
     | '/_authenticated/recharge'
@@ -1054,6 +1066,13 @@ declare module '@tanstack/react-router' {
       path: '/pk-history'
       fullPath: '/pk-history'
       preLoaderRoute: typeof AuthenticatedPkHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/partner': {
+      id: '/_authenticated/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof AuthenticatedPartnerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/notifications': {
@@ -1536,6 +1555,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedMyRoomsRoute: typeof AuthenticatedMyRoomsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedPartnerRoute: typeof AuthenticatedPartnerRoute
   AuthenticatedPkHistoryRoute: typeof AuthenticatedPkHistoryRoute
   AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
@@ -1558,6 +1578,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedMyRoomsRoute: AuthenticatedMyRoomsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedPartnerRoute: AuthenticatedPartnerRoute,
   AuthenticatedPkHistoryRoute: AuthenticatedPkHistoryRoute,
   AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
