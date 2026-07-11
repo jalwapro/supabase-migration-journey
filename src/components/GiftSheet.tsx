@@ -192,7 +192,13 @@ export function GiftSheet({
     // allows it. Unlocks the audio context for subsequent gift sounds too.
     if (selectedGift.sound_url) {
       try {
-        const a = new Audio(selectedGift.sound_url);
+        // Lovable CDN assets (/__l5e/…) only serve from the *.lovable.app origin;
+        // on the preview sandbox origin the relative path 404s and audio dies.
+        const raw = selectedGift.sound_url;
+        const src = raw.startsWith("/__l5e/")
+          ? `https://cloud-to-soul.lovable.app${raw}`
+          : raw;
+        const a = new Audio(src);
         a.volume = 0.9;
         void a.play().catch(() => {});
       } catch {

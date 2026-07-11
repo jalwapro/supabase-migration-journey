@@ -30,7 +30,10 @@ type Play = {
 
 function resolveSoundUrl(url: string | null | undefined) {
   if (!url) return null;
-  // Use relative URL so it works on preview + published origins alike.
+  // Lovable-hosted assets are only served under the *.lovable.app origin.
+  // On the sandboxed preview origin (lovableproject.com) a relative /__l5e/…
+  // path returns HTML/404 and audio fails silently, so prefix the CDN origin.
+  if (url.startsWith("/__l5e/")) return `${LOVABLE_ASSET_ORIGIN}${url}`;
   return url;
 }
 
