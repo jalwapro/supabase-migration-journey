@@ -77,6 +77,7 @@ type Room = {
   agora_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
+  active_pk_match_id?: string | null;
   host: {
     username: string | null;
     avatar: string | null;
