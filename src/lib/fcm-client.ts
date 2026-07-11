@@ -71,16 +71,15 @@ function bindForegroundHandler(m: Messaging) {
     const notifId = data.notifId;
     if (notifId) {
       openNotification({
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        id: notifId as any,
+        id: String(notifId),
         user_id: "",
         actor_id: (data.sender_id as string) ?? null,
-        kind: (data.kind as string) ?? "generic",
+        kind: ((data.kind as string) ?? "system_broadcast") as NotificationRow["kind"],
         title: payload.notification?.title ?? (data.title as string) ?? "New notification",
         body: payload.notification?.body ?? (data.body as string) ?? null,
         entity_type: (data.entity_type as string) ?? null,
         entity_id: (data.entity_id as string) ?? null,
-        data,
+        data: data as Record<string, unknown>,
         read_at: null,
         created_at: new Date().toISOString(),
       });
