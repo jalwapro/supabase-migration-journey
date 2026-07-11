@@ -92,14 +92,7 @@ function AnimatedGiftVideo({ src, emoji, onDone }: { src: string; emoji: string;
   }, []);
 
   if (failed) {
-    return (
-      <span
-        className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
-        style={{ fontSize: "10rem" }}
-      >
-        {emoji}
-      </span>
-    );
+    return null;
   }
 
   return (
