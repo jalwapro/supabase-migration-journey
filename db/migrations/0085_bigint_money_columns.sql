@@ -71,6 +71,8 @@ BEGIN
 END $$;
 
 -- Rewrite gift RPCs so internal numeric vars are bigint too.
+DROP FUNCTION IF EXISTS public.send_gift(uuid, uuid, uuid, integer);
+DROP FUNCTION IF EXISTS public.send_gift(uuid, uuid, uuid, int);
 CREATE OR REPLACE FUNCTION public.send_gift(
   _room_id uuid, _gift_id uuid, _receiver_id uuid, _quantity int DEFAULT 1
 ) RETURNS public.gift_sends
