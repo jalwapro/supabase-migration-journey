@@ -138,7 +138,7 @@ function AnimatedGiftVideo({
         }}
         onEnded={onDone}
         className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
-        style={{ opacity: ready ? 1 : 0 }}
+        style={{ opacity: ready ? 1 : 0, mixBlendMode: "screen" }}
       >
         <source src={src} type={type === "webm" ? "video/webm" : "video/mp4"} />
       </video>
