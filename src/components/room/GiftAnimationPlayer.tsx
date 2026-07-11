@@ -127,7 +127,7 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
           tryPlay();
         }}
         onError={() => setFailed(true)}
-        className="gift-anim-video h-[72vh] max-h-[760px] w-auto max-w-[100vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        className="gift-anim-video h-[38vh] max-h-[380px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
         style={{ visibility: ready ? "visible" : "hidden" }}
       >
         {webmSrc && <source src={webmSrc} type="video/webm" />}
@@ -289,13 +289,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-end overflow-hidden pb-28"
       aria-live="polite"
     >
-      {/* dim + radial glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
+      {/* near-transparent dim so room stays visible behind the gift */}
+      <div className="absolute inset-0 bg-black/5" />
       <div className="absolute inset-0 gift-anim-glow" />
       <div className="absolute inset-0 gift-anim-shimmer" />
+
 
       {/* particles */}
       {particles.map((_, i) => {
@@ -372,7 +373,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* receiver DP + points badge */}
       {(current.receiverAvatar || current.receiverName) && (
-        <div className="absolute inset-x-0 bottom-24 z-10 flex flex-col items-center gift-anim-caption">
+        <div className="mt-3 z-10 flex flex-col items-center gift-anim-caption">
           <div className="relative">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
             {current.receiverAvatar ? (
