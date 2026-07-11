@@ -124,7 +124,6 @@ export function GiftSheet({
       };
     },
     onSuccess: async (sent) => {
-      toast.success("Gift sent 🎁");
       onClose(); // close sheet so full-screen animation is visible
       window.dispatchEvent(
         new CustomEvent("jalwa:gift-sent", {
