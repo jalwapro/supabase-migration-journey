@@ -6,6 +6,7 @@ import { getMessaging, getToken, onMessage, type Messaging } from "firebase/mess
 import { supabase } from "@/integrations/supabase/client";
 import { openNotification } from "@/components/NotificationPopup";
 import { playNotifySound } from "@/lib/notify-sound";
+import type { NotificationRow } from "@/hooks/useNotifications";
 
 type FirebaseConfig = {
   apiKey: string;
