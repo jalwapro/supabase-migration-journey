@@ -475,8 +475,15 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
   animation: gift-anim-emoji-in 3.8s cubic-bezier(.34,1.56,.64,1) forwards;
   filter: drop-shadow(0 0 24px rgba(255,215,0,.7));
 }
+@keyframes gift-anim-video-play {
+  0%   { transform: scale(.96); opacity: 0; }
+  8%   { transform: scale(1); opacity: 1; }
+  86%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.03); opacity: 0; }
+}
 .gift-anim-video {
-  animation-duration: 6.2s;
+  animation: gift-anim-video-play 6.6s ease-out forwards;
+  filter: drop-shadow(0 0 28px rgba(255,215,0,.72));
 }
 
 @keyframes gift-anim-glow-in {
