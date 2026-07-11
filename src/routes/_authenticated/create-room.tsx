@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { Mic, Video, Lock, Loader2, ArrowLeft, Radio, Plus, X } from "lucide-react";
+import { Mic, Video, Lock, Loader2, ArrowLeft, Radio, Plus, X, Swords } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/create-room")({
