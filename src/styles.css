@@ -475,6 +475,9 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
   animation: gift-anim-emoji-in 3.8s cubic-bezier(.34,1.56,.64,1) forwards;
   filter: drop-shadow(0 0 24px rgba(255,215,0,.7));
 }
+.gift-anim-video {
+  animation-duration: 6.2s;
+}
 
 @keyframes gift-anim-glow-in {
   0%   { opacity: 0; transform: scale(0.4); }
