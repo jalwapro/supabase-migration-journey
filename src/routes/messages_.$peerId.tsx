@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/hooks/useAuth";
@@ -15,6 +15,12 @@ import {
   Lock,
   Smile,
   X,
+  Check,
+  CheckCheck,
+  Reply,
+  Copy,
+  Trash2,
+  Forward,
 } from "lucide-react";
 import { toast } from "sonner";
 import { uploadToUserFolder } from "@/lib/uploads";
@@ -35,11 +41,17 @@ type DM = {
   media_mime: string | null;
   duration_seconds: number | null;
   gallery_image_id: string | null;
+  reply_to_id: string | null;
+  delivered_at: string | null;
   read_at: string | null;
+  deleted_at: string | null;
   created_at: string;
 };
 
 type Img = { id: string; path: string; is_public: boolean };
+
+const SELECT_COLS =
+  "id,sender_id,recipient_id,message,kind,media_url,media_mime,duration_seconds,gallery_image_id,reply_to_id,delivered_at,read_at,deleted_at,created_at";
 
 function DmThread() {
   const { peerId } = Route.useParams();
@@ -52,22 +64,36 @@ function DmThread() {
   const [recording, setRecording] = useState(false);
   const [showAlbum, setShowAlbum] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [peerTyping, setPeerTyping] = useState(false);
+  const [replyTo, setReplyTo] = useState<DM | null>(null);
+  const [actionMsg, setActionMsg] = useState<DM | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const mediaRec = useRef<MediaRecorder | null>(null);
   const recordChunks = useRef<Blob[]>([]);
   const recordStart = useRef<number>(0);
+  const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const lastTypingSent = useRef<number>(0);
+  const peerTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const peer = useQuery({
-    queryKey: ["profile", peerId],
+    queryKey: ["profile-chat", peerId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,user_code,bubble")
+        .select("id,username,avatar,user_code,bubble,last_seen")
         .eq("id", peerId)
         .maybeSingle();
       if (error) throw error;
-      return data as { id: string; username: string | null; avatar: string | null; user_code: string | null; bubble: string | null } | null;
+      return data as {
+        id: string;
+        username: string | null;
+        avatar: string | null;
+        user_code: string | null;
+        bubble: string | null;
+        last_seen: string | null;
+      } | null;
     },
   });
 
@@ -116,14 +142,14 @@ function DmThread() {
     },
   });
 
-  // Load history + mark read
+  // Load history + mark delivered/read
   useEffect(() => {
     if (!user) return;
     let cancel = false;
     (async () => {
       const { data, error } = await supabase
         .from("direct_messages")
-        .select("*")
+        .select(SELECT_COLS)
         .or(
           `and(sender_id.eq.${user.id},recipient_id.eq.${peerId}),and(sender_id.eq.${peerId},recipient_id.eq.${user.id})`,
         )
@@ -132,48 +158,120 @@ function DmThread() {
       if (cancel) return;
       if (error) { toast.error(error.message); return; }
       setMessages((data ?? []) as DM[]);
+      const now = new Date().toISOString();
+      // Mark all peer→me as delivered AND read (thread is open)
       await supabase
         .from("direct_messages")
-        .update({ read_at: new Date().toISOString() })
+        .update({ read_at: now, delivered_at: now })
         .eq("sender_id", peerId)
         .eq("recipient_id", user.id)
         .is("read_at", null);
+      await supabase
+        .from("direct_messages")
+        .update({ delivered_at: now })
+        .eq("sender_id", peerId)
+        .eq("recipient_id", user.id)
+        .is("delivered_at", null);
       qc.invalidateQueries({ queryKey: ["dm_index", user.id] });
     })();
     return () => { cancel = true; };
   }, [user, peerId, qc]);
 
-  // Realtime
+  // Realtime — DM inserts + updates + peer presence + typing broadcast
   useEffect(() => {
     if (!user) return;
-    const ch = supabase
-      .channel(`dm-${user.id}-${peerId}`)
-      .on("postgres_changes", {
-        event: "INSERT", schema: "public", table: "direct_messages",
-      }, (payload) => {
-        const m = payload.new as DM;
-        const pair =
-          (m.sender_id === user.id && m.recipient_id === peerId) ||
-          (m.sender_id === peerId && m.recipient_id === user.id);
-        if (!pair) return;
-        setMessages((prev) => (prev.some((item) => item.id === m.id) ? prev : [...prev, m]));
-        if (m.recipient_id === user.id) {
-          void supabase
-            .from("direct_messages")
-            .update({ read_at: new Date().toISOString() })
-            .eq("id", m.id);
-        }
+
+    // Messages: INSERT & UPDATE for this pair
+    const dmCh = supabase
+      .channel(`dm-thread-${user.id}-${peerId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "direct_messages" },
+        (payload) => {
+          const m = payload.new as DM;
+          const pair =
+            (m.sender_id === user.id && m.recipient_id === peerId) ||
+            (m.sender_id === peerId && m.recipient_id === user.id);
+          if (!pair) return;
+          setMessages((prev) => (prev.some((item) => item.id === m.id) ? prev : [...prev, m]));
+          if (m.recipient_id === user.id) {
+            const now = new Date().toISOString();
+            void supabase
+              .from("direct_messages")
+              .update({ read_at: now, delivered_at: now })
+              .eq("id", m.id);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "direct_messages" },
+        (payload) => {
+          const m = payload.new as DM;
+          const pair =
+            (m.sender_id === user.id && m.recipient_id === peerId) ||
+            (m.sender_id === peerId && m.recipient_id === user.id);
+          if (!pair) return;
+          setMessages((prev) => prev.map((item) => (item.id === m.id ? { ...item, ...m } : item)));
+        },
+      )
+      .subscribe();
+
+    // Peer presence — refresh last_seen when their profile changes
+    const presenceCh = supabase
+      .channel(`peer-presence-${peerId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${peerId}` },
+        () => {
+          qc.invalidateQueries({ queryKey: ["profile-chat", peerId] });
+        },
+      )
+      .subscribe();
+
+    // Typing indicator — broadcast channel (ephemeral, both sides join)
+    const pairKey = [user.id, peerId].sort().join("::");
+    const typing = supabase.channel(`typing-${pairKey}`, {
+      config: { broadcast: { self: false } },
+    });
+    typing
+      .on("broadcast", { event: "typing" }, (payload) => {
+        if ((payload.payload as { from?: string })?.from !== peerId) return;
+        setPeerTyping(true);
+        if (peerTypingTimer.current) clearTimeout(peerTypingTimer.current);
+        peerTypingTimer.current = setTimeout(() => setPeerTyping(false), 3000);
       })
       .subscribe();
-    return () => { void supabase.removeChannel(ch); };
-  }, [user, peerId]);
+    typingChannel.current = typing;
+
+    return () => {
+      void supabase.removeChannel(dmCh);
+      void supabase.removeChannel(presenceCh);
+      void supabase.removeChannel(typing);
+      typingChannel.current = null;
+      if (peerTypingTimer.current) clearTimeout(peerTypingTimer.current);
+    };
+  }, [user, peerId, qc]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+  }, [messages.length, peerTyping]);
+
+  // Broadcast typing (throttled to 1/2s)
+  const broadcastTyping = useCallback(() => {
+    if (!user || !typingChannel.current) return;
+    const now = Date.now();
+    if (now - lastTypingSent.current < 2000) return;
+    lastTypingSent.current = now;
+    void typingChannel.current.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { from: user.id },
+    });
+  }, [user]);
 
   async function insertMsg(row: Partial<DM>) {
-    if (!user) return;
+    if (!user) return false;
     const { data, error } = await supabase
       .from("direct_messages")
       .insert({
@@ -181,7 +279,7 @@ function DmThread() {
         recipient_id: peerId,
         ...row,
       })
-      .select("id,sender_id,recipient_id,message,kind,media_url,media_mime,duration_seconds,gallery_image_id,read_at,created_at")
+      .select(SELECT_COLS)
       .single();
     if (error) {
       if (error.message.includes("row-level")) {
@@ -202,7 +300,9 @@ function DmThread() {
     const v = text.trim();
     if (!v) return;
     setText("");
-    const ok = await insertMsg({ kind: "text", message: v });
+    const rid = replyTo?.id ?? null;
+    setReplyTo(null);
+    const ok = await insertMsg({ kind: "text", message: v, reply_to_id: rid });
     if (!ok) setText(v);
   }
 
@@ -222,11 +322,14 @@ function DmThread() {
         : file.type.startsWith("video/")
           ? "video"
           : "file";
+      const rid = replyTo?.id ?? null;
+      setReplyTo(null);
       await insertMsg({
         kind,
         media_url: res.url,
         media_mime: file.type,
         message: file.type.startsWith("image") || file.type.startsWith("video") ? null : file.name,
+        reply_to_id: rid,
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
@@ -295,6 +398,45 @@ function DmThread() {
     if (error) toast.error(error.message);
   }
 
+  async function softDelete(m: DM) {
+    setActionMsg(null);
+    const { error } = await supabase
+      .from("direct_messages")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", m.id)
+      .eq("sender_id", user!.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setMessages((prev) => prev.map((x) => (x.id === m.id ? { ...x, deleted_at: new Date().toISOString() } : x)));
+    qc.invalidateQueries({ queryKey: ["dm_index", user!.id] });
+  }
+
+  function copyMsg(m: DM) {
+    setActionMsg(null);
+    const t = m.message ?? m.media_url ?? "";
+    if (!t) return;
+    navigator.clipboard.writeText(t);
+    toast.success("Copied");
+  }
+
+  const msgIndex = useMemo(() => {
+    const m = new Map<string, DM>();
+    for (const it of messages) m.set(it.id, it);
+    return m;
+  }, [messages]);
+
+  const statusLine = useMemo(() => {
+    if (peerTyping) return "typing…";
+    const ls = peer.data?.last_seen;
+    if (!ls) return `ID ${peer.data?.user_code ?? "—"}`;
+    const diff = Date.now() - new Date(ls).getTime();
+    if (diff < 60 * 1000) return "online";
+    if (diff < 60 * 60 * 1000) return `last seen ${Math.floor(diff / 60000)}m ago`;
+    if (diff < 24 * 60 * 60 * 1000) return `last seen ${Math.floor(diff / 3600000)}h ago`;
+    return `last seen ${new Date(ls).toLocaleDateString()}`;
+  }, [peerTyping, peer.data?.last_seen, peer.data?.user_code]);
 
   if (!user) return null;
 
@@ -314,16 +456,31 @@ function DmThread() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <Link to="/messages" className="flex min-w-0 flex-1 items-center gap-2">
-            <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
-              {peer.data?.avatar ? (
-                <img src={peer.data.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                (peer.data?.username ?? "?").slice(0, 1).toUpperCase()
+            <div className="relative">
+              <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
+                {peer.data?.avatar ? (
+                  <img src={peer.data.avatar} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  (peer.data?.username ?? "?").slice(0, 1).toUpperCase()
+                )}
+              </div>
+              {statusLine === "online" && (
+                <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500" />
               )}
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-bold">@{peer.data?.username ?? "user"}</p>
-              <p className="text-[10px] text-muted-foreground">ID {peer.data?.user_code ?? "—"}</p>
+              <p
+                className={`truncate text-[10px] ${
+                  peerTyping
+                    ? "font-bold text-[color:var(--primary)]"
+                    : statusLine === "online"
+                      ? "text-emerald-400"
+                      : "text-muted-foreground"
+                }`}
+              >
+                {statusLine}
+              </p>
             </div>
           </Link>
         </header>
@@ -341,35 +498,111 @@ function DmThread() {
           )}
           {messages.map((m) => {
             const mine = m.sender_id === user.id;
-            const bubbleSkin = mine ? (myBubble.data ?? null) : (peer.data?.bubble ?? null);
+            const isDeleted = !!m.deleted_at;
+            const bubbleSkin = !isDeleted ? (mine ? (myBubble.data ?? null) : (peer.data?.bubble ?? null)) : null;
             const skinStyle = bubbleSkin
               ? { backgroundImage: `url(${bubbleSkin})`, backgroundSize: "100% 100%", backgroundRepeat: "no-repeat" as const }
               : undefined;
+            const quoted = m.reply_to_id ? msgIndex.get(m.reply_to_id) : null;
+
+            const onPressStart = () => {
+              if (isDeleted) return;
+              longPressTimer.current = setTimeout(() => setActionMsg(m), 400);
+            };
+            const onPressEnd = () => {
+              if (longPressTimer.current) {
+                clearTimeout(longPressTimer.current);
+                longPressTimer.current = null;
+              }
+            };
+
             return (
               <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                 <div
                   style={skinStyle}
-                  className={`max-w-[78%] break-words rounded-2xl px-3 py-2 text-sm ${
-                    bubbleSkin
-                      ? "text-white drop-shadow"
-                      : mine
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-card border border-border rounded-bl-sm"
+                  onPointerDown={onPressStart}
+                  onPointerUp={onPressEnd}
+                  onPointerLeave={onPressEnd}
+                  onPointerCancel={onPressEnd}
+                  onContextMenu={(e) => { e.preventDefault(); if (!isDeleted) setActionMsg(m); }}
+                  className={`max-w-[78%] break-words rounded-2xl px-3 py-2 text-sm select-none ${
+                    isDeleted
+                      ? "border border-dashed border-border bg-card/40 italic text-muted-foreground"
+                      : bubbleSkin
+                        ? "text-white drop-shadow"
+                        : mine
+                          ? "bg-primary text-primary-foreground rounded-br-sm"
+                          : "bg-card border border-border rounded-bl-sm"
                   }`}
                 >
-                  <MessageBody
-                    m={m}
-                    mine={mine}
-                    albumSrc={m.gallery_image_id ? albumRefs.data?.[m.gallery_image_id] : undefined}
-                  />
-                  <p className={`mt-0.5 text-[9px] ${bubbleSkin ? "text-white/80" : mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                    {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
+                  {quoted && !isDeleted && (
+                    <div
+                      className={`mb-1.5 rounded-lg border-l-2 px-2 py-1 text-[11px] ${
+                        mine
+                          ? "border-white/70 bg-white/15 text-primary-foreground/90"
+                          : "border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-foreground/80"
+                      }`}
+                    >
+                      <p className="font-bold text-[10px] opacity-80">
+                        {quoted.sender_id === user.id ? "You" : `@${peer.data?.username ?? "user"}`}
+                      </p>
+                      <p className="truncate">{quotedPreview(quoted)}</p>
+                    </div>
+                  )}
+                  {isDeleted ? (
+                    <span className="flex items-center gap-1.5">
+                      <Trash2 className="h-3 w-3" /> This message was deleted
+                    </span>
+                  ) : (
+                    <MessageBody
+                      m={m}
+                      mine={mine}
+                      albumSrc={m.gallery_image_id ? albumRefs.data?.[m.gallery_image_id] : undefined}
+                    />
+                  )}
+                  <div
+                    className={`mt-0.5 flex items-center justify-end gap-1 text-[9px] ${
+                      bubbleSkin ? "text-white/80" : mine ? "text-primary-foreground/70" : "text-muted-foreground"
+                    }`}
+                  >
+                    <span>
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    {mine && !isDeleted && <Ticks m={m} />}
+                  </div>
                 </div>
               </div>
             );
           })}
+          {peerTyping && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl rounded-bl-sm border border-border bg-card px-3 py-2">
+                <TypingDots />
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* Reply preview above composer */}
+        {replyTo && (
+          <div className="border-t border-border bg-card/70 px-3 py-2">
+            <div className="flex items-start gap-2 rounded-lg border-l-2 border-[color:var(--primary)] bg-background/60 px-2 py-1.5">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold text-[color:var(--primary)]">
+                  Replying to {replyTo.sender_id === user.id ? "yourself" : `@${peer.data?.username ?? "user"}`}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">{quotedPreview(replyTo)}</p>
+              </div>
+              <button
+                onClick={() => setReplyTo(null)}
+                aria-label="Cancel reply"
+                className="grid h-6 w-6 place-items-center rounded-full bg-card"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Composer */}
         <div
@@ -415,7 +648,7 @@ function DmThread() {
             </button>
             <input
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
               onKeyDown={(e) => e.key === "Enter" && sendText()}
               placeholder={recording ? "Recording…" : "Type a message…"}
               disabled={recording}
@@ -494,12 +727,101 @@ function DmThread() {
         </div>
       )}
 
+      {/* Long-press action sheet */}
+      {actionMsg && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-end bg-black/60"
+          onClick={() => setActionMsg(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-3xl border-t border-border bg-background p-4"
+            style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+            <div className="mb-3 rounded-xl border border-border bg-card/60 px-3 py-2 text-xs text-muted-foreground">
+              <p className="line-clamp-2">{quotedPreview(actionMsg)}</p>
+            </div>
+            <div className="grid gap-1">
+              <ActionRow icon={Reply} label="Reply" onClick={() => { setReplyTo(actionMsg); setActionMsg(null); }} />
+              <ActionRow icon={Copy} label="Copy" onClick={() => copyMsg(actionMsg)} />
+              <ActionRow
+                icon={Forward}
+                label="Forward"
+                onClick={() => { setActionMsg(null); toast("Forward coming soon"); }}
+              />
+              {actionMsg.sender_id === user.id && (
+                <ActionRow
+                  icon={Trash2}
+                  label="Delete for everyone"
+                  danger
+                  onClick={() => softDelete(actionMsg)}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
       <ChatEmojiOverlay scope={{ type: "dm", selfId: user.id, peerId }} />
     </div>
 
   );
 
+}
+
+function quotedPreview(m: DM): string {
+  if (m.deleted_at) return "Deleted message";
+  if (m.kind === "text") return m.message ?? "";
+  if (m.kind === "image") return "📷 Photo";
+  if (m.kind === "video") return "🎬 Video";
+  if (m.kind === "voice") return "🎙️ Voice message";
+  if (m.kind === "album") return "🖼️ Shared from gallery";
+  if (m.kind === "file") return `📎 ${m.message ?? "File"}`;
+  return "";
+}
+
+function Ticks({ m }: { m: DM }) {
+  if (m.read_at) return <CheckCheck className="h-3 w-3 text-sky-300" />;
+  if (m.delivered_at) return <CheckCheck className="h-3 w-3" />;
+  return <Check className="h-3 w-3" />;
+}
+
+function TypingDots() {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[color:var(--primary)] [animation-delay:-0.3s]" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[color:var(--primary)] [animation-delay:-0.15s]" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[color:var(--primary)]" />
+    </span>
+  );
+}
+
+function ActionRow({
+  icon: Icon,
+  label,
+  onClick,
+  danger,
+}: {
+  icon: typeof Reply;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition active:scale-[0.98] ${
+        danger
+          ? "bg-red-500/10 text-red-400"
+          : "bg-card/60 text-foreground hover:bg-card"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
 }
 
 function MessageBody({
