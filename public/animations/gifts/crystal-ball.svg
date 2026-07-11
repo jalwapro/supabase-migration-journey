@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs><radialGradient id="cg"><stop offset="0%" stop-color="#e0a8ff"/><stop offset="100%" stop-color="#5b1e9c" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="100" cy="100" r="85" fill="url(#cg)"><animate attributeName="r" values="70;95;70" dur="2.5s" repeatCount="indefinite"/></circle>
+  <g><text x="100" y="125" font-size="90" text-anchor="middle">🔮</text>
+    <animateTransform attributeName="transform" type="rotate" from="0 100 100" to="360 100 100" dur="8s" repeatCount="indefinite"/>
+  </g>
+</svg>

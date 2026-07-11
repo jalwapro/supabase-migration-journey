@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="fg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#ffdd55"/><stop offset="60%" stop-color="#ff6a00" stop-opacity="0.6"/><stop offset="100%" stop-color="#b30000" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="90" fill="url(#fg)"><animate attributeName="r" values="70;100;70" dur="1.5s" repeatCount="indefinite"/></circle>
+  <g><text x="100" y="120" font-size="100" text-anchor="middle">🔥</text>
+    <animateTransform attributeName="transform" type="scale" values="0.9;1.1;0.9" additive="sum" dur="1.2s" repeatCount="indefinite"/>
+  </g>
+</svg>
