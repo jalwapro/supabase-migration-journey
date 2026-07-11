@@ -17,6 +17,7 @@ type Play = {
   receiverAvatar: string | null;
   giftName: string;
   giftEmoji: string;
+  giftImageUrl?: string | null;
   giftClipUrl: string | null;
   giftClipType: string | null;
   coins: number;
@@ -301,6 +302,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverAvatar: null,
             giftName: r.gift_name,
             giftEmoji: r.gift_emoji,
+            giftImageUrl: g.image_url ?? null,
             giftClipUrl: g.clip_path ?? g.image_url ?? null,
             giftClipType: g.clip_path ? (g.clip_type ?? null) : g.image_url ? "image" : null,
             coins: r.coins ?? 0,
@@ -347,6 +349,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverAvatar: rc.avatar ?? null,
             giftName: g.name ?? "Gift",
             giftEmoji: g.emoji ?? g.icon ?? "🎁",
+            giftImageUrl: g.image_url ?? null,
             giftClipUrl: g.clip_path ?? g.image_url ?? null,
             giftClipType: g.clip_path ? (g.clip_type ?? null) : g.image_url ? "image" : null,
             coins: r.coins_spent ?? 0,
@@ -375,7 +378,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const giftClipUrl = giftClip.url;
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
   const hasSvg = !!giftClipUrl && !hasVideo;
-  const fallbackImage = current?.giftClipType === "image" ? current.giftClipUrl : null;
+  const fallbackImage = current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
 
   const clearCurrent = useCallback(() => {
     currentRef.current = null;

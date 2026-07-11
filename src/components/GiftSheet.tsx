@@ -156,6 +156,7 @@ export function GiftSheet({
           receiverAvatar: firstReceiver?.avatar ?? null,
           giftName: selectedGift.name,
           giftEmoji: selectedGift.emoji ?? selectedGift.icon ?? "🎁",
+          giftImageUrl: selectedGift.image_url ?? null,
           giftClipUrl: selectedGift.clip_path ?? selectedGift.image_url ?? null,
           giftClipType: selectedGift.clip_path ? selectedGift.clip_type : selectedGift.image_url ? "image" : null,
           coins: price(selectedGift) * qty,
