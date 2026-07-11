@@ -484,7 +484,6 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
 .gift-anim-video {
   animation: gift-anim-video-play 11.8s ease-out forwards;
   background: transparent;
-  mix-blend-mode: screen;
 }
 
 @keyframes gift-anim-glow-in {
