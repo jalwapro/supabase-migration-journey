@@ -10,7 +10,7 @@ import {
   Loader2,
   Paperclip,
   Mic,
-  Square,
+  Image as ImageIcon,
   Image as ImageIcon,
   Lock,
   Smile,
