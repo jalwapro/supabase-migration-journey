@@ -78,7 +78,6 @@ function AnimatedGiftVideo({
   onDone,
   fallbackEmoji,
   fallbackImage,
-  videoOnly = false,
 }: {
   src: string;
   type: string | null;
@@ -86,7 +85,6 @@ function AnimatedGiftVideo({
   onDone: () => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
-  videoOnly?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -96,18 +94,15 @@ function AnimatedGiftVideo({
 
   useEffect(() => {
     readyOnceRef.current = false;
-    setReady(videoOnly);
+    setReady(false);
     setFailed(false);
     const video = videoRef.current;
     if (!video) return;
     video.pause();
     video.currentTime = 0;
     video.load();
-    if (videoOnly) {
-      onReady();
-      void video.play().catch(() => {});
-    }
-  }, [src, videoOnly, onReady]);
+    void video.play().catch(() => {});
+  }, [src]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -134,13 +129,13 @@ function AnimatedGiftVideo({
     tryPlay();
   }, [onReady, tryPlay]);
 
-  if (failed && !videoOnly) {
+  if (failed) {
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />;
   }
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
-      {!ready && !videoOnly && (
+      {!ready && (
         <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />
       )}
       <video
@@ -160,8 +155,8 @@ function AnimatedGiftVideo({
           onReady();
         }}
         onEnded={onDone}
-        className={`${ready || videoOnly ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
-        style={{ opacity: ready || videoOnly ? 1 : 0, mixBlendMode: "screen" }}
+        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
+        style={{ opacity: ready ? 1 : 0, mixBlendMode: "screen" }}
       />
     </div>
   );
@@ -195,14 +190,6 @@ function GiftFallbackVisual({
   if (image && !imageFailed) {
     return (
       <div className="relative grid min-h-[42vh] place-items-center">
-        {!imageLoaded && (
-          <span
-            className="absolute gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
-            style={{ fontSize: "8rem" }}
-          >
-            {emoji || "🎁"}
-          </span>
-        )}
         <img
           src={image}
           alt=""
@@ -519,7 +506,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onDone={clearCurrent}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            videoOnly={isRoyalRose}
           />
         ) : hasSvg ? (
           <AnimatedGiftImage
