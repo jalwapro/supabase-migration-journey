@@ -23,6 +23,7 @@ type Play = {
   diamonds: number;
   quantity: number;
   animation: string;
+  local?: boolean;
 };
 
 const PLAY_MS = 4200;
@@ -32,6 +33,10 @@ function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
   if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
   return url;
+}
+
+function giftSignature(p: Play) {
+  return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
 function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
@@ -95,9 +100,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
+  const localGiftRef = useRef<Map<string, number>>(new Map());
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
+    const signature = giftSignature(p);
+    const localUntil = localGiftRef.current.get(signature) ?? 0;
+    if (!p.local && localUntil > Date.now()) return;
+    if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
     setQueue((q) => [...q, p]);
   }, []);

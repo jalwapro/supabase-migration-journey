@@ -140,6 +140,7 @@ export function GiftSheet({
             diamonds: sent.gift.diamonds_value * sent.quantity,
             quantity: sent.quantity,
             animation: sent.gift.animation ?? "pop",
+            local: true,
           },
         }),
       );
