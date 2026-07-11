@@ -346,26 +346,52 @@ function DmThread() {
     }
   }
 
+  function pickRecorderMime(): { mime: string; ext: string } {
+    const candidates: Array<{ mime: string; ext: string }> = [
+      { mime: "audio/webm;codecs=opus", ext: "webm" },
+      { mime: "audio/webm", ext: "webm" },
+      { mime: "audio/mp4;codecs=mp4a.40.2", ext: "m4a" },
+      { mime: "audio/mp4", ext: "m4a" },
+      { mime: "audio/aac", ext: "aac" },
+      { mime: "audio/ogg;codecs=opus", ext: "ogg" },
+    ];
+    for (const c of candidates) {
+      if (typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c.mime)) return c;
+    }
+    return { mime: "", ext: "webm" };
+  }
+
   async function startRecord() {
     if (!user) return;
+    if (typeof MediaRecorder === "undefined") {
+      toast.error("Is browser me voice recording support nahi hai");
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const rec = new MediaRecorder(stream);
+      const { mime, ext } = pickRecorderMime();
+      const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       recordChunks.current = [];
       recordStart.current = Date.now();
       rec.ondataavailable = (ev) => { if (ev.data.size > 0) recordChunks.current.push(ev.data); };
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
-        const blob = new Blob(recordChunks.current, { type: "audio/webm" });
+        const outType = rec.mimeType || mime || "audio/webm";
+        const blob = new Blob(recordChunks.current, { type: outType });
         const duration = Math.max(1, Math.round((Date.now() - recordStart.current) / 1000));
-        const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
+        if (blob.size < 800) {
+          toast.error("Recording bahut choti thi — thoda lamba dabaye rakho");
+          setAttachBusy(false);
+          return;
+        }
+        const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: outType });
         try {
           setAttachBusy(true);
           const res = await uploadToUserFolder("voice-notes", file, user.id);
           await insertMsg({
             kind: "voice",
             media_url: res.url,
-            media_mime: "audio/webm",
+            media_mime: outType,
             duration_seconds: duration,
           });
         } catch (err) {
@@ -377,16 +403,19 @@ function DmThread() {
       rec.start();
       mediaRec.current = rec;
       setRecording(true);
-    } catch {
-      toast.error("Mic access denied");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Mic access denied");
     }
   }
 
   function stopRecord() {
-    mediaRec.current?.stop();
+    if (mediaRec.current && mediaRec.current.state !== "inactive") {
+      mediaRec.current.stop();
+    }
     mediaRec.current = null;
     setRecording(false);
   }
+
 
   async function shareAlbumImage(img: Img) {
     setShowAlbum(false);
@@ -678,10 +707,10 @@ function DmThread() {
             ) : (
               <button
                 type="button"
-                onMouseDown={startRecord}
-                onMouseUp={stopRecord}
-                onTouchStart={startRecord}
-                onTouchEnd={stopRecord}
+                onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId); void startRecord(); }}
+                onPointerUp={(e) => { e.preventDefault(); stopRecord(); }}
+                onPointerCancel={() => stopRecord()}
+                onPointerLeave={() => { if (recording) stopRecord(); }}
                 aria-label={recording ? "Release to send" : "Hold to record"}
                 className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition ${
                   recording
