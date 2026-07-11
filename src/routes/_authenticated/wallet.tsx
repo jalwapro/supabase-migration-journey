@@ -6,14 +6,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Coins,
-  Diamond,
   ArrowDownToLine,
-  ArrowUpFromLine,
   Gift,
   TrendingUp,
   TrendingDown,
 } from "lucide-react";
-import { toast } from "sonner";
+
 import { formatCompact } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
@@ -82,28 +80,6 @@ function WalletPage() {
             </div>
           </div>
 
-          <div className="glass rounded-3xl bg-gradient-to-br from-[color:var(--secondary)]/25 via-[color:var(--primary)]/10 to-transparent p-5">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-              Points earned
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <Diamond className="h-8 w-8 text-[color:var(--secondary)]" />
-              <span className="text-4xl font-black">
-                {(profile?.diamonds ?? 0).toLocaleString()}
-              </span>
-            </div>
-            <button
-              onClick={() => toast("Withdraw flow ships in Phase 5")}
-              className="mt-4 w-full rounded-full border border-[color:var(--secondary)]/60 py-2.5 text-sm font-bold text-[color:var(--secondary)]"
-            >
-              <ArrowUpFromLine className="mr-1.5 inline h-4 w-4" />
-              Withdraw
-            </button>
-          </div>
-
-          <p className="pt-1 text-center text-[10px] text-muted-foreground">
-            Earn points from every gift you receive as a host
-          </p>
 
 
           <section id="wallet-history">
