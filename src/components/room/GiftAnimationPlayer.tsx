@@ -278,25 +278,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
       aria-live="polite"
     >
-      {/* particles */}
-      {particles.map((_, i) => {
-        const angle = (360 / particles.length) * i;
-        return (
-          <span
-            key={i}
-            className="absolute text-2xl gift-anim-particle"
-            style={{
-              ["--angle" as string]: `${angle}deg`,
-              top: "auto",
-              bottom: "calc(env(safe-area-inset-bottom) + 13.5rem)",
-              left: "50%",
-              animationDelay: `${(i % 5) * 40}ms`,
-            } as React.CSSProperties}
-          >
-            {i % 2 === 0 ? "✨" : "💫"}
-          </span>
-        );
-      })}
+      {/* particles removed */}
 
       {/* sender chip */}
       <div className="absolute left-4 top-6 flex items-center gap-2 gift-anim-sender">
