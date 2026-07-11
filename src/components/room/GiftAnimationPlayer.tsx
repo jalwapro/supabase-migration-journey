@@ -17,6 +17,7 @@ type Play = {
   receiverAvatar: string | null;
   giftName: string;
   giftEmoji: string;
+  giftImageUrl?: string | null;
   giftClipUrl: string | null;
   giftClipType: string | null;
   coins: number;
@@ -61,11 +62,15 @@ function AnimatedGiftVideo({
   type,
   onReady,
   onDone,
+  fallbackEmoji,
+  fallbackImage,
 }: {
   src: string;
   type: string | null;
   onReady: () => void;
   onDone: () => void;
+  fallbackEmoji: string;
+  fallbackImage: string | null;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -110,7 +115,7 @@ function AnimatedGiftVideo({
   }, [onReady, tryPlay]);
 
   if (failed) {
-    return null;
+    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />;
   }
 
   return (
@@ -138,6 +143,48 @@ function AnimatedGiftVideo({
   );
 }
 
+function GiftFallbackVisual({
+  emoji,
+  image,
+  onReady,
+}: {
+  emoji: string;
+  image: string | null;
+  onReady: () => void;
+}) {
+  const readyOnceRef = useRef(false);
+  const markReady = useCallback(() => {
+    if (readyOnceRef.current) return;
+    readyOnceRef.current = true;
+    onReady();
+  }, [onReady]);
+
+  useEffect(() => {
+    if (!image) markReady();
+  }, [image, markReady]);
+
+  if (image) {
+    return (
+      <img
+        src={image}
+        alt=""
+        onLoad={markReady}
+        onError={markReady}
+        className="gift-anim-emoji h-[34vh] max-h-[330px] w-auto max-w-[76vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+      />
+    );
+  }
+
+  return (
+    <span
+      className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+      style={{ fontSize: "10rem" }}
+    >
+      {emoji || "🎁"}
+    </span>
+  );
+}
+
 function AnimatedGiftImage({ src, onReady }: { src: string; onReady: () => void }) {
   const readyOnceRef = useRef(false);
   const [ready, setReady] = useState(false);
@@ -161,7 +208,7 @@ function AnimatedGiftImage({ src, onReady }: { src: string; onReady: () => void 
       alt=""
       onLoad={markReady}
       onError={markReady}
-      className={`${ready ? "gift-anim-emoji" : "opacity-0"} h-[38vh] max-h-[360px] w-auto max-w-[80vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]`}
+      className={`${ready ? "gift-anim-emoji" : "opacity-0"} h-[52vh] max-h-[520px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]`}
     />
   );
 }
@@ -243,10 +290,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               ? supabase.from("profiles").select("avatar").eq("id", r.sender_id).maybeSingle()
               : Promise.resolve({ data: null }),
             r.gift_id
-              ? supabase.from("gifts").select("animation,clip_path,clip_type,sound_url").eq("id", r.gift_id).maybeSingle()
+              ? supabase.from("gifts").select("animation,clip_path,clip_type,image_url,sound_url").eq("id", r.gift_id).maybeSingle()
               : Promise.resolve({ data: null }),
           ]);
-          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null; sound_url?: string | null };
+          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null; image_url?: string | null; sound_url?: string | null };
           enqueue({
             key: `ev-${r.id}`,
             senderName: r.sender_name ?? "Guest",
@@ -255,8 +302,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverAvatar: null,
             giftName: r.gift_name,
             giftEmoji: r.gift_emoji,
-            giftClipUrl: g.clip_path ?? null,
-            giftClipType: g.clip_type ?? null,
+            giftImageUrl: g.image_url ?? null,
+            giftClipUrl: g.clip_path ?? g.image_url ?? null,
+            giftClipType: g.clip_path ? (g.clip_type ?? null) : g.image_url ? "image" : null,
             coins: r.coins ?? 0,
             diamonds: 0,
             quantity: 1,
@@ -281,7 +329,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           const [{ data: gift }, { data: sender }, { data: receiver }] = await Promise.all([
             supabase
               .from("gifts")
-              .select("name,emoji,icon,animation,clip_path,clip_type,sound_url")
+              .select("name,emoji,icon,animation,clip_path,clip_type,image_url,sound_url")
               .eq("id", r.gift_id)
               .maybeSingle(),
             supabase.from("profiles").select("username,avatar").eq("id", r.sender_id).maybeSingle(),
@@ -289,7 +337,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           ]);
           const g = (gift ?? {}) as {
             name?: string; emoji?: string; icon?: string; animation?: string;
-            clip_path?: string | null; clip_type?: string | null; sound_url?: string | null;
+            clip_path?: string | null; clip_type?: string | null; image_url?: string | null; sound_url?: string | null;
           };
           const s = (sender ?? {}) as { username?: string; avatar?: string | null };
           const rc = (receiver ?? {}) as { username?: string; avatar?: string | null };
@@ -301,8 +349,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverAvatar: rc.avatar ?? null,
             giftName: g.name ?? "Gift",
             giftEmoji: g.emoji ?? g.icon ?? "🎁",
-            giftClipUrl: g.clip_path ?? null,
-            giftClipType: g.clip_type ?? null,
+            giftImageUrl: g.image_url ?? null,
+            giftClipUrl: g.clip_path ?? g.image_url ?? null,
+            giftClipType: g.clip_path ? (g.clip_type ?? null) : g.image_url ? "image" : null,
             coins: r.coins_spent ?? 0,
             diamonds: r.diamonds_earned ?? 0,
             quantity: r.quantity ?? 1,
@@ -329,6 +378,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const giftClipUrl = giftClip.url;
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
   const hasSvg = !!giftClipUrl && !hasVideo;
+  const fallbackImage = current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
 
   const clearCurrent = useCallback(() => {
     currentRef.current = null;
@@ -379,7 +429,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
-  const isBig = current.coins >= 5000;
 
   return (
     <div
@@ -409,19 +458,21 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         </div>
       </div>
 
-      {/* bottom: big clip / emoji, TikTok-style above footer */}
-      <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center px-2">
+      {/* center/front-screen gift animation */}
+      <div className="absolute inset-x-0 top-[14vh] z-10 flex flex-col items-center px-2">
         {hasVideo ? (
-          <AnimatedGiftVideo src={giftClipUrl ?? ""} type={giftClip.type} onReady={markCurrentReady} onDone={clearCurrent} />
+          <AnimatedGiftVideo
+            src={giftClipUrl ?? ""}
+            type={giftClip.type}
+            onReady={markCurrentReady}
+            onDone={clearCurrent}
+            fallbackEmoji={current.giftEmoji}
+            fallbackImage={fallbackImage}
+          />
         ) : hasSvg ? (
           <AnimatedGiftImage src={giftClipUrl ?? ""} onReady={markCurrentReady} />
         ) : (
-          <span
-            className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
-            style={{ fontSize: isBig ? "12rem" : "9rem" }}
-          >
-            {current.giftEmoji}
-          </span>
+          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} />
         )}
         <div className="mt-2 flex items-center gap-2 gift-anim-caption">
           <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
@@ -442,7 +493,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* receiver DP */}
       {(current.receiverAvatar || current.receiverName) && (
-        <div className="mt-3 z-10 flex flex-col items-center gift-anim-caption">
+        <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center gift-anim-caption">
           <div className="relative">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
             {current.receiverAvatar ? (
