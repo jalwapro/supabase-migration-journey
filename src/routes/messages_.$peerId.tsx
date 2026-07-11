@@ -11,7 +11,6 @@ import {
   Paperclip,
   Mic,
   Image as ImageIcon,
-  Image as ImageIcon,
   Lock,
   Smile,
   X,
