@@ -59,7 +59,7 @@ function giftSignature(p: Play) {
   return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-function AnimatedGiftVideo({ src, emoji, onDone }: { src: string; emoji: string; onDone: () => void }) {
+function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -323,7 +323,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       {/* bottom: big clip / emoji, TikTok-style above footer */}
       <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center px-2">
         {hasVideo ? (
-          <AnimatedGiftVideo src={giftClipUrl} emoji={current.giftEmoji} onDone={() => setCurrent(null)} />
+          <AnimatedGiftVideo src={giftClipUrl} onDone={() => setCurrent(null)} />
         ) : hasSvg ? (
           <img
             src={giftClipUrl}
