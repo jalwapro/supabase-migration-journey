@@ -96,7 +96,7 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
   }
 
   return (
-    <div className="relative grid place-items-center bg-transparent">
+    <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
       <video
         ref={videoRef}
         autoPlay
@@ -114,7 +114,7 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
         }}
         onError={() => setFailed(true)}
         onEnded={onDone}
-        className="gift-anim-video h-[30vh] max-h-[300px] w-auto max-w-[92vw] bg-transparent object-contain opacity-0 transition-opacity duration-150"
+        className="gift-anim-video h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150"
         style={{ opacity: ready ? 1 : 0 }}
       >
         {webmSrc && <source src={webmSrc} type="video/webm" />}
