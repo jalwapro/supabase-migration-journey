@@ -429,7 +429,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
-  const isBig = current.coins >= 5000;
 
   return (
     <div
