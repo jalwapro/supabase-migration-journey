@@ -153,6 +153,7 @@ function GiftFallbackVisual({
   onReady: () => void;
 }) {
   const readyOnceRef = useRef(false);
+  const [imageFailed, setImageFailed] = useState(false);
   const markReady = useCallback(() => {
     if (readyOnceRef.current) return;
     readyOnceRef.current = true;
@@ -160,16 +161,21 @@ function GiftFallbackVisual({
   }, [onReady]);
 
   useEffect(() => {
+    readyOnceRef.current = false;
+    setImageFailed(false);
     if (!image) markReady();
   }, [image, markReady]);
 
-  if (image) {
+  if (image && !imageFailed) {
     return (
       <img
         src={image}
         alt=""
         onLoad={markReady}
-        onError={markReady}
+        onError={() => {
+          setImageFailed(true);
+          markReady();
+        }}
         className="gift-anim-emoji h-[34vh] max-h-[330px] w-auto max-w-[76vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
       />
     );
