@@ -90,7 +90,8 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
           tryPlay();
         }}
         onError={() => setFailed(true)}
-        className={`gift-anim-emoji gift-anim-video h-[42vh] max-h-[420px] w-auto max-w-[90vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)] ${ready ? "opacity-100" : "opacity-0"}`}
+        className="gift-anim-emoji gift-anim-video h-[42vh] max-h-[420px] w-auto max-w-[90vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        style={{ visibility: ready ? "visible" : "hidden" }}
       />
     </div>
   );
