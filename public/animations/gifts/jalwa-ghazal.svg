@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="g1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ff6ec7" stop-opacity="1"/>
+      <stop offset="45%" stop-color="#ff6ec7" stop-opacity="0.55"/>
+      <stop offset="80%" stop-color="#7b5cff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g2" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" stop-color="#7b5cff" stop-opacity="0"/>
+      <stop offset="85%" stop-color="#7b5cff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#7b5cff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="b1"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  
+  <circle cx="200" cy="200" r="170" fill="url(#g1)">
+    <animate attributeName="r" values="150;180;150" dur="2.4s" repeatCount="indefinite"/>
+  </circle>
+  <g fill="#ff6ec7" opacity="0.7">
+    <circle cx="90" cy="380" r="8"><animate attributeName="cy" from="400" to="-20" dur="6s" repeatCount="indefinite"/></circle>
+    <circle cx="310" cy="380" r="6"><animate attributeName="cy" from="410" to="-10" dur="5s" repeatCount="indefinite"/></circle>
+    <circle cx="200" cy="380" r="10"><animate attributeName="cy" from="405" to="-20" dur="7s" repeatCount="indefinite"/></circle>
+    <circle cx="60" cy="380" r="5"><animate attributeName="cy" from="415" to="-15" dur="4.5s" repeatCount="indefinite"/></circle>
+    <circle cx="340" cy="380" r="7"><animate attributeName="cy" from="405" to="-10" dur="5.5s" repeatCount="indefinite"/></circle>
+  </g>
+  
+  
+  
+  <text x="200" y="245" font-size="190" text-anchor="middle" dominant-baseline="middle">🎁
+    <animateTransform attributeName="transform" type="scale" values="1;1.08;1" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+    <animate attributeName="y" values="245;235;245" dur="1.6s" repeatCount="indefinite"/>
+  </text>
+</svg>
