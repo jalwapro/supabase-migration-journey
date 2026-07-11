@@ -29,10 +29,30 @@ type Play = {
 const PLAY_MS = 4200;
 const VIDEO_PLAY_MS = 6800;
 
+const WEBM_FALLBACKS: Record<string, string> = {
+  "01_love_balloons.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/475fb727-1a63-4622-aa38-d2ae6b217cff/01_love_balloons.webm",
+  "02_chocolate_box.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/e7799583-f21c-4f38-a794-d16cf687e302/02_chocolate_box.webm",
+  "03_cake.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/41d55a5f-f70d-49cc-87fa-38656593e6b5/03_cake.webm",
+  "04_magic_wand.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/12cf0867-2f9e-4512-aa3f-9655bdbecabc/04_magic_wand.webm",
+  "05_coffee_cup.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/37475095-e9c0-43a8-8dfb-bd8bf96b26f4/05_coffee_cup.webm",
+  "06_ice_cream.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/6167d31f-8491-4cb9-b3e2-f14751f45c61/06_ice_cream.webm",
+  "07_ring.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/a98e9c32-520a-4cd8-8539-733fa7edbbcd/07_ring.webm",
+  "08_ferrari.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/f2725d31-d6b2-4bcc-a420-1851ba71b938/08_ferrari.webm",
+  "09_private_jet.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/dbcb487a-5817-42ac-a099-671ccea7f7ef/09_private_jet.webm",
+  "10_yacht.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/d577f08b-7bb2-4a9c-97a2-71a8f3877f89/10_yacht.webm",
+  "11_helicopter.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/a0255553-3629-4611-ad09-d15756d23b3e/11_helicopter.webm",
+  "12_golden_dragon.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/02a0670b-1488-4a61-94ce-1c02ad9d53f6/12_golden_dragon.webm",
+};
+
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
   if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
   return url;
+}
+
+function resolveWebmFallback(url: string) {
+  const fileName = url.split("/").pop() ?? "";
+  return WEBM_FALLBACKS[fileName] ?? null;
 }
 
 function giftSignature(p: Play) {
@@ -43,6 +63,25 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const webmSrc = resolveWebmFallback(src);
+
+  useEffect(() => {
+    setReady(false);
+    setFailed(false);
+    const video = videoRef.current;
+    if (!video) return;
+    video.pause();
+    video.currentTime = 0;
+    video.load();
+  }, [src]);
+
+  useEffect(() => () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.pause();
+    video.removeAttribute("src");
+    video.load();
+  }, []);
 
   const tryPlay = useCallback(() => {
     const video = videoRef.current;
@@ -75,10 +114,8 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
       )}
       <video
         ref={videoRef}
-        src={src}
         autoPlay
         muted
-        loop
         playsInline
         preload="auto"
         onLoadedData={() => {
@@ -90,9 +127,12 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
           tryPlay();
         }}
         onError={() => setFailed(true)}
-        className="gift-anim-emoji gift-anim-video h-[42vh] max-h-[420px] w-auto max-w-[90vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+        className="gift-anim-video h-[72vh] max-h-[760px] w-auto max-w-[100vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
         style={{ visibility: ready ? "visible" : "hidden" }}
-      />
+      >
+        {webmSrc && <source src={webmSrc} type="video/webm" />}
+        <source src={src} type="video/mp4" />
+      </video>
     </div>
   );
 }
