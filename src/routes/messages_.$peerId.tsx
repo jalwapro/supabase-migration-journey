@@ -707,10 +707,10 @@ function DmThread() {
             ) : (
               <button
                 type="button"
-                onMouseDown={startRecord}
-                onMouseUp={stopRecord}
-                onTouchStart={startRecord}
-                onTouchEnd={stopRecord}
+                onPointerDown={(e) => { e.preventDefault(); (e.currentTarget as HTMLButtonElement).setPointerCapture?.(e.pointerId); void startRecord(); }}
+                onPointerUp={(e) => { e.preventDefault(); stopRecord(); }}
+                onPointerCancel={() => stopRecord()}
+                onPointerLeave={() => { if (recording) stopRecord(); }}
                 aria-label={recording ? "Release to send" : "Hold to record"}
                 className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition ${
                   recording
