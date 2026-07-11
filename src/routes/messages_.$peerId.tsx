@@ -375,18 +375,27 @@ function DmThread() {
       return;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      });
       const { mime, ext } = pickRecorderMime();
       const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
       recordChunks.current = [];
       recordStart.current = Date.now();
+      recordCancelled.current = false;
+      recordStream.current = stream;
+      setRecordStartTs(Date.now());
+      setRecordDrag(0);
+      try { navigator.vibrate?.(30); } catch { /* noop */ }
       rec.ondataavailable = (ev) => { if (ev.data.size > 0) recordChunks.current.push(ev.data); };
       rec.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
+        recordStream.current = null;
+        if (recordCancelled.current) return; // discarded
         const outType = rec.mimeType || mime || "audio/webm";
         const blob = new Blob(recordChunks.current, { type: outType });
         const duration = Math.max(1, Math.round((Date.now() - recordStart.current) / 1000));
-        if (blob.size < 800) {
+        if (blob.size < 1200 || duration < 1) {
           toast.error("Recording bahut choti thi — thoda lamba dabaye rakho");
           setAttachBusy(false);
           return;
@@ -415,13 +424,24 @@ function DmThread() {
     }
   }
 
-  function stopRecord() {
+  function stopRecord(cancel = false) {
+    if (cancel) recordCancelled.current = true;
     if (mediaRec.current && mediaRec.current.state !== "inactive") {
-      mediaRec.current.stop();
+      try { mediaRec.current.stop(); } catch { /* noop */ }
+    }
+    // If cancelled, ensure tracks stopped even if onstop hasn't fired.
+    if (cancel && recordStream.current) {
+      recordStream.current.getTracks().forEach((t) => t.stop());
+      recordStream.current = null;
     }
     mediaRec.current = null;
+    recordPointerStart.current = null;
+    setRecordDrag(0);
     setRecording(false);
+    if (cancel) { try { navigator.vibrate?.(15); } catch { /* noop */ } }
   }
+
+
 
 
   async function shareAlbumImage(img: Img) {
