@@ -29,31 +29,12 @@ type Play = {
 const PLAY_MS = 4200;
 const VIDEO_PLAY_MS = 12000;
 
-const WEBM_FALLBACKS: Record<string, string> = {
-  "01_love_balloons.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ecab9a99-783d-4b01-8367-7623ab8fb94a/01_love_balloons.alpha.webm",
-  "02_chocolate_box.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/5301e1a2-2317-4b6a-9e75-73909245f606/02_chocolate_box.alpha.webm",
-  "03_cake.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/57d0a07b-93fc-4ce7-87e4-ed1522460ba7/03_cake.alpha.webm",
-  "04_magic_wand.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/67213ed8-be25-4c83-a0b8-40bbb1402653/04_magic_wand.alpha.webm",
-  "05_coffee_cup.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/7733dce8-006e-491d-9141-1e7c0f9e5787/05_coffee_cup.alpha.webm",
-  "06_ice_cream.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/d5e8c03d-431d-4cef-bb12-bd187e25c826/06_ice_cream.alpha.webm",
-  "07_ring.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/26244db3-73e3-47f0-a7e6-a9fc8320924f/07_ring.alpha.webm",
-  "08_ferrari.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/0aa930f2-73ac-41c3-87f8-ba913d319b42/08_ferrari.alpha.webm",
-  "09_private_jet.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/72ea3116-3a5c-4845-92ea-346475cbc763/09_private_jet.alpha.webm",
-  "10_yacht.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/6fc0dce2-de09-49cb-9b60-7057b41263fd/10_yacht.alpha.webm",
-  "11_helicopter.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/1c2869e5-272c-4da2-9a7d-13f630b7d461/11_helicopter.alpha.webm",
-  "12_golden_dragon.mp4": "https://cloud-to-soul.lovable.app/__l5e/assets-v1/0c9cf956-81b3-4c94-9c51-21296c194923/12_golden_dragon.alpha.webm",
-};
-
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
   if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
   return url;
 }
 
-function resolveWebmFallback(url: string) {
-  const fileName = url.split("/").pop() ?? "";
-  return WEBM_FALLBACKS[fileName] ?? null;
-}
 
 function giftSignature(p: Play) {
   return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
