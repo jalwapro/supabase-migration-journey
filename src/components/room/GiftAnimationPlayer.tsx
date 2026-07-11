@@ -161,8 +161,8 @@ function AnimatedGiftVideo({
           onReady();
         }}
         onEnded={onDone}
-        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150`}
-        style={{ opacity: ready ? 1 : 0, mixBlendMode: type === "webm" ? "normal" : "screen" }}
+        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-black object-cover opacity-0 transition-opacity duration-150`}
+        style={{ opacity: ready ? 1 : 0, mixBlendMode: type === "webm" ? "normal" : "normal" }}
       />
     </div>
   );
