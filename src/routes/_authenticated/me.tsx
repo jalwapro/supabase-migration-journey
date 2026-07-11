@@ -302,7 +302,7 @@ function MePage() {
           )}
           <Row to="/gallery" icon="📸" title="Gallery" sub="Manage your photos" />
           <Row to="/wallet" icon="💰" title="Wallet & Coins" sub="Recharge your balance" />
-          <Row to="/recharge" icon="🧾" title="Recharge History" sub="Your top-up requests & status" />
+          <Row to="/recharge-history" icon="🧾" title="Recharge History" sub="Your top-up requests & status" />
           <Row to="/withdraw" icon="💎" title="Withdraw Points" sub="Cash out your earnings" />
           <Row to="/theme-shop" icon="🛍️" title="Shop" sub="Cars, frames, rings, entrances & more" />
           <Row to="/custom-theme" icon="🎨" title="Custom Theme" sub="Design your own room background" />
