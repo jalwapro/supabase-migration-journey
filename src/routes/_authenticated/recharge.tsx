@@ -229,7 +229,7 @@ function RechargePage() {
                         </span>
                       )}
                       <div className="flex items-center gap-1.5">
-                        <Coins className="h-4 w-4 text-[color:var(--gold)]" />
+                        <CoinIcon className="h-4 w-4 text-[color:var(--gold)]" />
                         <span className="text-lg font-black">{total.toLocaleString()}</span>
                       </div>
                       {p.bonus_coins > 0 && (
@@ -263,7 +263,7 @@ function RechargePage() {
               <div className="rounded-2xl bg-gradient-to-br from-[color:var(--gold)]/20 to-primary/10 p-4">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">You will receive</p>
                 <div className="mt-1 flex items-center gap-2">
-                  <Coins className="h-6 w-6 text-[color:var(--gold)]" />
+                  <CoinIcon className="h-6 w-6 text-[color:var(--gold)]" />
                   <span className="text-2xl font-black">
                     {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()}
                   </span>
@@ -406,7 +406,7 @@ function RechargePage() {
                 <p className="mt-1 text-xs text-muted-foreground">Your coins are now in your wallet</p>
               </div>
               <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)]/30 to-[color:var(--gold)]/10 px-6 py-3">
-                <Coins className="h-6 w-6 text-[color:var(--gold)]" />
+                <CoinIcon className="h-6 w-6 text-[color:var(--gold)]" />
                 <span className="text-2xl font-black">+{creditedCoins.toLocaleString()}</span>
               </div>
               <div className="flex gap-2 pt-2">
