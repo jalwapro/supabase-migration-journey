@@ -62,7 +62,7 @@ function AnimatedGiftVideo({ src, emoji }: { src: string; emoji: string }) {
     <div className="relative grid place-items-center">
       {!ready && (
         <span
-          className="gift-anim-emoji absolute block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
+          className="absolute block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
           style={{ fontSize: "10rem" }}
         >
           {emoji}
