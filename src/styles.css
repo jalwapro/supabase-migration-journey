@@ -286,11 +286,16 @@
 }
 body.themed,
 body.themed .app-frame,
-body.themed .app-frame-outer {
+body.themed .app-frame-outer,
+body.theme-background-active,
+body.theme-background-active .app-frame,
+body.theme-background-active .app-frame-outer {
   background: transparent !important;
 }
 body.themed .app-frame > .relative.z-10 [class*="min-h-dvh"][class*="bg-background"],
-body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"] {
+body.themed .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"],
+body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-dvh"][class*="bg-background"],
+body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"] {
   background-color: transparent !important;
 }
 @media (min-width: 481px) {
