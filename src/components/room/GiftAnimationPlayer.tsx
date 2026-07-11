@@ -185,13 +185,25 @@ function GiftFallbackVisual({
   );
 }
 
-function AnimatedGiftImage({ src, onReady }: { src: string; onReady: () => void }) {
+function AnimatedGiftImage({
+  src,
+  onReady,
+  fallbackEmoji,
+  fallbackImage,
+}: {
+  src: string;
+  onReady: () => void;
+  fallbackEmoji: string;
+  fallbackImage: string | null;
+}) {
   const readyOnceRef = useRef(false);
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     readyOnceRef.current = false;
     setReady(false);
+    setFailed(false);
   }, [src]);
 
   const markReady = useCallback(() => {
@@ -202,14 +214,26 @@ function AnimatedGiftImage({ src, onReady }: { src: string; onReady: () => void 
     }
   }, [onReady]);
 
+  if (failed) {
+    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} />;
+  }
+
   return (
-    <img
-      src={src}
-      alt=""
-      onLoad={markReady}
-      onError={markReady}
-      className={`${ready ? "gift-anim-emoji" : "opacity-0"} h-[52vh] max-h-[520px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]`}
-    />
+    <div className="relative grid min-h-[42vh] place-items-center">
+      {!ready && (
+        <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={markReady} />
+      )}
+      <img
+        src={src}
+        alt=""
+        onLoad={markReady}
+        onError={() => {
+          setFailed(true);
+          markReady();
+        }}
+        className={`${ready ? "gift-anim-emoji" : "absolute opacity-0"} h-[52vh] max-h-[520px] w-auto max-w-[92vw] object-contain drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]`}
+      />
+    </div>
   );
 }
 
@@ -397,6 +421,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }
   }, [current?.key, current, hasVideo, hasSvg]);
 
+  // Safety net: never let a slow/broken asset keep the gift invisible or stuck.
+  useEffect(() => {
+    if (!current || readyKey === current.key) return;
+    const t = setTimeout(() => setReadyKey(current.key), 700);
+    return () => clearTimeout(t);
+  }, [current, readyKey]);
+
   // Play gift sound when a new gift starts
   useEffect(() => {
     if (!current?.soundUrl) return;
@@ -470,7 +501,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             fallbackImage={fallbackImage}
           />
         ) : hasSvg ? (
-          <AnimatedGiftImage src={giftClipUrl ?? ""} onReady={markCurrentReady} />
+          <AnimatedGiftImage
+            src={giftClipUrl ?? ""}
+            onReady={markCurrentReady}
+            fallbackEmoji={current.giftEmoji}
+            fallbackImage={fallbackImage}
+          />
         ) : (
           <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} />
         )}
