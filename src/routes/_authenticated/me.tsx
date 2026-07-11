@@ -291,6 +291,15 @@ function MePage() {
 
           {/* Menu */}
           {isAdmin && <Row to="/admin" icon="🛡️" title="Admin Panel" sub="Manage the whole app" gold />}
+          {isPartner && (
+            <Row
+              to="/partner"
+              icon="🤝"
+              title="Partner Dashboard"
+              sub={`Your ${partnerRow?.percentage ?? 0}% revenue share`}
+              gold
+            />
+          )}
           <Row to="/gallery" icon="📸" title="Gallery" sub="Manage your photos" />
           <Row to="/wallet" icon="💰" title="Wallet & Coins" sub="Recharge your balance" />
           <Row to="/withdraw" icon="💎" title="Withdraw Points" sub="Cash out your earnings" />
