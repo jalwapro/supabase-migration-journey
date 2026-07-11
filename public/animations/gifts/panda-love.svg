@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <g fill="#ff3d68">
+    <text x="40" y="60" font-size="24">❤</text>
+    <text x="150" y="70" font-size="18"><animate attributeName="y" values="80;20" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2s" repeatCount="indefinite"/>❤</text>
+    <text x="30" y="150" font-size="20"><animate attributeName="y" values="160;40" dur="2.4s" begin="0.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2.4s" begin="0.5s" repeatCount="indefinite"/>❤</text>
+    <text x="170" y="140" font-size="16"><animate attributeName="y" values="150;30" dur="2.2s" begin="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2.2s" begin="1s" repeatCount="indefinite"/>❤</text>
+  </g>
+  <g><text x="100" y="125" font-size="90" text-anchor="middle">🐼</text>
+    <animateTransform attributeName="transform" type="scale" values="1;1.08;1" additive="sum" dur="1s" repeatCount="indefinite"/>
+  </g>
+</svg>

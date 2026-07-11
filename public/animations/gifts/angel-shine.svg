@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs><radialGradient id="ag"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#fff5c0" stop-opacity="0"/></radialGradient></defs>
+  <circle cx="100" cy="100" r="90" fill="url(#ag)"><animate attributeName="opacity" values="0.3;0.9;0.3" dur="2s" repeatCount="indefinite"/></circle>
+  <g><text x="100" y="125" font-size="90" text-anchor="middle">👼</text>
+    <animateTransform attributeName="transform" type="translate" values="0 -6;0 6;0 -6" dur="3s" repeatCount="indefinite"/>
+  </g>
+  <g stroke="#fff5c0" stroke-width="2" opacity="0.5">
+    <line x1="100" y1="0" x2="100" y2="30"><animate attributeName="opacity" values="0;0.8;0" dur="2s" repeatCount="indefinite"/></line>
+    <line x1="0" y1="100" x2="30" y2="100"><animate attributeName="opacity" values="0;0.8;0" dur="2s" begin="0.5s" repeatCount="indefinite"/></line>
+    <line x1="170" y1="100" x2="200" y2="100"><animate attributeName="opacity" values="0;0.8;0" dur="2s" begin="1s" repeatCount="indefinite"/></line>
+  </g>
+</svg>
