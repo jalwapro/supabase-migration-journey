@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { openNotification } from "@/components/NotificationPopup";
+import { playNotifySound } from "@/lib/notify-sound";
 import type { NotificationRow } from "@/hooks/useNotifications";
 
 
@@ -188,6 +189,7 @@ export function useGlobalRealtime() {
           qc.invalidateQueries({ queryKey: ["notif-feed", uid] });
           const row = payload.new;
           if (row?.title) {
+            playNotifySound();
             toast(row.title, {
               description: row.body ?? undefined,
               action: { label: "Open", onClick: () => openNotification(row) },
