@@ -45,6 +45,7 @@ import { Route as AuthenticatedGamesIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
+import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
@@ -263,6 +264,11 @@ const ApiPublicSmtpVerifyRoute = ApiPublicSmtpVerifyRouteImport.update({
 const ApiPublicPushWebhookRoute = ApiPublicPushWebhookRouteImport.update({
   id: '/api/public/push-webhook',
   path: '/api/public/push-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicFirebaseConfigRoute = ApiPublicFirebaseConfigRouteImport.update({
+  id: '/api/public/firebase-config',
+  path: '/api/public/firebase-config',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
@@ -545,6 +551,7 @@ export interface FileRoutesByFullPath {
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -617,6 +624,7 @@ export interface FileRoutesByTo {
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -693,6 +701,7 @@ export interface FileRoutesById {
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -769,6 +778,7 @@ export interface FileRouteTypes {
     | '/games/lucky-spin'
     | '/settings/notifications'
     | '/u/$userId'
+    | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/admin/'
@@ -841,6 +851,7 @@ export interface FileRouteTypes {
     | '/games/lucky-spin'
     | '/settings/notifications'
     | '/u/$userId'
+    | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/admin'
@@ -916,6 +927,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/u/$userId'
+    | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
@@ -935,6 +947,7 @@ export interface RootRouteChildren {
   ApiSendEmailRoute: typeof ApiSendEmailRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
+  ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
   ApiPublicPushWebhookRoute: typeof ApiPublicPushWebhookRoute
   ApiPublicSmtpVerifyRoute: typeof ApiPublicSmtpVerifyRoute
 }
@@ -1191,6 +1204,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/push-webhook'
       fullPath: '/api/public/push-webhook'
       preLoaderRoute: typeof ApiPublicPushWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/firebase-config': {
+      id: '/api/public/firebase-config'
+      path: '/api/public/firebase-config'
+      fullPath: '/api/public/firebase-config'
+      preLoaderRoute: typeof ApiPublicFirebaseConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/u/$userId': {
@@ -1628,19 +1648,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSendEmailRoute: ApiSendEmailRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
+  ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
   ApiPublicPushWebhookRoute: ApiPublicPushWebhookRoute,
   ApiPublicSmtpVerifyRoute: ApiPublicSmtpVerifyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
