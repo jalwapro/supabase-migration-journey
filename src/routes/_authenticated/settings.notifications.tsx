@@ -197,7 +197,16 @@ function BrowserPushToggle() {
   const enable = async () => {
     if (!user) return;
     setBusy(true);
-    try { await subscribeToPush(user.id); setStatus("subscribed"); toast.success("Browser notifications enabled"); }
+    try {
+      const { enableFcmForUser } = await import("@/lib/fcm-client");
+      const res = await enableFcmForUser(user.id);
+      if (!res) {
+        // Fall back to Web Push (Safari / no FCM)
+        await subscribeToPush(user.id);
+      }
+      setStatus("subscribed");
+      toast.success("Notifications enabled");
+    }
     catch (e) { toast.error((e as Error).message); setStatus(await currentPushStatus()); }
     finally { setBusy(false); }
   };
