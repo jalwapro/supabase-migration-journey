@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -194,7 +194,7 @@ export function PkBattleSheet({
 
 /* ---------------- INCOMING INVITE POPUP (for the challenged host) --------- */
 
-export function PkIncomingInvite() {
+export function PkIncomingInvite({ currentRoomId }: { currentRoomId?: string }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [invite, setInvite] = useState<Invite | null>(null);
@@ -256,17 +256,34 @@ export function PkIncomingInvite() {
   async function respond(accept: boolean) {
     if (!invite) return;
     setBusy(true);
-    const { error } = await supabase.rpc("pk_respond_invite", {
+    const { data, error } = await supabase.rpc("pk_respond_invite", {
       _invite_id: invite.id,
       _accept: accept,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
     setInvite(null);
-    if (accept) {
-      toast.success("PK Match started!");
-      qc.invalidateQueries({ queryKey: ["pk_active_match"] });
+    if (!accept) {
+      toast.message("Challenge declined");
+      return;
     }
+
+    // Optimistic: seed overlay instantly on the accepter's own room cache,
+    // so it doesn't have to wait for the live_rooms realtime tick.
+    const match = (Array.isArray(data) ? data[0] : data) as Match | null;
+    if (match && currentRoomId) {
+      qc.setQueryData(["room", currentRoomId], (prev: any) =>
+        prev ? { ...prev, active_pk_match_id: match.id } : prev,
+      );
+    }
+    // Force fresh reads on both sides.
+    qc.invalidateQueries({ queryKey: ["room", currentRoomId] });
+    if (match) {
+      qc.invalidateQueries({ queryKey: ["room", match.room_a] });
+      qc.invalidateQueries({ queryKey: ["room", match.room_b] });
+      qc.invalidateQueries({ queryKey: ["pk_active_match", match.id] });
+    }
+    toast.success("PK Match started!");
   }
 
   if (!invite) return null;
@@ -310,6 +327,65 @@ export function PkIncomingInvite() {
     </div>
   );
 }
+
+/* ---------------- CHALLENGER FEEDBACK (for the sending host) -------------- */
+// Listens for status transitions on invites the current user SENT and:
+//  - toasts accepted / declined / expired
+//  - invalidates the current room query so the match overlay appears instantly
+//    on the challenger side without waiting for the live_rooms realtime tick.
+export function PkChallengerToasts({ currentRoomId }: { currentRoomId: string }) {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const seenRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!user) return;
+    const ch = supabase
+      .channel(`pk_out:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "pk_invites",
+          filter: `from_host=eq.${user.id}`,
+        },
+        (payload: any) => {
+          const row = payload?.new as {
+            id: string;
+            status: string;
+            match_id: string | null;
+          };
+          if (!row || seenRef.current.has(`${row.id}:${row.status}`)) return;
+          seenRef.current.add(`${row.id}:${row.status}`);
+
+          if (row.status === "accepted") {
+            toast.success("Opponent accepted — PK is live!");
+            // Seed challenger's room cache instantly, then invalidate to reconcile.
+            if (row.match_id) {
+              qc.setQueryData(["room", currentRoomId], (prev: any) =>
+                prev ? { ...prev, active_pk_match_id: row.match_id } : prev,
+              );
+              qc.invalidateQueries({ queryKey: ["pk_active_match", row.match_id] });
+            }
+            qc.invalidateQueries({ queryKey: ["room", currentRoomId] });
+          } else if (row.status === "declined") {
+            toast.message("Opponent declined the challenge");
+          } else if (row.status === "expired") {
+            toast.message("Challenge expired — no response");
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [user, currentRoomId, qc]);
+
+  return null;
+}
+
+
 
 /* ---------------- ACTIVE MATCH OVERLAY (score bar + timer) --------------- */
 
