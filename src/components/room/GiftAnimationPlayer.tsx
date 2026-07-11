@@ -23,8 +23,15 @@ type Play = {
   diamonds: number;
   quantity: number;
   animation: string;
+  soundUrl?: string | null;
   local?: boolean;
 };
+
+function resolveSoundUrl(url: string | null | undefined) {
+  if (!url) return null;
+  if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
+  return url;
+}
 
 const PLAY_MS = 4200;
 const VIDEO_PLAY_MS = 12000;
@@ -234,10 +241,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               ? supabase.from("profiles").select("avatar").eq("id", r.sender_id).maybeSingle()
               : Promise.resolve({ data: null }),
             r.gift_id
-              ? supabase.from("gifts").select("animation,clip_path,clip_type").eq("id", r.gift_id).maybeSingle()
+              ? supabase.from("gifts").select("animation,clip_path,clip_type,sound_url").eq("id", r.gift_id).maybeSingle()
               : Promise.resolve({ data: null }),
           ]);
-          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null };
+          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null; sound_url?: string | null };
           enqueue({
             key: `ev-${r.id}`,
             senderName: r.sender_name ?? "Guest",
@@ -252,6 +259,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             diamonds: 0,
             quantity: 1,
             animation: g.animation ?? "pop",
+            soundUrl: g.sound_url ?? null,
           });
         },
       )
@@ -271,7 +279,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           const [{ data: gift }, { data: sender }, { data: receiver }] = await Promise.all([
             supabase
               .from("gifts")
-              .select("name,emoji,icon,animation,clip_path,clip_type")
+              .select("name,emoji,icon,animation,clip_path,clip_type,sound_url")
               .eq("id", r.gift_id)
               .maybeSingle(),
             supabase.from("profiles").select("username,avatar").eq("id", r.sender_id).maybeSingle(),
@@ -279,7 +287,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           ]);
           const g = (gift ?? {}) as {
             name?: string; emoji?: string; icon?: string; animation?: string;
-            clip_path?: string | null; clip_type?: string | null;
+            clip_path?: string | null; clip_type?: string | null; sound_url?: string | null;
           };
           const s = (sender ?? {}) as { username?: string; avatar?: string | null };
           const rc = (receiver ?? {}) as { username?: string; avatar?: string | null };
@@ -297,6 +305,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             diamonds: r.diamonds_earned ?? 0,
             quantity: r.quantity ?? 1,
             animation: g.animation ?? "pop",
+            soundUrl: g.sound_url ?? null,
           });
         },
       )
@@ -335,6 +344,21 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       setReadyKey(current.key);
     }
   }, [current?.key, current, hasVideo, hasSvg]);
+
+  // Play gift sound when a new gift starts
+  useEffect(() => {
+    if (!current?.soundUrl) return;
+    const src = resolveSoundUrl(current.soundUrl);
+    if (!src) return;
+    const audio = new Audio(src);
+    audio.volume = 0.85;
+    audio.play().catch(() => {});
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, [current?.key, current?.soundUrl]);
+
 
   // Auto-clear current after PLAY_MS. Kept in a separate effect so the
   // cleanup only fires when `current` itself changes — not on every
