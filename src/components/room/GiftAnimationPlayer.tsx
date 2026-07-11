@@ -34,12 +34,12 @@ function resolveSoundUrl(url: string | null | undefined) {
 }
 
 const PLAY_MS = 3200;
-const VIDEO_PLAY_MS = 6000;
+const VIDEO_PLAY_MS = 3800;
 
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
-  if (url.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${url}`;
+  if (url.startsWith("/__l5e/")) return url;
   return url;
 }
 
@@ -179,11 +179,17 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, [current]);
 
   const enqueueOne = useCallback((p: Play) => {
+    if (p.local) {
+      setQueue([]);
+      currentRef.current = p;
+      setCurrent(p);
+      return;
+    }
     // If nothing is playing, show it immediately (synchronously via ref
     // so a rapid-fire second call in the same tick still queues correctly).
     // Otherwise append to the pending queue.
     if (currentRef.current) {
-      setQueue((q) => [...q, p]);
+      setQueue((q) => [...q.slice(-3), p]);
     } else {
       currentRef.current = p;
       setCurrent(p);
@@ -198,15 +204,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
 
-    const repeatCount = Math.max(1, Math.min(50, Math.floor(Number(p.quantity) || 1)));
-    for (let i = 0; i < repeatCount; i += 1) {
-      enqueueOne({
-        ...p,
-        key: repeatCount === 1 ? p.key : `${p.key}-x${i + 1}`,
-        diamonds: repeatCount > 1 ? Math.round((p.diamonds ?? 0) / repeatCount) : p.diamonds,
-        quantity: 1,
-      });
-    }
+    enqueueOne({
+      ...p,
+      quantity: Math.max(1, Math.floor(Number(p.quantity) || 1)),
+    });
   }, [enqueueOne]);
 
 

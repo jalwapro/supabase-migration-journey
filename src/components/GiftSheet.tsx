@@ -19,6 +19,7 @@ export type Gift = {
   animation: string | null;
   clip_path?: string | null;
   clip_type?: string | null;
+  sound_url?: string | null;
 };
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
@@ -59,7 +60,7 @@ export function GiftSheet({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sort_order,is_active,active")
+        .select("id,name,emoji,icon,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active")
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
@@ -98,53 +99,24 @@ export function GiftSheet({
   const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
   const send = useMutation({
-    mutationFn: async () => {
-      if (!selectedGift) throw new Error("Pick a gift");
-      const targets = sendToAll
-        ? receivers.map((r) => r.id)
-        : receiverId
-          ? [receiverId]
-          : [];
+    mutationFn: async ({ gift, targets, quantity }: { gift: Gift; targets: string[]; quantity: number }) => {
       if (targets.length === 0) throw new Error("Pick a receiver");
       for (const rid of targets) {
         const { error } = await supabase.rpc("send_gift", {
           _room_id: roomId,
           _receiver_id: rid,
-          _gift_id: selectedGift.id,
-          _quantity: qty,
+          _gift_id: gift.id,
+          _quantity: quantity,
         });
         if (error) throw error;
       }
-      const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
       return {
-        gift: selectedGift,
-        receiver: firstReceiver,
-        quantity: qty,
-        coins: price(selectedGift) * qty,
+        gift,
+        quantity,
+        coins: price(gift) * quantity,
       };
     },
-    onSuccess: async (sent) => {
-      onClose(); // close sheet so full-screen animation is visible
-      window.dispatchEvent(
-        new CustomEvent("jalwa:gift-sent", {
-          detail: {
-            key: `local-${sent.gift.id}-${Date.now()}`,
-            senderName: profile?.username ?? "Guest",
-            senderAvatar: profile?.avatar ?? null,
-            receiverName: sent.receiver?.username ?? "Host",
-            receiverAvatar: sent.receiver?.avatar ?? null,
-            giftName: sent.gift.name,
-            giftEmoji: sent.gift.emoji ?? sent.gift.icon ?? "🎁",
-            giftClipUrl: sent.gift.clip_path ?? null,
-            giftClipType: sent.gift.clip_type ?? null,
-            coins: sent.coins,
-            diamonds: sent.gift.diamonds_value * sent.quantity,
-            quantity: sent.quantity,
-            animation: sent.gift.animation ?? "pop",
-            local: true,
-          },
-        }),
-      );
+    onSuccess: async () => {
       await refresh();
       qc.invalidateQueries({ queryKey: ["wallet_tx"] });
       setSelectedGift(null);
@@ -159,6 +131,43 @@ export function GiftSheet({
   const totalCost =
     price(selectedGift) * qty * (sendToAll ? Math.max(1, receivers.length) : 1);
   const canAfford = (profile?.coins ?? 0) >= totalCost;
+
+  const handleSend = () => {
+    if (!selectedGift || send.isPending) return;
+    const targets = sendToAll
+      ? receivers.map((r) => r.id)
+      : receiverId
+        ? [receiverId]
+        : [];
+    if (targets.length === 0) {
+      toast.error("Pick a receiver");
+      return;
+    }
+    const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
+    window.dispatchEvent(
+      new CustomEvent("jalwa:gift-sent", {
+        detail: {
+          key: `local-${selectedGift.id}-${Date.now()}`,
+          senderName: profile?.username ?? "Guest",
+          senderAvatar: profile?.avatar ?? null,
+          receiverName: firstReceiver?.username ?? "Host",
+          receiverAvatar: firstReceiver?.avatar ?? null,
+          giftName: selectedGift.name,
+          giftEmoji: selectedGift.emoji ?? selectedGift.icon ?? "🎁",
+          giftClipUrl: selectedGift.clip_path ?? null,
+          giftClipType: selectedGift.clip_type ?? null,
+          coins: price(selectedGift) * qty,
+          diamonds: selectedGift.diamonds_value * qty,
+          quantity: qty,
+          animation: selectedGift.animation ?? "pop",
+          soundUrl: selectedGift.sound_url ?? null,
+          local: true,
+        },
+      }),
+    );
+    onClose();
+    send.mutate({ gift: selectedGift, targets, quantity: qty });
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black" onClick={onClose} style={{ contain: "strict", isolation: "isolate" }}>
@@ -357,7 +366,7 @@ export function GiftSheet({
             ))}
           </div>
           <button
-            onClick={() => send.mutate()}
+            onClick={handleSend}
             disabled={!selectedGift || (!sendToAll && !receiverId) || !canAfford || send.isPending}
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
           >
