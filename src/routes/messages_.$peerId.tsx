@@ -604,9 +604,9 @@ function DmThread() {
           </div>
         )}
 
-        {/* Composer */}
+        {/* Composer — Jalwa premium */}
         <div
-          className="sticky bottom-0 border-t border-border bg-background/90 px-2 py-2 backdrop-blur-xl"
+          className="sticky bottom-0 border-t border-[color:var(--gold)]/20 bg-gradient-to-t from-background via-background/95 to-background/80 px-2.5 pt-2 backdrop-blur-xl"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
         >
           <input
@@ -616,51 +616,56 @@ function DmThread() {
             className="hidden"
             onChange={pickAttachment}
           />
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={attachBusy || recording}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/60 text-muted-foreground disabled:opacity-40"
-              aria-label="Attach"
-            >
-              {attachBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAlbum(true)}
-              disabled={attachBusy || recording}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/60 text-[color:var(--gold)] disabled:opacity-40"
-              aria-label="Share from private album"
-              title="Private album se share karo"
-            >
-              <Lock className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setEmojiOpen(true)}
-              disabled={attachBusy || recording}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card/60 text-[color:var(--primary)] disabled:opacity-40"
-              aria-label="Animated emoji"
-              title="Animated emoji bhejo"
-            >
-              <Smile className="h-4 w-4" />
-            </button>
-            <input
-              value={text}
-              onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
-              onKeyDown={(e) => e.key === "Enter" && sendText()}
-              placeholder={recording ? "Recording…" : "Type a message…"}
-              disabled={recording}
-              className="flex-1 rounded-full border border-border bg-card/60 px-4 py-2.5 text-sm outline-none focus:border-[color:var(--primary)] disabled:opacity-60"
-            />
+          <div className="flex items-end gap-2">
+            {/* Premium pill wrapper with emoji + input + attach icons inside */}
+            <div className="relative flex min-w-0 flex-1 items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-card/70 pl-1.5 pr-1 shadow-[0_4px_20px_-6px_rgba(0,0,0,0.6)] focus-within:border-[color:var(--primary)]/70 focus-within:shadow-[0_0_0_3px_rgba(236,72,153,0.15)] transition-all">
+              <button
+                type="button"
+                onClick={() => setEmojiOpen(true)}
+                disabled={attachBusy || recording}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--primary)] hover:bg-[color:var(--primary)]/10 disabled:opacity-40 transition"
+                aria-label="Animated emoji"
+              >
+                <Smile className="h-[18px] w-[18px]" />
+              </button>
+              <input
+                value={text}
+                onChange={(e) => { setText(e.target.value); broadcastTyping(); }}
+                onKeyDown={(e) => e.key === "Enter" && sendText()}
+                placeholder={recording ? "Recording…" : "Message"}
+                disabled={recording}
+                className="min-w-0 flex-1 bg-transparent px-1 py-2.5 text-[15px] placeholder:text-muted-foreground/70 outline-none disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAlbum(true)}
+                disabled={attachBusy || recording}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[color:var(--gold)] hover:bg-[color:var(--gold)]/10 disabled:opacity-40 transition"
+                aria-label="Private album"
+                title="Private album se share karo"
+              >
+                <Lock className="h-[16px] w-[16px]" />
+              </button>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={attachBusy || recording}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40 transition"
+                aria-label="Attach"
+              >
+                {attachBusy ? <Loader2 className="h-[16px] w-[16px] animate-spin" /> : <Paperclip className="h-[16px] w-[16px]" />}
+              </button>
+            </div>
+
+            {/* Premium send / mic button */}
             {text.trim() ? (
               <button
                 onClick={sendText}
                 aria-label="Send"
-                className="glow-4d grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
+                className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)] text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.6)] active:scale-95 transition"
               >
-                <Send className="h-4 w-4" />
+                <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                <Send className="h-[18px] w-[18px] translate-x-[1px]" />
               </button>
             ) : (
               <button
@@ -670,20 +675,24 @@ function DmThread() {
                 onTouchStart={startRecord}
                 onTouchEnd={stopRecord}
                 aria-label={recording ? "Release to send" : "Hold to record"}
-                className={`glow-4d grid h-10 w-10 shrink-0 place-items-center rounded-full text-primary-foreground ${
-                  recording ? "bg-red-500 animate-pulse" : "bg-primary"
+                className={`relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-primary-foreground shadow-[0_6px_20px_-4px_rgba(236,72,153,0.5)] active:scale-95 transition ${
+                  recording
+                    ? "bg-red-500 animate-pulse"
+                    : "bg-gradient-to-br from-[color:var(--primary)] via-[color:var(--secondary)] to-[color:var(--primary)]"
                 }`}
               >
-                {recording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/25" />
+                {recording ? <Square className="h-[18px] w-[18px]" /> : <Mic className="h-[18px] w-[18px]" />}
               </button>
             )}
           </div>
           {recording && (
-            <p className="mt-1 text-center text-[10px] text-red-400">
-              Recording… release to send
+            <p className="mt-1 text-center text-[10px] font-semibold text-red-400">
+              ● Recording… release to send
             </p>
           )}
         </div>
+
       </div>
 
       {/* Private album picker */}
