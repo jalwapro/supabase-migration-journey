@@ -56,6 +56,7 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
+import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay } from "@/components/room/PkBattleSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
@@ -76,6 +77,7 @@ type Room = {
   agora_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
+  active_pk_match_id?: string | null;
   host: {
     username: string | null;
     avatar: string | null;
@@ -155,6 +157,7 @@ function RoomPage() {
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [pkOpen, setPkOpen] = useState(false);
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
@@ -205,10 +208,10 @@ function RoomPage() {
     queryFn: async () => {
       const baseCols =
         "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
-      // Try with milestone column; fall back if migration 0040 not applied yet.
+      // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
-        .select(`${baseCols},milestone_awarded_at`)
+        .select(`${baseCols},milestone_awarded_at,active_pk_match_id`)
         .eq("id", roomId)
         .maybeSingle()) as { data: unknown; error: unknown };
       if (error) {
@@ -1727,6 +1730,18 @@ function RoomPage() {
         receivers={giftReceivers}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <PkIncomingInvite />
+      {room.data?.active_pk_match_id && (
+        <PkMatchOverlay
+          matchId={room.data.active_pk_match_id}
+          meHostId={isHost ? user?.id ?? null : null}
+        />
+      )}
+      <PkBattleSheet
+        open={pkOpen}
+        onClose={() => setPkOpen(false)}
+        currentRoomId={roomId}
+      />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
@@ -1943,7 +1958,14 @@ function RoomPage() {
           setVideoSettingsOpen(false);
           void leaveRoom();
         }}
-        onPk={() => toast.info("PK Battle — coming soon")}
+        onPk={() => {
+          setVideoSettingsOpen(false);
+          if (!isHost) {
+            toast.info("Only the host can start a PK match");
+            return;
+          }
+          setPkOpen(true);
+        }}
       />
 
       <SeatActionSheet
