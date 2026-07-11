@@ -96,7 +96,7 @@ function AnimatedGiftVideo({ src, onDone }: { src: string; onDone: () => void })
         onError={() => setFailed(true)}
         onEnded={onDone}
         className="gift-anim-video h-full w-full bg-transparent object-contain opacity-0 transition-opacity duration-150"
-        style={{ opacity: ready ? 1 : 0 }}
+        style={{ opacity: ready ? 1 : 0, mixBlendMode: "screen" }}
       >
         <source src={src} type="video/mp4" />
       </video>
