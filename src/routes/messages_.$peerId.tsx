@@ -157,7 +157,15 @@ function DmThread() {
         .limit(200);
       if (cancel) return;
       if (error) { toast.error(error.message); return; }
-      setMessages((data ?? []) as DM[]);
+      setMessages((prev) => {
+        const map = new Map<string, DM>();
+        for (const m of (data ?? []) as DM[]) map.set(m.id, m);
+        // Preserve any realtime messages that arrived before history finished loading
+        for (const m of prev) if (!map.has(m.id)) map.set(m.id, m);
+        return Array.from(map.values()).sort(
+          (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+        );
+      });
       const now = new Date().toISOString();
       // Mark all peer→me as delivered AND read (thread is open)
       await supabase
