@@ -289,13 +289,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[60] flex flex-col items-center justify-end overflow-hidden pb-28"
       aria-live="polite"
     >
-      {/* dim + radial glow */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/70" />
+      {/* near-transparent dim so room stays visible behind the gift */}
+      <div className="absolute inset-0 bg-black/5" />
       <div className="absolute inset-0 gift-anim-glow" />
       <div className="absolute inset-0 gift-anim-shimmer" />
+
 
       {/* particles */}
       {particles.map((_, i) => {
