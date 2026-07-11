@@ -2,6 +2,9 @@
 -- for premium mythic gifts (up to 100,000,000 coins) and future accumulation.
 BEGIN;
 
+-- Drop dependent views before altering column types; recreated at end.
+DROP VIEW IF EXISTS public.room_popularity;
+
 -- Profiles: coin/diamond balances
 ALTER TABLE public.profiles
   ALTER COLUMN coins    TYPE bigint USING coins::bigint,
