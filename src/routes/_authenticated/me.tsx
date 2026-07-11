@@ -47,6 +47,19 @@ function MePage() {
   const { user, profile, isAdmin, signOut, refresh } = useAuth();
   const { data: counts } = useCounts(user?.id);
   const { data: vip } = useVipProfile(user?.id);
+  const { data: partnerRow } = useQuery({
+    queryKey: ["is-partner", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("partners")
+        .select("id,is_active,percentage")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+  });
+  const isPartner = !!partnerRow?.is_active;
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
