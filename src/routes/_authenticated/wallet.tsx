@@ -6,9 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Coins,
-  Diamond,
   ArrowDownToLine,
-  ArrowUpFromLine,
   Gift,
   TrendingUp,
   TrendingDown,
