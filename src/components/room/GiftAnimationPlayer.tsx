@@ -386,9 +386,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       {/* bottom: big clip / emoji, TikTok-style above footer */}
       <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center px-2">
         {hasVideo ? (
-          <AnimatedGiftVideo src={giftClipUrl} type={giftClip.type} onReady={markCurrentReady} onDone={clearCurrent} />
+          <AnimatedGiftVideo src={giftClipUrl ?? ""} type={giftClip.type} onReady={markCurrentReady} onDone={clearCurrent} />
         ) : hasSvg ? (
-          <AnimatedGiftImage src={giftClipUrl} onReady={markCurrentReady} />
+          <AnimatedGiftImage src={giftClipUrl ?? ""} onReady={markCurrentReady} />
         ) : (
           <span
             className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.6)]"
