@@ -36,8 +36,9 @@ function resolveSoundUrl(url: string | null | undefined) {
 
 const PLAY_MS = 3200;
 const VIDEO_PLAY_MS = 3800;
-const ROYAL_ROSE_MP4_URL = "/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4";
-const ROYAL_ROSE_THUMB_URL = "/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png";
+const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
+const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
+const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
@@ -47,7 +48,7 @@ function isRoyalRoseGift(name: string | null | undefined) {
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
-  if (url.startsWith("/__l5e/")) return url;
+  if (url.startsWith("/__l5e/")) return `${LOVABLE_ASSET_ORIGIN}${url}`;
   return url;
 }
 
