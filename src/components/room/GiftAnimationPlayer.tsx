@@ -414,7 +414,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         )}
       </div>
 
-      {/* receiver DP + points badge */}
+      {/* receiver DP */}
       {(current.receiverAvatar || current.receiverName) && (
         <div className="mt-3 z-10 flex flex-col items-center gift-anim-caption">
           <div className="relative">
