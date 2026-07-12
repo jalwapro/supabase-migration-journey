@@ -126,6 +126,29 @@ export function PkBattleSheet({
     toast.message("Search cancelled");
   }
 
+  // TikTok-style "Next": skip current queue slot, requeue fresh to pair with a different host.
+  async function nextOpponent() {
+    await supabase.rpc("pk_leave_queue");
+    setWaitedSec(0);
+    const { data, error } = await supabase.rpc("pk_join_random_queue", {
+      _duration_sec: duration,
+    });
+    if (error) return toast.error(error.message);
+    const match = (Array.isArray(data) ? data[0] : data) as Match | null;
+    if (match) {
+      qc.setQueryData(["room", currentRoomId], (prev: any) =>
+        prev ? { ...prev, active_pk_match_id: match.id } : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["room", currentRoomId] });
+      qc.invalidateQueries({ queryKey: ["pk_active_match", match.id] });
+      setSearching(false);
+      toast.success("Matched! PK is live!");
+      onClose();
+    } else {
+      toast.message("Searching next host…");
+    }
+  }
+
   // While searching: tick + poll own live room for active_pk_match_id.
   useEffect(() => {
     if (!searching || !user) return;
@@ -252,25 +275,33 @@ export function PkBattleSheet({
                 <p className="text-[11px] text-white/60">
                   Waited {waitedSec}s · trying next host automatically · auto-cancels at 180s
                 </p>
-                <button
-                  onClick={cancelSearch}
-                  className="mt-1 rounded-full bg-white/10 px-4 py-2 text-xs font-bold text-white/90"
-                >
-                  Cancel search
-                </button>
+                <div className="flex w-full gap-2">
+                  <button
+                    onClick={cancelSearch}
+                    className="flex-1 rounded-full bg-white/10 px-4 py-2.5 text-xs font-bold text-white/80"
+                  >
+                    ✕ Cancel
+                  </button>
+                  <button
+                    onClick={nextOpponent}
+                    className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--gold)] px-4 py-2.5 text-xs font-extrabold text-white shadow-lg"
+                  >
+                    ⏭ Next Host
+                  </button>
+                </div>
               </div>
             ) : (
               <>
                 <p className="mb-3 text-center text-xs text-white/70">
                   Get instantly paired with another random live host who's also
-                  looking for a PK battle.
+                  looking for a PK battle. Not happy? Tap <b>Next</b> to skip.
                 </p>
                 <button
                   onClick={findRandom}
                   className="glow-4d flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-pink-500 to-[color:var(--gold)] py-3 text-sm font-extrabold text-white"
                 >
                   <Shuffle className="h-4 w-4" />
-                  Find Random Opponent
+                  Start PK — Find Opponent
                 </button>
               </>
             )}
@@ -749,18 +780,6 @@ export function PkMatchOverlay({
             >
               <Clock className="h-3 w-3" /> {mm}:{ss}
             </span>
-            {canEndEarly && !isEnded && (
-              <button
-                onClick={() =>
-                  supabase
-                    .rpc("pk_end_match", { _match_id: matchId })
-                    .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }))
-                }
-                className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/80"
-              >
-                End
-              </button>
-            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -786,6 +805,21 @@ export function PkMatchOverlay({
             <span className="text-red-300">🔴 {Number(sA).toLocaleString()}</span>
             <span className="text-blue-300">{Number(sB).toLocaleString()} 🔵</span>
           </div>
+
+          {/* Prominent End PK button for participants (TikTok-style) */}
+          {canEndEarly && !isEnded && (
+            <button
+              onClick={() => {
+                if (!confirm("End this PK match now?")) return;
+                supabase
+                  .rpc("pk_end_match", { _match_id: matchId })
+                  .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }));
+              }}
+              className="mt-2 w-full rounded-full bg-gradient-to-r from-red-600 to-red-500 py-2 text-xs font-extrabold text-white shadow-lg active:scale-[0.98]"
+            >
+              🛑 End PK Match
+            </button>
+          )}
 
           {isEnded && (
             <div className="mt-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/20 py-1.5 text-[11px] font-extrabold text-white">
