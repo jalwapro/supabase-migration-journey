@@ -2093,10 +2093,6 @@ function RoomPage() {
         speakerMuted={agora.speakerMuted}
         onToggleSpeaker={agora.toggleSpeaker}
         isVideo={isVideo}
-        onOpenSeats={() => {
-          setVideoSettingsOpen(false);
-          setSeatsSheetOpen(true);
-        }}
         onOpenMusic={() => {
           setVideoSettingsOpen(false);
           setMusicOpen(true);
@@ -2108,6 +2104,14 @@ function RoomPage() {
         onShare={() => {
           setVideoSettingsOpen(false);
           void share();
+        }}
+        onOpenGuests={() => {
+          setVideoSettingsOpen(false);
+          setViewersSheetOpen(true);
+        }}
+        onOpenRank={() => {
+          setVideoSettingsOpen(false);
+          void navigate({ to: "/rank" });
         }}
         onEndLive={() => {
           setVideoSettingsOpen(false);
@@ -3271,10 +3275,11 @@ function VideoSettingsSheet({
   speakerMuted,
   onToggleSpeaker,
   isVideo,
-  onOpenSeats,
   onOpenMusic,
   onOpenGames,
   onShare,
+  onOpenGuests,
+  onOpenRank,
   onEndLive,
   onPk,
 }: {
@@ -3290,10 +3295,11 @@ function VideoSettingsSheet({
   speakerMuted: boolean;
   onToggleSpeaker: () => void;
   isVideo: boolean;
-  onOpenSeats: () => void;
   onOpenMusic: () => void;
   onOpenGames: () => void;
   onShare: () => void;
+  onOpenGuests: () => void;
+  onOpenRank: () => void;
   onEndLive: () => void;
   onPk: () => void;
 }) {
@@ -3412,9 +3418,8 @@ function VideoSettingsSheet({
           <ToolBtn icon={<Gamepad2 className="h-5 w-5" />} label="Games" onClick={onOpenGames} />
           <ToolBtn icon={<Swords className="h-5 w-5" />} label="PK" onClick={onPk} />
           <ToolBtn icon={<Share2 className="h-5 w-5" />} label="Invite" onClick={onShare} />
-          <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={() => {}} />
-          <ToolBtn icon={<Trophy className="h-5 w-5" />} label="Rank" onClick={() => {}} />
-          <ToolBtn icon={<Flame className="h-5 w-5" />} label="Boost" onClick={() => {}} />
+          <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={onOpenGuests} />
+          <ToolBtn icon={<Trophy className="h-5 w-5" />} label="Rank" onClick={onOpenRank} />
         </div>
 
         {isHost && (
