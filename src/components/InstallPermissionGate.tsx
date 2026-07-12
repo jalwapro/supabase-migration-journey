@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Mic, Video, Bell, MapPin, Loader2, Check, X } from "lucide-react";
 import { isNative } from "@/lib/native";
 
-const FLAG_KEY = "jalwa_install_perms_asked_v3";
+const FLAG_KEY = "jalwa_install_perms_asked_v4";
 
 type PermState = "idle" | "asking" | "granted" | "denied";
 type PermKey = "mic" | "camera" | "notifications" | "location";
@@ -37,11 +37,14 @@ export function InstallPermissionGate() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!isNative() && !isStandalone()) return;
+    // Show on native app, installed PWA, AND regular browser tab —
+    // har user ko first-launch pe mic/camera/notif/location maangna hai.
     try {
       if (localStorage.getItem(FLAG_KEY) === "1") return;
     } catch { /* no-op */ }
-    setNeedsAsk(true);
+    // Small delay so it doesn't clash with splash/auth redirect.
+    const t = setTimeout(() => setNeedsAsk(true), 800);
+    return () => clearTimeout(t);
   }, []);
 
   function setOne(k: PermKey, s: PermState) {
