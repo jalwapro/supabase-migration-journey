@@ -536,6 +536,146 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
 }
 .gift-anim-caption { animation: gift-anim-caption-in 3.8s ease-out forwards; }
 
+/* ============ Cinematic Gift FX (9-phase overlay) ============ */
+@keyframes cine-streak {
+  0%   { opacity: 0; transform: rotate(var(--r, 0deg)) scaleX(0); }
+  25%  { opacity: 1; transform: rotate(var(--r, 0deg)) scaleX(1); }
+  100% { opacity: 0; transform: rotate(var(--r, 0deg)) scaleX(1.2); }
+}
+.cine-streak {
+  animation: cine-streak 450ms ease-out forwards;
+  filter: drop-shadow(0 0 8px var(--fx-accent));
+}
+@keyframes cine-shockwave {
+  0%   { opacity: 0.9; transform: translate(-50%,-50%) scale(0); }
+  100% { opacity: 0;   transform: translate(-50%,-50%) scale(6); }
+}
+.cine-shockwave {
+  width: 22vmin; height: 22vmin; border-radius: 999px;
+  border: 3px solid var(--fx-accent);
+  box-shadow: 0 0 60px var(--fx-accent), inset 0 0 40px var(--fx-from);
+  animation: cine-shockwave 700ms ease-out forwards;
+}
+@keyframes cine-orbit {
+  0%   { transform: translate(-50%,-50%) rotate(var(--angle)) translateX(0) scale(.2); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translate(-50%,-50%) rotate(var(--angle)) translateX(28vmin) scale(1); opacity: 0.9; }
+}
+.cine-orbit {
+  animation: cine-orbit 1200ms cubic-bezier(.4,.02,.2,1) forwards;
+  filter: drop-shadow(0 0 6px var(--fx-accent));
+}
+@keyframes cine-buildup-glow {
+  0%   { opacity: 0; transform: translate(-50%,-50%) scale(.4); }
+  50%  { opacity: 1; }
+  100% { opacity: 0.85; transform: translate(-50%,-50%) scale(1); }
+}
+.cine-buildup-glow {
+  background: radial-gradient(circle, var(--fx-accent) 0%, var(--fx-from) 30%, transparent 65%);
+  filter: blur(30px);
+  animation: cine-buildup-glow 950ms ease-out forwards;
+  mix-blend-mode: screen;
+}
+@keyframes cine-hero-pulse {
+  0%   { opacity: 0; transform: translate(-50%,-50%) scale(.2); }
+  40%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(4); }
+}
+.cine-hero-pulse {
+  width: 36vmin; height: 36vmin; border-radius: 999px;
+  background: radial-gradient(circle, var(--fx-accent) 0%, transparent 70%);
+  animation: cine-hero-pulse 700ms ease-out forwards;
+  mix-blend-mode: screen;
+}
+@keyframes cine-hero-flash {
+  0%,100% { opacity: 0; }
+  10%     { opacity: 0.35; }
+  30%     { opacity: 0.15; }
+}
+.cine-hero-flash {
+  background: radial-gradient(circle at 50% 45%, var(--fx-accent), transparent 55%);
+  animation: cine-hero-flash 700ms ease-out forwards;
+  mix-blend-mode: screen;
+}
+@keyframes cine-petal-fall {
+  0%   { transform: translate3d(0,-10vh,0) rotate(0deg); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate3d(4vw,110vh,0) rotate(720deg); opacity: 0; }
+}
+.cine-petal {
+  animation-name: cine-petal-fall;
+  animation-timing-function: cubic-bezier(.3,.6,.5,1);
+  animation-fill-mode: forwards;
+  will-change: transform, opacity;
+}
+@keyframes cine-mote {
+  0%,100% { transform: translateY(0) scale(.6); opacity: 0; }
+  50%     { transform: translateY(-40px) scale(1.2); opacity: 0.9; }
+}
+.cine-mote {
+  animation-name: cine-mote;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  box-shadow: 0 0 8px var(--fx-accent);
+}
+@keyframes cine-room-aurora {
+  0%,100% { opacity: 0.28; transform: translate3d(0,0,0); }
+  50%     { opacity: 0.45; transform: translate3d(-3%,2%,0); }
+}
+.cine-room-aurora {
+  background:
+    radial-gradient(60% 45% at 20% 30%, var(--fx-from), transparent 70%),
+    radial-gradient(55% 40% at 80% 70%, var(--fx-to), transparent 72%),
+    radial-gradient(70% 50% at 50% 50%, var(--fx-accent), transparent 75%);
+  mix-blend-mode: screen;
+  filter: blur(40px);
+  animation: cine-room-aurora 4s ease-in-out infinite;
+}
+.cine-vignette {
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,.55) 100%);
+}
+@keyframes cine-bloom {
+  0%   { opacity: 0; transform: translate(-50%,-50%) scale(.6); }
+  40%  { opacity: 1; }
+  100% { opacity: 0.4; transform: translate(-50%,-50%) scale(1.2); }
+}
+.cine-bloom {
+  width: 70vmin; height: 70vmin; border-radius: 999px;
+  filter: blur(20px);
+  mix-blend-mode: screen;
+  animation: cine-bloom 3.2s ease-out forwards;
+}
+@keyframes cine-lensflare {
+  0%,100% { opacity: 0; transform: translate(-50%,-50%) rotate(0deg) scale(.8); }
+  50%     { opacity: 0.7; transform: translate(-50%,-50%) rotate(180deg) scale(1); }
+}
+.cine-lensflare {
+  width: 90vmin; height: 8px;
+  background: linear-gradient(90deg, transparent, var(--fx-accent), #fff, var(--fx-accent), transparent);
+  filter: blur(4px);
+  mix-blend-mode: screen;
+  animation: cine-lensflare 2.6s ease-in-out forwards;
+}
+@keyframes cine-title-in {
+  0%   { opacity: 0; letter-spacing: 0.05em; transform: translateY(-12px) scale(.9); }
+  30%  { opacity: 1; letter-spacing: 0.45em; transform: translateY(0) scale(1); }
+  80%  { opacity: 1; letter-spacing: 0.35em; }
+  100% { opacity: 0; letter-spacing: 0.55em; transform: translateY(-4px) scale(1.05); }
+}
+.cine-title {
+  animation: cine-title-in 3.6s ease-out forwards;
+}
+@keyframes cine-combo-in {
+  0%   { opacity: 0; transform: scale(.4) rotate(-8deg); }
+  40%  { opacity: 1; transform: scale(1.15) rotate(3deg); }
+  60%  { transform: scale(0.95) rotate(-1deg); }
+  100% { opacity: 0; transform: scale(1.05) rotate(0deg); }
+}
+.cine-combo {
+  animation: cine-combo-in 3.4s cubic-bezier(.34,1.56,.64,1) forwards;
+}
+
+
 /* =============================================================
  * Royal Gold Shop (theme-shop) — premium amber luxe aesthetic
  * ============================================================= */

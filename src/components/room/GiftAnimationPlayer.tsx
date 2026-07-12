@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
+
 
 /**
  * TikTok-style full-screen gift animation player.
@@ -554,7 +556,15 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     >
       {/* Subtle vignette only — keep the room visible behind the gift */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
-      {/* particles removed */}
+
+      {/* Cinematic 9-phase overlay (rarity + combo aware) */}
+      <CinematicGiftFX
+        giftKey={current.key}
+        tier={coinsToTier(current.coins, current.quantity)}
+        combo={comboTier(current.quantity)}
+      />
+
+
 
       {/* sender chip */}
       <div className="absolute left-4 top-6 flex items-center gap-2 gift-anim-sender">
