@@ -3832,6 +3832,57 @@ function SeatInvitePopup({
   );
 }
 
+/* ─── Seat request popup for host/moderator ────────────────── */
+function SeatRequestPopup({
+  request,
+  onAccept,
+  onReject,
+}: {
+  request: { id: string; from_name: string | null; from_avatar: string | null; seat_index: number | null };
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  const name = request.from_name ?? "Viewer";
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+        <div className="flex flex-col items-center gap-3 text-center">
+          {request.from_avatar ? (
+            <img src={request.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
+          ) : (
+            <div className="grid h-16 w-16 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xl font-black">
+              {initial}
+            </div>
+          )}
+          <p className="text-sm font-bold">
+            <span className="text-[color:var(--gold)]">@{name}</span> seat pe aana chahta hai
+          </p>
+          <p className="text-[11px] text-white/60">
+            {request.seat_index != null ? `Seat ${request.seat_index + 1}` : "First available seat"}
+          </p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onReject}
+            className="flex-1 rounded-full border border-white/20 py-3 text-sm font-bold text-white/80"
+          >
+            Reject
+          </button>
+          <button
+            onClick={onAccept}
+            className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-white shadow-lg"
+          >
+            Pick
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
 /* ─── Emoji reaction sheet: pick seat + emoji (animated 50-set) ─── */
