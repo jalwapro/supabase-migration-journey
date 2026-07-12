@@ -1885,6 +1885,14 @@ function RoomPage() {
         onClose={() => setGiftOpen(false)}
         roomId={roomId}
         receivers={giftReceivers}
+        onSent={({ gift, targets }) =>
+          setComboState({ gift: gift as ShopGift, targets, receivers: giftReceivers })
+        }
+      />
+      <ComboGiftButton
+        roomId={roomId}
+        state={comboState}
+        onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
       <PkIncomingInvite currentRoomId={roomId} />
