@@ -1656,7 +1656,7 @@ function RoomPage() {
 
 
 
-            {isHost || iAmOnSeat ? (
+            {isHost ? (
               <button
                 onClick={() => void agora.toggleVideo()}
                 aria-label={agora.videoOn ? "Turn camera off" : "Turn camera on"}
@@ -1669,6 +1669,7 @@ function RoomPage() {
                 {agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
               </button>
             ) : null}
+
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
@@ -3197,7 +3198,8 @@ function VideoSettingsSheet({
         </div>
 
         {/* Video FX row (video rooms only) */}
-        {isVideo && (isHost || videoOn) && (
+        {isVideo && isHost && (
+
           <>
             <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
               Video Effects
@@ -3258,7 +3260,7 @@ function VideoSettingsSheet({
             {speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             {speakerMuted ? "Speaker Off" : "Speaker On"}
           </button>
-          {isVideo && (isHost || videoOn) && (
+          {isVideo && isHost && (
             <button
               onClick={onToggleVideo}
               className={`col-span-2 flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
