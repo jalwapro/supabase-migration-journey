@@ -347,7 +347,12 @@ function Home() {
               ) : userSearch.data && userSearch.data.length > 0 ? (
                 <div className="space-y-2">
                   {userSearch.data.map((u) => (
-                    <div key={u.id} className="glass flex items-center gap-3 rounded-2xl p-2.5">
+                    <Link
+                      key={u.id}
+                      to="/u/$userId"
+                      params={{ userId: u.id }}
+                      className="glass flex items-center gap-3 rounded-2xl p-2.5"
+                    >
                       <div className="grid h-10 w-10 shrink-0 overflow-hidden rounded-full bg-card">
                         {u.avatar ? (
                           <img src={u.avatar} alt="" className="h-full w-full object-cover" />
@@ -366,8 +371,9 @@ function Home() {
                           {u.user_code ? ` · ID ${u.user_code}` : ""}
                         </p>
                       </div>
-                    </div>
+                    </Link>
                   ))}
+
                 </div>
               ) : (
                 <p className="py-3 text-center text-xs text-muted-foreground">No users found</p>

@@ -259,7 +259,12 @@ export function GiftSheet({
 
         {/* Top gifter of this room */}
         {topGifter.data && (
-          <div className="mb-3 flex items-center gap-2 rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/15 to-transparent p-2">
+          <Link
+            to="/u/$userId"
+            params={{ userId: topGifter.data.user_id }}
+            onClick={onClose}
+            className="mb-3 flex items-center gap-2 rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/15 to-transparent p-2"
+          >
             <span className="text-base leading-none">🏆</span>
             <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-[color:var(--gold)]/40">
               {topGifter.data.avatar ? (
@@ -278,8 +283,9 @@ export function GiftSheet({
                 @{topGifter.data.username ?? "user"}
               </p>
             </div>
-          </div>
+          </Link>
         )}
+
 
         {/* Receiver picker — DP-only chips + All */}
         <div className="mb-3">

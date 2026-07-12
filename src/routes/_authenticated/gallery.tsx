@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -209,21 +209,24 @@ function Page() {
               </p>
               {(unlocks ?? []).map((u) => (
                 <div key={u.id} className="glass flex items-center gap-2 rounded-2xl p-2.5">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/20">
-                    {u.viewer?.avatar ? (
-                      <img src={u.viewer.avatar} className="h-full w-full object-cover" alt="" />
-                    ) : (
-                      <Users className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">
-                      @{u.viewer?.username ?? "user"}
-                    </p>
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      {u.status}
-                    </p>
-                  </div>
+                  <Link to="/u/$userId" params={{ userId: u.viewer_id }} className="flex min-w-0 flex-1 items-center gap-2">
+                    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/20">
+                      {u.viewer?.avatar ? (
+                        <img src={u.viewer.avatar} className="h-full w-full object-cover" alt="" />
+                      ) : (
+                        <Users className="h-4 w-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold">
+                        @{u.viewer?.username ?? "user"}
+                      </p>
+                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                        {u.status}
+                      </p>
+                    </div>
+                  </Link>
+
                   {u.status !== "accepted" && (
                     <button
                       onClick={() => decide(u, "accepted")}
