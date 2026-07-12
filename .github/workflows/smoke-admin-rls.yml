@@ -1,0 +1,34 @@
+name: Smoke — Admin RLS
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke-admin-rls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run admin-gating smoke test
+        env:
+          # VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY come from .env (checked in).
+          # Credentials must be configured as repo/organization secrets.
+          ADMIN_EMAIL: ${{ secrets.SMOKE_ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.SMOKE_ADMIN_PASSWORD }}
+          USER_EMAIL: ${{ secrets.SMOKE_USER_EMAIL }}
+          USER_PASSWORD: ${{ secrets.SMOKE_USER_PASSWORD }}
+        run: |
+          if [ -z "$ADMIN_EMAIL" ] || [ -z "$ADMIN_PASSWORD" ] || [ -z "$USER_EMAIL" ] || [ -z "$USER_PASSWORD" ]; then
+            echo "✖ Missing SMOKE_ADMIN_EMAIL / SMOKE_ADMIN_PASSWORD / SMOKE_USER_EMAIL / SMOKE_USER_PASSWORD repo secrets"
+            exit 1
+          fi
+          node scripts/smoke-admin-rls.mjs
