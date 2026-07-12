@@ -954,7 +954,11 @@ function RoomPage() {
   }
 
 
-  async function leaveRoom() {
+  function leaveRoom() {
+    setExitConfirmOpen(true);
+  }
+
+  async function doLeaveRoom() {
     if (user && isHost) {
       try {
         // Convert accumulated gift points into diamonds for each receiver
@@ -984,8 +988,10 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
+    setExitConfirmOpen(false);
     navigate({ to: "/" });
   }
+
 
 
   function share() {
