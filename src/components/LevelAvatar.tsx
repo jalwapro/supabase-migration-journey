@@ -138,6 +138,7 @@ export function LevelAvatar({
           Lv {level}
         </span>
       )}
-    </div>
+    </Wrapper>
+
   );
 }
