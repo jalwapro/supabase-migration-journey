@@ -80,16 +80,20 @@ function AnimatedGiftVideo({
   type,
   onReady,
   onDone,
+  onDuration,
   fallbackEmoji,
   fallbackImage,
+  withSound = false,
   suppressEmojiFallback = false,
 }: {
   src: string;
   type: string | null;
   onReady: () => void;
   onDone: () => void;
+  onDuration?: (ms: number) => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
+  withSound?: boolean;
   suppressEmojiFallback?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
