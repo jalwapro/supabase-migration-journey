@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Crown, Sparkles, Globe2, Users, Trophy, Flame } from "lucide-react";
+import { Crown, Sparkles, Globe2, Users, Trophy, Flame, Gift, Mic2, CalendarDays, CalendarRange, CalendarCheck, Infinity as InfinityIcon, Sun } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins } from "@/lib/vip-levels";
@@ -71,60 +71,105 @@ function RankPage() {
           <div className="absolute top-10 left-1/2 h-[2px] w-[300px] -translate-x-1/2 -rotate-[28deg] bg-gradient-to-r from-transparent via-[color:var(--gold)]/50 to-transparent" />
         </div>
 
-        {/* Board toggle */}
-        <div className="relative z-10 px-5 pt-4">
-          <div className="flex rounded-full border border-white/10 bg-black/50 p-1 backdrop-blur-xl">
-            {(["gifters","hosts"] as Board[]).map((b) => (
-              <button key={b} onClick={() => setBoard(b)}
-                className={`flex-1 rounded-full py-2 text-[11px] font-black uppercase tracking-[0.2em] transition ${
-                  board === b
-                    ? "bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground shadow-[0_0_18px_rgba(255,0,127,0.35)]"
-                    : "text-white/40"
-                }`}>
-                {b === "gifters" ? "Gifters" : "Hosts"}
-              </button>
-            ))}
-          </div>
+        {/* ═══ Premium Control Console ═══ */}
+        <div className="relative z-10 px-4 pt-4">
+          <div className="relative overflow-hidden rounded-[28px] border border-[color:var(--gold)]/25 bg-gradient-to-b from-white/[0.06] via-black/40 to-black/60 p-3 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-2xl">
+            {/* aurora shimmer */}
+            <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70">
+              <div className="absolute -top-16 left-1/2 h-40 w-64 -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(212,175,55,0.25),transparent_70%)] blur-2xl" />
+              <div className="absolute -bottom-14 right-0 h-32 w-32 rounded-full bg-[radial-gradient(closest-side,rgba(255,0,127,0.22),transparent_70%)] blur-2xl" />
+              <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--gold)]/50 to-transparent" />
+            </div>
 
-          {/* Scope */}
-          <div className="mt-4 flex justify-center gap-7">
-            {([
-              { k: "global",  label: "Global",  icon: <Globe2 className="h-3 w-3" /> },
-              { k: "country", label: profile?.country || "Country", icon: <Sparkles className="h-3 w-3" /> },
-              { k: "family",  label: "Family",  icon: <Users className="h-3 w-3" /> },
-            ] as { k: Scope; label: string; icon: React.ReactNode }[]).map((s) => {
-              const active = scope === s.k;
-              const disabled = s.k === "country" && !profile?.country;
-              return (
-                <button key={s.k} disabled={disabled} onClick={() => setScope(s.k)}
-                  className={`flex items-center gap-1.5 pb-1 text-[10px] font-black uppercase tracking-[0.25em] transition disabled:opacity-30 ${
-                    active
-                      ? "border-b-2 border-[color:var(--gold)] text-[color:var(--gold)] [text-shadow:0_0_8px_rgba(212,175,55,0.5)]"
-                      : "text-white/30"
-                  }`}>
-                  {s.icon} {s.label}
-                </button>
-              );
-            })}
-          </div>
+            {/* ── Board segmented ── */}
+            <div className="relative flex rounded-2xl border border-white/10 bg-black/60 p-1 shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]">
+              {/* sliding indicator */}
+              <span
+                aria-hidden
+                className="absolute inset-y-1 w-[calc(50%-4px)] rounded-xl bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_6px_24px_-6px_rgba(255,0,127,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] transition-transform duration-500 ease-out"
+                style={{ transform: board === "gifters" ? "translateX(4px)" : "translateX(calc(100% + 4px))" }}
+              />
+              {([
+                { k: "gifters", label: "Gifters", Icon: Gift },
+                { k: "hosts",   label: "Hosts",   Icon: Mic2 },
+              ] as { k: Board; label: string; Icon: typeof Gift }[]).map(({ k, label, Icon }) => {
+                const active = board === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setBoard(k)}
+                    className={`relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2.5 text-[11px] font-black uppercase tracking-[0.22em] transition ${
+                      active ? "text-primary-foreground drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]" : "text-white/45"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Period */}
-          <div className="scrollbar-hide mt-3 flex gap-2 overflow-x-auto">
-            {(["daily","weekly","monthly","yearly","all"] as Period[]).map((p) => {
-              const active = period === p;
-              return (
-                <button key={p} onClick={() => setPeriod(p)}
-                  className={`shrink-0 rounded-lg px-3.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition ${
-                    active
-                      ? "border border-[color:var(--primary)]/50 bg-white/10 text-white shadow-[0_0_12px_rgba(255,0,127,0.25)]"
-                      : "border border-white/10 bg-white/[0.03] text-white/50"
-                  }`}>
-                  {p === "all" ? "All-time" : p}
-                </button>
-              );
-            })}
+            {/* ── Scope chips ── */}
+            <div className="relative mt-3 flex gap-2">
+              {([
+                { k: "global",  label: "Global",  Icon: Globe2 },
+                { k: "country", label: profile?.country || "Country", Icon: Sparkles },
+                { k: "family",  label: "Family",  Icon: Users },
+              ] as { k: Scope; label: string; Icon: typeof Globe2 }[]).map(({ k, label, Icon }) => {
+                const active = scope === k;
+                const disabled = k === "country" && !profile?.country;
+                return (
+                  <button
+                    key={k}
+                    disabled={disabled}
+                    onClick={() => setScope(k)}
+                    className={`group relative flex flex-1 items-center justify-center gap-1.5 overflow-hidden rounded-xl border py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all duration-300 disabled:opacity-30 ${
+                      active
+                        ? "border-[color:var(--gold)]/60 bg-gradient-to-b from-[color:var(--gold)]/20 to-[color:var(--gold)]/5 text-[color:var(--gold)] shadow-[0_0_20px_-4px_rgba(212,175,55,0.55),inset_0_1px_0_rgba(255,255,255,0.15)]"
+                        : "border-white/10 bg-white/[0.03] text-white/40 hover:text-white/70"
+                    }`}
+                  >
+                    {active && (
+                      <span aria-hidden className="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-transparent via-[color:var(--gold)] to-transparent" />
+                    )}
+                    <Icon className="h-3 w-3" strokeWidth={2.5} />
+                    <span className="truncate">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Period rail ── */}
+            <div className="scrollbar-hide relative mt-3 flex gap-1.5 overflow-x-auto">
+              {([
+                { k: "daily",   label: "Today",    Icon: Sun },
+                { k: "weekly",  label: "Week",     Icon: CalendarDays },
+                { k: "monthly", label: "Month",    Icon: CalendarRange },
+                { k: "yearly",  label: "Year",     Icon: CalendarCheck },
+                { k: "all",     label: "All-time", Icon: InfinityIcon },
+              ] as { k: Period; label: string; Icon: typeof Sun }[]).map(({ k, label, Icon }) => {
+                const active = period === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setPeriod(k)}
+                    className={`relative shrink-0 overflow-hidden rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${
+                      active
+                        ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_6px_18px_-6px_rgba(255,0,127,0.7),inset_0_1px_0_rgba(255,255,255,0.3)]"
+                        : "border border-white/10 bg-white/[0.03] text-white/45 hover:text-white/80"
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <Icon className="h-3 w-3" strokeWidth={2.5} />
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
+
 
         {/* Diamond Podium */}
         <section className="relative z-10 px-4 pt-8">
