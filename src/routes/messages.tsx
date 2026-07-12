@@ -245,7 +245,10 @@ function ChatsList({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-sm">{p?.username ?? "user"}</p>
+                <p className="truncate font-semibold text-sm">
+                  {p?.username ?? "user"}
+                  <span className="ml-1 text-[10px] font-normal text-muted-foreground">#{String(m.peer_id).slice(0, 4)}</span>
+                </p>
                 <p className="truncate text-xs text-muted-foreground">{m.text || "Say hi 👋"}</p>
               </div>
               {m.unread ? (
