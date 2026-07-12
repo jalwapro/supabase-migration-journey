@@ -1008,22 +1008,8 @@ function MessageBody({
     );
   }
   if (m.kind === "album") {
-    return (
-      <div className="relative">
-        {albumSrc ? (
-          <a href={albumSrc} target="_blank" rel="noreferrer">
-            <img src={albumSrc} alt="private album" className="max-h-64 rounded-lg" />
-          </a>
-        ) : (
-          <div className="grid h-40 w-40 place-items-center rounded-lg bg-black/40 text-[color:var(--gold)]">
-            <Lock className="h-6 w-6" />
-          </div>
-        )}
-        <span className="absolute left-1 top-1 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold text-[color:var(--gold)]">
-          <Lock className="h-2.5 w-2.5" /> Private album
-        </span>
-      </div>
-    );
+    return <PrivateAlbum src={albumSrc} />;
   }
+
   return <ImageIcon className="h-4 w-4" />;
 }
