@@ -111,11 +111,11 @@ export function ComboGiftButton({
     try {
       for (const rid of targets) {
         const { error } = await supabase.rpc("send_gift", {
-          _room_id: (state as unknown as { roomId?: string }).roomId ?? undefined,
+          _room_id: roomId,
           _receiver_id: rid,
           _gift_id: gift.id,
           _quantity: 1,
-        } as never);
+        });
         if (error) throw error;
       }
       await refresh();
