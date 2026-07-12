@@ -816,11 +816,21 @@ function RoomPage() {
       });
       return;
     }
-    const { error } = await supabase.rpc("take_seat", {
+    // Host/mod: sit directly. Otherwise: send request to host for approval.
+    if (isHost || isModerator) {
+      const { error } = await supabase.rpc("take_seat", {
+        _room_id: roomId,
+        _seat_index: seatIndex,
+      });
+      if (error) toast.error(error.message);
+      return;
+    }
+    const { error } = await supabase.rpc("request_seat", {
       _room_id: roomId,
       _seat_index: seatIndex,
     });
     if (error) toast.error(error.message);
+    else toast.success("Seat request bhej diya — host ke approve ka wait karo");
   }
 
   async function leaveSeat() {
