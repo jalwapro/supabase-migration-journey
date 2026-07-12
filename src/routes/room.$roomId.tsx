@@ -2124,6 +2124,10 @@ function RoomPage() {
           setVideoSettingsOpen(false);
           void navigate({ to: "/rank" });
         }}
+        onOpenSeats={() => {
+          setVideoSettingsOpen(false);
+          setSeatsSheetOpen(true);
+        }}
         onEndLive={() => {
           setVideoSettingsOpen(false);
           void leaveRoom();
