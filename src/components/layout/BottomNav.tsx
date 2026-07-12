@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Trophy, Video, MessageCircle, User } from "lucide-react";
-import type { ComponentType } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, type ComponentType } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -23,22 +23,51 @@ const TABS: Tab[] = [
 function useUnreadDm() {
   const { user } = useAuth();
   const uid = user?.id ?? null;
-  return useQuery({
+  const qc = useQueryClient();
+
+  const query = useQuery({
     queryKey: ["dm", "unread-badge", uid],
     enabled: !!uid,
     queryFn: async () => {
       if (!uid) return 0;
+      // NOTE: no `deleted_at` filter — if the column is missing in some
+      // deployments the whole query 400s and the badge silently stays 0.
       const { count, error } = await supabase
         .from("direct_messages")
         .select("id", { count: "exact", head: true })
         .eq("recipient_id", uid)
-        .is("read_at", null)
-        .is("deleted_at", null);
-      if (error) return 0;
+        .is("read_at", null);
+      if (error) {
+        console.warn("[unread-dm] query failed", error);
+        return 0;
+      }
       return count ?? 0;
     },
-    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
+    staleTime: 5_000,
   });
+
+  // Realtime: badge should light up the instant a new DM arrives, without
+  // waiting for a route change or the 30s poll.
+  useEffect(() => {
+    if (!uid) return;
+    const ch = supabase
+      .channel(`dm-badge:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` },
+        () => {
+          void qc.invalidateQueries({ queryKey: ["dm", "unread-badge", uid] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+  }, [uid, qc]);
+
+  return query;
 }
 
 export function BottomNav() {
