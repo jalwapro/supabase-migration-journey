@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Crown, Sparkles, Globe2, Users, Trophy, Flame } from "lucide-react";
+import { Crown, Sparkles, Globe2, Users, Trophy, Flame, Gift, Mic2, CalendarDays, CalendarRange, CalendarCheck, Infinity as InfinityIcon, Sun } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins } from "@/lib/vip-levels";
