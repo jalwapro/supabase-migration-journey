@@ -75,20 +75,17 @@ function UserProfilePage() {
   const isMe = me?.id === userId;
 
   const prof = useQuery({
-    queryKey: ["public-profile", userId],
+    queryKey: ["public-profile", userId, me?.id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          "id,username,full_name,avatar,frame,ring,bubble,car,entrance,special_id,data_card,bio,gender,country,coins,diamonds,level,xp,is_vip,vip_level,vip_expiry,user_code,last_seen,created_at,total_gifted_coins",
-        )
-        .eq("id", userId)
+        .rpc("get_profile_public", { _id: userId })
         .maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("User not found");
       return data as FullProfile;
     },
   });
+
 
   const stats = useQuery({
     queryKey: ["public-profile-stats", userId],

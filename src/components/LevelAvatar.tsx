@@ -1,5 +1,7 @@
 import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+
 
 type Size = "sm" | "md" | "lg" | "xl";
 
@@ -14,7 +16,9 @@ export function LevelAvatar({
   frame,
   ring,
   className = "",
+  userId,
 }: {
+
   src?: string | null;
   name?: string | null;
   level: number;
@@ -25,18 +29,33 @@ export function LevelAvatar({
   /** Equipped aura ring media URL. Rotates behind the avatar. */
   ring?: string | null;
   className?: string;
+  /** If provided, avatar becomes a Link to that user's profile. */
+  userId?: string | null;
 }) {
+
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
   const frameIsVideo = !!frame && /\.(mp4|webm|mov)($|\?)/i.test(frame);
   const ringIsVideo = !!ring && /\.(mp4|webm|mov)($|\?)/i.test(ring);
 
+  const Wrapper: any = userId ? Link : "div";
+  const wrapperProps: any = userId
+    ? {
+        to: "/u/$userId",
+        params: { userId },
+        onClick: (e: any) => e.stopPropagation(),
+        "aria-label": `Open ${name ?? "user"} profile`,
+      }
+    : {};
+
   return (
-    <div
-      className={`relative shrink-0 ${className}`}
+    <Wrapper
+      {...wrapperProps}
+      className={`relative block shrink-0 ${userId ? "cursor-pointer" : ""} ${className}`}
       style={{ width: px, height: px }}
     >
+
       {/* Equipped aura ring behind avatar */}
       {ring && (
         <div className="pointer-events-none absolute inset-[-28%] z-0 dp-ring-spin" aria-hidden>
@@ -119,6 +138,7 @@ export function LevelAvatar({
           Lv {level}
         </span>
       )}
-    </div>
+    </Wrapper>
+
   );
 }
