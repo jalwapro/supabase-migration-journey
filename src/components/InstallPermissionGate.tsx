@@ -54,8 +54,6 @@ export function InstallPermissionGate() {
   async function askMic(): Promise<void> {
     setOne("mic", "asking");
     try {
-      // getUserMedia inside Capacitor WebView triggers the native
-      // RECORD_AUDIO permission (as long as it's declared in AndroidManifest).
       if (!navigator.mediaDevices?.getUserMedia) throw new Error("no mic");
       const s = await navigator.mediaDevices.getUserMedia({ audio: true });
       s.getTracks().forEach((t) => t.stop());
@@ -77,6 +75,35 @@ export function InstallPermissionGate() {
       s.getTracks().forEach((t) => t.stop());
       setOne("camera", "granted");
     } catch { setOne("camera", "denied"); }
+  }
+
+  /**
+   * Ask mic + camera in ONE getUserMedia call — mobile browsers (Chrome
+   * Android, Samsung Internet) consume the user gesture with the first
+   * prompt, so a second getUserMedia after `await` silently fails. A
+   * combined `{audio, video}` prompt covers both with a single gesture.
+   * Falls back to individual asks on failure.
+   */
+  async function askMicAndCamera(): Promise<void> {
+    if (isNative()) {
+      // Native path: Capacitor plugins don't share the gesture issue.
+      await askMic();
+      await askCamera();
+      return;
+    }
+    setOne("mic", "asking");
+    setOne("camera", "asking");
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("no media");
+      const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+      s.getTracks().forEach((t) => t.stop());
+      setOne("mic", "granted");
+      setOne("camera", "granted");
+    } catch {
+      // Combined failed (device may lack one). Try each individually.
+      await askMic();
+      await askCamera();
+    }
   }
 
   async function askNotifications(): Promise<void> {
@@ -116,10 +143,11 @@ export function InstallPermissionGate() {
 
   async function askAll() {
     setBusy(true);
-    // Sequential — some Android WebViews reject overlapping prompts.
-    await askMic();
-    await askCamera();
+    // 1) Mic + Camera together (single prompt on mobile — critical).
+    await askMicAndCamera();
+    // 2) Notifications (its own OS prompt, doesn't need gesture on Android).
     await askNotifications();
+    // 3) Location.
     await askLocation();
     try { localStorage.setItem(FLAG_KEY, "1"); } catch { /* no-op */ }
     setBusy(false);
