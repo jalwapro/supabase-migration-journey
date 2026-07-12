@@ -369,10 +369,31 @@ function DmThread() {
 
   async function startRecord() {
     if (!user) return;
-    if (typeof MediaRecorder === "undefined") {
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
       toast.error("Is browser me voice recording support nahi hai");
       return;
     }
+    if (!window.isSecureContext) {
+      toast.error("Voice recording ke liye HTTPS zaroori hai");
+      return;
+    }
+    // Proactive permission check — clearer message when browser
+    // has previously denied mic access.
+    try {
+      const perms = (navigator as Navigator & { permissions?: Permissions }).permissions;
+      if (perms?.query) {
+        const status = await perms
+          .query({ name: "microphone" as PermissionName })
+          .catch(() => null);
+        if (status?.state === "denied") {
+          toast.error(
+            "Mic blocked hai — browser settings me site ke liye Microphone Allow karo, phir dubara try karo",
+            { duration: 6000 },
+          );
+          return;
+        }
+      }
+    } catch { /* permissions API optional */ }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -419,7 +440,19 @@ function DmThread() {
       mediaRec.current = rec;
       setRecording(true);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Mic access denied");
+      const e = err as DOMException;
+      if (e?.name === "NotAllowedError" || e?.name === "SecurityError") {
+        toast.error(
+          "Mic permission denied — browser address bar ke lock icon se Microphone Allow karo",
+          { duration: 6000 },
+        );
+      } else if (e?.name === "NotFoundError" || e?.name === "OverconstrainedError") {
+        toast.error("Koi microphone nahi mila — device check karo");
+      } else if (e?.name === "NotReadableError") {
+        toast.error("Mic kisi aur app me use ho raha hai — usse band karke try karo");
+      } else {
+        toast.error(e?.message || "Mic access denied");
+      }
     }
   }
 
