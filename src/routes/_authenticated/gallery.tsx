@@ -219,7 +219,7 @@ function Page() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold">
-                        @{u.viewer?.username ?? "user"}
+                        {u.viewer?.username ?? "user"}
                       </p>
                       <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                         {u.status}

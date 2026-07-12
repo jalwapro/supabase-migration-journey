@@ -367,7 +367,7 @@ function Home() {
                           {u.full_name ?? u.username ?? "User"}
                         </p>
                         <p className="truncate text-[11px] text-muted-foreground">
-                          @{u.username ?? "user"}
+                          {u.username ?? "user"}
                           {u.user_code ? ` · ID ${u.user_code}` : ""}
                         </p>
                       </div>
@@ -494,7 +494,7 @@ function Home() {
                     </span>
                   </span>
                   <span className="w-full truncate text-center text-[10px] text-foreground/80">
-                    @{u.username ?? "user"}
+                    {u.username ?? "user"}
                   </span>
                 </Link>
               ))}
@@ -591,7 +591,7 @@ function Home() {
                     <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold">@{u.username ?? "user"}</p>
+                    <p className="truncate text-sm font-semibold">{u.username ?? "user"}</p>
                     <p className="text-[11px] text-emerald-500">Online now</p>
                   </div>
                   <MessageCircle className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
@@ -672,7 +672,7 @@ function RoomCard({ room }: { room: Room }) {
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">@{room.host?.username ?? "host"}</span>
+            <span className="truncate">{room.host?.username ?? "host"}</span>
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">

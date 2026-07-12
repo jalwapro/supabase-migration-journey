@@ -86,7 +86,10 @@ function Page() {
                     {p.avatar ? <img src={p.avatar} className="h-full w-full object-cover" alt="" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold">@{p.username}</p>
+                    <p className="truncate text-sm font-bold">
+                      {p.username}
+                      <span className="ml-1 text-[10px] font-normal text-muted-foreground">#{String(p.id).slice(0, 4)}</span>
+                    </p>
                     <p className="text-[11px] text-muted-foreground">Lv.{p.level}{p.is_vip ? " · 👑 VIP" : ""}</p>
                   </div>
                 </Link>

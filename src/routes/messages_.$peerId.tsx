@@ -566,7 +566,7 @@ function DmThread() {
               )}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold">@{peer.data?.username ?? "user"}</p>
+              <p className="truncate text-sm font-bold">{peer.data?.username ?? "user"}</p>
               <p
                 className={`truncate text-[10px] ${
                   peerTyping

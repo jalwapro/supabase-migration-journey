@@ -48,7 +48,7 @@ function Page() {
                 {p.avatar ? <img src={p.avatar} className="h-full w-full object-cover" alt="" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold">@{p.username}</p>
+                <p className="truncate text-sm font-bold">{p.username}</p>
                 <p className="text-[11px] text-muted-foreground">Lv.{p.level}</p>
               </div>
               <button

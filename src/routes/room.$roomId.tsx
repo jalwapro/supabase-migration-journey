@@ -2082,7 +2082,7 @@ function RoomPage() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-bold text-white">@{g.username ?? "user"}</p>
+                        <p className="truncate text-sm font-bold text-white">{g.username ?? "user"}</p>
                         <p className="text-[10px] font-bold text-[color:var(--gold)]">
                           {i === 0 ? "🏆 " : ""}{(g.total_coins ?? 0).toLocaleString()} coins
                         </p>
@@ -2706,7 +2706,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   if (m.kind === "gift") {
     return (
       <div className="inline-flex max-w-[95%] items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/10 px-2.5 py-1 text-[11px] font-bold text-[color:var(--gold)]">
-        🎁 <span className="text-white/80">@{m.user?.username ?? "user"}</span> sent{" "}
+        🎁 <span className="text-white/80">{m.user?.username ?? "user"}</span> sent{" "}
         {body}
       </div>
     );
@@ -2744,7 +2744,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
       >
         <span className="mr-1 inline-flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
           <VipBadge level={m.user?.level ?? 0} size="xs" />
-          @{m.user?.username ?? "user"}:
+          {m.user?.username ?? "user"}:
         </span>
         <span className="break-words text-[11.5px] leading-snug text-white/95">
           {body}
@@ -3625,7 +3625,7 @@ function SeatActionSheet({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-extrabold">@{name}</div>
+            <div className="truncate text-base font-extrabold">{name}</div>
             <div className="text-[11px] text-muted-foreground">
               {member.is_moderator ? "Moderator" : "On seat"}
               {isSeatLocked ? " · 🔒 locked" : ""}
@@ -3847,7 +3847,7 @@ function ViewerRow({
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-bold text-white">@{name}</div>
+        <div className="truncate text-[13px] font-bold text-white">{name}</div>
         <div className="text-[10px] text-white/50">
           {member.is_moderator ? "Moderator" : member.seat_index != null ? `Seat ${member.seat_index + 1}` : "Viewer"}
         </div>
@@ -3890,7 +3890,7 @@ function SeatInvitePopup({
           {invite.seat_index === 0 ? (
             <>
               <p className="text-sm font-bold">
-                <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko <span className="text-[color:var(--gold)]">Video</span> pe bulaya hai
+                <span className="text-[color:var(--gold)]">{name}</span> ne aap ko <span className="text-[color:var(--gold)]">Video</span> pe bulaya hai
               </p>
               <p className="text-[11px] text-white/60">
                 Accept karo — aap host tile pe aa jaoge, host aap ki audio seat pe chala jayega
@@ -3899,7 +3899,7 @@ function SeatInvitePopup({
           ) : (
             <>
               <p className="text-sm font-bold">
-                <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
+                <span className="text-[color:var(--gold)]">{name}</span> ne aap ko seat pe bulaya hai
               </p>
               <p className="text-[11px] text-white/60">
                 {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
@@ -3951,7 +3951,7 @@ function SeatRequestPopup({
             </div>
           )}
           <p className="text-sm font-bold">
-            <span className="text-[color:var(--gold)]">@{name}</span> seat pe aana chahta hai
+            <span className="text-[color:var(--gold)]">{name}</span> seat pe aana chahta hai
           </p>
           <p className="text-[11px] text-white/60">
             {request.seat_index != null ? `Seat ${request.seat_index + 1}` : "First available seat"}
@@ -4252,7 +4252,7 @@ function GifterListSheet({
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-extrabold">Gifters for @{receiver.name}</h2>
+            <h2 className="text-lg font-extrabold">Gifters for {receiver.name}</h2>
             <p className="text-xs text-muted-foreground">
               {rows.length} gifter{rows.length === 1 ? "" : "s"} · {totalPts.toLocaleString()} pts
             </p>
@@ -4291,7 +4291,7 @@ function GifterListSheet({
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-bold">@{r.username ?? "user"}</p>
+                  <p className="truncate text-sm font-bold">{r.username ?? "user"}</p>
                   <p className="text-[11px] text-muted-foreground">
                     {r.gift_count} gift{r.gift_count === 1 ? "" : "s"}
                   </p>

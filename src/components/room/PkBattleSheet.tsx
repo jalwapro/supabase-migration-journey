@@ -343,7 +343,7 @@ export function PkBattleSheet({
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-bold">{h.title}</p>
                       <p className="truncate text-[11px] text-white/50">
-                        @{h.host?.username ?? "host"} · {h.viewer_count} watching
+                        {h.host?.username ?? "host"} · {h.viewer_count} watching
                       </p>
                     </div>
                     <button
@@ -480,7 +480,7 @@ export function PkIncomingInvite({ currentRoomId }: { currentRoomId?: string }) 
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-extrabold text-white">
-            @{invite.from_profile?.username ?? "host"} wants to PK!
+            {invite.from_profile?.username ?? "host"} wants to PK!
           </p>
           <p className="text-[11px] text-white/70">
             {invite.duration_sec / 60} min · expires in {remaining}s
@@ -727,7 +727,7 @@ export function PkMatchOverlay({
                   )}
                 </div>
                 <p className="text-lg font-extrabold text-white">
-                  @{winnerProfile?.username ?? "host"}
+                  {winnerProfile?.username ?? "host"}
                 </p>
                 <p className="mb-4 text-xs text-white/70">
                   {Number(iWon ? sA + sB : Math.max(sA, sB)).toLocaleString()} pts collected
@@ -739,10 +739,10 @@ export function PkMatchOverlay({
                 )}
                 <div className="flex justify-center gap-2 text-xs">
                   <span className="rounded-full bg-red-500/20 px-3 py-1 font-bold text-red-300">
-                    @{pA?.username ?? "A"} · {Number(sA).toLocaleString()}
+                    {pA?.username ?? "A"} · {Number(sA).toLocaleString()}
                   </span>
                   <span className="rounded-full bg-blue-500/20 px-3 py-1 font-bold text-blue-300">
-                    @{pB?.username ?? "B"} · {Number(sB).toLocaleString()}
+                    {pB?.username ?? "B"} · {Number(sB).toLocaleString()}
                   </span>
                 </div>
               </>
@@ -856,7 +856,7 @@ function HostPill({
         {avatar ? <img src={avatar} className="h-full w-full object-cover" alt="" /> : null}
       </div>
       <span className="max-w-[54px] truncate text-[10px] font-bold text-white">
-        @{name ?? "host"}
+        {name ?? "host"}
       </span>
     </div>
   );

@@ -570,7 +570,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           </div>
         )}
         <div className="rounded-full bg-black/70 px-3 py-1">
-          <p className="text-[11px] font-bold text-white leading-none">@{current.senderName}</p>
+          <p className="text-[11px] font-bold text-white leading-none">{current.senderName}</p>
           <p className="text-[10px] font-bold text-[color:var(--gold)] leading-tight">
             sent {current.giftName}
           </p>
@@ -638,7 +638,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             )}
           </div>
           <p className="mt-2 rounded-full bg-black/70 px-3 py-0.5 text-[11px] font-bold text-white">
-            @{current.receiverName}
+            {current.receiverName}
           </p>
         </div>
       )}

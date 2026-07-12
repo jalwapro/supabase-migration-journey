@@ -129,7 +129,7 @@ export function ChatEmojiOverlay({ scope }: { scope: Scope }) {
           </div>
         )}
         <div className="rounded-full bg-black/70 px-3 py-1">
-          <p className="text-[11px] font-bold leading-none text-white">@{current.senderName}</p>
+          <p className="text-[11px] font-bold leading-none text-white">{current.senderName}</p>
           <p className="text-[10px] font-bold leading-tight text-[color:var(--gold)]">
             sent {current.name}
           </p>
