@@ -3412,9 +3412,6 @@ function VideoSettingsSheet({
           <ToolBtn icon={<Gamepad2 className="h-5 w-5" />} label="Games" onClick={onOpenGames} />
           <ToolBtn icon={<Swords className="h-5 w-5" />} label="PK" onClick={onPk} />
           <ToolBtn icon={<Share2 className="h-5 w-5" />} label="Invite" onClick={onShare} />
-          {isHost && (
-            <ToolBtn icon={<Armchair className="h-5 w-5" />} label="Seats" onClick={onOpenSeats} />
-          )}
           <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={() => {}} />
           <ToolBtn icon={<Trophy className="h-5 w-5" />} label="Rank" onClick={() => {}} />
           <ToolBtn icon={<Flame className="h-5 w-5" />} label="Boost" onClick={() => {}} />
