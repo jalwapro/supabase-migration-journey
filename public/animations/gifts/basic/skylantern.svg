@@ -1,22 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
 <defs>
 <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-<stop offset="0%" stop-color="#f97316" stop-opacity="0.9"/>
-<stop offset="60%" stop-color="#f97316" stop-opacity="0.25"/>
+<stop offset="0%" stop-color="#f97316" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#f97316" stop-opacity="0.28"/>
 <stop offset="100%" stop-color="#000" stop-opacity="0"/>
 </radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
 </defs>
-<circle cx="200" cy="200" r="170" fill="url(#glow)">
-<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
 </circle>
 <g font-size="22" text-anchor="middle" font-family="Arial">
 <text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
 <text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
 <text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
 <text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+<text x="200" y="70" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></text>
+<text x="60" y="210" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.9s" repeatCount="indefinite"/></text>
+<text x="340" y="210" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2.1s" repeatCount="indefinite"/></text>
+<text x="200" y="360" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></text>
 </g>
-<g>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
-<g><path d="M155 180 Q 150 250 175 280 L 225 280 Q 250 250 245 180 Q 245 150 200 145 Q 155 150 155 180 Z" fill="#f97316" stroke="#7c2d12" stroke-width="2"/><rect x="170" y="275" width="60" height="10" fill="#78350f"/><ellipse cx="200" cy="255" rx="18" ry="10" fill="#fde68a"><animate attributeName="opacity" values="0.7;1;0.7" dur="0.8s" repeatCount="indefinite"/></ellipse><path d="M155 180 L 245 180 M155 210 L 245 210 M155 240 L 245 240" stroke="#7c2d12" stroke-width="1" opacity="0.6"/></g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><radialGradient id="lantern" cx="50%" cy="70%" r="60%"><stop offset="0" stop-color="#fef3c7"/><stop offset="50%" stop-color="#f97316"/><stop offset="100%" stop-color="#7c2d12"/></radialGradient></defs><path d="M150 175 Q 143 250 172 285 L 228 285 Q 257 250 250 175 Q 250 140 200 135 Q 150 140 150 175 Z" fill="url(#lantern)" stroke="#450a0a" stroke-width="2"/><g stroke="#7c2d12" stroke-width="1.2" opacity="0.6" fill="none"><path d="M150 175 L 250 175"/><path d="M148 205 L 252 205"/><path d="M150 235 L 250 235"/><path d="M155 260 L 245 260"/><path d="M175 135 L 172 285 M200 135 L 200 285 M225 135 L 228 285"/></g><rect x="165" y="278" width="70" height="10" rx="2" fill="#451a03"/><ellipse cx="200" cy="250" rx="18" ry="12" fill="#fef3c7"><animate attributeName="opacity" values="0.7;1;0.7" dur="0.8s" repeatCount="indefinite"/></ellipse><path d="M195 245 Q 200 235 205 245 Q 210 260 200 265 Q 190 260 195 245 Z" fill="#f97316"><animate attributeName="opacity" values="1;0.8;1" dur="0.5s" repeatCount="indefinite"/></path><g stroke="#78350f" stroke-width="1.5" fill="none"><path d="M175 285 L 200 305 L 225 285"/></g>
 </g>
 </svg>

@@ -1,22 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
 <defs>
 <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-<stop offset="0%" stop-color="#c68642" stop-opacity="0.9"/>
-<stop offset="60%" stop-color="#c68642" stop-opacity="0.25"/>
+<stop offset="0%" stop-color="#c68642" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#c68642" stop-opacity="0.28"/>
 <stop offset="100%" stop-color="#000" stop-opacity="0"/>
 </radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
 </defs>
-<circle cx="200" cy="200" r="170" fill="url(#glow)">
-<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
 </circle>
 <g font-size="22" text-anchor="middle" font-family="Arial">
 <text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
 <text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
 <text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
 <text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+<text x="200" y="70" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></text>
+<text x="60" y="210" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.9s" repeatCount="indefinite"/></text>
+<text x="340" y="210" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2.1s" repeatCount="indefinite"/></text>
+<text x="200" y="360" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></text>
 </g>
-<g>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
-<g><circle cx="150" cy="140" r="30" fill="#a0522d"/><circle cx="250" cy="140" r="30" fill="#a0522d"/><circle cx="150" cy="140" r="15" fill="#8b4513"/><circle cx="250" cy="140" r="15" fill="#8b4513"/><ellipse cx="200" cy="180" rx="70" ry="60" fill="#c68642"/><ellipse cx="200" cy="270" rx="90" ry="55" fill="#c68642"/><circle cx="175" cy="170" r="6" fill="#000"/><circle cx="225" cy="170" r="6" fill="#000"/><ellipse cx="200" cy="200" rx="10" ry="7" fill="#000"/><path d="M180 215 Q 200 225 220 215" stroke="#000" stroke-width="2" fill="none"/><path d="M175 240 Q 190 250 200 240 Q 210 250 225 240" stroke="#dc2626" stroke-width="5" fill="none"/></g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><radialGradient id="fur" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#e8b98d"/><stop offset="100%" stop-color="#8b5a2b"/></radialGradient></defs><circle cx="150" cy="140" r="32" fill="url(#fur)"/><circle cx="250" cy="140" r="32" fill="url(#fur)"/><circle cx="150" cy="140" r="16" fill="#f4a570"/><circle cx="250" cy="140" r="16" fill="#f4a570"/><ellipse cx="200" cy="185" rx="75" ry="65" fill="url(#fur)"/><ellipse cx="200" cy="285" rx="95" ry="60" fill="url(#fur)"/><ellipse cx="200" cy="215" rx="35" ry="28" fill="#f4a570"/><circle cx="175" cy="170" r="7" fill="#1a0a04"/><circle cx="225" cy="170" r="7" fill="#1a0a04"/><circle cx="173" cy="168" r="2" fill="#fff"/><circle cx="223" cy="168" r="2" fill="#fff"/><ellipse cx="200" cy="205" rx="11" ry="8" fill="#1a0a04"/><path d="M180 220 Q 200 232 220 220" stroke="#1a0a04" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M170 245 Q 185 258 200 248 Q 215 258 230 245" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="200" cy="250" r="6" fill="#dc2626"/>
 </g>
 </svg>
