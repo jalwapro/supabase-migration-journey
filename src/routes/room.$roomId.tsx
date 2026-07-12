@@ -198,6 +198,12 @@ function RoomPage() {
     from_avatar: string | null;
     seat_index: number | null;
   } | null>(null);
+  const [pendingSeatRequest, setPendingSeatRequest] = useState<{
+    id: string;
+    from_name: string | null;
+    from_avatar: string | null;
+    seat_index: number | null;
+  } | null>(null);
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
@@ -628,6 +634,76 @@ function RoomPage() {
     };
   }, [user, roomId]);
 
+  // Seat requests → popup for host/moderator to accept/reject.
+  useEffect(() => {
+    if (!user || !(isHost || isModerator)) return;
+    let cancelled = false;
+    // Load any existing pending request first.
+    void (async () => {
+      const { data } = await supabase
+        .from("seat_requests")
+        .select("id,from_user,seat_index,status")
+        .eq("room_id", roomId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("username,avatar")
+        .eq("id", (data as { from_user: string }).from_user)
+        .maybeSingle();
+      const prof = p as { username: string | null; avatar: string | null } | null;
+      setPendingSeatRequest({
+        id: (data as { id: string }).id,
+        from_name: prof?.username ?? null,
+        from_avatar: prof?.avatar ?? null,
+        seat_index: (data as { seat_index: number | null }).seat_index,
+      });
+    })();
+
+    const ch = supabase
+      .channel(`seat-requests-${roomId}-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "seat_requests",
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload) => {
+          const row = payload.new as {
+            id: string;
+            from_user: string;
+            seat_index: number | null;
+            status: string;
+          };
+          if (row.status !== "pending") return;
+          const { data } = await supabase
+            .from("profiles")
+            .select("username,avatar")
+            .eq("id", row.from_user)
+            .maybeSingle();
+          const p = data as { username: string | null; avatar: string | null } | null;
+          setPendingSeatRequest({
+            id: row.id,
+            from_name: p?.username ?? null,
+            from_avatar: p?.avatar ?? null,
+            seat_index: row.seat_index,
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(ch);
+    };
+  }, [user, roomId, isHost, isModerator]);
+
+
+
   useEffect(() => {
     if (!user || !room.data?.id) return;
     const seatIndex = isHost ? 0 : null;
@@ -810,11 +886,21 @@ function RoomPage() {
       });
       return;
     }
-    const { error } = await supabase.rpc("take_seat", {
+    // Host/mod: sit directly. Otherwise: send request to host for approval.
+    if (isHost || isModerator) {
+      const { error } = await supabase.rpc("take_seat", {
+        _room_id: roomId,
+        _seat_index: seatIndex,
+      });
+      if (error) toast.error(error.message);
+      return;
+    }
+    const { error } = await supabase.rpc("request_seat", {
       _room_id: roomId,
       _seat_index: seatIndex,
     });
     if (error) toast.error(error.message);
+    else toast.success("Seat request bhej diya — host ke approve ka wait karo");
   }
 
   async function leaveSeat() {
@@ -2209,6 +2295,28 @@ function RoomPage() {
             setPendingInvite(null);
           }}
 
+        />
+      )}
+      {pendingSeatRequest && (
+        <SeatRequestPopup
+          request={pendingSeatRequest}
+          onReject={async () => {
+            const { error } = await supabase.rpc("respond_seat_request", {
+              _request_id: pendingSeatRequest.id,
+              _accept: false,
+            });
+            if (error) toast.error(error.message);
+            setPendingSeatRequest(null);
+          }}
+          onAccept={async () => {
+            const { error } = await supabase.rpc("respond_seat_request", {
+              _request_id: pendingSeatRequest.id,
+              _accept: true,
+            });
+            if (error) toast.error(error.message);
+            else toast.success("Seat de di 🎤");
+            setPendingSeatRequest(null);
+          }}
         />
       )}
       <EmojiReactionSheet
@@ -3723,6 +3831,57 @@ function SeatInvitePopup({
     </div>
   );
 }
+
+/* ─── Seat request popup for host/moderator ────────────────── */
+function SeatRequestPopup({
+  request,
+  onAccept,
+  onReject,
+}: {
+  request: { id: string; from_name: string | null; from_avatar: string | null; seat_index: number | null };
+  onAccept: () => void;
+  onReject: () => void;
+}) {
+  const name = request.from_name ?? "Viewer";
+  const initial = name.slice(0, 1).toUpperCase();
+  return (
+    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+        <div className="flex flex-col items-center gap-3 text-center">
+          {request.from_avatar ? (
+            <img src={request.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
+          ) : (
+            <div className="grid h-16 w-16 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xl font-black">
+              {initial}
+            </div>
+          )}
+          <p className="text-sm font-bold">
+            <span className="text-[color:var(--gold)]">@{name}</span> seat pe aana chahta hai
+          </p>
+          <p className="text-[11px] text-white/60">
+            {request.seat_index != null ? `Seat ${request.seat_index + 1}` : "First available seat"}
+          </p>
+        </div>
+        <div className="mt-5 flex gap-2">
+          <button
+            onClick={onReject}
+            className="flex-1 rounded-full border border-white/20 py-3 text-sm font-bold text-white/80"
+          >
+            Reject
+          </button>
+          <button
+            onClick={onAccept}
+            className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-white shadow-lg"
+          >
+            Pick
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
