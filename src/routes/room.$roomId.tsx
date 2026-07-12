@@ -2109,6 +2109,14 @@ function RoomPage() {
           setVideoSettingsOpen(false);
           void share();
         }}
+        onOpenGuests={() => {
+          setVideoSettingsOpen(false);
+          setViewersSheetOpen(true);
+        }}
+        onOpenRank={() => {
+          setVideoSettingsOpen(false);
+          void navigate({ to: "/rank" });
+        }}
         onEndLive={() => {
           setVideoSettingsOpen(false);
           void leaveRoom();
