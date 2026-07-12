@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
+
 
 /**
  * TikTok-style full-screen gift animation player.
