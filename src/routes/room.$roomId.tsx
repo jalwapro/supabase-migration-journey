@@ -2297,6 +2297,28 @@ function RoomPage() {
 
         />
       )}
+      {pendingSeatRequest && (
+        <SeatRequestPopup
+          request={pendingSeatRequest}
+          onReject={async () => {
+            const { error } = await supabase.rpc("respond_seat_request", {
+              _request_id: pendingSeatRequest.id,
+              _accept: false,
+            });
+            if (error) toast.error(error.message);
+            setPendingSeatRequest(null);
+          }}
+          onAccept={async () => {
+            const { error } = await supabase.rpc("respond_seat_request", {
+              _request_id: pendingSeatRequest.id,
+              _accept: true,
+            });
+            if (error) toast.error(error.message);
+            else toast.success("Seat de di 🎤");
+            setPendingSeatRequest(null);
+          }}
+        />
+      )}
       <EmojiReactionSheet
         open={emojiSheetOpen}
         onClose={() => setEmojiSheetOpen(false)}
