@@ -121,7 +121,7 @@ function AnimatedGiftVideo({
         gainRef.current = ctx.createGain();
         sourceRef.current.connect(gainRef.current).connect(ctx.destination);
       }
-      if (gainRef.current) gainRef.current.gain.value = 5; // ~500%
+      if (gainRef.current) gainRef.current.gain.value = 20; // ~2000% — full room hears the roar
     } catch {
       // AudioContext may already be wired to this element; fall back to element volume.
       try { video.volume = 1; } catch { /* ignore */ }
