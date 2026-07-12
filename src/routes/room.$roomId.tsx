@@ -3259,7 +3259,7 @@ function VideoSettingsSheet({
             {speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             {speakerMuted ? "Speaker Off" : "Speaker On"}
           </button>
-          {isVideo && (isHost || videoOn) && (
+          {isVideo && isHost && (
             <button
               onClick={onToggleVideo}
               className={`col-span-2 flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold ${
