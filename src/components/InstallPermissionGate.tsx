@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Mic, Video, Bell, MapPin, Loader2, Check, X } from "lucide-react";
 import { isNative } from "@/lib/native";
 
-const FLAG_KEY = "jalwa_install_perms_asked_v3";
+const FLAG_KEY = "jalwa_install_perms_asked_v4";
 
 type PermState = "idle" | "asking" | "granted" | "denied";
 type PermKey = "mic" | "camera" | "notifications" | "location";
