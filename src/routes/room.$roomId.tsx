@@ -161,6 +161,7 @@ function RoomPage() {
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
     beauty: true,
