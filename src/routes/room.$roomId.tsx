@@ -198,6 +198,12 @@ function RoomPage() {
     from_avatar: string | null;
     seat_index: number | null;
   } | null>(null);
+  const [pendingSeatRequest, setPendingSeatRequest] = useState<{
+    id: string;
+    from_name: string | null;
+    from_avatar: string | null;
+    seat_index: number | null;
+  } | null>(null);
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
