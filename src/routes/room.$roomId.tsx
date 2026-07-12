@@ -3361,22 +3361,27 @@ function SeatActionSheet({
   canModerate,
   canLock,
   isSeatLocked,
+  isVideoRoom,
   onClose,
   onToggleModerator,
   onKickFromSeat,
   onKickFromRoom,
   onToggleLock,
+  onBringToVideo,
 }: {
   member: Member | null;
   canModerate: boolean;
   canLock: boolean;
   isSeatLocked: boolean;
+  isVideoRoom: boolean;
   onClose: () => void;
   onToggleModerator: () => void;
   onKickFromSeat: () => void;
   onKickFromRoom: () => void;
   onToggleLock: () => void;
+  onBringToVideo: () => void;
 }) {
+
 
   if (!member) return null;
   const name = member.user?.username ?? "User";
