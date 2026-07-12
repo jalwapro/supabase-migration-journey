@@ -58,6 +58,16 @@ import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay, PkChallengerToasts } from "@/components/room/PkBattleSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
 
@@ -161,6 +171,7 @@ function RoomPage() {
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
     beauty: true,
@@ -954,7 +965,11 @@ function RoomPage() {
   }
 
 
-  async function leaveRoom() {
+  function leaveRoom() {
+    setExitConfirmOpen(true);
+  }
+
+  async function doLeaveRoom() {
     if (user && isHost) {
       try {
         // Convert accumulated gift points into diamonds for each receiver
@@ -984,8 +999,10 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
+    setExitConfirmOpen(false);
     navigate({ to: "/" });
   }
+
 
 
   function share() {
@@ -1968,6 +1985,36 @@ function RoomPage() {
           setPkOpen(true);
         }}
       />
+
+      <AlertDialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
+        <AlertDialogContent className="border-violet-400/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              {isHost ? "Close the room?" : "Leave the room?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              {isHost
+                ? "Yeh room band ho jayega aur sab viewers exit ho jayenge. Kya aap sure hain?"
+                : "Kya aap is room say bahar jana chahtay hain?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-white/20 bg-transparent text-white hover:bg-white/10">
+              Nahi
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void doLeaveRoom();
+              }}
+              className="bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90"
+            >
+              {isHost ? "Haan, band karo" : "Haan, exit"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       <SeatActionSheet
         member={manageMember}
