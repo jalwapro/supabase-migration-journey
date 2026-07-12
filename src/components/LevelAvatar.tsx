@@ -1,5 +1,7 @@
 import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+
 
 type Size = "sm" | "md" | "lg" | "xl";
 
