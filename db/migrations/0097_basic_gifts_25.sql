@@ -1,40 +1,47 @@
--- Jalwa Basic Gifts collection (25 SVGs) matching reference image
+-- Jalwa Basic Gifts collection (25 SVGs) — safe upsert (no deletes, preserves gift_sends FKs)
 BEGIN;
 
--- Remove any old duplicates by name so re-runs stay clean
-DELETE FROM public.gifts WHERE name IN (
-  'Heart','Like','Rose','Chocolate','Teddy','Balloon','Candy','Ice Cream','Coffee','Ring',
-  'Cake','Fire','Kiss','Star','Butterfly','Gift Box','Love Letter','Crystal Heart','Snowflake','Rainbow',
-  'Crown','Magic Wand','Sky Lantern','Confetti','Rocket'
-);
-
+WITH data(name, emoji, price, category, sort_order, clip_path) AS (VALUES
+  ('Heart','❤️',1,'popular',1,'/animations/gifts/basic/heart.svg'),
+  ('Like','👍',1,'popular',2,'/animations/gifts/basic/like.svg'),
+  ('Rose','🌹',1,'love',3,'/animations/gifts/basic/rose.svg'),
+  ('Chocolate','🍫',2,'classic',4,'/animations/gifts/basic/chocolate.svg'),
+  ('Teddy','🧸',2,'classic',5,'/animations/gifts/basic/teddy.svg'),
+  ('Balloon','🎈',2,'popular',6,'/animations/gifts/basic/balloon.svg'),
+  ('Candy','🍭',3,'classic',7,'/animations/gifts/basic/candy.svg'),
+  ('Ice Cream','🍦',3,'classic',8,'/animations/gifts/basic/icecream.svg'),
+  ('Coffee','☕',3,'classic',9,'/animations/gifts/basic/coffee.svg'),
+  ('Ring','💍',5,'luxury',10,'/animations/gifts/basic/ring.svg'),
+  ('Cake','🎂',5,'popular',11,'/animations/gifts/basic/cake.svg'),
+  ('Fire','🔥',5,'popular',12,'/animations/gifts/basic/fire.svg'),
+  ('Kiss','💋',5,'love',13,'/animations/gifts/basic/kiss.svg'),
+  ('Star','⭐',5,'popular',14,'/animations/gifts/basic/star.svg'),
+  ('Butterfly','🦋',6,'popular',15,'/animations/gifts/basic/butterfly.svg'),
+  ('Gift Box','🎁',6,'popular',16,'/animations/gifts/basic/giftbox.svg'),
+  ('Love Letter','💌',6,'love',17,'/animations/gifts/basic/loveletter.svg'),
+  ('Crystal Heart','💎',8,'luxury',18,'/animations/gifts/basic/crystalheart.svg'),
+  ('Snowflake','❄️',8,'popular',19,'/animations/gifts/basic/snowflake.svg'),
+  ('Rainbow','🌈',8,'popular',20,'/animations/gifts/basic/rainbow.svg'),
+  ('Crown','👑',10,'luxury',21,'/animations/gifts/basic/crown.svg'),
+  ('Magic Wand','🪄',10,'premium',22,'/animations/gifts/basic/magicwand.svg'),
+  ('Sky Lantern','🏮',10,'popular',23,'/animations/gifts/basic/skylantern.svg'),
+  ('Confetti','🎉',10,'popular',24,'/animations/gifts/basic/confetti.svg'),
+  ('Rocket','🚀',15,'premium',25,'/animations/gifts/basic/rocket.svg')
+),
+upd AS (
+  UPDATE public.gifts g
+     SET emoji = d.emoji, icon = d.emoji, price = d.price, price_coins = d.price,
+         category = d.category, sort_order = d.sort_order,
+         clip_path = d.clip_path, clip_type = 'svg', animation = 'pop',
+         is_active = true, active = true, image_url = NULL
+    FROM data d
+   WHERE g.name = d.name
+  RETURNING g.name
+)
 INSERT INTO public.gifts
   (name, emoji, icon, price, price_coins, diamonds_value, category, animation, sort_order, clip_path, clip_type, is_active, active)
-VALUES
-  ('Heart','❤️','❤️',1,1,1,'popular','pop',1,'/animations/gifts/basic/heart.svg','svg',true,true),
-  ('Like','👍','👍',1,1,1,'popular','pop',2,'/animations/gifts/basic/like.svg','svg',true,true),
-  ('Rose','🌹','🌹',1,1,1,'love','pop',3,'/animations/gifts/basic/rose.svg','svg',true,true),
-  ('Chocolate','🍫','🍫',2,2,1,'classic','pop',4,'/animations/gifts/basic/chocolate.svg','svg',true,true),
-  ('Teddy','🧸','🧸',2,2,1,'classic','pop',5,'/animations/gifts/basic/teddy.svg','svg',true,true),
-  ('Balloon','🎈','🎈',2,2,1,'popular','pop',6,'/animations/gifts/basic/balloon.svg','svg',true,true),
-  ('Candy','🍭','🍭',3,3,2,'classic','pop',7,'/animations/gifts/basic/candy.svg','svg',true,true),
-  ('Ice Cream','🍦','🍦',3,3,2,'classic','pop',8,'/animations/gifts/basic/icecream.svg','svg',true,true),
-  ('Coffee','☕','☕',3,3,2,'classic','pop',9,'/animations/gifts/basic/coffee.svg','svg',true,true),
-  ('Ring','💍','💍',5,5,3,'luxury','pop',10,'/animations/gifts/basic/ring.svg','svg',true,true),
-  ('Cake','🎂','🎂',5,5,3,'popular','pop',11,'/animations/gifts/basic/cake.svg','svg',true,true),
-  ('Fire','🔥','🔥',5,5,3,'popular','pop',12,'/animations/gifts/basic/fire.svg','svg',true,true),
-  ('Kiss','💋','💋',5,5,3,'love','pop',13,'/animations/gifts/basic/kiss.svg','svg',true,true),
-  ('Star','⭐','⭐',5,5,3,'popular','pop',14,'/animations/gifts/basic/star.svg','svg',true,true),
-  ('Butterfly','🦋','🦋',6,6,3,'popular','pop',15,'/animations/gifts/basic/butterfly.svg','svg',true,true),
-  ('Gift Box','🎁','🎁',6,6,3,'popular','pop',16,'/animations/gifts/basic/giftbox.svg','svg',true,true),
-  ('Love Letter','💌','💌',6,6,3,'love','pop',17,'/animations/gifts/basic/loveletter.svg','svg',true,true),
-  ('Crystal Heart','💎','💎',8,8,4,'luxury','pop',18,'/animations/gifts/basic/crystalheart.svg','svg',true,true),
-  ('Snowflake','❄️','❄️',8,8,4,'popular','pop',19,'/animations/gifts/basic/snowflake.svg','svg',true,true),
-  ('Rainbow','🌈','🌈',8,8,4,'popular','pop',20,'/animations/gifts/basic/rainbow.svg','svg',true,true),
-  ('Crown','👑','👑',10,10,5,'luxury','pop',21,'/animations/gifts/basic/crown.svg','svg',true,true),
-  ('Magic Wand','🪄','🪄',10,10,5,'premium','pop',22,'/animations/gifts/basic/magicwand.svg','svg',true,true),
-  ('Sky Lantern','🏮','🏮',10,10,5,'popular','pop',23,'/animations/gifts/basic/skylantern.svg','svg',true,true),
-  ('Confetti','🎉','🎉',10,10,5,'popular','pop',24,'/animations/gifts/basic/confetti.svg','svg',true,true),
-  ('Rocket','🚀','🚀',15,15,7,'premium','pop',25,'/animations/gifts/basic/rocket.svg','svg',true,true);
+SELECT d.name, d.emoji, d.emoji, d.price, d.price, GREATEST(1, d.price/2), d.category, 'pop', d.sort_order, d.clip_path, 'svg', true, true
+  FROM data d
+ WHERE d.name NOT IN (SELECT name FROM upd);
 
 COMMIT;
