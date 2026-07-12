@@ -379,8 +379,8 @@ function DmThread() {
       toast.error("Voice recording ke liye HTTPS zaroori hai");
       return;
     }
-    // Proactive permission check — clearer message when browser
-    // has previously denied mic access.
+    // Proactive permission check — open in-app popup if mic is blocked or
+    // needs to be prompted, so the user sees a clear action instead of a toast.
     try {
       const perms = (navigator as Navigator & { permissions?: Permissions }).permissions;
       if (perms?.query) {
@@ -388,10 +388,11 @@ function DmThread() {
           .query({ name: "microphone" as PermissionName })
           .catch(() => null);
         if (status?.state === "denied") {
-          toast.error(
-            "Mic blocked hai — browser settings me site ke liye Microphone Allow karo, phir dubara try karo",
-            { duration: 6000 },
-          );
+          setMicPrompt("denied");
+          return;
+        }
+        if (status?.state === "prompt") {
+          setMicPrompt("prompt");
           return;
         }
       }
@@ -444,10 +445,8 @@ function DmThread() {
     } catch (err) {
       const e = err as DOMException;
       if (e?.name === "NotAllowedError" || e?.name === "SecurityError") {
-        toast.error(
-          "Mic permission denied — browser address bar ke lock icon se Microphone Allow karo",
-          { duration: 6000 },
-        );
+        // User (or browser) denied — surface the in-app popup with instructions.
+        setMicPrompt("denied");
       } else if (e?.name === "NotFoundError" || e?.name === "OverconstrainedError") {
         toast.error("Koi microphone nahi mila — device check karo");
       } else if (e?.name === "NotReadableError") {
@@ -907,6 +906,12 @@ function DmThread() {
 
       <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(e) => void sendAnimatedEmoji(e)} />
       <ChatEmojiOverlay scope={{ type: "dm", selfId: user.id, peerId }} />
+      <MicPermissionModal
+        open={!!micPrompt}
+        state={micPrompt ?? "prompt"}
+        onClose={() => setMicPrompt(null)}
+        onGranted={() => { setMicPrompt(null); void startRecord(); }}
+      />
     </div>
 
   );
