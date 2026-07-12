@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#ec4899" stop-opacity="0.9"/>
+<stop offset="60%" stop-color="#ec4899" stop-opacity="0.25"/>
+<stop offset="100%" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<circle cx="200" cy="200" r="170" fill="url(#glow)">
+<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<g font-size="22" text-anchor="middle" font-family="Arial">
+<text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
+<text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
+<text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
+<text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+</g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
+<g><polygon points="130,290 90,330 200,240 250,190" fill="#ec4899" stroke="#831843" stroke-width="2"/><g><circle cx="240" cy="140" r="8" fill="#fbbf24"/><rect x="270" y="170" width="12" height="12" fill="#22c55e" transform="rotate(30 276 176)"/><circle cx="300" cy="120" r="7" fill="#3b82f6"/><polygon points="220,100 230,120 210,120" fill="#a855f7"/><circle cx="180" cy="90" r="6" fill="#dc2626"/><rect x="280" y="90" width="10" height="10" fill="#f97316"/><path d="M250 190 Q 280 150 320 160" stroke="#fbbf24" stroke-width="3" fill="none"/><path d="M240 180 Q 260 120 200 100" stroke="#22c55e" stroke-width="3" fill="none"/><animateTransform attributeName="transform" type="translate" values="0,0;5,-8;0,0" dur="1s" repeatCount="indefinite"/></g></g>
+</g>
+</svg>
