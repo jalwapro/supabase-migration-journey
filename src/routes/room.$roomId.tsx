@@ -3411,6 +3411,15 @@ function SeatActionSheet({
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-2">
+          {canModerate && isVideoRoom && member.seat_index != null && member.seat_index > 0 && (
+            <button
+              onClick={onBringToVideo}
+              className="w-full rounded-2xl border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-[color:var(--primary)]/20 to-[color:var(--secondary)]/20 py-3 text-sm font-black text-white shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
+            >
+              🎥 Bring to Video (Swap Seats)
+            </button>
+          )}
+
           {canModerate && (
             <button
               onClick={onToggleModerator}
