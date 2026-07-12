@@ -2071,12 +2071,28 @@ function RoomPage() {
         member={manageMember}
         canModerate={isHost}
         canLock={isHost || isModerator}
+        isVideoRoom={isVideo}
         isSeatLocked={
           manageMember?.seat_index != null
             ? lockedSeats.includes(manageMember.seat_index)
             : false
         }
         onClose={() => setManageMember(null)}
+        onBringToVideo={async () => {
+          if (!manageMember || !user) return;
+          const { error } = await supabase.from("seat_invites").insert({
+            room_id: roomId,
+            from_user: user.id,
+            to_user: manageMember.user_id,
+            seat_index: 0,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success("Video invite bhej diya");
+            setManageMember(null);
+          }
+        }}
+
         onToggleModerator={async () => {
           if (!manageMember) return;
           const next = !manageMember.is_moderator;
