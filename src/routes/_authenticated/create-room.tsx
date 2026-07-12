@@ -263,6 +263,9 @@ function CreateRoom() {
                           (c) => c.slug === "pk" || c.slug === "pk-battle" || /pk/i.test(c.name),
                         );
                         if (pk) setCategoryId(pk.id);
+                      } else if (key === "video") {
+                        setType("video");
+                        if (seatCount === 2) setSeatCount(1);
                       } else {
                         setRoomType(key);
                       }
