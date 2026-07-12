@@ -146,12 +146,12 @@ export function PkBattleSheet({
         onClose();
       }
     }, 2500);
-    // auto-timeout after 60s
+    // auto-timeout after 3 min (keeps trying to pair with any next queued host)
     const stop = setTimeout(() => {
       void supabase.rpc("pk_leave_queue");
       setSearching(false);
       toast.message("No opponent found. Try again!");
-    }, 60_000);
+    }, 180_000);
     return () => {
       clearInterval(t);
       clearInterval(poll);
