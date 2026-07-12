@@ -29,7 +29,10 @@ export function LevelAvatar({
   /** Equipped aura ring media URL. Rotates behind the avatar. */
   ring?: string | null;
   className?: string;
+  /** If provided, avatar becomes a Link to that user's profile. */
+  userId?: string | null;
 }) {
+
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
