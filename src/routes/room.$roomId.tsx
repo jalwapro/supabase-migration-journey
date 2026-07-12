@@ -3429,10 +3429,12 @@ function VideoSettingsSheet({
         <div className="grid grid-cols-4 gap-2">
           <ToolBtn icon={<Music className="h-5 w-5" />} label="Music" onClick={onOpenMusic} disabled={!isHost} />
           <ToolBtn icon={<Gamepad2 className="h-5 w-5" />} label="Games" onClick={onOpenGames} />
-          
           <ToolBtn icon={<Share2 className="h-5 w-5" />} label="Invite" onClick={onShare} />
           <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={onOpenGuests} />
           <ToolBtn icon={<Trophy className="h-5 w-5" />} label="Rank" onClick={onOpenRank} />
+          {!isVideo && (
+            <ToolBtn icon={<Grid3x3 className="h-5 w-5" />} label="Seats" onClick={onOpenSeats} />
+          )}
         </div>
 
         {isHost && (
