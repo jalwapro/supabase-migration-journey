@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#f97316" stop-opacity="0.9"/>
+<stop offset="60%" stop-color="#f97316" stop-opacity="0.25"/>
+<stop offset="100%" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<circle cx="200" cy="200" r="170" fill="url(#glow)">
+<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<g font-size="22" text-anchor="middle" font-family="Arial">
+<text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
+<text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
+<text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
+<text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+</g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
+<g><path d="M200 320 Q 130 290 140 220 Q 145 180 175 160 Q 165 200 195 210 Q 190 170 220 130 Q 225 180 250 200 Q 275 230 265 275 Q 255 310 200 320 Z" fill="#f97316"><animate attributeName="opacity" values="0.9;1;0.9" dur="0.6s" repeatCount="indefinite"/></path><path d="M200 310 Q 160 290 165 240 Q 175 210 195 220 Q 200 190 215 170 Q 220 210 240 220 Q 250 250 240 285 Q 225 305 200 310 Z" fill="#facc15"/><path d="M200 300 Q 180 285 190 260 Q 200 245 210 260 Q 215 285 200 300 Z" fill="#fff7ed"/></g>
+</g>
+</svg>

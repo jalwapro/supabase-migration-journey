@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#a855f7" stop-opacity="0.9"/>
+<stop offset="60%" stop-color="#a855f7" stop-opacity="0.25"/>
+<stop offset="100%" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<circle cx="200" cy="200" r="170" fill="url(#glow)">
+<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<g font-size="22" text-anchor="middle" font-family="Arial">
+<text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
+<text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
+<text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
+<text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+</g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
+<g><path d="M100 280 A 100 100 0 0 1 300 280" stroke="#dc2626" stroke-width="14" fill="none"/><path d="M114 280 A 86 86 0 0 1 286 280" stroke="#f97316" stroke-width="14" fill="none"/><path d="M128 280 A 72 72 0 0 1 272 280" stroke="#fbbf24" stroke-width="14" fill="none"/><path d="M142 280 A 58 58 0 0 1 258 280" stroke="#22c55e" stroke-width="14" fill="none"/><path d="M156 280 A 44 44 0 0 1 244 280" stroke="#3b82f6" stroke-width="14" fill="none"/><path d="M170 280 A 30 30 0 0 1 230 280" stroke="#a855f7" stroke-width="14" fill="none"/><ellipse cx="110" cy="285" rx="30" ry="18" fill="#fff"/><ellipse cx="290" cy="285" rx="30" ry="18" fill="#fff"/></g>
+</g>
+</svg>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#ec4899" stop-opacity="0.9"/>
+<stop offset="60%" stop-color="#ec4899" stop-opacity="0.25"/>
+<stop offset="100%" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<circle cx="200" cy="200" r="170" fill="url(#glow)">
+<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<g font-size="22" text-anchor="middle" font-family="Arial">
+<text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
+<text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
+<text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
+<text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+</g>
+<g>
+<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
+<g><ellipse cx="200" cy="310" rx="100" ry="15" fill="#000" opacity="0.2"/><rect x="115" y="220" width="170" height="80" rx="4" fill="#fbbf24"/><path d="M115 220 Q 200 240 285 220 L 285 240 Q 200 260 115 240 Z" fill="#ec4899"/><ellipse cx="200" cy="220" rx="85" ry="15" fill="#f472b6"/><g><rect x="170" y="180" width="4" height="30" fill="#fef3c7"/><path d="M172 180 Q 168 172 172 165 Q 176 172 172 180" fill="#f59e0b"><animate attributeName="opacity" values="0.7;1;0.7" dur="0.5s" repeatCount="indefinite"/></path><rect x="198" y="170" width="4" height="40" fill="#fef3c7"/><path d="M200 170 Q 196 162 200 155 Q 204 162 200 170" fill="#f59e0b"><animate attributeName="opacity" values="1;0.7;1" dur="0.6s" repeatCount="indefinite"/></path><rect x="226" y="180" width="4" height="30" fill="#fef3c7"/><path d="M228 180 Q 224 172 228 165 Q 232 172 228 180" fill="#f59e0b"><animate attributeName="opacity" values="0.7;1;0.7" dur="0.55s" repeatCount="indefinite"/></path></g></g>
+</g>
+</svg>
