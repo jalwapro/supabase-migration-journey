@@ -59,14 +59,14 @@ function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
       />
     );
   }
-  if (gift.clip_path && gift.clip_type === "svg") {
-    return <img src={gift.clip_path} alt="" className="h-full w-full object-contain" />;
-  }
   if (gift.clip_path && gift.clip_type === "mp4") {
     return <video src={gift.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />;
   }
   if (gift.image_url) {
     return <img src={gift.image_url} alt="" className="h-full w-full object-contain" />;
+  }
+  if (gift.clip_path && gift.clip_type === "svg") {
+    return <img src={gift.clip_path} alt="" className="h-full w-full object-contain" />;
   }
   return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
 }
