@@ -1,6 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Trophy, Video, MessageCircle, User } from "lucide-react";
 import type { ComponentType } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 type Tab = {
   to: string;
@@ -17,8 +20,30 @@ const TABS: Tab[] = [
   { to: "/me", label: "Me", Icon: User },
 ];
 
+function useUnreadDm() {
+  const { user } = useAuth();
+  const uid = user?.id ?? null;
+  return useQuery({
+    queryKey: ["dm", "unread-badge", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      if (!uid) return 0;
+      const { count, error } = await supabase
+        .from("direct_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("recipient_id", uid)
+        .is("read_at", null)
+        .is("deleted_at", null);
+      if (error) return 0;
+      return count ?? 0;
+    },
+    staleTime: 15_000,
+  });
+}
+
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { data: unread = 0 } = useUnreadDm();
 
   return (
     <nav
@@ -43,6 +68,7 @@ export function BottomNav() {
               </li>
             );
           }
+          const showBadge = to === "/messages" && unread > 0;
           return (
             <li key={to}>
               <Link
@@ -51,7 +77,17 @@ export function BottomNav() {
                   active ? "text-[color:var(--primary)]" : "text-muted-foreground"
                 }`}
               >
-                <Icon className="h-5 w-5" />
+                <span className="relative">
+                  <Icon className="h-5 w-5" />
+                  {showBadge && (
+                    <span
+                      aria-label={`${unread} unread`}
+                      className="absolute -right-1.5 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-black leading-none text-white ring-2 ring-background animate-pulse"
+                    >
+                      {unread > 99 ? "99+" : unread}
+                    </span>
+                  )}
+                </span>
                 <span>{label}</span>
               </Link>
             </li>
