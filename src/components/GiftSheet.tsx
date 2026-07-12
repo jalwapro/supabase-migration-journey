@@ -76,11 +76,13 @@ export function GiftSheet({
   onClose,
   roomId,
   receivers,
+  onSent,
 }: {
   open: boolean;
   onClose: () => void;
   roomId: string;
   receivers: GiftReceiver[];
+  onSent?: (info: { gift: Gift; targets: string[] }) => void;
 }) {
   const { profile, refresh } = useAuth();
   const qc = useQueryClient();
