@@ -3279,10 +3279,11 @@ function VideoSettingsSheet({
   speakerMuted,
   onToggleSpeaker,
   isVideo,
-  onOpenSeats,
   onOpenMusic,
   onOpenGames,
   onShare,
+  onOpenGuests,
+  onOpenRank,
   onEndLive,
   onPk,
 }: {
@@ -3298,10 +3299,11 @@ function VideoSettingsSheet({
   speakerMuted: boolean;
   onToggleSpeaker: () => void;
   isVideo: boolean;
-  onOpenSeats: () => void;
   onOpenMusic: () => void;
   onOpenGames: () => void;
   onShare: () => void;
+  onOpenGuests: () => void;
+  onOpenRank: () => void;
   onEndLive: () => void;
   onPk: () => void;
 }) {
