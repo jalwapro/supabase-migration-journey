@@ -14,9 +14,11 @@ export type ComboState = {
 };
 
 export function ComboGiftButton({
+  roomId,
   state,
   onExpire,
 }: {
+  roomId: string;
   state: ComboState | null;
   onExpire: () => void;
 }) {
