@@ -100,7 +100,7 @@ function RoomsPage() {
                     )}
                     <div className="absolute inset-x-2 bottom-2">
                       <div className="flex items-center gap-1 text-[10px] text-white/80">
-                        <TypeIcon className="h-3 w-3" /> @{r.host?.username ?? "host"}
+                        <TypeIcon className="h-3 w-3" /> {r.host?.username ?? "host"}
                       </div>
                       <h3 className="line-clamp-2 text-xs font-bold text-white">{r.title}</h3>
                     </div>

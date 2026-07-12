@@ -204,7 +204,7 @@ function MePage() {
 
                 <div className="flex items-center gap-2">
                   <h2 className="truncate text-xl font-black">
-                    @{profile?.username ?? "you"}
+                    {profile?.username ?? "you"}
                   </h2>
                   {profile?.is_vip && (
                     <Crown className="h-4 w-4 shrink-0 text-[color:var(--gold)]" />

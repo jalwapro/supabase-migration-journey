@@ -42,7 +42,7 @@ export function VipEntrance({
         <p className="text-[10px] font-black uppercase tracking-widest" style={{ color: tier.color }}>
           {tier.label} has entered
         </p>
-        <p className="truncate text-sm font-black text-white">@{username}</p>
+        <p className="truncate text-sm font-black text-white">{username}</p>
       </div>
       <VipBadge level={level} size="sm" />
       {/* sparkles */}

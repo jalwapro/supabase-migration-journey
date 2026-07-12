@@ -280,7 +280,7 @@ export function GiftSheet({
                 Top Gifter in this room
               </p>
               <p className="truncate text-xs font-bold text-white">
-                @{topGifter.data.username ?? "user"}
+                {topGifter.data.username ?? "user"}
               </p>
             </div>
           </Link>

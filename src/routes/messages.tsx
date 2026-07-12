@@ -245,7 +245,7 @@ function ChatsList({
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate font-semibold text-sm">@{p?.username ?? "user"}</p>
+                <p className="truncate font-semibold text-sm">{p?.username ?? "user"}</p>
                 <p className="truncate text-xs text-muted-foreground">{m.text || "Say hi 👋"}</p>
               </div>
               {m.unread ? (
@@ -323,7 +323,7 @@ function FriendsList({
               {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">@{p.username ?? "user"}</p>
+              <p className="truncate text-sm font-semibold">{p.username ?? "user"}</p>
               <p className="truncate text-[10px] text-muted-foreground">ID {p.user_code ?? "—"}</p>
             </div>
           </Link>
@@ -438,7 +438,7 @@ function AddFriend() {
                 {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">@{p.username ?? "user"}</p>
+                <p className="truncate text-sm font-semibold">{p.username ?? "user"}</p>
                 <p className="truncate text-[10px] text-muted-foreground">ID {p.user_code ?? "—"}</p>
               </div>
               <Link

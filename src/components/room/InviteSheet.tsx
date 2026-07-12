@@ -199,7 +199,7 @@ export function InviteSheet({
                       )}
                     </div>
                     <p className="min-w-0 flex-1 truncate text-sm font-bold">
-                      @{f.username ?? "user"}
+                      {f.username ?? "user"}
                     </p>
                     <button
                       disabled={busy || done}
