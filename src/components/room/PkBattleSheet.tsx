@@ -820,31 +820,6 @@ export function PkMatchOverlay({
               🛑 End PK Match
             </button>
           )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <HostPill name={pA?.username} avatar={pA?.avatar} side="a" />
-            <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-white/10">
-              <div
-                className="absolute inset-y-0 left-0 rounded-r-full bg-gradient-to-r from-red-500 via-red-400 to-pink-400 transition-all"
-                style={{ width: `${pctA}%` }}
-              />
-              <div
-                className="absolute inset-y-0 right-0 rounded-l-full bg-gradient-to-l from-blue-500 via-blue-400 to-cyan-400 transition-all"
-                style={{ width: `${100 - pctA}%` }}
-              />
-              <div
-                className="absolute top-0 h-full w-0.5 -translate-x-1/2 bg-white/80"
-                style={{ left: `${pctA}%` }}
-              />
-            </div>
-            <HostPill name={pB?.username} avatar={pB?.avatar} side="b" />
-          </div>
-
-          <div className="mt-1 flex justify-between px-1 text-[10px] font-bold">
-            <span className="text-red-300">🔴 {Number(sA).toLocaleString()}</span>
-            <span className="text-blue-300">{Number(sB).toLocaleString()} 🔵</span>
-          </div>
 
           {isEnded && (
             <div className="mt-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/20 py-1.5 text-[11px] font-extrabold text-white">
