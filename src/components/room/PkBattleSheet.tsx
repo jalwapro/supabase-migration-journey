@@ -126,6 +126,29 @@ export function PkBattleSheet({
     toast.message("Search cancelled");
   }
 
+  // TikTok-style "Next": skip current queue slot, requeue fresh to pair with a different host.
+  async function nextOpponent() {
+    await supabase.rpc("pk_leave_queue");
+    setWaitedSec(0);
+    const { data, error } = await supabase.rpc("pk_join_random_queue", {
+      _duration_sec: duration,
+    });
+    if (error) return toast.error(error.message);
+    const match = (Array.isArray(data) ? data[0] : data) as Match | null;
+    if (match) {
+      qc.setQueryData(["room", currentRoomId], (prev: any) =>
+        prev ? { ...prev, active_pk_match_id: match.id } : prev,
+      );
+      qc.invalidateQueries({ queryKey: ["room", currentRoomId] });
+      qc.invalidateQueries({ queryKey: ["pk_active_match", match.id] });
+      setSearching(false);
+      toast.success("Matched! PK is live!");
+      onClose();
+    } else {
+      toast.message("Searching next host…");
+    }
+  }
+
   // While searching: tick + poll own live room for active_pk_match_id.
   useEffect(() => {
     if (!searching || !user) return;
