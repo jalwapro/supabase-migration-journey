@@ -499,19 +499,38 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // Play gift sound when a new gift starts (skip for premium — video has its own audio)
+  // Play gift sound when a new gift starts. Premium gifts (Royal Lion) have
+  // silent video, so soundUrl (ElevenLabs roar) provides the audio at max volume.
   useEffect(() => {
-    if (!current?.soundUrl || isPremiumLong) return;
+    if (!current?.soundUrl) return;
     const src = resolveSoundUrl(current.soundUrl);
     if (!src) return;
     const audio = new Audio(src);
-    audio.volume = 0.85;
-    audio.play().catch(() => {});
+    audio.volume = 1.0;
+    // Boost via Web Audio for premium (500%)
+    let ctx: AudioContext | null = null;
+    try {
+      const AC: typeof AudioContext | undefined =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (AC && isPremiumLong) {
+        ctx = new AC();
+        const source = ctx.createMediaElementSource(audio);
+        const gain = ctx.createGain();
+        gain.gain.value = 5;
+        source.connect(gain).connect(ctx.destination);
+      }
+    } catch {}
+    audio.play().catch(() => {
+      audio.muted = true;
+      audio.play().catch(() => {});
+    });
     return () => {
       audio.pause();
       audio.src = "";
+      try { ctx?.close(); } catch {}
     };
   }, [current?.key, current?.soundUrl, isPremiumLong]);
+
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
