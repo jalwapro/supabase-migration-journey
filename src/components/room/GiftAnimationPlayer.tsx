@@ -516,7 +516,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         ctx = new AC();
         const source = ctx.createMediaElementSource(audio);
         const gain = ctx.createGain();
-        gain.gain.value = 5;
+        gain.gain.value = 20;
         source.connect(gain).connect(ctx.destination);
       }
     } catch {}
