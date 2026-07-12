@@ -12,8 +12,17 @@ import {
 import { toast } from "sonner";
 import jalwaCoin from "@/assets/jalwa-coin.png.asset.json";
 
+const COIN_URL_ABS = `https://cloud-to-soul.lovable.app${jalwaCoin.url}`;
 const CoinIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <img src={jalwaCoin.url} alt="Jalwa coin" className={`${className} drop-shadow-[0_0_6px_rgba(255,200,60,0.6)]`} />
+  <img
+    src={jalwaCoin.url}
+    alt="Jalwa coin"
+    onError={(e) => {
+      const img = e.currentTarget;
+      if (img.src !== COIN_URL_ABS) img.src = COIN_URL_ABS;
+    }}
+    className={`${className} drop-shadow-[0_0_6px_rgba(255,200,60,0.6)]`}
+  />
 );
 
 export const Route = createFileRoute("/_authenticated/recharge")({
