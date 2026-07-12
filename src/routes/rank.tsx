@@ -320,7 +320,10 @@ function FacetedRow({ entry, accentIdx }: { entry: Entry; accentIdx: number }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <p className="truncate text-sm font-black text-white">{entry.username ?? "user"}</p>
+              <p className="truncate text-sm font-black text-white">
+                {entry.username ?? "user"}
+                <span className="ml-1 text-[10px] font-normal text-white/50">#{String(entry.user_id).slice(0, 4)}</span>
+              </p>
               <VipBadge level={entry.vip_level ?? 0} size="xs" />
             </div>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-widest text-white/40">
