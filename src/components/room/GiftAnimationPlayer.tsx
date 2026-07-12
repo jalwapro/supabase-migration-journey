@@ -197,7 +197,8 @@ function AnimatedGiftVideo({
           const d = e.currentTarget.duration;
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
         }}
-        onCanPlayThrough={markReady}
+        onLoadedData={markReady}
+        onCanPlay={markReady}
         onError={() => {
           setFailed(true);
           onReady();
