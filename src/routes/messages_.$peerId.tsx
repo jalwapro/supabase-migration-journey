@@ -27,6 +27,7 @@ import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet
 import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 import { VoiceRecordingTray } from "@/components/chat/VoiceRecordingTray";
 import { VoiceMessage } from "@/components/chat/VoiceMessage";
+import { MicPermissionModal } from "@/components/chat/MicPermissionModal";
 
 export const Route = createFileRoute("/messages_/$peerId")({
   component: DmThread,
@@ -68,6 +69,7 @@ function DmThread() {
   const [peerTyping, setPeerTyping] = useState(false);
   const [replyTo, setReplyTo] = useState<DM | null>(null);
   const [actionMsg, setActionMsg] = useState<DM | null>(null);
+  const [micPrompt, setMicPrompt] = useState<null | "prompt" | "denied">(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const mediaRec = useRef<MediaRecorder | null>(null);
