@@ -15,7 +15,7 @@ type Tab = {
 const TABS: Tab[] = [
   { to: "/", label: "Home", Icon: Home },
   { to: "/rank", label: "Rank", Icon: Trophy },
-  { to: "/create-room", label: "", Icon: Video, primary: true },
+  { to: "/create-room", label: "", Icon: Plus, primary: true },
   { to: "/messages", label: "Chat", Icon: MessageCircle },
   { to: "/me", label: "Me", Icon: User },
 ];
