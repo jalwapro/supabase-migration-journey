@@ -8,6 +8,13 @@
 -- - banners.expires_at column so auto-banners self-expire
 -- =============================================================
 
+-- 0) Extend notification_kind enum for PK events
+alter type public.notification_kind add value if not exists 'pk_win';
+alter type public.notification_kind add value if not exists 'pk_loss';
+alter type public.notification_kind add value if not exists 'pk_draw';
+alter type public.notification_kind add value if not exists 'pk_champion_pending';
+alter type public.notification_kind add value if not exists 'pk_champion_banner';
+
 -- 1) banners.expires_at (auto-expire) ---------------------------
 alter table public.banners
   add column if not exists expires_at timestamptz;
