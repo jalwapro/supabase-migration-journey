@@ -47,6 +47,37 @@ importScripts("https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-com
   }
 })();
 
+// Fallback for reliability on mobile (Android Chrome / Samsung Internet):
+// if a push arrives while the app is completely closed and Firebase's
+// onBackgroundMessage handler doesn't fire (or the payload has no
+// `notification` field), show the notification straight from the raw
+// PushEvent so the user always gets a system-tray alert.
+self.addEventListener("push", (event) => {
+  let payload = {};
+  try { payload = event.data ? event.data.json() : {}; } catch { /* ignore */ }
+  const n = payload.notification || {};
+  const d = payload.data || {};
+  const title = n.title || d.title || "Jalwa";
+  const body = n.body || d.body || "";
+  const url = d.url || (d.kind === "dm_new" && d.sender_id ? `/messages/${d.sender_id}` : "/notifications");
+  // Only show if FCM's SDK handler hasn't already displayed one for this tag.
+  event.waitUntil((async () => {
+    const tag = d.kind || d.notifId || "jalwa";
+    const existing = await self.registration.getNotifications({ tag });
+    if (existing && existing.length > 0) return;
+    await self.registration.showNotification(title, {
+      body,
+      icon: "/favicon.png",
+      badge: "/favicon.png",
+      tag,
+      renotify: true,
+      vibrate: [80, 40, 120],
+      requireInteraction: false,
+      data: { url, ...d },
+    });
+  })());
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const data = event.notification.data || {};
