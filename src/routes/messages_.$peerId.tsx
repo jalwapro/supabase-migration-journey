@@ -1013,3 +1013,111 @@ function MessageBody({
 
   return <ImageIcon className="h-4 w-4" />;
 }
+
+function PrivateAlbum({ src }: { src?: string }) {
+  const [revealed, setRevealed] = useState(false);
+  const [remaining, setRemaining] = useState(60);
+  const [burned, setBurned] = useState(false);
+  const [hidden, setHidden] = useState(false); // hides on tab blur / visibility change
+
+  // Countdown after reveal
+  useEffect(() => {
+    if (!revealed || burned) return;
+    if (remaining <= 0) {
+      setBurned(true);
+      return;
+    }
+    const t = setTimeout(() => setRemaining((r) => r - 1), 1000);
+    return () => clearTimeout(t);
+  }, [revealed, remaining, burned]);
+
+  // Anti-screenshot deterrents: hide when tab loses focus / visibility changes
+  useEffect(() => {
+    if (!revealed || burned) return;
+    const onBlur = () => setHidden(true);
+    const onFocus = () => setHidden(false);
+    const onVis = () => setHidden(document.visibilityState !== "visible");
+    window.addEventListener("blur", onBlur);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      window.removeEventListener("blur", onBlur);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [revealed, burned]);
+
+  if (!src) {
+    return (
+      <div className="relative grid h-40 w-40 place-items-center rounded-lg bg-black/40 text-[color:var(--gold)]">
+        <Lock className="h-6 w-6" />
+        <span className="absolute left-1 top-1 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold text-[color:var(--gold)]">
+          <Lock className="h-2.5 w-2.5" /> Private
+        </span>
+      </div>
+    );
+  }
+
+  if (burned) {
+    return (
+      <div className="relative grid h-40 w-40 place-items-center rounded-lg bg-black/60 text-red-300">
+        <div className="flex flex-col items-center gap-1 text-center text-[10px]">
+          <Lock className="h-5 w-5" />
+          <span className="font-bold">Photo expired</span>
+          <span className="opacity-70">60s over</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!revealed) {
+    return (
+      <button
+        type="button"
+        onClick={() => setRevealed(true)}
+        className="relative grid h-40 w-40 place-items-center overflow-hidden rounded-lg text-[color:var(--gold)]"
+      >
+        <img
+          src={src}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover blur-2xl scale-125"
+          draggable={false}
+          onContextMenu={(e) => e.preventDefault()}
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="relative z-10 flex flex-col items-center gap-1 text-center">
+          <Lock className="h-6 w-6" />
+          <span className="text-[10px] font-bold">Tap to view</span>
+          <span className="text-[9px] opacity-70">60s • No screenshots</span>
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="relative select-none"
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ WebkitTouchCallout: "none", WebkitUserSelect: "none", userSelect: "none" } as React.CSSProperties}
+    >
+      <img
+        src={src}
+        alt="private album"
+        draggable={false}
+        className={`max-h-64 rounded-lg pointer-events-none transition ${hidden ? "blur-2xl" : ""}`}
+      />
+      {hidden && (
+        <div className="absolute inset-0 grid place-items-center rounded-lg bg-black/70 text-center text-[10px] font-bold text-red-300">
+          Screenshot blocked
+        </div>
+      )}
+      <span className="absolute left-1 top-1 flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-bold text-[color:var(--gold)]">
+        <Lock className="h-2.5 w-2.5" /> Private
+      </span>
+      <span className="absolute right-1 top-1 rounded-full bg-red-500/90 px-2 py-0.5 text-[10px] font-bold text-white tabular-nums">
+        {remaining}s
+      </span>
+    </div>
+  );
+}
+
