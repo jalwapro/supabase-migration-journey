@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Mic, Video, Bell, MapPin, Loader2, Check, X } from "lucide-react";
+import { isNative } from "@/lib/native";
 
-const FLAG_KEY = "jalwa_install_perms_asked_v2";
+const FLAG_KEY = "jalwa_install_perms_asked_v3";
 
 type PermState = "idle" | "asking" | "granted" | "denied";
 type PermKey = "mic" | "camera" | "notifications" | "location";
@@ -21,10 +22,11 @@ function isStandalone(): boolean {
 }
 
 /**
- * First-launch permission gate for the installed PWA / WebAPK.
- * Sequentially requests Mic, Camera, Notifications, Location — so all four
- * appear (and can be toggled) in the OS "App info" screen after install.
- * Never shows in a normal browser tab.
+ * First-launch permission gate.
+ * - Native (Capacitor APK/IPA): uses Capacitor plugins → permissions register
+ *   in Android "App info → Permissions" and iOS Settings.
+ * - Installed PWA (standalone): uses web APIs (site-level, not OS-level).
+ * - Normal browser tab: hidden.
  */
 export function InstallPermissionGate() {
   const [needsAsk, setNeedsAsk] = useState(false);
@@ -35,7 +37,7 @@ export function InstallPermissionGate() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!isStandalone()) return;
+    if (!isNative() && !isStandalone()) return;
     try {
       if (localStorage.getItem(FLAG_KEY) === "1") return;
     } catch { /* no-op */ }
@@ -47,9 +49,11 @@ export function InstallPermissionGate() {
   }
 
   async function askMic(): Promise<void> {
-    if (!navigator.mediaDevices?.getUserMedia) { setOne("mic", "denied"); return; }
     setOne("mic", "asking");
     try {
+      // getUserMedia inside Capacitor WebView triggers the native
+      // RECORD_AUDIO permission (as long as it's declared in AndroidManifest).
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("no mic");
       const s = await navigator.mediaDevices.getUserMedia({ audio: true });
       s.getTracks().forEach((t) => t.stop());
       setOne("mic", "granted");
@@ -57,9 +61,15 @@ export function InstallPermissionGate() {
   }
 
   async function askCamera(): Promise<void> {
-    if (!navigator.mediaDevices?.getUserMedia) { setOne("camera", "denied"); return; }
     setOne("camera", "asking");
     try {
+      if (isNative()) {
+        const { Camera } = await import("@capacitor/camera");
+        const res = await Camera.requestPermissions({ permissions: ["camera"] });
+        setOne("camera", res.camera === "granted" ? "granted" : "denied");
+        return;
+      }
+      if (!navigator.mediaDevices?.getUserMedia) throw new Error("no cam");
       const s = await navigator.mediaDevices.getUserMedia({ video: true });
       s.getTracks().forEach((t) => t.stop());
       setOne("camera", "granted");
@@ -67,24 +77,38 @@ export function InstallPermissionGate() {
   }
 
   async function askNotifications(): Promise<void> {
-    if (!("Notification" in window)) { setOne("notifications", "denied"); return; }
     setOne("notifications", "asking");
     try {
+      if (isNative()) {
+        const { PushNotifications } = await import("@capacitor/push-notifications");
+        const res = await PushNotifications.requestPermissions();
+        setOne("notifications", res.receive === "granted" ? "granted" : "denied");
+        return;
+      }
+      if (!("Notification" in window)) throw new Error("no notif");
       const perm = await Notification.requestPermission();
       setOne("notifications", perm === "granted" ? "granted" : "denied");
     } catch { setOne("notifications", "denied"); }
   }
 
   async function askLocation(): Promise<void> {
-    if (!("geolocation" in navigator)) { setOne("location", "denied"); return; }
     setOne("location", "asking");
-    await new Promise<void>((resolve) => {
-      navigator.geolocation.getCurrentPosition(
-        () => { setOne("location", "granted"); resolve(); },
-        () => { setOne("location", "denied"); resolve(); },
-        { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
-      );
-    });
+    try {
+      if (isNative()) {
+        const { Geolocation } = await import("@capacitor/geolocation");
+        const res = await Geolocation.requestPermissions({ permissions: ["location"] });
+        setOne("location", res.location === "granted" ? "granted" : "denied");
+        return;
+      }
+      if (!("geolocation" in navigator)) throw new Error("no geo");
+      await new Promise<void>((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => { setOne("location", "granted"); resolve(); },
+          () => { setOne("location", "denied"); resolve(); },
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+        );
+      });
+    } catch { setOne("location", "denied"); }
   }
 
   async function askAll() {
@@ -96,7 +120,6 @@ export function InstallPermissionGate() {
     await askLocation();
     try { localStorage.setItem(FLAG_KEY, "1"); } catch { /* no-op */ }
     setBusy(false);
-    // Small delay so the user sees the final ticks before the gate closes.
     setTimeout(() => setNeedsAsk(false), 600);
   }
 
