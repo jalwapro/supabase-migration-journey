@@ -399,16 +399,18 @@ function RechargePage() {
           {/* STEP: success */}
           {step === "success" && (
             <div className="space-y-4 py-6 text-center">
-              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-500/20">
-                <CheckCircle2 className="h-10 w-10 text-emerald-400" />
+              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-amber-500/20">
+                <Hourglass className="h-10 w-10 text-amber-400" />
               </div>
               <div>
-                <p className="text-lg font-black">Payment Confirmed!</p>
-                <p className="mt-1 text-xs text-muted-foreground">Your coins are now in your wallet</p>
+                <p className="text-lg font-black">Waiting for approval</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  OTP verify ho gaya. Admin approve karega to coins wallet mein aa jayenge (usually few minutes).
+                </p>
               </div>
               <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)]/30 to-[color:var(--gold)]/10 px-6 py-3">
                 <CoinIcon className="h-6 w-6 text-[color:var(--gold)]" />
-                <span className="text-2xl font-black">+{creditedCoins.toLocaleString()}</span>
+                <span className="text-2xl font-black">+{(selectedPkg ? selectedPkg.coins + selectedPkg.bonus_coins : creditedCoins).toLocaleString()}</span>
               </div>
               <div className="flex gap-2 pt-2">
                 <button
