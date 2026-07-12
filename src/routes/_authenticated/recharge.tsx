@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 
 import {
   ArrowLeft, Loader2, CheckCircle2, Smartphone, Building2,
-  CreditCard, Wallet, Sparkles, Crown, Gem, Flame,
+  CreditCard, Wallet, Sparkles, Crown, Gem, Flame, Hourglass,
 } from "lucide-react";
 import { toast } from "sonner";
 import jalwaCoin from "@/assets/jalwa-coin.png.asset.json";
