@@ -146,6 +146,7 @@ function RechargePage() {
     onSuccess: (row) => {
       setCreditedCoins(row.coins_credited);
       setStep("success");
+      toast.success(row.message || "Submitted for admin approval");
       qc.invalidateQueries({ queryKey: ["profile"] });
       qc.invalidateQueries({ queryKey: ["me"] });
       qc.invalidateQueries({ queryKey: ["wallet_transactions"] });
