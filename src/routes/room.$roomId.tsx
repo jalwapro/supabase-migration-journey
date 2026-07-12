@@ -1346,89 +1346,91 @@ function RoomPage() {
 
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo ? (
-        <>
-          {/* Host solo video tile */}
-          <VideoSeatGrid
-            coverUrl={r.cover_url}
-            isLive={r.status === "live"}
-            layout="SOLO"
-            seats={[(() => {
-              const m = seatsByIndex.get(0);
-              const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-              const fallback = !m
-                ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
-                : null;
-              return {
-                index: 0,
-                isHostSeat: true,
-                member: m,
-                remote,
-                fallbackUser: fallback,
-                giftPoints: giftPoints[m?.user_id ?? r.host_id] ?? 0,
-                onClaim: () => void takeSeat(0),
-                onLike: () => void onSeatTap(0),
-                likeCount: seatLikes[0] ?? 0,
-                currentUserId: user?.id,
-                localMuted: agora.muted,
-              };
-            })()]}
-          />
-          {/* 8 audio guest seats (4×2) */}
-          <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-3">
-            <div className="mb-2 flex items-center justify-between px-1">
-              <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/60">
-                Guest Seats · 8
-              </span>
-              <span className="text-[10px] font-bold text-white/40">
-                Audio only
-              </span>
+        (() => {
+          const hostM = seatsByIndex.get(0);
+          const hostRemote = hostM ? agora.remotes.get(uidFromUuid(hostM.user_id)) : undefined;
+          const hostFallback = !hostM
+            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+            : null;
+          const hostTile = {
+            index: 0,
+            isHostSeat: true,
+            member: hostM,
+            remote: hostRemote,
+            fallbackUser: hostFallback,
+            giftPoints: giftPoints[hostM?.user_id ?? r.host_id] ?? 0,
+            onClaim: () => void takeSeat(0),
+            onLike: () => void onSeatTap(0),
+            likeCount: seatLikes[0] ?? 0,
+            currentUserId: user?.id,
+            localMuted: agora.muted,
+          } as VideoSeatData;
+
+          const renderSeat = (i: number) => {
+            const m = seatsByIndex.get(i);
+            const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+            return (
+              <Seat
+                key={i}
+                index={i}
+                member={m}
+                remote={remote}
+                isHostSeat={false}
+                cover={r.cover_url}
+                fallbackUser={null}
+                onClaim={() => takeSeat(i)}
+                likeCount={seatLikes[i] ?? 0}
+                onLike={() => onSeatTap(i)}
+                giftPoints={giftPoints[m?.user_id ?? ""] ?? 0}
+                recentlyGifted={!!recentGiftUsers[m?.user_id ?? ""]}
+                glowing={!!glowSeats[i]}
+                locked={lockedSeats.includes(i)}
+                isKing={!!(m && kingUserId === m.user_id)}
+                onEmptyManage={
+                  isHost || isModerator ? () => setManageEmptySeat(i) : undefined
+                }
+                currentUserId={user?.id}
+                localMuted={agora.muted}
+                onOpenGifters={
+                  m
+                    ? () =>
+                        setGifterListReceiver({
+                          id: m.user_id,
+                          name: m.user?.username ?? `Seat ${i + 1}`,
+                        })
+                    : undefined
+                }
+              />
+            );
+          };
+
+          return (
+            <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+              {/* Top: compact host video + 2×2 seats 1–4 */}
+              <div className="flex items-stretch gap-2.5">
+                <div className="relative h-[220px] w-[42%] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60 shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--gold)_60%,transparent)]">
+                  <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                </div>
+                <div className="grid flex-1 grid-cols-2 gap-2">
+                  {[1, 2, 3, 4].map((i) => renderSeat(i))}
+                </div>
+              </div>
+
+              {/* Bottom row: seats 5–8 */}
+              <div className="mt-3 flex items-center justify-between px-1">
+                <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/60">
+                  Guest Seats · 8
+                </span>
+                <span className="text-[10px] font-bold text-white/40">Audio only</span>
+              </div>
+              <div className="mt-1.5 grid grid-cols-4 gap-2">
+                {[5, 6, 7, 8].map((i) => renderSeat(i))}
+              </div>
             </div>
-            <div
-              className="grid gap-x-2 gap-y-3"
-              style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}
-            >
-              {Array.from({ length: 8 }).map((_, k) => {
-                const i = k + 1;
-                const m = seatsByIndex.get(i);
-                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-                return (
-                  <Seat
-                    key={i}
-                    index={i}
-                    member={m}
-                    remote={remote}
-                    isHostSeat={false}
-                    cover={r.cover_url}
-                    fallbackUser={null}
-                    onClaim={() => takeSeat(i)}
-                    likeCount={seatLikes[i] ?? 0}
-                    onLike={() => onSeatTap(i)}
-                    giftPoints={giftPoints[m?.user_id ?? ""] ?? 0}
-                    recentlyGifted={!!recentGiftUsers[m?.user_id ?? ""]}
-                    glowing={!!glowSeats[i]}
-                    locked={lockedSeats.includes(i)}
-                    isKing={!!(m && kingUserId === m.user_id)}
-                    onEmptyManage={
-                      isHost || isModerator ? () => setManageEmptySeat(i) : undefined
-                    }
-                    currentUserId={user?.id}
-                    localMuted={agora.muted}
-                    onOpenGifters={
-                      m
-                        ? () =>
-                            setGifterListReceiver({
-                              id: m.user_id,
-                              name: m.user?.username ?? `Seat ${i + 1}`,
-                            })
-                        : undefined
-                    }
-                  />
-                );
-              })}
-            </div>
-          </div>
-        </>
+          );
+        })()
       ) : (
+
 
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
           <div className="p-0">
