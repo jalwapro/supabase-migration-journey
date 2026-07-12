@@ -164,6 +164,8 @@ function RoomPage() {
 
   const [text, setText] = useState("");
   const [giftOpen, setGiftOpen] = useState(false);
+  const [comboState, setComboState] = useState<ComboState | null>(null);
+  
   
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
