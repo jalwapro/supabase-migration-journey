@@ -64,10 +64,10 @@ type Setting = { key: string; value: Record<string, string | number> };
 function Integrations() {
   const qc = useQueryClient();
   const list = useQuery({
-    queryKey: ["app_settings", "integrations"],
+    queryKey: ["app_kv", "integrations"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("app_settings")
+        .from("app_kv")
         .select("key,value")
         .in("key", GROUPS.map((g) => g.key));
       if (error) throw error;
@@ -85,7 +85,7 @@ function Integrations() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {GROUPS.map((g) => (
-            <Card key={g.key} group={g} initial={getVal(g.key) as Record<string, string | number>} onSaved={() => qc.invalidateQueries({ queryKey: ["app_settings"] })} />
+            <Card key={g.key} group={g} initial={getVal(g.key) as Record<string, string | number>} onSaved={() => qc.invalidateQueries({ queryKey: ["app_kv"] })} />
           ))}
         </div>
       )}
@@ -113,7 +113,7 @@ function Card({
         const v = values[f.name] ?? "";
         parsed[f.name] = f.type === "number" ? Number(v) || 0 : v;
       }
-      const { error } = await supabase.from("app_settings").upsert({ key: group.key, value: parsed });
+      const { error } = await supabase.from("app_kv").upsert({ key: group.key, value: parsed });
       if (error) throw error;
     },
     onSuccess: () => {
