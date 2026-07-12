@@ -3197,7 +3197,8 @@ function VideoSettingsSheet({
         </div>
 
         {/* Video FX row (video rooms only) */}
-        {isVideo && (isHost || videoOn) && (
+        {isVideo && isHost && (
+
           <>
             <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
               Video Effects
