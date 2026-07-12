@@ -634,6 +634,76 @@ function RoomPage() {
     };
   }, [user, roomId]);
 
+  // Seat requests → popup for host/moderator to accept/reject.
+  useEffect(() => {
+    if (!user || !(isHost || isModerator)) return;
+    let cancelled = false;
+    // Load any existing pending request first.
+    void (async () => {
+      const { data } = await supabase
+        .from("seat_requests")
+        .select("id,from_user,seat_index,status")
+        .eq("room_id", roomId)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("username,avatar")
+        .eq("id", (data as { from_user: string }).from_user)
+        .maybeSingle();
+      const prof = p as { username: string | null; avatar: string | null } | null;
+      setPendingSeatRequest({
+        id: (data as { id: string }).id,
+        from_name: prof?.username ?? null,
+        from_avatar: prof?.avatar ?? null,
+        seat_index: (data as { seat_index: number | null }).seat_index,
+      });
+    })();
+
+    const ch = supabase
+      .channel(`seat-requests-${roomId}-${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "seat_requests",
+          filter: `room_id=eq.${roomId}`,
+        },
+        async (payload) => {
+          const row = payload.new as {
+            id: string;
+            from_user: string;
+            seat_index: number | null;
+            status: string;
+          };
+          if (row.status !== "pending") return;
+          const { data } = await supabase
+            .from("profiles")
+            .select("username,avatar")
+            .eq("id", row.from_user)
+            .maybeSingle();
+          const p = data as { username: string | null; avatar: string | null } | null;
+          setPendingSeatRequest({
+            id: row.id,
+            from_name: p?.username ?? null,
+            from_avatar: p?.avatar ?? null,
+            seat_index: row.seat_index,
+          });
+        },
+      )
+      .subscribe();
+    return () => {
+      cancelled = true;
+      void supabase.removeChannel(ch);
+    };
+  }, [user, roomId, isHost, isModerator]);
+
+
+
   useEffect(() => {
     if (!user || !room.data?.id) return;
     const seatIndex = isHost ? 0 : null;
