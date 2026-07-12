@@ -3291,6 +3291,7 @@ function VideoSettingsSheet({
   onShare,
   onOpenGuests,
   onOpenRank,
+  onOpenSeats,
   onEndLive,
   onPk,
 }: {
@@ -3311,6 +3312,7 @@ function VideoSettingsSheet({
   onShare: () => void;
   onOpenGuests: () => void;
   onOpenRank: () => void;
+  onOpenSeats: () => void;
   onEndLive: () => void;
   onPk: () => void;
 }) {
