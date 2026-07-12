@@ -51,7 +51,7 @@ import {
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { GiftSheet, type GiftReceiver, type Gift } from "@/components/GiftSheet";
+import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/components/GiftSheet";
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
