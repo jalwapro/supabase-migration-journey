@@ -235,6 +235,7 @@ export function GiftSheet({
     );
     onClose();
     send.mutate({ gift: selectedGift, targets, quantity: qty });
+    onSent?.({ gift: selectedGift, targets });
   };
 
   return (
