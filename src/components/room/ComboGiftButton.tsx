@@ -133,11 +133,11 @@ export function ComboGiftButton({
   const c = 2 * Math.PI * r;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 z-40" style={{ bottom: "calc(env(safe-area-inset-bottom) + 88px)" }}>
+    <div className="pointer-events-none fixed inset-x-0 z-[70]" style={{ bottom: "calc(env(safe-area-inset-bottom) + 120px)" }}>
       <div className="mx-auto flex w-full max-w-md justify-end px-4">
         <button
           onClick={tap}
-          className="pointer-events-auto relative grid place-items-center rounded-full shadow-[0_10px_40px_-10px_rgba(255,0,120,0.7)] transition-transform active:scale-95"
+          className="pointer-events-auto relative grid place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_10px_40px_-4px_rgba(255,45,149,0.9)] ring-2 ring-white/40 transition-transform active:scale-95"
           style={{ width: ringSize, height: ringSize }}
           aria-label="Combo gift"
         >
