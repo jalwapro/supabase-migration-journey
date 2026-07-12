@@ -3684,12 +3684,26 @@ function SeatInvitePopup({
               {initial}
             </div>
           )}
-          <p className="text-sm font-bold">
-            <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
-          </p>
-          <p className="text-[11px] text-white/60">
-            {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
-          </p>
+          {invite.seat_index === 0 ? (
+            <>
+              <p className="text-sm font-bold">
+                <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko <span className="text-[color:var(--gold)]">Video</span> pe bulaya hai
+              </p>
+              <p className="text-[11px] text-white/60">
+                Accept karo — aap host tile pe aa jaoge, host aap ki audio seat pe chala jayega
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-bold">
+                <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
+              </p>
+              <p className="text-[11px] text-white/60">
+                {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
+              </p>
+            </>
+          )}
+
         </div>
         <div className="mt-5 flex gap-2">
           <button
