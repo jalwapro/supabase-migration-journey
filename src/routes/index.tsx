@@ -43,7 +43,7 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-type Banner = { id: string; title: string | null; image_url: string; link_url: string | null };
+type Banner = { id: string; title: string | null; image_url: string; link_url: string | null; expires_at?: string | null };
 type Room = {
   id: string;
   title: string;
