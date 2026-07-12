@@ -552,7 +552,7 @@ function DmThread() {
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <Link to="/messages" className="flex min-w-0 flex-1 items-center gap-2">
+          <Link to="/u/$userId" params={{ userId: peerId }} className="flex min-w-0 flex-1 items-center gap-2">
             <div className="relative">
               <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-[color:var(--secondary)]/40 text-xs font-bold">
                 {peer.data?.avatar ? (
