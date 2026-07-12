@@ -547,10 +547,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             type={giftClip.type}
             onReady={markCurrentReady}
             onDone={clearCurrent}
+            onDuration={(ms) => setVideoDurationMs(ms)}
+            withSound={isPremiumLong}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={isRoyalRose}
           />
+
         ) : hasSvg ? (
           <AnimatedGiftImage
             src={giftClipUrl ?? ""}
