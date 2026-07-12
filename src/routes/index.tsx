@@ -8,6 +8,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { DailySpinFloatingButton } from "@/components/DailySpinFloatingButton";
+import { formatCompact } from "@/lib/utils";
 
 import jalwaLogo from "@/assets/jalwa-logo.png";
 import {
@@ -309,7 +310,7 @@ function Home() {
                   className="glow-4d flex items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-gradient-to-r from-[color:var(--gold)]/20 to-transparent px-2.5 py-1.5 text-[11px] font-bold"
                 >
                   <WalletIcon className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                  <span>{profile.coins.toLocaleString()}</span>
+                  <span title={profile.coins.toLocaleString()}>{formatCompact(profile.coins)}</span>
                 </Link>
               )}
               {isAdmin && (
