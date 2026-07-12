@@ -2093,10 +2093,6 @@ function RoomPage() {
         speakerMuted={agora.speakerMuted}
         onToggleSpeaker={agora.toggleSpeaker}
         isVideo={isVideo}
-        onOpenSeats={() => {
-          setVideoSettingsOpen(false);
-          setSeatsSheetOpen(true);
-        }}
         onOpenMusic={() => {
           setVideoSettingsOpen(false);
           setMusicOpen(true);
