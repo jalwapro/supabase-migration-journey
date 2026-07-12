@@ -1434,7 +1434,81 @@ function RoomPage() {
       </div>
 
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
-      {isVideo ? (
+      {isVideo && r.seat_count === 2 ? (
+        (() => {
+          const hostM = seatsByIndex.get(0);
+          const oppM = seatsByIndex.get(1);
+          const hostRemote = hostM ? agora.remotes.get(uidFromUuid(hostM.user_id)) : undefined;
+          const oppRemote = oppM ? agora.remotes.get(uidFromUuid(oppM.user_id)) : undefined;
+          const hasOpponent = !!oppM || !!r.active_pk_match_id;
+          const hostFallback = !hostM
+            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+            : null;
+          const hostTile: VideoSeatData = {
+            index: 0,
+            isHostSeat: true,
+            member: hostM,
+            remote: hostRemote,
+            fallbackUser: hostFallback,
+            giftPoints: giftPoints[hostM?.user_id ?? r.host_id] ?? 0,
+            onClaim: () => void takeSeat(0),
+            onLike: () => void onSeatTap(0),
+            likeCount: seatLikes[0] ?? 0,
+            currentUserId: user?.id,
+            localMuted: agora.muted,
+          };
+          const oppTile: VideoSeatData = {
+            index: 1,
+            isHostSeat: false,
+            member: oppM,
+            remote: oppRemote,
+            fallbackUser: null,
+            giftPoints: giftPoints[oppM?.user_id ?? ""] ?? 0,
+            onClaim: () => void takeSeat(1),
+            onLike: () => void onSeatTap(1),
+            likeCount: seatLikes[1] ?? 0,
+            currentUserId: user?.id,
+            localMuted: agora.muted,
+          };
+
+          return (
+            <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+              {!hasOpponent ? (
+                <>
+                  <div className="relative h-[380px] w-full overflow-hidden rounded-3xl border border-[color:var(--gold)]/60 bg-black/60 shadow-[0_0_36px_-8px_color-mix(in_oklab,var(--gold)_70%,transparent)]">
+                    <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 py-4">
+                      <span className="text-[10px] font-black uppercase tracking-[2px] text-[color:var(--gold)]">
+                        Waiting for Challenger
+                      </span>
+                      <span className="text-[11px] text-white/70">
+                        Solo stage until another host accepts your PK
+                      </span>
+                    </div>
+                  </div>
+                  {isHost && (
+                    <button
+                      onClick={() => setPkOpen(true)}
+                      className="glow-4d mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-[color:var(--gold)] to-[color:var(--primary)] py-3 text-sm font-extrabold text-primary-foreground"
+                    >
+                      ⚔️ Invite / Accept Challenger
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60">
+                    <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                  </div>
+                  <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--destructive)]/60 bg-black/60">
+                    <VideoTile data={oppTile} coverUrl={r.cover_url} />
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })()
+      ) : isVideo ? (
         (() => {
           const hostM = seatsByIndex.get(0);
           const hostRemote = hostM ? agora.remotes.get(uidFromUuid(hostM.user_id)) : undefined;
