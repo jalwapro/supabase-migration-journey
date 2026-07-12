@@ -25,6 +25,7 @@ function CreateRoom() {
   const [busy, setBusy] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(true);
   const [seatCount, setSeatCount] = useState<number>(20);
+  const isPkMatch = type === "video" && seatCount === 2;
 
   // Keep seat count valid for the current room type
   const setRoomType = (t: "voice" | "video") => {
@@ -83,6 +84,7 @@ function CreateRoom() {
         title: autoTitle,
         room_type: type,
         seat_count: seatCount,
+        pk_battle: isPkMatch,
         is_locked: locked,
         password: locked ? password || null : null,
         category_id: categoryId,
@@ -172,7 +174,7 @@ function CreateRoom() {
               setSheetOpen(true);
             }}
             className={`relative overflow-hidden rounded-2xl border p-3 text-left transition ${
-              type === "video" && seatCount === 2
+              isPkMatch
                 ? "border-[color:var(--destructive)]/60 bg-gradient-to-br from-[color:var(--destructive)]/25 via-card to-card shadow-lg shadow-[color:var(--destructive)]/10"
                 : "border-border bg-card/60"
             }`}
@@ -248,8 +250,8 @@ function CreateRoom() {
               ).map(({ key, label, Icon, gradient }) => {
                 const active =
                   key === "pk"
-                    ? type === "video" && seatCount === 2
-                    : type === key && !(key === "video" && seatCount === 2);
+                    ? isPkMatch
+                    : type === key && !(key === "video" && isPkMatch);
                 return (
                   <button
                     key={key}
