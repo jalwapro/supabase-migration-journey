@@ -2071,12 +2071,28 @@ function RoomPage() {
         member={manageMember}
         canModerate={isHost}
         canLock={isHost || isModerator}
+        isVideoRoom={isVideo}
         isSeatLocked={
           manageMember?.seat_index != null
             ? lockedSeats.includes(manageMember.seat_index)
             : false
         }
         onClose={() => setManageMember(null)}
+        onBringToVideo={async () => {
+          if (!manageMember || !user) return;
+          const { error } = await supabase.from("seat_invites").insert({
+            room_id: roomId,
+            from_user: user.id,
+            to_user: manageMember.user_id,
+            seat_index: 0,
+          });
+          if (error) toast.error(error.message);
+          else {
+            toast.success("Video invite bhej diya");
+            setManageMember(null);
+          }
+        }}
+
         onToggleModerator={async () => {
           if (!manageMember) return;
           const next = !manageMember.is_moderator;
@@ -2183,13 +2199,16 @@ function RoomPage() {
             setPendingInvite(null);
           }}
           onAccept={async () => {
-            const { error } = await supabase.rpc("accept_seat_invite", {
+            const isVideoSwap = pendingInvite.seat_index === 0;
+            const rpcName = isVideoSwap ? "accept_video_swap_invite" : "accept_seat_invite";
+            const { error } = await supabase.rpc(rpcName, {
               _invite_id: pendingInvite.id,
             });
             if (error) toast.error(error.message);
-            else toast.success("You're on the seat 🎤");
+            else toast.success(isVideoSwap ? "You're on video 🎥" : "You're on the seat 🎤");
             setPendingInvite(null);
           }}
+
         />
       )}
       <EmojiReactionSheet
@@ -3361,22 +3380,27 @@ function SeatActionSheet({
   canModerate,
   canLock,
   isSeatLocked,
+  isVideoRoom,
   onClose,
   onToggleModerator,
   onKickFromSeat,
   onKickFromRoom,
   onToggleLock,
+  onBringToVideo,
 }: {
   member: Member | null;
   canModerate: boolean;
   canLock: boolean;
   isSeatLocked: boolean;
+  isVideoRoom: boolean;
   onClose: () => void;
   onToggleModerator: () => void;
   onKickFromSeat: () => void;
   onKickFromRoom: () => void;
   onToggleLock: () => void;
+  onBringToVideo: () => void;
 }) {
+
 
   if (!member) return null;
   const name = member.user?.username ?? "User";
@@ -3406,6 +3430,15 @@ function SeatActionSheet({
           </div>
         </div>
         <div className="mt-5 flex flex-col gap-2">
+          {canModerate && isVideoRoom && member.seat_index != null && member.seat_index > 0 && (
+            <button
+              onClick={onBringToVideo}
+              className="w-full rounded-2xl border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-[color:var(--primary)]/20 to-[color:var(--secondary)]/20 py-3 text-sm font-black text-white shadow-[0_0_18px_-4px_color-mix(in_oklab,var(--gold)_50%,transparent)]"
+            >
+              🎥 Bring to Video (Swap Seats)
+            </button>
+          )}
+
           {canModerate && (
             <button
               onClick={onToggleModerator}
@@ -3651,12 +3684,26 @@ function SeatInvitePopup({
               {initial}
             </div>
           )}
-          <p className="text-sm font-bold">
-            <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
-          </p>
-          <p className="text-[11px] text-white/60">
-            {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
-          </p>
+          {invite.seat_index === 0 ? (
+            <>
+              <p className="text-sm font-bold">
+                <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko <span className="text-[color:var(--gold)]">Video</span> pe bulaya hai
+              </p>
+              <p className="text-[11px] text-white/60">
+                Accept karo — aap host tile pe aa jaoge, host aap ki audio seat pe chala jayega
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-bold">
+                <span className="text-[color:var(--gold)]">@{name}</span> ne aap ko seat pe bulaya hai
+              </p>
+              <p className="text-[11px] text-white/60">
+                {invite.seat_index != null ? `Seat ${invite.seat_index + 1}` : "First available seat"}
+              </p>
+            </>
+          )}
+
         </div>
         <div className="mt-5 flex gap-2">
           <button
