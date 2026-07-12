@@ -98,9 +98,35 @@ function AnimatedGiftVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
-  
+
+  // Wire the video element to a Web Audio graph with a 5x GainNode so premium
+  // gifts play at boosted volume (~500%) — the whole room hears the gift.
+  const ensureAudioBoost = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || !withSound) return;
+    try {
+      if (!audioCtxRef.current) {
+        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        audioCtxRef.current = new Ctx();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === "suspended") void ctx.resume();
+      if (!sourceRef.current) {
+        sourceRef.current = ctx.createMediaElementSource(video);
+        gainRef.current = ctx.createGain();
+        sourceRef.current.connect(gainRef.current).connect(ctx.destination);
+      }
+      if (gainRef.current) gainRef.current.gain.value = 5; // ~500%
+    } catch {
+      // AudioContext may already be wired to this element; fall back to element volume.
+      try { video.volume = 1; } catch { /* ignore */ }
+    }
+  }, [withSound]);
 
   useEffect(() => {
     readyOnceRef.current = false;
@@ -110,37 +136,37 @@ function AnimatedGiftVideo({
     if (!video) return;
     video.pause();
     video.currentTime = 0;
-    // Ensure the element reflects the desired mute state BEFORE load so the
-    // browser treats the play() call as unmuted from the start (no toggle mid-play).
-    video.muted = !withSound;
-    video.volume = withSound ? 1 : 0;
+    video.muted = false;
+    video.volume = 1;
     video.load();
-    // Do NOT call play() here — wait until the clip is fully buffered
-    // (canplaythrough) so playback runs smoothly without stuttering.
-  }, [src, withSound]);
+  }, [src]);
 
   useEffect(() => () => {
     const video = videoRef.current;
-    if (!video) return;
-    video.pause();
-    video.removeAttribute("src");
-    video.load();
+    if (video) {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    }
+    try { void audioCtxRef.current?.close(); } catch { /* ignore */ }
+    audioCtxRef.current = null;
+    gainRef.current = null;
+    sourceRef.current = null;
   }, []);
 
   const startPlayback = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    const attempt = (muted: boolean) => {
-      video.muted = muted;
-      if (!muted) video.volume = 1;
-      return video.play();
-    };
-    // Try unmuted first (send-gift click gave us a user gesture); if the
-    // browser blocks it, fall back to muted so the video still plays.
-    attempt(!withSound).catch(() => {
-      if (withSound) attempt(true).catch(() => {});
+    video.muted = false;
+    video.volume = 1;
+    ensureAudioBoost();
+    video.play().catch(() => {
+      // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
+      // retry muted so at least the visual plays.
+      video.muted = true;
+      video.play().catch(() => {});
     });
-  }, [withSound]);
+  }, [ensureAudioBoost]);
 
   const markReady = useCallback(() => {
     setReady(true);
@@ -164,7 +190,6 @@ function AnimatedGiftVideo({
         key={src}
         ref={videoRef}
         src={src}
-        muted={!withSound}
         playsInline
         disablePictureInPicture
         preload="auto"
@@ -186,6 +211,7 @@ function AnimatedGiftVideo({
 
   );
 }
+
 
 function GiftFallbackVisual({
   emoji,
