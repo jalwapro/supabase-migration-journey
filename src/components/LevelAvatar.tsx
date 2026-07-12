@@ -16,7 +16,9 @@ export function LevelAvatar({
   frame,
   ring,
   className = "",
+  userId,
 }: {
+
   src?: string | null;
   name?: string | null;
   level: number;
