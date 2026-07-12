@@ -110,9 +110,14 @@ function AnimatedGiftVideo({
     if (!video) return;
     video.pause();
     video.currentTime = 0;
+    // Ensure the element reflects the desired mute state BEFORE load so the
+    // browser treats the play() call as unmuted from the start (no toggle mid-play).
+    video.muted = !withSound;
+    video.volume = withSound ? 1 : 0;
     video.load();
-    void video.play().catch(() => {});
-  }, [src]);
+    // Do NOT call play() here — wait until the clip is fully buffered
+    // (canplaythrough) so playback runs smoothly without stuttering.
+  }, [src, withSound]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -122,13 +127,20 @@ function AnimatedGiftVideo({
     video.load();
   }, []);
 
-  const tryPlay = useCallback(() => {
+  const startPlayback = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.play().catch(() => {
-      // Some browsers need canplay/loadeddata first; those events call this again.
+    const attempt = (muted: boolean) => {
+      video.muted = muted;
+      if (!muted) video.volume = 1;
+      return video.play();
+    };
+    // Try unmuted first (send-gift click gave us a user gesture); if the
+    // browser blocks it, fall back to muted so the video still plays.
+    attempt(!withSound).catch(() => {
+      if (withSound) attempt(true).catch(() => {});
     });
-  }, []);
+  }, [withSound]);
 
   const markReady = useCallback(() => {
     setReady(true);
@@ -136,8 +148,8 @@ function AnimatedGiftVideo({
       readyOnceRef.current = true;
       onReady();
     }
-    tryPlay();
-  }, [onReady, tryPlay]);
+    startPlayback();
+  }, [onReady, startPlayback]);
 
   if (failed) {
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />;
@@ -152,7 +164,6 @@ function AnimatedGiftVideo({
         key={src}
         ref={videoRef}
         src={src}
-        autoPlay
         muted={!withSound}
         playsInline
         disablePictureInPicture
@@ -160,24 +171,8 @@ function AnimatedGiftVideo({
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
-          markReady();
         }}
-        onLoadedData={markReady}
-        onCanPlay={() => {
-          markReady();
-          if (withSound) {
-            const v = videoRef.current;
-            if (v) {
-              v.muted = false;
-              v.volume = 1;
-              v.play().catch(() => {
-                // Autoplay with sound blocked → retry muted so video still plays
-                v.muted = true;
-                v.play().catch(() => {});
-              });
-            }
-          }
-        }}
+        onCanPlayThrough={markReady}
         onError={() => {
           setFailed(true);
           onReady();
@@ -188,6 +183,7 @@ function AnimatedGiftVideo({
       />
 
     </div>
+
   );
 }
 
