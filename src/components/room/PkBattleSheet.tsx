@@ -250,7 +250,7 @@ export function PkBattleSheet({
                   Searching for opponent…
                 </p>
                 <p className="text-[11px] text-white/60">
-                  Waited {waitedSec}s · auto-cancels at 60s
+                  Waited {waitedSec}s · trying next host automatically · auto-cancels at 180s
                 </p>
                 <button
                   onClick={cancelSearch}
