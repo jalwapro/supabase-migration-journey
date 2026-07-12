@@ -238,22 +238,41 @@ function CreateRoom() {
               </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              {(["voice", "video"] as const).map((t) => {
-                const Icon = t === "video" ? Video : Mic;
-                const active = type === t;
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {(
+                [
+                  { key: "voice", label: "Voice", Icon: Mic, gradient: "from-[color:var(--primary)] to-[color:var(--secondary)]" },
+                  { key: "video", label: "Video", Icon: Video, gradient: "from-[color:var(--gold)] to-[color:var(--primary)]" },
+                  { key: "pk", label: "PK Match", Icon: Swords, gradient: "from-[color:var(--destructive)] to-[color:var(--gold)]" },
+                ] as const
+              ).map(({ key, label, Icon, gradient }) => {
+                const active =
+                  key === "pk"
+                    ? type === "video" && seatCount === 2
+                    : type === key && !(key === "video" && seatCount === 2);
                 return (
                   <button
-                    key={t}
-                    onClick={() => setRoomType(t)}
-                    className={`flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold capitalize transition ${
+                    key={key}
+                    onClick={() => {
+                      if (key === "pk") {
+                        setType("video");
+                        setSeatCount(2);
+                        const pk = categoryList.find(
+                          (c) => c.slug === "pk" || c.slug === "pk-battle" || /pk/i.test(c.name),
+                        );
+                        if (pk) setCategoryId(pk.id);
+                      } else {
+                        setRoomType(key);
+                      }
+                    }}
+                    className={`flex items-center justify-center gap-1.5 rounded-full py-3 text-xs font-bold transition ${
                       active
-                        ? "bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground"
+                        ? `bg-gradient-to-r ${gradient} text-primary-foreground shadow-lg`
                         : "border border-border bg-background/60 text-foreground/80"
                     }`}
                   >
                     <Icon className="h-4 w-4" />
-                    {t}
+                    {label}
                   </button>
                 );
               })}
