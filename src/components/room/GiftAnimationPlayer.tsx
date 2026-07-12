@@ -315,15 +315,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, [current]);
 
   const enqueueOne = useCallback((p: Play) => {
-    if (p.local) {
-      setQueue([]);
-      currentRef.current = p;
-      setCurrent(p);
-      return;
-    }
     // If nothing is playing, show it immediately (synchronously via ref
     // so a rapid-fire second call in the same tick still queues correctly).
     // Otherwise append to the pending queue.
+    // NOTE: Do NOT wipe queue/current on local sends — that would drop
+    // other users' incoming gifts while the local user is combo-tapping.
     if (currentRef.current) {
       setQueue((q) => [...q.slice(-3), p]);
     } else {
