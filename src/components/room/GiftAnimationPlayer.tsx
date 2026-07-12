@@ -153,13 +153,31 @@ function AnimatedGiftVideo({
         ref={videoRef}
         src={src}
         autoPlay
-        muted
+        muted={!withSound}
         playsInline
         disablePictureInPicture
         preload="auto"
-        onLoadedMetadata={markReady}
+        onLoadedMetadata={(e) => {
+          const d = e.currentTarget.duration;
+          if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
+          markReady();
+        }}
         onLoadedData={markReady}
-        onCanPlay={markReady}
+        onCanPlay={() => {
+          markReady();
+          if (withSound) {
+            const v = videoRef.current;
+            if (v) {
+              v.muted = false;
+              v.volume = 1;
+              v.play().catch(() => {
+                // Autoplay with sound blocked → retry muted so video still plays
+                v.muted = true;
+                v.play().catch(() => {});
+              });
+            }
+          }
+        }}
         onError={() => {
           setFailed(true);
           onReady();
@@ -168,6 +186,7 @@ function AnimatedGiftVideo({
         className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-black object-cover opacity-0 transition-opacity duration-150`}
         style={{ opacity: ready ? 1 : 0, mixBlendMode: type === "webm" ? "normal" : "normal" }}
       />
+
     </div>
   );
 }
