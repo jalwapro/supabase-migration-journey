@@ -43,7 +43,7 @@ export const Route = createFileRoute("/")({
   component: Home,
 });
 
-type Banner = { id: string; title: string | null; image_url: string; link_url: string | null };
+type Banner = { id: string; title: string | null; image_url: string; link_url: string | null; expires_at?: string | null };
 type Room = {
   id: string;
   title: string;
@@ -146,11 +146,14 @@ function Home() {
 
   const banners = useQuery({
     queryKey: ["banners"],
+    refetchInterval: 60_000,
     queryFn: async () => {
+      const nowIso = new Date().toISOString();
       const { data, error } = await supabase
         .from("banners")
-        .select("id,title,image_url,link_url")
+        .select("id,title,image_url,link_url,expires_at")
         .eq("active", true)
+        .or(`expires_at.is.null,expires_at.gt.${nowIso}`)
         .order("sort_order");
       if (error) throw error;
       return data as Banner[];

@@ -146,12 +146,12 @@ export function PkBattleSheet({
         onClose();
       }
     }, 2500);
-    // auto-timeout after 60s
+    // auto-timeout after 3 min (keeps trying to pair with any next queued host)
     const stop = setTimeout(() => {
       void supabase.rpc("pk_leave_queue");
       setSearching(false);
       toast.message("No opponent found. Try again!");
-    }, 60_000);
+    }, 180_000);
     return () => {
       clearInterval(t);
       clearInterval(poll);
@@ -250,7 +250,7 @@ export function PkBattleSheet({
                   Searching for opponent…
                 </p>
                 <p className="text-[11px] text-white/60">
-                  Waited {waitedSec}s · auto-cancels at 60s
+                  Waited {waitedSec}s · trying next host automatically · auto-cancels at 180s
                 </p>
                 <button
                   onClick={cancelSearch}
@@ -632,6 +632,20 @@ export function PkMatchOverlay({
   }, [remaining, match.data, matchId, qc]);
 
   const m = match.data;
+
+  // Winner celebration: show fullscreen for 6s when status transitions to ended
+  const [celebrateFor, setCelebrateFor] = useState<string | null>(null);
+  const celebratedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!m) return;
+    if (m.status === "ended" && celebratedRef.current !== m.id) {
+      celebratedRef.current = m.id;
+      setCelebrateFor(m.id);
+      const t = setTimeout(() => setCelebrateFor(null), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [m?.id, m?.status]);
+
   if (!m) return null;
 
   const isEnded = m.status !== "active";
@@ -649,72 +663,143 @@ export function PkMatchOverlay({
   const mm = String(Math.floor(remaining / 60)).padStart(1, "0");
   const ss = String(remaining % 60).padStart(2, "0");
 
+  const winnerProfile = m.winner_id
+    ? m.winner_id === m.host_a
+      ? pA
+      : pB
+    : null;
+  const iWon = m.winner_id && meHostId === m.winner_id;
+
   return (
-    <div className="pointer-events-none fixed inset-x-2 top-16 z-[60] mx-auto max-w-[440px]">
-      <div className="pointer-events-auto rounded-2xl border border-white/10 bg-black/55 p-2 shadow-2xl backdrop-blur-md">
-        <div className="mb-1 flex items-center justify-between text-[11px] font-bold text-white">
-          <span className="flex items-center gap-1 text-red-300">
-            <Swords className="h-3 w-3" /> PK MATCH
-          </span>
-          <span
-            className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${
-              remaining <= 10 && !isEnded
-                ? "bg-red-500/30 text-red-100"
-                : "bg-white/10 text-white/80"
-            }`}
-          >
-            <Clock className="h-3 w-3" /> {mm}:{ss}
-          </span>
-          {canEndEarly && !isEnded && (
+    <>
+      {/* Winner celebration overlay (6s) */}
+      {celebrateFor === m.id && (
+        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/75 backdrop-blur-md">
+          <div className="animate-in zoom-in-95 fade-in mx-6 max-w-[400px] rounded-3xl border border-[color:var(--gold)]/50 bg-gradient-to-br from-[#2d0b4d] via-[#4d0b2e] to-[#1a0b2e] p-6 text-center shadow-2xl">
+            {m.winner_id ? (
+              <>
+                <div className="mx-auto mb-3 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--destructive)] shadow-[0_0_40px_rgba(255,200,0,0.6)]">
+                  <Trophy className="h-10 w-10 text-white" />
+                </div>
+                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-[color:var(--gold)]">
+                  {iWon ? "🎉 Victory!" : "PK Match Winner"}
+                </p>
+                <div className="mx-auto mb-3 grid h-14 w-14 place-items-center overflow-hidden rounded-full border-2 border-[color:var(--gold)]">
+                  {winnerProfile?.avatar ? (
+                    <img
+                      src={winnerProfile.avatar}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Swords className="h-6 w-6 text-white" />
+                  )}
+                </div>
+                <p className="text-lg font-extrabold text-white">
+                  @{winnerProfile?.username ?? "host"}
+                </p>
+                <p className="mb-4 text-xs text-white/70">
+                  {Number(iWon ? sA + sB : Math.max(sA, sB)).toLocaleString()} pts collected
+                </p>
+                {iWon && (
+                  <div className="mb-3 rounded-xl bg-[color:var(--gold)]/15 py-2 text-sm font-extrabold text-[color:var(--gold)]">
+                    +500 coins bonus
+                  </div>
+                )}
+                <div className="flex justify-center gap-2 text-xs">
+                  <span className="rounded-full bg-red-500/20 px-3 py-1 font-bold text-red-300">
+                    @{pA?.username ?? "A"} · {Number(sA).toLocaleString()}
+                  </span>
+                  <span className="rounded-full bg-blue-500/20 px-3 py-1 font-bold text-blue-300">
+                    @{pB?.username ?? "B"} · {Number(sB).toLocaleString()}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mx-auto mb-3 grid h-20 w-20 place-items-center rounded-full bg-white/10">
+                  <Swords className="h-10 w-10 text-white/70" />
+                </div>
+                <p className="text-lg font-extrabold text-white">It&apos;s a Draw!</p>
+                <p className="text-xs text-white/60">Both hosts fought equal — respect!</p>
+              </>
+            )}
             <button
-              onClick={() =>
-                supabase
-                  .rpc("pk_end_match", { _match_id: matchId })
-                  .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }))
-              }
-              className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/80"
+              onClick={() => setCelebrateFor(null)}
+              className="mt-4 rounded-full bg-white/10 px-4 py-1.5 text-[11px] font-bold text-white/80"
             >
-              End
+              Close
             </button>
+          </div>
+        </div>
+      )}
+
+      <div className="pointer-events-none fixed inset-x-2 top-16 z-[60] mx-auto max-w-[440px]">
+        <div className="pointer-events-auto rounded-2xl border border-white/10 bg-black/55 p-2 shadow-2xl backdrop-blur-md">
+          <div className="mb-1 flex items-center justify-between text-[11px] font-bold text-white">
+            <span className="flex items-center gap-1 text-red-300">
+              <Swords className="h-3 w-3" /> PK MATCH
+            </span>
+            <span
+              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${
+                remaining <= 10 && !isEnded
+                  ? "bg-red-500/30 text-red-100"
+                  : "bg-white/10 text-white/80"
+              }`}
+            >
+              <Clock className="h-3 w-3" /> {mm}:{ss}
+            </span>
+            {canEndEarly && !isEnded && (
+              <button
+                onClick={() =>
+                  supabase
+                    .rpc("pk_end_match", { _match_id: matchId })
+                    .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }))
+                }
+                className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/80"
+              >
+                End
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <HostPill name={pA?.username} avatar={pA?.avatar} side="a" />
+            <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="absolute inset-y-0 left-0 rounded-r-full bg-gradient-to-r from-red-500 via-red-400 to-pink-400 transition-all"
+                style={{ width: `${pctA}%` }}
+              />
+              <div
+                className="absolute inset-y-0 right-0 rounded-l-full bg-gradient-to-l from-blue-500 via-blue-400 to-cyan-400 transition-all"
+                style={{ width: `${100 - pctA}%` }}
+              />
+              <div
+                className="absolute top-0 h-full w-0.5 -translate-x-1/2 bg-white/80"
+                style={{ left: `${pctA}%` }}
+              />
+            </div>
+            <HostPill name={pB?.username} avatar={pB?.avatar} side="b" />
+          </div>
+
+          <div className="mt-1 flex justify-between px-1 text-[10px] font-bold">
+            <span className="text-red-300">🔴 {Number(sA).toLocaleString()}</span>
+            <span className="text-blue-300">{Number(sB).toLocaleString()} 🔵</span>
+          </div>
+
+          {isEnded && (
+            <div className="mt-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/20 py-1.5 text-[11px] font-extrabold text-white">
+              <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+              {m.winner_id
+                ? `Winner: @${
+                    (m.winner_id === m.host_a ? pA?.username : pB?.username) ?? "host"
+                  }`
+                : "It's a draw!"}
+            </div>
           )}
         </div>
-
-        <div className="flex items-center gap-2">
-          <HostPill name={pA?.username} avatar={pA?.avatar} side="a" />
-          <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="absolute inset-y-0 left-0 rounded-r-full bg-gradient-to-r from-red-500 via-red-400 to-pink-400 transition-all"
-              style={{ width: `${pctA}%` }}
-            />
-            <div
-              className="absolute inset-y-0 right-0 rounded-l-full bg-gradient-to-l from-blue-500 via-blue-400 to-cyan-400 transition-all"
-              style={{ width: `${100 - pctA}%` }}
-            />
-            <div
-              className="absolute top-0 h-full w-0.5 -translate-x-1/2 bg-white/80"
-              style={{ left: `${pctA}%` }}
-            />
-          </div>
-          <HostPill name={pB?.username} avatar={pB?.avatar} side="b" />
-        </div>
-
-        <div className="mt-1 flex justify-between px-1 text-[10px] font-bold">
-          <span className="text-red-300">🔴 {Number(sA).toLocaleString()}</span>
-          <span className="text-blue-300">{Number(sB).toLocaleString()} 🔵</span>
-        </div>
-
-        {isEnded && (
-          <div className="mt-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/20 py-1.5 text-[11px] font-extrabold text-white">
-            <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-            {m.winner_id
-              ? `Winner: @${
-                  (m.winner_id === m.host_a ? pA?.username : pB?.username) ?? "host"
-                }`
-              : "It's a draw!"}
-          </div>
-        )}
       </div>
-    </div>
+    </>
   );
 }
 
