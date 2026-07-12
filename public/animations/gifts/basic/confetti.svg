@@ -1,22 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
 <defs>
 <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-<stop offset="0%" stop-color="#ec4899" stop-opacity="0.9"/>
-<stop offset="60%" stop-color="#ec4899" stop-opacity="0.25"/>
+<stop offset="0%" stop-color="#ec4899" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#ec4899" stop-opacity="0.28"/>
 <stop offset="100%" stop-color="#000" stop-opacity="0"/>
 </radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
 </defs>
-<circle cx="200" cy="200" r="170" fill="url(#glow)">
-<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
 </circle>
 <g font-size="22" text-anchor="middle" font-family="Arial">
 <text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
 <text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
 <text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
 <text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+<text x="200" y="70" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></text>
+<text x="60" y="210" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.9s" repeatCount="indefinite"/></text>
+<text x="340" y="210" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2.1s" repeatCount="indefinite"/></text>
+<text x="200" y="360" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></text>
 </g>
-<g>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
-<g><polygon points="130,290 90,330 200,240 250,190" fill="#ec4899" stroke="#831843" stroke-width="2"/><g><circle cx="240" cy="140" r="8" fill="#fbbf24"/><rect x="270" y="170" width="12" height="12" fill="#22c55e" transform="rotate(30 276 176)"/><circle cx="300" cy="120" r="7" fill="#3b82f6"/><polygon points="220,100 230,120 210,120" fill="#a855f7"/><circle cx="180" cy="90" r="6" fill="#dc2626"/><rect x="280" y="90" width="10" height="10" fill="#f97316"/><path d="M250 190 Q 280 150 320 160" stroke="#fbbf24" stroke-width="3" fill="none"/><path d="M240 180 Q 260 120 200 100" stroke="#22c55e" stroke-width="3" fill="none"/><animateTransform attributeName="transform" type="translate" values="0,0;5,-8;0,0" dur="1s" repeatCount="indefinite"/></g></g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><linearGradient id="popper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f472b6"/><stop offset="1" stop-color="#831843"/></linearGradient></defs><polygon points="130,295 85,335 205,235 250,190" fill="url(#popper)" stroke="#500724" stroke-width="2"/><ellipse cx="235" cy="205" rx="14" ry="10" fill="#fbbf24" transform="rotate(-45 235 205)"/><g><circle cx="245" cy="140" r="9" fill="#fbbf24"/><rect x="270" y="170" width="14" height="14" fill="#22c55e" transform="rotate(30 277 177)"/><circle cx="305" cy="115" r="8" fill="#3b82f6"/><polygon points="220,95 232,118 208,118" fill="#a855f7"/><circle cx="175" cy="85" r="7" fill="#dc2626"/><rect x="285" y="85" width="12" height="12" fill="#f97316" transform="rotate(20 291 91)"/><circle cx="325" cy="200" r="6" fill="#ec4899"/><rect x="150" y="150" width="10" height="10" fill="#22c55e" transform="rotate(45 155 155)"/><polygon points="170,120 178,135 162,135" fill="#fbbf24"/><path d="M250 190 Q 285 145 325 155" stroke="#fbbf24" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M240 180 Q 265 120 210 100" stroke="#22c55e" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M260 195 Q 295 195 310 175" stroke="#3b82f6" stroke-width="3" fill="none" stroke-linecap="round"/><animateTransform attributeName="transform" type="translate" values="0,0;6,-10;0,0" dur="1s" repeatCount="indefinite"/></g>
 </g>
 </svg>

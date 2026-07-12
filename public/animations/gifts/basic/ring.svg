@@ -1,22 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
 <defs>
 <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-<stop offset="0%" stop-color="#fbbf24" stop-opacity="0.9"/>
-<stop offset="60%" stop-color="#fbbf24" stop-opacity="0.25"/>
+<stop offset="0%" stop-color="#fbbf24" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#fbbf24" stop-opacity="0.28"/>
 <stop offset="100%" stop-color="#000" stop-opacity="0"/>
 </radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
 </defs>
-<circle cx="200" cy="200" r="170" fill="url(#glow)">
-<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
 </circle>
 <g font-size="22" text-anchor="middle" font-family="Arial">
 <text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
 <text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
 <text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
 <text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+<text x="200" y="70" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></text>
+<text x="60" y="210" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.9s" repeatCount="indefinite"/></text>
+<text x="340" y="210" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2.1s" repeatCount="indefinite"/></text>
+<text x="200" y="360" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></text>
 </g>
-<g>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
-<g><ellipse cx="200" cy="250" rx="65" ry="60" fill="none" stroke="#fbbf24" stroke-width="18"/><ellipse cx="200" cy="250" rx="65" ry="60" fill="none" stroke="#f59e0b" stroke-width="4"/><polygon points="200,140 175,180 200,210 225,180" fill="#93c5fd" stroke="#3b82f6" stroke-width="2"/><polygon points="200,140 175,180 200,175" fill="#bfdbfe"/><polygon points="200,140 225,180 200,175" fill="#60a5fa"/></g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fef3c7"/><stop offset="50%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#a16207"/></linearGradient><radialGradient id="dia" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#fff"/><stop offset="60%" stop-color="#bfdbfe"/><stop offset="100%" stop-color="#3b82f6"/></radialGradient></defs><ellipse cx="200" cy="255" rx="68" ry="62" fill="none" stroke="url(#gold)" stroke-width="20"/><ellipse cx="200" cy="255" rx="68" ry="62" fill="none" stroke="#78350f" stroke-width="2"/><ellipse cx="200" cy="255" rx="58" ry="52" fill="none" stroke="#78350f" stroke-width="1.5"/><polygon points="200,130 170,175 200,220 230,175" fill="url(#dia)" stroke="#1e3a8a" stroke-width="2"/><polygon points="200,130 170,175 200,175" fill="#fff" opacity="0.7"/><polygon points="200,130 230,175 200,175" fill="#93c5fd"/><polygon points="200,220 170,175 200,175" fill="#60a5fa"/><polygon points="200,220 230,175 200,175" fill="#3b82f6"/><line x1="200" y1="130" x2="200" y2="220" stroke="#1e3a8a" stroke-width="1"/>
 </g>
 </svg>

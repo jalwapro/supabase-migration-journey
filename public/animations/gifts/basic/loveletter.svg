@@ -1,22 +1,40 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
 <defs>
 <radialGradient id="glow" cx="50%" cy="50%" r="50%">
-<stop offset="0%" stop-color="#f472b6" stop-opacity="0.9"/>
-<stop offset="60%" stop-color="#f472b6" stop-opacity="0.25"/>
+<stop offset="0%" stop-color="#f472b6" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#f472b6" stop-opacity="0.28"/>
 <stop offset="100%" stop-color="#000" stop-opacity="0"/>
 </radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
 </defs>
-<circle cx="200" cy="200" r="170" fill="url(#glow)">
-<animate attributeName="opacity" values="0.5;1;0.5" dur="1.8s" repeatCount="indefinite"/>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
 </circle>
 <g font-size="22" text-anchor="middle" font-family="Arial">
 <text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
 <text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
 <text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
 <text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+<text x="200" y="70" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/></text>
+<text x="60" y="210" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.9s" repeatCount="indefinite"/></text>
+<text x="340" y="210" fill="#ffd700" font-size="14">✦<animate attributeName="opacity" values="0.3;1;0.3" dur="2.1s" repeatCount="indefinite"/></text>
+<text x="200" y="360" fill="#ff4d6d" font-size="14">✧<animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></text>
 </g>
-<g>
-<animateTransform attributeName="transform" type="translate" values="0,0;0,-14;0,0" dur="1.6s" repeatCount="indefinite"/>
-<g><rect x="120" y="180" width="160" height="110" rx="4" fill="#fef3c7" stroke="#a16207" stroke-width="2"/><polyline points="120,180 200,240 280,180" stroke="#a16207" stroke-width="2" fill="none"/><polyline points="120,290 175,235 M280,290 225,235" stroke="#a16207" stroke-width="2" fill="none"/><path d="M200 235 C 175 215, 175 195, 195 195 C 200 195, 200 200, 200 205 C 200 200, 200 195, 205 195 C 225 195, 225 215, 200 235 Z" fill="#dc2626"/></g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><linearGradient id="env" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fefce8"/><stop offset="1" stop-color="#eab308"/></linearGradient></defs><rect x="115" y="185" width="170" height="118" rx="6" fill="url(#env)" stroke="#a16207" stroke-width="2"/><rect x="130" y="165" width="90" height="60" fill="#fff" stroke="#a16207" stroke-width="1.5"/><g stroke="#a16207" stroke-width="1" opacity="0.5"><line x1="140" y1="180" x2="210" y2="180"/><line x1="140" y1="192" x2="210" y2="192"/><line x1="140" y1="204" x2="200" y2="204"/></g><polyline points="115,185 200,248 285,185" stroke="#a16207" stroke-width="2" fill="none"/><polyline points="115,303 175,240 M285,303 225,240" stroke="#a16207" stroke-width="2" fill="none"/><path d="M215 250 C 185 225, 185 200, 210 200 C 217 200, 220 208, 220 215 C 220 208, 223 200, 230 200 C 255 200, 255 225, 215 250 Z" fill="#dc2626" stroke="#7f1d1d" stroke-width="2"/><ellipse cx="208" cy="212" rx="5" ry="3" fill="#fff" opacity="0.6"/>
 </g>
 </svg>
