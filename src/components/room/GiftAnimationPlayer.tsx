@@ -445,13 +445,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
   const hasSvg = !!giftClipUrl && !hasVideo;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
+  const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
     : current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
+  const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
 
   const clearCurrent = useCallback(() => {
     currentRef.current = null;
     setCurrent(null);
+    setVideoDurationMs(null);
   }, []);
 
   const markCurrentReady = useCallback(() => {
@@ -461,6 +464,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     setReadyKey(null);
+    setVideoDurationMs(null);
     if (current && !hasVideo && !hasSvg) {
       setReadyKey(current.key);
     }
@@ -473,9 +477,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // Play gift sound when a new gift starts
+  // Play gift sound when a new gift starts (skip for premium — video has its own audio)
   useEffect(() => {
-    if (!current?.soundUrl) return;
+    if (!current?.soundUrl || isPremiumLong) return;
     const src = resolveSoundUrl(current.soundUrl);
     if (!src) return;
     const audio = new Audio(src);
@@ -485,21 +489,20 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       audio.pause();
       audio.src = "";
     };
-  }, [current?.key, current?.soundUrl]);
+  }, [current?.key, current?.soundUrl, isPremiumLong]);
 
 
-  // Auto-clear current after PLAY_MS. Kept in a separate effect so the
-  // cleanup only fires when `current` itself changes — not on every
-  // queue mutation, which was cancelling the timer and leaving the
-  // full-screen overlay stuck on screen ("room frozen until refresh").
+  // Auto-clear current after play duration. For videos, use the actual clip
+  // duration (from loadedmetadata) so 8–10s premium gifts play through fully.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
-    const t = setTimeout(
-      clearCurrent,
-      hasVideo ? VIDEO_PLAY_MS : PLAY_MS,
-    );
+    const ms = hasVideo
+      ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
+      : PLAY_MS;
+    const t = setTimeout(clearCurrent, ms + 300);
     return () => clearTimeout(t);
-  }, [current, readyKey, hasVideo, clearCurrent]);
+  }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, clearCurrent]);
+
 
   if (!current) return null;
 
