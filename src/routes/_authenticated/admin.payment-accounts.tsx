@@ -27,10 +27,10 @@ const FIELDS = [
 function PaymentAccounts() {
   const qc = useQueryClient();
   const setting = useQuery({
-    queryKey: ["app_settings", "payments"],
+    queryKey: ["app_kv", "payments"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("app_settings")
+        .from("app_kv")
         .select("key,value")
         .eq("key", "payments")
         .maybeSingle();
@@ -44,12 +44,12 @@ function PaymentAccounts() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("app_settings").upsert({ key: "payments", value: current });
+      const { error } = await supabase.from("app_kv").upsert({ key: "payments", value: current });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Payment accounts saved");
-      qc.invalidateQueries({ queryKey: ["app_settings"] });
+      qc.invalidateQueries({ queryKey: ["app_kv"] });
       setValues({});
     },
     onError: (e: Error) => toast.error(e.message),

@@ -101,7 +101,7 @@ export const Route = createFileRoute("/api/agora-token")({
           const preferredKey =
             kind === "video" ? "agora_video" : kind === "pk" ? "agora_pk" : "agora_voice";
           const { data: settings, error: sErr } = await anon
-            .from("app_settings")
+            .from("app_kv")
             .select("key,value")
             .in("key", [preferredKey, "agora"]);
           if (sErr) return json({ error: sErr.message }, 500);
