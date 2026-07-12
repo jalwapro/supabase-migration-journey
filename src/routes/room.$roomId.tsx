@@ -2199,13 +2199,16 @@ function RoomPage() {
             setPendingInvite(null);
           }}
           onAccept={async () => {
-            const { error } = await supabase.rpc("accept_seat_invite", {
+            const isVideoSwap = pendingInvite.seat_index === 0;
+            const rpcName = isVideoSwap ? "accept_video_swap_invite" : "accept_seat_invite";
+            const { error } = await supabase.rpc(rpcName, {
               _invite_id: pendingInvite.id,
             });
             if (error) toast.error(error.message);
-            else toast.success("You're on the seat 🎤");
+            else toast.success(isVideoSwap ? "You're on video 🎥" : "You're on the seat 🎤");
             setPendingInvite(null);
           }}
+
         />
       )}
       <EmojiReactionSheet
