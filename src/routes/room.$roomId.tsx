@@ -1346,42 +1346,90 @@ function RoomPage() {
 
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo ? (
-        (() => {
-          const rawSeats = Math.max(1, r.seat_count);
-          const videoSeats = rawSeats <= 1 ? 1 : rawSeats <= 2 ? 2 : 4;
-          const layout: "SOLO" | "1/1" | "2/2" =
-            videoSeats === 1 ? "SOLO" : videoSeats === 2 ? "1/1" : "2/2";
-          return (
-            <VideoSeatGrid
-              coverUrl={r.cover_url}
-              isLive={r.status === "live"}
-              layout={layout}
-              seats={Array.from({ length: videoSeats }).map((_, i) => {
+        <>
+          {/* Host solo video tile */}
+          <VideoSeatGrid
+            coverUrl={r.cover_url}
+            isLive={r.status === "live"}
+            layout="SOLO"
+            seats={[(() => {
+              const m = seatsByIndex.get(0);
+              const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+              const fallback = !m
+                ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+                : null;
+              return {
+                index: 0,
+                isHostSeat: true,
+                member: m,
+                remote,
+                fallbackUser: fallback,
+                giftPoints: giftPoints[m?.user_id ?? r.host_id] ?? 0,
+                onClaim: () => void takeSeat(0),
+                onLike: () => void onSeatTap(0),
+                likeCount: seatLikes[0] ?? 0,
+                currentUserId: user?.id,
+                localMuted: agora.muted,
+              };
+            })()]}
+          />
+          {/* 8 audio guest seats (4×2) */}
+          <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-3">
+            <div className="mb-2 flex items-center justify-between px-1">
+              <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/60">
+                Guest Seats · 8
+              </span>
+              <span className="text-[10px] font-bold text-white/40">
+                Audio only
+              </span>
+            </div>
+            <div
+              className="grid gap-x-2 gap-y-3"
+              style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))" }}
+            >
+              {Array.from({ length: 8 }).map((_, k) => {
+                const i = k + 1;
                 const m = seatsByIndex.get(i);
-                const isHostSeat = i === 0;
                 const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-                const fallback =
-                  isHostSeat && !m
-                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
-                    : null;
-                return {
-                  index: i,
-                  isHostSeat,
-                  member: m,
-                  remote,
-                  fallbackUser: fallback,
-                  giftPoints: giftPoints[m?.user_id ?? (isHostSeat ? r.host_id : "")] ?? 0,
-                  onClaim: () => void takeSeat(i),
-                  onLike: () => void onSeatTap(i),
-                  likeCount: seatLikes[i] ?? 0,
-                  currentUserId: user?.id,
-                  localMuted: agora.muted,
-                };
+                return (
+                  <Seat
+                    key={i}
+                    index={i}
+                    member={m}
+                    remote={remote}
+                    isHostSeat={false}
+                    cover={r.cover_url}
+                    fallbackUser={null}
+                    onClaim={() => takeSeat(i)}
+                    likeCount={seatLikes[i] ?? 0}
+                    onLike={() => onSeatTap(i)}
+                    giftPoints={giftPoints[m?.user_id ?? ""] ?? 0}
+                    recentlyGifted={!!recentGiftUsers[m?.user_id ?? ""]}
+                    glowing={!!glowSeats[i]}
+                    locked={lockedSeats.includes(i)}
+                    isKing={!!(m && kingUserId === m.user_id)}
+                    onEmptyManage={
+                      isHost || isModerator ? () => setManageEmptySeat(i) : undefined
+                    }
+                    currentUserId={user?.id}
+                    localMuted={agora.muted}
+                    onOpenGifters={
+                      m
+                        ? () =>
+                            setGifterListReceiver({
+                              id: m.user_id,
+                              name: m.user?.username ?? `Seat ${i + 1}`,
+                            })
+                        : undefined
+                    }
+                  />
+                );
               })}
-            />
-          );
-        })()
+            </div>
+          </div>
+        </>
       ) : (
+
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
           <div className="p-0">
             {(() => {
