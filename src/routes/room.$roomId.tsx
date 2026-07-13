@@ -1444,10 +1444,12 @@ function RoomPage() {
       };
 
   return (
+    <CamFilterProvider>
     <div
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
       style={roomStyle}
     >
+      <CamFilterSheet open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
         const bg = hostBg || DEFAULT_BG_URL;
