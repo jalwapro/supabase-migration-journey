@@ -182,7 +182,7 @@ export function useZegoRoom({
   const [muted, setMuted] = useState(true);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const speakerMutedRef = useRef(false);
-  const [videoOn, setVideoOn] = useState(video);
+  const [videoOn, setVideoOn] = useState(false);
   const [localVideoTrackFacade, setLocalVideoTrackFacade] = useState<RemoteVideoTrack | null>(null);
 
   // Wrap a ZegoLocalStream (returned by createZegoStream) in a RemoteVideoTrack-shaped
@@ -248,6 +248,8 @@ export function useZegoRoom({
   const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
   const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
+  const remoteMediaStreamsRef = useRef<Map<string, MediaStream>>(new Map());
+  const remotePlayPromisesRef = useRef<Map<string, Promise<MediaStream | null>>>(new Map());
   // Hidden <audio> elements per remote stream so viewers actually hear voices.
   const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const [speakingUids, setSpeakingUids] = useState<Set<number>>(new Set());
@@ -260,6 +262,28 @@ export function useZegoRoom({
     micErrorRef.current = message;
     setMicError(message);
     setMicBlocked(blocked);
+  }, []);
+
+  const getRemoteMediaStream = useCallback((engine: ZegoEngine, streamID: string) => {
+    const cached = remoteMediaStreamsRef.current.get(streamID);
+    if (cached) return Promise.resolve(cached);
+    const pending = remotePlayPromisesRef.current.get(streamID);
+    if (pending) return pending;
+
+    const next = Promise.resolve(
+      engine.startPlayingStream(streamID) as unknown as MediaStream | Promise<MediaStream>,
+    )
+      .then((ms) => {
+        if (ms) remoteMediaStreamsRef.current.set(streamID, ms);
+        remotePlayPromisesRef.current.delete(streamID);
+        return ms ?? null;
+      })
+      .catch(() => {
+        remotePlayPromisesRef.current.delete(streamID);
+        return null;
+      });
+    remotePlayPromisesRef.current.set(streamID, next);
+    return next;
   }, []);
 
   const closeLocalTracks = useCallback(() => {
