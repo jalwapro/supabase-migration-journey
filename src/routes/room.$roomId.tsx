@@ -3024,6 +3024,7 @@ function Seat({
   currentUserId,
   localMuted,
   onOpenGifters,
+  isSpeaking,
 }: {
   index: number;
   member?: Member;
