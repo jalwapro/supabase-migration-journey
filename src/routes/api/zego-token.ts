@@ -1,8 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-// Public Supabase URL — safe to embed
-const SUPABASE_URL = "https://vfuiqjxgyptjqhbmzigk.supabase.co";
+function resolveSupabaseUrl() {
+  return (
+    process.env.SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL ||
+    "https://vfuiqjxgyptjqhbmzigk.supabase.co"
+  );
+}
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -63,7 +68,7 @@ export const Route = createFileRoute("/api/zego-token")({
         const bearer = auth.replace(/^Bearer\s+/i, "");
         if (!bearer) return json({ error: "unauthorized" }, 401);
 
-        const sb = createClient(SUPABASE_URL, serviceKey, {
+        const sb = createClient(resolveSupabaseUrl(), serviceKey, {
           auth: { persistSession: false, autoRefreshToken: false },
         });
         const { data: userRes, error: userErr } = await sb.auth.getUser(bearer);
