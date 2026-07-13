@@ -222,7 +222,7 @@ export function useZegoRoom({
     if (vstream) {
       try { vstream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       localVideoStreamRef.current = null;
-      setLocalVideoStream(null);
+      setLocalVideoTrackFacade(null);
     }
     const mp = musicPlayerRef.current;
     if (mp) {
@@ -698,7 +698,7 @@ export function useZegoRoom({
         localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
       } catch { /* ignore */ }
       localVideoStreamRef.current = null;
-      setLocalVideoStream(null);
+      setLocalVideoTrackFacade(null);
       setVideoOn(false);
       return;
     }
@@ -709,7 +709,7 @@ export function useZegoRoom({
     try {
       const cam = await engine.createZegoStream({ camera: { audio: false, video: true } });
       localVideoStreamRef.current = cam;
-      setLocalVideoStream(cam);
+      setLocalVideoTrackFacade(makeLocalFacade(cam));
       engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       setVideoOn(true);
       setMicIssue(null, false);
@@ -828,7 +828,7 @@ export function useZegoRoom({
     localAudioTrack: localStreamRef,
     localAudioPublished: localAudioPublishedRef,
     localVideoTrack: localVideoStreamRef,
-    localVideoStream,
+    localVideoTrack: localVideoTrackFacade,
     // music
     musicPlaying,
     musicTitle,
