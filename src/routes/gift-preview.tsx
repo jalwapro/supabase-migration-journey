@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
+import { resolveLuxuryGiftMp4Url } from '@/lib/luxuryGiftMp4';
 
 export const Route = createFileRoute('/gift-preview')({
   component: GiftPreview,
@@ -65,9 +66,10 @@ function GiftPreview() {
             ×
           </button>
           <video
-            src={active.url}
+            src={resolveLuxuryGiftMp4Url(active.url) ?? active.url}
             autoPlay
             loop
+            muted
             playsInline
             controls
             className="max-h-[90vh] w-auto aspect-[9/16] rounded-2xl shadow-2xl"
@@ -87,6 +89,7 @@ function LazyCard({ clip, onOpen }: { clip: Clip; onOpen: () => void }) {
   const ref = useRef<HTMLButtonElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [visible, setVisible] = useState(false);
+  const playableUrl = resolveLuxuryGiftMp4Url(clip.url) ?? clip.url;
 
   useEffect(() => {
     const el = ref.current;
@@ -118,7 +121,7 @@ function LazyCard({ clip, onOpen }: { clip: Clip; onOpen: () => void }) {
         {visible ? (
           <video
             ref={videoRef}
-            src={clip.url}
+            src={playableUrl}
             muted
             playsInline
             preload="metadata"

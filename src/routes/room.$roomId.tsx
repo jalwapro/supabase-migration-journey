@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
+import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 
 import { useZegoRoom as useAgoraRoom, type RemoteUser, type RemoteVideoTrack } from "@/hooks/useZegoRoom";
 import { RoomDiagnostics } from "@/components/room/RoomDiagnostics";
@@ -2282,7 +2283,7 @@ function RoomPage() {
                             {g.clip_path && g.clip_type === "svg" ? (
                               <img src={g.clip_path} alt="" className="h-full w-full object-contain" />
                             ) : g.clip_path && g.clip_type === "mp4" ? (
-                              <video src={g.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />
+                              <video src={resolveLuxuryGiftMp4Url(g.clip_path) ?? g.clip_path} autoPlay loop muted playsInline preload="metadata" className="h-full w-full object-cover" />
                             ) : (
                               <span className="text-3xl leading-none">{g.emoji ?? g.icon ?? "🎁"}</span>
                             )}

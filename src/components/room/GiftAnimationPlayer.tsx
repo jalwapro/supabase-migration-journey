@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
 
 
@@ -53,8 +54,9 @@ function isRoyalRoseGift(name: string | null | undefined) {
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
-  if (url.startsWith("/__l5e/")) return `${LOVABLE_ASSET_ORIGIN}${url}`;
-  return url;
+  const optimizedUrl = resolveLuxuryGiftMp4Url(url) ?? url;
+  if (optimizedUrl.startsWith("/__l5e/")) return optimizedUrl;
+  return optimizedUrl;
 }
 
 function getEffectiveGiftClip(p: Play) {
@@ -138,8 +140,8 @@ function AnimatedGiftVideo({
     if (!video) return;
     video.pause();
     video.currentTime = 0;
-    video.muted = false;
-    video.volume = 1;
+    video.muted = !withSound;
+    video.volume = withSound ? 1 : 0;
     video.load();
   }, [src]);
 
@@ -159,9 +161,9 @@ function AnimatedGiftVideo({
   const startPlayback = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = false;
-    video.volume = 1;
-    ensureAudioBoost();
+    video.muted = !withSound;
+    video.volume = withSound ? 1 : 0;
+    if (withSound) ensureAudioBoost();
     video.play().catch(() => {
       // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
       // retry muted so at least the visual plays.
