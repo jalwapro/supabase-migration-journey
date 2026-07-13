@@ -222,6 +222,7 @@ export function useZegoRoom({
     if (vstream) {
       try { vstream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       localVideoStreamRef.current = null;
+      setLocalVideoStream(null);
     }
     const mp = musicPlayerRef.current;
     if (mp) {
