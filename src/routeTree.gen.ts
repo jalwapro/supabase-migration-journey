@@ -14,6 +14,7 @@ import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RankRouteImport } from './routes/rank'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as GiftPreviewRouteImport } from './routes/gift-preview'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -106,6 +107,11 @@ const RankRoute = RankRouteImport.update({
 const MessagesRoute = MessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftPreviewRoute = GiftPreviewRouteImport.update({
+  id: '/gift-preview',
+  path: '/gift-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -478,6 +484,7 @@ const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/gift-preview': typeof GiftPreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -552,6 +559,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/gift-preview': typeof GiftPreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -626,6 +634,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/gift-preview': typeof GiftPreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -702,6 +711,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/gift-preview'
     | '/messages'
     | '/rank'
     | '/reset-password'
@@ -776,6 +786,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/gift-preview'
     | '/messages'
     | '/rank'
     | '/reset-password'
@@ -849,6 +860,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/gift-preview'
     | '/messages'
     | '/rank'
     | '/reset-password'
@@ -925,6 +937,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  GiftPreviewRoute: typeof GiftPreviewRoute
   MessagesRoute: typeof MessagesRoute
   RankRoute: typeof RankRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -974,6 +987,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gift-preview': {
+      id: '/gift-preview'
+      path: '/gift-preview'
+      fullPath: '/gift-preview'
+      preLoaderRoute: typeof GiftPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1617,6 +1637,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  GiftPreviewRoute: GiftPreviewRoute,
   MessagesRoute: MessagesRoute,
   RankRoute: RankRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -1633,13 +1654,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
