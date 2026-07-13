@@ -1485,9 +1485,22 @@ function RoomPage() {
           <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
             <div className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
               {r.host?.avatar ? (
-                <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={r.host.avatar}
+                  alt=""
+                  className={`h-full w-full object-cover ${hostAfk ? "opacity-60 grayscale" : ""}`}
+                />
               ) : (
                 <UserIcon className="h-5 w-5 text-white/80" />
+              )}
+              {hostAfk && (
+                <span
+                  aria-label="Host is away"
+                  title="Host is away"
+                  className="pointer-events-none absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-amber-300/70 bg-black/70 text-[11px] shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse"
+                >
+                  ☕
+                </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
