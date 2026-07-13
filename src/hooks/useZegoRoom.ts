@@ -613,7 +613,42 @@ export function useZegoRoom({
         },
       );
 
+      // Sound-level events → drive the DP speaking ring.
+      const SPEAK_THRESHOLD = 5; // 0..100
+      engine.on(
+        "remoteSoundLevelUpdate",
+        (levels: Record<string, number>) => {
+          if (!isCurrentJoin()) return;
+          setSpeakingUids((prev) => {
+            const next = new Set(prev);
+            for (const [sid, lvl] of Object.entries(levels ?? {})) {
+              const u = streamToUidRef.current.get(sid);
+              if (u == null) continue;
+              if (lvl >= SPEAK_THRESHOLD) next.add(u);
+              else next.delete(u);
+            }
+            return next;
+          });
+        },
+      );
+      engine.on(
+        "capturedSoundLevelUpdate",
+        (level: number) => {
+          if (!isCurrentJoin() || uid == null) return;
+          setSpeakingUids((prev) => {
+            const has = prev.has(uid);
+            const speaking = level >= SPEAK_THRESHOLD;
+            if (speaking === has) return prev;
+            const next = new Set(prev);
+            if (speaking) next.add(uid);
+            else next.delete(uid);
+            return next;
+          });
+        },
+      );
+
       try {
+
         // ZEGO recommends userUpdate:true so roomUserUpdate fires for existing users.
         await engine.loginRoom(
           channelName,
