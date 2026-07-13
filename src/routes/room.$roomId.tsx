@@ -2515,11 +2515,11 @@ function VideoTile({
   coverUrl: string | null;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
-  const localVideoElRef = useRef<HTMLVideoElement | null>(null);
-  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoStream } = data;
+  const localVideoRef = useRef<HTMLDivElement | null>(null);
+  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoTrack } = data;
 
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
-  const showLocalPreview = isSelf && !!localVideoStream;
+  const showLocalPreview = isSelf && !!localVideoTrack;
 
   useEffect(() => {
     if (remote?.videoTrack && videoRef.current) {
@@ -2531,13 +2531,12 @@ function VideoTile({
   }, [remote?.videoTrack]);
 
   useEffect(() => {
-    const el = localVideoElRef.current;
-    if (el && showLocalPreview && localVideoStream) {
-      el.srcObject = localVideoStream;
-      el.play().catch(() => { /* autoplay may need gesture */ });
+    const el = localVideoRef.current;
+    if (el && showLocalPreview && localVideoTrack) {
+      localVideoTrack.play(el, { fit: "cover" });
     }
-    return () => { if (el) el.srcObject = null; };
-  }, [showLocalPreview, localVideoStream]);
+    return () => { localVideoTrack?.stop(); };
+  }, [showLocalPreview, localVideoTrack]);
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
@@ -2566,13 +2565,7 @@ function VideoTile({
       aria-label={member ? `Like ${label}` : `Take ${label}`}
     >
       {showLocalPreview ? (
-        <video
-          ref={localVideoElRef}
-          autoPlay
-          playsInline
-          muted
-          className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
-        />
+        <div ref={localVideoRef} className="absolute inset-0" />
       ) : remote?.videoTrack ? (
         <div ref={videoRef} className="absolute inset-0" />
       ) : displayAvatar ? (
