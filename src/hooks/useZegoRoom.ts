@@ -474,11 +474,29 @@ export function useZegoRoom({
                 const p = engine.startPlayingStream(s.streamID) as unknown as
                   | Promise<MediaStream>
                   | MediaStream;
-                Promise.resolve(p).catch(() => { /* ignore */ });
+                Promise.resolve(p)
+                  .then((ms) => {
+                    if (!ms || isVideo) return;
+                    // Attach to a hidden <audio> element so viewers hear it.
+                    let el = audioElsRef.current.get(s.streamID);
+                    if (!el) {
+                      el = document.createElement("audio");
+                      el.autoplay = true;
+                      (el as HTMLAudioElement).playsInline = true;
+                      el.style.display = "none";
+                      document.body.appendChild(el);
+                      audioElsRef.current.set(s.streamID, el);
+                    }
+                    el.srcObject = ms;
+                    el.muted = speakerMutedRef.current;
+                    el.play().catch(() => { /* gesture may be needed */ });
+                  })
+                  .catch(() => { /* ignore */ });
               } catch { /* ignore */ }
               if (speakerMutedRef.current) {
                 try { engine.mutePlayStreamAudio(s.streamID, true); } catch { /* ignore */ }
               }
+
               setRemotes((prev) => {
                 const next = new Map(prev);
                 const existing = next.get(remoteUid);
