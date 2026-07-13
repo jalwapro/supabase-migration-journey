@@ -295,6 +295,25 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
+  // Video room: whoever occupies seat 0 (host seat) gets camera auto-on;
+  // leaving seat 0 auto-turns it off. Fixes "swap hote hi camera nahi chala".
+  const mySeatIndex = myMember?.seat_index ?? null;
+  const autoCamAppliedRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (!isVideo) return;
+    if (agora.status !== "connected") return;
+    const onSeat0 = mySeatIndex === 0;
+    if (onSeat0 && !agora.videoOn && !autoCamAppliedRef.current) {
+      autoCamAppliedRef.current = true;
+      void agora.toggleVideo();
+    } else if (!onSeat0 && agora.videoOn && autoCamAppliedRef.current) {
+      autoCamAppliedRef.current = false;
+      void agora.toggleVideo();
+    } else if (!onSeat0) {
+      autoCamAppliedRef.current = false;
+    }
+  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
+
   const loadRoomState = useCallback(async () => {
     const [
       { data: mData, error: mErr },
