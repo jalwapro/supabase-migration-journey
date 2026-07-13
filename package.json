@@ -109,5 +109,11 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16"
+  },
+  "overrides": {
+    "protobufjs": "^7.5.4"
+  },
+  "resolutions": {
+    "protobufjs": "^7.5.4"
   }
 }
