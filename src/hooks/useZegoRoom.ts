@@ -569,10 +569,9 @@ export function useZegoRoom({
       setMicIssue(message, false);
       return { ok: false, error: message };
     }
-    if (status !== "connected") {
-      for (let i = 0; i < 80 && status !== "connected"; i++) {
-        await new Promise((r) => setTimeout(r, 100));
-      }
+    // Wait for the room to reach CONNECTED before publishing.
+    for (let i = 0; i < 80 && (status as string) !== "connected"; i++) {
+      await new Promise((r) => setTimeout(r, 100));
     }
 
     const mapMediaError = (e: unknown): string => {
