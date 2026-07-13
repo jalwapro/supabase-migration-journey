@@ -1,8 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-// Public Supabase URL — safe to embed
-const SUPABASE_URL = "https://vfuiqjxgyptjqhbmzigk.supabase.co";
+// Supabase URL — read from env so users can point at their own project.
+// Falls back to VITE_ variant during build, then legacy hardcoded value.
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  process.env.VITE_SUPABASE_URL ||
+  "https://vfuiqjxgyptjqhbmzigk.supabase.co";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
