@@ -314,6 +314,71 @@ function RoomPage() {
     }
   }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
 
+  // ── Host AFK detection ─────────────────────────────────────────────
+  // profiles.last_seen ticks every 15s from useAuth's heartbeat.
+  // >10 min stale → show ☕ cup badge on host DP.
+  // >20 min stale → start 10-second countdown, then auto-exit viewers.
+  const hostLastSeen = useQuery({
+    enabled: !!room.data?.host_id && !isHost,
+    queryKey: ["host-last-seen", room.data?.host_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("last_seen")
+        .eq("id", room.data!.host_id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.last_seen as string | null) ?? null;
+    },
+    refetchInterval: 30_000,
+  });
+  const [afkTick, setAfkTick] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setAfkTick(Date.now()), 5_000);
+    return () => clearInterval(t);
+  }, []);
+  const hostAfkMs = hostLastSeen.data
+    ? Math.max(0, afkTick - new Date(hostLastSeen.data).getTime())
+    : 0;
+  const HOST_AFK_MS = 10 * 60 * 1000;
+  const HOST_EXIT_MS = 20 * 60 * 1000;
+  const hostAfk = !isHost && !!hostLastSeen.data && hostAfkMs > HOST_AFK_MS;
+  const shouldStartAfkExit =
+    !isHost &&
+    !!hostLastSeen.data &&
+    hostAfkMs > HOST_EXIT_MS &&
+    room.data?.status === "live";
+  const [afkExitLeft, setAfkExitLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!shouldStartAfkExit) {
+      setAfkExitLeft(null);
+      return;
+    }
+    setAfkExitLeft((n) => (n === null ? 10 : n));
+  }, [shouldStartAfkExit]);
+  useEffect(() => {
+    if (afkExitLeft === null) return;
+    if (afkExitLeft <= 0) {
+      void (async () => {
+        if (user) {
+          await supabase
+            .from("room_members")
+            .delete()
+            .eq("room_id", roomId)
+            .eq("user_id", user.id);
+        }
+        toast("Host inactive — room say exit ho gaye");
+        navigate({ to: "/" });
+      })();
+      return;
+    }
+    const t = setTimeout(
+      () => setAfkExitLeft((n) => (n === null ? null : n - 1)),
+      1000,
+    );
+    return () => clearTimeout(t);
+  }, [afkExitLeft, user, roomId, navigate]);
+
   const loadRoomState = useCallback(async () => {
     const [
       { data: mData, error: mErr },
