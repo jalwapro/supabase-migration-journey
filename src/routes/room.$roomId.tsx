@@ -1454,6 +1454,7 @@ function RoomPage() {
             currentUserId: user?.id,
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: hostM ? agora.speakingUids.has(uidFromUuid(hostM.user_id)) : false,
           };
           const oppTile: VideoSeatData = {
             index: 1,
@@ -1468,6 +1469,7 @@ function RoomPage() {
             currentUserId: user?.id,
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: oppM ? agora.speakingUids.has(uidFromUuid(oppM.user_id)) : false,
           };
 
           return (
