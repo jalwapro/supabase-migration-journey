@@ -420,6 +420,9 @@ export function useZegoRoom({
         if (staleUser && localAudioPublishedRef.current) {
           try { stale.stopPublishingStream(streamIdFor(staleRoom, staleUser)); } catch { /* ignore */ }
         }
+        if (staleUser && localVideoStreamRef.current) {
+          try { stale.stopPublishingStream(streamIdFor(staleRoom, `${staleUser}_cam`)); } catch { /* ignore */ }
+        }
         leaveQueueRef.current = leaveQueueRef.current
           .then(async () => { try { await stale.logoutRoom(staleRoom); } catch { /* ignore */ } });
       }
@@ -734,6 +737,9 @@ export function useZegoRoom({
         try { e.stopSoundLevelMonitor?.(); } catch { /* ignore */ }
         if (localAudioPublishedRef.current) {
           try { e.stopPublishingStream(streamIdFor(room, userIdStr)); } catch { /* ignore */ }
+        }
+        if (localVideoStreamRef.current) {
+          try { e.stopPublishingStream(streamIdFor(room, `${userIdStr}_cam`)); } catch { /* ignore */ }
         }
       }
       if (engineRef.current === e) engineRef.current = null;
