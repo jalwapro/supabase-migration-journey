@@ -828,6 +828,7 @@ export function useZegoRoom({
     localAudioTrack: localStreamRef,
     localAudioPublished: localAudioPublishedRef,
     localVideoTrack: localVideoStreamRef,
+    localVideoStream,
     // music
     musicPlaying,
     musicTitle,
