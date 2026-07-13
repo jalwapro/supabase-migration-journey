@@ -295,6 +295,25 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
+  // Video room: whoever occupies seat 0 (host seat) gets camera auto-on;
+  // leaving seat 0 auto-turns it off. Fixes "swap hote hi camera nahi chala".
+  const mySeatIndex = myMember?.seat_index ?? null;
+  const autoCamAppliedRef = useRef<boolean>(false);
+  useEffect(() => {
+    if (!isVideo) return;
+    if (agora.status !== "connected") return;
+    const onSeat0 = mySeatIndex === 0;
+    if (onSeat0 && !agora.videoOn && !autoCamAppliedRef.current) {
+      autoCamAppliedRef.current = true;
+      void agora.toggleVideo();
+    } else if (!onSeat0 && agora.videoOn && autoCamAppliedRef.current) {
+      autoCamAppliedRef.current = false;
+      void agora.toggleVideo();
+    } else if (!onSeat0) {
+      autoCamAppliedRef.current = false;
+    }
+  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
+
   const loadRoomState = useCallback(async () => {
     const [
       { data: mData, error: mErr },
@@ -1855,6 +1874,22 @@ function RoomPage() {
                 }`}
               >
                 {agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
+              </button>
+            ) : null}
+
+            {isHost && isVideo && mySeatIndex !== 0 ? (
+              <button
+                onClick={async () => {
+                  const { error } = await supabase.rpc("host_reclaim_video_seat", {
+                    _room_id: roomId,
+                  });
+                  if (error) toast.error(error.message);
+                  else toast.success("Host seat reclaimed 👑");
+                }}
+                className="grid h-9 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
+                aria-label="Return to host seat"
+              >
+                👑 Host Seat
               </button>
             ) : null}
 
