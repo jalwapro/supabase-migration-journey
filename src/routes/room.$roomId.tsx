@@ -3066,7 +3066,7 @@ function Seat({
     : remote
       ? !remote.hasAudio
       : !!member?.is_muted;
-  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
+  const speaking = !!isSpeaking && !effectiveMuted;
 
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
