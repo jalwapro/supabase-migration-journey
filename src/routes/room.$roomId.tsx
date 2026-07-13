@@ -295,24 +295,25 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
-  // Video room: whoever occupies seat 0 (host seat) gets camera auto-on;
-  // leaving seat 0 auto-turns it off. Fixes "swap hote hi camera nahi chala".
+  // Video room: whoever occupies seat 0 (host) OR seat 1 (second camera) gets
+  // camera auto-on; leaving those seats auto-turns it off.
   const mySeatIndex = myMember?.seat_index ?? null;
   const autoCamAppliedRef = useRef<boolean>(false);
   useEffect(() => {
     if (!isVideo) return;
     if (agora.status !== "connected") return;
-    const onSeat0 = mySeatIndex === 0;
-    if (onSeat0 && !agora.videoOn && !autoCamAppliedRef.current) {
+    const onCamSeat = mySeatIndex === 0 || mySeatIndex === 1;
+    if (onCamSeat && !agora.videoOn && !autoCamAppliedRef.current) {
       autoCamAppliedRef.current = true;
       void agora.toggleVideo();
-    } else if (!onSeat0 && agora.videoOn && autoCamAppliedRef.current) {
+    } else if (!onCamSeat && agora.videoOn && autoCamAppliedRef.current) {
       autoCamAppliedRef.current = false;
       void agora.toggleVideo();
-    } else if (!onSeat0) {
+    } else if (!onCamSeat) {
       autoCamAppliedRef.current = false;
     }
   }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
+
 
   // ── Host AFK detection ─────────────────────────────────────────────
   // profiles.last_seen ticks every 15s from useAuth's heartbeat.
