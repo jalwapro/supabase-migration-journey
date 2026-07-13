@@ -396,6 +396,9 @@ export function useZegoRoom({
         try { stale.off("roomStateUpdate"); } catch { /* ignore */ }
         try { stale.off("publisherStateUpdate"); } catch { /* ignore */ }
         try { stale.off("tokenWillExpire"); } catch { /* ignore */ }
+        try { stale.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
+        try { stale.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
+        try { stale.stopSoundLevelMonitor?.(); } catch { /* ignore */ }
         if (staleUser && localAudioPublishedRef.current) {
           try { stale.stopPublishingStream(streamIdFor(staleRoom, staleUser)); } catch { /* ignore */ }
         }
@@ -407,6 +410,11 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      for (const [, el] of audioElsRef.current) {
+        try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+      }
+      audioElsRef.current.clear();
+      setSpeakingUids(new Set());
       setRemotes(new Map());
       setMuted(true);
       setVideoOn(false);
