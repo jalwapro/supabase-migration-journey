@@ -785,8 +785,6 @@ export function useZegoRoom({
     try { musicPlayerRef.current?.setVolume(Math.max(0, Math.min(100, v))); } catch { /* ignore */ }
   }, []);
 
-  // Silence deliberately unused SDK types so tsc-strict doesn't complain.
-  void ((): ZegoServerResponse | null => null);
 
   return {
     status,
