@@ -305,14 +305,23 @@ function RoomPage() {
     const onCamSeat = mySeatIndex === 0 || mySeatIndex === 1;
     if (onCamSeat && !agora.videoOn && !autoCamAppliedRef.current) {
       autoCamAppliedRef.current = true;
-      void agora.toggleVideo();
+      let cancelled = false;
+      void (async () => {
+        for (let i = 0; i < 3 && !cancelled; i += 1) {
+          const ok = await agora.toggleVideo();
+          if (ok) return;
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+        if (!cancelled) autoCamAppliedRef.current = false;
+      })();
+      return () => { cancelled = true; };
     } else if (!onCamSeat && agora.videoOn && autoCamAppliedRef.current) {
       autoCamAppliedRef.current = false;
       void agora.toggleVideo();
     } else if (!onCamSeat) {
       autoCamAppliedRef.current = false;
     }
-  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
+  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora.toggleVideo]);
 
 
   // ── Host AFK detection ─────────────────────────────────────────────
