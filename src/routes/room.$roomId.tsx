@@ -1335,6 +1335,16 @@ function RoomPage() {
       <div className="pointer-events-none absolute top-1/3 -right-16 h-[300px] w-[300px] rounded-full bg-[color:var(--primary)]/15 blur-[100px]" />
 
 
+      <RoomDiagnostics
+        roomId={roomId}
+        rtcChannel={room.data?.rtc_channel ?? null}
+        status={agora.status}
+        error={agora.error}
+        remotesCount={agora.remotes.size}
+        muted={agora.muted}
+        speakerMuted={agora.speakerMuted}
+      />
+
       {/* ─── Header ─────────────────────────────────────────────── */}
       <div
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
