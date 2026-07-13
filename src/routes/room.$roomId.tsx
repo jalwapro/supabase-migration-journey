@@ -1453,7 +1453,7 @@ function RoomPage() {
             likeCount: seatLikes[0] ?? 0,
             currentUserId: user?.id,
             localMuted: agora.muted,
-            localVideoStream: agora.localVideoStream ?? null,
+            localVideoTrack: agora.localVideoTrack ?? null,
           };
           const oppTile: VideoSeatData = {
             index: 1,
@@ -1467,7 +1467,7 @@ function RoomPage() {
             likeCount: seatLikes[1] ?? 0,
             currentUserId: user?.id,
             localMuted: agora.muted,
-            localVideoStream: agora.localVideoStream ?? null,
+            localVideoTrack: agora.localVideoTrack ?? null,
           };
 
           return (
@@ -1526,7 +1526,7 @@ function RoomPage() {
             likeCount: seatLikes[0] ?? 0,
             currentUserId: user?.id,
             localMuted: agora.muted,
-            localVideoStream: agora.localVideoStream ?? null,
+            localVideoTrack: agora.localVideoTrack ?? null,
           } as VideoSeatData;
 
           const renderSeat = (i: number) => {
@@ -2440,7 +2440,7 @@ type VideoSeatData = {
   likeCount: number;
   currentUserId?: string;
   localMuted?: boolean;
-  localVideoStream?: MediaStream | null;
+  localVideoTrack?: RemoteVideoTrack | null;
 };
 
 function VideoSeatGrid({
