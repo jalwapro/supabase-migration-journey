@@ -181,7 +181,7 @@ export function useZegoRoom({
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const speakerMutedRef = useRef(false);
   const [videoOn, setVideoOn] = useState(video);
-  const [localVideoStream, setLocalVideoStream] = useState<MediaStream | null>(null);
+  const [localVideoTrackFacade, setLocalVideoTrackFacade] = useState<RemoteVideoTrack | null>(null);
   const [micBlocked, setMicBlocked] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const micErrorRef = useRef<string | null>(null);
