@@ -142,19 +142,17 @@ export class CamProcessor {
   private loop = () => {
     this.rafId = requestAnimationFrame(this.loop);
     if (this.srcVideo.readyState < 2) return;
+    // Throttle to ~24fps to reduce CPU load on low-end Android
+    this.frameIdx++;
+    if (this.frameIdx % 5 === 0) return; // skip 1 in 5 frames
     try {
       this.drawFrame();
     } catch (e) {
-      // never let a frame throw kill the loop
-      if ((this as unknown as { _lastErrLog?: number })._lastErrLog !== undefined) {
-        const rec = this as unknown as { _lastErrLog?: number };
-        if (performance.now() - (rec._lastErrLog ?? 0) > 2000) {
-          console.warn("[camPipeline] frame error", e);
-          rec._lastErrLog = performance.now();
-        }
-      } else {
+      const rec = this as unknown as { _lastErrLog?: number };
+      const now = performance.now();
+      if (!rec._lastErrLog || now - rec._lastErrLog > 2000) {
         console.warn("[camPipeline] frame error", e);
-        (this as unknown as { _lastErrLog?: number })._lastErrLog = performance.now();
+        rec._lastErrLog = now;
       }
     }
   };
