@@ -1454,6 +1454,7 @@ function RoomPage() {
             currentUserId: user?.id,
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: hostM ? agora.speakingUids.has(uidFromUuid(hostM.user_id)) : false,
           };
           const oppTile: VideoSeatData = {
             index: 1,
@@ -1468,6 +1469,7 @@ function RoomPage() {
             currentUserId: user?.id,
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: oppM ? agora.speakingUids.has(uidFromUuid(oppM.user_id)) : false,
           };
 
           return (
@@ -1527,6 +1529,7 @@ function RoomPage() {
             currentUserId: user?.id,
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: hostM ? agora.speakingUids.has(uidFromUuid(hostM.user_id)) : false,
           } as VideoSeatData;
 
           const renderSeat = (i: number) => {
@@ -1554,6 +1557,7 @@ function RoomPage() {
                 }
                 currentUserId={user?.id}
                 localMuted={agora.muted}
+                isSpeaking={m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false}
                 onOpenGifters={
                   m
                     ? () =>
@@ -1637,6 +1641,7 @@ function RoomPage() {
                         }
                         currentUserId={user?.id}
                         localMuted={agora.muted}
+                        isSpeaking={m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false}
                         onOpenGifters={
                           m
                             ? () =>
@@ -2441,6 +2446,7 @@ type VideoSeatData = {
   currentUserId?: string;
   localMuted?: boolean;
   localVideoTrack?: RemoteVideoTrack | null;
+  isSpeaking?: boolean;
 };
 
 function VideoSeatGrid({
@@ -2516,7 +2522,7 @@ function VideoTile({
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
   const localVideoRef = useRef<HTMLDivElement | null>(null);
-  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoTrack } = data;
+  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoTrack, isSpeaking } = data;
 
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
   const showLocalPreview = isSelf && !!localVideoTrack;
@@ -2548,7 +2554,7 @@ function VideoTile({
     : remote
       ? !remote.hasAudio
       : !!member?.is_muted;
-  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
+  const speaking = !!isSpeaking && !effectiveMuted;
   const label = `No.${index + 1}`;
 
   return (
@@ -3023,6 +3029,7 @@ function Seat({
   currentUserId,
   localMuted,
   onOpenGifters,
+  isSpeaking,
 }: {
   index: number;
   member?: Member;
@@ -3043,6 +3050,7 @@ function Seat({
   currentUserId?: string;
   localMuted?: boolean;
   onOpenGifters?: () => void;
+  isSpeaking?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
@@ -3063,7 +3071,7 @@ function Seat({
     : remote
       ? !remote.hasAudio
       : !!member?.is_muted;
-  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
+  const speaking = !!isSpeaking && !effectiveMuted;
 
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;

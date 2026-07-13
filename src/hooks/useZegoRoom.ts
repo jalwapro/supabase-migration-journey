@@ -21,6 +21,8 @@ type ZegoEngine = {
   setPlayVolume: (streamID: string, volume: number) => void;
   destroyEngine: () => void;
   setLogConfig: (cfg: Record<string, unknown>) => void;
+  startSoundLevelMonitor?: (cfgOrMs?: number | { millisecond?: number }) => void;
+  stopSoundLevelMonitor?: () => void;
   on: (event: string, cb: (...args: never[]) => void) => void;
   off: (event: string, cb?: (...args: never[]) => void) => void;
 };
@@ -246,6 +248,10 @@ export function useZegoRoom({
   const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
   const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
+  // Hidden <audio> elements per remote stream so viewers actually hear voices.
+  const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const [speakingUids, setSpeakingUids] = useState<Set<number>>(new Set());
+
 
   // -----------------------------------------------------------------------
   // Utilities
@@ -390,6 +396,9 @@ export function useZegoRoom({
         try { stale.off("roomStateUpdate"); } catch { /* ignore */ }
         try { stale.off("publisherStateUpdate"); } catch { /* ignore */ }
         try { stale.off("tokenWillExpire"); } catch { /* ignore */ }
+        try { stale.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
+        try { stale.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
+        try { stale.stopSoundLevelMonitor?.(); } catch { /* ignore */ }
         if (staleUser && localAudioPublishedRef.current) {
           try { stale.stopPublishingStream(streamIdFor(staleRoom, staleUser)); } catch { /* ignore */ }
         }
@@ -401,6 +410,11 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      for (const [, el] of audioElsRef.current) {
+        try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+      }
+      audioElsRef.current.clear();
+      setSpeakingUids(new Set());
       setRemotes(new Map());
       setMuted(true);
       setVideoOn(false);
@@ -468,11 +482,29 @@ export function useZegoRoom({
                 const p = engine.startPlayingStream(s.streamID) as unknown as
                   | Promise<MediaStream>
                   | MediaStream;
-                Promise.resolve(p).catch(() => { /* ignore */ });
+                Promise.resolve(p)
+                  .then((ms) => {
+                    if (!ms || isVideo) return;
+                    // Attach to a hidden <audio> element so viewers hear it.
+                    let el = audioElsRef.current.get(s.streamID);
+                    if (!el) {
+                      el = document.createElement("audio");
+                      el.autoplay = true;
+                      (el as unknown as { playsInline?: boolean }).playsInline = true;
+                      el.style.display = "none";
+                      document.body.appendChild(el);
+                      audioElsRef.current.set(s.streamID, el);
+                    }
+                    el.srcObject = ms;
+                    el.muted = speakerMutedRef.current;
+                    el.play().catch(() => { /* gesture may be needed */ });
+                  })
+                  .catch(() => { /* ignore */ });
               } catch { /* ignore */ }
               if (speakerMutedRef.current) {
                 try { engine.mutePlayStreamAudio(s.streamID, true); } catch { /* ignore */ }
               }
+
               setRemotes((prev) => {
                 const next = new Map(prev);
                 const existing = next.get(remoteUid);
@@ -499,6 +531,11 @@ export function useZegoRoom({
           } else {
             for (const s of streamList) {
               try { engine.stopPlayingStream(s.streamID); } catch { /* ignore */ }
+              const el = audioElsRef.current.get(s.streamID);
+              if (el) {
+                try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+                audioElsRef.current.delete(s.streamID);
+              }
               const remoteUid = streamToUidRef.current.get(s.streamID);
               const wasVideo = /_cam_main$/.test(s.streamID);
               streamToUidRef.current.delete(s.streamID);
@@ -584,7 +621,42 @@ export function useZegoRoom({
         },
       );
 
+      // Sound-level events → drive the DP speaking ring.
+      const SPEAK_THRESHOLD = 5; // 0..100
+      engine.on(
+        "remoteSoundLevelUpdate",
+        (levels: Record<string, number>) => {
+          if (!isCurrentJoin()) return;
+          setSpeakingUids((prev) => {
+            const next = new Set(prev);
+            for (const [sid, lvl] of Object.entries(levels ?? {})) {
+              const u = streamToUidRef.current.get(sid);
+              if (u == null) continue;
+              if (lvl >= SPEAK_THRESHOLD) next.add(u);
+              else next.delete(u);
+            }
+            return next;
+          });
+        },
+      );
+      engine.on(
+        "capturedSoundLevelUpdate",
+        (level: number) => {
+          if (!isCurrentJoin() || uid == null) return;
+          setSpeakingUids((prev) => {
+            const has = prev.has(uid);
+            const speaking = level >= SPEAK_THRESHOLD;
+            if (speaking === has) return prev;
+            const next = new Set(prev);
+            if (speaking) next.add(uid);
+            else next.delete(uid);
+            return next;
+          });
+        },
+      );
+
       try {
+
         // ZEGO recommends userUpdate:true so roomUserUpdate fires for existing users.
         await engine.loginRoom(
           channelName,
@@ -592,6 +664,7 @@ export function useZegoRoom({
           { userID: localUidStr, userName: localUidStr },
           { userUpdate: true },
         );
+        try { engine.startSoundLevelMonitor?.({ millisecond: 300 }); } catch { /* ignore */ }
         if (isCurrentJoin()) setStatus("connected");
       } catch (e) {
         if (!isCurrentJoin()) return;
@@ -615,6 +688,9 @@ export function useZegoRoom({
         try { e.off("roomStateUpdate"); } catch { /* ignore */ }
         try { e.off("publisherStateUpdate"); } catch { /* ignore */ }
         try { e.off("tokenWillExpire"); } catch { /* ignore */ }
+        try { e.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
+        try { e.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
+        try { e.stopSoundLevelMonitor?.(); } catch { /* ignore */ }
         if (localAudioPublishedRef.current) {
           try { e.stopPublishingStream(streamIdFor(room, userIdStr)); } catch { /* ignore */ }
         }
@@ -627,6 +703,11 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      for (const [, el] of audioElsRef.current) {
+        try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+      }
+      audioElsRef.current.clear();
+      setSpeakingUids(new Set());
       setRemotes(new Map());
       setMuted(true);
       setVideoOn(false);
@@ -752,6 +833,9 @@ export function useZegoRoom({
             if (!next) engine.setPlayVolume(sid, 100);
           } catch { /* ignore */ }
         }
+      }
+      for (const [, el] of audioElsRef.current) {
+        try { el.muted = next; } catch { /* ignore */ }
       }
       return next;
     });
@@ -896,6 +980,7 @@ export function useZegoRoom({
     muted,
     speakerMuted,
     videoOn,
+    speakingUids,
     micBlocked,
     micError,
     requestMic,
