@@ -243,7 +243,8 @@ export function useZegoRoom({
   // Track which remote streams belong to which uid so we can build the
   // RemoteUser facade.
   const streamToUidRef = useRef<Map<string, number>>(new Map());
-  const uidStreamRef = useRef<Map<number, string>>(new Map());
+  const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
+  const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
 
   // -----------------------------------------------------------------------
