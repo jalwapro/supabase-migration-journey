@@ -2549,7 +2549,7 @@ function VideoTile({
     : remote
       ? !remote.hasAudio
       : !!member?.is_muted;
-  const speaking = (remote?.hasAudio && !effectiveMuted) || (isSelf && !effectiveMuted);
+  const speaking = !!isSpeaking && !effectiveMuted;
   const label = `No.${index + 1}`;
 
   return (
