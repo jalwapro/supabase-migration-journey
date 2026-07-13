@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { useEffect, useRef, useState } from 'react';
 
 export const Route = createFileRoute('/gift-preview')({
   component: GiftPreview,
@@ -33,33 +34,99 @@ const clips = [
   { n: '075', name: 'Billionaire Empire',     price: '99,999', url: '/__l5e/assets-v1/39e0fcd9-bef3-4ce1-a0b5-c758f3af125b/jalwa-billionaire-empire.mp4' },
 ];
 
+type Clip = typeof clips[number];
+
 function GiftPreview() {
+  const [active, setActive] = useState<Clip | null>(null);
   return (
     <div className="min-h-screen bg-black text-white p-4">
       <h1 className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-yellow-300 to-pink-500 bg-clip-text text-transparent">
         JALWA LUXURY GIFTS (051 – 075)
       </h1>
       <p className="text-center text-xs text-white/60 mb-6">
-        25 cinematic AI-generated 9:16 MP4 clips. Migration: <code>0116_jalwa_luxury_051_075_mp4.sql</code>
+        Tap any card to play full-screen (smooth playback — one video at a time)
       </p>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 max-w-6xl mx-auto">
         {clips.map((c) => (
-          <div key={c.n} className="rounded-xl overflow-hidden border border-white/10 bg-black">
-            <video
-              src={c.url}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full aspect-[9/16] object-cover"
-            />
-            <div className="p-2">
-              <div className="text-[10px] text-yellow-400 font-mono">{c.n}</div>
-              <div className="text-xs font-semibold truncate">{c.name}</div>
-              <div className="text-[11px] text-yellow-300">🪙 {c.price}</div>
-            </div>
-          </div>
+          <LazyCard key={c.n} clip={c} onOpen={() => setActive(c)} />
         ))}
+      </div>
+
+      {active && (
+        <div
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4"
+          onClick={() => setActive(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white text-3xl leading-none px-3 py-1 rounded-full bg-white/10"
+            onClick={() => setActive(null)}
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <video
+            src={active.url}
+            autoPlay
+            loop
+            playsInline
+            controls
+            className="max-h-[90vh] w-auto aspect-[9/16] rounded-2xl shadow-2xl"
+          />
+          <div className="absolute bottom-6 left-0 right-0 text-center">
+            <div className="text-yellow-400 text-xs font-mono">{active.n}</div>
+            <div className="text-white text-lg font-bold">{active.name}</div>
+            <div className="text-yellow-300">🪙 {active.price}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LazyCard({ clip, onOpen }: { clip: Clip; onOpen: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      onClick={onOpen}
+      className="rounded-xl overflow-hidden border border-white/10 bg-black cursor-pointer hover:border-yellow-400/60 transition"
+    >
+      <div className="w-full aspect-[9/16] bg-gradient-to-br from-purple-900/40 to-black relative">
+        {visible && (
+          <video
+            src={clip.url + '#t=0.5'}
+            preload="metadata"
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 hover:opacity-100 transition">
+          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-black text-xl">▶</div>
+        </div>
+      </div>
+      <div className="p-2">
+        <div className="text-[10px] text-yellow-400 font-mono">{clip.n}</div>
+        <div className="text-xs font-semibold truncate">{clip.name}</div>
+        <div className="text-[11px] text-yellow-300">🪙 {clip.price}</div>
       </div>
     </div>
   );
