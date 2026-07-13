@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { X, Loader2, Coins, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -60,7 +61,7 @@ function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
     );
   }
   if (gift.clip_path && gift.clip_type === "mp4") {
-    return <video src={gift.clip_path} autoPlay loop muted playsInline className="h-full w-full object-cover" />;
+    return <video src={resolveLuxuryGiftMp4Url(gift.clip_path) ?? gift.clip_path} autoPlay loop muted playsInline preload="metadata" className="h-full w-full object-cover" />;
   }
   if (gift.image_url) {
     return <img src={gift.image_url} alt="" className="h-full w-full object-contain" />;
@@ -222,7 +223,7 @@ export function GiftSheet({
           giftName: selectedGift.name,
           giftEmoji: royalRose ? "" : selectedGift.emoji ?? selectedGift.icon ?? "🎁",
           giftImageUrl: royalRose ? ROYAL_ROSE_THUMB_URL : selectedGift.image_url ?? null,
-          giftClipUrl: royalRose ? ROYAL_ROSE_MP4_URL : selectedGift.image_url ?? selectedGift.clip_path ?? null,
+          giftClipUrl: royalRose ? ROYAL_ROSE_MP4_URL : selectedGift.image_url ?? resolveLuxuryGiftMp4Url(selectedGift.clip_path) ?? null,
           giftClipType: royalRose ? "mp4" : selectedGift.image_url ? "image" : selectedGift.clip_path ? selectedGift.clip_type : null,
           coins: price(selectedGift) * qty,
           diamonds: selectedGift.diamonds_value * qty,
