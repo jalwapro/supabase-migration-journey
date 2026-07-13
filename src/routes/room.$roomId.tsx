@@ -2441,6 +2441,7 @@ type VideoSeatData = {
   currentUserId?: string;
   localMuted?: boolean;
   localVideoTrack?: RemoteVideoTrack | null;
+  isSpeaking?: boolean;
 };
 
 function VideoSeatGrid({
