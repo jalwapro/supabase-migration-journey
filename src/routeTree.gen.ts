@@ -19,8 +19,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
+import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
-import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
@@ -133,14 +133,14 @@ const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   path: '/messages/$peerId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
+  id: '/api/zego-token',
+  path: '/api/zego-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
   id: '/api/send-email',
   path: '/api/send-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
-  id: '/api/agora-token',
-  path: '/api/agora-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -510,8 +510,8 @@ export interface FileRoutesByFullPath {
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
-  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -583,8 +583,8 @@ export interface FileRoutesByTo {
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
-  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -660,8 +660,8 @@ export interface FileRoutesById {
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
-  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -737,8 +737,8 @@ export interface FileRouteTypes {
     | '/vip'
     | '/wallet'
     | '/withdraw'
-    | '/api/agora-token'
     | '/api/send-email'
+    | '/api/zego-token'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -810,8 +810,8 @@ export interface FileRouteTypes {
     | '/vip'
     | '/wallet'
     | '/withdraw'
-    | '/api/agora-token'
     | '/api/send-email'
+    | '/api/zego-token'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -886,8 +886,8 @@ export interface FileRouteTypes {
     | '/_authenticated/vip'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
-    | '/api/agora-token'
     | '/api/send-email'
+    | '/api/zego-token'
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
@@ -943,8 +943,8 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SplashRoute: typeof SplashRoute
-  ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
+  ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
   ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
@@ -1024,18 +1024,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesPeerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/zego-token': {
+      id: '/api/zego-token'
+      path: '/api/zego-token'
+      fullPath: '/api/zego-token'
+      preLoaderRoute: typeof ApiZegoTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/send-email': {
       id: '/api/send-email'
       path: '/api/send-email'
       fullPath: '/api/send-email'
       preLoaderRoute: typeof ApiSendEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/agora-token': {
-      id: '/api/agora-token'
-      path: '/api/agora-token'
-      fullPath: '/api/agora-token'
-      preLoaderRoute: typeof ApiAgoraTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -1644,8 +1644,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SplashRoute: SplashRoute,
-  ApiAgoraTokenRoute: ApiAgoraTokenRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
+  ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
   ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
@@ -1655,13 +1655,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
