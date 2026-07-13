@@ -58,6 +58,7 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
+import { CamFilterProvider, CamFilterSheet, useCamFilter } from "@/components/room/CamFilter";
 import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay, PkChallengerToasts } from "@/components/room/PkBattleSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
@@ -175,6 +176,7 @@ function RoomPage() {
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
@@ -1442,10 +1444,12 @@ function RoomPage() {
       };
 
   return (
+    <CamFilterProvider>
     <div
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
       style={roomStyle}
     >
+      <CamFilterSheet open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
         const bg = hostBg || DEFAULT_BG_URL;
@@ -2029,6 +2033,17 @@ function RoomPage() {
                 {agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
               </button>
             ) : null}
+
+            {isVideo ? (
+              <button
+                onClick={() => setFilterSheetOpen(true)}
+                aria-label="Camera filter"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30 text-white backdrop-blur-md"
+              >
+                <Sparkles className="h-4 w-4" />
+              </button>
+            ) : null}
+
 
             {isHost && isVideo && mySeatIndex !== 0 ? (
               <button
@@ -2637,6 +2652,7 @@ function RoomPage() {
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
+    </CamFilterProvider>
   );
 }
 
@@ -2730,6 +2746,7 @@ function VideoTile({
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
   const localVideoRef = useRef<HTMLDivElement | null>(null);
+  const { css: filterCss } = useCamFilter();
   const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoTrack, isSpeaking } = data;
 
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
@@ -2779,9 +2796,9 @@ function VideoTile({
       aria-label={member ? `Like ${label}` : `Take ${label}`}
     >
       {showLocalPreview ? (
-        <div ref={localVideoRef} className="absolute inset-0" />
+        <div ref={localVideoRef} className="absolute inset-0" style={filterCss !== "none" ? { filter: filterCss } : undefined} />
       ) : remote?.videoTrack ? (
-        <div ref={videoRef} className="absolute inset-0" />
+        <div ref={videoRef} className="absolute inset-0" style={filterCss !== "none" ? { filter: filterCss } : undefined} />
       ) : displayAvatar ? (
         <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
       ) : coverUrl ? (
