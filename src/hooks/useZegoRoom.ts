@@ -175,6 +175,12 @@ export function useZegoRoom({
   const localStreamRef = useRef<MediaStream | null>(null);
   const localAudioPublishedRef = useRef(false);
   const localVideoStreamRef = useRef<MediaStream | null>(null);
+  // Raw camera stream (pre-processing) — kept so we can stop the physical
+  // camera when toggling video off, even if the published stream is a
+  // canvas-processed derivative.
+  const localRawCameraRef = useRef<MediaStream | null>(null);
+  // Callback to tear down the CamPipeline processor set by the room UI.
+  const localPipelineReleaseRef = useRef<(() => void) | null>(null);
 
   const [status, setStatus] = useState<AgoraStatus>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -187,18 +193,20 @@ export function useZegoRoom({
 
   // Wrap a ZegoLocalStream (returned by createZegoStream) in a RemoteVideoTrack-shaped
   // facade so the UI can attach the local preview to any container div via `.play(el)`.
-  function makeLocalFacade(cam: MediaStream): RemoteVideoTrack {
+  function makeLocalFacade(cam: MediaStream, opts?: { mirror?: boolean; useZegoPlayer?: boolean }): RemoteVideoTrack {
+    const mirror = opts?.mirror ?? true;
+    const useZegoPlayer = opts?.useZegoPlayer ?? true;
     const zls = cam as unknown as {
       playVideo?: (view: HTMLElement, cfg?: unknown) => void;
       stop?: () => void;
     };
     let mounted: HTMLElement | null = null;
     return {
-      play(container: HTMLElement, opts?: { fit?: "cover" | "contain" }) {
+      play(container: HTMLElement, playOpts?: { fit?: "cover" | "contain" }) {
         mounted = container;
         try {
-          if (typeof zls.playVideo === "function") {
-            zls.playVideo(container, { objectFit: opts?.fit ?? "cover", mirror: 1 });
+          if (useZegoPlayer && typeof zls.playVideo === "function") {
+            zls.playVideo(container, { objectFit: playOpts?.fit ?? "cover", mirror: mirror ? 1 : 0 });
             return;
           }
         } catch { /* fall through */ }
@@ -211,8 +219,8 @@ export function useZegoRoom({
           v.playsInline = true;
           v.style.width = "100%";
           v.style.height = "100%";
-          v.style.objectFit = opts?.fit ?? "cover";
-          v.style.transform = "scaleX(-1)";
+          v.style.objectFit = playOpts?.fit ?? "cover";
+          v.style.transform = mirror ? "scaleX(-1)" : "none";
           container.appendChild(v);
         }
         v.srcObject = cam as MediaStream;
@@ -890,7 +898,10 @@ export function useZegoRoom({
     });
   }, []);
 
-  const toggleVideo = useCallback(async () => {
+  const toggleVideo = useCallback(async (options?: {
+    processStream?: (raw: MediaStream) => Promise<MediaStream>;
+    releaseProcessor?: () => void;
+  }) => {
     const engine = engineRef.current;
     const room = currentRoomRef.current;
     const localUid = currentUserRef.current;
@@ -909,6 +920,11 @@ export function useZegoRoom({
         localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
       } catch { /* ignore */ }
       localVideoStreamRef.current = null;
+      // Stop the raw camera tracks + tear down the CamPipeline processor.
+      try { localRawCameraRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      localRawCameraRef.current = null;
+      try { localPipelineReleaseRef.current?.(); } catch { /* ignore */ }
+      localPipelineReleaseRef.current = null;
       setLocalVideoTrackFacade(null);
       setVideoOn(false);
       return true;
@@ -918,10 +934,35 @@ export function useZegoRoom({
       return false;
     }
     try {
-      const cam = await engine.createZegoStream({ camera: { audio: false, video: true } });
-      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
-      localVideoStreamRef.current = cam;
-      setLocalVideoTrackFacade(makeLocalFacade(cam));
+      let publishStream: MediaStream;
+      let usedProcessing = false;
+      if (options?.processStream) {
+        // Grab raw camera ourselves so we can hand it to the processor.
+        const raw = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+          audio: false,
+        });
+        localRawCameraRef.current = raw;
+        const processed = await options.processStream(raw);
+        usedProcessing = processed !== raw;
+        if (usedProcessing) {
+          publishStream = await engine.createZegoStream({ custom: { source: processed } });
+        } else {
+          // Bypass — publish the raw camera directly via custom source
+          publishStream = await engine.createZegoStream({ custom: { source: raw } });
+        }
+        localPipelineReleaseRef.current = options.releaseProcessor ?? null;
+      } else {
+        publishStream = await engine.createZegoStream({ camera: { audio: false, video: true } });
+      }
+      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), publishStream);
+      localVideoStreamRef.current = publishStream;
+      setLocalVideoTrackFacade(makeLocalFacade(publishStream, {
+        // Processed frames are already mirrored by the canvas, so don't
+        // double-mirror in the preview element.
+        mirror: !usedProcessing,
+        useZegoPlayer: !usedProcessing,
+      }));
       setVideoOn(true);
       setMicIssue(null, false);
       return true;
@@ -932,6 +973,10 @@ export function useZegoRoom({
         try { failed.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       }
       localVideoStreamRef.current = null;
+      try { localRawCameraRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      localRawCameraRef.current = null;
+      try { localPipelineReleaseRef.current?.(); } catch { /* ignore */ }
+      localPipelineReleaseRef.current = null;
       setLocalVideoTrackFacade(null);
       setVideoOn(false);
       console.warn("[zego] camera failed", e);

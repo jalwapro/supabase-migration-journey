@@ -58,7 +58,8 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
-import { CamFilterProvider, CamFilterSheet, useCamFilter } from "@/components/room/CamFilter";
+import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
+import { CamStudio } from "@/components/room/CamStudio";
 import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay, PkChallengerToasts } from "@/components/room/PkBattleSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
@@ -177,6 +178,10 @@ function RoomPage() {
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const pipelineBridgeRef = useRef<{
+    processStream: (raw: MediaStream) => Promise<MediaStream>;
+    releaseProcessor: () => void;
+  } | null>(null);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
@@ -297,6 +302,14 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
+  // Wrapper that hands the CamPipeline processor callbacks (populated by
+  // PipelineBridge inside the provider) to agora.toggleVideo so the
+  // published camera stream carries face stickers / background / beauty.
+  const toggleVideoWithPipeline = useCallback(
+    () => agora.toggleVideo(pipelineBridgeRef.current ?? undefined),
+    [agora],
+  );
+
   // Video room: whoever occupies seat 0 (host) OR seat 1 (second camera) gets
   // camera auto-on; leaving those seats auto-turns it off.
   const mySeatIndex = myMember?.seat_index ?? null;
@@ -310,7 +323,7 @@ function RoomPage() {
       let cancelled = false;
       void (async () => {
         for (let i = 0; i < 3 && !cancelled; i += 1) {
-          const ok = await agora.toggleVideo();
+          const ok = await toggleVideoWithPipeline();
           if (ok) return;
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
@@ -319,11 +332,11 @@ function RoomPage() {
       return () => { cancelled = true; };
     } else if (!onCamSeat && agora.videoOn && autoCamAppliedRef.current) {
       autoCamAppliedRef.current = false;
-      void agora.toggleVideo();
+      void toggleVideoWithPipeline();
     } else if (!onCamSeat) {
       autoCamAppliedRef.current = false;
     }
-  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora.toggleVideo]);
+  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, toggleVideoWithPipeline]);
 
 
   // ── Host AFK detection ─────────────────────────────────────────────
@@ -1444,12 +1457,13 @@ function RoomPage() {
       };
 
   return (
-    <CamFilterProvider>
+    <CamPipelineProvider>
+    <PipelineBridge bridgeRef={pipelineBridgeRef} />
     <div
       className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
       style={roomStyle}
     >
-      <CamFilterSheet open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+      <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
         const bg = hostBg || DEFAULT_BG_URL;
@@ -2022,7 +2036,7 @@ function RoomPage() {
 
             {isHost ? (
               <button
-                onClick={() => void agora.toggleVideo()}
+                onClick={() => void toggleVideoWithPipeline()}
                 aria-label={agora.videoOn ? "Turn camera off" : "Turn camera on"}
                 className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
                   agora.videoOn
@@ -2400,7 +2414,7 @@ function RoomPage() {
         fx={videoFx}
         onFxChange={(k, v) => setVideoFx((s) => ({ ...s, [k]: v }))}
         videoOn={agora.videoOn}
-        onToggleVideo={() => void agora.toggleVideo()}
+        onToggleVideo={() => void toggleVideoWithPipeline()}
         muted={agora.muted}
         onToggleMute={() => void toggleMuteWithSync()}
         speakerMuted={agora.speakerMuted}
@@ -2652,9 +2666,33 @@ function RoomPage() {
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
-    </CamFilterProvider>
+    </CamPipelineProvider>
   );
 }
+
+/**
+ * PipelineBridge — child of CamPipelineProvider that publishes the
+ * processStream/releaseProcessor callbacks onto a ref the parent RoomPage
+ * can read (parent lives outside the provider, so it can't call
+ * useCamPipeline directly).
+ */
+function PipelineBridge({
+  bridgeRef,
+}: {
+  bridgeRef: React.MutableRefObject<{
+    processStream: (raw: MediaStream) => Promise<MediaStream>;
+    releaseProcessor: () => void;
+  } | null>;
+}) {
+  const { processStream, releaseProcessor } = useCamPipeline();
+  useEffect(() => {
+    bridgeRef.current = { processStream, releaseProcessor };
+    return () => { bridgeRef.current = null; };
+  }, [bridgeRef, processStream, releaseProcessor]);
+  return null;
+}
+
+
 
 /* ─── Video seat grid (SOLO / 1-1 / 2-2) ─────────────────────── */
 type VideoSeatData = {
@@ -2746,7 +2784,9 @@ function VideoTile({
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
   const localVideoRef = useRef<HTMLDivElement | null>(null);
-  const { css: filterCss } = useCamFilter();
+  // Camera-side effects (filters/background/beauty) are baked into the
+  // published stream by CamPipeline, so no CSS filter needs to be applied
+  // to the tile itself.
   const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoTrack, isSpeaking } = data;
 
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
@@ -2796,9 +2836,9 @@ function VideoTile({
       aria-label={member ? `Like ${label}` : `Take ${label}`}
     >
       {showLocalPreview ? (
-        <div ref={localVideoRef} className="absolute inset-0" style={filterCss !== "none" ? { filter: filterCss } : undefined} />
+        <div ref={localVideoRef} className="absolute inset-0" />
       ) : remote?.videoTrack ? (
-        <div ref={videoRef} className="absolute inset-0" style={filterCss !== "none" ? { filter: filterCss } : undefined} />
+        <div ref={videoRef} className="absolute inset-0" />
       ) : displayAvatar ? (
         <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
       ) : coverUrl ? (
