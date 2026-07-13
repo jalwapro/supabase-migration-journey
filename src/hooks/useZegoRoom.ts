@@ -399,6 +399,7 @@ export function useZegoRoom({
       closeLocalTracks();
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
+      uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
       setRemotes(new Map());
       setMuted(true);
