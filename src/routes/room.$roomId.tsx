@@ -3159,10 +3159,14 @@ function Seat({
         <div className="absolute inset-x-0 top-[28%] grid place-items-center">
           <div className={`relative ${displayFrame ? "h-8 w-8" : "h-10 w-10"}`}>
             {speaking && (
-              <>
-                <span className="pointer-events-none absolute inset-0 rounded-full ring-2 ring-cyan-400/80 animate-ping" />
-                <span className="pointer-events-none absolute -inset-1 rounded-full ring-2 ring-cyan-300/60 animate-ping" style={{ animationDelay: "300ms" }} />
-              </>
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-[-25%] rounded-full animate-pulse"
+                style={{
+                  background: "radial-gradient(circle, rgba(103,232,249,0.55) 0%, transparent 70%)",
+                  filter: "blur(5px)",
+                }}
+              />
             )}
             {displayAvatar && !remote?.videoTrack ? (
               <img
@@ -3250,10 +3254,14 @@ function Seat({
           </div>
         )}
         {speaking && !hostAwayFromSeat && (
-          <>
-            <span className="pointer-events-none absolute inset-[2%] z-10 rounded-full ring-2 ring-cyan-400/80 animate-ping" />
-            <span className="pointer-events-none absolute inset-[-4%] z-0 rounded-full ring-2 ring-cyan-300/60 animate-ping" style={{ animationDelay: "300ms" }} />
-          </>
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-[-8%] z-0 rounded-full animate-pulse"
+            style={{
+              background: "radial-gradient(circle, color-mix(in oklab, var(--primary) 55%, transparent) 0%, transparent 70%)",
+              filter: "blur(6px)",
+            }}
+          />
         )}
         <div className={`absolute overflow-hidden rounded-full bg-white/5 ${
           displayFrame ? "inset-[22%]" : "inset-[8%]"
