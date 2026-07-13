@@ -1453,6 +1453,7 @@ function RoomPage() {
             likeCount: seatLikes[0] ?? 0,
             currentUserId: user?.id,
             localMuted: agora.muted,
+            localVideoStream: agora.localVideoStream ?? null,
           };
           const oppTile: VideoSeatData = {
             index: 1,
@@ -1466,6 +1467,7 @@ function RoomPage() {
             likeCount: seatLikes[1] ?? 0,
             currentUserId: user?.id,
             localMuted: agora.muted,
+            localVideoStream: agora.localVideoStream ?? null,
           };
 
           return (
