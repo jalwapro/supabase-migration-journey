@@ -2512,7 +2512,11 @@ function VideoTile({
   coverUrl: string | null;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
-  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted } = data;
+  const localVideoElRef = useRef<HTMLVideoElement | null>(null);
+  const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoStream } = data;
+
+  const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
+  const showLocalPreview = isSelf && !!localVideoStream;
 
   useEffect(() => {
     if (remote?.videoTrack && videoRef.current) {
@@ -2523,9 +2527,17 @@ function VideoTile({
     };
   }, [remote?.videoTrack]);
 
+  useEffect(() => {
+    const el = localVideoElRef.current;
+    if (el && showLocalPreview && localVideoStream) {
+      el.srcObject = localVideoStream;
+      el.play().catch(() => { /* autoplay may need gesture */ });
+    }
+    return () => { if (el) el.srcObject = null; };
+  }, [showLocalPreview, localVideoStream]);
+
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
-  const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
   // Prefer live Agora signal over stale DB `is_muted`:
   // - self: local mute flag from Agora hook
   // - others: if we have a remote entry, use its live hasAudio; else fall back to DB
@@ -2550,7 +2562,15 @@ function VideoTile({
       }`}
       aria-label={member ? `Like ${label}` : `Take ${label}`}
     >
-      {remote?.videoTrack ? (
+      {showLocalPreview ? (
+        <video
+          ref={localVideoElRef}
+          autoPlay
+          playsInline
+          muted
+          className="absolute inset-0 h-full w-full -scale-x-100 object-cover"
+        />
+      ) : remote?.videoTrack ? (
         <div ref={videoRef} className="absolute inset-0" />
       ) : displayAvatar ? (
         <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
