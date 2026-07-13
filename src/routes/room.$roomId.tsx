@@ -260,6 +260,26 @@ function RoomPage() {
     setLockedSeats(room.data?.locked_seats ?? []);
   }, [room.data?.locked_seats]);
 
+  // Host ended the live → kick viewers out of the room automatically.
+  const endedNoticedRef = useRef(false);
+  useEffect(() => {
+    if (!room.data) return;
+    if (room.data.status !== "ended") return;
+    if (isHost) return;
+    if (endedNoticedRef.current) return;
+    endedNoticedRef.current = true;
+    toast("Host ended the live");
+    if (user) {
+      void supabase
+        .from("room_members")
+        .delete()
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+    }
+    navigate({ to: "/" });
+  }, [room.data, isHost, user, roomId, navigate]);
+
+
   // Auto-scroll chat to newest on every new message
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
