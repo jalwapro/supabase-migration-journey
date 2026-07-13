@@ -2437,6 +2437,7 @@ type VideoSeatData = {
   likeCount: number;
   currentUserId?: string;
   localMuted?: boolean;
+  localVideoStream?: MediaStream | null;
 };
 
 function VideoSeatGrid({
