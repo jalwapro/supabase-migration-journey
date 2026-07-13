@@ -656,6 +656,7 @@ export function useZegoRoom({
           { userID: localUidStr, userName: localUidStr },
           { userUpdate: true },
         );
+        try { engine.startSoundLevelMonitor?.({ millisecond: 300 }); } catch { /* ignore */ }
         if (isCurrentJoin()) setStatus("connected");
       } catch (e) {
         if (!isCurrentJoin()) return;
