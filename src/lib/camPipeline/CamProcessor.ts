@@ -39,15 +39,21 @@ export class CamProcessor {
   private canvas: HTMLCanvasElement;
   private maskCanvas: HTMLCanvasElement;
   private bgCanvas: HTMLCanvasElement;
+  private personCanvas: HTMLCanvasElement;
+  private maskTmpCanvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private maskCtx: CanvasRenderingContext2D;
   private bgCtx: CanvasRenderingContext2D;
+  private personCtx: CanvasRenderingContext2D;
+  private maskTmpCtx: CanvasRenderingContext2D;
   private rafId: number | null = null;
   private outStream: MediaStream | null = null;
   private cfg: CamPipelineConfig;
   private segmenter: ImageSegmenter | null = null;
   private landmarker: FaceLandmarker | null = null;
   private started = false;
+  private frameIdx = 0;
+  private lastPersonMaskFrame = 0;
 
   constructor(srcStream: MediaStream, cfg: CamPipelineConfig) {
     this.cfg = cfg;
@@ -71,6 +77,18 @@ export class CamProcessor {
     this.bgCanvas.width = OUT_W;
     this.bgCanvas.height = OUT_H;
     this.bgCtx = this.bgCanvas.getContext("2d", { alpha: false })!;
+
+    // Reusable person layer (previously re-allocated every frame → GC storms on Android)
+    this.personCanvas = document.createElement("canvas");
+    this.personCanvas.width = OUT_W;
+    this.personCanvas.height = OUT_H;
+    this.personCtx = this.personCanvas.getContext("2d")!;
+
+    // Reusable tiny canvas for putImageData of the raw seg mask
+    this.maskTmpCanvas = document.createElement("canvas");
+    this.maskTmpCanvas.width = OUT_W;
+    this.maskTmpCanvas.height = OUT_H;
+    this.maskTmpCtx = this.maskTmpCanvas.getContext("2d")!;
   }
 
   updateConfig(cfg: CamPipelineConfig) {
