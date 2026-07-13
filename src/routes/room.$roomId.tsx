@@ -788,11 +788,37 @@ function RoomPage() {
       if (msgErr) console.warn("[join insert]", msgErr.message);
     })();
 
-    // No cleanup delete: users only leave via the Exit button or when
-    // host/moderator removes them. This lets a seated user survive a
-    // page refresh without dropping to the audience.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roomId, isHost, room.data?.id]);
+
+  // Auto-remove membership when the user actually leaves the room
+  // (route change, tab close, back button). Host is excluded — host uses
+  // the Exit button which ends the room via finalize_room_gifts.
+  useEffect(() => {
+    if (!user || !room.data?.id || isHost) return;
+    const uid = user.id;
+    const rid = roomId;
+
+    const removeMembership = () => {
+      void supabase
+        .from("room_members")
+        .delete()
+        .eq("room_id", rid)
+        .eq("user_id", uid);
+    };
+
+    const onPageHide = () => removeMembership();
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("beforeunload", onPageHide);
+
+    return () => {
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("beforeunload", onPageHide);
+      removeMembership();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, roomId, isHost, room.data?.id]);
+
 
 
 
