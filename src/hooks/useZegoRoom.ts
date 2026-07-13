@@ -354,6 +354,9 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       videoContainersRef.current.clear();
       setRemotes(new Map());
+      setMuted(true);
+      setVideoOn(false);
+      setMicIssue(null, false);
       setStatus("idle");
       return;
     }
