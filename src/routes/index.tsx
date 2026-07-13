@@ -146,7 +146,7 @@ function Home() {
 
   const banners = useQuery({
     queryKey: ["banners"],
-    refetchInterval: 60_000,
+    staleTime: 5 * 60_000,
     queryFn: async () => {
       const nowIso = new Date().toISOString();
       const { data, error } = await supabase
@@ -173,8 +173,10 @@ function Home() {
       if (error) throw error;
       return (data ?? []) as LiveUser[];
     },
-    refetchInterval: 10_000,
-    refetchOnWindowFocus: true,
+    // Realtime handles updates via useRealtimeInvalidate above; a slow safety
+    // poll is enough — 10s was hammering the DB and jittering the UI.
+    refetchInterval: 60_000,
+    staleTime: 30_000,
   });
 
   const rooms = useQuery({
@@ -194,7 +196,9 @@ function Home() {
       if (error) throw error;
       return (data ?? []) as unknown as Room[];
     },
-    refetchInterval: 20_000,
+    // Realtime invalidates instantly on live_rooms changes.
+    refetchInterval: 60_000,
+    staleTime: 30_000,
   });
 
   const filteredRooms = useMemo(() => {
