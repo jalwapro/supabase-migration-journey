@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/zego-token")({
         const bearer = auth.replace(/^Bearer\s+/i, "");
         if (!bearer) return json({ error: "unauthorized" }, 401);
 
-        const sb = createClient(SUPABASE_URL, serviceKey, {
+        const sb = createClient(resolveSupabaseUrl(), serviceKey, {
           auth: { persistSession: false, autoRefreshToken: false },
         });
         const { data: userRes, error: userErr } = await sb.auth.getUser(bearer);
