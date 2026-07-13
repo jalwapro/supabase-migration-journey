@@ -1877,6 +1877,22 @@ function RoomPage() {
               </button>
             ) : null}
 
+            {isHost && isVideo && mySeatIndex !== 0 ? (
+              <button
+                onClick={async () => {
+                  const { error } = await supabase.rpc("host_reclaim_video_seat", {
+                    _room_id: roomId,
+                  });
+                  if (error) toast.error(error.message);
+                  else toast.success("Host seat reclaimed 👑");
+                }}
+                className="grid h-9 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
+                aria-label="Return to host seat"
+              >
+                👑 Host Seat
+              </button>
+            ) : null}
+
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
