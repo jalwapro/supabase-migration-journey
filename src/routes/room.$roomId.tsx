@@ -314,6 +314,71 @@ function RoomPage() {
     }
   }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
 
+  // ── Host AFK detection ─────────────────────────────────────────────
+  // profiles.last_seen ticks every 15s from useAuth's heartbeat.
+  // >10 min stale → show ☕ cup badge on host DP.
+  // >20 min stale → start 10-second countdown, then auto-exit viewers.
+  const hostLastSeen = useQuery({
+    enabled: !!room.data?.host_id && !isHost,
+    queryKey: ["host-last-seen", room.data?.host_id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("last_seen")
+        .eq("id", room.data!.host_id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data?.last_seen as string | null) ?? null;
+    },
+    refetchInterval: 30_000,
+  });
+  const [afkTick, setAfkTick] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setAfkTick(Date.now()), 5_000);
+    return () => clearInterval(t);
+  }, []);
+  const hostAfkMs = hostLastSeen.data
+    ? Math.max(0, afkTick - new Date(hostLastSeen.data).getTime())
+    : 0;
+  const HOST_AFK_MS = 10 * 60 * 1000;
+  const HOST_EXIT_MS = 20 * 60 * 1000;
+  const hostAfk = !isHost && !!hostLastSeen.data && hostAfkMs > HOST_AFK_MS;
+  const shouldStartAfkExit =
+    !isHost &&
+    !!hostLastSeen.data &&
+    hostAfkMs > HOST_EXIT_MS &&
+    room.data?.status === "live";
+  const [afkExitLeft, setAfkExitLeft] = useState<number | null>(null);
+  useEffect(() => {
+    if (!shouldStartAfkExit) {
+      setAfkExitLeft(null);
+      return;
+    }
+    setAfkExitLeft((n) => (n === null ? 10 : n));
+  }, [shouldStartAfkExit]);
+  useEffect(() => {
+    if (afkExitLeft === null) return;
+    if (afkExitLeft <= 0) {
+      void (async () => {
+        if (user) {
+          await supabase
+            .from("room_members")
+            .delete()
+            .eq("room_id", roomId)
+            .eq("user_id", user.id);
+        }
+        toast("Host inactive — room say exit ho gaye");
+        navigate({ to: "/" });
+      })();
+      return;
+    }
+    const t = setTimeout(
+      () => setAfkExitLeft((n) => (n === null ? null : n - 1)),
+      1000,
+    );
+    return () => clearTimeout(t);
+  }, [afkExitLeft, user, roomId, navigate]);
+
   const loadRoomState = useCallback(async () => {
     const [
       { data: mData, error: mErr },
@@ -1420,9 +1485,22 @@ function RoomPage() {
           <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
             <div className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
               {r.host?.avatar ? (
-                <img src={r.host.avatar} alt="" className="h-full w-full object-cover" />
+                <img
+                  src={r.host.avatar}
+                  alt=""
+                  className={`h-full w-full object-cover ${hostAfk ? "opacity-60 grayscale" : ""}`}
+                />
               ) : (
                 <UserIcon className="h-5 w-5 text-white/80" />
+              )}
+              {hostAfk && (
+                <span
+                  aria-label="Host is away"
+                  title="Host is away"
+                  className="pointer-events-none absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-amber-300/70 bg-black/70 text-[11px] shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse"
+                >
+                  ☕
+                </span>
               )}
             </div>
             <div className="min-w-0 flex-1">
@@ -1494,6 +1572,20 @@ function RoomPage() {
           </div>
         </div>
       </div>
+
+      {/* Host AFK banner */}
+      {(hostAfk || afkExitLeft !== null) && (
+        <div className="relative z-20 mx-auto w-full max-w-md px-3">
+          <div className="flex items-center justify-center gap-2 rounded-full border border-amber-300/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-bold text-amber-200 backdrop-blur">
+            <span className="text-base leading-none">☕</span>
+            {afkExitLeft !== null ? (
+              <span>Host inactive — auto exit in {afkExitLeft}s</span>
+            ) : (
+              <span>Host is away — waiting for return</span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo && r.seat_count === 2 ? (
