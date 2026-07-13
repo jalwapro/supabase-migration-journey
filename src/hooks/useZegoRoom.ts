@@ -682,7 +682,10 @@ export function useZegoRoom({
     const engine = engineRef.current;
     const room = currentRoomRef.current;
     const localUid = currentUserRef.current;
-    if (!engine || !room || !localUid) return;
+    if (!engine || !room || !localUid) {
+      setMicIssue("Not connected to room yet — try again in a moment", false);
+      return;
+    }
 
     if (localVideoStreamRef.current) {
       // Stop the video-only companion stream.
@@ -694,22 +697,36 @@ export function useZegoRoom({
         localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
       } catch { /* ignore */ }
       localVideoStreamRef.current = null;
+      setLocalVideoStream(null);
       setVideoOn(false);
       return;
     }
     if (status !== "connected") {
-      console.warn("[zego] cannot publish video, status:", status);
+      setMicIssue("Still connecting to room — try again in a moment", false);
       return;
     }
     try {
       const cam = await engine.createZegoStream({ camera: { audio: false, video: true } });
       localVideoStreamRef.current = cam;
+      setLocalVideoStream(cam);
       engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       setVideoOn(true);
+      setMicIssue(null, false);
     } catch (e) {
       console.warn("[zego] camera failed", e);
+      const err = e as { name?: string; message?: string };
+      const blocked = err?.name === "NotAllowedError" || /permission|denied/i.test(err?.message ?? "");
+      const notFound = err?.name === "NotFoundError" || /not\s*found|no.*device/i.test(err?.message ?? "");
+      setMicIssue(
+        blocked
+          ? "Camera permission denied — allow camera in browser settings"
+          : notFound
+            ? "No camera found on this device"
+            : `Camera failed: ${err?.message ?? "unknown error"}`,
+        blocked,
+      );
     }
-  }, [status]);
+  }, [status, setMicIssue]);
 
   // -----------------------------------------------------------------------
   // Host music playback via ZEGO MediaPlayer + enableAux(true) so remote
