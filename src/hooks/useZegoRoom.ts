@@ -482,7 +482,7 @@ export function useZegoRoom({
                     if (!el) {
                       el = document.createElement("audio");
                       el.autoplay = true;
-                      (el as HTMLAudioElement).playsInline = true;
+                      (el as unknown as { playsInline?: boolean }).playsInline = true;
                       el.style.display = "none";
                       document.body.appendChild(el);
                       audioElsRef.current.set(s.streamID, el);
