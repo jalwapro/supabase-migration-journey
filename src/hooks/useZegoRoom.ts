@@ -368,23 +368,17 @@ export function useZegoRoom({
           v.style.objectFit = "cover";
           container.appendChild(v);
         }
-        // startPlayingStream returns a MediaStream in ZEGO Web SDK 3.x.
-        try {
-          const p = engine.startPlayingStream(streamID) as unknown as
-            | MediaStream
-            | Promise<MediaStream>;
-          Promise.resolve(p)
-            .then((ms) => {
-              if (ms && v) v.srcObject = ms;
-            })
-            .catch(() => { /* ignore */ });
-        } catch { /* ignore */ }
+        void getRemoteMediaStream(engine, streamID).then((ms) => {
+          if (!ms || !v || videoContainersRef.current.get(remoteUid) !== container) return;
+          v.srcObject = ms;
+          v.play().catch(() => { /* gesture may be needed */ });
+        });
       },
       stop: () => {
-        try { engine.stopPlayingStream(streamID); } catch { /* ignore */ }
         const container = videoContainersRef.current.get(remoteUid);
         const v = container?.querySelector("video") as HTMLVideoElement | null;
         if (v) v.srcObject = null;
+        videoContainersRef.current.delete(remoteUid);
       },
     };
     return {
@@ -394,7 +388,7 @@ export function useZegoRoom({
       audioTrack: audio,
       videoTrack: kind === "video" ? video : undefined,
     };
-  }, []);
+  }, [getRemoteMediaStream]);
 
   // -----------------------------------------------------------------------
   // Main join / leave effect. Preserves the Agora hook's semantics:
