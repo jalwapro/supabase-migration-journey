@@ -613,9 +613,19 @@ export function useZegoRoom({
             const sid = uidStreamRef.current.get(remoteUid);
             if (sid) {
               try { engine.stopPlayingStream(sid); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(sid);
+              remotePlayPromisesRef.current.delete(sid);
               streamToUidRef.current.delete(sid);
             }
+            const videoSid = uidVideoStreamRef.current.get(remoteUid);
+            if (videoSid) {
+              try { engine.stopPlayingStream(videoSid); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(videoSid);
+              remotePlayPromisesRef.current.delete(videoSid);
+              streamToUidRef.current.delete(videoSid);
+            }
             uidStreamRef.current.delete(remoteUid);
+            uidVideoStreamRef.current.delete(remoteUid);
             videoContainersRef.current.delete(remoteUid);
             setRemotes((prev) => {
               const next = new Map(prev);
@@ -734,6 +744,8 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      remoteMediaStreamsRef.current.clear();
+      remotePlayPromisesRef.current.clear();
       for (const [, el] of audioElsRef.current) {
         try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
       }
