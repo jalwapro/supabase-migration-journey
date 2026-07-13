@@ -2746,6 +2746,7 @@ function VideoTile({
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
   const localVideoRef = useRef<HTMLDivElement | null>(null);
+  const { css: filterCss } = useCamFilter();
   const { member, remote, isHostSeat, fallbackUser, giftPoints, onClaim, onLike, index, likeCount, currentUserId, localMuted, localVideoTrack, isSpeaking } = data;
 
   const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
