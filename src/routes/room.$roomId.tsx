@@ -2034,6 +2034,17 @@ function RoomPage() {
               </button>
             ) : null}
 
+            {isVideo ? (
+              <button
+                onClick={() => setFilterSheetOpen(true)}
+                aria-label="Camera filter"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30 text-white backdrop-blur-md"
+              >
+                <Sparkles className="h-4 w-4" />
+              </button>
+            ) : null}
+
+
             {isHost && isVideo && mySeatIndex !== 0 ? (
               <button
                 onClick={async () => {
