@@ -827,7 +827,6 @@ export function useZegoRoom({
     // Compatibility refs kept for the room component's guards.
     localAudioTrack: localStreamRef,
     localAudioPublished: localAudioPublishedRef,
-    localVideoTrack: localVideoStreamRef,
     localVideoTrack: localVideoTrackFacade,
     // music
     musicPlaying,
