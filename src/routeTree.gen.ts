@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
+import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
 import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
@@ -131,6 +132,11 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
 const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   id: '/messages_/$peerId',
   path: '/messages/$peerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
+  id: '/api/zego-token',
+  path: '/api/zego-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
@@ -512,6 +518,7 @@ export interface FileRoutesByFullPath {
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -585,6 +592,7 @@ export interface FileRoutesByTo {
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -662,6 +670,7 @@ export interface FileRoutesById {
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -739,6 +748,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/api/agora-token'
     | '/api/send-email'
+    | '/api/zego-token'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -812,6 +822,7 @@ export interface FileRouteTypes {
     | '/withdraw'
     | '/api/agora-token'
     | '/api/send-email'
+    | '/api/zego-token'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -888,6 +899,7 @@ export interface FileRouteTypes {
     | '/_authenticated/withdraw'
     | '/api/agora-token'
     | '/api/send-email'
+    | '/api/zego-token'
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
@@ -945,6 +957,7 @@ export interface RootRouteChildren {
   SplashRoute: typeof SplashRoute
   ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
+  ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
   ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
@@ -1022,6 +1035,13 @@ declare module '@tanstack/react-router' {
       path: '/messages/$peerId'
       fullPath: '/messages/$peerId'
       preLoaderRoute: typeof MessagesPeerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/zego-token': {
+      id: '/api/zego-token'
+      path: '/api/zego-token'
+      fullPath: '/api/zego-token'
+      preLoaderRoute: typeof ApiZegoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/send-email': {
@@ -1646,6 +1666,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplashRoute: SplashRoute,
   ApiAgoraTokenRoute: ApiAgoraTokenRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
+  ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
   ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
