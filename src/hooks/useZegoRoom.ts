@@ -428,6 +428,8 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      remoteMediaStreamsRef.current.clear();
+      remotePlayPromisesRef.current.clear();
       for (const [, el] of audioElsRef.current) {
         try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
       }
@@ -497,12 +499,18 @@ export function useZegoRoom({
               // Start playing (audio) immediately — video will be attached
               // to a container by the UI via videoTrack.play(...).
               try {
-                const p = engine.startPlayingStream(s.streamID) as unknown as
-                  | Promise<MediaStream>
-                  | MediaStream;
-                Promise.resolve(p)
+                void getRemoteMediaStream(engine, s.streamID)
                   .then((ms) => {
-                    if (!ms || isVideo) return;
+                    if (!ms) return;
+                    if (isVideo) {
+                      const container = videoContainersRef.current.get(remoteUid);
+                      const v = container?.querySelector("video") as HTMLVideoElement | null;
+                      if (v) {
+                        v.srcObject = ms;
+                        v.play().catch(() => { /* gesture may be needed */ });
+                      }
+                      return;
+                    }
                     // Attach to a hidden <audio> element so viewers hear it.
                     let el = audioElsRef.current.get(s.streamID);
                     if (!el) {
@@ -549,6 +557,8 @@ export function useZegoRoom({
           } else {
             for (const s of streamList) {
               try { engine.stopPlayingStream(s.streamID); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(s.streamID);
+              remotePlayPromisesRef.current.delete(s.streamID);
               const el = audioElsRef.current.get(s.streamID);
               if (el) {
                 try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
@@ -559,6 +569,9 @@ export function useZegoRoom({
               streamToUidRef.current.delete(s.streamID);
               if (remoteUid != null) {
                 if (wasVideo) {
+                  const container = videoContainersRef.current.get(remoteUid);
+                  const v = container?.querySelector("video") as HTMLVideoElement | null;
+                  if (v) v.srcObject = null;
                   uidVideoStreamRef.current.delete(remoteUid);
                   videoContainersRef.current.delete(remoteUid);
                 } else {
