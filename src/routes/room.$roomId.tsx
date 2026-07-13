@@ -2641,6 +2641,7 @@ function RoomPage() {
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
     </div>
+    </CamFilterProvider>
   );
 }
 
