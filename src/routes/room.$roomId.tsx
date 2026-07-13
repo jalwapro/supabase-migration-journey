@@ -1526,6 +1526,7 @@ function RoomPage() {
             likeCount: seatLikes[0] ?? 0,
             currentUserId: user?.id,
             localMuted: agora.muted,
+            localVideoStream: agora.localVideoStream ?? null,
           } as VideoSeatData;
 
           const renderSeat = (i: number) => {
