@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 
-import { useAgoraRoom, type RemoteUser } from "@/hooks/useAgoraRoom";
+import { useZegoRoom as useAgoraRoom, type RemoteUser } from "@/hooks/useZegoRoom";
 import {
   Flag,
   Share2,
