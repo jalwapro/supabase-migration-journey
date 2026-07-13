@@ -1641,6 +1641,7 @@ function RoomPage() {
                         }
                         currentUserId={user?.id}
                         localMuted={agora.muted}
+                        isSpeaking={m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false}
                         onOpenGifters={
                           m
                             ? () =>
