@@ -890,7 +890,7 @@ export function useZegoRoom({
     const localUid = currentUserRef.current;
     if (!engine || !room || !localUid) {
       setMicIssue("Not connected to room yet — try again in a moment", false);
-      return;
+      return false;
     }
 
     if (localVideoStreamRef.current) {
@@ -905,20 +905,29 @@ export function useZegoRoom({
       localVideoStreamRef.current = null;
       setLocalVideoTrackFacade(null);
       setVideoOn(false);
-      return;
+      return true;
     }
     if (status !== "connected") {
       setMicIssue("Still connecting to room — try again in a moment", false);
-      return;
+      return false;
     }
     try {
       const cam = await engine.createZegoStream({ camera: { audio: false, video: true } });
+      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       localVideoStreamRef.current = cam;
       setLocalVideoTrackFacade(makeLocalFacade(cam));
-      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       setVideoOn(true);
       setMicIssue(null, false);
+      return true;
     } catch (e) {
+      const failed = localVideoStreamRef.current;
+      if (failed) {
+        try { engine.destroyStream(failed); } catch { /* ignore */ }
+        try { failed.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      }
+      localVideoStreamRef.current = null;
+      setLocalVideoTrackFacade(null);
+      setVideoOn(false);
       console.warn("[zego] camera failed", e);
       const err = e as { name?: string; message?: string };
       const blocked = err?.name === "NotAllowedError" || /permission|denied/i.test(err?.message ?? "");
@@ -931,6 +940,7 @@ export function useZegoRoom({
             : `Camera failed: ${err?.message ?? "unknown error"}`,
         blocked,
       );
+      return false;
     }
   }, [status, setMicIssue]);
 
