@@ -523,6 +523,11 @@ export function useZegoRoom({
           } else {
             for (const s of streamList) {
               try { engine.stopPlayingStream(s.streamID); } catch { /* ignore */ }
+              const el = audioElsRef.current.get(s.streamID);
+              if (el) {
+                try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+                audioElsRef.current.delete(s.streamID);
+              }
               const remoteUid = streamToUidRef.current.get(s.streamID);
               const wasVideo = /_cam_main$/.test(s.streamID);
               streamToUidRef.current.delete(s.streamID);
