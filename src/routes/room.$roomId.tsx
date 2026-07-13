@@ -58,6 +58,7 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
+import { CamFilterProvider, CamFilterSheet, useCamFilter } from "@/components/room/CamFilter";
 import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay, PkChallengerToasts } from "@/components/room/PkBattleSheet";
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
