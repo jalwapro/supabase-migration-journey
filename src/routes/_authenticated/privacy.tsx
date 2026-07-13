@@ -11,7 +11,7 @@ function Page() {
         <div className="space-y-4 px-4 pt-4 pb-6 text-sm leading-relaxed text-muted-foreground">
           <Section title="1. Information We Collect">
             We collect your email, username, profile info, chat/room activity, and payment data required to
-            operate the app. Voice/video streams pass through Agora and are not recorded by us.
+            operate the app. Voice/video streams pass through ZEGOCLOUD and are not recorded by us.
           </Section>
           <Section title="2. How We Use Data">
             To provide the service, personalize your experience, prevent abuse, process recharges and
