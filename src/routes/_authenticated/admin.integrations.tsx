@@ -53,6 +53,14 @@ function Integrations() {
   return (
     <>
       <AdminPageHeader title="Integrations" subtitle="Third-party keys, branding, economy" />
+      <div className="glass mb-4 rounded-2xl p-4">
+        <h3 className="font-bold">ZEGOCLOUD — Voice &amp; Video RTC</h3>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          RTC ab ZEGOCLOUD se chalta hai. AppID aur ServerSecret environment secrets
+          (<code>ZEGO_APP_ID</code>, <code>ZEGO_SERVER_SECRET</code>) me store hain —
+          yahan edit karne ki zaroorat nahi. Change karne ke liye Project Secrets use karein.
+        </p>
+      </div>
       {list.isLoading ? (
         <div className="p-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (
