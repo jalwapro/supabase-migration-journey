@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const Route = createFileRoute('/gift-preview')({
   component: GiftPreview,
@@ -84,16 +84,53 @@ function GiftPreview() {
 }
 
 function LazyCard({ clip, onOpen }: { clip: Clip; onOpen: () => void }) {
+  const ref = useRef<HTMLButtonElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setVisible(true);
+            io.disconnect();
+            break;
+          }
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onOpen}
       className="rounded-xl overflow-hidden border border-white/10 bg-black cursor-pointer hover:border-yellow-400/60 transition text-left"
     >
       <div className="w-full aspect-[9/16] bg-gradient-to-br from-purple-900/60 via-pink-900/40 to-black relative flex items-center justify-center">
-        <div className="text-4xl">🎁</div>
-        <div className="absolute inset-0 flex items-center justify-center bg-black/10">
-          <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center text-black text-xl shadow-xl">▶</div>
+        {visible ? (
+          <video
+            ref={videoRef}
+            src={clip.url}
+            muted
+            playsInline
+            preload="metadata"
+            autoPlay
+            loop
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : (
+          <div className="text-4xl">🎁</div>
+        )}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/10 pointer-events-none">
+          <div className="w-12 h-12 rounded-full bg-white/70 flex items-center justify-center text-black text-xl shadow-xl">▶</div>
         </div>
         <div className="absolute top-2 left-2 text-[10px] text-yellow-300/90 font-mono bg-black/40 px-1.5 py-0.5 rounded">
           {clip.n}
