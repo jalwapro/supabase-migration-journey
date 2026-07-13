@@ -980,6 +980,7 @@ export function useZegoRoom({
     muted,
     speakerMuted,
     videoOn,
+    speakingUids,
     micBlocked,
     micError,
     requestMic,
