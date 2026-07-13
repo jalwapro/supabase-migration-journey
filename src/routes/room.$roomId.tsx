@@ -3045,6 +3045,7 @@ function Seat({
   currentUserId?: string;
   localMuted?: boolean;
   onOpenGifters?: () => void;
+  isSpeaking?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
 
