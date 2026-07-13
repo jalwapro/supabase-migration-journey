@@ -182,7 +182,7 @@ export function useZegoRoom({
   const [muted, setMuted] = useState(true);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const speakerMutedRef = useRef(false);
-  const [videoOn, setVideoOn] = useState(video);
+  const [videoOn, setVideoOn] = useState(false);
   const [localVideoTrackFacade, setLocalVideoTrackFacade] = useState<RemoteVideoTrack | null>(null);
 
   // Wrap a ZegoLocalStream (returned by createZegoStream) in a RemoteVideoTrack-shaped
@@ -248,6 +248,8 @@ export function useZegoRoom({
   const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
   const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
+  const remoteMediaStreamsRef = useRef<Map<string, MediaStream>>(new Map());
+  const remotePlayPromisesRef = useRef<Map<string, Promise<MediaStream | null>>>(new Map());
   // Hidden <audio> elements per remote stream so viewers actually hear voices.
   const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const [speakingUids, setSpeakingUids] = useState<Set<number>>(new Set());
@@ -260,6 +262,28 @@ export function useZegoRoom({
     micErrorRef.current = message;
     setMicError(message);
     setMicBlocked(blocked);
+  }, []);
+
+  const getRemoteMediaStream = useCallback((engine: ZegoEngine, streamID: string) => {
+    const cached = remoteMediaStreamsRef.current.get(streamID);
+    if (cached) return Promise.resolve(cached);
+    const pending = remotePlayPromisesRef.current.get(streamID);
+    if (pending) return pending;
+
+    const next = Promise.resolve(
+      engine.startPlayingStream(streamID) as unknown as MediaStream | Promise<MediaStream>,
+    )
+      .then((ms) => {
+        if (ms) remoteMediaStreamsRef.current.set(streamID, ms);
+        remotePlayPromisesRef.current.delete(streamID);
+        return ms ?? null;
+      })
+      .catch(() => {
+        remotePlayPromisesRef.current.delete(streamID);
+        return null;
+      });
+    remotePlayPromisesRef.current.set(streamID, next);
+    return next;
   }, []);
 
   const closeLocalTracks = useCallback(() => {
@@ -344,23 +368,17 @@ export function useZegoRoom({
           v.style.objectFit = "cover";
           container.appendChild(v);
         }
-        // startPlayingStream returns a MediaStream in ZEGO Web SDK 3.x.
-        try {
-          const p = engine.startPlayingStream(streamID) as unknown as
-            | MediaStream
-            | Promise<MediaStream>;
-          Promise.resolve(p)
-            .then((ms) => {
-              if (ms && v) v.srcObject = ms;
-            })
-            .catch(() => { /* ignore */ });
-        } catch { /* ignore */ }
+        void getRemoteMediaStream(engine, streamID).then((ms) => {
+          if (!ms || !v || videoContainersRef.current.get(remoteUid) !== container) return;
+          v.srcObject = ms;
+          v.play().catch(() => { /* gesture may be needed */ });
+        });
       },
       stop: () => {
-        try { engine.stopPlayingStream(streamID); } catch { /* ignore */ }
         const container = videoContainersRef.current.get(remoteUid);
         const v = container?.querySelector("video") as HTMLVideoElement | null;
         if (v) v.srcObject = null;
+        videoContainersRef.current.delete(remoteUid);
       },
     };
     return {
@@ -370,7 +388,7 @@ export function useZegoRoom({
       audioTrack: audio,
       videoTrack: kind === "video" ? video : undefined,
     };
-  }, []);
+  }, [getRemoteMediaStream]);
 
   // -----------------------------------------------------------------------
   // Main join / leave effect. Preserves the Agora hook's semantics:
@@ -402,6 +420,9 @@ export function useZegoRoom({
         if (staleUser && localAudioPublishedRef.current) {
           try { stale.stopPublishingStream(streamIdFor(staleRoom, staleUser)); } catch { /* ignore */ }
         }
+        if (staleUser && localVideoStreamRef.current) {
+          try { stale.stopPublishingStream(streamIdFor(staleRoom, `${staleUser}_cam`)); } catch { /* ignore */ }
+        }
         leaveQueueRef.current = leaveQueueRef.current
           .then(async () => { try { await stale.logoutRoom(staleRoom); } catch { /* ignore */ } });
       }
@@ -410,6 +431,8 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      remoteMediaStreamsRef.current.clear();
+      remotePlayPromisesRef.current.clear();
       for (const [, el] of audioElsRef.current) {
         try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
       }
@@ -479,12 +502,18 @@ export function useZegoRoom({
               // Start playing (audio) immediately — video will be attached
               // to a container by the UI via videoTrack.play(...).
               try {
-                const p = engine.startPlayingStream(s.streamID) as unknown as
-                  | Promise<MediaStream>
-                  | MediaStream;
-                Promise.resolve(p)
+                void getRemoteMediaStream(engine, s.streamID)
                   .then((ms) => {
-                    if (!ms || isVideo) return;
+                    if (!ms) return;
+                    if (isVideo) {
+                      const container = videoContainersRef.current.get(remoteUid);
+                      const v = container?.querySelector("video") as HTMLVideoElement | null;
+                      if (v) {
+                        v.srcObject = ms;
+                        v.play().catch(() => { /* gesture may be needed */ });
+                      }
+                      return;
+                    }
                     // Attach to a hidden <audio> element so viewers hear it.
                     let el = audioElsRef.current.get(s.streamID);
                     if (!el) {
@@ -531,6 +560,8 @@ export function useZegoRoom({
           } else {
             for (const s of streamList) {
               try { engine.stopPlayingStream(s.streamID); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(s.streamID);
+              remotePlayPromisesRef.current.delete(s.streamID);
               const el = audioElsRef.current.get(s.streamID);
               if (el) {
                 try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
@@ -541,6 +572,9 @@ export function useZegoRoom({
               streamToUidRef.current.delete(s.streamID);
               if (remoteUid != null) {
                 if (wasVideo) {
+                  const container = videoContainersRef.current.get(remoteUid);
+                  const v = container?.querySelector("video") as HTMLVideoElement | null;
+                  if (v) v.srcObject = null;
                   uidVideoStreamRef.current.delete(remoteUid);
                   videoContainersRef.current.delete(remoteUid);
                 } else {
@@ -582,9 +616,19 @@ export function useZegoRoom({
             const sid = uidStreamRef.current.get(remoteUid);
             if (sid) {
               try { engine.stopPlayingStream(sid); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(sid);
+              remotePlayPromisesRef.current.delete(sid);
               streamToUidRef.current.delete(sid);
             }
+            const videoSid = uidVideoStreamRef.current.get(remoteUid);
+            if (videoSid) {
+              try { engine.stopPlayingStream(videoSid); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(videoSid);
+              remotePlayPromisesRef.current.delete(videoSid);
+              streamToUidRef.current.delete(videoSid);
+            }
             uidStreamRef.current.delete(remoteUid);
+            uidVideoStreamRef.current.delete(remoteUid);
             videoContainersRef.current.delete(remoteUid);
             setRemotes((prev) => {
               const next = new Map(prev);
@@ -694,6 +738,9 @@ export function useZegoRoom({
         if (localAudioPublishedRef.current) {
           try { e.stopPublishingStream(streamIdFor(room, userIdStr)); } catch { /* ignore */ }
         }
+        if (localVideoStreamRef.current) {
+          try { e.stopPublishingStream(streamIdFor(room, `${userIdStr}_cam`)); } catch { /* ignore */ }
+        }
       }
       if (engineRef.current === e) engineRef.current = null;
       currentRoomRef.current = null;
@@ -703,6 +750,8 @@ export function useZegoRoom({
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
+      remoteMediaStreamsRef.current.clear();
+      remotePlayPromisesRef.current.clear();
       for (const [, el] of audioElsRef.current) {
         try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
       }
@@ -847,7 +896,7 @@ export function useZegoRoom({
     const localUid = currentUserRef.current;
     if (!engine || !room || !localUid) {
       setMicIssue("Not connected to room yet — try again in a moment", false);
-      return;
+      return false;
     }
 
     if (localVideoStreamRef.current) {
@@ -862,20 +911,29 @@ export function useZegoRoom({
       localVideoStreamRef.current = null;
       setLocalVideoTrackFacade(null);
       setVideoOn(false);
-      return;
+      return true;
     }
     if (status !== "connected") {
       setMicIssue("Still connecting to room — try again in a moment", false);
-      return;
+      return false;
     }
     try {
       const cam = await engine.createZegoStream({ camera: { audio: false, video: true } });
+      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       localVideoStreamRef.current = cam;
       setLocalVideoTrackFacade(makeLocalFacade(cam));
-      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       setVideoOn(true);
       setMicIssue(null, false);
+      return true;
     } catch (e) {
+      const failed = localVideoStreamRef.current;
+      if (failed) {
+        try { engine.destroyStream(failed); } catch { /* ignore */ }
+        try { failed.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      }
+      localVideoStreamRef.current = null;
+      setLocalVideoTrackFacade(null);
+      setVideoOn(false);
       console.warn("[zego] camera failed", e);
       const err = e as { name?: string; message?: string };
       const blocked = err?.name === "NotAllowedError" || /permission|denied/i.test(err?.message ?? "");
@@ -888,6 +946,7 @@ export function useZegoRoom({
             : `Camera failed: ${err?.message ?? "unknown error"}`,
         blocked,
       );
+      return false;
     }
   }, [status, setMicIssue]);
 
