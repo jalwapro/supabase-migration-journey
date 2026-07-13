@@ -88,7 +88,7 @@ function CreateRoom() {
         is_locked: locked,
         password: locked ? password || null : null,
         category_id: categoryId,
-        agora_channel: channel,
+        rtc_channel: channel,
       })
       .select("id")
       .single();
