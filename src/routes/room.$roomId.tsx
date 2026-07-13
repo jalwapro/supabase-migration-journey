@@ -85,7 +85,7 @@ type Room = {
   viewer_count: number;
   seat_count: number;
   host_id: string;
-  agora_channel: string;
+  rtc_channel: string;
   locked_seats: number[] | null;
   milestone_awarded_at?: string | null;
   active_pk_match_id?: string | null;
@@ -227,7 +227,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,agora_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -266,7 +266,7 @@ function RoomPage() {
   }, [messages.length]);
 
   const agora = useAgoraRoom({
-    channel: room.data?.agora_channel ?? null,
+    channel: room.data?.rtc_channel ?? null,
     uid: myUid,
     publish: shouldPublish,
     video: isVideo,
