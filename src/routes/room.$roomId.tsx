@@ -1573,6 +1573,20 @@ function RoomPage() {
         </div>
       </div>
 
+      {/* Host AFK banner */}
+      {(hostAfk || afkExitLeft !== null) && (
+        <div className="relative z-20 mx-auto w-full max-w-md px-3">
+          <div className="flex items-center justify-center gap-2 rounded-full border border-amber-300/40 bg-amber-500/10 px-3 py-1.5 text-[11px] font-bold text-amber-200 backdrop-blur">
+            <span className="text-base leading-none">☕</span>
+            {afkExitLeft !== null ? (
+              <span>Host inactive — auto exit in {afkExitLeft}s</span>
+            ) : (
+              <span>Host is away — waiting for return</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo && r.seat_count === 2 ? (
         (() => {
