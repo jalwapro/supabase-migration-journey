@@ -181,7 +181,51 @@ export function useZegoRoom({
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const speakerMutedRef = useRef(false);
   const [videoOn, setVideoOn] = useState(video);
-  const [localVideoStream, setLocalVideoStream] = useState<MediaStream | null>(null);
+  const [localVideoTrackFacade, setLocalVideoTrackFacade] = useState<RemoteVideoTrack | null>(null);
+
+  // Wrap a ZegoLocalStream (returned by createZegoStream) in a RemoteVideoTrack-shaped
+  // facade so the UI can attach the local preview to any container div via `.play(el)`.
+  function makeLocalFacade(cam: MediaStream): RemoteVideoTrack {
+    const zls = cam as unknown as {
+      playVideo?: (view: HTMLElement, cfg?: unknown) => void;
+      stop?: () => void;
+    };
+    let mounted: HTMLElement | null = null;
+    return {
+      play(container: HTMLElement, opts?: { fit?: "cover" | "contain" }) {
+        mounted = container;
+        try {
+          if (typeof zls.playVideo === "function") {
+            zls.playVideo(container, { objectFit: opts?.fit ?? "cover", mirror: 1 });
+            return;
+          }
+        } catch { /* fall through */ }
+        // Fallback: raw MediaStream
+        let v = container.querySelector("video") as HTMLVideoElement | null;
+        if (!v) {
+          v = document.createElement("video");
+          v.autoplay = true;
+          v.muted = true;
+          v.playsInline = true;
+          v.style.width = "100%";
+          v.style.height = "100%";
+          v.style.objectFit = opts?.fit ?? "cover";
+          v.style.transform = "scaleX(-1)";
+          container.appendChild(v);
+        }
+        v.srcObject = cam as MediaStream;
+        v.play().catch(() => { /* gesture may be needed */ });
+      },
+      stop() {
+        const el = mounted;
+        mounted = null;
+        if (el) {
+          const v = el.querySelector("video");
+          if (v) v.remove();
+        }
+      },
+    };
+  }
   const [micBlocked, setMicBlocked] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
   const micErrorRef = useRef<string | null>(null);
@@ -222,7 +266,7 @@ export function useZegoRoom({
     if (vstream) {
       try { vstream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       localVideoStreamRef.current = null;
-      setLocalVideoStream(null);
+      setLocalVideoTrackFacade(null);
     }
     const mp = musicPlayerRef.current;
     if (mp) {
@@ -698,7 +742,7 @@ export function useZegoRoom({
         localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
       } catch { /* ignore */ }
       localVideoStreamRef.current = null;
-      setLocalVideoStream(null);
+      setLocalVideoTrackFacade(null);
       setVideoOn(false);
       return;
     }
@@ -709,7 +753,7 @@ export function useZegoRoom({
     try {
       const cam = await engine.createZegoStream({ camera: { audio: false, video: true } });
       localVideoStreamRef.current = cam;
-      setLocalVideoStream(cam);
+      setLocalVideoTrackFacade(makeLocalFacade(cam));
       engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), cam);
       setVideoOn(true);
       setMicIssue(null, false);
@@ -827,8 +871,7 @@ export function useZegoRoom({
     // Compatibility refs kept for the room component's guards.
     localAudioTrack: localStreamRef,
     localAudioPublished: localAudioPublishedRef,
-    localVideoTrack: localVideoStreamRef,
-    localVideoStream,
+    localVideoTrack: localVideoTrackFacade,
     // music
     musicPlaying,
     musicTitle,
