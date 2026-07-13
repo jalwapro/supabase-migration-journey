@@ -1,10 +1,29 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import type {
-  ZegoExpressEngine as ZegoEngine,
   ZegoLocalStreamConfig,
   ZegoStreamList,
-  ZegoServerResponse,
-} from "zego-express-engine-webrtc/sdk/code/zh/ZegoExpressEntity.d";
+} from "zego-express-engine-webrtc/sdk/code/zh/ZegoExpressEntity.web";
+// The default export is the ZegoExpressEngine class; type it structurally
+// to avoid pulling the whole class type surface (which varies between
+// SDK versions).
+type ZegoEngine = {
+  loginRoom: (roomID: string, token: string, user: { userID: string; userName: string }, config?: Record<string, unknown>) => Promise<unknown>;
+  logoutRoom: (roomID: string) => Promise<unknown>;
+  renewToken: (roomID: string, token: string) => Promise<unknown>;
+  createZegoStream: (cfg: ZegoLocalStreamConfig) => Promise<MediaStream>;
+  destroyStream: (stream: MediaStream) => void;
+  startPublishingStream: (streamID: string, stream: MediaStream, config?: Record<string, unknown>) => void;
+  stopPublishingStream: (streamID: string) => void;
+  mutePublishStreamAudio: (stream: MediaStream, mute: boolean) => void;
+  startPlayingStream: (streamID: string, options?: Record<string, unknown>) => Promise<MediaStream> | MediaStream;
+  stopPlayingStream: (streamID: string) => void;
+  mutePlayStreamAudio: (streamID: string, mute: boolean) => void;
+  setPlayVolume: (streamID: string, volume: number) => void;
+  destroyEngine: () => void;
+  setLogConfig: (cfg: Record<string, unknown>) => void;
+  on: (event: string, cb: (...args: never[]) => void) => void;
+  off: (event: string, cb?: (...args: never[]) => void) => void;
+};
 import { supabase } from "@/integrations/supabase/client";
 
 // -------------------------------------------------------------------------
