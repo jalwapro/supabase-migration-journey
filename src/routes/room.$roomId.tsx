@@ -2796,9 +2796,9 @@ function VideoTile({
       aria-label={member ? `Like ${label}` : `Take ${label}`}
     >
       {showLocalPreview ? (
-        <div ref={localVideoRef} className="absolute inset-0" />
+        <div ref={localVideoRef} className="absolute inset-0" style={filterCss !== "none" ? { filter: filterCss } : undefined} />
       ) : remote?.videoTrack ? (
-        <div ref={videoRef} className="absolute inset-0" />
+        <div ref={videoRef} className="absolute inset-0" style={filterCss !== "none" ? { filter: filterCss } : undefined} />
       ) : displayAvatar ? (
         <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
       ) : coverUrl ? (
