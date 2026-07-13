@@ -21,7 +21,6 @@ import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
-import { Route as ApiAgoraTokenRouteImport } from './routes/api/agora-token'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
@@ -142,11 +141,6 @@ const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
 const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
   id: '/api/send-email',
   path: '/api/send-email',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiAgoraTokenRoute = ApiAgoraTokenRouteImport.update({
-  id: '/api/agora-token',
-  path: '/api/agora-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -516,7 +510,6 @@ export interface FileRoutesByFullPath {
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
-  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
@@ -590,7 +583,6 @@ export interface FileRoutesByTo {
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
-  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
@@ -668,7 +660,6 @@ export interface FileRoutesById {
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
-  '/api/agora-token': typeof ApiAgoraTokenRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
@@ -746,7 +737,6 @@ export interface FileRouteTypes {
     | '/vip'
     | '/wallet'
     | '/withdraw'
-    | '/api/agora-token'
     | '/api/send-email'
     | '/api/zego-token'
     | '/messages/$peerId'
@@ -820,7 +810,6 @@ export interface FileRouteTypes {
     | '/vip'
     | '/wallet'
     | '/withdraw'
-    | '/api/agora-token'
     | '/api/send-email'
     | '/api/zego-token'
     | '/messages/$peerId'
@@ -897,7 +886,6 @@ export interface FileRouteTypes {
     | '/_authenticated/vip'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
-    | '/api/agora-token'
     | '/api/send-email'
     | '/api/zego-token'
     | '/messages_/$peerId'
@@ -955,7 +943,6 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SplashRoute: typeof SplashRoute
-  ApiAgoraTokenRoute: typeof ApiAgoraTokenRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
@@ -1049,13 +1036,6 @@ declare module '@tanstack/react-router' {
       path: '/api/send-email'
       fullPath: '/api/send-email'
       preLoaderRoute: typeof ApiSendEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/agora-token': {
-      id: '/api/agora-token'
-      path: '/api/agora-token'
-      fullPath: '/api/agora-token'
-      preLoaderRoute: typeof ApiAgoraTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -1664,7 +1644,6 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SplashRoute: SplashRoute,
-  ApiAgoraTokenRoute: ApiAgoraTokenRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
