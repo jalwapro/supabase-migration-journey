@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 
 import { useZegoRoom as useAgoraRoom, type RemoteUser } from "@/hooks/useZegoRoom";
+import { RoomDiagnostics } from "@/components/room/RoomDiagnostics";
 import {
   Flag,
   Share2,
@@ -1333,6 +1334,16 @@ function RoomPage() {
       <div className="pointer-events-none absolute -top-24 -left-24 h-[400px] w-[400px] rounded-full bg-[color:var(--secondary)]/20 blur-[120px]" />
       <div className="pointer-events-none absolute top-1/3 -right-16 h-[300px] w-[300px] rounded-full bg-[color:var(--primary)]/15 blur-[100px]" />
 
+
+      <RoomDiagnostics
+        roomId={roomId}
+        rtcChannel={room.data?.rtc_channel ?? null}
+        status={agora.status}
+        error={agora.error}
+        remotesCount={agora.remotes.size}
+        muted={agora.muted}
+        speakerMuted={agora.speakerMuted}
+      />
 
       {/* ─── Header ─────────────────────────────────────────────── */}
       <div
