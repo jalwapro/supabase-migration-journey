@@ -834,6 +834,9 @@ export function useZegoRoom({
           } catch { /* ignore */ }
         }
       }
+      for (const [, el] of audioElsRef.current) {
+        try { el.muted = next; } catch { /* ignore */ }
+      }
       return next;
     });
   }, []);
