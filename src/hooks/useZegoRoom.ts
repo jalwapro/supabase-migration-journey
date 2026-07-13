@@ -246,6 +246,10 @@ export function useZegoRoom({
   const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
   const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
+  // Hidden <audio> elements per remote stream so viewers actually hear voices.
+  const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
+  const [speakingUids, setSpeakingUids] = useState<Set<number>>(new Set());
+
 
   // -----------------------------------------------------------------------
   // Utilities
