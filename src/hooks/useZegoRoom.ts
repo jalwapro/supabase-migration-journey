@@ -243,7 +243,8 @@ export function useZegoRoom({
   // Track which remote streams belong to which uid so we can build the
   // RemoteUser facade.
   const streamToUidRef = useRef<Map<string, number>>(new Map());
-  const uidStreamRef = useRef<Map<number, string>>(new Map());
+  const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
+  const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
 
   // -----------------------------------------------------------------------
@@ -398,6 +399,7 @@ export function useZegoRoom({
       closeLocalTracks();
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
+      uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
       setRemotes(new Map());
       setMuted(true);
@@ -456,8 +458,10 @@ export function useZegoRoom({
               const remoteUidRaw = s.user?.userID ?? "";
               const remoteUid = Number(remoteUidRaw);
               if (!Number.isFinite(remoteUid) || remoteUid === uid) continue;
+              const isVideo = /_cam_main$/.test(s.streamID);
               streamToUidRef.current.set(s.streamID, remoteUid);
-              uidStreamRef.current.set(remoteUid, s.streamID);
+              if (isVideo) uidVideoStreamRef.current.set(remoteUid, s.streamID);
+              else uidStreamRef.current.set(remoteUid, s.streamID);
               // Start playing (audio) immediately — video will be attached
               // to a container by the UI via videoTrack.play(...).
               try {
@@ -469,16 +473,25 @@ export function useZegoRoom({
               if (speakerMutedRef.current) {
                 try { engine.mutePlayStreamAudio(s.streamID, true); } catch { /* ignore */ }
               }
-              const audioFacade = makeRemoteFacade(engine, remoteUid, s.streamID, "audio");
-              const videoFacade = makeRemoteFacade(engine, remoteUid, s.streamID, "video");
               setRemotes((prev) => {
                 const next = new Map(prev);
+                const existing = next.get(remoteUid);
+                const audioSid = uidStreamRef.current.get(remoteUid);
+                const videoSid = uidVideoStreamRef.current.get(remoteUid);
+                const audioFacade = audioSid
+                  ? makeRemoteFacade(engine, remoteUid, audioSid, "audio")
+                  : existing?.audioTrack
+                    ? { audioTrack: existing.audioTrack } as unknown as RemoteUser
+                    : undefined;
+                const videoFacade = videoSid
+                  ? makeRemoteFacade(engine, remoteUid, videoSid, "video")
+                  : undefined;
                 next.set(remoteUid, {
                   uid: remoteUid,
-                  hasAudio: true,
-                  hasVideo: true, // ZEGO doesn't distinguish audio-vs-video events; UI checks container
-                  audioTrack: audioFacade.audioTrack,
-                  videoTrack: videoFacade.videoTrack,
+                  hasAudio: !!audioSid,
+                  hasVideo: !!videoSid,
+                  audioTrack: audioFacade?.audioTrack ?? existing?.audioTrack,
+                  videoTrack: videoFacade?.videoTrack ?? existing?.videoTrack,
                 });
                 return next;
               });
@@ -487,13 +500,33 @@ export function useZegoRoom({
             for (const s of streamList) {
               try { engine.stopPlayingStream(s.streamID); } catch { /* ignore */ }
               const remoteUid = streamToUidRef.current.get(s.streamID);
+              const wasVideo = /_cam_main$/.test(s.streamID);
               streamToUidRef.current.delete(s.streamID);
               if (remoteUid != null) {
-                uidStreamRef.current.delete(remoteUid);
-                videoContainersRef.current.delete(remoteUid);
+                if (wasVideo) {
+                  uidVideoStreamRef.current.delete(remoteUid);
+                  videoContainersRef.current.delete(remoteUid);
+                } else {
+                  uidStreamRef.current.delete(remoteUid);
+                }
+                const stillAudio = uidStreamRef.current.get(remoteUid);
+                const stillVideo = uidVideoStreamRef.current.get(remoteUid);
                 setRemotes((prev) => {
                   const next = new Map(prev);
-                  next.delete(remoteUid);
+                  if (!stillAudio && !stillVideo) {
+                    next.delete(remoteUid);
+                  } else {
+                    const existing = next.get(remoteUid);
+                    if (existing) {
+                      next.set(remoteUid, {
+                        ...existing,
+                        hasAudio: !!stillAudio,
+                        hasVideo: !!stillVideo,
+                        videoTrack: stillVideo ? existing.videoTrack : undefined,
+                        audioTrack: stillAudio ? existing.audioTrack : undefined,
+                      });
+                    }
+                  }
                   return next;
                 });
               }
@@ -592,6 +625,7 @@ export function useZegoRoom({
       closeLocalTracks();
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
+      uidVideoStreamRef.current.clear();
       videoContainersRef.current.clear();
       setRemotes(new Map());
       setMuted(true);
