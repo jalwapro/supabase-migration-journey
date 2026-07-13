@@ -21,6 +21,8 @@ type ZegoEngine = {
   setPlayVolume: (streamID: string, volume: number) => void;
   destroyEngine: () => void;
   setLogConfig: (cfg: Record<string, unknown>) => void;
+  startSoundLevelMonitor?: (cfgOrMs?: number | { millisecond?: number }) => void;
+  stopSoundLevelMonitor?: () => void;
   on: (event: string, cb: (...args: never[]) => void) => void;
   off: (event: string, cb?: (...args: never[]) => void) => void;
 };
