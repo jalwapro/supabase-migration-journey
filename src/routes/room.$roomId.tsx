@@ -1529,6 +1529,7 @@ function RoomPage() {
             currentUserId: user?.id,
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: hostM ? agora.speakingUids.has(uidFromUuid(hostM.user_id)) : false,
           } as VideoSeatData;
 
           const renderSeat = (i: number) => {
