@@ -12,33 +12,6 @@ export const Route = createFileRoute("/_authenticated/admin/integrations")({
 
 const GROUPS: { key: string; title: string; hint: string; fields: { name: string; label: string; type?: string }[] }[] = [
   {
-    key: "agora_voice",
-    title: "Agora — Voice Rooms",
-    hint: "Alag Agora project sirf voice rooms ke liye. console.agora.io se App ID + Certificate.",
-    fields: [
-      { name: "appId", label: "App ID" },
-      { name: "appCertificate", label: "App Certificate", type: "password" },
-    ],
-  },
-  {
-    key: "agora_video",
-    title: "Agora — Video Rooms",
-    hint: "Alag Agora project sirf video rooms ke liye. Khali chhoro to voice wali ID use hogi.",
-    fields: [
-      { name: "appId", label: "App ID" },
-      { name: "appCertificate", label: "App Certificate", type: "password" },
-    ],
-  },
-  {
-    key: "agora",
-    title: "Agora — Legacy (fallback)",
-    hint: "Purani single Agora ID. Voice/Video specific na ho to yeh use hoti hai.",
-    fields: [
-      { name: "appId", label: "App ID" },
-      { name: "appCertificate", label: "App Certificate", type: "password" },
-    ],
-  },
-  {
     key: "branding",
     title: "Branding",
     hint: "Shown in headers and share previews.",
