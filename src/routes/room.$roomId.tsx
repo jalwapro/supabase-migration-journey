@@ -295,24 +295,25 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
-  // Video room: whoever occupies seat 0 (host seat) gets camera auto-on;
-  // leaving seat 0 auto-turns it off. Fixes "swap hote hi camera nahi chala".
+  // Video room: whoever occupies seat 0 (host) OR seat 1 (second camera) gets
+  // camera auto-on; leaving those seats auto-turns it off.
   const mySeatIndex = myMember?.seat_index ?? null;
   const autoCamAppliedRef = useRef<boolean>(false);
   useEffect(() => {
     if (!isVideo) return;
     if (agora.status !== "connected") return;
-    const onSeat0 = mySeatIndex === 0;
-    if (onSeat0 && !agora.videoOn && !autoCamAppliedRef.current) {
+    const onCamSeat = mySeatIndex === 0 || mySeatIndex === 1;
+    if (onCamSeat && !agora.videoOn && !autoCamAppliedRef.current) {
       autoCamAppliedRef.current = true;
       void agora.toggleVideo();
-    } else if (!onSeat0 && agora.videoOn && autoCamAppliedRef.current) {
+    } else if (!onCamSeat && agora.videoOn && autoCamAppliedRef.current) {
       autoCamAppliedRef.current = false;
       void agora.toggleVideo();
-    } else if (!onSeat0) {
+    } else if (!onCamSeat) {
       autoCamAppliedRef.current = false;
     }
   }, [isVideo, mySeatIndex, agora.status, agora.videoOn, agora]);
+
 
   // ── Host AFK detection ─────────────────────────────────────────────
   // profiles.last_seen ticks every 15s from useAuth's heartbeat.
@@ -1673,7 +1674,7 @@ function RoomPage() {
           const hostFallback = !hostM
             ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
             : null;
-          const hostTile = {
+          const hostTile: VideoSeatData = {
             index: 0,
             isHostSeat: true,
             member: hostM,
@@ -1687,7 +1688,25 @@ function RoomPage() {
             localMuted: agora.muted,
             localVideoTrack: agora.localVideoTrack ?? null,
             isSpeaking: hostM ? agora.speakingUids.has(uidFromUuid(hostM.user_id)) : false,
-          } as VideoSeatData;
+          };
+
+          const camM = seatsByIndex.get(1);
+          const camRemote = camM ? agora.remotes.get(uidFromUuid(camM.user_id)) : undefined;
+          const camTile: VideoSeatData = {
+            index: 1,
+            isHostSeat: false,
+            member: camM,
+            remote: camRemote,
+            fallbackUser: null,
+            giftPoints: giftPoints[camM?.user_id ?? ""] ?? 0,
+            onClaim: () => void takeSeat(1),
+            onLike: () => void onSeatTap(1),
+            likeCount: seatLikes[1] ?? 0,
+            currentUserId: user?.id,
+            localMuted: agora.muted,
+            localVideoTrack: agora.localVideoTrack ?? null,
+            isSpeaking: camM ? agora.speakingUids.has(uidFromUuid(camM.user_id)) : false,
+          };
 
           const renderSeat = (i: number) => {
             const m = seatsByIndex.get(i);
@@ -1730,29 +1749,36 @@ function RoomPage() {
 
           return (
             <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-              {/* Top: compact host video + 2×2 seats 1–4 */}
-              <div className="flex items-stretch gap-2.5">
-                <div className="relative h-[220px] w-[42%] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60 shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--gold)_60%,transparent)]">
+              {/* Top: 2 camera screens side-by-side (host fixed on seat 0, seat 1 swappable) */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="relative h-[220px] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60 shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--gold)_60%,transparent)]">
                   <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                  <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-[color:var(--gold)]/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-[#1a0b2e]">
+                    Host
+                  </div>
                 </div>
-                <div className="grid flex-1 grid-cols-2 gap-2">
-                  {[1, 2, 3, 4].map((i) => renderSeat(i))}
+                <div className="relative h-[220px] overflow-hidden rounded-2xl border border-[color:var(--primary)]/60 bg-black/60 shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]">
+                  <VideoTile data={camTile} coverUrl={r.cover_url} />
+                  <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-[color:var(--primary)]/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+                    Cam 2
+                  </div>
                 </div>
               </div>
 
-              {/* Bottom row: seats 5–8 */}
+              {/* Bottom row: 4 audio seats (2–5) */}
               <div className="mt-3 flex items-center justify-between px-1">
                 <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/60">
-                  Guest Seats · 8
+                  Guest Seats · 4
                 </span>
                 <span className="text-[10px] font-bold text-white/40">Audio only</span>
               </div>
               <div className="mt-1.5 grid grid-cols-4 gap-2">
-                {[5, 6, 7, 8].map((i) => renderSeat(i))}
+                {[2, 3, 4, 5].map((i) => renderSeat(i))}
               </div>
             </div>
           );
         })()
+
       ) : (
 
 
