@@ -203,9 +203,12 @@ export class CamProcessor {
       this.bgCtx.filter = "none";
     }
 
-    // 2. If any bg replacement, run segmentation to get person mask
-    let personMaskReady = false;
-    if (bgKind !== "none" && this.segmenter) {
+    // 2. If any bg replacement, run segmentation to get person mask.
+    // Run seg every 2nd draw frame — cheaper on Android, mask reused between.
+    let personMaskReady = this.lastPersonMaskFrame > 0 &&
+      (this.frameIdx - this.lastPersonMaskFrame) < 4 &&
+      bgKind !== "none";
+    if (bgKind !== "none" && this.segmenter && this.frameIdx % 2 === 0) {
       try {
         const result = this.segmenter.segmentForVideo(src, performance.now());
         const catMask = result.categoryMask;
@@ -213,8 +216,12 @@ export class CamProcessor {
           const mw = catMask.width;
           const mh = catMask.height;
           const data = catMask.getAsUint8Array();
-          const img = this.maskCtx.createImageData(mw, mh);
-          // Selfie segmenter: 0 = background, non-zero = person
+          // Reuse maskTmpCanvas at native size
+          if (this.maskTmpCanvas.width !== mw || this.maskTmpCanvas.height !== mh) {
+            this.maskTmpCanvas.width = mw;
+            this.maskTmpCanvas.height = mh;
+          }
+          const img = this.maskTmpCtx.createImageData(mw, mh);
           for (let i = 0; i < data.length; i++) {
             const isPerson = data[i] === 0 ? 0 : 255;
             const j = i * 4;
@@ -223,20 +230,16 @@ export class CamProcessor {
             img.data[j + 2] = 255;
             img.data[j + 3] = isPerson;
           }
-          // Draw to mask canvas at native size, then scale
-          const tmp = document.createElement("canvas");
-          tmp.width = mw;
-          tmp.height = mh;
-          tmp.getContext("2d")!.putImageData(img, 0, 0);
+          this.maskTmpCtx.putImageData(img, 0, 0);
           this.maskCtx.clearRect(0, 0, w, h);
-          this.maskCtx.filter = "blur(3px)"; // soften edges
-          this.maskCtx.drawImage(tmp, 0, 0, w, h);
+          this.maskCtx.filter = "blur(3px)";
+          this.maskCtx.drawImage(this.maskTmpCanvas, 0, 0, w, h);
           this.maskCtx.filter = "none";
           personMaskReady = true;
+          this.lastPersonMaskFrame = this.frameIdx;
           try { catMask.close(); } catch { /* ignore */ }
         }
       } catch (e) {
-        // segmentation failed — fall back to no bg
         console.warn("[camPipeline] segment fail", e);
       }
     }
@@ -244,41 +247,34 @@ export class CamProcessor {
     // 3. Composite output frame
     this.ctx.save();
     this.ctx.filter = "none";
-    // Fill with bg or default
     if (bgKind !== "none") {
       this.ctx.drawImage(this.bgCanvas, 0, 0, w, h);
     }
 
-    // Person layer: raw video, mirrored, with optional beauty filter
-    const personCanvas = document.createElement("canvas");
-    personCanvas.width = w;
-    personCanvas.height = h;
-    const pctx = personCanvas.getContext("2d")!;
+    // Person layer — reused canvas (no per-frame allocation)
+    const pctx = this.personCtx;
+    pctx.setTransform(1, 0, 0, 1, 0, 0);
+    pctx.clearRect(0, 0, w, h);
     pctx.save();
     pctx.translate(w, 0);
     pctx.scale(-1, 1);
     if (cfg.beautyOn) {
       const b = Math.max(0, Math.min(1, cfg.beautyIntensity));
-      // Subtle beauty: slight blur + brightness/saturation lift.
       pctx.filter = `blur(${(0.5 + b * 1.5).toFixed(2)}px) brightness(${(1 + b * 0.06).toFixed(2)}) saturate(${(1 + b * 0.15).toFixed(2)}) contrast(${(1 + b * 0.04).toFixed(2)})`;
+    } else {
+      pctx.filter = "none";
     }
     pctx.drawImage(src, w - dx - dw, dy, dw, dh);
     pctx.restore();
     pctx.filter = "none";
 
     if (personMaskReady && bgKind !== "none") {
-      // Keep only person pixels using mask alpha
       pctx.globalCompositeOperation = "destination-in";
       pctx.drawImage(this.maskCanvas, 0, 0, w, h);
       pctx.globalCompositeOperation = "source-over";
     }
 
-    if (bgKind === "none") {
-      // No background layer — just draw person full frame
-      this.ctx.drawImage(personCanvas, 0, 0, w, h);
-    } else {
-      this.ctx.drawImage(personCanvas, 0, 0, w, h);
-    }
+    this.ctx.drawImage(this.personCanvas, 0, 0, w, h);
     this.ctx.restore();
 
     // 4. Face stickers on top (in mirrored coords)
