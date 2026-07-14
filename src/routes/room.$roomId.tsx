@@ -751,27 +751,10 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost, popularity.coin_score, room.data?.milestone_awarded_at]);
 
-  // Global milestone broadcast — every open room shows a celebratory toast
-  // when any host in the app completes the popularity task.
-  useEffect(() => {
-    const ch = supabase
-      .channel(`milestone-broadcasts-${roomId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "milestone_broadcasts" },
-        (payload: { new: { host_username: string | null; room_title: string | null } }) => {
-          const who = payload.new.host_username ?? "Host";
-          toast.success(`🏆 @${who} ka popularity task complete ho gaya!`, {
-            description: payload.new.room_title ?? undefined,
-            duration: 8000,
-          });
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
-  }, [roomId]);
+  // NOTE: milestone_broadcasts subscription moved to useGlobalRealtime so it
+  // opens once per session instead of once per room-mount (scale fix P0 #3).
+
+
 
 
 
