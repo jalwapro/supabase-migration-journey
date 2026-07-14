@@ -666,10 +666,30 @@ export function useZegoRoom({
 
       engine.on(
         "roomStateUpdate",
-        (roomID: string, state: string, _errorCode: number, _extendedData: string) => {
+        (roomID: string, state: string, errorCode: number, extendedData: string) => {
           if (roomID !== channelName || !isCurrentJoin()) return;
           if (state === "CONNECTED") setStatus("connected");
           else if (state === "DISCONNECTED") setStatus("error");
+          if (errorCode) console.warn("[zego] roomStateUpdate", { state, errorCode, extendedData });
+        },
+      );
+
+      // Log publish/play errors so silent failures (token privilege, codec,
+      // autoplay policy) become visible in the console for diagnosis.
+      engine.on(
+        "publisherStateUpdate",
+        (result: { streamID: string; state: string; errorCode: number; extendedData: string }) => {
+          if (result?.errorCode || result?.state !== "PUBLISHING") {
+            console.warn("[zego] publisherStateUpdate", result);
+          }
+        },
+      );
+      engine.on(
+        "playerStateUpdate",
+        (result: { streamID: string; state: string; errorCode: number; extendedData: string }) => {
+          if (result?.errorCode || result?.state !== "PLAYING") {
+            console.warn("[zego] playerStateUpdate", result);
+          }
         },
       );
 
