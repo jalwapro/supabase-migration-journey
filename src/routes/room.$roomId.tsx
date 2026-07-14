@@ -539,13 +539,63 @@ function RoomPage() {
             navigate({ to: "/" });
             return;
           }
-          const { data } = await supabase
-            .from("room_members")
-            .select(
-              "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
-            )
-            .eq("room_id", roomId);
-          setMembers((data ?? []) as unknown as Member[]);
+          // SCALE FIX: patch state from payload instead of refetching the whole
+          // room_members list. In a 5,000-viewer room, one seat change would
+          // otherwise trigger 5,000 simultaneous full-table selects.
+          const evt = payload.eventType;
+          if (evt === "DELETE") {
+            const removed = payload.old as { user_id?: string };
+            if (!removed?.user_id) return;
+            setMembers((prev) => prev.filter((m) => m.user_id !== removed.user_id));
+            return;
+          }
+          const row = payload.new as {
+            room_id: string;
+            user_id: string;
+            seat_index: number | null;
+            is_muted: boolean;
+            is_video: boolean;
+            is_moderator?: boolean;
+          };
+          if (!row?.user_id) return;
+          // For UPDATE, merge into existing row (profile already loaded).
+          if (evt === "UPDATE") {
+            setMembers((prev) =>
+              prev.map((m) =>
+                m.user_id === row.user_id
+                  ? {
+                      ...m,
+                      seat_index: row.seat_index,
+                      is_muted: row.is_muted,
+                      is_video: row.is_video,
+                      is_moderator: row.is_moderator ?? m.is_moderator,
+                    }
+                  : m,
+              ),
+            );
+            return;
+          }
+          // INSERT: fetch just this one user's profile (single-row lookup).
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("username,avatar,frame")
+            .eq("id", row.user_id)
+            .maybeSingle();
+          const newMember: Member = {
+            room_id: row.room_id,
+            user_id: row.user_id,
+            seat_index: row.seat_index,
+            is_muted: row.is_muted,
+            is_video: row.is_video,
+            is_moderator: row.is_moderator,
+            user: (prof as Member["user"]) ?? null,
+          };
+          setMembers((prev) => {
+            if (prev.some((m) => m.user_id === row.user_id)) {
+              return prev.map((m) => (m.user_id === row.user_id ? newMember : m));
+            }
+            return [...prev, newMember];
+          });
         },
 
       )
@@ -701,27 +751,10 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost, popularity.coin_score, room.data?.milestone_awarded_at]);
 
-  // Global milestone broadcast — every open room shows a celebratory toast
-  // when any host in the app completes the popularity task.
-  useEffect(() => {
-    const ch = supabase
-      .channel(`milestone-broadcasts-${roomId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "milestone_broadcasts" },
-        (payload: { new: { host_username: string | null; room_title: string | null } }) => {
-          const who = payload.new.host_username ?? "Host";
-          toast.success(`🏆 @${who} ka popularity task complete ho gaya!`, {
-            description: payload.new.room_title ?? undefined,
-            duration: 8000,
-          });
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
-  }, [roomId]);
+  // NOTE: milestone_broadcasts subscription moved to useGlobalRealtime so it
+  // opens once per session instead of once per room-mount (scale fix P0 #3).
+
+
 
 
 

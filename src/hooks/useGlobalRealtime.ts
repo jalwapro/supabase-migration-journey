@@ -184,6 +184,9 @@ export function useGlobalRealtime() {
     ]);
 
     // Dedicated notifications channel with toast + cache refresh.
+    // ALSO carries the global `milestone_broadcasts` INSERT (unfiltered global
+    // event) so we open only one channel per session instead of one per open
+    // room tab (scale fix — was P0 #3 in the audit).
     const chNotif = supabase
       .channel(`notif:${uid}`)
       .on(
@@ -203,7 +206,19 @@ export function useGlobalRealtime() {
         },
 
       )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "milestone_broadcasts" },
+        (payload: { new: { host_username: string | null; room_title: string | null } }) => {
+          const who = payload.new.host_username ?? "Host";
+          toast.success(`🏆 @${who} ka popularity task complete ho gaya!`, {
+            description: payload.new.room_title ?? undefined,
+            duration: 8000,
+          });
+        },
+      )
       .subscribe();
+
 
     return () => {
       void supabase.removeChannel(ch1);
