@@ -682,7 +682,9 @@ export function useZegoRoom({
         "publisherStateUpdate",
         (result: { streamID: string; state: string; errorCode: number; extendedData: string }) => {
           if (result?.errorCode || result?.state !== "PUBLISHING") {
-            console.warn("[zego] publisherStateUpdate", result);
+            console.warn(
+              `[zego] publisherStateUpdate stream=${result?.streamID} state=${result?.state} errorCode=${result?.errorCode} extendedData=${result?.extendedData}`,
+            );
           }
         },
       );
@@ -690,7 +692,9 @@ export function useZegoRoom({
         "playerStateUpdate",
         (result: { streamID: string; state: string; errorCode: number; extendedData: string }) => {
           if (result?.errorCode || result?.state !== "PLAYING") {
-            console.warn("[zego] playerStateUpdate", result);
+            console.warn(
+              `[zego] playerStateUpdate stream=${result?.streamID} state=${result?.state} errorCode=${result?.errorCode} extendedData=${result?.extendedData}`,
+            );
           }
         },
       );
