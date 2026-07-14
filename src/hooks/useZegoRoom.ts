@@ -1012,12 +1012,13 @@ export function useZegoRoom({
     try {
       let publishStream: MediaStream;
       let usedProcessing = false;
+      let raw: MediaStream | null = null;
       if (options?.processStream) {
         // Grab raw camera ourselves so we can hand it to the processor.
-        const raw = await navigator.mediaDevices.getUserMedia({
+        raw = await requestBrowserMedia({
           video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
           audio: false,
-        });
+        }, "camera");
         localRawCameraRef.current = raw;
         const processed = await options.processStream(raw);
         usedProcessing = processed !== raw;
@@ -1029,7 +1030,18 @@ export function useZegoRoom({
         }
         localPipelineReleaseRef.current = options.releaseProcessor ?? null;
       } else {
-        publishStream = await engine.createZegoStream({ camera: { audio: false, video: true } });
+        raw = await requestBrowserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+          audio: false,
+        }, "camera");
+        localRawCameraRef.current = raw;
+        publishStream = await engine.createZegoStream({ custom: { source: raw } });
+      }
+      try {
+        const fresh = await fetchToken(room, Number(localUid), "publisher");
+        try { await engine.renewToken(room, fresh.token); } catch { /* ignore */ }
+      } catch (e) {
+        console.warn("[zego] camera publisher token upgrade failed", e);
       }
       engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), publishStream);
       localVideoStreamRef.current = publishStream;
@@ -1056,17 +1068,8 @@ export function useZegoRoom({
       setLocalVideoTrackFacade(null);
       setVideoOn(false);
       console.warn("[zego] camera failed", e);
-      const err = e as { name?: string; message?: string };
-      const blocked = err?.name === "NotAllowedError" || /permission|denied/i.test(err?.message ?? "");
-      const notFound = err?.name === "NotFoundError" || /not\s*found|no.*device/i.test(err?.message ?? "");
-      setMicIssue(
-        blocked
-          ? "Camera permission denied — allow camera in browser settings"
-          : notFound
-            ? "No camera found on this device"
-            : `Camera failed: ${err?.message ?? "unknown error"}`,
-        blocked,
-      );
+      const issue = describeMediaError(e, "camera");
+      setMicIssue(issue.message, issue.blocked);
       return false;
     }
   }, [status, setMicIssue]);
