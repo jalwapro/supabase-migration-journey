@@ -526,14 +526,14 @@ function RoomPage() {
             playEmojiAnimation(row.id, emoji, fromSeat, toSeat, clip);
             return;
           }
-          if (row.user_id) {
-            const { data } = await supabase
-              .from("profiles")
-              .select("username,avatar,level")
-              .eq("id", row.user_id)
-              .maybeSingle();
-            row.user = (data as Message["user"]) ?? null;
-          }
+          // SCALE FIX: sender info is denormalized on room_messages by trigger
+          // (migration 0118). No more N+1 profile lookup per message; 5k
+          // viewers × 50 msgs/sec previously = 250k profile queries/sec.
+          row.user = row.user ?? {
+            username: row.sender_username ?? null,
+            avatar: row.sender_avatar ?? null,
+            level: row.sender_level ?? null,
+          };
           setMessages((prev) => [...prev.slice(-99), row]);
         },
       )
