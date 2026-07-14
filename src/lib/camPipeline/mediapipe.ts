@@ -7,6 +7,15 @@ import type { FaceLandmarker, ImageSegmenter } from "@mediapipe/tasks-vision";
 const WASM_BASE =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm";
 
+function pickDelegate(): "GPU" | "CPU" {
+  // Android WebView / some mobile GPUs often fail MediaPipe GPU delegate
+  // silently. CPU is slower but reliable, and keeps filters working instead
+  // of disabling the whole pipeline.
+  if (typeof navigator === "undefined") return "GPU";
+  const ua = navigator.userAgent.toLowerCase();
+  return /android|wv\)|iphone|ipad|ipod/.test(ua) ? "CPU" : "GPU";
+}
+
 let visionResolverPromise: Promise<{
   FaceLandmarker: typeof FaceLandmarker;
   ImageSegmenter: typeof ImageSegmenter;
@@ -33,7 +42,7 @@ export function getFaceLandmarker(): Promise<FaceLandmarker> {
         baseOptions: {
           modelAssetPath:
             "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
-          delegate: "GPU",
+          delegate: pickDelegate(),
         },
         runningMode: "VIDEO",
         numFaces: 1,
@@ -58,7 +67,7 @@ export function getSegmenter(): Promise<ImageSegmenter> {
         baseOptions: {
           modelAssetPath:
             "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/1/selfie_segmenter.tflite",
-          delegate: "GPU",
+          delegate: pickDelegate(),
         },
         runningMode: "VIDEO",
         outputCategoryMask: true,
