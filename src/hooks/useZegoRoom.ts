@@ -127,7 +127,7 @@ async function fetchToken(
     server?: string;
     expiresAt?: number;
   };
-  if (!res.ok || !data.token || !data.appId || !data.server) {
+  if (!res.ok || !data.token || !data.appId || typeof data.server !== "string") {
     throw new Error(data.error ?? "token failed");
   }
   return {
