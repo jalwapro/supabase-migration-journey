@@ -30,35 +30,33 @@ function RoomsPage() {
     { table: "gift_sends", invalidate: [["rooms", "all"]] },
   ]);
   const rooms = useQuery({
-
     queryKey: ["rooms", "all"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("live_rooms")
-        .select(
-          "id,title,cover_url,room_type,viewer_count,is_locked,host:profiles!live_rooms_host_id_fkey(username,avatar)",
-        )
-        .eq("status", "live")
-        .limit(200);
+      // SCALE FIX: server-side pre-joined + ranked + paginated list.
+      // Removes: 200-row fetch + second popularity query + client-side sort.
+      const { data, error } = await supabase.rpc("list_live_rooms_ranked", {
+        _limit: 60,
+        _offset: 0,
+      });
       if (error) throw error;
-      const list = (data ?? []) as unknown as Room[];
-      if (list.length === 0) return list;
-      const { data: pop } = await supabase
-        .from("room_popularity")
-        .select("room_id,coin_score")
-        .in(
-          "room_id",
-          list.map((r) => r.id),
-        );
-      const map = new Map<string, number>();
-      (pop ?? []).forEach((p: { room_id: string; coin_score: number }) =>
-        map.set(p.room_id, Number(p.coin_score ?? 0)),
-      );
-      return list
-        .map((r) => ({ ...r, coin_score: map.get(r.id) ?? 0 }))
-        .sort((a, b) => (b.coin_score ?? 0) - (a.coin_score ?? 0));
+      return (data ?? []).map((r: {
+        id: string; title: string; cover_url: string | null;
+        room_type: string; viewer_count: number; is_locked: boolean;
+        host_username: string | null; host_avatar: string | null;
+        coin_score: number;
+      }) => ({
+        id: r.id,
+        title: r.title,
+        cover_url: r.cover_url,
+        room_type: r.room_type as "voice" | "video",
+        viewer_count: r.viewer_count,
+        is_locked: r.is_locked,
+        host: { username: r.host_username, avatar: r.host_avatar },
+        coin_score: Number(r.coin_score ?? 0),
+      })) as Room[];
     },
   });
+
 
   return (
     <>
