@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import type {
-  ZegoLocalStreamConfig,
-  ZegoStreamList,
-} from "zego-express-engine-webrtc/sdk/code/zh/ZegoExpressEntity.web";
+import type { ZegoStreamList } from "zego-express-engine-webrtc/sdk/code/zh/ZegoExpressEntity.web";
 // The default export is the ZegoExpressEngine class; type it structurally
 // to avoid pulling the whole class type surface (which varies between
 // SDK versions).
@@ -10,7 +7,7 @@ type ZegoEngine = {
   loginRoom: (roomID: string, token: string, user: { userID: string; userName: string }, config?: Record<string, unknown>) => Promise<unknown>;
   logoutRoom: (roomID: string) => Promise<unknown>;
   renewToken: (roomID: string, token: string) => Promise<unknown>;
-  createZegoStream: (cfg: ZegoLocalStreamConfig) => Promise<MediaStream>;
+  createZegoStream: (cfg: ZegoCreateStreamOptions) => Promise<MediaStream>;
   destroyStream: (stream: MediaStream) => void;
   startPublishingStream: (streamID: string, stream: MediaStream, config?: Record<string, unknown>) => void;
   stopPublishingStream: (streamID: string) => void;
@@ -29,6 +26,16 @@ type ZegoEngine = {
 import { supabase } from "@/integrations/supabase/client";
 
 type MediaIssueKind = "microphone" | "camera";
+type ZegoCreateStreamOptions = {
+  custom?: {
+    audio?: { source: HTMLMediaElement | MediaStream; channelCount?: 1 | 2 };
+    video?: {
+      source: HTMLMediaElement | MediaStream;
+      optimizationMode?: "default" | "motion" | "detail";
+      keyFrameInterval?: number;
+    };
+  };
+};
 
 // -------------------------------------------------------------------------
 // Module-scope SDK loader — mirrors the old useAgoraRoom pattern so mic
@@ -198,6 +205,14 @@ async function requestBrowserMedia(constraints: MediaStreamConstraints, kind: Me
     throw new Error(`${kind === "camera" ? "Camera" : "Microphone"} is not supported in this browser.`);
   }
   return navigator.mediaDevices.getUserMedia(constraints);
+}
+
+function zegoCustomAudio(source: MediaStream): ZegoCreateStreamOptions {
+  return { custom: { audio: { source, channelCount: 1 } } };
+}
+
+function zegoCustomVideo(source: MediaStream): ZegoCreateStreamOptions {
+  return { custom: { video: { source, optimizationMode: "motion", keyFrameInterval: 2 } } };
 }
 
 export function useZegoRoom({
@@ -879,7 +894,7 @@ export function useZegoRoom({
       try {
         raw = await requestBrowserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false }, "microphone");
         localRawMicRef.current = raw;
-        localStreamRef.current = await engine.createZegoStream({ custom: { source: raw } });
+        localStreamRef.current = await engine.createZegoStream(zegoCustomAudio(raw));
       } catch (e) {
         console.warn("[zego] createZegoStream failed", e);
         if (raw) {
@@ -1010,10 +1025,10 @@ export function useZegoRoom({
         const processed = await options.processStream(raw);
         usedProcessing = processed !== raw;
         if (usedProcessing) {
-          publishStream = await engine.createZegoStream({ custom: { source: processed } });
+          publishStream = await engine.createZegoStream(zegoCustomVideo(processed));
         } else {
           // Bypass — publish the raw camera directly via custom source
-          publishStream = await engine.createZegoStream({ custom: { source: raw } });
+          publishStream = await engine.createZegoStream(zegoCustomVideo(raw));
         }
         localPipelineReleaseRef.current = options.releaseProcessor ?? null;
       } else {
@@ -1022,7 +1037,7 @@ export function useZegoRoom({
           audio: false,
         }, "camera");
         localRawCameraRef.current = raw;
-        publishStream = await engine.createZegoStream({ custom: { source: raw } });
+        publishStream = await engine.createZegoStream(zegoCustomVideo(raw));
       }
       try {
         const fresh = await fetchToken(room, Number(localUid), "publisher");
