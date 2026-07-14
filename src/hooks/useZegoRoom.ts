@@ -491,8 +491,10 @@ export function useZegoRoom({
           container.appendChild(v);
         }
         void getRemoteMediaStream(engine, streamID).then((ms) => {
-          if (!ms || !v || videoContainersRef.current.get(remoteUid) !== container) return;
-          v.srcObject = ms;
+          if (!v || videoContainersRef.current.get(remoteUid) !== container) return;
+          const media = asBrowserMediaStream(ms);
+          if (!media) return;
+          try { v.srcObject = media; } catch { return; }
           v.play().catch(() => { /* gesture may be needed */ });
         });
       },
