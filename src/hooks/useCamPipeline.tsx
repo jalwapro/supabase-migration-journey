@@ -13,7 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CamPipelineConfig } from "@/lib/camPipeline/CamProcessor";
-import { CamProcessor, isBypass } from "@/lib/camPipeline/CamProcessor";
+import { CamProcessor } from "@/lib/camPipeline/CamProcessor";
 
 async function waitForVideoFrames(stream: MediaStream, timeoutMs = 2000): Promise<void> {
   const track = stream.getVideoTracks()[0];
@@ -85,13 +85,8 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
 
   const processStream = useCallback(async (raw: MediaStream) => {
     rawStreamRef.current = raw;
-    // Bypass — no filter, no beauty. Publish raw stream for max quality.
-    if (isBypass(cfg)) {
-      processorRef.current?.stop();
-      processorRef.current = null;
-      return raw;
-    }
-    // (Re)build processor on top of the fresh raw stream.
+    // Always run the processor while camera is on so live filter/beauty
+    // changes apply instantly without republishing the Zego track.
     processorRef.current?.stop();
     const proc = new CamProcessor(raw, cfg);
     processorRef.current = proc;
