@@ -1699,40 +1699,38 @@ function RoomPage() {
             isSpeaking: oppM ? agora.speakingUids.has(uidFromUuid(oppM.user_id)) : false,
           };
 
-          return (
-            <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-              {!hasOpponent ? (
-                <>
-                  <div className="relative h-[380px] w-full overflow-hidden rounded-3xl border border-[color:var(--gold)]/60 bg-black/60 shadow-[0_0_36px_-8px_color-mix(in_oklab,var(--gold)_70%,transparent)]">
-                    <VideoTile data={hostTile} coverUrl={r.cover_url} />
-                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 py-4">
-                      <span className="text-[10px] font-black uppercase tracking-[2px] text-[color:var(--gold)]">
-                        Waiting for Challenger
-                      </span>
-                      <span className="text-[11px] text-white/70">
-                        Solo stage until another host accepts your PK
-                      </span>
-                    </div>
-                  </div>
-                  {isHost && (
-                    <button
-                      onClick={() => setPkOpen(true)}
-                      className="glow-4d mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-[color:var(--gold)] to-[color:var(--primary)] py-3 text-sm font-extrabold text-primary-foreground"
-                    >
-                      ⚔️ Invite / Accept Challenger
-                    </button>
-                  )}
-                </>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60">
-                    <VideoTile data={hostTile} coverUrl={r.cover_url} />
-                  </div>
-                  <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--destructive)]/60 bg-black/60">
-                    <VideoTile data={oppTile} coverUrl={r.cover_url} />
-                  </div>
+          return !hasOpponent ? (
+            <div className="relative z-10 min-h-0 w-full flex-1">
+              <div className="absolute inset-0 overflow-hidden bg-black">
+                <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pb-24 pt-6">
+                  <span className="text-[10px] font-black uppercase tracking-[2px] text-[color:var(--gold)]">
+                    Waiting for Challenger
+                  </span>
+                  <span className="text-[11px] text-white/70">
+                    Solo stage until another host accepts your PK
+                  </span>
                 </div>
-              )}
+                {isHost && (
+                  <button
+                    onClick={() => setPkOpen(true)}
+                    className="glow-4d absolute inset-x-4 bottom-4 z-10 flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-[color:var(--gold)] to-[color:var(--primary)] py-3 text-sm font-extrabold text-primary-foreground shadow-2xl"
+                  >
+                    ⚔️ Invite / Accept Challenger
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60">
+                  <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                </div>
+                <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--destructive)]/60 bg-black/60">
+                  <VideoTile data={oppTile} coverUrl={r.cover_url} />
+                </div>
+              </div>
             </div>
           );
         })()
