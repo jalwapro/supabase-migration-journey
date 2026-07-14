@@ -27,10 +27,35 @@ export function ComboGiftButton({
   const [remaining, setRemaining] = useState(COMBO_MS);
   const startRef = useRef<number>(Date.now());
   const busyRef = useRef(false);
+  // Per-receiver tap totals for the end-of-combo summary message.
+  const tapTotalsRef = useRef<Record<string, number>>({});
+  const activeStateRef = useRef<ComboState | null>(null);
+
+  // Flush a single summary message per receiver so viewers see one gift log
+  // entry instead of N (skips 50 room_messages + realtime fan-outs per tap).
+  const flushSummary = () => {
+    const totals = tapTotalsRef.current;
+    const active = activeStateRef.current;
+    tapTotalsRef.current = {};
+    activeStateRef.current = null;
+    if (!active) return;
+    for (const [receiverId, qty] of Object.entries(totals)) {
+      if (qty < 1) continue;
+      void supabase.rpc("log_combo_gift_summary", {
+        _room_id: roomId,
+        _receiver_id: receiverId,
+        _gift_id: active.gift.id,
+        _total_quantity: qty,
+      });
+    }
+  };
 
   // Reset when a new combo starts
   useEffect(() => {
     if (!state) return;
+    // If we jumped to a new gift/target set mid-combo, flush the previous one.
+    if (activeStateRef.current && activeStateRef.current !== state) flushSummary();
+    activeStateRef.current = state;
     setCount(1);
     startRef.current = Date.now();
     setRemaining(COMBO_MS);
@@ -43,6 +68,7 @@ export function ComboGiftButton({
       const left = COMBO_MS - (Date.now() - startRef.current);
       if (left <= 0) {
         clearInterval(id);
+        flushSummary();
         onExpire();
         return;
       }
@@ -50,6 +76,7 @@ export function ComboGiftButton({
     }, 100);
     return () => clearInterval(id);
   }, [state, onExpire]);
+
 
   if (!state) return null;
   const { gift, targets, receivers } = state;
