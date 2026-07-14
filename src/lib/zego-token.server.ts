@@ -1,6 +1,5 @@
 // Server-only ZEGOCLOUD token04 generator.
-// Direct port of ZEGOCLOUD's official reference implementation
-// (github.com/ZEGOCLOUD/zego_server_assistant, token/nodejs/server/zegoServerAssistant.ts).
+// Direct port of ZEGOCLOUD's official Node reference implementation.
 // Loaded only inside a server route handler.
 import { createCipheriv, randomBytes } from "crypto";
 
@@ -10,12 +9,10 @@ function makeNonce(): number {
   return buf.readInt32BE(0);
 }
 
-function aesGcmEncrypt(plainText: string, key: string): { encrypted: Buffer; nonce: Buffer } {
-  const nonce = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", Buffer.from(key, "utf8"), nonce);
+function aesCbcEncrypt(plainText: string, key: string, iv: Buffer): Buffer {
+  const cipher = createCipheriv("aes-256-cbc", Buffer.from(key, "utf8"), iv);
   cipher.setAutoPadding(true);
-  const body = Buffer.concat([cipher.update(plainText, "utf8"), cipher.final()]);
-  return { encrypted: Buffer.concat([body, cipher.getAuthTag()]), nonce };
+  return Buffer.concat([cipher.update(plainText, "utf8"), cipher.final()]);
 }
 
 export type ZegoPrivileges = { login?: boolean; publish?: boolean };
@@ -59,19 +56,19 @@ export function generateZegoToken04(
     payload: JSON.stringify(payloadObj),
   };
 
-  const plaintText = JSON.stringify(tokenInfo);
-  const { encrypted, nonce } = aesGcmEncrypt(plaintText, serverSecret);
+  const plainText = JSON.stringify(tokenInfo);
+  const iv = randomBytes(16);
+  const encrypted = aesCbcEncrypt(plainText, serverSecret, iv);
 
   // Official token04 binary layout:
-  // expire(8, BE) | nonceLen(2, BE) | nonce | encLen(2, BE) | enc+tag | mode(1 = GCM)
+  // expire(8, BE) | ivLen(2, BE) | iv | encLen(2, BE) | encryptedPayload
   const b1 = Buffer.alloc(8);
   b1.writeBigInt64BE(BigInt(expire), 0);
   const b2 = Buffer.alloc(2);
-  b2.writeUInt16BE(nonce.byteLength, 0);
+  b2.writeUInt16BE(iv.byteLength, 0);
   const b3 = Buffer.alloc(2);
   b3.writeUInt16BE(encrypted.byteLength, 0);
-  const b4 = Buffer.from([1]);
 
-  const buf = Buffer.concat([b1, b2, nonce, b3, encrypted, b4]);
+  const buf = Buffer.concat([b1, b2, iv, b3, encrypted]);
   return { token: "04" + buf.toString("base64"), expire };
 }
