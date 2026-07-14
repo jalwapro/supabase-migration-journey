@@ -1723,16 +1723,42 @@ function RoomPage() {
             </div>
           ) : (
             <div className="relative z-10 min-h-0 w-full flex-1">
-              <div className="absolute inset-0 grid grid-cols-2 gap-0.5 overflow-hidden bg-black">
-                <div className="relative h-full w-full overflow-hidden border-r border-[color:var(--gold)]/40 bg-black">
+              {/* ambient royal glow bg */}
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 via-black to-black" />
+              {/* side blur strips */}
+              <div className="pointer-events-none absolute left-0 top-1/2 h-32 w-1.5 -translate-y-1/2 bg-rose-500/40 blur-sm" />
+              <div className="pointer-events-none absolute right-0 top-1/2 h-32 w-1.5 -translate-y-1/2 bg-sky-500/40 blur-sm" />
+
+              <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-1 pt-24">
+                {/* Host A — rose (Team Crimson) */}
+                <div className="relative overflow-hidden rounded-l-2xl border-y-2 border-l-2 border-rose-500/70 bg-black shadow-[inset_0_0_60px_rgba(244,63,94,0.25)]">
                   <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                  {/* ornate gold corners */}
+                  <div className="pointer-events-none absolute left-1 top-1 h-6 w-6 border-l-4 border-t-4 border-[color:var(--gold)]" />
+                  <div className="pointer-events-none absolute bottom-1 left-1 h-6 w-6 border-b-4 border-l-4 border-[color:var(--gold)]" />
+                  {/* Winning badge */}
+                  {pkLeader === "a" && (
+                    <div className="pointer-events-none absolute right-1 top-1 rounded bg-gradient-to-r from-amber-600 to-amber-400 px-1.5 py-0.5 text-[8px] font-black uppercase text-black shadow-lg shadow-amber-500/60">
+                      👑 Winning
+                    </div>
+                  )}
                 </div>
-                <div className="relative h-full w-full overflow-hidden border-l border-[color:var(--destructive)]/40 bg-black">
+
+                {/* Host B — sky (Team Azure) */}
+                <div className="relative overflow-hidden rounded-r-2xl border-y-2 border-r-2 border-sky-500/70 bg-black shadow-[inset_0_0_60px_rgba(59,130,246,0.25)]">
                   <VideoTile data={oppTile} coverUrl={r.cover_url} />
+                  <div className="pointer-events-none absolute right-1 top-1 h-6 w-6 border-r-4 border-t-4 border-[color:var(--gold)]" />
+                  <div className="pointer-events-none absolute bottom-1 right-1 h-6 w-6 border-b-4 border-r-4 border-[color:var(--gold)]" />
+                  {pkLeader === "b" && (
+                    <div className="pointer-events-none absolute left-1 top-1 rounded bg-gradient-to-r from-amber-600 to-amber-400 px-1.5 py-0.5 text-[8px] font-black uppercase text-black shadow-lg shadow-amber-500/60">
+                      👑 Winning
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           );
+
 
         })()
       ) : isVideo ? (
