@@ -1975,7 +1975,7 @@ function RoomPage() {
 
                 {/* Volume-style meter — always-visible red→green gradient;
                     filled rungs light up as the room progresses. */}
-                <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-3">
+                <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-8">
                   {Array.from({ length: 12 }).map((_, i) => {
                     const filledCount = Math.round((popularityPct / 100) * 12);
                     const isFilled = i < filledCount;
@@ -2072,7 +2072,7 @@ function RoomPage() {
                   {popularityPct}%
                 </span>
               </div>
-              <div className="z-10 mt-1 mb-1 flex w-full flex-1 min-h-0 flex-col-reverse gap-[2px] px-2">
+              <div className="z-10 mt-1 mb-1 flex w-full flex-1 min-h-0 flex-col-reverse gap-[2px] px-5">
                 {Array.from({ length: 10 }).map((_, i) => {
                   const filledCount = Math.round((popularityPct / 100) * 10);
                   const isFilled = i < filledCount;
