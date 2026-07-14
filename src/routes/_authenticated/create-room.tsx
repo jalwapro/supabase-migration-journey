@@ -59,52 +59,69 @@ function CreateRoom() {
         ];
 
   async function create() {
-    if (!user) return;
+    if (!user) {
+      toast.error("Sign in required");
+      return;
+    }
+    if (busy) return;
     setBusy(true);
-
-    // One live room per user — jump to existing one if already live.
-    const { data: existing } = await supabase
-      .from("live_rooms")
-      .select("id")
-      .eq("host_id", user.id)
-      .eq("status", "live")
-      .maybeSingle();
-    if (existing?.id) {
-      setBusy(false);
-      toast.info("You already have a live room — opening it.");
-      navigate({ to: "/room/$roomId", params: { roomId: existing.id } });
-      return;
-    }
-
-    const channel = `jalwa-${crypto.randomUUID().slice(0, 12)}`;
-    const { data, error } = await supabase
-      .from("live_rooms")
-      .insert({
-        host_id: user.id,
-        title: autoTitle,
-        room_type: type,
-        seat_count: seatCount,
-        pk_battle: isPkMatch,
-        is_locked: locked,
-        password: locked ? password || null : null,
-        category_id: categoryId,
-        rtc_channel: channel,
-      })
-      .select("id")
-      .single();
-    setBusy(false);
-    if (error) {
-      // Unique-index violation → user already has a live room
-      if (error.code === "23505") {
-        toast.error("You already have an active live room.");
-      } else {
-        toast.error(error.message);
+    try {
+      // One live room per user — jump to existing one if already live.
+      const { data: existing, error: existingErr } = await supabase
+        .from("live_rooms")
+        .select("id")
+        .eq("host_id", user.id)
+        .eq("status", "live")
+        .maybeSingle();
+      if (existingErr) {
+        console.error("[create-room] existing check failed", existingErr);
       }
-      return;
+      if (existing?.id) {
+        toast.info("You already have a live room — opening it.");
+        navigate({ to: "/room/$roomId", params: { roomId: existing.id } });
+        return;
+      }
+
+      const channel = `jalwa-${crypto.randomUUID().slice(0, 12)}`;
+      const { data, error } = await supabase
+        .from("live_rooms")
+        .insert({
+          host_id: user.id,
+          title: autoTitle,
+          room_type: type,
+          seat_count: seatCount,
+          pk_battle: isPkMatch,
+          is_locked: locked,
+          password: locked ? password || null : null,
+          category_id: categoryId,
+          rtc_channel: channel,
+        })
+        .select("id")
+        .maybeSingle();
+      if (error) {
+        console.error("[create-room] insert failed", error);
+        if (error.code === "23505") {
+          toast.error("You already have an active live room.");
+        } else {
+          toast.error(error.message ?? "Failed to create room");
+        }
+        return;
+      }
+      if (!data?.id) {
+        console.error("[create-room] insert returned no row");
+        toast.error("Room created but ID missing — please retry.");
+        return;
+      }
+      toast.success("You're live!");
+      navigate({ to: "/room/$roomId", params: { roomId: data.id } });
+    } catch (e) {
+      console.error("[create-room] unexpected", e);
+      toast.error((e as Error)?.message ?? "Something went wrong");
+    } finally {
+      setBusy(false);
     }
-    toast.success("You're live!");
-    navigate({ to: "/room/$roomId", params: { roomId: data.id } });
   }
+
 
 
   return (
