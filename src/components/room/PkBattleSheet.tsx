@@ -995,32 +995,8 @@ function HostBlock({
           </p>
         </div>
       </div>
-      {/* Top 3 contributors */}
-      <div className={`flex w-full items-center gap-0.5 ${isA ? "justify-start" : "justify-end"}`}>
-        {contribs.length === 0 ? (
-          <span className="text-[9px] text-white/40">no gifters yet</span>
-        ) : (
-          contribs.map((c, i) => (
-            <div
-              key={c.sender_id}
-              title={`@${c.username ?? "user"} · ${c.total.toLocaleString()}`}
-              className={`relative grid h-5 w-5 place-items-center overflow-hidden rounded-full border ${
-                i === 0 ? "border-[color:var(--gold)]" : "border-white/30"
-              } bg-black/40`}
-              style={{ marginLeft: isA && i > 0 ? "-4px" : undefined, marginRight: !isA && i > 0 ? "-4px" : undefined }}
-            >
-              {c.avatar ? (
-                <img src={c.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-[8px] font-bold text-white/60">{i + 1}</span>
-              )}
-              {i === 0 && (
-                <Crown className="absolute -top-1.5 h-2.5 w-2.5 text-[color:var(--gold)]" />
-              )}
-            </div>
-          ))
-        )}
-      </div>
+
+
     </div>
   );
 }
