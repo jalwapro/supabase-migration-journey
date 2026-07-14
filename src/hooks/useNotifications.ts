@@ -1,8 +1,6 @@
-import { useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { toast } from "sonner";
 
 export type NotificationKind =
   | "friend_request" | "friend_accept" | "dm_new" | "mention"
@@ -39,27 +37,7 @@ export function useUnreadCount() {
   });
 }
 
-export function useNotificationRealtime() {
-  const { user } = useAuth();
-  const qc = useQueryClient();
+// NOTE: `useNotificationRealtime` was removed — it duplicated the notification
+// channel already opened by `useGlobalRealtime` (see src/hooks/useGlobalRealtime.ts).
+// A second subscription per user doubled realtime channel load at scale.
 
-  useEffect(() => {
-    if (!user) return;
-    const channel = supabase
-      .channel(`notif:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          const row = payload.new as NotificationRow;
-          qc.invalidateQueries({ queryKey: ["notif-unread", user.id] });
-          qc.invalidateQueries({ queryKey: ["notif-feed", user.id] });
-          toast(row.title, { description: row.body ?? undefined });
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [user, qc]);
-}
