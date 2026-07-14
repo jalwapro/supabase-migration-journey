@@ -2090,15 +2090,8 @@ function RoomPage() {
               </button>
             ) : null}
 
-            {isVideo ? (
-              <button
-                onClick={() => setFilterSheetOpen(true)}
-                aria-label="Camera filter"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-gradient-to-br from-[color:var(--primary)]/30 to-[color:var(--secondary)]/30 text-white backdrop-blur-md"
-              >
-                <Sparkles className="h-4 w-4" />
-              </button>
-            ) : null}
+            {/* Filter/effects button removed — pipeline disabled */}
+
 
 
             {isHost && isVideo && mySeatIndex !== 0 ? (
@@ -3760,24 +3753,13 @@ function VideoSettingsSheet({
           </button>
         </div>
 
-        {/* Video FX row (video rooms only) */}
+        {/* Video FX section removed — filters/beauty/background disabled */}
         {isVideo && isHost && (
-
           <>
             <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">
-              Video Effects
+              Video
             </div>
-            <div className="mb-4 grid grid-cols-4 gap-2">
-              <FxToggle
-                icon={<Sparkles className="h-4 w-4" />}
-                label="Beauty"
-                active={cfg.beautyOn}
-                onClick={() => {
-                  const next = !cfg.beautyOn;
-                  setBeautyOn(next);
-                  onFxChange("beauty", next);
-                }}
-              />
+            <div className="mb-4 grid grid-cols-2 gap-2">
               <FxToggle
                 icon={<FlipHorizontal className="h-4 w-4" />}
                 label="Mirror"
@@ -3790,19 +3772,10 @@ function VideoSettingsSheet({
                 active={fx.hd}
                 onClick={() => onFxChange("hd", !fx.hd)}
               />
-              <FxToggle
-                icon={<Grid3x3 className="h-4 w-4" />}
-                label="Blur BG"
-                active={blurActive}
-                onClick={() => {
-                  const next = !blurActive;
-                  setBackground(next ? "blur-soft" : "none");
-                  onFxChange("blur", next);
-                }}
-              />
             </div>
           </>
         )}
+
 
         {/* Audio row — always shown */}
         <div className="mb-2 text-[11px] font-black uppercase tracking-widest text-white/50">

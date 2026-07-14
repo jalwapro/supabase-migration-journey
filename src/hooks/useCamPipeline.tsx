@@ -123,16 +123,14 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
   const setBeautyIntensity = useCallback((v: number) => setCfg((p) => ({ ...p, beautyIntensity: v })), []);
 
   const processStream = useCallback(async (raw: MediaStream) => {
+    // Filters/beauty/background pipeline disabled — publish the raw camera
+    // stream directly. Keeps CPU/battery low and avoids MediaPipe glitches.
     rawStreamRef.current = raw;
     processorRef.current?.stop();
-    const proc = new CamProcessor(raw, cfg);
-    processorRef.current = proc;
-    const out = await proc.start();
-    // Wait until the canvas capture stream is actually producing frames,
-    // otherwise ZEGO sees an empty track and aborts publish with 1103061.
-    await waitForVideoFrames(out);
-    return out;
-  }, [cfg]);
+    processorRef.current = null;
+    return raw;
+  }, []);
+
 
   const releaseProcessor = useCallback(() => {
     processorRef.current?.stop();
