@@ -221,6 +221,47 @@ function zegoCustomVideo(source: MediaStream): ZegoCreateStreamOptions {
   return { custom: { video: { source, optimizationMode: "motion", keyFrameInterval: 2 } } };
 }
 
+function asBrowserMediaStream(value: unknown): MediaStream | null {
+  if (typeof MediaStream !== "undefined" && value instanceof MediaStream) return value;
+
+  const candidate = value as {
+    stream?: unknown;
+    mediaStream?: unknown;
+    videoCaptureStream?: unknown;
+    audioCaptureStream?: unknown;
+    getTracks?: () => unknown;
+    getVideoTracks?: () => unknown;
+    getAudioTracks?: () => unknown;
+  } | null;
+
+  const nested = [
+    candidate?.stream,
+    candidate?.mediaStream,
+    candidate?.videoCaptureStream,
+    candidate?.audioCaptureStream,
+  ];
+  for (const item of nested) {
+    if (typeof MediaStream !== "undefined" && item instanceof MediaStream) return item;
+  }
+
+  try {
+    const rawTracks = typeof candidate?.getTracks === "function"
+      ? candidate.getTracks()
+      : [
+          ...(typeof candidate?.getVideoTracks === "function" ? (candidate.getVideoTracks() as unknown[]) : []),
+          ...(typeof candidate?.getAudioTracks === "function" ? (candidate.getAudioTracks() as unknown[]) : []),
+        ];
+    const tracks = Array.isArray(rawTracks)
+      ? rawTracks.filter((track): track is MediaStreamTrack => (
+          typeof MediaStreamTrack !== "undefined" && track instanceof MediaStreamTrack
+        ))
+      : [];
+    return tracks.length > 0 ? new MediaStream(tracks) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function useZegoRoom({
   channel,
   uid,
@@ -285,7 +326,9 @@ export function useZegoRoom({
           v.style.transform = mirror ? "scaleX(-1)" : "none";
           container.appendChild(v);
         }
-        v.srcObject = cam as MediaStream;
+        const media = asBrowserMediaStream(cam);
+        if (!media) return;
+        v.srcObject = media;
         v.play().catch(() => { /* gesture may be needed */ });
       },
       stop() {
@@ -344,9 +387,10 @@ export function useZegoRoom({
       engine.startPlayingStream(streamID) as unknown as MediaStream | Promise<MediaStream>,
     )
       .then((ms) => {
-        if (ms) remoteMediaStreamsRef.current.set(streamID, ms);
+        const media = asBrowserMediaStream(ms);
+        if (media) remoteMediaStreamsRef.current.set(streamID, media);
         remotePlayPromisesRef.current.delete(streamID);
-        return ms ?? null;
+        return media;
       })
       .catch(() => {
         remotePlayPromisesRef.current.delete(streamID);
