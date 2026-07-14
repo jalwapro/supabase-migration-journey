@@ -1111,7 +1111,9 @@ export function useZegoRoom({
       } catch (e) {
         console.warn("[zego] camera publisher token upgrade failed", e);
       }
-      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), publishStream);
+      const camStreamId = streamIdFor(room, `${localUid}_cam`);
+      console.log(`[zego-debug] startPublishingStream cam id=${camStreamId} tracks=${publishStream.getTracks().length}`);
+      engine.startPublishingStream(camStreamId, publishStream);
       localVideoStreamRef.current = publishStream;
       setLocalVideoTrackFacade(makeLocalFacade(publishStream, {
         // Processed frames are already mirrored by the canvas, so don't
