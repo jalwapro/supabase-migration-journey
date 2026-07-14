@@ -197,19 +197,6 @@ async function requestBrowserMedia(constraints: MediaStreamConstraints, kind: Me
   if (!navigator.mediaDevices?.getUserMedia) {
     throw new Error(`${kind === "camera" ? "Camera" : "Microphone"} is not supported in this browser.`);
   }
-  try {
-    const permissionName = kind === "camera" ? "camera" : "microphone";
-    const permissions = navigator.permissions as (Permissions & {
-      query(permissionDesc: { name: PermissionName }): Promise<PermissionStatus>;
-    }) | undefined;
-    const status = await permissions?.query({ name: permissionName as PermissionName });
-    if (status?.state === "denied") {
-      const err = new DOMException(`${permissionName} permission denied`, "NotAllowedError");
-      throw err;
-    }
-  } catch (e) {
-    if ((e as { name?: string })?.name === "NotAllowedError") throw e;
-  }
   return navigator.mediaDevices.getUserMedia(constraints);
 }
 
