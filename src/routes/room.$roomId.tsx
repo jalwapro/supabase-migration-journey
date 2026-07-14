@@ -2072,7 +2072,7 @@ function RoomPage() {
                   {popularityPct}%
                 </span>
               </div>
-              <div className="z-10 mt-1 mb-1 flex w-full flex-1 min-h-0 flex-col-reverse gap-[2px] px-2">
+              <div className="z-10 mt-1 mb-1 flex w-full flex-1 min-h-0 flex-col-reverse gap-[2px] px-5">
                 {Array.from({ length: 10 }).map((_, i) => {
                   const filledCount = Math.round((popularityPct / 100) * 10);
                   const isFilled = i < filledCount;
