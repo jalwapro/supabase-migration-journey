@@ -2028,11 +2028,11 @@ function RoomPage() {
 
           </div>
         ) : (
-          <div className="flex min-h-0 flex-1 gap-2">
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-white/10 bg-black/40 p-2 backdrop-blur-md">
-              <div className="mb-1 flex items-center justify-between border-b border-white/10 px-1 pb-1.5">
-                <span className="text-[12px] font-black text-white">Chat</span>
-                <span className="text-[9px] font-semibold uppercase tracking-wider text-white/50">Live</span>
+          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_20%] gap-2">
+            <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
+              <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
+                <span className="text-sm font-bold text-white">Room Chat</span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
               </div>
               <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
                 {messages.length === 0 && <EmptyChat />}
@@ -2048,7 +2048,7 @@ function RoomPage() {
             {/* Rank meter — same size as voice room */}
             <button
               onClick={() => openMilestoneSheet()}
-              className="relative flex h-[300px] w-[38%] shrink-0 flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
+              className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
             >
               <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
               <div className="z-10 flex w-full items-center justify-end">
@@ -2072,7 +2072,7 @@ function RoomPage() {
                   {popularityPct}%
                 </span>
               </div>
-              <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-8">
+              <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-3">
                 {Array.from({ length: 12 }).map((_, i) => {
                   const filledCount = Math.round((popularityPct / 100) * 12);
                   const isFilled = i < filledCount;
