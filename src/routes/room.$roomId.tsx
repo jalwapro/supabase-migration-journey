@@ -2070,7 +2070,7 @@ function RoomPage() {
 
 
 
-            {isHost ? (
+            {isVideo && (isHost || mySeatIndex === 0 || mySeatIndex === 1) ? (
               <button
                 onClick={() => void toggleVideoWithPipeline()}
                 aria-label={agora.videoOn ? "Turn camera off" : "Turn camera on"}
