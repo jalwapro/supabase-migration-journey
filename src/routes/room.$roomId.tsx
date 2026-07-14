@@ -1722,17 +1722,18 @@ function RoomPage() {
               </div>
             </div>
           ) : (
-            <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-              <div className="grid grid-cols-2 gap-2">
-                <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60">
+            <div className="relative z-10 min-h-0 w-full flex-1">
+              <div className="absolute inset-0 grid grid-cols-2 gap-0.5 overflow-hidden bg-black">
+                <div className="relative h-full w-full overflow-hidden border-r border-[color:var(--gold)]/40 bg-black">
                   <VideoTile data={hostTile} coverUrl={r.cover_url} />
                 </div>
-                <div className="relative h-[300px] overflow-hidden rounded-2xl border border-[color:var(--destructive)]/60 bg-black/60">
+                <div className="relative h-full w-full overflow-hidden border-l border-[color:var(--destructive)]/40 bg-black">
                   <VideoTile data={oppTile} coverUrl={r.cover_url} />
                 </div>
               </div>
             </div>
           );
+
         })()
       ) : isVideo ? (
         (() => {
