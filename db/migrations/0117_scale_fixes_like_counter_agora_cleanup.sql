@@ -30,6 +30,7 @@ update public.room_members m
    and m.seat_index = sub.seat_index;
 
 -- ---------- like_room_seat RPC — O(1) increment instead of COUNT(*) -----
+drop function if exists public.like_room_seat(uuid, int);
 create or replace function public.like_room_seat(
   _room_id uuid,
   _seat_index int
