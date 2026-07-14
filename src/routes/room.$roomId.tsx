@@ -317,31 +317,15 @@ function RoomPage() {
     [agora],
   );
 
-  // Video room: whoever occupies seat 0 (host) OR seat 1 (second camera) gets
-  // camera auto-on; leaving those seats auto-turns it off.
+  // Video room: browsers require camera permission from a real tap/click, so
+  // never auto-start camera from an effect. Only auto-stop when leaving a cam seat.
   const mySeatIndex = myMember?.seat_index ?? null;
-  const autoCamAppliedRef = useRef<boolean>(false);
   useEffect(() => {
     if (!isVideo) return;
     if (agora.status !== "connected") return;
     const onCamSeat = mySeatIndex === 0 || mySeatIndex === 1;
-    if (onCamSeat && !agora.videoOn && !autoCamAppliedRef.current) {
-      autoCamAppliedRef.current = true;
-      let cancelled = false;
-      void (async () => {
-        for (let i = 0; i < 3 && !cancelled; i += 1) {
-          const ok = await toggleVideoWithPipeline();
-          if (ok) return;
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-        if (!cancelled) autoCamAppliedRef.current = false;
-      })();
-      return () => { cancelled = true; };
-    } else if (!onCamSeat && agora.videoOn && autoCamAppliedRef.current) {
-      autoCamAppliedRef.current = false;
+    if (!onCamSeat && agora.videoOn) {
       void toggleVideoWithPipeline();
-    } else if (!onCamSeat) {
-      autoCamAppliedRef.current = false;
     }
   }, [isVideo, mySeatIndex, agora.status, agora.videoOn, toggleVideoWithPipeline]);
 
