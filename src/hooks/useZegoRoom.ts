@@ -622,6 +622,7 @@ export function useZegoRoom({
               const remoteUid = Number(remoteUidRaw);
               if (!Number.isFinite(remoteUid) || remoteUid === uid) continue;
               const isVideo = /_cam_main$/.test(s.streamID);
+              console.log(`[zego-debug] ADD stream=${s.streamID} remoteUid=${remoteUid} isVideo=${isVideo}`);
               streamToUidRef.current.set(s.streamID, remoteUid);
               if (isVideo) uidVideoStreamRef.current.set(remoteUid, s.streamID);
               else uidStreamRef.current.set(remoteUid, s.streamID);
@@ -631,12 +632,14 @@ export function useZegoRoom({
                 void getRemoteMediaStream(engine, s.streamID)
                   .then((ms) => {
                     const media = asBrowserMediaStream(ms);
+                    console.log(`[zego-debug] getRemoteMediaStream resolved stream=${s.streamID} media=${!!media} tracks=${media?.getTracks().length ?? 0}`);
                     if (!media) return;
                     if (isVideo) {
                       const container = videoContainersRef.current.get(remoteUid);
                       const v = container?.querySelector("video") as HTMLVideoElement | null;
+                      console.log(`[zego-debug] video container for uid=${remoteUid} present=${!!container} videoEl=${!!v}`);
                       if (v) {
-                        try { v.srcObject = media; } catch { return; }
+                        try { v.srcObject = media; } catch (err) { console.warn("[zego-debug] srcObject set failed", err); return; }
                         v.play().catch(() => { /* gesture may be needed */ });
                       }
                       return;
@@ -651,12 +654,12 @@ export function useZegoRoom({
                       document.body.appendChild(el);
                       audioElsRef.current.set(s.streamID, el);
                     }
-                    try { el.srcObject = media; } catch { return; }
+                    try { el.srcObject = media; } catch (err) { console.warn("[zego-debug] audio srcObject set failed", err); return; }
                     el.muted = speakerMutedRef.current;
                     el.play().catch(() => { /* gesture may be needed */ });
                   })
-                  .catch(() => { /* ignore */ });
-              } catch { /* ignore */ }
+                  .catch((err) => { console.warn("[zego-debug] getRemoteMediaStream rejected", s.streamID, err); });
+              } catch (err) { console.warn("[zego-debug] play setup threw", err); }
               if (speakerMutedRef.current) {
                 try { engine.mutePlayStreamAudio(s.streamID, true); } catch { /* ignore */ }
               }
@@ -1108,7 +1111,9 @@ export function useZegoRoom({
       } catch (e) {
         console.warn("[zego] camera publisher token upgrade failed", e);
       }
-      engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), publishStream);
+      const camStreamId = streamIdFor(room, `${localUid}_cam`);
+      console.log(`[zego-debug] startPublishingStream cam id=${camStreamId} tracks=${publishStream.getTracks().length}`);
+      engine.startPublishingStream(camStreamId, publishStream);
       localVideoStreamRef.current = publishStream;
       setLocalVideoTrackFacade(makeLocalFacade(publishStream, {
         // Processed frames are already mirrored by the canvas, so don't
