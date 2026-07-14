@@ -28,6 +28,8 @@ type ZegoEngine = {
 };
 import { supabase } from "@/integrations/supabase/client";
 
+type MediaIssueKind = "microphone" | "camera";
+
 // -------------------------------------------------------------------------
 // Module-scope SDK loader — mirrors the old useAgoraRoom pattern so mic
 // requests initiated by a click handler don't lose the user-gesture chain.
@@ -158,6 +160,57 @@ async function getEngine(appId: number, server: string): Promise<ZegoEngine> {
 
 function streamIdFor(channel: string, uid: number | string) {
   return `${channel}_${uid}_main`;
+}
+
+function describeMediaError(e: unknown, kind: MediaIssueKind): { message: string; blocked: boolean } {
+  const err = e as { name?: string; code?: string | number; message?: string; errorCode?: string | number };
+  const rawName = String(err?.name ?? err?.code ?? err?.errorCode ?? "");
+  const rawMessage = String(err?.message ?? "");
+  const label = kind === "camera" ? "Camera" : "Microphone";
+
+  if (rawName === "NotAllowedError" || rawName === "PERMISSION_DENIED" || rawName.includes("1103064")) {
+    return {
+      message: `${label} permission denied. Tap the 🔒 icon in the address bar → Site settings → ${label} → Allow.`,
+      blocked: true,
+    };
+  }
+  if (rawName === "NotFoundError" || rawName === "DEVICE_NOT_FOUND") {
+    return { message: `No ${kind} found on this device.`, blocked: false };
+  }
+  if (rawName === "NotReadableError" || rawName.includes("1103065")) {
+    return { message: `${label} is in use by another app. Close it and try again.`, blocked: false };
+  }
+  if (rawName === "SecurityError") {
+    return { message: `${label} blocked — the page must be served over HTTPS.`, blocked: true };
+  }
+  if (rawName.includes("1103061") || /get media fail/i.test(rawMessage)) {
+    return {
+      message: `${label} failed to start. Please allow ${kind} access and close any app already using it.`,
+      blocked: false,
+    };
+  }
+
+  return { message: rawMessage || `Could not access ${kind}.`, blocked: false };
+}
+
+async function requestBrowserMedia(constraints: MediaStreamConstraints, kind: MediaIssueKind): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error(`${kind === "camera" ? "Camera" : "Microphone"} is not supported in this browser.`);
+  }
+  try {
+    const permissionName = kind === "camera" ? "camera" : "microphone";
+    const permissions = navigator.permissions as (Permissions & {
+      query(permissionDesc: { name: PermissionName }): Promise<PermissionStatus>;
+    }) | undefined;
+    const status = await permissions?.query({ name: permissionName as PermissionName });
+    if (status?.state === "denied") {
+      const err = new DOMException(`${permissionName} permission denied`, "NotAllowedError");
+      throw err;
+    }
+  } catch (e) {
+    if ((e as { name?: string })?.name === "NotAllowedError") throw e;
+  }
+  return navigator.mediaDevices.getUserMedia(constraints);
 }
 
 export function useZegoRoom({
