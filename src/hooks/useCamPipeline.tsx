@@ -20,6 +20,23 @@ import {
 import type { CamPipelineConfig } from "@/lib/camPipeline/CamProcessor";
 import { CamProcessor, isBypass } from "@/lib/camPipeline/CamProcessor";
 
+/**
+ * Wait until the first video frame is available on the given MediaStream.
+ * Resolves as soon as the track reports non-zero dimensions or after a short
+ * timeout — keeps camera-on snappy while avoiding ZEGO's 1103061 error when
+ * `createZegoStream` receives an empty canvas-capture track.
+ */
+async function waitForVideoFrames(stream: MediaStream, timeoutMs = 1500): Promise<void> {
+  const track = stream.getVideoTracks()[0];
+  if (!track) return;
+  const start = performance.now();
+  while (performance.now() - start < timeoutMs) {
+    const s = track.getSettings?.();
+    if (s?.width && s?.height) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+}
+
 const LS_KEY = "cam-pipeline-cfg-v1";
 
 const DEFAULT_CFG: CamPipelineConfig = {
@@ -93,14 +110,21 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
 
   const processStream = useCallback(async (raw: MediaStream) => {
     rawStreamRef.current = raw;
-    // Always attach the processor so live config changes (sticker/background/beauty)
-    // from CamStudio take effect immediately — otherwise a camera started in
-    // bypass mode would ignore every filter until it was toggled off/on.
-    // When nothing is active, the processor just draws a mirrored frame.
-    void isBypass; // kept exported for other consumers
+    // If no effects are active, publish the raw camera directly. Wrapping in
+    // the canvas processor when there's nothing to do adds startup latency
+    // (canvas.captureStream fires before the first frame is drawn), which
+    // makes ZEGO's createZegoStream fail with 1103061 "get media fail".
+    if (isBypass(cfg)) {
+      processorRef.current?.stop();
+      processorRef.current = null;
+      return raw;
+    }
     const proc = new CamProcessor(raw, cfg);
     processorRef.current = proc;
     const out = await proc.start();
+    // Wait until the canvas capture stream is actually producing frames,
+    // otherwise ZEGO sees an empty track and aborts publish with 1103061.
+    await waitForVideoFrames(out);
     return out;
   }, [cfg]);
 
