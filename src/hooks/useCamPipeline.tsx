@@ -93,12 +93,11 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
 
   const processStream = useCallback(async (raw: MediaStream) => {
     rawStreamRef.current = raw;
-    if (isBypass(cfg)) {
-      // teardown any old processor
-      processorRef.current?.stop();
-      processorRef.current = null;
-      return raw;
-    }
+    // Always attach the processor so live config changes (sticker/background/beauty)
+    // from CamStudio take effect immediately — otherwise a camera started in
+    // bypass mode would ignore every filter until it was toggled off/on.
+    // When nothing is active, the processor just draws a mirrored frame.
+    void isBypass; // kept exported for other consumers
     const proc = new CamProcessor(raw, cfg);
     processorRef.current = proc;
     const out = await proc.start();
