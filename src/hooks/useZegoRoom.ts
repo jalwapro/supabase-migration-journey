@@ -28,6 +28,8 @@ type ZegoEngine = {
 };
 import { supabase } from "@/integrations/supabase/client";
 
+type MediaIssueKind = "microphone" | "camera";
+
 // -------------------------------------------------------------------------
 // Module-scope SDK loader — mirrors the old useAgoraRoom pattern so mic
 // requests initiated by a click handler don't lose the user-gesture chain.
@@ -125,7 +127,7 @@ async function fetchToken(
     server?: string;
     expiresAt?: number;
   };
-  if (!res.ok || !data.token || !data.appId || !data.server) {
+  if (!res.ok || !data.token || !data.appId || typeof data.server !== "string") {
     throw new Error(data.error ?? "token failed");
   }
   return {
@@ -160,6 +162,44 @@ function streamIdFor(channel: string, uid: number | string) {
   return `${channel}_${uid}_main`;
 }
 
+function describeMediaError(e: unknown, kind: MediaIssueKind): { message: string; blocked: boolean } {
+  const err = e as { name?: string; code?: string | number; message?: string; errorCode?: string | number };
+  const rawName = String(err?.name ?? err?.code ?? err?.errorCode ?? "");
+  const rawMessage = String(err?.message ?? "");
+  const label = kind === "camera" ? "Camera" : "Microphone";
+
+  if (rawName === "NotAllowedError" || rawName === "PERMISSION_DENIED" || rawName.includes("1103064")) {
+    return {
+      message: `${label} permission denied. Tap the 🔒 icon in the address bar → Site settings → ${label} → Allow.`,
+      blocked: true,
+    };
+  }
+  if (rawName === "NotFoundError" || rawName === "DEVICE_NOT_FOUND") {
+    return { message: `No ${kind} found on this device.`, blocked: false };
+  }
+  if (rawName === "NotReadableError" || rawName.includes("1103065")) {
+    return { message: `${label} is in use by another app. Close it and try again.`, blocked: false };
+  }
+  if (rawName === "SecurityError") {
+    return { message: `${label} blocked — the page must be served over HTTPS.`, blocked: true };
+  }
+  if (rawName.includes("1103061") || /get media fail/i.test(rawMessage)) {
+    return {
+      message: `${label} failed to start. Please allow ${kind} access and close any app already using it.`,
+      blocked: false,
+    };
+  }
+
+  return { message: rawMessage || `Could not access ${kind}.`, blocked: false };
+}
+
+async function requestBrowserMedia(constraints: MediaStreamConstraints, kind: MediaIssueKind): Promise<MediaStream> {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error(`${kind === "camera" ? "Camera" : "Microphone"} is not supported in this browser.`);
+  }
+  return navigator.mediaDevices.getUserMedia(constraints);
+}
+
 export function useZegoRoom({
   channel,
   uid,
@@ -173,6 +213,7 @@ export function useZegoRoom({
   const currentUserRef = useRef<string | null>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
+  const localRawMicRef = useRef<MediaStream | null>(null);
   const localAudioPublishedRef = useRef(false);
   const localVideoStreamRef = useRef<MediaStream | null>(null);
   // Raw camera stream (pre-processing) — kept so we can stop the physical
@@ -301,12 +342,18 @@ export function useZegoRoom({
       localStreamRef.current = null;
       localAudioPublishedRef.current = false;
     }
+    try { localRawMicRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    localRawMicRef.current = null;
     const vstream = localVideoStreamRef.current;
     if (vstream) {
       try { vstream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       localVideoStreamRef.current = null;
       setLocalVideoTrackFacade(null);
     }
+    try { localRawCameraRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    localRawCameraRef.current = null;
+    try { localPipelineReleaseRef.current?.(); } catch { /* ignore */ }
+    localPipelineReleaseRef.current = null;
     const mp = musicPlayerRef.current;
     if (mp) {
       try { mp.stop(); } catch { /* ignore */ }
@@ -335,6 +382,8 @@ export function useZegoRoom({
       try { stream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
     }
     localStreamRef.current = null;
+    try { localRawMicRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    localRawMicRef.current = null;
     localAudioPublishedRef.current = false;
     setMuted(true);
   }, []);
@@ -825,34 +874,21 @@ export function useZegoRoom({
       await new Promise((r) => setTimeout(r, 100));
     }
 
-    const mapMediaError = (e: unknown): string => {
-      const err = e as { name?: string; code?: string | number; message?: string };
-      const name = String(err?.name ?? err?.code ?? "");
-      if (name === "NotAllowedError" || name === "PERMISSION_DENIED" || name.includes("1103064"))
-        return "Microphone permission denied. Tap the 🔒 icon in the address bar → Site settings → Microphone → Allow.";
-      if (name === "NotFoundError" || name === "DEVICE_NOT_FOUND")
-        return "No microphone found on this device.";
-      if (name === "NotReadableError")
-        return "Microphone is in use by another app. Close it and try again.";
-      if (name === "SecurityError")
-        return "Microphone blocked — the page must be served over HTTPS.";
-      return err?.message ?? "Could not access microphone.";
-    };
-    const isPermDenied = (e: unknown) => {
-      const n = String((e as { name?: string; code?: string })?.name ??
-        (e as { code?: string })?.code ?? "");
-      return n === "NotAllowedError" || n === "PERMISSION_DENIED" || n.includes("1103064");
-    };
-
     if (!localStreamRef.current) {
+      let raw: MediaStream | null = null;
       try {
-        const cfg: ZegoLocalStreamConfig = { camera: { audio: true, video: false } };
-        localStreamRef.current = await engine.createZegoStream(cfg);
+        raw = await requestBrowserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false }, "microphone");
+        localRawMicRef.current = raw;
+        localStreamRef.current = await engine.createZegoStream({ custom: { source: raw } });
       } catch (e) {
         console.warn("[zego] createZegoStream failed", e);
-        const message = mapMediaError(e);
-        setMicIssue(message, isPermDenied(e));
-        return { ok: false, error: message };
+        if (raw) {
+          try { raw.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+          if (localRawMicRef.current === raw) localRawMicRef.current = null;
+        }
+        const issue = describeMediaError(e, "microphone");
+        setMicIssue(issue.message, issue.blocked);
+        return { ok: false, error: issue.message };
       }
     }
 
@@ -963,12 +999,13 @@ export function useZegoRoom({
     try {
       let publishStream: MediaStream;
       let usedProcessing = false;
+      let raw: MediaStream | null = null;
       if (options?.processStream) {
         // Grab raw camera ourselves so we can hand it to the processor.
-        const raw = await navigator.mediaDevices.getUserMedia({
+        raw = await requestBrowserMedia({
           video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
           audio: false,
-        });
+        }, "camera");
         localRawCameraRef.current = raw;
         const processed = await options.processStream(raw);
         usedProcessing = processed !== raw;
@@ -980,7 +1017,18 @@ export function useZegoRoom({
         }
         localPipelineReleaseRef.current = options.releaseProcessor ?? null;
       } else {
-        publishStream = await engine.createZegoStream({ camera: { audio: false, video: true } });
+        raw = await requestBrowserMedia({
+          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+          audio: false,
+        }, "camera");
+        localRawCameraRef.current = raw;
+        publishStream = await engine.createZegoStream({ custom: { source: raw } });
+      }
+      try {
+        const fresh = await fetchToken(room, Number(localUid), "publisher");
+        try { await engine.renewToken(room, fresh.token); } catch { /* ignore */ }
+      } catch (e) {
+        console.warn("[zego] camera publisher token upgrade failed", e);
       }
       engine.startPublishingStream(streamIdFor(room, `${localUid}_cam`), publishStream);
       localVideoStreamRef.current = publishStream;
@@ -1007,17 +1055,8 @@ export function useZegoRoom({
       setLocalVideoTrackFacade(null);
       setVideoOn(false);
       console.warn("[zego] camera failed", e);
-      const err = e as { name?: string; message?: string };
-      const blocked = err?.name === "NotAllowedError" || /permission|denied/i.test(err?.message ?? "");
-      const notFound = err?.name === "NotFoundError" || /not\s*found|no.*device/i.test(err?.message ?? "");
-      setMicIssue(
-        blocked
-          ? "Camera permission denied — allow camera in browser settings"
-          : notFound
-            ? "No camera found on this device"
-            : `Camera failed: ${err?.message ?? "unknown error"}`,
-        blocked,
-      );
+      const issue = describeMediaError(e, "camera");
+      setMicIssue(issue.message, issue.blocked);
       return false;
     }
   }, [status, setMicIssue]);
