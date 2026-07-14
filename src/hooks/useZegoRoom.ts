@@ -1119,9 +1119,9 @@ export function useZegoRoom({
       engine.startPublishingStream(camStreamId, publishStream);
       localVideoStreamRef.current = publishStream;
       setLocalVideoTrackFacade(makeLocalFacade(publishStream, {
-        // Processed frames are already mirrored by the canvas, so don't
-        // double-mirror in the preview element.
-        mirror: !usedProcessing,
+        // Published stream stays in normal orientation for viewers; mirror
+        // only the local self-preview so filters/background are not "ulte".
+        mirror: true,
         useZegoPlayer: !usedProcessing,
       }));
       setVideoOn(true);

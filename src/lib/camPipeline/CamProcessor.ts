@@ -95,7 +95,9 @@ export class CamProcessor {
 
   updateConfig(cfg: CamPipelineConfig) {
     this.cfg = cfg;
-    this.ensureModelsForConfig(cfg);
+    this.ensureModelsForConfig(cfg).catch((e) => {
+      console.warn("[camPipeline] model update failed", e);
+    });
   }
 
   async start(): Promise<MediaStream> {
@@ -193,7 +195,7 @@ export class CamProcessor {
 
     this.ensureModelsForConfig(cfg).catch(() => { /* retried on next config/frame */ });
 
-    // Compute source video draw rect (cover fit, mirrored self-view).
+    // Compute source video draw rect (cover fit, normal publish orientation).
     const srcW = src.videoWidth || w;
     const srcH = src.videoHeight || h;
     const scale = Math.max(w / srcW, h / srcH);
@@ -219,11 +221,7 @@ export class CamProcessor {
       }
     } else if (bgKind === "blur") {
       this.bgCtx.filter = `blur(${bgPreset?.blur ?? 12}px)`;
-      this.bgCtx.save();
-      this.bgCtx.translate(w, 0);
-      this.bgCtx.scale(-1, 1);
-      this.bgCtx.drawImage(src, w - dx - dw, dy, dw, dh);
-      this.bgCtx.restore();
+      this.bgCtx.drawImage(src, dx, dy, dw, dh);
       this.bgCtx.filter = "none";
     }
 
@@ -273,11 +271,7 @@ export class CamProcessor {
           this.maskTmpCtx.putImageData(img, 0, 0);
           this.maskCtx.clearRect(0, 0, w, h);
           this.maskCtx.filter = "blur(3px)";
-          this.maskCtx.save();
-          this.maskCtx.translate(w, 0);
-          this.maskCtx.scale(-1, 1);
           this.maskCtx.drawImage(this.maskTmpCanvas, 0, 0, w, h);
-          this.maskCtx.restore();
           this.maskCtx.filter = "none";
           personMaskReady = true;
           this.lastPersonMaskFrame = this.frameIdx;
@@ -286,6 +280,22 @@ export class CamProcessor {
       } catch (e) {
         console.warn("[camPipeline] segment fail", e);
       }
+    }
+
+    // If MediaPipe is still loading or unavailable, still show a visible
+    // background change with a soft center portrait mask instead of hiding the
+    // selected background behind the full camera frame.
+    if (bgKind !== "none" && !personMaskReady) {
+      this.maskCtx.clearRect(0, 0, w, h);
+      this.maskCtx.save();
+      this.maskCtx.filter = "blur(10px)";
+      this.maskCtx.fillStyle = "rgba(255,255,255,0.95)";
+      this.maskCtx.beginPath();
+      this.maskCtx.ellipse(w / 2, h * 0.54, w * 0.34, h * 0.5, 0, 0, Math.PI * 2);
+      this.maskCtx.fill();
+      this.maskCtx.restore();
+      this.maskCtx.filter = "none";
+      personMaskReady = true;
     }
 
     // 3. Composite output frame
@@ -300,15 +310,13 @@ export class CamProcessor {
     pctx.setTransform(1, 0, 0, 1, 0, 0);
     pctx.clearRect(0, 0, w, h);
     pctx.save();
-    pctx.translate(w, 0);
-    pctx.scale(-1, 1);
     if (cfg.beautyOn) {
       const b = Math.max(0, Math.min(1, cfg.beautyIntensity));
       pctx.filter = `blur(${(0.5 + b * 1.5).toFixed(2)}px) brightness(${(1 + b * 0.06).toFixed(2)}) saturate(${(1 + b * 0.15).toFixed(2)}) contrast(${(1 + b * 0.04).toFixed(2)})`;
     } else {
       pctx.filter = "none";
     }
-    pctx.drawImage(src, w - dx - dw, dy, dw, dh);
+    pctx.drawImage(src, dx, dy, dw, dh);
     pctx.restore();
     pctx.filter = "none";
 
@@ -321,17 +329,15 @@ export class CamProcessor {
     this.ctx.drawImage(this.personCanvas, 0, 0, w, h);
     this.ctx.restore();
 
-    // 4. Face stickers on top (in mirrored coords)
+    // 4. Face stickers on top (normal publish coords)
     const sticker = STICKER_BY_ID[cfg.stickerId];
     if (sticker && sticker.id !== "none" && this.landmarker) {
       try {
         const r = this.landmarker.detectForVideo(src, performance.now());
         const faces = r.faceLandmarks;
         if (faces && faces.length > 0) {
-          // Mirror landmark X because we mirrored the video
-          const mirrored = faces[0].map((p) => ({ x: 1 - p.x, y: p.y }));
           // Scale into our output canvas coords
-          const scaledLandmarks = mirrored.map((p) => {
+          const scaledLandmarks = faces[0].map((p) => {
             const px = (p.x * srcW * scale) + dx;
             const py = (p.y * srcH * scale) + dy;
             return { x: px / w, y: py / h };
