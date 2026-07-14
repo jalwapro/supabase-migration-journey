@@ -318,16 +318,22 @@ function RoomPage() {
   );
 
   // Video room: browsers require camera permission from a real tap/click, so
-  // never auto-start camera from an effect. Only auto-stop when leaving a cam seat.
+  // never auto-start camera from an effect. Only auto-stop when the user is
+  // explicitly on a non-cam seat. Host has no seat row (mySeatIndex=null) but
+  // always occupies cam 0, so never auto-off for host — and never auto-off
+  // when seat_index is null / still loading, otherwise turning the camera on
+  // races the effect and immediately stops the publish (NO_PUBLISH).
   const mySeatIndex = myMember?.seat_index ?? null;
   useEffect(() => {
     if (!isVideo) return;
     if (agora.status !== "connected") return;
+    if (isHost) return;
+    if (mySeatIndex === null) return;
     const onCamSeat = mySeatIndex === 0 || mySeatIndex === 1;
     if (!onCamSeat && agora.videoOn) {
       void toggleVideoWithPipeline();
     }
-  }, [isVideo, mySeatIndex, agora.status, agora.videoOn, toggleVideoWithPipeline]);
+  }, [isVideo, isHost, mySeatIndex, agora.status, agora.videoOn, toggleVideoWithPipeline]);
 
 
   // ── Host AFK detection ─────────────────────────────────────────────
