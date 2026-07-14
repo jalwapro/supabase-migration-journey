@@ -47,21 +47,10 @@ function isRoyalRoseGift(name: string | null | undefined) {
 }
 
 function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
+  // Show static PNG thumbnail everywhere in the gift box.
+  // Animation only plays after Send (via jalwa:gift-sent event in room).
   if (isRoyalRoseGift(gift.name)) {
-    return (
-      <video
-        src={ROYAL_ROSE_MP4_URL}
-        poster={ROYAL_ROSE_THUMB_URL}
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="h-full w-full object-cover"
-      />
-    );
-  }
-  if (gift.clip_path && gift.clip_type === "mp4") {
-    return <video src={resolveLuxuryGiftMp4Url(gift.clip_path) ?? gift.clip_path} autoPlay loop muted playsInline preload="metadata" className="h-full w-full object-cover" />;
+    return <img src={ROYAL_ROSE_THUMB_URL} alt="" className="h-full w-full object-contain" />;
   }
   if (gift.image_url) {
     return <img src={gift.image_url} alt="" className="h-full w-full object-contain" />;
