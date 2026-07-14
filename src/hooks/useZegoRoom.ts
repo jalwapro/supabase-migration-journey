@@ -887,34 +887,21 @@ export function useZegoRoom({
       await new Promise((r) => setTimeout(r, 100));
     }
 
-    const mapMediaError = (e: unknown): string => {
-      const err = e as { name?: string; code?: string | number; message?: string };
-      const name = String(err?.name ?? err?.code ?? "");
-      if (name === "NotAllowedError" || name === "PERMISSION_DENIED" || name.includes("1103064"))
-        return "Microphone permission denied. Tap the 🔒 icon in the address bar → Site settings → Microphone → Allow.";
-      if (name === "NotFoundError" || name === "DEVICE_NOT_FOUND")
-        return "No microphone found on this device.";
-      if (name === "NotReadableError")
-        return "Microphone is in use by another app. Close it and try again.";
-      if (name === "SecurityError")
-        return "Microphone blocked — the page must be served over HTTPS.";
-      return err?.message ?? "Could not access microphone.";
-    };
-    const isPermDenied = (e: unknown) => {
-      const n = String((e as { name?: string; code?: string })?.name ??
-        (e as { code?: string })?.code ?? "");
-      return n === "NotAllowedError" || n === "PERMISSION_DENIED" || n.includes("1103064");
-    };
-
     if (!localStreamRef.current) {
+      let raw: MediaStream | null = null;
       try {
-        const cfg: ZegoLocalStreamConfig = { camera: { audio: true, video: false } };
-        localStreamRef.current = await engine.createZegoStream(cfg);
+        raw = await requestBrowserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false }, "microphone");
+        localRawMicRef.current = raw;
+        localStreamRef.current = await engine.createZegoStream({ custom: { source: raw } });
       } catch (e) {
         console.warn("[zego] createZegoStream failed", e);
-        const message = mapMediaError(e);
-        setMicIssue(message, isPermDenied(e));
-        return { ok: false, error: message };
+        if (raw) {
+          try { raw.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+          if (localRawMicRef.current === raw) localRawMicRef.current = null;
+        }
+        const issue = describeMediaError(e, "microphone");
+        setMicIssue(issue.message, issue.blocked);
+        return { ok: false, error: issue.message };
       }
     }
 
