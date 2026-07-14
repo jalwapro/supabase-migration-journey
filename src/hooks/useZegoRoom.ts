@@ -872,6 +872,12 @@ export function useZegoRoom({
   // Publish mic — same contract as Agora hook.
   // -----------------------------------------------------------------------
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+    const pendingRaw = !localStreamRef.current
+      ? requestBrowserMedia(
+          { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false },
+          "microphone",
+        )
+      : null;
     let engine = engineRef.current;
     for (let i = 0; i < 20 && !engineRef.current; i++) {
       await new Promise((r) => setTimeout(r, 100));
@@ -880,6 +886,9 @@ export function useZegoRoom({
     const room = currentRoomRef.current;
     const localUid = currentUserRef.current;
     if (!engine || !room || !localUid) {
+      if (pendingRaw) {
+        try { (await pendingRaw).getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      }
       const message = "Room connection not ready yet. Please try again in a moment.";
       setMicIssue(message, false);
       return { ok: false, error: message };
@@ -892,7 +901,8 @@ export function useZegoRoom({
     if (!localStreamRef.current) {
       let raw: MediaStream | null = null;
       try {
-        raw = await requestBrowserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false }, "microphone");
+        raw = await pendingRaw;
+        if (!raw) throw new Error("Microphone unavailable");
         localRawMicRef.current = raw;
         localStreamRef.current = await engine.createZegoStream(zegoCustomAudio(raw));
       } catch (e) {
