@@ -2,10 +2,10 @@
  * CamPipelineProvider — global state for camera studio effects.
  * Replaces the old CSS-only CamFilter system.
  *
- * The provider only holds the CONFIG. The actual CamProcessor is instantiated
- * inside useZegoRoom's toggleVideo path when the user turns camera on,
- * because we need the raw camera MediaStream first (obtained via
- * navigator.mediaDevices.getUserMedia before publishing).
+ * The provider holds the CONFIG plus the live CamProcessor. The processor is
+ * created inside useZegoRoom's camera-toggle path because we need the raw
+ * camera MediaStream first, but once created it stays active even when no
+ * effect is selected so filter changes apply immediately while camera is on.
  */
 import {
   createContext,
@@ -18,7 +18,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CamPipelineConfig } from "@/lib/camPipeline/CamProcessor";
-import { CamProcessor, isBypass } from "@/lib/camPipeline/CamProcessor";
+import { CamProcessor } from "@/lib/camPipeline/CamProcessor";
 
 /**
  * Wait until the first video frame is available on the given MediaStream.
@@ -26,14 +26,28 @@ import { CamProcessor, isBypass } from "@/lib/camPipeline/CamProcessor";
  * timeout — keeps camera-on snappy while avoiding ZEGO's 1103061 error when
  * `createZegoStream` receives an empty canvas-capture track.
  */
-async function waitForVideoFrames(stream: MediaStream, timeoutMs = 1500): Promise<void> {
+async function waitForVideoFrames(stream: MediaStream, timeoutMs = 2500): Promise<void> {
   const track = stream.getVideoTracks()[0];
   if (!track) return;
+  if (typeof document === "undefined") return;
+
+  const probe = document.createElement("video");
+  probe.muted = true;
+  probe.playsInline = true;
+  probe.autoplay = true;
+  probe.srcObject = stream;
+  void probe.play().catch(() => {});
+
   const start = performance.now();
-  while (performance.now() - start < timeoutMs) {
-    const s = track.getSettings?.();
-    if (s?.width && s?.height) return;
-    await new Promise((r) => setTimeout(r, 50));
+  try {
+    while (performance.now() - start < timeoutMs) {
+      const s = track.getSettings?.();
+      if (probe.readyState >= 2 && (probe.videoWidth > 0 || !!s?.width) && (probe.videoHeight > 0 || !!s?.height)) return;
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  } finally {
+    try { probe.pause(); } catch { /* ignore */ }
+    try { probe.srcObject = null; } catch { /* ignore */ }
   }
 }
 
@@ -110,15 +124,7 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
 
   const processStream = useCallback(async (raw: MediaStream) => {
     rawStreamRef.current = raw;
-    // If no effects are active, publish the raw camera directly. Wrapping in
-    // the canvas processor when there's nothing to do adds startup latency
-    // (canvas.captureStream fires before the first frame is drawn), which
-    // makes ZEGO's createZegoStream fail with 1103061 "get media fail".
-    if (isBypass(cfg)) {
-      processorRef.current?.stop();
-      processorRef.current = null;
-      return raw;
-    }
+    processorRef.current?.stop();
     const proc = new CamProcessor(raw, cfg);
     processorRef.current = proc;
     const out = await proc.start();
