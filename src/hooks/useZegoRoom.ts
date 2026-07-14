@@ -226,6 +226,7 @@ export function useZegoRoom({
   const currentUserRef = useRef<string | null>(null);
 
   const localStreamRef = useRef<MediaStream | null>(null);
+  const localRawMicRef = useRef<MediaStream | null>(null);
   const localAudioPublishedRef = useRef(false);
   const localVideoStreamRef = useRef<MediaStream | null>(null);
   // Raw camera stream (pre-processing) — kept so we can stop the physical
@@ -354,12 +355,18 @@ export function useZegoRoom({
       localStreamRef.current = null;
       localAudioPublishedRef.current = false;
     }
+    try { localRawMicRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    localRawMicRef.current = null;
     const vstream = localVideoStreamRef.current;
     if (vstream) {
       try { vstream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       localVideoStreamRef.current = null;
       setLocalVideoTrackFacade(null);
     }
+    try { localRawCameraRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    localRawCameraRef.current = null;
+    try { localPipelineReleaseRef.current?.(); } catch { /* ignore */ }
+    localPipelineReleaseRef.current = null;
     const mp = musicPlayerRef.current;
     if (mp) {
       try { mp.stop(); } catch { /* ignore */ }
@@ -388,6 +395,8 @@ export function useZegoRoom({
       try { stream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
     }
     localStreamRef.current = null;
+    try { localRawMicRef.current?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    localRawMicRef.current = null;
     localAudioPublishedRef.current = false;
     setMuted(true);
   }, []);
