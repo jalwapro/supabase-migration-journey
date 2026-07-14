@@ -1737,7 +1737,7 @@ function RoomPage() {
                   <div className="pointer-events-none absolute left-1 top-1 h-6 w-6 border-l-4 border-t-4 border-[color:var(--gold)]" />
                   <div className="pointer-events-none absolute bottom-1 left-1 h-6 w-6 border-b-4 border-l-4 border-[color:var(--gold)]" />
                   {/* Winning badge */}
-                  {pkLeader === "a" && (
+                  {false && (
                     <div className="pointer-events-none absolute right-1 top-1 rounded bg-gradient-to-r from-amber-600 to-amber-400 px-1.5 py-0.5 text-[8px] font-black uppercase text-black shadow-lg shadow-amber-500/60">
                       👑 Winning
                     </div>
@@ -1749,7 +1749,7 @@ function RoomPage() {
                   <VideoTile data={oppTile} coverUrl={r.cover_url} />
                   <div className="pointer-events-none absolute right-1 top-1 h-6 w-6 border-r-4 border-t-4 border-[color:var(--gold)]" />
                   <div className="pointer-events-none absolute bottom-1 right-1 h-6 w-6 border-b-4 border-r-4 border-[color:var(--gold)]" />
-                  {pkLeader === "b" && (
+                  {false && (
                     <div className="pointer-events-none absolute left-1 top-1 rounded bg-gradient-to-r from-amber-600 to-amber-400 px-1.5 py-0.5 text-[8px] font-black uppercase text-black shadow-lg shadow-amber-500/60">
                       👑 Winning
                     </div>
