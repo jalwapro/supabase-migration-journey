@@ -54,55 +54,58 @@ function MessagesPage() {
     },
   });
 
-  // DM inbox — all conversations
+  // DM inbox — all conversations.
+  // SCALE FIX: server-side aggregation via dm_inbox RPC. Was: fetch last 300
+  // messages to browser, build per-peer index client-side (missed
+  // conversations whose latest msg was #301, and shipped 300 rows to every
+  // load). Now: one query, ~50 rows, correct.
   const inbox = useQuery({
     queryKey: ["dm_index", uid],
     enabled: !!uid,
     queryFn: async () => {
-      if (!uid) return { list: [], peers: new Map<string, PeerProfile>() };
-      const { data, error } = await supabase
-        .from("direct_messages")
-        .select("sender_id,recipient_id,message,kind,created_at,read_at,deleted_at")
-        .or(`sender_id.eq.${uid},recipient_id.eq.${uid}`)
-        .order("created_at", { ascending: false })
-        .limit(300);
+      if (!uid) return { list: [] as LastMsg[], peers: new Map<string, PeerProfile>() };
+      const { data, error } = await supabase.rpc("dm_inbox", {
+        _limit: 50,
+        _offset: 0,
+      });
       if (error) throw error;
-      const map = new Map<string, LastMsg>();
-      for (const m of data ?? []) {
-        const peer = m.sender_id === uid ? m.recipient_id : m.sender_id;
-        const preview =
-          m.deleted_at ? "🚫 Message deleted"
-          : m.kind === "image" ? "📷 Photo"
-          : m.kind === "video" ? "🎬 Video"
-          : m.kind === "voice" ? "🎙️ Voice message"
-          : m.kind === "album" ? "🖼️ Shared from gallery"
-          : m.kind === "file" ? "📎 File"
-          : (m.message ?? "");
-        const existing = map.get(peer);
-        if (!existing) {
-          map.set(peer, {
-            peer_id: peer,
-            text: preview,
-            created_at: m.created_at,
-            unread: m.recipient_id === uid && !m.read_at ? 1 : 0,
-          });
-        } else if (m.recipient_id === uid && !m.read_at) {
-          existing.unread += 1;
-        }
-      }
-      const list = Array.from(map.values());
-      const ids = list.map((m) => m.peer_id);
-      if (!ids.length) return { list, peers: new Map<string, PeerProfile>() };
-      const { data: profs } = await supabase
-        .from("profiles")
-        .select("id,username,avatar,user_code")
-        .in("id", ids);
+      type Row = {
+        peer_id: string;
+        peer_username: string | null;
+        peer_avatar: string | null;
+        peer_user_code: string | null;
+        last_message: string | null;
+        last_kind: string | null;
+        last_deleted: boolean;
+        last_created_at: string;
+        unread: number;
+      };
+      const rows = (data ?? []) as Row[];
+      const list: LastMsg[] = rows.map((r) => ({
+        peer_id: r.peer_id,
+        text: r.last_deleted
+          ? "🚫 Message deleted"
+          : r.last_kind === "image" ? "📷 Photo"
+          : r.last_kind === "video" ? "🎬 Video"
+          : r.last_kind === "voice" ? "🎙️ Voice message"
+          : r.last_kind === "album" ? "🖼️ Shared from gallery"
+          : r.last_kind === "file"  ? "📎 File"
+          : (r.last_message ?? ""),
+        created_at: r.last_created_at,
+        unread: r.unread,
+      }));
       const peers = new Map<string, PeerProfile>(
-        (profs ?? []).map((p: any) => [p.id, p]),
+        rows.map((r) => [r.peer_id, {
+          id: r.peer_id,
+          username: r.peer_username,
+          avatar: r.peer_avatar,
+          user_code: r.peer_user_code,
+        }]),
       );
       return { list, peers };
     },
   });
+
 
   // Realtime — invalidate on DM or follow change. DM sender/recipient filters
   // stay on separate channels so both directions keep the inbox live.
