@@ -1,11 +1,6 @@
 /**
- * CamPipelineProvider — global state for camera studio effects.
- * Replaces the old CSS-only CamFilter system.
- *
- * The provider holds the CONFIG plus the live CamProcessor. The processor is
- * created inside useZegoRoom's camera-toggle path because we need the raw
- * camera MediaStream first, but once created it stays active even when no
- * effect is selected so filter changes apply immediately while camera is on.
+ * CamPipelineProvider — global state for camera studio filters + beauty.
+ * Uses a canvas-2D `ctx.filter` pipeline (no MediaPipe, no ML models).
  */
 import {
   createContext,
@@ -20,29 +15,19 @@ import {
 import type { CamPipelineConfig } from "@/lib/camPipeline/CamProcessor";
 import { CamProcessor } from "@/lib/camPipeline/CamProcessor";
 
-/**
- * Wait until the first video frame is available on the given MediaStream.
- * Resolves as soon as the track reports non-zero dimensions or after a short
- * timeout — keeps camera-on snappy while avoiding ZEGO's 1103061 error when
- * `createZegoStream` receives an empty canvas-capture track.
- */
-async function waitForVideoFrames(stream: MediaStream, timeoutMs = 2500): Promise<void> {
+async function waitForVideoFrames(stream: MediaStream, timeoutMs = 2000): Promise<void> {
   const track = stream.getVideoTracks()[0];
-  if (!track) return;
-  if (typeof document === "undefined") return;
-
+  if (!track || typeof document === "undefined") return;
   const probe = document.createElement("video");
   probe.muted = true;
   probe.playsInline = true;
   probe.autoplay = true;
   probe.srcObject = stream;
   void probe.play().catch(() => {});
-
   const start = performance.now();
   try {
     while (performance.now() - start < timeoutMs) {
-      const s = track.getSettings?.();
-      if (probe.readyState >= 2 && (probe.videoWidth > 0 || !!s?.width) && (probe.videoHeight > 0 || !!s?.height)) return;
+      if (probe.readyState >= 2 && probe.videoWidth > 0 && probe.videoHeight > 0) return;
       await new Promise((r) => setTimeout(r, 50));
     }
   } finally {
@@ -51,30 +36,20 @@ async function waitForVideoFrames(stream: MediaStream, timeoutMs = 2500): Promis
   }
 }
 
-const LS_KEY = "cam-pipeline-cfg-v1";
+const LS_KEY = "cam-pipeline-cfg-v2";
 
 const DEFAULT_CFG: CamPipelineConfig = {
-  stickerId: "none",
-  backgroundId: "none",
-  customBgUrl: null,
+  filterId: "none",
   beautyOn: false,
   beautyIntensity: 0.5,
 };
 
 interface CamPipelineCtx {
   cfg: CamPipelineConfig;
-  setSticker: (id: string) => void;
-  setBackground: (id: string) => void;
-  setCustomBg: (url: string | null) => void;
+  setFilter: (id: string) => void;
   setBeautyOn: (on: boolean) => void;
   setBeautyIntensity: (v: number) => void;
-  /**
-   * Called by the room's camera-toggle path to build/process a stream.
-   * Returns either the raw stream (if bypass) or a canvas-processed one.
-   * Keeps track of the processor so future config edits reach it live.
-   */
   processStream: (raw: MediaStream) => Promise<MediaStream>;
-  /** Tear down the internal processor when camera turns off. */
   releaseProcessor: () => void;
 }
 
@@ -87,7 +62,7 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
       const raw = localStorage.getItem(LS_KEY);
       if (!raw) return DEFAULT_CFG;
       const parsed = JSON.parse(raw) as Partial<CamPipelineConfig>;
-      return { ...DEFAULT_CFG, ...parsed, customBgUrl: null };
+      return { ...DEFAULT_CFG, ...parsed };
     } catch {
       return DEFAULT_CFG;
     }
@@ -96,41 +71,29 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
   const processorRef = useRef<CamProcessor | null>(null);
   const rawStreamRef = useRef<MediaStream | null>(null);
 
-  // Persist config
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        LS_KEY,
-        JSON.stringify({
-          stickerId: cfg.stickerId,
-          backgroundId: cfg.backgroundId,
-          beautyOn: cfg.beautyOn,
-          beautyIntensity: cfg.beautyIntensity,
-        }),
-      );
-    } catch { /* ignore */ }
+    try { localStorage.setItem(LS_KEY, JSON.stringify(cfg)); } catch { /* ignore */ }
   }, [cfg]);
 
-  // Push config to live processor
   useEffect(() => {
     processorRef.current?.updateConfig(cfg);
   }, [cfg]);
 
-  const setSticker = useCallback((id: string) => setCfg((p) => ({ ...p, stickerId: id })), []);
-  const setBackground = useCallback((id: string) => setCfg((p) => ({ ...p, backgroundId: id, customBgUrl: null })), []);
-  const setCustomBg = useCallback((url: string | null) => setCfg((p) => ({ ...p, customBgUrl: url })), []);
+  const setFilter = useCallback((id: string) => setCfg((p) => ({ ...p, filterId: id })), []);
   const setBeautyOn = useCallback((on: boolean) => setCfg((p) => ({ ...p, beautyOn: on })), []);
   const setBeautyIntensity = useCallback((v: number) => setCfg((p) => ({ ...p, beautyIntensity: v })), []);
 
   const processStream = useCallback(async (raw: MediaStream) => {
-    // Filters/beauty/background pipeline disabled — publish the raw camera
-    // stream directly. Keeps CPU/battery low and avoids MediaPipe glitches.
     rawStreamRef.current = raw;
+    // Always run the processor while camera is on so live filter/beauty
+    // changes apply instantly without republishing the Zego track.
     processorRef.current?.stop();
-    processorRef.current = null;
-    return raw;
-  }, []);
-
+    const proc = new CamProcessor(raw, cfg);
+    processorRef.current = proc;
+    const out = await proc.start();
+    await waitForVideoFrames(out).catch(() => {});
+    return out;
+  }, [cfg]);
 
   const releaseProcessor = useCallback(() => {
     processorRef.current?.stop();
@@ -139,17 +102,8 @@ export function CamPipelineProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<CamPipelineCtx>(
-    () => ({
-      cfg,
-      setSticker,
-      setBackground,
-      setCustomBg,
-      setBeautyOn,
-      setBeautyIntensity,
-      processStream,
-      releaseProcessor,
-    }),
-    [cfg, setSticker, setBackground, setCustomBg, setBeautyOn, setBeautyIntensity, processStream, releaseProcessor],
+    () => ({ cfg, setFilter, setBeautyOn, setBeautyIntensity, processStream, releaseProcessor }),
+    [cfg, setFilter, setBeautyOn, setBeautyIntensity, processStream, releaseProcessor],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
