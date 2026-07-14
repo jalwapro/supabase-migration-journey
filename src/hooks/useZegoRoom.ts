@@ -28,12 +28,12 @@ import { supabase } from "@/integrations/supabase/client";
 type MediaIssueKind = "microphone" | "camera";
 type ZegoCreateStreamOptions = {
   custom?: {
-    audio?: { source: HTMLMediaElement | MediaStream; channelCount?: 1 | 2 };
-    video?: {
-      source: HTMLMediaElement | MediaStream;
-      optimizationMode?: "default" | "motion" | "detail";
-      keyFrameInterval?: number;
-    };
+    source: HTMLMediaElement | MediaStream;
+    channelCount?: 1 | 2;
+    videoOptimizationMode?: "default" | "motion" | "detail";
+    keyFrameInterval?: number;
+    bitrate?: number;
+    audioBitrate?: number;
   };
 };
 
