@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
+import { jwtVerify } from "jose";
 
 function resolveSupabaseUrl() {
   return (
@@ -22,6 +22,49 @@ function json(body: unknown, status = 200) {
   });
 }
 
+// SCALE FIX: verify Supabase JWTs locally instead of calling
+// `auth.getUser(bearer)` — that hit was a network round-trip to Supabase Auth
+// on every ZEGO token mint (every room join / renewal). At 10k concurrent
+// users this was a hot bottleneck. Local HS256 verify against
+// SUPABASE_JWT_SECRET is microseconds and needs no network.
+//
+// Falls back to remote verify only if SUPABASE_JWT_SECRET is not configured,
+// so existing deployments keep working during the rollout.
+async function verifyBearer(bearer: string): Promise<string | null> {
+  const secret =
+    process.env.SUPABASE_JWT_SECRET ||
+    process.env.SB_JWT_SECRET ||
+    process.env.JWT_SECRET;
+  if (secret) {
+    try {
+      const { payload } = await jwtVerify(bearer, new TextEncoder().encode(secret), {
+        algorithms: ["HS256"],
+      });
+      const sub = typeof payload.sub === "string" ? payload.sub : null;
+      if (!sub) return null;
+      // jose already checks exp/nbf. Require an authenticated role.
+      if (payload.role && payload.role !== "authenticated") return null;
+      return sub;
+    } catch {
+      return null;
+    }
+  }
+
+  // Fallback: remote verify (legacy path).
+  const serviceKey =
+    process.env.SB_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SB_SECRET_KEY;
+  if (!serviceKey) return null;
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(resolveSupabaseUrl(), serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await sb.auth.getUser(bearer);
+  if (error || !data?.user) return null;
+  return data.user.id;
+}
+
 export const Route = createFileRoute("/api/zego-token")({
   server: {
     handlers: {
@@ -36,15 +79,6 @@ export const Route = createFileRoute("/api/zego-token")({
         const appId = Number(appIdRaw);
         if (!Number.isFinite(appId) || appId <= 0) {
           return json({ error: "ZEGO_APP_ID must be a positive integer" }, 500);
-        }
-
-        const serviceKey =
-          process.env.SB_SERVICE_ROLE_KEY ??
-          process.env.SUPABASE_SERVICE_ROLE_KEY ??
-          process.env.SB_SECRET_KEY;
-        if (!serviceKey) {
-          console.error("[zego-token] no service key env var found");
-          return json({ error: "server misconfigured: service key missing" }, 500);
         }
 
         let body: {
@@ -63,16 +97,13 @@ export const Route = createFileRoute("/api/zego-token")({
         const roleName = body.role === "audience" ? "audience" : "publisher";
         if (!channel || !uidStr) return json({ error: "channel and uid required" }, 400);
 
-        // Verify caller is signed in (bearer token from supabase)
+        // Verify caller is signed in — local JWT verify (no network hop).
         const auth = request.headers.get("authorization") ?? "";
         const bearer = auth.replace(/^Bearer\s+/i, "");
         if (!bearer) return json({ error: "unauthorized" }, 401);
+        const callerId = await verifyBearer(bearer);
+        if (!callerId) return json({ error: "unauthorized" }, 401);
 
-        const sb = createClient(resolveSupabaseUrl(), serviceKey, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        });
-        const { data: userRes, error: userErr } = await sb.auth.getUser(bearer);
-        if (userErr || !userRes?.user) return json({ error: "unauthorized" }, 401);
 
         const expireSeconds = 3600;
         const { generateZegoToken04 } = await import("@/lib/zego-token.server");
