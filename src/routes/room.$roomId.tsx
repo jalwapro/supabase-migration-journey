@@ -2090,7 +2090,15 @@ function RoomPage() {
               </button>
             ) : null}
 
-            {/* Filter/effects button removed — pipeline disabled */}
+            {isVideo && (isHost || mySeatIndex === 0 || mySeatIndex === 1) ? (
+              <button
+                onClick={() => setFilterSheetOpen(true)}
+                aria-label="Filters & beauty"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              >
+                <Sparkles className="h-4 w-4 text-pink-400" />
+              </button>
+            ) : null}
 
 
 
