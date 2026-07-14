@@ -127,8 +127,14 @@ type Message = {
   text: string | null;
   message?: string | null;
   created_at: string;
+  // Denormalized sender columns (populated by trigger; see migration 0118).
+  sender_username?: string | null;
+  sender_avatar?: string | null;
+  sender_level?: number | null;
+  // Kept for backward-compat with existing render code.
   user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
+
 
 
 function uidFromUuid(uuid: string): number {
