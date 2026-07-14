@@ -127,8 +127,14 @@ type Message = {
   text: string | null;
   message?: string | null;
   created_at: string;
+  // Denormalized sender columns (populated by trigger; see migration 0118).
+  sender_username?: string | null;
+  sender_avatar?: string | null;
+  sender_level?: number | null;
+  // Kept for backward-compat with existing render code.
   user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
+
 
 
 function uidFromUuid(uuid: string): number {
@@ -422,11 +428,12 @@ function RoomPage() {
       supabase
         .from("room_messages")
         .select(
-          "id,user_id,kind,text,message,created_at,user:profiles!room_messages_user_id_fkey(username,avatar,level)",
+          "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level",
         )
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
         .limit(50),
+
       supabase
         .from("room_seat_likes")
         .select("seat_index")
@@ -448,7 +455,18 @@ function RoomPage() {
       toast.error(`Room data failed: ${firstErr.message}`);
     }
     setMembers((mData ?? []) as unknown as Member[]);
-    setMessages(((msgData ?? []) as unknown as Message[]).reverse());
+    setMessages(
+      ((msgData ?? []) as unknown as Message[])
+        .map((m) => ({
+          ...m,
+          user: m.user ?? {
+            username: m.sender_username ?? null,
+            avatar: m.sender_avatar ?? null,
+            level: m.sender_level ?? null,
+          },
+        }))
+        .reverse(),
+    );
     const likeMap: Record<number, number> = {};
     (likeData ?? []).forEach((row: { seat_index: number }) => {
       likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
@@ -508,14 +526,14 @@ function RoomPage() {
             playEmojiAnimation(row.id, emoji, fromSeat, toSeat, clip);
             return;
           }
-          if (row.user_id) {
-            const { data } = await supabase
-              .from("profiles")
-              .select("username,avatar,level")
-              .eq("id", row.user_id)
-              .maybeSingle();
-            row.user = (data as Message["user"]) ?? null;
-          }
+          // SCALE FIX: sender info is denormalized on room_messages by trigger
+          // (migration 0118). No more N+1 profile lookup per message; 5k
+          // viewers × 50 msgs/sec previously = 250k profile queries/sec.
+          row.user = row.user ?? {
+            username: row.sender_username ?? null,
+            avatar: row.sender_avatar ?? null,
+            level: row.sender_level ?? null,
+          };
           setMessages((prev) => [...prev.slice(-99), row]);
         },
       )
