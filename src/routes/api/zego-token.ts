@@ -122,10 +122,11 @@ export const Route = createFileRoute("/api/zego-token")({
           return json({ error: e instanceof Error ? e.message : "token failed" }, 500);
         }
 
-        // Server URL: standard ZEGO Web SDK websocket for the app
+        // Server URL: ZEGO Console value when configured; modern Web SDKs can
+        // discover the endpoint with an empty string, so don't guess a URL.
         const serverUrl =
           process.env.ZEGO_SERVER_URL?.trim() ||
-          `wss://webliveroom${appId}-api.coolzcloud.com/ws`;
+          "";
 
         return json({
           appId,
