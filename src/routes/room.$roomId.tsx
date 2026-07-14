@@ -455,7 +455,18 @@ function RoomPage() {
       toast.error(`Room data failed: ${firstErr.message}`);
     }
     setMembers((mData ?? []) as unknown as Member[]);
-    setMessages(((msgData ?? []) as unknown as Message[]).reverse());
+    setMessages(
+      ((msgData ?? []) as unknown as Message[])
+        .map((m) => ({
+          ...m,
+          user: m.user ?? {
+            username: m.sender_username ?? null,
+            avatar: m.sender_avatar ?? null,
+            level: m.sender_level ?? null,
+          },
+        }))
+        .reverse(),
+    );
     const likeMap: Record<number, number> = {};
     (likeData ?? []).forEach((row: { seat_index: number }) => {
       likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
