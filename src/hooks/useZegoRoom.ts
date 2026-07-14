@@ -630,12 +630,13 @@ export function useZegoRoom({
               try {
                 void getRemoteMediaStream(engine, s.streamID)
                   .then((ms) => {
-                    if (!ms) return;
+                    const media = asBrowserMediaStream(ms);
+                    if (!media) return;
                     if (isVideo) {
                       const container = videoContainersRef.current.get(remoteUid);
                       const v = container?.querySelector("video") as HTMLVideoElement | null;
                       if (v) {
-                        v.srcObject = ms;
+                        try { v.srcObject = media; } catch { return; }
                         v.play().catch(() => { /* gesture may be needed */ });
                       }
                       return;
@@ -650,7 +651,7 @@ export function useZegoRoom({
                       document.body.appendChild(el);
                       audioElsRef.current.set(s.streamID, el);
                     }
-                    el.srcObject = ms;
+                    try { el.srcObject = media; } catch { return; }
                     el.muted = speakerMutedRef.current;
                     el.play().catch(() => { /* gesture may be needed */ });
                   })
