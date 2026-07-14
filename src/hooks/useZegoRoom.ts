@@ -421,6 +421,7 @@ export function useZegoRoom({
         try { stale.off("roomUserUpdate"); } catch { /* ignore */ }
         try { stale.off("roomStateUpdate"); } catch { /* ignore */ }
         try { stale.off("publisherStateUpdate"); } catch { /* ignore */ }
+        try { stale.off("playerStateUpdate"); } catch { /* ignore */ }
         try { stale.off("tokenWillExpire"); } catch { /* ignore */ }
         try { stale.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
         try { stale.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
@@ -492,6 +493,7 @@ export function useZegoRoom({
       try { engine.off("roomUserUpdate"); } catch { /* ignore */ }
       try { engine.off("roomStateUpdate"); } catch { /* ignore */ }
       try { engine.off("publisherStateUpdate"); } catch { /* ignore */ }
+      try { engine.off("playerStateUpdate"); } catch { /* ignore */ }
       try { engine.off("tokenWillExpire"); } catch { /* ignore */ }
 
       engine.on(
@@ -759,6 +761,7 @@ export function useZegoRoom({
         try { e.off("roomUserUpdate"); } catch { /* ignore */ }
         try { e.off("roomStateUpdate"); } catch { /* ignore */ }
         try { e.off("publisherStateUpdate"); } catch { /* ignore */ }
+        try { e.off("playerStateUpdate"); } catch { /* ignore */ }
         try { e.off("tokenWillExpire"); } catch { /* ignore */ }
         try { e.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
         try { e.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
