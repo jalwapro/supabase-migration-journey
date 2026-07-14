@@ -51,6 +51,8 @@ export class CamProcessor {
   private cfg: CamPipelineConfig;
   private segmenter: ImageSegmenter | null = null;
   private landmarker: FaceLandmarker | null = null;
+  private segmenterLoading: Promise<void> | null = null;
+  private landmarkerLoading: Promise<void> | null = null;
   private started = false;
   private frameIdx = 0;
   private lastPersonMaskFrame = 0;
@@ -93,6 +95,7 @@ export class CamProcessor {
 
   updateConfig(cfg: CamPipelineConfig) {
     this.cfg = cfg;
+    this.ensureModelsForConfig(cfg);
   }
 
   async start(): Promise<MediaStream> {
@@ -101,17 +104,10 @@ export class CamProcessor {
 
     await this.srcVideo.play().catch(() => {});
 
-    // Lazy-init models
-    try {
-      const needsSeg = this.cfg.backgroundId !== "none" || !!this.cfg.customBgUrl;
-      const needsFace = this.cfg.stickerId && this.cfg.stickerId !== "none";
-      const promises: Promise<unknown>[] = [];
-      if (needsSeg) promises.push(getSegmenter().then((s) => (this.segmenter = s)));
-      if (needsFace) promises.push(getFaceLandmarker().then((l) => (this.landmarker = l)));
-      await Promise.all(promises);
-    } catch (e) {
+    // Lazy-init models needed for the current config before publishing.
+    await this.ensureModelsForConfig(this.cfg).catch((e) => {
       console.warn("[camPipeline] model init failed, continuing without", e);
-    }
+    });
 
     // Pre-warm: try to load any other model in background so config changes
     // later feel instant.
@@ -121,6 +117,32 @@ export class CamProcessor {
     this.outStream = this.canvas.captureStream(FPS);
     this.loop();
     return this.outStream;
+  }
+
+  private ensureModelsForConfig(cfg: CamPipelineConfig): Promise<void> {
+    const needsSeg = cfg.backgroundId !== "none" || !!cfg.customBgUrl;
+    const needsFace = !!cfg.stickerId && cfg.stickerId !== "none";
+    const jobs: Promise<void>[] = [];
+
+    if (needsSeg && !this.segmenter) {
+      if (!this.segmenterLoading) {
+        this.segmenterLoading = getSegmenter()
+          .then((s) => { this.segmenter = s; })
+          .finally(() => { this.segmenterLoading = null; });
+      }
+      jobs.push(this.segmenterLoading);
+    }
+
+    if (needsFace && !this.landmarker) {
+      if (!this.landmarkerLoading) {
+        this.landmarkerLoading = getFaceLandmarker()
+          .then((l) => { this.landmarker = l; })
+          .finally(() => { this.landmarkerLoading = null; });
+      }
+      jobs.push(this.landmarkerLoading);
+    }
+
+    return Promise.all(jobs).then(() => undefined);
   }
 
   stop() {
@@ -169,6 +191,8 @@ export class CamProcessor {
       ? "image"
       : bgPreset?.kind ?? "none";
 
+    this.ensureModelsForConfig(cfg).catch(() => { /* retried on next config/frame */ });
+
     // Compute source video draw rect (cover fit, mirrored self-view).
     const srcW = src.videoWidth || w;
     const srcH = src.videoHeight || h;
@@ -216,6 +240,22 @@ export class CamProcessor {
           const mw = catMask.width;
           const mh = catMask.height;
           const data = catMask.getAsUint8Array();
+          let centerZero = 0;
+          let centerOne = 0;
+          let edgeZero = 0;
+          let edgeOne = 0;
+          for (let y = 0; y < mh; y += 8) {
+            for (let x = 0; x < mw; x += 8) {
+              const value = data[y * mw + x] === 0 ? 0 : 1;
+              const inCenter = x > mw * 0.3 && x < mw * 0.7 && y > mh * 0.2 && y < mh * 0.85;
+              const onEdge = x < mw * 0.12 || x > mw * 0.88 || y < mh * 0.12 || y > mh * 0.88;
+              if (inCenter) value === 0 ? centerZero++ : centerOne++;
+              if (onEdge) value === 0 ? edgeZero++ : edgeOne++;
+            }
+          }
+          const centerOneRatio = centerOne / Math.max(1, centerZero + centerOne);
+          const edgeOneRatio = edgeOne / Math.max(1, edgeZero + edgeOne);
+          const personLabel = centerOneRatio >= edgeOneRatio ? 1 : 0;
           // Reuse maskTmpCanvas at native size
           if (this.maskTmpCanvas.width !== mw || this.maskTmpCanvas.height !== mh) {
             this.maskTmpCanvas.width = mw;
@@ -223,7 +263,7 @@ export class CamProcessor {
           }
           const img = this.maskTmpCtx.createImageData(mw, mh);
           for (let i = 0; i < data.length; i++) {
-            const isPerson = data[i] === 0 ? 0 : 255;
+            const isPerson = (data[i] === personLabel || (personLabel === 1 && data[i] > 1)) ? 255 : 0;
             const j = i * 4;
             img.data[j] = 255;
             img.data[j + 1] = 255;
@@ -233,7 +273,11 @@ export class CamProcessor {
           this.maskTmpCtx.putImageData(img, 0, 0);
           this.maskCtx.clearRect(0, 0, w, h);
           this.maskCtx.filter = "blur(3px)";
+          this.maskCtx.save();
+          this.maskCtx.translate(w, 0);
+          this.maskCtx.scale(-1, 1);
           this.maskCtx.drawImage(this.maskTmpCanvas, 0, 0, w, h);
+          this.maskCtx.restore();
           this.maskCtx.filter = "none";
           personMaskReady = true;
           this.lastPersonMaskFrame = this.frameIdx;

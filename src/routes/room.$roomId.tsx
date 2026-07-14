@@ -3731,6 +3731,8 @@ function VideoSettingsSheet({
   onEndLive: () => void;
   onPk: () => void;
 }) {
+  const { cfg, setBeautyOn, setBackground } = useCamPipeline();
+  const blurActive = !cfg.customBgUrl && cfg.backgroundId.startsWith("blur");
   if (!open) return null;
   return (
     <>
@@ -3769,8 +3771,12 @@ function VideoSettingsSheet({
               <FxToggle
                 icon={<Sparkles className="h-4 w-4" />}
                 label="Beauty"
-                active={fx.beauty}
-                onClick={() => onFxChange("beauty", !fx.beauty)}
+                active={cfg.beautyOn}
+                onClick={() => {
+                  const next = !cfg.beautyOn;
+                  setBeautyOn(next);
+                  onFxChange("beauty", next);
+                }}
               />
               <FxToggle
                 icon={<FlipHorizontal className="h-4 w-4" />}
@@ -3787,8 +3793,12 @@ function VideoSettingsSheet({
               <FxToggle
                 icon={<Grid3x3 className="h-4 w-4" />}
                 label="Blur BG"
-                active={fx.blur}
-                onClick={() => onFxChange("blur", !fx.blur)}
+                active={blurActive}
+                onClick={() => {
+                  const next = !blurActive;
+                  setBackground(next ? "blur-soft" : "none");
+                  onFxChange("blur", next);
+                }}
               />
             </div>
           </>
