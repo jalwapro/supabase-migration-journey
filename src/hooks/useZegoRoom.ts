@@ -421,6 +421,7 @@ export function useZegoRoom({
         try { stale.off("roomUserUpdate"); } catch { /* ignore */ }
         try { stale.off("roomStateUpdate"); } catch { /* ignore */ }
         try { stale.off("publisherStateUpdate"); } catch { /* ignore */ }
+        try { stale.off("playerStateUpdate"); } catch { /* ignore */ }
         try { stale.off("tokenWillExpire"); } catch { /* ignore */ }
         try { stale.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
         try { stale.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
@@ -492,6 +493,7 @@ export function useZegoRoom({
       try { engine.off("roomUserUpdate"); } catch { /* ignore */ }
       try { engine.off("roomStateUpdate"); } catch { /* ignore */ }
       try { engine.off("publisherStateUpdate"); } catch { /* ignore */ }
+      try { engine.off("playerStateUpdate"); } catch { /* ignore */ }
       try { engine.off("tokenWillExpire"); } catch { /* ignore */ }
 
       engine.on(
@@ -666,10 +668,30 @@ export function useZegoRoom({
 
       engine.on(
         "roomStateUpdate",
-        (roomID: string, state: string, _errorCode: number, _extendedData: string) => {
+        (roomID: string, state: string, errorCode: number, extendedData: string) => {
           if (roomID !== channelName || !isCurrentJoin()) return;
           if (state === "CONNECTED") setStatus("connected");
           else if (state === "DISCONNECTED") setStatus("error");
+          if (errorCode) console.warn("[zego] roomStateUpdate", { state, errorCode, extendedData });
+        },
+      );
+
+      // Log publish/play errors so silent failures (token privilege, codec,
+      // autoplay policy) become visible in the console for diagnosis.
+      engine.on(
+        "publisherStateUpdate",
+        (result: { streamID: string; state: string; errorCode: number; extendedData: string }) => {
+          if (result?.errorCode || result?.state !== "PUBLISHING") {
+            console.warn("[zego] publisherStateUpdate", result);
+          }
+        },
+      );
+      engine.on(
+        "playerStateUpdate",
+        (result: { streamID: string; state: string; errorCode: number; extendedData: string }) => {
+          if (result?.errorCode || result?.state !== "PLAYING") {
+            console.warn("[zego] playerStateUpdate", result);
+          }
         },
       );
 
@@ -739,6 +761,7 @@ export function useZegoRoom({
         try { e.off("roomUserUpdate"); } catch { /* ignore */ }
         try { e.off("roomStateUpdate"); } catch { /* ignore */ }
         try { e.off("publisherStateUpdate"); } catch { /* ignore */ }
+        try { e.off("playerStateUpdate"); } catch { /* ignore */ }
         try { e.off("tokenWillExpire"); } catch { /* ignore */ }
         try { e.off("remoteSoundLevelUpdate"); } catch { /* ignore */ }
         try { e.off("capturedSoundLevelUpdate"); } catch { /* ignore */ }
