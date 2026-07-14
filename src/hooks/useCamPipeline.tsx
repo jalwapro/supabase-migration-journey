@@ -20,6 +20,23 @@ import {
 import type { CamPipelineConfig } from "@/lib/camPipeline/CamProcessor";
 import { CamProcessor, isBypass } from "@/lib/camPipeline/CamProcessor";
 
+/**
+ * Wait until the first video frame is available on the given MediaStream.
+ * Resolves as soon as the track reports non-zero dimensions or after a short
+ * timeout — keeps camera-on snappy while avoiding ZEGO's 1103061 error when
+ * `createZegoStream` receives an empty canvas-capture track.
+ */
+async function waitForVideoFrames(stream: MediaStream, timeoutMs = 1500): Promise<void> {
+  const track = stream.getVideoTracks()[0];
+  if (!track) return;
+  const start = performance.now();
+  while (performance.now() - start < timeoutMs) {
+    const s = track.getSettings?.();
+    if (s?.width && s?.height) return;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+}
+
 const LS_KEY = "cam-pipeline-cfg-v1";
 
 const DEFAULT_CFG: CamPipelineConfig = {
