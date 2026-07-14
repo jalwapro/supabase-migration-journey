@@ -565,7 +565,9 @@ export function PkChallengerToasts({ currentRoomId }: { currentRoomId: string })
 
 
 
-/* ---------------- ACTIVE MATCH OVERLAY (score bar + timer) --------------- */
+/* ---------------- ACTIVE MATCH OVERLAY (TikTok-style) --------------------- */
+
+type Contrib = { sender_id: string; total: number; username: string | null; avatar: string | null };
 
 export function PkMatchOverlay({
   matchId,
@@ -576,6 +578,7 @@ export function PkMatchOverlay({
 }) {
   const qc = useQueryClient();
   const [tick, setTick] = useState(0);
+  const [pulseSide, setPulseSide] = useState<"a" | "b" | null>(null);
 
   const match = useQuery({
     enabled: !!matchId,
@@ -620,13 +623,50 @@ export function PkMatchOverlay({
     },
   });
 
+  // Top contributors per side (top 3) within the match window
+  const contribs = useQuery({
+    enabled: !!match.data,
+    queryKey: ["pk_top_contribs", matchId, match.data?.started_at, match.data?.ended_at ?? match.data?.ends_at],
+    refetchInterval: 4000,
+    queryFn: async () => {
+      const m = match.data!;
+      const endBoundary = m.ended_at ?? m.ends_at;
+      const { data, error } = await supabase
+        .from("gift_sends")
+        .select("sender_id,receiver_id,coins_spent,sender:profiles!gift_sends_sender_id_fkey(username,avatar)")
+        .in("receiver_id", [m.host_a, m.host_b])
+        .gte("created_at", m.started_at)
+        .lte("created_at", endBoundary)
+        .limit(500);
+      if (error) throw error;
+      const agg: Record<string, { a: Map<string, Contrib>; b: Map<string, Contrib> }> = {
+        _: { a: new Map(), b: new Map() },
+      };
+      (data ?? []).forEach((row: any) => {
+        const side: "a" | "b" = row.receiver_id === m.host_a ? "a" : "b";
+        const map = agg._[side];
+        const cur = map.get(row.sender_id) ?? {
+          sender_id: row.sender_id,
+          total: 0,
+          username: row.sender?.username ?? null,
+          avatar: row.sender?.avatar ?? null,
+        };
+        cur.total += Number(row.coins_spent ?? 0);
+        map.set(row.sender_id, cur);
+      });
+      const sort = (m: Map<string, Contrib>) =>
+        [...m.values()].sort((x, y) => y.total - x.total).slice(0, 3);
+      return { a: sort(agg._.a), b: sort(agg._.b) };
+    },
+  });
+
   // 1s ticker for countdown
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(t);
   }, []);
 
-  // subscribe to gift_sends to refresh score immediately
+  // subscribe to gift_sends → refresh score + pulse the receiving side
   useEffect(() => {
     if (!match.data) return;
     const ch = supabase
@@ -636,8 +676,16 @@ export function PkMatchOverlay({
         { event: "INSERT", schema: "public", table: "gift_sends" },
         (payload: any) => {
           const rid = payload?.new?.receiver_id;
-          if (rid === match.data!.host_a || rid === match.data!.host_b) {
+          if (rid === match.data!.host_a) {
+            setPulseSide("a");
+            setTimeout(() => setPulseSide(null), 700);
             qc.invalidateQueries({ queryKey: ["pk_score", matchId] });
+            qc.invalidateQueries({ queryKey: ["pk_top_contribs", matchId] });
+          } else if (rid === match.data!.host_b) {
+            setPulseSide("b");
+            setTimeout(() => setPulseSide(null), 700);
+            qc.invalidateQueries({ queryKey: ["pk_score", matchId] });
+            qc.invalidateQueries({ queryKey: ["pk_top_contribs", matchId] });
           }
         },
       )
@@ -652,7 +700,7 @@ export function PkMatchOverlay({
     return Math.max(0, Math.ceil((+new Date(match.data.ends_at) - Date.now()) / 1000));
   }, [match.data, tick]);
 
-  // Auto-end when timer hits 0 (any client can call — RPC is idempotent)
+  // Auto-end when timer hits 0
   useEffect(() => {
     if (!match.data || match.data.status !== "active") return;
     if (remaining > 0) return;
@@ -665,7 +713,7 @@ export function PkMatchOverlay({
 
   const m = match.data;
 
-  // Winner celebration: show fullscreen for 6s when status transitions to ended
+  // Winner celebration
   const [celebrateFor, setCelebrateFor] = useState<string | null>(null);
   const celebratedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -684,7 +732,7 @@ export function PkMatchOverlay({
   const sA = isEnded ? m.score_a : score.data?.score_a ?? 0;
   const sB = isEnded ? m.score_b : score.data?.score_b ?? 0;
   const total = Math.max(1, Number(sA) + Number(sB));
-  const pctA = Math.max(6, Math.min(94, (Number(sA) / total) * 100));
+  const pctA = Math.max(8, Math.min(92, (Number(sA) / total) * 100));
 
   const pA = profiles.data?.get(m.host_a);
   const pB = profiles.data?.get(m.host_b);
@@ -694,44 +742,41 @@ export function PkMatchOverlay({
 
   const mm = String(Math.floor(remaining / 60)).padStart(1, "0");
   const ss = String(remaining % 60).padStart(2, "0");
+  const critical = remaining <= 10 && !isEnded;
 
-  const winnerProfile = m.winner_id
-    ? m.winner_id === m.host_a
-      ? pA
-      : pB
+  const leader: "a" | "b" | null =
+    Number(sA) === Number(sB) ? null : Number(sA) > Number(sB) ? "a" : "b";
+  const loserSide: "a" | "b" | null = isEnded && m.winner_id
+    ? m.winner_id === m.host_a ? "b" : "a"
     : null;
+
+  const winnerProfile = m.winner_id ? (m.winner_id === m.host_a ? pA : pB) : null;
   const iWon = m.winner_id && meHostId === m.winner_id;
 
   return (
     <>
       {/* Winner celebration overlay (6s) */}
       {celebrateFor === m.id && (
-        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/75 backdrop-blur-md">
-          <div className="animate-in zoom-in-95 fade-in mx-6 max-w-[400px] rounded-3xl border border-[color:var(--gold)]/50 bg-gradient-to-br from-[#2d0b4d] via-[#4d0b2e] to-[#1a0b2e] p-6 text-center shadow-2xl">
+        <div className="fixed inset-0 z-[95] grid place-items-center bg-black/80 backdrop-blur-md">
+          <div className="animate-in zoom-in-95 fade-in mx-6 max-w-[420px] rounded-3xl border border-[color:var(--gold)]/50 bg-gradient-to-br from-[#2d0b4d] via-[#4d0b2e] to-[#1a0b2e] p-6 text-center shadow-[0_0_80px_rgba(255,180,60,0.35)]">
             {m.winner_id ? (
               <>
-                <div className="mx-auto mb-3 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--destructive)] shadow-[0_0_40px_rgba(255,200,0,0.6)]">
-                  <Trophy className="h-10 w-10 text-white" />
+                <div className="mx-auto mb-3 grid h-24 w-24 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-[color:var(--destructive)] shadow-[0_0_60px_rgba(255,200,0,0.7)]">
+                  <Crown className="h-12 w-12 text-white drop-shadow" />
                 </div>
-                <p className="mb-1 text-xs font-bold uppercase tracking-widest text-[color:var(--gold)]">
-                  {iWon ? "🎉 Victory!" : "PK Match Winner"}
+                <p className="mb-1 text-[11px] font-black uppercase tracking-[0.25em] text-[color:var(--gold)]">
+                  {iWon ? "🎉 Victory" : "PK Winner"}
                 </p>
-                <div className="mx-auto mb-3 grid h-14 w-14 place-items-center overflow-hidden rounded-full border-2 border-[color:var(--gold)]">
+                <div className="mx-auto mb-3 grid h-16 w-16 place-items-center overflow-hidden rounded-full border-2 border-[color:var(--gold)] shadow-lg">
                   {winnerProfile?.avatar ? (
-                    <img
-                      src={winnerProfile.avatar}
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
+                    <img src={winnerProfile.avatar} alt="" className="h-full w-full object-cover" />
                   ) : (
                     <Swords className="h-6 w-6 text-white" />
                   )}
                 </div>
-                <p className="text-lg font-extrabold text-white">
-                  {winnerProfile?.username ?? "host"}
-                </p>
+                <p className="text-xl font-black text-white">@{winnerProfile?.username ?? "host"}</p>
                 <p className="mb-4 text-xs text-white/70">
-                  {Number(iWon ? sA + sB : Math.max(sA, sB)).toLocaleString()} pts collected
+                  {Number(Math.max(sA, sB)).toLocaleString()} pts collected
                 </p>
                 {iWon && (
                   <div className="mb-3 rounded-xl bg-[color:var(--gold)]/15 py-2 text-sm font-extrabold text-[color:var(--gold)]">
@@ -739,11 +784,11 @@ export function PkMatchOverlay({
                   </div>
                 )}
                 <div className="flex justify-center gap-2 text-xs">
-                  <span className="rounded-full bg-red-500/20 px-3 py-1 font-bold text-red-300">
-                    {pA?.username ?? "A"} · {Number(sA).toLocaleString()}
+                  <span className="rounded-full bg-red-500/25 px-3 py-1 font-bold text-red-200">
+                    🔴 @{pA?.username ?? "A"} · {Number(sA).toLocaleString()}
                   </span>
-                  <span className="rounded-full bg-blue-500/20 px-3 py-1 font-bold text-blue-300">
-                    {pB?.username ?? "B"} · {Number(sB).toLocaleString()}
+                  <span className="rounded-full bg-blue-500/25 px-3 py-1 font-bold text-blue-200">
+                    🔵 @{pB?.username ?? "B"} · {Number(sB).toLocaleString()}
                   </span>
                 </div>
               </>
@@ -752,7 +797,7 @@ export function PkMatchOverlay({
                 <div className="mx-auto mb-3 grid h-20 w-20 place-items-center rounded-full bg-white/10">
                   <Swords className="h-10 w-10 text-white/70" />
                 </div>
-                <p className="text-lg font-extrabold text-white">It&apos;s a Draw!</p>
+                <p className="text-xl font-black text-white">It&apos;s a Draw!</p>
                 <p className="text-xs text-white/60">Both hosts fought equal — respect!</p>
               </>
             )}
@@ -766,48 +811,98 @@ export function PkMatchOverlay({
         </div>
       )}
 
-      <div className="pointer-events-none fixed inset-x-2 top-16 z-[60] mx-auto max-w-[440px]">
-        <div className="pointer-events-auto rounded-2xl border border-white/10 bg-black/55 p-2 shadow-2xl backdrop-blur-md">
-          <div className="mb-1 flex items-center justify-between text-[11px] font-bold text-white">
-            <span className="flex items-center gap-1 text-red-300">
-              <Swords className="h-3 w-3" /> PK MATCH
-            </span>
-            <span
-              className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] ${
-                remaining <= 10 && !isEnded
-                  ? "bg-red-500/30 text-red-100"
-                  : "bg-white/10 text-white/80"
-              }`}
-            >
-              <Clock className="h-3 w-3" /> {mm}:{ss}
-            </span>
-          </div>
+      {/* TikTok-style HUD: full-width, split framing, center fireball */}
+      <div className="pointer-events-none fixed inset-x-0 top-14 z-[60] mx-auto flex max-w-[480px] flex-col px-2">
+        {/* Center timer chip */}
+        <div className="pointer-events-auto mx-auto mb-1 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-3 py-1 shadow-lg backdrop-blur-md">
+          <Swords className="h-3 w-3 text-[color:var(--destructive)]" />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">PK MATCH</span>
+          <span
+            className={`ml-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums ${
+              critical
+                ? "animate-pulse bg-red-500 text-white shadow-[0_0_16px_rgba(239,68,68,0.7)]"
+                : "bg-white/10 text-white"
+            }`}
+          >
+            <Clock className="h-3 w-3" /> {mm}:{ss}
+          </span>
+        </div>
 
-          <div className="flex items-center gap-2">
-            <HostPill name={pA?.username} avatar={pA?.avatar} side="a" />
-            <div className="relative h-3 flex-1 overflow-hidden rounded-full bg-white/10">
+        {/* Split VS card */}
+        <div className="pointer-events-auto relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-black/70 to-black/50 shadow-2xl backdrop-blur-md">
+          {/* pulse flashes on gift */}
+          <div
+            className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 transition-opacity duration-500 ${
+              pulseSide === "a" ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ background: "radial-gradient(closest-side, rgba(239,68,68,0.55), transparent 70%)" }}
+          />
+          <div
+            className={`pointer-events-none absolute inset-y-0 right-0 w-1/2 transition-opacity duration-500 ${
+              pulseSide === "b" ? "opacity-100" : "opacity-0"
+            }`}
+            style={{ background: "radial-gradient(closest-side, rgba(59,130,246,0.55), transparent 70%)" }}
+          />
+
+          <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-1 p-2">
+            {/* Side A */}
+            <HostBlock
+              side="a"
+              profile={pA}
+              score={Number(sA)}
+              isLeader={leader === "a"}
+              isMe={isHostA}
+              contribs={contribs.data?.a ?? []}
+              punished={loserSide === "a"}
+            />
+            {/* VS badge */}
+            <div className="relative mx-1 grid h-10 w-10 place-items-center">
               <div
-                className="absolute inset-y-0 left-0 rounded-r-full bg-gradient-to-r from-red-500 via-red-400 to-pink-400 transition-all"
-                style={{ width: `${pctA}%` }}
+                className={`absolute inset-0 rounded-full ${
+                  critical ? "animate-ping bg-red-500/40" : "bg-white/5"
+                }`}
               />
-              <div
-                className="absolute inset-y-0 right-0 rounded-l-full bg-gradient-to-l from-blue-500 via-blue-400 to-cyan-400 transition-all"
-                style={{ width: `${100 - pctA}%` }}
-              />
-              <div
-                className="absolute top-0 h-full w-0.5 -translate-x-1/2 bg-white/80"
-                style={{ left: `${pctA}%` }}
-              />
+              <div className="relative grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-red-500 via-orange-400 to-blue-500 shadow-[0_0_20px_rgba(255,120,60,0.6)]">
+                <Flame className="h-4 w-4 text-white" />
+              </div>
             </div>
-            <HostPill name={pB?.username} avatar={pB?.avatar} side="b" />
+            {/* Side B */}
+            <HostBlock
+              side="b"
+              profile={pB}
+              score={Number(sB)}
+              isLeader={leader === "b"}
+              isMe={isHostB}
+              contribs={contribs.data?.b ?? []}
+              punished={loserSide === "b"}
+            />
           </div>
 
-          <div className="mt-1 flex justify-between px-1 text-[10px] font-bold">
-            <span className="text-red-300">🔴 {Number(sA).toLocaleString()}</span>
-            <span className="text-blue-300">{Number(sB).toLocaleString()} 🔵</span>
+          {/* Score bar */}
+          <div className="relative mx-2 mb-2 h-4 overflow-hidden rounded-full border border-white/10 bg-black/40">
+            <div
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 via-red-500 to-pink-400 transition-all duration-500"
+              style={{ width: `${pctA}%`, boxShadow: "inset 0 0 12px rgba(255,80,80,0.6)" }}
+            />
+            <div
+              className="absolute inset-y-0 right-0 bg-gradient-to-l from-blue-600 via-blue-500 to-cyan-400 transition-all duration-500"
+              style={{ width: `${100 - pctA}%`, boxShadow: "inset 0 0 12px rgba(80,140,255,0.6)" }}
+            />
+            {/* fireball at the seam */}
+            <div
+              className="absolute top-1/2 grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-br from-yellow-300 via-orange-500 to-red-600 shadow-[0_0_18px_rgba(255,180,60,0.9)] transition-all duration-500"
+              style={{ left: `${pctA}%` }}
+            >
+              <Zap className="h-3.5 w-3.5 text-white" fill="currentColor" />
+            </div>
+            {/* score labels */}
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 text-[10px] font-black text-white drop-shadow">
+              <span className="tabular-nums">{Number(sA).toLocaleString()}</span>
+              <span className="tabular-nums">{Number(sB).toLocaleString()}</span>
+            </div>
           </div>
 
-          {/* Prominent End PK button for participants (TikTok-style) */}
+          {/* End PK button for participants */}
           {canEndEarly && !isEnded && (
             <button
               onClick={() => {
@@ -816,19 +911,17 @@ export function PkMatchOverlay({
                   .rpc("pk_end_match", { _match_id: matchId })
                   .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }));
               }}
-              className="mt-2 w-full rounded-full bg-gradient-to-r from-red-600 to-red-500 py-2 text-xs font-extrabold text-white shadow-lg active:scale-[0.98]"
+              className="mx-2 mb-2 w-[calc(100%-1rem)] rounded-full bg-gradient-to-r from-red-600 to-red-500 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-lg active:scale-[0.98]"
             >
-              🛑 End PK Match
+              🛑 End PK
             </button>
           )}
 
           {isEnded && (
-            <div className="mt-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/20 to-[color:var(--destructive)]/20 py-1.5 text-[11px] font-extrabold text-white">
+            <div className="mx-2 mb-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/25 to-[color:var(--destructive)]/25 py-1.5 text-[11px] font-black text-white">
               <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
               {m.winner_id
-                ? `Winner: @${
-                    (m.winner_id === m.host_a ? pA?.username : pB?.username) ?? "host"
-                  }`
+                ? `Winner: @${(m.winner_id === m.host_a ? pA?.username : pB?.username) ?? "host"}`
                 : "It's a draw!"}
             </div>
           )}
@@ -838,27 +931,97 @@ export function PkMatchOverlay({
   );
 }
 
-function HostPill({
-  name,
-  avatar,
+function HostBlock({
   side,
+  profile,
+  score,
+  isLeader,
+  isMe,
+  contribs,
+  punished,
 }: {
-  name?: string | null;
-  avatar?: string | null;
   side: "a" | "b";
+  profile?: { username: string | null; avatar: string | null };
+  score: number;
+  isLeader: boolean;
+  isMe: boolean;
+  contribs: Contrib[];
+  punished: boolean;
 }) {
+  const isA = side === "a";
+  const accent = isA ? "from-red-500 to-pink-500" : "from-blue-500 to-cyan-400";
+  const bg = isA ? "bg-red-500/15" : "bg-blue-500/15";
+  const border = isA ? "border-red-400/40" : "border-blue-400/40";
+
   return (
     <div
-      className={`flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 ${
-        side === "a" ? "bg-red-500/20" : "bg-blue-500/20"
+      className={`relative flex min-w-0 flex-col items-center gap-1 rounded-xl border ${border} ${bg} p-1.5 ${
+        isA ? "" : "flex-row-reverse"
       }`}
     >
-      <div className="grid h-5 w-5 place-items-center overflow-hidden rounded-full bg-white/20">
-        {avatar ? <img src={avatar} className="h-full w-full object-cover" alt="" /> : null}
+      {/* Leader crown */}
+      {isLeader && (
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2">
+          <Crown className="h-4 w-4 text-[color:var(--gold)] drop-shadow-[0_0_6px_rgba(255,200,0,0.9)]" />
+        </div>
+      )}
+      {/* Punishment stripe */}
+      {punished && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center rounded-xl bg-black/55">
+          <div className="flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[9px] font-black uppercase text-red-300">
+            <Skull className="h-3 w-3" /> Penalty
+          </div>
+        </div>
+      )}
+      <div className={`flex w-full items-center gap-1.5 ${isA ? "" : "flex-row-reverse"}`}>
+        <div
+          className={`relative grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full border-2 ${
+            isLeader ? "border-[color:var(--gold)]" : "border-white/30"
+          }`}
+        >
+          {profile?.avatar ? (
+            <img src={profile.avatar} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <Swords className="h-4 w-4 text-white/60" />
+          )}
+        </div>
+        <div className={`min-w-0 flex-1 ${isA ? "text-left" : "text-right"}`}>
+          <p className="truncate text-[11px] font-black text-white">
+            @{profile?.username ?? (isA ? "hostA" : "hostB")}
+            {isMe && <span className="ml-1 text-[9px] font-bold text-white/60">YOU</span>}
+          </p>
+          <p className={`bg-gradient-to-r ${accent} bg-clip-text text-[13px] font-black tabular-nums text-transparent`}>
+            {score.toLocaleString()}
+          </p>
+        </div>
       </div>
-      <span className="max-w-[54px] truncate text-[10px] font-bold text-white">
-        {name ?? "host"}
-      </span>
+      {/* Top 3 contributors */}
+      <div className={`flex w-full items-center gap-0.5 ${isA ? "justify-start" : "justify-end"}`}>
+        {contribs.length === 0 ? (
+          <span className="text-[9px] text-white/40">no gifters yet</span>
+        ) : (
+          contribs.map((c, i) => (
+            <div
+              key={c.sender_id}
+              title={`@${c.username ?? "user"} · ${c.total.toLocaleString()}`}
+              className={`relative grid h-5 w-5 place-items-center overflow-hidden rounded-full border ${
+                i === 0 ? "border-[color:var(--gold)]" : "border-white/30"
+              } bg-black/40`}
+              style={{ marginLeft: isA && i > 0 ? "-4px" : undefined, marginRight: !isA && i > 0 ? "-4px" : undefined }}
+            >
+              {c.avatar ? (
+                <img src={c.avatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-[8px] font-bold text-white/60">{i + 1}</span>
+              )}
+              {i === 0 && (
+                <Crown className="absolute -top-1.5 h-2.5 w-2.5 text-[color:var(--gold)]" />
+              )}
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
+
