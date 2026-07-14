@@ -405,7 +405,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
-        async (payload) => {
+        (payload) => {
+          // SCALE FIX: sender/receiver/gift are denormalized on gift_sends
+          // by trigger (migration 0121). Zero extra queries per viewer per
+          // gift — 5k viewers × 1 gift used to be 15,000 lookups.
           const r = payload.new as {
             id: string;
             sender_id: string;
@@ -414,38 +417,35 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             quantity: number;
             coins_spent: number;
             diamonds_earned: number;
+            sender_username: string | null;
+            sender_avatar: string | null;
+            receiver_username: string | null;
+            receiver_avatar: string | null;
+            gift_name: string | null;
+            gift_emoji: string | null;
+            gift_icon: string | null;
+            gift_animation: string | null;
+            gift_clip_path: string | null;
+            gift_clip_type: string | null;
+            gift_image_url: string | null;
+            gift_sound_url: string | null;
           };
-          const [{ data: gift }, { data: sender }, { data: receiver }] = await Promise.all([
-            supabase
-              .from("gifts")
-              .select("name,emoji,icon,animation,clip_path,clip_type,image_url,sound_url")
-              .eq("id", r.gift_id)
-              .maybeSingle(),
-            supabase.from("profiles").select("username,avatar").eq("id", r.sender_id).maybeSingle(),
-            supabase.from("profiles").select("username,avatar").eq("id", r.receiver_id).maybeSingle(),
-          ]);
-          const g = (gift ?? {}) as {
-            name?: string; emoji?: string; icon?: string; animation?: string;
-            clip_path?: string | null; clip_type?: string | null; image_url?: string | null; sound_url?: string | null;
-          };
-          const s = (sender ?? {}) as { username?: string; avatar?: string | null };
-          const rc = (receiver ?? {}) as { username?: string; avatar?: string | null };
           enqueue({
             key: `sd-${r.id}`,
-            senderName: s.username ?? "Guest",
-            senderAvatar: s.avatar ?? null,
-            receiverName: rc.username ?? "Host",
-            receiverAvatar: rc.avatar ?? null,
-            giftName: g.name ?? "Gift",
-            giftEmoji: g.emoji ?? g.icon ?? "🎁",
-            giftImageUrl: g.image_url ?? null,
-            giftClipUrl: g.image_url ?? g.clip_path ?? null,
-            giftClipType: g.image_url ? "image" : g.clip_path ? (g.clip_type ?? null) : null,
+            senderName: r.sender_username ?? "Guest",
+            senderAvatar: r.sender_avatar ?? null,
+            receiverName: r.receiver_username ?? "Host",
+            receiverAvatar: r.receiver_avatar ?? null,
+            giftName: r.gift_name ?? "Gift",
+            giftEmoji: r.gift_emoji ?? r.gift_icon ?? "🎁",
+            giftImageUrl: r.gift_image_url ?? null,
+            giftClipUrl: r.gift_image_url ?? r.gift_clip_path ?? null,
+            giftClipType: r.gift_image_url ? "image" : r.gift_clip_path ? r.gift_clip_type : null,
             coins: r.coins_spent ?? 0,
             diamonds: r.diamonds_earned ?? 0,
             quantity: r.quantity ?? 1,
-            animation: g.animation ?? "pop",
-            soundUrl: g.sound_url ?? null,
+            animation: r.gift_animation ?? "pop",
+            soundUrl: r.gift_sound_url ?? null,
           });
         },
       )
