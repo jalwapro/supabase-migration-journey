@@ -811,122 +811,96 @@ export function PkMatchOverlay({
         </div>
       )}
 
-      {/* TikTok-style HUD: full-width, split framing, center fireball */}
-      <div className="pointer-events-none fixed inset-x-0 top-14 z-[60] mx-auto flex max-w-[480px] flex-col px-2">
-        {/* Center timer chip */}
-        <div className="pointer-events-auto mx-auto mb-1 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/70 px-3 py-1 shadow-lg backdrop-blur-md">
-          <Swords className="h-3 w-3 text-[color:var(--destructive)]" />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/80">PK MATCH</span>
+      {/* Epic Warrior HUD: compact royal header + gold-diamond VS scoreboard */}
+      <div className="pointer-events-none fixed inset-x-0 top-14 z-[60] mx-auto flex max-w-[480px] flex-col px-3">
+        {/* Team labels + timer */}
+        <div className="pointer-events-auto mb-1 flex items-end justify-between text-[10px] font-black uppercase tracking-[0.18em]">
+          <span className={`truncate drop-shadow-[0_0_6px_rgba(244,63,94,0.8)] ${leader === "a" ? "text-rose-300" : "text-rose-400/80"}`}>
+            {isHostA && "⚔ "}@{pA?.username ?? "host A"}
+          </span>
           <span
-            className={`ml-1 flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-black tabular-nums ${
+            className={`mx-2 flex items-center gap-1 rounded-full border px-2 py-0.5 tabular-nums ${
               critical
-                ? "animate-pulse bg-red-500 text-white shadow-[0_0_16px_rgba(239,68,68,0.7)]"
-                : "bg-white/10 text-white"
+                ? "animate-pulse border-red-400 bg-red-500/90 text-white shadow-[0_0_14px_rgba(239,68,68,0.7)]"
+                : "border-[color:var(--gold)]/60 bg-black/70 text-[color:var(--gold)] backdrop-blur-md"
             }`}
           >
             <Clock className="h-3 w-3" /> {mm}:{ss}
           </span>
+          <span className={`truncate text-right drop-shadow-[0_0_6px_rgba(96,165,250,0.8)] ${leader === "b" ? "text-sky-300" : "text-sky-400/80"}`}>
+            @{pB?.username ?? "host B"}{isHostB && " ⚔"}
+          </span>
         </div>
 
-        {/* Split VS card */}
-        <div className="pointer-events-auto relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-black/70 to-black/50 shadow-2xl backdrop-blur-md">
-          {/* pulse flashes on gift */}
+        {/* Gold-ringed PK progress bar with diamond VS pin */}
+        <div className="pointer-events-auto relative h-6 w-full overflow-hidden rounded-full border-2 border-[color:var(--gold)]/60 bg-neutral-950/80 shadow-[0_0_20px_rgba(217,119,6,0.35)] backdrop-blur-md">
+          {/* pulse flash on gift */}
           <div
             className={`pointer-events-none absolute inset-y-0 left-0 w-1/2 transition-opacity duration-500 ${
               pulseSide === "a" ? "opacity-100" : "opacity-0"
             }`}
-            style={{ background: "radial-gradient(closest-side, rgba(239,68,68,0.55), transparent 70%)" }}
+            style={{ background: "radial-gradient(closest-side, rgba(244,63,94,0.6), transparent 70%)" }}
           />
           <div
             className={`pointer-events-none absolute inset-y-0 right-0 w-1/2 transition-opacity duration-500 ${
               pulseSide === "b" ? "opacity-100" : "opacity-0"
             }`}
-            style={{ background: "radial-gradient(closest-side, rgba(59,130,246,0.55), transparent 70%)" }}
+            style={{ background: "radial-gradient(closest-side, rgba(59,130,246,0.6), transparent 70%)" }}
           />
 
-          <div className="relative grid grid-cols-[1fr_auto_1fr] items-center gap-1 p-2">
-            {/* Side A */}
-            <HostBlock
-              side="a"
-              profile={pA}
-              score={Number(sA)}
-              isLeader={leader === "a"}
-              isMe={isHostA}
-              contribs={contribs.data?.a ?? []}
-              punished={loserSide === "a"}
-            />
-            {/* VS badge */}
-            <div className="relative mx-1 grid h-10 w-10 place-items-center">
-              <div
-                className={`absolute inset-0 rounded-full ${
-                  critical ? "animate-ping bg-red-500/40" : "bg-white/5"
-                }`}
-              />
-              <div className="relative grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-red-500 via-orange-400 to-blue-500 shadow-[0_0_20px_rgba(255,120,60,0.6)]">
-                <Flame className="h-4 w-4 text-white" />
-              </div>
-            </div>
-            {/* Side B */}
-            <HostBlock
-              side="b"
-              profile={pB}
-              score={Number(sB)}
-              isLeader={leader === "b"}
-              isMe={isHostB}
-              contribs={contribs.data?.b ?? []}
-              punished={loserSide === "b"}
-            />
+          {/* rose side A */}
+          <div
+            className="absolute inset-y-0 left-0 flex items-center bg-gradient-to-r from-rose-700 to-rose-400 px-2 transition-all duration-500"
+            style={{ width: `${pctA}%` }}
+          >
+            <span className="text-[10px] font-black italic tabular-nums text-white drop-shadow">
+              {Number(sA).toLocaleString()}
+            </span>
+          </div>
+          {/* blue side B */}
+          <div
+            className="absolute inset-y-0 right-0 flex items-center justify-end bg-gradient-to-l from-blue-700 to-blue-400 px-2 transition-all duration-500"
+            style={{ width: `${100 - pctA}%` }}
+          >
+            <span className="text-[10px] font-black italic tabular-nums text-white drop-shadow">
+              {Number(sB).toLocaleString()}
+            </span>
           </div>
 
-          {/* Score bar */}
-          <div className="relative mx-2 mb-2 h-4 overflow-hidden rounded-full border border-white/10 bg-black/40">
-            <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-red-600 via-red-500 to-pink-400 transition-all duration-500"
-              style={{ width: `${pctA}%`, boxShadow: "inset 0 0 12px rgba(255,80,80,0.6)" }}
-            />
-            <div
-              className="absolute inset-y-0 right-0 bg-gradient-to-l from-blue-600 via-blue-500 to-cyan-400 transition-all duration-500"
-              style={{ width: `${100 - pctA}%`, boxShadow: "inset 0 0 12px rgba(80,140,255,0.6)" }}
-            />
-            {/* fireball at the seam */}
-            <div
-              className="absolute top-1/2 grid h-6 w-6 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-gradient-to-br from-yellow-300 via-orange-500 to-red-600 shadow-[0_0_18px_rgba(255,180,60,0.9)] transition-all duration-500"
-              style={{ left: `${pctA}%` }}
-            >
-              <Zap className="h-3.5 w-3.5 text-white" fill="currentColor" />
-            </div>
-            {/* score labels */}
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-between px-2 text-[10px] font-black text-white drop-shadow">
-              <span className="tabular-nums">{Number(sA).toLocaleString()}</span>
-              <span className="tabular-nums">{Number(sB).toLocaleString()}</span>
-            </div>
+          {/* Gold diamond VS pin */}
+          <div
+            className="absolute top-1/2 grid h-8 w-8 -translate-x-1/2 -translate-y-1/2 rotate-45 place-items-center border-2 border-[color:var(--gold)] bg-gradient-to-br from-amber-500 to-amber-700 shadow-[0_0_14px_#fbbf24] transition-all duration-500"
+            style={{ left: `${pctA}%` }}
+          >
+            <span className="-rotate-45 text-[8px] font-black uppercase tracking-wider text-white">VS</span>
           </div>
-
-          {/* End PK button for participants */}
-          {canEndEarly && !isEnded && (
-            <button
-              onClick={() => {
-                if (!confirm("End this PK match now?")) return;
-                supabase
-                  .rpc("pk_end_match", { _match_id: matchId })
-                  .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }));
-              }}
-              className="mx-2 mb-2 w-[calc(100%-1rem)] rounded-full bg-gradient-to-r from-red-600 to-red-500 py-1.5 text-[11px] font-black uppercase tracking-wider text-white shadow-lg active:scale-[0.98]"
-            >
-              🛑 End PK
-            </button>
-          )}
-
-          {isEnded && (
-            <div className="mx-2 mb-2 flex items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-[color:var(--gold)]/25 to-[color:var(--destructive)]/25 py-1.5 text-[11px] font-black text-white">
-              <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-              {m.winner_id
-                ? `Winner: @${(m.winner_id === m.host_a ? pA?.username : pB?.username) ?? "host"}`
-                : "It's a draw!"}
-            </div>
-          )}
         </div>
+
+        {/* End PK button for participants */}
+        {canEndEarly && !isEnded && (
+          <button
+            onClick={() => {
+              if (!confirm("End this PK match now?")) return;
+              supabase
+                .rpc("pk_end_match", { _match_id: matchId })
+                .then(() => qc.invalidateQueries({ queryKey: ["pk_active_match", matchId] }));
+            }}
+            className="pointer-events-auto mx-auto mt-2 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-red-700 to-red-500 px-4 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-lg active:scale-[0.98]"
+          >
+            🛑 End PK
+          </button>
+        )}
+
+        {isEnded && (
+          <div className="pointer-events-auto mx-auto mt-2 flex items-center gap-1 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/25 to-[color:var(--destructive)]/25 px-3 py-1 text-[11px] font-black text-white backdrop-blur-md">
+            <Trophy className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+            {m.winner_id
+              ? `Winner: @${(m.winner_id === m.host_a ? pA?.username : pB?.username) ?? "host"}`
+              : "It's a draw!"}
+          </div>
+        )}
       </div>
+
     </>
   );
 }
