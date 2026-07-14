@@ -142,8 +142,10 @@ export function ComboGiftButton({
           _receiver_id: rid,
           _gift_id: gift.id,
           _quantity: 1,
+          _write_message: false, // batched: one summary written on combo end
         });
         if (error) throw error;
+        tapTotalsRef.current[rid] = (tapTotalsRef.current[rid] ?? 0) + 1;
       }
       await refresh();
     } catch (e) {
