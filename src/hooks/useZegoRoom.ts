@@ -28,12 +28,15 @@ import { supabase } from "@/integrations/supabase/client";
 type MediaIssueKind = "microphone" | "camera";
 type ZegoCreateStreamOptions = {
   custom?: {
-    source: HTMLMediaElement | MediaStream;
-    channelCount?: 1 | 2;
-    videoOptimizationMode?: "default" | "motion" | "detail";
-    keyFrameInterval?: number;
-    bitrate?: number;
-    audioBitrate?: number;
+    audio?: {
+      source: HTMLMediaElement | MediaStream;
+      channelCount?: 1 | 2;
+    };
+    video?: {
+      source: HTMLMediaElement | MediaStream;
+      optimizationMode?: "default" | "motion" | "detail";
+      keyFrameInterval?: number;
+    };
   };
 };
 
@@ -208,14 +211,14 @@ async function requestBrowserMedia(constraints: MediaStreamConstraints, kind: Me
 }
 
 function zegoCustomAudio(source: MediaStream): ZegoCreateStreamOptions {
-  // ZegoCustom is a FLAT config { source, channelCount, ... } — not nested
-  // under `audio`/`video`. Wrong shape → SDK receives no track and publish
-  // silently transitions PUBLISH_REQUESTING → NO_PUBLISH with errorCode=0.
-  return { custom: { source, channelCount: 1 } };
+  // createZegoStream uses nested custom audio/video sources.
+  // Passing the older flat createStream shape makes the SDK miss the track and
+  // fail with 1103061 / PUBLISH_REQUESTING → NO_PUBLISH.
+  return { custom: { audio: { source, channelCount: 1 } } };
 }
 
 function zegoCustomVideo(source: MediaStream): ZegoCreateStreamOptions {
-  return { custom: { source, videoOptimizationMode: "motion", keyFrameInterval: 2 } };
+  return { custom: { video: { source, optimizationMode: "motion", keyFrameInterval: 2 } } };
 }
 
 export function useZegoRoom({
