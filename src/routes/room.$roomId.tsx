@@ -3724,8 +3724,8 @@ function VideoSettingsSheet({
   onEndLive: () => void;
   onPk: () => void;
 }) {
-  const { cfg, setBeautyOn, setBackground } = useCamPipeline();
-  const blurActive = !cfg.customBgUrl && cfg.backgroundId.startsWith("blur");
+  // Filters disabled — no CamPipeline usage here.
+
   if (!open) return null;
   return (
     <>
