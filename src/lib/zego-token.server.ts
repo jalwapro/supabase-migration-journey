@@ -4,34 +4,18 @@
 // Loaded only inside a server route handler.
 import { createCipheriv, randomBytes } from "crypto";
 
-const IV_CHARS = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-function makeRandomIv(): string {
-  const bytes = randomBytes(16);
-  let out = "";
-  for (let i = 0; i < 16; i++) out += IV_CHARS.charAt(bytes[i] % IV_CHARS.length);
-  return out;
-}
-
 function makeNonce(): number {
   // int32 range
   const buf = randomBytes(4);
   return buf.readInt32BE(0);
 }
 
-function algorithmFor(secret: string): string {
-  switch (Buffer.byteLength(secret)) {
-    case 16: return "aes-128-cbc";
-    case 24: return "aes-192-cbc";
-    case 32: return "aes-256-cbc";
-    default: throw new Error("ZEGO server secret must be 16/24/32 bytes");
-  }
-}
-
-function aesEncrypt(plainText: string, key: string, iv: string): Buffer {
-  const cipher = createCipheriv(algorithmFor(key), key, iv);
+function aesGcmEncrypt(plainText: string, key: string): { encrypted: Buffer; nonce: Buffer } {
+  const nonce = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", Buffer.from(key, "utf8"), nonce);
   cipher.setAutoPadding(true);
-  return Buffer.concat([cipher.update(plainText, "utf8"), cipher.final()]);
+  const body = Buffer.concat([cipher.update(plainText, "utf8"), cipher.final()]);
+  return { encrypted: Buffer.concat([body, cipher.getAuthTag()]), nonce };
 }
 
 export type ZegoPrivileges = { login?: boolean; publish?: boolean };
@@ -76,17 +60,18 @@ export function generateZegoToken04(
   };
 
   const plaintText = JSON.stringify(tokenInfo);
-  const iv = makeRandomIv();
-  const encrypted = aesEncrypt(plaintText, serverSecret, iv);
+  const { encrypted, nonce } = aesGcmEncrypt(plaintText, serverSecret);
 
-  // Binary layout: expire(8, BE) | ivLen(2, BE) | iv | encLen(2, BE) | enc
+  // Official token04 binary layout:
+  // expire(8, BE) | nonceLen(2, BE) | nonce | encLen(2, BE) | enc+tag | mode(1 = GCM)
   const b1 = Buffer.alloc(8);
   b1.writeBigInt64BE(BigInt(expire), 0);
   const b2 = Buffer.alloc(2);
-  b2.writeUInt16BE(iv.length, 0);
+  b2.writeUInt16BE(nonce.byteLength, 0);
   const b3 = Buffer.alloc(2);
   b3.writeUInt16BE(encrypted.byteLength, 0);
+  const b4 = Buffer.from([1]);
 
-  const buf = Buffer.concat([b1, b2, Buffer.from(iv, "utf8"), b3, encrypted]);
+  const buf = Buffer.concat([b1, b2, nonce, b3, encrypted, b4]);
   return { token: "04" + buf.toString("base64"), expire };
 }
