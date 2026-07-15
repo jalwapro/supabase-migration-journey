@@ -341,18 +341,22 @@ export function PkBattleSheet({
         ) : (
 
           <>
-            <p className="mb-2 text-xs font-semibold text-white/60">
-              Pick a live host to challenge
-            </p>
+            <div className="mb-2 flex items-center gap-2">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[color:var(--gold)]/40" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[color:var(--gold)]/80">
+                ⚔ Choose Your Rival
+              </p>
+              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[color:var(--gold)]/40" />
+            </div>
             <div className="scrollbar-hide max-h-[45vh] space-y-2 overflow-y-auto pr-1">
               {hosts.isLoading && (
                 <div className="grid h-24 place-items-center">
-                  <Loader2 className="h-5 w-5 animate-spin text-white/40" />
+                  <Loader2 className="h-5 w-5 animate-spin text-[color:var(--gold)]/60" />
                 </div>
               )}
               {!hosts.isLoading && (hosts.data?.length ?? 0) === 0 && (
                 <p className="py-8 text-center text-xs text-white/50">
-                  No other live hosts right now.
+                  No warriors available right now.
                 </p>
               )}
               {hosts.data?.map((h) => {
@@ -360,9 +364,9 @@ export function PkBattleSheet({
                 return (
                   <div
                     key={h.id}
-                    className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5"
+                    className="flex items-center gap-3 rounded-2xl border border-[color:var(--gold)]/20 bg-gradient-to-r from-black/40 to-[color:var(--destructive)]/5 p-2.5 hover:border-[color:var(--gold)]/40 transition"
                   >
-                    <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-black/30">
+                    <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-black/40 ring-1 ring-[color:var(--gold)]/40">
                       {h.cover_url || h.host?.avatar ? (
                         <img
                           src={h.cover_url ?? h.host?.avatar ?? ""}
@@ -374,7 +378,7 @@ export function PkBattleSheet({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold">{h.title}</p>
+                      <p className="truncate text-sm font-black">{h.title}</p>
                       <p className="truncate text-[11px] text-white/50">
                         {h.host?.username ?? "host"} · {h.viewer_count} watching
                       </p>
@@ -382,20 +386,21 @@ export function PkBattleSheet({
                     <button
                       disabled={inPk || busy === h.host_id}
                       onClick={() => challenge(h.host_id)}
-                      className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] px-3.5 py-1.5 text-xs font-extrabold text-white disabled:opacity-40"
+                      className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-rose-500 to-[color:var(--gold)] px-3.5 py-1.5 text-xs font-black uppercase tracking-wider text-white shadow-md shadow-[color:var(--destructive)]/40 disabled:opacity-40"
                     >
                       {busy === h.host_id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
                       ) : (
                         <Swords className="h-3 w-3" />
                       )}
-                      {inPk ? "In PK" : "Challenge"}
+                      {inPk ? "In PK" : "Fight"}
                     </button>
                   </div>
                 );
               })}
             </div>
           </>
+
         )}
       </div>
     </>
