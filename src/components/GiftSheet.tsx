@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CATALOG_GIFTS } from "@/lib/gifts";
 import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
+import { getGiftAudioPrefs } from "@/lib/giftAudio";
 import { X, Loader2, Coins, Send } from "lucide-react";
 import { toast } from "sonner";
 
