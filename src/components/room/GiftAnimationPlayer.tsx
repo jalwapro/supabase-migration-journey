@@ -53,6 +53,14 @@ function isRoyalRoseGift(name: string | null | undefined) {
   return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
 }
 
+// Gifts rendered on a pure-black background — we screen-blend them so the black
+// disappears against the room and only the effect shows. Also implies the MP4
+// already carries baked-in audio, so we should unmute the video element.
+function isBlackBgGift(name: string | null | undefined) {
+  const n = (name ?? "").toLowerCase();
+  return n.includes("hand heart");
+}
+
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
