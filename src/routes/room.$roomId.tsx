@@ -1607,40 +1607,29 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Rank + members row */}
-        <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-          <Link
-            to="/rank"
-            className="flex min-w-0 items-center gap-2 rounded-full border border-violet-300/30 bg-black/35 px-3 py-1.5 text-left backdrop-blur"
-          >
-            <span className="text-lg leading-none">🏆</span>
-            <span className="truncate text-[12px] font-bold text-[color:var(--gold)]">
-              {`${popularityPct}%`}
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-white/80" />
-          </Link>
-          <div className="flex items-center gap-1.5">
-            {!isHost && (
-              <button
-                onClick={() => void joinFamily()}
-                disabled={!!familyMember.data}
-                className="rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
-                aria-label="Join premium family"
-              >
-                {familyMember.data ? "👑 PREMIUM" : "👑 PREMIUM"}
-              </button>
-            )}
+        {/* Members row (rank bar removed) */}
+        <div className="mt-2 flex items-center justify-end gap-1.5">
+          {!isHost && (
             <button
-              onClick={() => setViewersSheetOpen(true)}
-              className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur"
-              aria-label="View viewers"
+              onClick={() => void joinFamily()}
+              disabled={!!familyMember.data}
+              className="rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
+              aria-label="Join premium family"
             >
-              <Users className="h-4 w-4 text-white/80" />
-              <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              {familyMember.data ? "👑 PREMIUM" : "👑 PREMIUM"}
             </button>
-          </div>
+          )}
+          <button
+            onClick={() => setViewersSheetOpen(true)}
+            className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur"
+            aria-label="View viewers"
+          >
+            <Users className="h-4 w-4 text-white/80" />
+            <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          </button>
         </div>
+
       </div>
 
       {/* Host AFK banner */}
