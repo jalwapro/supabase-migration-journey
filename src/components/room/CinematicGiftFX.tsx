@@ -130,9 +130,9 @@ export function CinematicGiftFX({
       {phase === "hero" && (
         <>
           <div className="cine-hero-pulse absolute left-1/2 top-1/2" />
-          <div className="cine-hero-flash absolute inset-0" />
         </>
       )}
+
 
       {/* ==== PHASE 4: FULL-SCREEN TAKEOVER — petal/particle rain ==== */}
       {(phase === "takeover" || phase === "room") && (
