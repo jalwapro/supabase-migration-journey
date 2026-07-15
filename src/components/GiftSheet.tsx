@@ -140,10 +140,17 @@ export function GiftSheet({
     CATALOG_GIFTS.forEach((g) => preloadGiftVideo(g.clip_path));
   }, [open]);
 
+  // Preload every gift in the currently open category so tapping plays instantly
+  useEffect(() => {
+    if (!open) return;
+    visibleGifts.forEach((g) => preloadGiftVideo(giftVideoUrl(g)));
+  }, [open, visibleGifts]);
+
   useEffect(() => {
     if (!selectedGift) return;
     preloadGiftVideo(giftVideoUrl(selectedGift));
   }, [selectedGift]);
+
 
   useEffect(() => {
     if (!open) return;
