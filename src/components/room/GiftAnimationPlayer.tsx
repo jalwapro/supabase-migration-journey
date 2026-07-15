@@ -53,6 +53,14 @@ function isRoyalRoseGift(name: string | null | undefined) {
   return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
 }
 
+// Gifts rendered on a pure-black background — we screen-blend them so the black
+// disappears against the room and only the effect shows. Also implies the MP4
+// already carries baked-in audio, so we should unmute the video element.
+function isBlackBgGift(name: string | null | undefined) {
+  const n = (name ?? "").toLowerCase();
+  return n.includes("hand heart");
+}
+
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
@@ -91,6 +99,7 @@ function AnimatedGiftVideo({
   fallbackImage,
   withSound = false,
   suppressEmojiFallback = false,
+  screenBlend = false,
 }: {
   src: string;
   type: string | null;
@@ -101,6 +110,7 @@ function AnimatedGiftVideo({
   fallbackImage: string | null;
   withSound?: boolean;
   suppressEmojiFallback?: boolean;
+  screenBlend?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -204,7 +214,10 @@ function AnimatedGiftVideo({
           const d = e.currentTarget.duration;
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
         }}
-        onCanPlay={() => {
+        onCanPlayThrough={() => {
+          // Wait until enough is buffered to play through — avoids ruk-ruk stalls
+          // on larger MP4s. autoPlay already kicks playback; we only re-arm the
+          // audio graph here so premium/black-bg gifts get their sound.
           startPlayback();
         }}
         onPlaying={markReady}
@@ -214,7 +227,7 @@ function AnimatedGiftVideo({
         }}
         onEnded={onDone}
         className="gift-anim-video absolute inset-0 h-full w-full object-contain"
-        style={{ opacity: 1, willChange: "opacity, transform" }}
+        style={{ opacity: 1, willChange: "opacity, transform", mixBlendMode: screenBlend ? "screen" : undefined }}
       />
       {/* Instant placeholder behind the video so the gift appears IMMEDIATELY
           (TikTok-style). Video decodes on top and covers it once frames flow. */}
@@ -489,6 +502,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const hasSvg = !!giftClipUrl && !hasVideo;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
+  const isBlackBg = isBlackBgGift(current?.giftName);
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
     : current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
@@ -631,10 +645,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={isPremiumLong && !audioPrefs.muted && audioPrefs.volume > 0}
+            withSound={(isPremiumLong || isBlackBg) && !audioPrefs.muted && audioPrefs.volume > 0}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            suppressEmojiFallback={isRoyalRose}
+            suppressEmojiFallback={isRoyalRose || isBlackBg}
+            screenBlend={isBlackBg}
           />
 
         ) : hasSvg ? (
