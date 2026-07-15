@@ -224,7 +224,7 @@ function AnimatedGiftVideo({
         }}
         onEnded={onDone}
         className="gift-anim-video absolute inset-0 h-full w-full object-contain"
-        style={{ opacity: 1, willChange: "opacity, transform" }}
+        style={{ opacity: 1, willChange: "opacity, transform", mixBlendMode: screenBlend ? "screen" : undefined }}
       />
       {/* Instant placeholder behind the video so the gift appears IMMEDIATELY
           (TikTok-style). Video decodes on top and covers it once frames flow. */}
