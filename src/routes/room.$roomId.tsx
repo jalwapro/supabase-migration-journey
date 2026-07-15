@@ -2287,6 +2287,9 @@ function RoomPage() {
         onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
+        <GiftAudioControl />
+      </div>
       <PkIncomingInvite currentRoomId={roomId} />
       <PkChallengerToasts currentRoomId={roomId} />
       {room.data?.active_pk_match_id && (
