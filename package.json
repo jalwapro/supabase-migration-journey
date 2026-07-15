@@ -29,6 +29,7 @@
     "@capacitor/push-notifications": "^8.1.1",
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
+    "@fontsource/bebas-neue": "^5.2.7",
     "@fontsource/manrope": "^5.2.8",
     "@fontsource/sora": "^5.2.8",
     "@hookform/resolvers": "^5.4.0",

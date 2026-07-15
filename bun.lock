@@ -19,6 +19,7 @@
         "@capacitor/push-notifications": "^8.1.1",
         "@capacitor/splash-screen": "^8.0.1",
         "@capacitor/status-bar": "^8.0.2",
+        "@fontsource/bebas-neue": "^5.2.7",
         "@fontsource/manrope": "^5.2.8",
         "@fontsource/sora": "^5.2.8",
         "@hookform/resolvers": "^5.4.0",
@@ -353,6 +354,8 @@
     "@floating-ui/react-dom": ["@floating-ui/react-dom@2.1.8", "", { "dependencies": { "@floating-ui/dom": "^1.7.6" }, "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-cC52bHwM/n/CxS87FH0yWdngEZrjdtLW/qVruo68qg+prK7ZQ4YGdut2GyDVpoGeAYe/h899rVeOVm6Oi40k2A=="],
 
     "@floating-ui/utils": ["@floating-ui/utils@0.2.11", "", {}, "sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg=="],
+
+    "@fontsource/bebas-neue": ["@fontsource/bebas-neue@5.2.7", "https://europe-west4-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fontsource/bebas-neue/-/bebas-neue-5.2.7.tgz", {}, "sha512-DsmBrmq55d9BCU0mt4DT4RZDdH8vhWRKEUOfbuNB1EEjMuwbtFvM8N+3gIlkYSFbsb10P8Q19BV5OdpMu2h0fA=="],
 
     "@fontsource/manrope": ["@fontsource/manrope@5.2.8", "https://europe-west1-npm.pkg.dev/lovable-core-prod/sandbox-npm-cache/@fontsource/manrope/-/manrope-5.2.8.tgz", {}, "sha512-gJHJmcuUk7qWcNCfcAri/DJQtXtBYqi9yKratr4jXhSo0I3xUtNNKI+igQIcw5c+m95g0vounk8ZnX/kb8o0TA=="],
 
