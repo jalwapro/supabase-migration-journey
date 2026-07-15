@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="ckBg" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#fff9c9" stop-opacity="1"/>
+      <stop offset="45%" stop-color="#ffcf3d" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#3a2200" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ckGold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff2a8"/>
+      <stop offset="55%" stop-color="#f0b100"/>
+      <stop offset="100%" stop-color="#6b4a00"/>
+    </linearGradient>
+    <linearGradient id="ckRay" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff9c9" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#fff9c9" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="ckGlow"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+
+  <rect width="400" height="400" fill="#1a1000"/>
+  <circle cx="200" cy="200" r="200" fill="url(#ckBg)">
+    <animate attributeName="r" values="120;210;150" dur="1.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;1;0.7" dur="1.6s" repeatCount="indefinite"/>
+  </circle>
+
+  <g transform="translate(200 200)" filter="url(#ckGlow)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0;360" dur="8s" repeatCount="indefinite"/>
+      <g fill="url(#ckRay)" opacity="0.75">
+        <polygon points="-8,-200 8,-200 0,-40"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(30)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(60)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(90)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(120)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(150)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(180)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(210)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(240)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(270)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(300)"/>
+        <polygon points="-8,-200 8,-200 0,-40" transform="rotate(330)"/>
+      </g>
+    </g>
+  </g>
+
+  <g transform="translate(200 210)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0.9;1.1;0.95" dur="1.4s" repeatCount="indefinite" additive="sum"/>
+      <path d="M-110 40 L-110 -30 L-55 20 L0 -60 L55 20 L110 -30 L110 40 Z" fill="url(#ckGold)" stroke="#6b4a00" stroke-width="3"/>
+      <rect x="-115" y="42" width="230" height="30" rx="6" fill="url(#ckGold)" stroke="#6b4a00" stroke-width="3"/>
+      <circle cx="-55" cy="20" r="12" fill="#ff4d8f" stroke="#6b4a00" stroke-width="2"/>
+      <circle cx="0" cy="-60" r="14" fill="#4dd0ff" stroke="#6b4a00" stroke-width="2"/>
+      <circle cx="55" cy="20" r="12" fill="#9b5cff" stroke="#6b4a00" stroke-width="2"/>
+      <circle cx="0" cy="55" r="8" fill="#ff4d8f" stroke="#6b4a00" stroke-width="2"/>
+      <circle cx="-70" cy="55" r="6" fill="#4dd0ff" stroke="#6b4a00" stroke-width="1.5"/>
+      <circle cx="70" cy="55" r="6" fill="#9b5cff" stroke="#6b4a00" stroke-width="1.5"/>
+    </g>
+  </g>
+
+  <g fill="#fff">
+    <path d="M70 80 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 z">
+      <animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/>
+    </path>
+    <path d="M320 100 l3 -8 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 z">
+      <animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"/>
+    </path>
+    <path d="M320 300 l3 -8 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 z">
+      <animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite"/>
+    </path>
+    <path d="M60 310 l4 -10 l4 10 l10 4 l-10 4 l-4 10 l-4 -10 l-10 -4 z">
+      <animate attributeName="opacity" values="1;0;1" dur="1.3s" repeatCount="indefinite"/>
+    </path>
+  </g>
+</svg>

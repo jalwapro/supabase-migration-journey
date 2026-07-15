@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="hfBg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ff6ec7" stop-opacity="0.9"/>
+      <stop offset="45%" stop-color="#7b2ecc" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#12002a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="hfBlur"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+
+  <rect width="400" height="400" fill="#0b0018"/>
+  <circle cx="200" cy="200" r="200" fill="url(#hfBg)">
+    <animate attributeName="opacity" values="0.5;1;0.6" dur="1.6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- burst 1 center -->
+  <g transform="translate(200 200)" filter="url(#hfBlur)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0;1.4;1.4" dur="1.8s" repeatCount="indefinite" additive="sum"/>
+      <animate attributeName="opacity" values="1;1;0" dur="1.8s" repeatCount="indefinite"/>
+      <g fill="#ff4d8f" font-size="22">
+        <text x="0" y="-100" text-anchor="middle">💖</text>
+        <text x="90" y="-40" text-anchor="middle">💖</text>
+        <text x="60" y="70" text-anchor="middle">💖</text>
+        <text x="-60" y="70" text-anchor="middle">💖</text>
+        <text x="-90" y="-40" text-anchor="middle">💖</text>
+        <text x="0" y="105" text-anchor="middle">💖</text>
+        <text x="70" y="-90" text-anchor="middle">💖</text>
+        <text x="-70" y="-90" text-anchor="middle">💖</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- burst 2 left -->
+  <g transform="translate(110 140)" filter="url(#hfBlur)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0;1.2;1.2" dur="1.8s" begin="0.6s" repeatCount="indefinite" additive="sum"/>
+      <animate attributeName="opacity" values="1;1;0" dur="1.8s" begin="0.6s" repeatCount="indefinite"/>
+      <g font-size="20">
+        <text x="0" y="-70" text-anchor="middle">💗</text>
+        <text x="60" y="-30" text-anchor="middle">💗</text>
+        <text x="45" y="50" text-anchor="middle">💗</text>
+        <text x="-45" y="50" text-anchor="middle">💗</text>
+        <text x="-60" y="-30" text-anchor="middle">💗</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- burst 3 right -->
+  <g transform="translate(290 260)" filter="url(#hfBlur)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0;1.3;1.3" dur="1.8s" begin="1.2s" repeatCount="indefinite" additive="sum"/>
+      <animate attributeName="opacity" values="1;1;0" dur="1.8s" begin="1.2s" repeatCount="indefinite"/>
+      <g font-size="22">
+        <text x="0" y="-80" text-anchor="middle">💜</text>
+        <text x="70" y="-30" text-anchor="middle">💜</text>
+        <text x="50" y="60" text-anchor="middle">💜</text>
+        <text x="-50" y="60" text-anchor="middle">💜</text>
+        <text x="-70" y="-30" text-anchor="middle">💜</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- rising sparks -->
+  <g fill="#ffd700">
+    <circle cx="90" cy="380" r="3">
+      <animate attributeName="cy" values="380;100" dur="1.5s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;1;0" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="200" cy="380" r="3">
+      <animate attributeName="cy" values="380;150" dur="1.5s" begin="0.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;1;0" dur="1.5s" begin="0.4s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="310" cy="380" r="3">
+      <animate attributeName="cy" values="380;220" dur="1.5s" begin="0.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="1;1;0" dur="1.5s" begin="0.8s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <g transform="translate(200 200)">
+    <text x="0" y="18" font-size="80" text-anchor="middle" dominant-baseline="middle">💘
+      <animateTransform attributeName="transform" type="scale" values="1;1.2;1" dur="0.9s" repeatCount="indefinite" additive="sum"/>
+    </text>
+  </g>
+</svg>
