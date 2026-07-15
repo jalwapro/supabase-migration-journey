@@ -2289,6 +2289,7 @@ function RoomPage() {
         onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <TapHearts />
       <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
         <GiftAudioControl />
       </div>
