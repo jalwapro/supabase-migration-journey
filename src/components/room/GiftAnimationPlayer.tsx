@@ -330,6 +330,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
   const [readyKey, setReadyKey] = useState<string | null>(null);
+  const audioPrefs = useGiftAudioPrefs();
 
   useEffect(() => {
     currentRef.current = current;
