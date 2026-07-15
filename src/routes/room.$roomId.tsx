@@ -1689,7 +1689,8 @@ function RoomPage() {
           };
 
           return !hasOpponent ? (
-            <div className="relative z-10 min-h-0 w-full flex-1">
+            <div className="relative z-10 min-h-0 w-full flex-[3]">
+
               <div className="absolute inset-0 overflow-hidden bg-black">
                 <VideoTile data={hostTile} coverUrl={r.cover_url} />
 
