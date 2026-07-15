@@ -997,3 +997,36 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
 .royal-wing-flap  { animation: royal-wing-flap 2.2s ease-in-out infinite; transform-origin: 50% 50%; }
 .royal-crown-float{ animation: royal-crown-float 3s ease-in-out infinite; transform-origin: 50% 100%; }
 .royal-sparkle    { animation: royal-sparkle 1.8s ease-out infinite; }
+
+/* ─── TikTok-style floating tap hearts ───────────────────── */
+@keyframes tap-heart-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.3) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+    transform: translate(-50%, -60%) scale(1.25) rotate(calc(var(--rot) * 0.4));
+  }
+  30% {
+    transform: translate(calc(-50% + var(--sway) * 0.25), -110%) scale(1) rotate(calc(var(--rot) * 0.7));
+  }
+  70% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--sway) * 0.75), -260%) scale(0.95) rotate(var(--rot));
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--sway)), -420%) scale(0.6) rotate(calc(var(--rot) * 1.2));
+  }
+}
+
+.tap-heart {
+  position: absolute;
+  line-height: 1;
+  pointer-events: none;
+  will-change: transform, opacity;
+  transform: translate(-50%, -50%);
+  animation: tap-heart-rise 2.1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  user-select: none;
+}

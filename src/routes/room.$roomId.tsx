@@ -57,6 +57,7 @@ import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/component
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { GiftAudioControl } from "@/components/room/GiftAudioControl";
+import { TapHearts } from "@/components/room/TapHearts";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
@@ -2288,6 +2289,7 @@ function RoomPage() {
         onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <TapHearts />
       <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
         <GiftAudioControl />
       </div>
@@ -2905,7 +2907,20 @@ function VideoTile({
   return (
     <button
       data-seat-index={index}
-      onClick={() => (member ? onLike() : onClaim())}
+      onClick={(e) => {
+        if (member) {
+          try {
+            window.dispatchEvent(
+              new CustomEvent("jalwa:heart-tap", {
+                detail: { x: e.clientX, y: e.clientY, count: 3 },
+              }),
+            );
+          } catch { /* noop */ }
+          onLike();
+        } else {
+          onClaim();
+        }
+      }}
       className={`relative h-full w-full overflow-hidden rounded-2xl border bg-black/60 ${
         isHostSeat
           ? "border-[color:var(--gold)]/70 shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
@@ -3154,7 +3169,16 @@ function FollowLoveChip({
   }
   return (
     <button
-      onClick={onLove}
+      onClick={(e) => {
+        try {
+          window.dispatchEvent(
+            new CustomEvent("jalwa:heart-tap", {
+              detail: { x: e.clientX, y: e.clientY, count: 5 },
+            }),
+          );
+        } catch { /* noop */ }
+        onLove();
+      }}
       aria-label="Send daily love (100 coins)"
       title={cooling ? "Come back tomorrow" : "Daily love · 100 coins"}
       className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition active:scale-90 ${
