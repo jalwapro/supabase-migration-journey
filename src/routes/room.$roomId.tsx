@@ -1689,7 +1689,8 @@ function RoomPage() {
           };
 
           return !hasOpponent ? (
-            <div className="relative z-10 min-h-0 w-full flex-[3]">
+            <div className="relative z-10 min-h-0 w-full flex-1">
+
 
               <div className="absolute inset-0 overflow-hidden bg-black">
                 <VideoTile data={hostTile} coverUrl={r.cover_url} />
@@ -1756,7 +1757,7 @@ function RoomPage() {
               </div>
             </div>
           ) : (
-            <div className="relative z-10 min-h-0 w-full flex-[3]">
+            <div className="relative z-10 min-h-0 w-full flex-1">
               {/* ambient royal glow bg */}
               <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 via-black to-black" />
               {/* side blur strips */}
@@ -1978,8 +1979,8 @@ function RoomPage() {
       </div>
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
-      <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
-        {!isVideo ? (
+      {!isVideo ? (
+        <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
           <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_20%] gap-2">
             <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
               <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
@@ -2004,10 +2005,7 @@ function RoomPage() {
                 onClick={() => openMilestoneSheet()}
                 className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
               >
-                {/* background glow */}
                 <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
-
-                {/* Header: rank chip (right) */}
                 <div className="z-10 flex w-full items-center justify-end">
                   {isRanked && (
                     <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1.5 py-0.5">
@@ -2017,8 +2015,6 @@ function RoomPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Percentage */}
                 <div className="z-10 mt-1 text-center">
                   <span
                     className="text-3xl font-extrabold leading-none tabular-nums"
@@ -2031,9 +2027,6 @@ function RoomPage() {
                     {popularityPct}%
                   </span>
                 </div>
-
-                {/* Volume-style meter — always-visible red→green gradient;
-                    filled rungs light up as the room progresses. */}
                 <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-3">
                   {Array.from({ length: 12 }).map((_, i) => {
                     const filledCount = Math.round((popularityPct / 100) * 12);
@@ -2048,19 +2041,13 @@ function RoomPage() {
                           background: isFilled
                             ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
                             : `linear-gradient(90deg, hsl(${hue} 70% 45% / 0.18), hsl(${Math.min(hue + 20, 140)} 70% 55% / 0.18))`,
-                          boxShadow: isFilled
-                            ? `0 0 8px hsl(${hue} 95% 55% / 0.5)`
-                            : undefined,
-                          border: isFilled
-                            ? undefined
-                            : `1px solid hsl(${hue} 70% 50% / 0.22)`,
+                          boxShadow: isFilled ? `0 0 8px hsl(${hue} 95% 55% / 0.5)` : undefined,
+                          border: isFilled ? undefined : `1px solid hsl(${hue} 70% 50% / 0.22)`,
                         }}
                       />
                     );
                   })}
                 </div>
-
-                {/* CTA */}
                 {isHost && isRanked && !r.milestone_awarded_at ? (
                   <div className="z-10 flex w-full flex-col items-center justify-center rounded-xl bg-[color:var(--gold)] px-2 py-1.5 text-[color:#1a0b2e] shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--gold)_40%,transparent)]">
                     <span className="text-[10px] font-extrabold uppercase leading-none tracking-tight">
@@ -2076,36 +2063,31 @@ function RoomPage() {
                     🏆 Top Gifters
                   </div>
                 )}
-
-                {/* bottom accent */}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1 bg-[color:var(--secondary)]/10" />
               </button>
-
-
-
-            </div>
-
-          </div>
-        ) : (
-          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
-            <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
-              <span className="text-sm font-bold text-white">Room Chat</span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
-            </div>
-            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-              {messages.length === 0 && <EmptyChat />}
-              {messages
-                .filter((m) => m.kind !== "emoji")
-                .map((m) => (
-                  <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
-                ))}
-              <div ref={chatEndVideoRef} />
             </div>
           </div>
-        )}
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute inset-x-0 bottom-[68px] z-20 mx-auto flex w-full max-w-md flex-col px-3">
+          <div
+            className="pointer-events-auto max-h-[38vh] space-y-1 overflow-y-auto pr-1 scrollbar-hide"
+            style={{
+              maskImage: "linear-gradient(to bottom, transparent 0%, black 22%, black 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 22%, black 100%)",
+            }}
+          >
+            {messages
+              .filter((m) => m.kind !== "emoji")
+              .slice(-30)
+              .map((m) => (
+                <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+              ))}
+            <div ref={chatEndVideoRef} />
+          </div>
+        </div>
+      )}
 
-
-      </div>
 
 
       {/* Quick-gift strip removed — use footer Gift button */}
