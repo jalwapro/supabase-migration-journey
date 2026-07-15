@@ -214,7 +214,10 @@ function AnimatedGiftVideo({
           const d = e.currentTarget.duration;
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
         }}
-        onCanPlay={() => {
+        onCanPlayThrough={() => {
+          // Wait until enough is buffered to play through — avoids ruk-ruk stalls
+          // on larger MP4s. autoPlay already kicks playback; we only re-arm the
+          // audio graph here so premium/black-bg gifts get their sound.
           startPlayback();
         }}
         onPlaying={markReady}
