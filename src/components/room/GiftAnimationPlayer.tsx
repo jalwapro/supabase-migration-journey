@@ -499,6 +499,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const hasSvg = !!giftClipUrl && !hasVideo;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
+  const isBlackBg = isBlackBgGift(current?.giftName);
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
     : current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
