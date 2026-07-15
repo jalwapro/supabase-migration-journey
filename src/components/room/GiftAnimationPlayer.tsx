@@ -138,12 +138,12 @@ function AnimatedGiftVideo({
     setFailed(false);
     const video = videoRef.current;
     if (!video) return;
-    video.pause();
-    video.currentTime = 0;
     video.muted = !withSound;
     video.volume = withSound ? 1 : 0;
-    video.load();
-  }, [src]);
+    // Do NOT call video.load() — the JSX `src` prop + `key` remount already
+    // triggers a single fetch. A manual load() here causes a second request
+    // and a visible stutter on first play.
+  }, [src, withSound]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -197,19 +197,23 @@ function AnimatedGiftVideo({
         playsInline
         disablePictureInPicture
         preload="auto"
+        autoPlay
+        muted={!withSound}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
         }}
-        onLoadedData={markReady}
-        onCanPlay={markReady}
+        onCanPlay={() => {
+          startPlayback();
+        }}
+        onPlaying={markReady}
         onError={() => {
           setFailed(true);
           onReady();
         }}
         onEnded={onDone}
-        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full bg-black object-cover opacity-0 transition-opacity duration-150`}
-        style={{ opacity: ready ? 1 : 0, mixBlendMode: type === "webm" ? "normal" : "normal" }}
+        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full object-contain`}
+        style={{ opacity: ready ? 1 : 0, willChange: "opacity, transform" }}
       />
 
     </div>
@@ -493,10 +497,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }
   }, [current?.key, current, hasVideo, hasSvg]);
 
-  // Safety net: never let a slow/broken asset keep the gift invisible or stuck.
+  // Safety net: never let a broken asset keep the gift invisible forever.
+  // Long enough that a slow first-fetch of the video doesn't fall back to
+  // emoji + skip the actual animation.
   useEffect(() => {
     if (!current || readyKey === current.key) return;
-    const t = setTimeout(() => setReadyKey(current.key), 700);
+    const t = setTimeout(() => setReadyKey(current.key), 2500);
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
