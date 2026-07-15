@@ -2905,7 +2905,20 @@ function VideoTile({
   return (
     <button
       data-seat-index={index}
-      onClick={() => (member ? onLike() : onClaim())}
+      onClick={(e) => {
+        if (member) {
+          try {
+            window.dispatchEvent(
+              new CustomEvent("jalwa:heart-tap", {
+                detail: { x: e.clientX, y: e.clientY, count: 3 },
+              }),
+            );
+          } catch { /* noop */ }
+          onLike();
+        } else {
+          onClaim();
+        }
+      }}
       className={`relative h-full w-full overflow-hidden rounded-2xl border bg-black/60 ${
         isHostSeat
           ? "border-[color:var(--gold)]/70 shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
