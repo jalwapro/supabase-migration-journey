@@ -211,18 +211,19 @@ export function GiftSheet({
     // Play gift sound INSIDE this click handler so the browser autoplay policy
     // allows it. Unlocks the audio context for subsequent gift sounds too.
     if (selectedGift.sound_url) {
-      try {
-        // Lovable CDN assets (/__l5e/…) only serve from the *.lovable.app origin;
-        // on the preview sandbox origin the relative path 404s and audio dies.
-        const raw = selectedGift.sound_url;
-        const src = raw.startsWith("/__l5e/")
-          ? `https://cloud-to-soul.lovable.app${raw}`
-          : raw;
-        const a = new Audio(src);
-        a.volume = 0.9;
-        void a.play().catch(() => {});
-      } catch {
-        /* noop */
+      const prefs = getGiftAudioPrefs();
+      if (!prefs.muted && prefs.volume > 0) {
+        try {
+          const raw = selectedGift.sound_url;
+          const src = raw.startsWith("/__l5e/")
+            ? `https://cloud-to-soul.lovable.app${raw}`
+            : raw;
+          const a = new Audio(src);
+          a.volume = Math.min(1, 0.9 * prefs.volume);
+          void a.play().catch(() => {});
+        } catch {
+          /* noop */
+        }
       }
     }
 
