@@ -90,10 +90,17 @@ async function callRpc() {
   return res.json();
 }
 
+// Repo hard-caps committed files at 10 MB. Skip anything larger so builds
+// don't fail — those clips stay on the CDN with normal preload.
+const MAX_BYTES = 10 * 1024 * 1024;
+
 async function download(url, destPath) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`GET ${url} → ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.length > MAX_BYTES) {
+    throw new Error(`too large (${(buf.length / 1024 / 1024).toFixed(1)} MB > 10 MB cap)`);
+  }
   writeFileSync(destPath, buf);
   return buf.length;
 }
