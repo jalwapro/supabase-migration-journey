@@ -642,10 +642,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={isPremiumLong && !audioPrefs.muted && audioPrefs.volume > 0}
+            withSound={(isPremiumLong || isBlackBg) && !audioPrefs.muted && audioPrefs.volume > 0}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            suppressEmojiFallback={isRoyalRose}
+            suppressEmojiFallback={isRoyalRose || isBlackBg}
+            screenBlend={isBlackBg}
           />
 
         ) : hasSvg ? (
