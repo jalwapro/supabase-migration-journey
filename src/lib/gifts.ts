@@ -4,6 +4,7 @@
 // (or the RPC needs a catalog-slug path).
 import catalog from "./gifts.catalog.sample.json";
 import type { Gift } from "@/components/GiftSheet";
+import { absolutizeLovableAsset, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 
 type CatalogEntry = {
   id: string;
@@ -29,16 +30,8 @@ type CatalogEntry = {
   is_active?: boolean;
 };
 
-const LOVABLE_ORIGIN = "https://cloud-to-soul.lovable.app";
-
-function absolutize(url: string | null | undefined) {
-  if (!url) return null;
-  if (url.startsWith("/__l5e/")) return `${LOVABLE_ORIGIN}${url}`;
-  return url;
-}
-
 function toGift(entry: CatalogEntry): Gift & { rarity?: string; source: "catalog" } {
-  const clip = absolutize(entry.animation?.webm_url ?? entry.animation?.mp4_url ?? entry.thumbnail_url);
+  const clip = resolvePlayableGiftUrl(entry.animation?.webm_url ?? entry.animation?.mp4_url ?? entry.thumbnail_url);
   const clipType = entry.animation?.webm_url ? "webm" : entry.animation?.mp4_url ? "mp4" : null;
   return {
     id: entry.id,
@@ -53,7 +46,7 @@ function toGift(entry: CatalogEntry): Gift & { rarity?: string; source: "catalog
     animation: entry.animation?.type ?? "pop",
     clip_path: clip,
     clip_type: clipType,
-    sound_url: absolutize(entry.sound_url),
+    sound_url: absolutizeLovableAsset(entry.sound_url),
     rarity: entry.rarity,
     source: "catalog",
   };
