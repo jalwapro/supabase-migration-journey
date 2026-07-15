@@ -1690,72 +1690,67 @@ function RoomPage() {
 
           return !hasOpponent ? (
             <div className="relative z-10 min-h-0 w-full flex-1">
+              {/* ambient royal glow bg */}
+              <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 via-black to-black" />
+              {/* side blur strips */}
+              <div className="pointer-events-none absolute left-0 top-1/2 h-32 w-1.5 -translate-y-1/2 bg-rose-500/40 blur-sm" />
+              <div className="pointer-events-none absolute right-0 top-1/2 h-32 w-1.5 -translate-y-1/2 bg-white/20 blur-sm" />
 
-
-              <div className="absolute inset-0 overflow-hidden bg-black">
-                <VideoTile data={hostTile} coverUrl={r.cover_url} />
-
-                {/* dark radial vignette + scanlines */}
-                <div
-                  className="pointer-events-none absolute inset-0"
-                  style={{
-                    background:
-                      "radial-gradient(120% 80% at 50% 40%, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.92) 100%)",
-                  }}
-                />
-
-                {/* corner gold/pink decals */}
-                <div className="pointer-events-none absolute left-2 top-2 h-8 w-8 border-l-2 border-t-2 border-[color:var(--gold)]" />
-                <div className="pointer-events-none absolute right-2 top-2 h-8 w-8 border-r-2 border-t-2 border-[color:var(--destructive)]" />
-                <div className="pointer-events-none absolute bottom-2 left-2 h-8 w-8 border-b-2 border-l-2 border-[color:var(--destructive)]" />
-                <div className="pointer-events-none absolute bottom-2 right-2 h-8 w-8 border-b-2 border-r-2 border-[color:var(--gold)]" />
-
-                {/* Hero MATCH MAKING block */}
-                <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 flex-col items-center gap-3 px-6 text-center">
-                  <div className="flex items-center gap-2">
-                    <Swords className="h-4 w-4 text-[color:var(--gold)]" />
-                    <span className="text-[10px] font-black uppercase tracking-[3px] text-[color:var(--gold)]">
-                      PK Battle
-                    </span>
-                  </div>
-                  <h1
-                    className="text-[44px] font-black leading-none text-white"
-                    style={{
-                      fontFamily: "'Bebas Neue', system-ui, sans-serif",
-                      letterSpacing: "2px",
-                      textShadow:
-                        "0 0 24px rgba(255,207,92,0.55), 0 4px 20px rgba(255,45,135,0.45)",
-                    }}
-                  >
-                    WAITING
-                    <br />
-                    FOR RIVAL
-                  </h1>
-                  <div className="mt-1 flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--destructive)] opacity-75" />
-                      <span className="relative inline-flex h-2 w-2 rounded-full bg-[color:var(--destructive)]" />
-                    </span>
-                    <span className="text-[11px] font-bold uppercase tracking-[2px] text-white/80">
-                      Scouting Opponent…
-                    </span>
-                  </div>
-                  <p className="max-w-[260px] text-[11px] leading-relaxed text-white/55">
-                    Solo stage active — challenge kisi bhi host ko ya invite accept karo.
-                  </p>
+              <div className="absolute inset-0 grid grid-cols-2 gap-0.5 p-1 pt-24">
+                {/* Host A — rose (Team Crimson) */}
+                <div className="relative overflow-hidden rounded-l-2xl border-y-2 border-l-2 border-rose-500/70 bg-black shadow-[inset_0_0_60px_rgba(244,63,94,0.25)]">
+                  <VideoTile data={hostTile} coverUrl={r.cover_url} />
+                  <div className="pointer-events-none absolute left-1 top-1 h-6 w-6 border-l-4 border-t-4 border-[color:var(--gold)]" />
+                  <div className="pointer-events-none absolute bottom-1 left-1 h-6 w-6 border-b-4 border-l-4 border-[color:var(--gold)]" />
                 </div>
 
-                {isHost && (
-                  <button
-                    onClick={() => setPkOpen(true)}
-                    className="absolute inset-x-4 bottom-4 z-10 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--destructive)] via-[color:var(--gold)] to-[color:var(--destructive)] py-3.5 text-sm font-black uppercase tracking-[2px] text-black shadow-[0_0_30px_rgba(255,45,135,0.55)]"
-                  >
-                    <Swords className="h-4 w-4" />
-                    Find / Invite Challenger
-                  </button>
-                )}
+                {/* Empty opponent slot — waiting */}
+                <div className="relative overflow-hidden rounded-r-2xl border-y-2 border-r-2 border-dashed border-[color:var(--gold)]/60 bg-gradient-to-b from-black via-[#1a0b2e] to-black">
+                  <div className="pointer-events-none absolute right-1 top-1 h-6 w-6 border-r-4 border-t-4 border-[color:var(--gold)]/70" />
+                  <div className="pointer-events-none absolute bottom-1 right-1 h-6 w-6 border-b-4 border-r-4 border-[color:var(--gold)]/70" />
+
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-3 text-center">
+                    <div className="flex items-center gap-1.5">
+                      <Swords className="h-3.5 w-3.5 text-[color:var(--gold)]" />
+                      <span className="text-[9px] font-black uppercase tracking-[2px] text-[color:var(--gold)]">
+                        PK Battle
+                      </span>
+                    </div>
+                    <div
+                      className="text-[22px] font-black leading-tight text-white"
+                      style={{
+                        fontFamily: "'Bebas Neue', system-ui, sans-serif",
+                        letterSpacing: "1.5px",
+                        textShadow: "0 0 18px rgba(255,207,92,0.55)",
+                      }}
+                    >
+                      WAITING
+                      <br />
+                      FOR RIVAL
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--destructive)] opacity-75" />
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--destructive)]" />
+                      </span>
+                      <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/70">
+                        Scouting…
+                      </span>
+                    </div>
+                    {isHost && (
+                      <button
+                        onClick={() => setPkOpen(true)}
+                        className="mt-2 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-black shadow-[0_0_20px_rgba(255,45,135,0.55)]"
+                      >
+                        <Swords className="h-3 w-3" />
+                        Invite
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
+
           ) : (
             <div className="relative z-10 min-h-0 w-full flex-1">
               {/* ambient royal glow bg */}
