@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
+import { useGiftAudioPrefs } from "@/lib/giftAudio";
 
 
 /**
