@@ -552,6 +552,25 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, clearCurrent]);
 
 
+  // Prefetch next queued gift's clip so it's warm in cache when it plays.
+  const nextPlay = queue[0] ?? null;
+  const nextClip = nextPlay ? getEffectiveGiftClip(nextPlay) : null;
+  const nextPrefetchUrl =
+    nextClip && ["mp4", "webm"].includes(nextClip.type ?? "") ? nextClip.url : null;
+  useEffect(() => {
+    if (!nextPrefetchUrl) return;
+    const v = document.createElement("video");
+    v.preload = "auto";
+    v.muted = true;
+    v.src = nextPrefetchUrl;
+    // Kick a fetch; discard when done.
+    v.load();
+    return () => {
+      v.removeAttribute("src");
+      v.load();
+    };
+  }, [nextPrefetchUrl]);
+
   if (!current) return null;
 
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
