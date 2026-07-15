@@ -2085,9 +2085,12 @@ function RoomPage() {
             </div>
 
           </div>
-        ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_20%] gap-2">
-            <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
+        ) : (() => {
+          const oppSeat = seatsByIndex.get(1);
+          const videoPreMatch = isVideo && r.seat_count === 2 && !oppSeat && !r.active_pk_match_id;
+          if (videoPreMatch) return null;
+          return (
+            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
               <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
                 <span className="text-sm font-bold text-white">Room Chat</span>
                 <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
@@ -2102,62 +2105,9 @@ function RoomPage() {
                 <div ref={chatEndVideoRef} />
               </div>
             </div>
+          );
+        })()}
 
-            {/* Rank meter — same size as voice room */}
-            <button
-              onClick={() => openMilestoneSheet()}
-              className="relative flex h-full min-h-[240px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
-            >
-              <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
-              <div className="z-10 flex w-full items-center justify-end">
-                {isRanked && (
-                  <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1.5 py-0.5">
-                    <span className="text-[8px] font-extrabold uppercase tracking-tight text-emerald-300">
-                      Ranked
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="z-10 mt-1 text-center">
-                <span
-                  className="text-3xl font-extrabold leading-none tabular-nums"
-                  style={{
-                    color: isRanked
-                      ? "#34d399"
-                      : `hsl(${Math.round((popularityPct / 100) * 120)} 90% 55%)`,
-                  }}
-                >
-                  {popularityPct}%
-                </span>
-              </div>
-              <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-3">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const filledCount = Math.round((popularityPct / 100) * 12);
-                  const isFilled = i < filledCount;
-                  const rungPct = ((i + 1) / 12) * 100;
-                  const hue = isRanked ? 140 : Math.round((rungPct / 100) * 120);
-                  return (
-                    <div
-                      key={i}
-                      className="w-full flex-1 rounded-[3px]"
-                      style={{
-                        background: isFilled
-                          ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
-                          : `linear-gradient(90deg, hsl(${hue} 70% 45% / 0.18), hsl(${Math.min(hue + 20, 140)} 70% 55% / 0.18))`,
-                        boxShadow: isFilled ? `0 0 8px hsl(${hue} 95% 55% / 0.5)` : undefined,
-                        border: isFilled ? undefined : `1px solid hsl(${hue} 70% 50% / 0.22)`,
-                      }}
-                    />
-                  );
-                })}
-              </div>
-              <div className="z-10 w-full rounded-xl border border-white/10 bg-white/5 py-1.5 text-center text-[9px] font-semibold text-white/70">
-                🏆 Top Gifters
-              </div>
-            </button>
-
-          </div>
-        )}
       </div>
 
 
