@@ -257,228 +257,190 @@ export function GiftSheet({
     onSent?.({ gift: selectedGift, targets });
   };
 
+  const activeCategory = categories.includes(activeCat) ? activeCat : categories[0];
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/80" onClick={onClose} style={{ contain: "strict", isolation: "isolate" }}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70"
+      onClick={onClose}
+      style={{ contain: "strict", isolation: "isolate" }}
+    >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto flex max-h-[88dvh] w-full max-w-md flex-col rounded-t-3xl border-t border-border bg-background p-4 shadow-2xl"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 1rem)", contain: "layout paint" }}
+        className="mx-auto flex h-[62dvh] max-h-[640px] w-full max-w-md flex-col rounded-t-2xl bg-[#161616] text-white shadow-[0_-8px_40px_rgba(0,0,0,0.6)]"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)", contain: "layout paint" }}
       >
-
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="font-bold">Send a Gift</h3>
-          <div className="flex items-center gap-1.5 rounded-full bg-card/60 px-2 py-1 text-[11px] font-bold text-[color:var(--gold)]">
-            <Coins className="h-3 w-3" />
-            {(profile?.coins ?? 0).toLocaleString()}
-          </div>
-          <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-card/60">
-            <X className="h-4 w-4" />
-          </button>
+        {/* Drag handle */}
+        <div className="flex justify-center pt-2">
+          <span className="h-1 w-10 rounded-full bg-white/20" />
         </div>
 
-        {/* Top gifter of this room */}
-        {topGifter.data && (
-          <Link
-            to="/u/$userId"
-            params={{ userId: topGifter.data.user_id }}
-            onClick={onClose}
-            className="mb-3 flex items-center gap-2 rounded-2xl border border-[color:var(--gold)]/40 bg-gradient-to-r from-[color:var(--gold)]/15 to-transparent p-2"
-          >
-            <span className="text-base leading-none">🏆</span>
-            <div className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full bg-black/40 ring-1 ring-[color:var(--gold)]/40">
-              {topGifter.data.avatar ? (
-                <img src={topGifter.data.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <span className="text-xs font-bold text-white">
-                  {(topGifter.data.username ?? "?").slice(0, 1).toUpperCase()}
-                </span>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-[color:var(--gold)]/80">
-                Top Gifter in this room
-              </p>
-              <p className="truncate text-xs font-bold text-white">
-                {topGifter.data.username ?? "user"}
-              </p>
-            </div>
-          </Link>
-        )}
-
-
-        {/* Receiver picker — DP-only chips + All */}
-        <div className="mb-3">
-          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-            To {sendToAll ? `· All (${receivers.length})` : ""}
-          </p>
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {receivers.length === 0 && (
-              <p className="text-xs text-muted-foreground">No one on stage to gift.</p>
-            )}
-            {receivers.length > 1 && (
-              <button
-                onClick={() => setSendToAll((v) => !v)}
-                aria-label="All"
-                className={`shrink-0 rounded-full p-[2px] transition ${
-                  sendToAll
-                    ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                    : "bg-white/10"
-                }`}
-              >
-                <div className="grid h-11 w-11 place-items-center rounded-full bg-card text-[10px] font-black">
-                  ALL
-                </div>
-              </button>
-            )}
-            {receivers.map((r) => {
-              const active = !sendToAll && receiverId === r.id;
-              return (
+        {/* Receiver row — tiny avatars, TikTok style */}
+        {receivers.length > 0 && (
+          <div className="flex items-center gap-2 px-4 pt-3">
+            <span className="text-[11px] text-white/60">To:</span>
+            <div className="flex flex-1 gap-1.5 overflow-x-auto">
+              {receivers.length > 1 && (
                 <button
-                  key={r.id}
-                  onClick={() => {
-                    setSendToAll(false);
-                    setReceiverId(r.id);
-                  }}
-                  aria-label={r.username ?? "user"}
-                  className={`shrink-0 rounded-full p-[2px] transition ${
-                    active
-                      ? "bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_0_14px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                      : "bg-white/10"
+                  onClick={() => setSendToAll((v) => !v)}
+                  className={`grid h-7 shrink-0 place-items-center rounded-full px-2 text-[10px] font-bold transition ${
+                    sendToAll ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/80"
                   }`}
                 >
-                  <div className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-card">
+                  All
+                </button>
+              )}
+              {receivers.map((r) => {
+                const active = !sendToAll && receiverId === r.id;
+                return (
+                  <button
+                    key={r.id}
+                    onClick={() => {
+                      setSendToAll(false);
+                      setReceiverId(r.id);
+                    }}
+                    aria-label={r.username ?? "user"}
+                    className={`grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full transition ${
+                      active ? "ring-2 ring-[#fe2c55]" : "ring-1 ring-white/15"
+                    }`}
+                  >
                     {r.avatar ? (
                       <img src={r.avatar} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-sm font-bold">{(r.username ?? "?").slice(0, 1).toUpperCase()}</span>
+                      <span className="text-[10px] font-bold">
+                        {(r.username ?? "?").slice(0, 1).toUpperCase()}
+                      </span>
                     )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Selected gift animated preview */}
-        {selectedGift && (
-          <div className="mb-3 flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-[color:var(--primary)]/10 via-[color:var(--secondary)]/10 to-[color:var(--gold)]/10 p-3">
-            <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-2xl bg-black/40">
-              <GiftPreview gift={selectedGift} large />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-bold">{selectedGift.name}</p>
-              <p className="mt-0.5 flex items-center gap-1 text-[11px] font-bold text-[color:var(--gold)]">
-                <Coins className="h-3 w-3" />
-                {price(selectedGift).toLocaleString()} coins
-              </p>
-              <p className="mt-0.5 text-[10px] uppercase tracking-widest text-muted-foreground">
-                {CATEGORY_LABEL[selectedGift.category ?? ""] ?? selectedGift.category}
-              </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Category tabs */}
-        <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
+        {/* Category tabs — TikTok underline style */}
+        <div className="mt-2 flex gap-4 overflow-x-auto border-b border-white/5 px-4">
           {categories.map((c) => {
-            const active = (categories.includes(activeCat) ? activeCat : categories[0]) === c;
+            const active = activeCategory === c;
             return (
               <button
                 key={c}
                 onClick={() => setActiveCat(c)}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold transition ${
-                  active
-                    ? "bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground shadow-[0_4px_14px_-4px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-                    : "bg-card/60 text-muted-foreground"
+                className={`relative shrink-0 whitespace-nowrap py-2.5 text-[13px] font-semibold transition ${
+                  active ? "text-white" : "text-white/50"
                 }`}
               >
                 {CATEGORY_LABEL[c] ?? c}
+                {active && (
+                  <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-[#fe2c55]" />
+                )}
               </button>
             );
           })}
         </div>
 
-        {/* Gifts grid */}
-        <div className="mb-3 min-h-0 flex-1 overflow-y-auto pr-0.5">
+        {/* Gifts grid — 4 cols, dense */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {gifts.isLoading && (
-            <div className="py-8 text-center">
-              <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
+            <div className="py-10 text-center">
+              <Loader2 className="mx-auto h-5 w-5 animate-spin text-white/40" />
             </div>
           )}
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-4 gap-1">
             {visibleGifts.map((g) => {
               const selected = selectedGift?.id === g.id;
               return (
                 <button
                   key={g.id}
-                  onClick={() => setSelectedGift(g)}
+                  onClick={() => {
+                    if (selected) {
+                      handleSend();
+                    } else {
+                      setSelectedGift(g);
+                    }
+                  }}
                   onPointerDown={() => preloadGiftVideo(giftVideoUrl(g))}
-                  className={`group relative flex flex-col items-center gap-1 overflow-hidden rounded-2xl border p-2 transition-colors ${
-                    selected
-                      ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10"
-                      : "border-border bg-card/40"
+                  className={`group relative flex flex-col items-center justify-end gap-0.5 rounded-xl px-1.5 pb-1.5 pt-2 transition ${
+                    selected ? "bg-white/10" : "bg-transparent active:bg-white/5"
                   }`}
                 >
-                  <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-black/20">
+                  <div className="grid h-14 w-14 place-items-center">
                     <GiftPreview gift={g} />
                   </div>
-                  {(g as { source?: string }).source === "catalog" && (
-                    <span className="absolute right-1 top-1 rounded-full bg-[color:var(--gold)]/90 px-1.5 py-[1px] text-[8px] font-black uppercase text-black">
-                      JSON
-                    </span>
-                  )}
-                  <span className="truncate text-[10px] font-semibold">{g.name}</span>
-                  <span className="flex items-center gap-0.5 text-[10px] text-[color:var(--gold)]">
+                  <span className="w-full truncate text-center text-[11px] font-medium text-white/90">
+                    {g.name}
+                  </span>
+                  <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#ffd447]">
                     <Coins className="h-2.5 w-2.5" />
                     {price(g).toLocaleString()}
                   </span>
+                  {selected && (
+                    <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-[#fe2c55]/60" />
+                  )}
                 </button>
               );
             })}
             {!gifts.isLoading && visibleGifts.length === 0 && (
-              <p className="col-span-4 py-6 text-center text-xs text-muted-foreground">No gifts in this category yet.</p>
+              <p className="col-span-4 py-8 text-center text-xs text-white/50">
+                No gifts in this category yet.
+              </p>
             )}
           </div>
         </div>
 
-        {/* Qty + Send */}
-        <div className="sticky bottom-0 -mx-4 -mb-4 flex shrink-0 items-center gap-2 border-t border-border bg-background/95 px-4 pb-4 pt-3 backdrop-blur">
-          <div className="flex items-center gap-1 rounded-full border border-border bg-card/60 p-1">
-            {[1, 5, 10, 99].map((n) => (
+        {/* Bottom action bar — coin balance + qty + Send */}
+        <div className="flex shrink-0 items-center gap-2 border-t border-white/5 bg-[#161616] px-3 py-2.5">
+          <Link
+            to="/recharge"
+            onClick={onClose}
+            className="flex items-center gap-1.5 rounded-full bg-white/[0.06] py-1.5 pl-2 pr-2.5 text-[12px] font-bold text-white active:bg-white/10"
+          >
+            <Coins className="h-3.5 w-3.5 text-[#ffd447]" />
+            <span>{(profile?.coins ?? 0).toLocaleString()}</span>
+            <span className="grid h-4 w-4 place-items-center rounded-full bg-[#fe2c55] text-[10px] font-black leading-none text-white">
+              +
+            </span>
+          </Link>
+
+          {/* Qty selector */}
+          <div className="flex items-center rounded-full bg-white/[0.06] p-0.5">
+            {[1, 10, 99].map((n) => (
               <button
                 key={n}
                 onClick={() => setQty(n)}
-                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                  qty === n
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground"
+                className={`min-w-[30px] rounded-full px-2 py-1 text-[11px] font-bold transition ${
+                  qty === n ? "bg-white text-black" : "text-white/70"
                 }`}
               >
-                x{n}
+                {n}
               </button>
             ))}
           </div>
+
           <button
             onClick={handleSend}
             disabled={!selectedGift || (!sendToAll && !receiverId) || !canAfford || send.isPending}
-            className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            className="ml-auto flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#fe2c55] to-[#ff5177] px-4 py-2 text-[13px] font-black text-white shadow-[0_4px_14px_-4px_rgba(254,44,85,0.7)] disabled:opacity-40 disabled:shadow-none"
           >
             {send.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-3.5 w-3.5" />
             )}
-            {selectedGift
-              ? `Send · ${totalCost.toLocaleString()} coins`
-              : "Pick a gift"}
+            Send
           </button>
         </div>
+
         {selectedGift && !canAfford && (
-          <p className="mt-2 text-center text-[11px] text-[color:var(--destructive)]">
-            Not enough coins. <Link to="/recharge" className="underline">Recharge</Link>
+          <p className="px-4 pb-1 text-center text-[11px] text-[#fe2c55]">
+            Not enough coins.{" "}
+            <Link to="/recharge" onClick={onClose} className="underline">
+              Recharge
+            </Link>
           </p>
         )}
       </div>
     </div>
   );
 }
+
