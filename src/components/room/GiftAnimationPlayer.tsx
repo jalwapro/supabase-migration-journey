@@ -226,7 +226,7 @@ function AnimatedGiftVideo({
         onPlaying={markReady}
         onError={(e) => {
           const err = (e.currentTarget as HTMLVideoElement).error;
-          console.log("[AGV] onError", { code: err?.code, message: err?.message, networkState: (e.currentTarget as HTMLVideoElement).networkState, readyState: (e.currentTarget as HTMLVideoElement).readyState });
+          console.log("[AGV] onError code=" + err?.code + " msg=" + err?.message + " nw=" + (e.currentTarget as HTMLVideoElement).networkState + " rs=" + (e.currentTarget as HTMLVideoElement).readyState);
           setFailed(true);
           onReady();
         }}
