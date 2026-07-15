@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="rsBg" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ff2d6f" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#c1005a" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#28001a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="rsHeart" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#ffb3c8"/>
+      <stop offset="60%" stop-color="#ff2d6f"/>
+      <stop offset="100%" stop-color="#8a0033"/>
+    </radialGradient>
+    <filter id="rsGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4"/>
+    </filter>
+  </defs>
+
+  <circle cx="200" cy="200" r="200" fill="url(#rsBg)">
+    <animate attributeName="r" values="120;220;180" dur="1.6s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;1;0.6" dur="1.6s" repeatCount="indefinite"/>
+  </circle>
+
+  <g filter="url(#rsGlow)">
+    <circle cx="200" cy="200" r="20" fill="#fff" opacity="0.9">
+      <animate attributeName="r" values="10;140;10" dur="1.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.9;0;0.9" dur="1.8s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="200" cy="200" r="20" fill="#ff2d6f" opacity="0.8">
+      <animate attributeName="r" values="10;180;10" dur="1.8s" begin="0.3s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.8;0;0.8" dur="1.8s" begin="0.3s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <g transform="translate(200 200)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="0.6;1.15;0.9;1.05" dur="1.2s" repeatCount="indefinite" additive="sum"/>
+      <path d="M0 55 C -95 -5 -95 -95 -35 -95 C -10 -95 0 -75 0 -60 C 0 -75 10 -95 35 -95 C 95 -95 95 -5 0 55 Z" fill="url(#rsHeart)" stroke="#fff" stroke-width="3"/>
+      <path d="M-25 -55 C -35 -70 -20 -80 -10 -70" stroke="#ffd6e4" stroke-width="4" fill="none" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <g>
+    <g font-size="34">
+      <text x="60" y="-20" opacity="0">🌹
+        <animate attributeName="y" values="-20;420" dur="3s" begin="0s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3s" begin="0s" repeatCount="indefinite"/>
+        <animateTransform attributeName="transform" type="rotate" values="0 60 0;360 60 200" dur="3s" repeatCount="indefinite"/>
+      </text>
+      <text x="150" y="-40" opacity="0">🌹
+        <animate attributeName="y" values="-40;430" dur="3.4s" begin="0.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3.4s" begin="0.4s" repeatCount="indefinite"/>
+      </text>
+      <text x="240" y="-30" opacity="0">🌹
+        <animate attributeName="y" values="-30;430" dur="2.8s" begin="0.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="2.8s" begin="0.8s" repeatCount="indefinite"/>
+      </text>
+      <text x="320" y="-50" opacity="0">🌹
+        <animate attributeName="y" values="-50;430" dur="3.2s" begin="0.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3.2s" begin="0.2s" repeatCount="indefinite"/>
+      </text>
+      <text x="20" y="-60" opacity="0">🌹
+        <animate attributeName="y" values="-60;440" dur="3.6s" begin="1s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3.6s" begin="1s" repeatCount="indefinite"/>
+      </text>
+      <text x="200" y="-20" opacity="0">💖
+        <animate attributeName="y" values="-20;430" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3s" begin="1.2s" repeatCount="indefinite"/>
+      </text>
+      <text x="100" y="-45" opacity="0">💖
+        <animate attributeName="y" values="-45;430" dur="3.4s" begin="1.6s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3.4s" begin="1.6s" repeatCount="indefinite"/>
+      </text>
+      <text x="290" y="-30" opacity="0">💖
+        <animate attributeName="y" values="-30;430" dur="3.1s" begin="2s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3.1s" begin="2s" repeatCount="indefinite"/>
+      </text>
+      <text x="360" y="-40" opacity="0">🌹
+        <animate attributeName="y" values="-40;440" dur="3.3s" begin="1.4s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0;1;1;0" dur="3.3s" begin="1.4s" repeatCount="indefinite"/>
+      </text>
+    </g>
+  </g>
+
+  <g fill="#fff9c9">
+    <circle cx="60" cy="80" r="3"><animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite"/></circle>
+    <circle cx="340" cy="110" r="2.5"><animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/></circle>
+    <circle cx="80" cy="320" r="3"><animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite"/></circle>
+    <circle cx="330" cy="300" r="2.5"><animate attributeName="opacity" values="1;0;1" dur="1.1s" repeatCount="indefinite"/></circle>
+  </g>
+</svg>

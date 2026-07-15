@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="gpBg" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="20%" stop-color="#e0aaff"/>
+      <stop offset="55%" stop-color="#5b2ecc"/>
+      <stop offset="100%" stop-color="#050014"/>
+    </radialGradient>
+    <filter id="gpBlur"><feGaussianBlur stdDeviation="2"/></filter>
+  </defs>
+
+  <rect width="400" height="400" fill="#050014"/>
+  <circle cx="200" cy="200" r="200" fill="url(#gpBg)">
+    <animate attributeName="opacity" values="0.7;1;0.8" dur="2s" repeatCount="indefinite"/>
+  </circle>
+
+  <g transform="translate(200 200)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="0;360" dur="6s" repeatCount="indefinite"/>
+      <g fill="none" stroke="#fff" stroke-width="2" opacity="0.85" filter="url(#gpBlur)">
+        <ellipse rx="170" ry="45"/>
+        <ellipse rx="140" ry="35" transform="rotate(30)" stroke="#f5d0fe"/>
+        <ellipse rx="110" ry="28" transform="rotate(60)" stroke="#e9d5ff"/>
+        <ellipse rx="80" ry="20" transform="rotate(90)" stroke="#fff"/>
+        <ellipse rx="55" ry="14" transform="rotate(120)" stroke="#fbcfe8"/>
+      </g>
+    </g>
+    <circle r="14" fill="#fff">
+      <animate attributeName="r" values="10;22;10" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="30" fill="none" stroke="#fff" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" values="20;170" dur="2s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="30" fill="none" stroke="#e0aaff" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" values="20;170" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.8;0" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+    </circle>
+    <circle r="30" fill="none" stroke="#fff" stroke-width="2" opacity="0.6">
+      <animate attributeName="r" values="20;170" dur="2s" begin="1.4s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.8;0" dur="2s" begin="1.4s" repeatCount="indefinite"/>
+    </circle>
+  </g>
+
+  <g transform="translate(200 200)">
+    <text x="0" y="8" font-size="70" text-anchor="middle" dominant-baseline="middle">🪐
+      <animateTransform attributeName="transform" type="rotate" values="0;-360" dur="8s" repeatCount="indefinite"/>
+    </text>
+  </g>
+
+  <g fill="#fff">
+    <circle cx="40" cy="60" r="1.8"><animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite"/></circle>
+    <circle cx="80" cy="100" r="1.2"><animate attributeName="opacity" values="1;0;1" dur="1.7s" repeatCount="indefinite"/></circle>
+    <circle cx="330" cy="70" r="2"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></circle>
+    <circle cx="360" cy="140" r="1.5"><animate attributeName="opacity" values="1;0;1" dur="1.5s" repeatCount="indefinite"/></circle>
+    <circle cx="30" cy="300" r="1.5"><animate attributeName="opacity" values="0;1;0" dur="1.9s" repeatCount="indefinite"/></circle>
+    <circle cx="90" cy="360" r="2"><animate attributeName="opacity" values="1;0;1" dur="1.3s" repeatCount="indefinite"/></circle>
+    <circle cx="340" cy="330" r="1.5"><animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite"/></circle>
+    <circle cx="370" cy="270" r="2"><animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"/></circle>
+    <circle cx="200" cy="30" r="1.5"><animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/></circle>
+    <circle cx="200" cy="370" r="1.5"><animate attributeName="opacity" values="1;0;1" dur="1.6s" repeatCount="indefinite"/></circle>
+  </g>
+</svg>
