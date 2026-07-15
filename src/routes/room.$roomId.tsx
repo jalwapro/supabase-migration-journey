@@ -2085,28 +2085,24 @@ function RoomPage() {
             </div>
 
           </div>
-        ) : (() => {
-          const oppSeat = seatsByIndex.get(1);
-          const videoPreMatch = isVideo && r.seat_count === 2 && !oppSeat && !r.active_pk_match_id;
-          if (videoPreMatch) return null;
-          return (
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
-              <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
-                <span className="text-sm font-bold text-white">Room Chat</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
-              </div>
-              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                {messages.length === 0 && <EmptyChat />}
-                {messages
-                  .filter((m) => m.kind !== "emoji")
-                  .map((m) => (
-                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
-                  ))}
-                <div ref={chatEndVideoRef} />
-              </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
+            <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
+              <span className="text-sm font-bold text-white">Room Chat</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
             </div>
-          );
-        })()}
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+              {messages.length === 0 && <EmptyChat />}
+              {messages
+                .filter((m) => m.kind !== "emoji")
+                .map((m) => (
+                  <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                ))}
+              <div ref={chatEndVideoRef} />
+            </div>
+          </div>
+        )}
+
 
       </div>
 
