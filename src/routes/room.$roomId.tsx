@@ -3167,7 +3167,16 @@ function FollowLoveChip({
   }
   return (
     <button
-      onClick={onLove}
+      onClick={(e) => {
+        try {
+          window.dispatchEvent(
+            new CustomEvent("jalwa:heart-tap", {
+              detail: { x: e.clientX, y: e.clientY, count: 5 },
+            }),
+          );
+        } catch { /* noop */ }
+        onLove();
+      }}
       aria-label="Send daily love (100 coins)"
       title={cooling ? "Come back tomorrow" : "Daily love · 100 coins"}
       className={`grid h-6 w-6 shrink-0 place-items-center rounded-full border transition active:scale-90 ${
