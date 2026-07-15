@@ -57,6 +57,7 @@ import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/component
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { GiftAudioControl } from "@/components/room/GiftAudioControl";
+import { TapHearts } from "@/components/room/TapHearts";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
