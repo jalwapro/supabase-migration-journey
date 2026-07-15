@@ -521,17 +521,17 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
 }
 
 @keyframes gift-anim-sender-in {
-  0%   { transform: translateX(-120%); opacity: 0; }
-  20%  { transform: translateX(0); opacity: 1; }
-  80%  { transform: translateX(0); opacity: 1; }
+  0%   { transform: translateX(-40%); opacity: 0; }
+  6%   { transform: translateX(0); opacity: 1; }
+  85%  { transform: translateX(0); opacity: 1; }
   100% { transform: translateX(-30%); opacity: 0; }
 }
 .gift-anim-sender { animation: gift-anim-sender-in 3.8s ease-out forwards; }
 
 @keyframes gift-anim-caption-in {
-  0%   { transform: translateY(20px); opacity: 0; }
-  30%  { transform: translateY(0); opacity: 1; }
-  85%  { opacity: 1; }
+  0%   { transform: translateY(10px); opacity: 0; }
+  6%   { transform: translateY(0); opacity: 1; }
+  90%  { opacity: 1; }
   100% { transform: translateY(-10px); opacity: 0; }
 }
 .gift-anim-caption { animation: gift-anim-caption-in 3.8s ease-out forwards; }
