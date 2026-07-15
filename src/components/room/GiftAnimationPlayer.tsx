@@ -643,8 +643,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* center/front-screen gift animation */}
       <div className="absolute inset-x-0 top-[14vh] z-10 flex flex-col items-center px-2">
-        {(() => { console.log("[TRINARY]", { hasVideo, hasSvg, url: giftClipUrl }); return null; })()}
         {hasVideo ? (
+
 
           <AnimatedGiftVideo
             src={giftClipUrl ?? ""}
