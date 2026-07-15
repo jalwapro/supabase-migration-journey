@@ -1689,7 +1689,8 @@ function RoomPage() {
           };
 
           return !hasOpponent ? (
-            <div className="relative z-10 min-h-0 w-full flex-1">
+            <div className="relative z-10 min-h-0 w-full flex-[3]">
+
               <div className="absolute inset-0 overflow-hidden bg-black">
                 <VideoTile data={hostTile} coverUrl={r.cover_url} />
 
@@ -1755,7 +1756,7 @@ function RoomPage() {
               </div>
             </div>
           ) : (
-            <div className="relative z-10 min-h-0 w-full flex-1">
+            <div className="relative z-10 min-h-0 w-full flex-[3]">
               {/* ambient royal glow bg */}
               <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 via-black to-black" />
               {/* side blur strips */}
@@ -2085,28 +2086,24 @@ function RoomPage() {
             </div>
 
           </div>
-        ) : (() => {
-          const oppSeat = seatsByIndex.get(1);
-          const videoPreMatch = isVideo && r.seat_count === 2 && !oppSeat && !r.active_pk_match_id;
-          if (videoPreMatch) return null;
-          return (
-            <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
-              <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
-                <span className="text-sm font-bold text-white">Room Chat</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
-              </div>
-              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                {messages.length === 0 && <EmptyChat />}
-                {messages
-                  .filter((m) => m.kind !== "emoji")
-                  .map((m) => (
-                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
-                  ))}
-                <div ref={chatEndVideoRef} />
-              </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col rounded-2xl border border-violet-300/30 bg-black/35 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
+            <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
+              <span className="text-sm font-bold text-white">Room Chat</span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">Live</span>
             </div>
-          );
-        })()}
+            <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
+              {messages.length === 0 && <EmptyChat />}
+              {messages
+                .filter((m) => m.kind !== "emoji")
+                .map((m) => (
+                  <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                ))}
+              <div ref={chatEndVideoRef} />
+            </div>
+          </div>
+        )}
+
 
       </div>
 
