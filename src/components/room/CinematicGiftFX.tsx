@@ -102,23 +102,8 @@ export function CinematicGiftFX({
       <div className="cine-room-aurora absolute inset-0" />
       <div className="cine-vignette absolute inset-0" />
 
-      {/* ==== PHASE 1: ENTRY — light-speed streaks ==== */}
-      {phase === "entry" && (
-        <div className="absolute inset-0">
-          {streaks.map((i) => (
-            <span
-              key={i}
-              className="cine-streak absolute left-1/2 top-1/2 block h-[2px] w-[80vmax] origin-left"
-              style={{
-                transform: `rotate(${(i / streaks.length) * 360}deg)`,
-                animationDelay: `${(i % 4) * 40}ms`,
-                background: `linear-gradient(90deg, transparent, ${meta.accent}, transparent)`,
-              }}
-            />
-          ))}
-          <div className="cine-shockwave absolute left-1/2 top-1/2" />
-        </div>
-      )}
+      {/* Entry streaks/shockwave removed — user asked to skip the pre-gift flash */}
+
 
       {/* ==== PHASE 2: BUILDUP — orbiting particle ring ==== */}
       {(phase === "buildup" || phase === "hero") && (
@@ -145,9 +130,9 @@ export function CinematicGiftFX({
       {phase === "hero" && (
         <>
           <div className="cine-hero-pulse absolute left-1/2 top-1/2" />
-          <div className="cine-hero-flash absolute inset-0" />
         </>
       )}
+
 
       {/* ==== PHASE 4: FULL-SCREEN TAKEOVER — petal/particle rain ==== */}
       {(phase === "takeover" || phase === "room") && (
