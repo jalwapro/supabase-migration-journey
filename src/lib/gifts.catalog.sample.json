@@ -1,0 +1,53 @@
+{
+  "$schema": "./gifts.catalog.schema.json",
+  "version": 1,
+  "updated_at": "2026-07-15",
+  "gifts": [
+    {
+      "id": "jalwa-ferrari",
+      "name": "Ferrari",
+      "description": "Luxury red Ferrari roaring through the screen",
+      "category": "luxury-vehicles",
+      "rarity": "epic",
+      "price_diamonds": 5000,
+      "gifter_xp": 500,
+      "duration_ms": 4200,
+      "thumbnail_url": "/__l5e/assets-v1/744b62fc-7414-41bc-9d3e-cd7dc17f29ad/jalwa-ferrari.mp4",
+      "animation": {
+        "type": "mp4",
+        "mp4_url": "/__l5e/assets-v1/744b62fc-7414-41bc-9d3e-cd7dc17f29ad/jalwa-ferrari.mp4",
+        "webm_url": "/__l5e/assets-v1/cc30a46d-9373-46a7-a797-13e4755f889c/jalwa-ferrari.webm",
+        "has_alpha": true,
+        "loop": false
+      },
+      "sound_url": null,
+      "tags": ["car", "luxury", "red", "supercar"],
+      "min_vip_level": 0,
+      "is_combo_enabled": true,
+      "is_active": true
+    },
+    {
+      "id": "jalwa-royal-crown",
+      "name": "Royal Crown",
+      "description": "Golden crown crowning the host as royalty",
+      "category": "royal",
+      "rarity": "legendary",
+      "price_diamonds": 12000,
+      "gifter_xp": 1200,
+      "duration_ms": 5000,
+      "thumbnail_url": "/__l5e/assets-v1/f60e5232-5305-42f9-9912-e80c480c952d/jalwa-royal-crown.mp4",
+      "animation": {
+        "type": "mp4",
+        "mp4_url": "/__l5e/assets-v1/f60e5232-5305-42f9-9912-e80c480c952d/jalwa-royal-crown.mp4",
+        "webm_url": "/__l5e/assets-v1/77b89bb0-a2e6-49ea-a76c-328154a4b873/jalwa-royal-crown.webm",
+        "has_alpha": true,
+        "loop": false
+      },
+      "sound_url": null,
+      "tags": ["crown", "royal", "gold", "vip"],
+      "min_vip_level": 3,
+      "is_combo_enabled": false,
+      "is_active": true
+    }
+  ]
+}
