@@ -99,6 +99,7 @@ function AnimatedGiftVideo({
   fallbackImage,
   withSound = false,
   suppressEmojiFallback = false,
+  screenBlend = false,
 }: {
   src: string;
   type: string | null;
@@ -109,6 +110,7 @@ function AnimatedGiftVideo({
   fallbackImage: string | null;
   withSound?: boolean;
   suppressEmojiFallback?: boolean;
+  screenBlend?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
