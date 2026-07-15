@@ -7,7 +7,7 @@ const LOCAL_GIFT_FILENAMES = new Set([
   "jalwa-diamond-necklace",
   "jalwa-diamond-safe",
   "jalwa-diamond-watch",
-  "jalwa-dragon-roar",
+  
   "jalwa-ferrari",
   "jalwa-floating-luxury-island",
   "jalwa-gold-bar",
