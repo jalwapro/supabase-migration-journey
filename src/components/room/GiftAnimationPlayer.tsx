@@ -187,9 +187,8 @@ function AnimatedGiftVideo({
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
-      {!ready && (
-        <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />
-      )}
+      {/* No placeholder while video buffers — avoids the static PNG/emoji
+          flash before the clip actually plays. Video fades in on `onPlaying`. */}
       <video
         key={src}
         ref={videoRef}
