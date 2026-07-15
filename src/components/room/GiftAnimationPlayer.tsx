@@ -212,9 +212,21 @@ function AnimatedGiftVideo({
           onReady();
         }}
         onEnded={onDone}
-        className={`${ready ? "gift-anim-video" : ""} absolute inset-0 h-full w-full object-contain`}
-        style={{ opacity: ready ? 1 : 0, willChange: "opacity, transform" }}
+        className="gift-anim-video absolute inset-0 h-full w-full object-contain"
+        style={{ opacity: 1, willChange: "opacity, transform" }}
       />
+      {/* Instant placeholder behind the video so the gift appears IMMEDIATELY
+          (TikTok-style). Video decodes on top and covers it once frames flow. */}
+      {!ready && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <GiftFallbackVisual
+            emoji={fallbackEmoji}
+            image={fallbackImage}
+            onReady={() => {}}
+            suppressEmoji={suppressEmojiFallback}
+          />
+        </div>
+      )}
 
     </div>
 
