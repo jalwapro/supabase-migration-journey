@@ -194,8 +194,11 @@ function AnimatedGiftVideo({
   }, [onReady, startPlayback]);
 
   if (failed) {
+    console.log("[AGV] FAILED", src);
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />;
   }
+  console.log("[AGV] render", { src: src.slice(-40), failed, ready });
+
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
@@ -221,10 +224,12 @@ function AnimatedGiftVideo({
           startPlayback();
         }}
         onPlaying={markReady}
-        onError={() => {
+        onError={(e) => {
+          console.log("[AGV] onError", (e.currentTarget as HTMLVideoElement).error);
           setFailed(true);
           onReady();
         }}
+
         onEnded={onDone}
         className="gift-anim-video absolute inset-0 h-full w-full object-contain"
         style={{ opacity: 1, willChange: "opacity, transform", mixBlendMode: screenBlend ? "screen" : undefined }}
@@ -638,7 +643,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* center/front-screen gift animation */}
       <div className="absolute inset-x-0 top-[14vh] z-10 flex flex-col items-center px-2">
+        {(() => { console.log("[TRINARY]", { hasVideo, hasSvg, url: giftClipUrl }); return null; })()}
         {hasVideo ? (
+
           <AnimatedGiftVideo
             src={giftClipUrl ?? ""}
             type={giftClip.type}
