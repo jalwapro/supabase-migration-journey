@@ -194,10 +194,9 @@ function AnimatedGiftVideo({
   }, [onReady, startPlayback]);
 
   if (failed) {
-    console.log("[AGV] FAILED", src);
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />;
   }
-  console.log("[AGV] render", { src: src.slice(-40), failed, ready });
+
 
 
   return (
