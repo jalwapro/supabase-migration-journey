@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { CATALOG_GIFTS } from "@/lib/gifts";
+import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { X, Loader2, Coins, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -130,6 +130,21 @@ export function GiftSheet({
 
   const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
+  const giftVideoUrl = (g: Gift | null) => {
+    if (!g?.clip_path || !["mp4", "webm"].includes(g.clip_type ?? "")) return null;
+    return resolvePlayableGiftUrl(g.clip_path);
+  };
+
+  useEffect(() => {
+    if (!open) return;
+    CATALOG_GIFTS.forEach((g) => preloadGiftVideo(g.clip_path));
+  }, [open]);
+
+  useEffect(() => {
+    if (!selectedGift) return;
+    preloadGiftVideo(giftVideoUrl(selectedGift));
+  }, [selectedGift]);
+
   useEffect(() => {
     if (!open) return;
     if (sendToAll) return;
@@ -217,7 +232,7 @@ export function GiftSheet({
           giftName: selectedGift.name,
           giftEmoji: royalRose ? "" : selectedGift.emoji ?? selectedGift.icon ?? "🎁",
           giftImageUrl: royalRose ? ROYAL_ROSE_THUMB_URL : selectedGift.image_url ?? null,
-          giftClipUrl: royalRose ? ROYAL_ROSE_MP4_URL : selectedGift.image_url ?? resolveLuxuryGiftMp4Url(selectedGift.clip_path) ?? null,
+          giftClipUrl: royalRose ? ROYAL_ROSE_MP4_URL : selectedGift.image_url ?? giftVideoUrl(selectedGift) ?? null,
           giftClipType: royalRose ? "mp4" : selectedGift.image_url ? "image" : selectedGift.clip_path ? selectedGift.clip_type : null,
           coins: price(selectedGift) * qty,
           diamonds: selectedGift.diamonds_value * qty,
@@ -388,6 +403,7 @@ export function GiftSheet({
                 <button
                   key={g.id}
                   onClick={() => setSelectedGift(g)}
+                  onPointerDown={() => preloadGiftVideo(giftVideoUrl(g))}
                   className={`group relative flex flex-col items-center gap-1 overflow-hidden rounded-2xl border p-2 transition-colors ${
                     selected
                       ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10"

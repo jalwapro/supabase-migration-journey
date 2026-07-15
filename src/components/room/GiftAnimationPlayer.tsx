@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
+import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
 
 
@@ -54,7 +55,7 @@ function isRoyalRoseGift(name: string | null | undefined) {
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
-  const optimizedUrl = resolveLuxuryGiftMp4Url(url) ?? url;
+  const optimizedUrl = resolvePlayableGiftUrl(resolveLuxuryGiftMp4Url(url) ?? url) ?? url;
   if (optimizedUrl.startsWith("/__l5e/")) return optimizedUrl;
   return optimizedUrl;
 }
@@ -328,8 +329,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     // NOTE: Do NOT wipe queue/current on local sends — that would drop
     // other users' incoming gifts while the local user is combo-tapping.
     if (currentRef.current) {
+      preloadGiftVideo(getEffectiveGiftClip(p).url);
       setQueue((q) => [...q.slice(-3), p]);
     } else {
+      preloadGiftVideo(getEffectiveGiftClip(p).url);
       currentRef.current = p;
       setCurrent(p);
     }
@@ -558,16 +561,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     nextClip && ["mp4", "webm"].includes(nextClip.type ?? "") ? nextClip.url : null;
   useEffect(() => {
     if (!nextPrefetchUrl) return;
-    const v = document.createElement("video");
-    v.preload = "auto";
-    v.muted = true;
-    v.src = nextPrefetchUrl;
-    // Kick a fetch; discard when done.
-    v.load();
-    return () => {
-      v.removeAttribute("src");
-      v.load();
-    };
+    preloadGiftVideo(nextPrefetchUrl);
   }, [nextPrefetchUrl]);
 
   if (!current) return null;
