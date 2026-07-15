@@ -526,10 +526,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // silent video, so soundUrl (ElevenLabs roar) provides the audio at max volume.
   useEffect(() => {
     if (!current?.soundUrl) return;
+    if (audioPrefs.muted || audioPrefs.volume <= 0) return;
     const src = resolveSoundUrl(current.soundUrl);
     if (!src) return;
     const audio = new Audio(src);
-    audio.volume = 1.0;
+    audio.volume = audioPrefs.volume;
     // Boost via Web Audio for premium (500%)
     let ctx: AudioContext | null = null;
     try {
@@ -539,7 +540,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         ctx = new AC();
         const source = ctx.createMediaElementSource(audio);
         const gain = ctx.createGain();
-        gain.gain.value = 20;
+        gain.gain.value = 20 * audioPrefs.volume;
         source.connect(gain).connect(ctx.destination);
       }
     } catch {}
@@ -552,7 +553,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       audio.src = "";
       try { ctx?.close(); } catch {}
     };
-  }, [current?.key, current?.soundUrl, isPremiumLong]);
+  }, [current?.key, current?.soundUrl, isPremiumLong, audioPrefs.muted, audioPrefs.volume]);
 
 
 
