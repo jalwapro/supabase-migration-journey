@@ -371,12 +371,6 @@ export function GiftSheet({
                     {g.name}
                   </span>
                   <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#ffd447]">
-                    <img
-                      src="/animations/emojis/money.svg"
-                      alt=""
-                      className="h-2.5 w-2.5"
-                      onError={(e) => ((e.currentTarget.style.display = "none"))}
-                    />
                     <Coins className="h-2.5 w-2.5" />
                     {price(g).toLocaleString()}
                   </span>
