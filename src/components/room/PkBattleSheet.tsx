@@ -194,120 +194,152 @@ export function PkBattleSheet({
   if (!open) return null;
   return (
     <>
-      <div className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-md" onClick={onClose} />
       <div
-        className="fixed bottom-0 left-1/2 z-[81] w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-[color:var(--destructive)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#1a0b2e] p-5 shadow-2xl"
+        className="fixed bottom-0 left-1/2 z-[81] w-full max-w-[480px] -translate-x-1/2 overflow-hidden rounded-t-3xl border-t-2 border-[color:var(--gold)]/60 bg-gradient-to-b from-[#3a0d1a] via-[#1f0838] to-[#0a0410] p-5 shadow-[0_-20px_60px_-10px_rgba(255,193,84,0.35)]"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
       >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-extrabold">
-            <Swords className="h-5 w-5 text-[color:var(--destructive)]" /> Live PK Match
-          </h2>
+        {/* Ornate gold corners */}
+        <div className="pointer-events-none absolute left-3 top-3 h-5 w-5 border-l-2 border-t-2 border-[color:var(--gold)]/70 rounded-tl-lg" />
+        <div className="pointer-events-none absolute right-3 top-3 h-5 w-5 border-r-2 border-t-2 border-[color:var(--gold)]/70 rounded-tr-lg" />
+
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[color:var(--gold)]/40" />
+
+        {/* Royal header with crossed swords emblem */}
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="relative grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-[color:var(--gold)] via-amber-500 to-[color:var(--destructive)] shadow-lg shadow-[color:var(--gold)]/40">
+              <Swords className="h-5 w-5 text-black drop-shadow" />
+              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-white/40" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black leading-none tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-[color:var(--gold)] via-amber-200 to-[color:var(--gold)]">
+                PK BATTLE
+              </h2>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/50">
+                ⚔ Royal Arena ⚔
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full bg-white/10"
+            className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/40 text-white/80 hover:bg-white/10"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-4 grid grid-cols-2 gap-1 rounded-full bg-white/5 p-1">
+        {/* Tabs — royal pill */}
+        <div className="mb-5 grid grid-cols-2 gap-1 rounded-full border border-[color:var(--gold)]/25 bg-black/40 p-1">
           <button
             onClick={() => setTab("random")}
-            className={`flex items-center justify-center gap-1 rounded-full py-2 text-xs font-bold transition ${
+            className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-black uppercase tracking-wider transition ${
               tab === "random"
-                ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] text-white"
-                : "text-white/60"
+                ? "bg-gradient-to-r from-[color:var(--destructive)] via-rose-500 to-[color:var(--gold)] text-white shadow-lg shadow-rose-500/40"
+                : "text-white/50"
             }`}
           >
             <Shuffle className="h-3.5 w-3.5" /> Random
           </button>
           <button
             onClick={() => setTab("pick")}
-            className={`flex items-center justify-center gap-1 rounded-full py-2 text-xs font-bold transition ${
+            className={`flex items-center justify-center gap-1.5 rounded-full py-2 text-xs font-black uppercase tracking-wider transition ${
               tab === "pick"
-                ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] text-white"
-                : "text-white/60"
+                ? "bg-gradient-to-r from-[color:var(--destructive)] via-rose-500 to-[color:var(--gold)] text-white shadow-lg shadow-rose-500/40"
+                : "text-white/50"
             }`}
           >
             <Users className="h-3.5 w-3.5" /> Pick Host
           </button>
         </div>
 
-        <label className="mb-1.5 block text-xs font-semibold text-white/60">
-          Match duration
-        </label>
-        <div className="mb-4 grid grid-cols-3 gap-2">
-          {([180, 300, 600] as const).map((sec) => {
-            const active = duration === sec;
-            return (
-              <button
-                key={sec}
-                disabled={searching}
-                onClick={() => setDuration(sec)}
-                className={`rounded-full py-2 text-xs font-bold transition disabled:opacity-40 ${
-                  active
-                    ? "bg-gradient-to-r from-[color:var(--destructive)] to-[color:var(--gold)] text-white"
-                    : "border border-white/15 bg-white/5 text-white/80"
-                }`}
-              >
-                <Clock className="mr-1 inline h-3 w-3" />
-                {sec / 60} min
-              </button>
-            );
-          })}
+        {/* Duration — gold framed pills */}
+        <div className="mb-5">
+          <div className="mb-2 flex items-center gap-2">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-[color:var(--gold)]/40" />
+            <label className="text-[10px] font-black uppercase tracking-[0.25em] text-[color:var(--gold)]/80">
+              ⏳ Battle Duration
+            </label>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-[color:var(--gold)]/40" />
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {([180, 300, 600] as const).map((sec) => {
+              const active = duration === sec;
+              return (
+                <button
+                  key={sec}
+                  disabled={searching}
+                  onClick={() => setDuration(sec)}
+                  className={`relative rounded-xl py-2.5 text-xs font-black transition disabled:opacity-40 ${
+                    active
+                      ? "border border-[color:var(--gold)] bg-gradient-to-b from-amber-500/30 to-[color:var(--destructive)]/30 text-white shadow-inner shadow-[color:var(--gold)]/30"
+                      : "border border-white/10 bg-black/30 text-white/60 hover:border-white/20"
+                  }`}
+                >
+                  <Clock className="mr-1 inline h-3 w-3" />
+                  {sec / 60} MIN
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {tab === "random" ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+          <div className="relative rounded-2xl border border-[color:var(--gold)]/30 bg-gradient-to-b from-black/50 to-[color:var(--destructive)]/10 p-4">
+            {/* corner emblems */}
+            <div className="pointer-events-none absolute left-2 top-2 h-3 w-3 border-l border-t border-[color:var(--gold)]/60" />
+            <div className="pointer-events-none absolute right-2 top-2 h-3 w-3 border-r border-t border-[color:var(--gold)]/60" />
+            <div className="pointer-events-none absolute bottom-2 left-2 h-3 w-3 border-b border-l border-[color:var(--gold)]/60" />
+            <div className="pointer-events-none absolute bottom-2 right-2 h-3 w-3 border-b border-r border-[color:var(--gold)]/60" />
+
             {searching ? (
               <div className="flex flex-col items-center gap-3 py-4">
                 <div className="relative">
-                  <div className="absolute inset-0 animate-ping rounded-full bg-[color:var(--destructive)]/40" />
-                  <div className="relative grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[color:var(--destructive)] to-[color:var(--gold)]">
-                    <Shuffle className="h-7 w-7 text-white" />
+                  <div className="absolute inset-0 animate-ping rounded-full bg-[color:var(--gold)]/40" />
+                  <div className="absolute -inset-2 rounded-full border-2 border-dashed border-[color:var(--gold)]/60 animate-spin [animation-duration:6s]" />
+                  <div className="relative grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[color:var(--destructive)] via-rose-600 to-[color:var(--gold)] shadow-2xl shadow-[color:var(--gold)]/50">
+                    <Swords className="h-8 w-8 text-white drop-shadow-lg" />
                   </div>
                 </div>
-                <p className="text-sm font-extrabold text-white">
-                  Searching for opponent…
+                <p className="text-sm font-black uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[color:var(--gold)] to-amber-200">
+                  Summoning Rival…
                 </p>
                 <p className="text-[11px] text-white/60">
-                  Waited {waitedSec}s · trying next host automatically · auto-cancels at 180s
+                  Waited {waitedSec}s · auto-matching · cancels at 180s
                 </p>
                 <div className="flex w-full gap-2">
                   <button
                     onClick={cancelSearch}
-                    className="flex-1 rounded-full bg-white/10 px-4 py-2.5 text-xs font-bold text-white/80"
+                    className="flex-1 rounded-full border border-white/15 bg-black/40 px-4 py-2.5 text-xs font-bold text-white/80"
                   >
-                    ✕ Cancel
+                    ✕ Retreat
                   </button>
                   <button
                     onClick={nextOpponent}
-                    className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--gold)] px-4 py-2.5 text-xs font-extrabold text-white shadow-lg"
+                    className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--gold)] via-amber-500 to-[color:var(--destructive)] px-4 py-2.5 text-xs font-black text-black shadow-lg shadow-[color:var(--gold)]/40"
                   >
-                    ⏭ Next Host
+                    ⏭ Next Warrior
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                <p className="mb-3 text-center text-xs text-white/70">
-                  Get instantly paired with another random live host who's also
-                  looking for a PK battle. Not happy? Tap <b>Next</b> to skip.
+                <p className="mb-4 text-center text-xs leading-relaxed text-white/70">
+                  ⚔ Enter the arena — get matched with a random live host ready to battle for glory. Not happy? Tap <b className="text-[color:var(--gold)]">Next</b> to skip.
                 </p>
                 <button
                   onClick={findRandom}
-                  className="glow-4d flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-pink-500 to-[color:var(--gold)] py-3 text-sm font-extrabold text-white"
+                  className="glow-4d relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-rose-500 to-[color:var(--gold)] py-3.5 text-sm font-black uppercase tracking-wider text-white shadow-xl shadow-[color:var(--destructive)]/40"
                 >
-                  <Shuffle className="h-4 w-4" />
-                  Start PK — Find Opponent
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity" />
+                  <Swords className="h-4 w-4" />
+                  Start Battle
                 </button>
               </>
             )}
           </div>
         ) : (
+
           <>
             <p className="mb-2 text-xs font-semibold text-white/60">
               Pick a live host to challenge
