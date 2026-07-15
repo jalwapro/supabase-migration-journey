@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
+import { CATALOG_GIFTS } from "@/lib/gifts";
 import { X, Loader2, Coins, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,7 +92,11 @@ export function GiftSheet({
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
-      return rows.filter((g) => g.is_active !== false && g.active !== false);
+      const dbGifts = rows.filter((g) => g.is_active !== false && g.active !== false);
+      // Merge JSON catalog gifts, skipping any id that already exists in DB.
+      const dbIds = new Set(dbGifts.map((g) => g.id));
+      const merged: Gift[] = [...dbGifts, ...CATALOG_GIFTS.filter((g) => !dbIds.has(g.id))];
+      return merged;
     },
     enabled: open,
   });
@@ -392,7 +397,11 @@ export function GiftSheet({
                   <div className="grid h-12 w-12 place-items-center overflow-hidden rounded-xl bg-black/20">
                     <GiftPreview gift={g} />
                   </div>
-
+                  {(g as { source?: string }).source === "catalog" && (
+                    <span className="absolute right-1 top-1 rounded-full bg-[color:var(--gold)]/90 px-1.5 py-[1px] text-[8px] font-black uppercase text-black">
+                      JSON
+                    </span>
+                  )}
                   <span className="truncate text-[10px] font-semibold">{g.name}</span>
                   <span className="flex items-center gap-0.5 text-[10px] text-[color:var(--gold)]">
                     <Coins className="h-2.5 w-2.5" />
