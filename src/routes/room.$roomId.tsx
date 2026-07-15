@@ -1756,7 +1756,7 @@ function RoomPage() {
               </div>
             </div>
           ) : (
-            <div className="relative z-10 min-h-0 w-full flex-1">
+            <div className="relative z-10 min-h-0 w-full flex-[3]">
               {/* ambient royal glow bg */}
               <div className="absolute inset-0 bg-gradient-to-b from-amber-900/20 via-black to-black" />
               {/* side blur strips */}
