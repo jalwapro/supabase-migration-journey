@@ -1639,7 +1639,7 @@ function RoomPage() {
               ) : null}
               <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md">
                 <div className="flex -space-x-2">
-                  {members.slice(0, 2).map((m) => (
+                  {members.filter((m) => m.user_id !== r.host_id).slice(0, 2).map((m) => (
                     <div
                       key={m.user_id}
                       className="grid h-5 w-5 place-items-center overflow-hidden rounded-full border border-white/40 bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 text-[8px] font-black"
