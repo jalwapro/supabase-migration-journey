@@ -2837,7 +2837,7 @@ function RoomPage() {
             toast.info("Only the host can start a PK match");
             return;
           }
-          setPkOpen(true);
+          navigate({ to: "/pk/$roomId", params: { roomId } });
         }}
       />
 
