@@ -351,7 +351,7 @@ function PkMatchPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/5 bg-black/60 px-3 py-2.5 backdrop-blur-xl">
         <button
-          onClick={() => navigate({ to: "/rooms" })}
+          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
           className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
           aria-label="Back"
         >
@@ -369,12 +369,26 @@ function PkMatchPage() {
             </span>
           </div>
         </div>
-        <button className="rounded-full border border-[color:var(--secondary)]/50 px-4 py-1.5 text-[12px] font-semibold text-[color:var(--secondary)] hover:bg-[color:var(--secondary)]/10">
-          Follow
+        {!isHost && (
+          <button
+            onClick={toggleFollow}
+            className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold ${
+              followQ.data
+                ? "border-white/20 text-white/60"
+                : "border-[color:var(--secondary)]/50 text-[color:var(--secondary)] hover:bg-[color:var(--secondary)]/10"
+            }`}
+          >
+            {followQ.data ? "Following" : "Follow"}
+          </button>
+        )}
+        <button
+          onClick={shareRoom}
+          className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
+          aria-label="Share"
+        >
+          <Share2 className="h-5 w-5" />
         </button>
-        <button className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5">
-          <MoreVertical className="h-5 w-5" />
-        </button>
+
       </div>
 
 
