@@ -1554,8 +1554,16 @@ function RoomPage() {
       >
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           {/* Host chip */}
-          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
-            <div className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
+          <div className={`flex min-w-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] ${
+            isVideo
+              ? "border-white/10 bg-black/40"
+              : "border-violet-300/35 bg-white/10 rounded-2xl py-1.5 pl-1.5"
+          }`}>
+            <div className={`relative shrink-0 overflow-hidden rounded-full ${
+              isVideo
+                ? "h-9 w-9 border-2 border-amber-400"
+                : "glow-4d grid h-11 w-11 place-items-center bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20"
+            }`}>
               {r.host?.avatar ? (
                 <img
                   src={r.host.avatar}
@@ -1577,7 +1585,7 @@ function RoomPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
+                <span className={`truncate font-black leading-tight ${isVideo ? "text-[11px]" : "text-[13px] sm:text-sm"}`}>
                   {r.title}
                 </span>
                 {!isHost && (
@@ -1590,9 +1598,19 @@ function RoomPage() {
                   />
                 )}
               </div>
-              <div className="truncate text-[10px] font-semibold text-white/60">
-                ID:{roomCode}
-              </div>
+              {isVideo ? (
+                <div className="flex items-center gap-1 leading-none">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[9px] font-bold text-pink-400">
+                    {Math.max(r.viewer_count, members.length)} viewing
+                  </span>
+                  <span className="text-[9px] text-white/40">· ID:{roomCode}</span>
+                </div>
+              ) : (
+                <div className="truncate text-[10px] font-semibold text-white/60">
+                  ID:{roomCode}
+                </div>
+              )}
             </div>
           </div>
           {/* Action icons */}
