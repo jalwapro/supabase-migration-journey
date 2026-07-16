@@ -49,7 +49,6 @@ import {
   Play,
   Pause,
   X,
-  Video,
 } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
