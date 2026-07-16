@@ -555,8 +555,14 @@ function PkMatchPage() {
           coins={hostSideScore || (room?.host?.coins ?? 0)}
           accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 rounded-r-none border-r-0"
           crown
-
+          videoTrack={
+            isHost
+              ? (agora.localVideoTrack ?? null)
+              : (room?.host_id ? agora.remotes.get(uidFromUuid(room.host_id))?.videoTrack ?? null : null)
+          }
+          mirror={isHost}
         />
+
 
 
         {/* VS badge overlay */}
