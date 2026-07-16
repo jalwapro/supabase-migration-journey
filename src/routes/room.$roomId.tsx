@@ -1094,6 +1094,10 @@ function RoomPage() {
 
   async function leaveSeat() {
     if (!user) return;
+    if (isHost) {
+      toast.error("Host cannot leave their seat");
+      return;
+    }
     const { error } = await supabase
       .from("room_members")
       .update({ seat_index: null })
@@ -1101,6 +1105,7 @@ function RoomPage() {
       .eq("user_id", user.id);
     if (error) toast.error(error.message);
   }
+
 
   async function takeAvailableVoiceSeat() {
     if (!user) {
@@ -2308,14 +2313,16 @@ function RoomPage() {
 
           {/* Footer icon row */}
           <div className="flex items-center justify-between gap-1.5">
-            <button
-              onClick={() => void toggleMuteWithSync()}
-              aria-label={agora.muted ? "Unmute" : "Mute"}
-              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
-            >
-              {agora.micBlocked || agora.muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
-              <span className="text-[10px] font-semibold">Mic</span>
-            </button>
+            {shouldPublish ? (
+              <button
+                onClick={() => void toggleMuteWithSync()}
+                aria-label={agora.muted ? "Unmute" : "Mute"}
+                className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
+              >
+                {agora.micBlocked || agora.muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+                <span className="text-[10px] font-semibold">Mic</span>
+              </button>
+            ) : null}
             <button
               onClick={() => agora.toggleSpeaker()}
               aria-label="Sound"
@@ -2348,20 +2355,25 @@ function RoomPage() {
               <MoreHorizontal className="h-5 w-5" />
               <span className="text-[10px] font-semibold">More</span>
             </button>
-            <button
-              onClick={() => {
-                if (isHost || mySeatIndex === 0 || mySeatIndex === 1) {
-                  void toggleVideoWithPipeline();
-                } else {
-                  toast.info("Raised hand ✋");
-                }
-              }}
-              className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
-            >
-              <span className="text-base leading-none">✋</span>
-              Raise Hand
-            </button>
+            {isHost ? (
+              <button
+                onClick={() => void toggleVideoWithPipeline()}
+                className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+              >
+                <Video className="h-4 w-4" />
+                {agora.videoOn ? "Camera On" : "Camera Off"}
+              </button>
+            ) : (
+              <button
+                onClick={() => toast.info("Raised hand ✋")}
+                className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+              >
+                <span className="text-base leading-none">✋</span>
+                Raise Hand
+              </button>
+            )}
           </div>
+
         </div>
 
       ) : (
