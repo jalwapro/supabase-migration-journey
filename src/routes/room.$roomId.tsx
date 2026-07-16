@@ -2022,7 +2022,7 @@ function RoomPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Mic className="h-3.5 w-3.5 text-violet-300" />
-                    <span className="text-[12px] font-bold text-white">Voice Seats ({Math.max(0, r.seat_count - 2)})</span>
+                    <span className="text-[12px] font-bold text-white">Voice Seats (4)</span>
                   </div>
                   {(isHost || isModerator) && (
                     <button
@@ -2035,8 +2035,7 @@ function RoomPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {Array.from({ length: Math.max(0, r.seat_count - 2) }).map((_, idx) => {
-                    const i = idx + 2;
+                  {[2, 3, 4, 5].map((i, idx) => {
                     const m = seatsByIndex.get(i);
                     const displayNum = idx + 1;
                     const speaking = m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false;
