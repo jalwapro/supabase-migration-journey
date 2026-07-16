@@ -2376,23 +2376,13 @@ function RoomPage() {
               // Host OR co-host seat holder → camera toggle
               if (isHost || isCoHostSeat) {
                 return (
-                  <>
-                    <button
-                      onClick={() => setFilterSheetOpen(true)}
-                      aria-label="Camera filters & effects"
-                      className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-fuchsia-400/60 bg-transparent px-3 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(232,121,249,0.35)] active:scale-95"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Filters
-                    </button>
-                    <button
-                      onClick={() => void toggleVideoWithPipeline()}
-                      className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
-                    >
-                      <Video className="h-4 w-4" />
-                      {agora.videoOn ? "Camera On" : "Camera Off"}
-                    </button>
-                  </>
+                  <button
+                    onClick={() => void toggleVideoWithPipeline()}
+                    className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+                  >
+                    <Video className="h-4 w-4" />
+                    {agora.videoOn ? "Camera On" : "Camera Off"}
+                  </button>
                 );
               }
               // Any other seated user (voice seats) → no raise hand
@@ -2408,6 +2398,7 @@ function RoomPage() {
                 </button>
               );
             })()}
+
           </div>
 
         </div>
@@ -2718,7 +2709,13 @@ function RoomPage() {
         speakerMuted={agora.speakerMuted}
         onToggleSpeaker={agora.toggleSpeaker}
         isVideo={isVideo}
+        canUseFilters={isVideo && (isHost || (myMember?.seat_index ?? -1) === 1)}
+        onOpenFilters={() => {
+          setVideoSettingsOpen(false);
+          setFilterSheetOpen(true);
+        }}
         onOpenMusic={() => {
+
           setVideoSettingsOpen(false);
           setMusicOpen(true);
         }}
@@ -4010,6 +4007,8 @@ function VideoSettingsSheet({
   speakerMuted,
   onToggleSpeaker,
   isVideo,
+  canUseFilters,
+  onOpenFilters,
   onOpenMusic,
   onOpenGames,
   onShare,
@@ -4031,6 +4030,8 @@ function VideoSettingsSheet({
   speakerMuted: boolean;
   onToggleSpeaker: () => void;
   isVideo: boolean;
+  canUseFilters: boolean;
+  onOpenFilters: () => void;
   onOpenMusic: () => void;
   onOpenGames: () => void;
   onShare: () => void;
@@ -4040,6 +4041,7 @@ function VideoSettingsSheet({
   onEndLive: () => void;
   onPk: () => void;
 }) {
+
   // Filters disabled — no CamPipeline usage here.
 
   if (!open) return null;
@@ -4141,7 +4143,11 @@ function VideoSettingsSheet({
           Room Tools
         </div>
         <div className="grid grid-cols-4 gap-2">
+          {canUseFilters && (
+            <ToolBtn icon={<Sparkles className="h-5 w-5" />} label="Filters" onClick={onOpenFilters} />
+          )}
           <ToolBtn icon={<Music className="h-5 w-5" />} label="Music" onClick={onOpenMusic} disabled={!isHost} />
+
           <ToolBtn icon={<Gamepad2 className="h-5 w-5" />} label="Games" onClick={onOpenGames} />
           <ToolBtn icon={<Share2 className="h-5 w-5" />} label="Invite" onClick={onShare} />
           <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={onOpenGuests} />
