@@ -534,11 +534,13 @@ function PkMatchPage() {
             return (
               <div className="flex flex-col items-center gap-3">
                 <div className="relative">
-                  <img
-                    src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
-                    className="h-28 w-28 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/60"
-                    alt=""
-                  />
+                  {h.host?.avatar ? (
+                    <img src={h.host.avatar} className="h-28 w-28 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/60" alt="" />
+                  ) : (
+                    <div className="grid h-28 w-28 place-items-center rounded-2xl bg-white/10 text-3xl font-black uppercase text-white/70 ring-2 ring-[color:var(--primary)]/60">
+                      {(h.host?.username ?? "?").charAt(0)}
+                    </div>
+                  )}
                   <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase">Live</span>
                 </div>
                 <div className="mt-2 text-center">
