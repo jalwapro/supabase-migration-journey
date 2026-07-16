@@ -553,6 +553,7 @@ function PkMatchPage() {
 
         {/* Opponent side */}
         {opponent || match ? (
+
           <HostPanel
             label="OPPONENT"
             username={opponent?.host?.username ?? opponentQ.data?.username ?? "Opponent"}
