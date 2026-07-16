@@ -557,48 +557,14 @@ function PkMatchPage() {
                 {rnd?.host?.username ?? "—"}
               </div>
               {rnd && (
-                <div className="text-center text-[10px] text-white/50">
-                  <Users className="mr-0.5 inline h-2.5 w-2.5" /> {rnd.viewer_count ?? 0} viewers
-                </div>
-              )}
-              {rnd ? (
-                <div className="mt-2 grid grid-cols-3 gap-1">
-                  <button
-                    onClick={() => {
-                      if (list.length <= 1) return;
-                      setRandomIdx((i) => (i + 1) % list.length);
-                    }}
-                    className="flex items-center justify-center gap-0.5 rounded-lg border border-white/15 bg-white/[0.04] py-1.5 text-[10.5px] font-semibold text-white/80 active:scale-95"
-                  >
-                    <SkipForward className="h-3 w-3" /> Next
-                  </button>
-                  <button
-                    onClick={() => navigate({ to: "/messages/$peerId", params: { peerId: rnd.host_id } })}
-                    className="flex items-center justify-center gap-0.5 rounded-lg border border-white/15 bg-white/[0.04] py-1.5 text-[10.5px] font-semibold text-white/80 active:scale-95"
-                  >
-                    <MessageCircle className="h-3 w-3" /> Chat
-                  </button>
-                  <button
-                    onClick={() => { setOpponent(rnd); setModeSheetOpen(true); }}
-                    className="flex items-center justify-center gap-0.5 rounded-lg bg-gradient-to-r from-sky-500 to-fuchsia-500 py-1.5 text-[10.5px] font-bold text-white active:scale-95"
-                  >
-                    <Check className="h-3 w-3" /> Match
-                  </button>
-                </div>
-              ) : (
                 <button
-                  onClick={() => setPickerOpen(true)}
-                  className="mt-2 rounded-lg border border-white/15 bg-white/[0.04] py-1.5 text-[11px] font-semibold text-white/80 active:scale-95"
+                  onClick={() => setOpponent(rnd)}
+                  className="mt-1 text-center text-[10px] text-white/40 underline"
                 >
-                  Browse hosts
+                  Change
                 </button>
               )}
-              <button
-                onClick={() => setPickerOpen(true)}
-                className="mt-1 text-center text-[10px] text-white/40 underline"
-              >
-                Pick manually
-              </button>
+
             </div>
           );
         })()}
