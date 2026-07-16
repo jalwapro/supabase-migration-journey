@@ -1,10 +1,11 @@
 /**
- * CamStudio bottom sheet — two tabs: Filters (color grades) + Beauty.
- * Opens from the ✨ button in the video controls of RoomPage.
+ * CamStudio bottom sheet — two tabs: Filters + Beauty.
+ * Filters tab shows a small featured row plus a "More" button that
+ * expands the full Beauty + Makeup catalog.
  */
-import { useState } from "react";
-import { X, Wand2, Sparkles } from "lucide-react";
-import { FILTERS } from "@/lib/camPipeline/filters";
+import { useMemo, useState } from "react";
+import { X, Wand2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { FILTERS, type FilterPreset } from "@/lib/camPipeline/filters";
 import { useCamPipeline } from "@/hooks/useCamPipeline";
 import { cn } from "@/lib/utils";
 
@@ -15,16 +16,26 @@ interface Props {
 
 type Tab = "filter" | "beauty";
 
+const FEATURED_IDS = ["none", "natural-beauty", "glass-skin", "luxury-glow", "studio-portrait", "hollywood"];
+
 export function CamStudio({ open, onClose }: Props) {
   const { cfg, setFilter, setBeautyOn, setBeautyIntensity } = useCamPipeline();
   const [tab, setTab] = useState<Tab>("filter");
+  const [showMore, setShowMore] = useState(false);
+
+  const featured = useMemo(
+    () => FEATURED_IDS.map((id) => FILTERS.find((f) => f.id === id)).filter(Boolean) as FilterPreset[],
+    [],
+  );
+  const beautyAll = useMemo(() => FILTERS.filter((f) => f.category === "beauty" && f.id !== "none"), []);
+  const makeupAll = useMemo(() => FILTERS.filter((f) => f.category === "makeup"), []);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
-        className="w-full max-w-[480px] rounded-t-3xl bg-gradient-to-b from-[#1a0b2e] to-[#0d0620] border-t border-white/10 pb-6 pt-4 px-4 max-h-[75vh] overflow-hidden flex flex-col"
+        className="w-full max-w-[480px] rounded-t-3xl bg-gradient-to-b from-[#1a0b2e] to-[#0d0620] border-t border-white/10 pb-6 pt-4 px-4 max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
@@ -43,22 +54,47 @@ export function CamStudio({ open, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto">
           {tab === "filter" && (
-            <div className="grid grid-cols-4 gap-2">
-              {FILTERS.map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setFilter(f.id)}
-                  className={cn(
-                    "aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border transition",
-                    cfg.filterId === f.id
-                      ? "border-pink-400 bg-pink-500/20 ring-2 ring-pink-400/50"
-                      : "border-white/10 bg-white/5 hover:bg-white/10",
-                  )}
-                >
-                  <span className="text-2xl leading-none">{f.emoji}</span>
-                  <span className="text-[10px] text-white/80 font-medium">{f.label}</span>
-                </button>
-              ))}
+            <div className="space-y-4">
+              {/* Featured */}
+              <div>
+                <div className="text-white/60 text-[11px] uppercase tracking-wider font-semibold mb-2 px-1">Featured</div>
+                <div className="grid grid-cols-4 gap-2">
+                  {featured.map((f) => (
+                    <FilterCard key={f.id} f={f} active={cfg.filterId === f.id} onClick={() => setFilter(f.id)} />
+                  ))}
+                </div>
+              </div>
+
+              {/* More button */}
+              <button
+                onClick={() => setShowMore((v) => !v)}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-gradient-to-r from-pink-500/20 to-fuchsia-500/20 border border-pink-400/40 text-white text-sm font-medium hover:from-pink-500/30 hover:to-fuchsia-500/30 transition"
+              >
+                {showMore ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {showMore ? "Show Less" : "More Filters"}
+                <span className="text-white/50 text-xs">({beautyAll.length + makeupAll.length})</span>
+              </button>
+
+              {showMore && (
+                <>
+                  <div>
+                    <div className="text-white/60 text-[11px] uppercase tracking-wider font-semibold mb-2 px-1">✨ Beauty</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {beautyAll.map((f) => (
+                        <FilterCard key={f.id} f={f} active={cfg.filterId === f.id} onClick={() => setFilter(f.id)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-[11px] uppercase tracking-wider font-semibold mb-2 px-1">💄 Makeup</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {makeupAll.map((f) => (
+                        <FilterCard key={f.id} f={f} active={cfg.filterId === f.id} onClick={() => setFilter(f.id)} />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           )}
 
@@ -99,6 +135,23 @@ export function CamStudio({ open, onClose }: Props) {
         </div>
       </div>
     </div>
+  );
+}
+
+function FilterCard({ f, active, onClick }: { f: FilterPreset; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border transition p-1",
+        active
+          ? "border-pink-400 bg-pink-500/20 ring-2 ring-pink-400/50"
+          : "border-white/10 bg-white/5 hover:bg-white/10",
+      )}
+    >
+      <span className="text-2xl leading-none">{f.emoji}</span>
+      <span className="text-[10px] text-white/80 font-medium text-center leading-tight px-1">{f.label}</span>
+    </button>
   );
 }
 
