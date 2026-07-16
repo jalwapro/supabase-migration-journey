@@ -7,7 +7,7 @@
  * saturate/sepia/hue-rotate/blur). No real ML inference runs.
  */
 
-export type FilterCategory = "beauty" | "makeup";
+export type FilterCategory = "beauty" | "makeup" | "funny" | "ar";
 
 export interface FilterPreset {
   id: string;
@@ -43,7 +43,32 @@ export const FILTERS: FilterPreset[] = [
   { id: "celebrity",        label: "Celebrity",       emoji: "⭐", category: "makeup", filter: "contrast(1.22) saturate(1.2) brightness(1.06) sepia(0.06)" },
   { id: "influencer",       label: "Influencer",      emoji: "👑", category: "makeup", filter: "brightness(1.1) saturate(1.3) sepia(0.15) contrast(1.08)" },
   { id: "perfect-selfie",   label: "Perfect Selfie",  emoji: "📱", category: "makeup", filter: "brightness(1.1) contrast(1.12) saturate(1.15)" },
+
+  // ── Funny ──────────────────────────────────────────────
+  { id: "puppy",            label: "Puppy",           emoji: "🐶", category: "funny", filter: "brightness(1.08) saturate(1.15) sepia(0.15) contrast(1.05)" },
+  { id: "cat",              label: "Cat",             emoji: "🐱", category: "funny", filter: "brightness(1.1) saturate(1.2) hue-rotate(-8deg) contrast(1.05)" },
+  { id: "bunny",            label: "Bunny",           emoji: "🐰", category: "funny", filter: "brightness(1.15) saturate(1.1) contrast(1.02) blur(0.3px)" },
+  { id: "panda",            label: "Panda",           emoji: "🐼", category: "funny", filter: "contrast(1.2) saturate(0.85) brightness(1.05)" },
+  { id: "monkey",           label: "Monkey",          emoji: "🙈", category: "funny", filter: "brightness(1.05) sepia(0.25) saturate(1.1) contrast(1.08)" },
+  { id: "dinosaur",         label: "Dinosaur",        emoji: "🦖", category: "funny", filter: "contrast(1.25) saturate(1.3) hue-rotate(60deg) brightness(0.95)" },
+  { id: "alien",            label: "Alien",           emoji: "👽", category: "funny", filter: "hue-rotate(90deg) saturate(1.6) brightness(1.05) contrast(1.15)" },
+  { id: "fat-face",         label: "Fat Face",        emoji: "😂", category: "funny", filter: "brightness(1.08) saturate(1.15) contrast(1.05)" },
+  { id: "tiny-face",        label: "Tiny Face",       emoji: "🤣", category: "funny", filter: "brightness(1.1) saturate(1.2) contrast(1.08)" },
+  { id: "big-eyes",         label: "Big Eyes",        emoji: "👀", category: "funny", filter: "brightness(1.12) contrast(1.15) saturate(1.25)" },
+
+  // ── AR Effects ─────────────────────────────────────────
+  { id: "butterfly",        label: "Butterfly",       emoji: "🦋", category: "ar", filter: "brightness(1.1) saturate(1.25) hue-rotate(-10deg) contrast(1.05)" },
+  { id: "angel",            label: "Angel Aura",      emoji: "👼", category: "ar", filter: "brightness(1.2) saturate(0.9) contrast(1.05) sepia(0.1)" },
+  { id: "devil",            label: "Devil Mode",      emoji: "😈", category: "ar", filter: "contrast(1.3) saturate(1.4) hue-rotate(-15deg) brightness(0.9)" },
+  { id: "fire-aura",        label: "Fire Aura",       emoji: "🔥", category: "ar", filter: "saturate(1.5) hue-rotate(-20deg) brightness(1.1) contrast(1.15)" },
+  { id: "ice-kingdom",      label: "Ice Kingdom",     emoji: "❄️", category: "ar", filter: "hue-rotate(180deg) saturate(1.2) brightness(1.15) contrast(1.05)" },
+  { id: "galaxy",           label: "Galaxy Portal",   emoji: "🌌", category: "ar", filter: "hue-rotate(240deg) saturate(1.4) brightness(0.95) contrast(1.2)" },
+  { id: "magic-wizard",     label: "Magic Wizard",    emoji: "✨", category: "ar", filter: "hue-rotate(210deg) saturate(1.3) brightness(1.1) contrast(1.1)" },
+  { id: "laser-eyes",       label: "Laser Eyes",      emoji: "⚡", category: "ar", filter: "hue-rotate(190deg) saturate(1.5) brightness(1.15) contrast(1.2)" },
+  { id: "neon-rgb",         label: "Neon RGB",        emoji: "🌈", category: "ar", filter: "saturate(1.8) hue-rotate(-25deg) brightness(1.08) contrast(1.15)" },
+  { id: "golden-crown",     label: "Golden Crown",    emoji: "👑", category: "ar", filter: "sepia(0.3) saturate(1.4) brightness(1.12) contrast(1.08)" },
 ];
+
 
 export const FILTER_BY_ID: Record<string, FilterPreset> = Object.fromEntries(
   FILTERS.map((f) => [f.id, f]),

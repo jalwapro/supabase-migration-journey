@@ -29,6 +29,9 @@ export function CamStudio({ open, onClose }: Props) {
   );
   const beautyAll = useMemo(() => FILTERS.filter((f) => f.category === "beauty" && f.id !== "none"), []);
   const makeupAll = useMemo(() => FILTERS.filter((f) => f.category === "makeup"), []);
+  const funnyAll = useMemo(() => FILTERS.filter((f) => f.category === "funny"), []);
+  const arAll = useMemo(() => FILTERS.filter((f) => f.category === "ar"), []);
+
 
   if (!open) return null;
 
@@ -72,7 +75,7 @@ export function CamStudio({ open, onClose }: Props) {
               >
                 {showMore ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 {showMore ? "Show Less" : "More Filters"}
-                <span className="text-white/50 text-xs">({beautyAll.length + makeupAll.length})</span>
+                <span className="text-white/50 text-xs">({beautyAll.length + makeupAll.length + funnyAll.length + arAll.length})</span>
               </button>
 
               {showMore && (
@@ -93,8 +96,25 @@ export function CamStudio({ open, onClose }: Props) {
                       ))}
                     </div>
                   </div>
+                  <div>
+                    <div className="text-white/60 text-[11px] uppercase tracking-wider font-semibold mb-2 px-1">😂 Funny</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {funnyAll.map((f) => (
+                        <FilterCard key={f.id} f={f} active={cfg.filterId === f.id} onClick={() => setFilter(f.id)} />
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-white/60 text-[11px] uppercase tracking-wider font-semibold mb-2 px-1">🎭 AR Effects</div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {arAll.map((f) => (
+                        <FilterCard key={f.id} f={f} active={cfg.filterId === f.id} onClick={() => setFilter(f.id)} />
+                      ))}
+                    </div>
+                  </div>
                 </>
               )}
+
             </div>
           )}
 
