@@ -391,7 +391,39 @@ function PkMatchPage() {
 
       </div>
 
-
+      {/* Incoming challenge banner */}
+      {incoming && (
+        <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-[color:var(--gold)]/50 bg-gradient-to-r from-amber-500/15 to-fuchsia-500/10 p-3">
+          {incoming.from?.avatar ? (
+            <img src={incoming.from.avatar} className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/60" alt="" />
+          ) : (
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-sm font-bold uppercase text-white/80 ring-2 ring-[color:var(--gold)]/60">
+              {(incoming.from?.username ?? "?").charAt(0)}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-bold">
+              {incoming.from?.username ?? "A host"} challenged you
+            </div>
+            <div className="text-[11px] text-white/60">
+              {Math.round(incoming.duration_sec / 60)} min PK
+              {incoming.stake_coins ? ` • ${incoming.stake_coins} coins stake` : ""}
+            </div>
+          </div>
+          <button
+            onClick={() => respondInvite(false)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-bold text-white/80"
+          >
+            Decline
+          </button>
+          <button
+            onClick={() => respondInvite(true)}
+            className="rounded-full bg-gradient-to-r from-sky-500 to-fuchsia-500 px-3 py-1.5 text-[11px] font-black text-white"
+          >
+            Accept
+          </button>
+        </div>
+      )}
 
 
       {/* VS panels */}
