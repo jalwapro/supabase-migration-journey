@@ -526,6 +526,34 @@ function PkMatchPage() {
         </Sheet>
       )}
 
+      {/* PK Mode Picker Sheet */}
+      {modeSheetOpen && (
+        <Sheet onClose={() => setModeSheetOpen(false)} title="Select PK Mode">
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.keys(MODE_META) as PkMode[]).map((k) => {
+              const meta = MODE_META[k];
+              const Icon = meta.icon;
+              return (
+                <button
+                  key={k}
+                  onClick={() => void startBattle(k)}
+                  disabled={starting}
+                  className={`relative flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-b ${meta.accent} p-3 text-center transition active:scale-95 disabled:opacity-60`}
+                >
+                  <Icon className="h-7 w-7 text-white" />
+                  <span className="text-[13px] font-bold">{meta.label}</span>
+                  <span className="text-[11px] text-white/70">{meta.minutes} Minutes</span>
+                  <span className="text-[10px] text-white/50">{meta.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-center text-[11px] text-white/50">
+            Time select karte hi match {opponent?.host?.username ?? "opponent"} ko challenge chala jayega.
+          </p>
+        </Sheet>
+      )}
+
       {/* Rules Sheet */}
       {rulesOpen && (
         <Sheet onClose={() => setRulesOpen(false)} title="PK Rules">
