@@ -80,8 +80,17 @@ import {
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
 
 export const Route = createFileRoute("/room/$roomId")({
-  beforeLoad: ({ params }) => {
-    throw redirect({ to: "/pk/$roomId", params: { roomId: params.roomId }, replace: true });
+  beforeLoad: async ({ params }) => {
+    // Only PK-battle rooms use the /pk/$roomId layout. Voice/video rooms stay here.
+    const { data } = await supabase
+      .from("live_rooms")
+      .select("pk_battle,room_type,seat_count")
+      .eq("id", params.roomId)
+      .maybeSingle();
+    const isPk = !!(data && (data.pk_battle || (data.room_type === "video" && data.seat_count === 2)));
+    if (isPk) {
+      throw redirect({ to: "/pk/$roomId", params: { roomId: params.roomId }, replace: true });
+    }
   },
   component: RoomPage,
 });
