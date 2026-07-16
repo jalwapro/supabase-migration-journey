@@ -183,7 +183,7 @@ function RoomPage() {
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [pkOpen, setPkOpen] = useState(false);
+  
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
