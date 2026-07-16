@@ -1,13 +1,13 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   Users,
-  MoreVertical,
+  
   Timer,
   Zap,
   Crown,
@@ -162,12 +162,94 @@ function PkMatchPage() {
     },
   });
 
+  // Opponent host profile (once a match is active)
+  const opponentHostId = match ? (match.host_a === user?.id ? match.host_b : match.host_a) : null;
+  const opponentQ = useQuery({
+    enabled: !!opponentHostId,
+    queryKey: ["pk-opponent", opponentHostId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,username,avatar")
+        .eq("id", opponentHostId!)
+        .maybeSingle();
+      return data as { id: string; username: string | null; avatar: string | null } | null;
+    },
+  });
+
+  // Follow state
+  const followQ = useQuery({
+    enabled: !!user && !!room?.host_id && user?.id !== room?.host_id,
+    queryKey: ["pk-follows-host", user?.id, room?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", user!.id)
+        .eq("following_id", room!.host_id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  async function toggleFollow() {
+    if (!user || !room) return;
+    if (followQ.data) {
+      const { error } = await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", user.id)
+        .eq("following_id", room.host_id);
+      if (error) return toast.error(error.message);
+      toast.success("Unfollowed");
+    } else {
+      const { error } = await supabase
+        .from("follows")
+        .insert({ follower_id: user.id, following_id: room.host_id });
+      if (error && error.code !== "23505") return toast.error(error.message);
+      toast.success("Following host");
+    }
+    followQ.refetch();
+  }
+
+  // Incoming pending invites addressed to me
+  const incomingQ = useQuery({
+    enabled: !!user,
+    queryKey: ["pk-incoming", user?.id],
+    refetchInterval: 3000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pk_invites")
+        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins,from:profiles!pk_invites_from_host_fkey(username,avatar)")
+        .eq("to_host", user!.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      return (data ?? [])[0] ?? null;
+    },
+  });
+  const incoming = incomingQ.data as any;
+
+  async function respondInvite(accept: boolean) {
+    if (!incoming) return;
+    const { error } = await supabase.rpc("pk_respond_invite", {
+      _invite_id: incoming.id,
+      _accept: accept,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(accept ? "Match started!" : "Declined");
+    incomingQ.refetch();
+    matchQ.refetch();
+    roomQ.refetch();
+  }
+
   // Countdown for match starts / ends
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
 
   const endsInSec = useMemo(() => {
     if (!match?.ends_at) return null;
@@ -179,6 +261,18 @@ function PkMatchPage() {
     const s = sec % 60;
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   }
+
+  // Auto-end match when clock hits 0
+  const endTriggeredRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (match?.status === "active" && endsInSec === 0 && endTriggeredRef.current !== match.id) {
+      endTriggeredRef.current = match.id;
+      void supabase.rpc("pk_end_match", { _match_id: match.id }).then(() => {
+        matchQ.refetch();
+        roomQ.refetch();
+      });
+    }
+  }, [match?.id, match?.status, endsInSec]);
 
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
@@ -195,6 +289,7 @@ function PkMatchPage() {
   }
 
   async function startBattle(chosenMode: PkMode) {
+    if (!isHost) return toast.error("Only the host can start a PK");
     if (!opponent) return;
     setMode(chosenMode);
     setModeSheetOpen(false);
@@ -215,6 +310,22 @@ function PkMatchPage() {
     toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[chosenMode].minutes} min`);
     setOpponent(null);
   }
+
+  async function shareRoom() {
+    const url = `${window.location.origin}/room/${roomId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: room?.title ?? "Live Room", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+    } catch {
+      /* user cancelled */
+    }
+  }
+
+
 
 
   async function sendMessage() {
@@ -240,7 +351,7 @@ function PkMatchPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/5 bg-black/60 px-3 py-2.5 backdrop-blur-xl">
         <button
-          onClick={() => navigate({ to: "/rooms" })}
+          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
           className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
           aria-label="Back"
         >
@@ -258,15 +369,61 @@ function PkMatchPage() {
             </span>
           </div>
         </div>
-        <button className="rounded-full border border-[color:var(--secondary)]/50 px-4 py-1.5 text-[12px] font-semibold text-[color:var(--secondary)] hover:bg-[color:var(--secondary)]/10">
-          Follow
+        {!isHost && (
+          <button
+            onClick={toggleFollow}
+            className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold ${
+              followQ.data
+                ? "border-white/20 text-white/60"
+                : "border-[color:var(--secondary)]/50 text-[color:var(--secondary)] hover:bg-[color:var(--secondary)]/10"
+            }`}
+          >
+            {followQ.data ? "Following" : "Follow"}
+          </button>
+        )}
+        <button
+          onClick={shareRoom}
+          className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
+          aria-label="Share"
+        >
+          <Share2 className="h-5 w-5" />
         </button>
-        <button className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5">
-          <MoreVertical className="h-5 w-5" />
-        </button>
+
       </div>
 
-
+      {/* Incoming challenge banner */}
+      {incoming && (
+        <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-[color:var(--gold)]/50 bg-gradient-to-r from-amber-500/15 to-fuchsia-500/10 p-3">
+          {incoming.from?.avatar ? (
+            <img src={incoming.from.avatar} className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/60" alt="" />
+          ) : (
+            <div className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-sm font-bold uppercase text-white/80 ring-2 ring-[color:var(--gold)]/60">
+              {(incoming.from?.username ?? "?").charAt(0)}
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[13px] font-bold">
+              {incoming.from?.username ?? "A host"} challenged you
+            </div>
+            <div className="text-[11px] text-white/60">
+              {Math.round(incoming.duration_sec / 60)} min PK
+              {incoming.stake_coins ? ` • ${incoming.stake_coins} coins stake` : ""}
+            </div>
+          </div>
+          <button
+            onClick={() => respondInvite(false)}
+            className="rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-bold text-white/80"
+          >
+            Decline
+          </button>
+          <button
+            onClick={() => respondInvite(true)}
+            className="rounded-full bg-gradient-to-r from-sky-500 to-fuchsia-500 px-3 py-1.5 text-[11px] font-black text-white"
+          >
+            Accept
+          </button>
+        </div>
+      )}
 
 
       {/* VS panels */}
@@ -302,12 +459,13 @@ function PkMatchPage() {
         {opponent || match ? (
           <HostPanel
             label="OPPONENT"
-            username={opponent?.host?.username ?? "Opponent"}
-            avatar={opponent?.host?.avatar}
+            username={opponent?.host?.username ?? opponentQ.data?.username ?? "Opponent"}
+            avatar={opponent?.host?.avatar ?? opponentQ.data?.avatar ?? null}
             coins={oppSideScore}
             accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
           />
         ) : (
+
           <button
             onClick={() => setPickerOpen(true)}
             className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/50 bg-gradient-to-b from-[#3f0d1d]/30 to-black/60 px-2 py-3"
@@ -480,13 +638,17 @@ function PkMatchPage() {
 
       {/* Bottom action bar */}
       <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
-        <ActionBtn icon={Mic} label="Mic" />
-        <ActionBtn icon={Volume2} label="Sound" />
-        <ActionBtn icon={Gift} label="Gift" />
-        <ActionBtn icon={Share2} label="Share" />
-        <ActionBtn icon={MoreHorizontal} label="More" />
-        <button className="flex items-center gap-1.5 rounded-full border border-[color:var(--secondary)]/60 bg-[color:var(--secondary)]/10 px-3.5 py-2 text-[12px] font-bold text-white">
-          <Hand className="h-4 w-4 text-[color:var(--gold)]" /> Raise Hand
+        <ActionBtn icon={Mic} label="Mic" onClick={() => toast.info("Mic controls are in the live room")} />
+        <ActionBtn icon={Volume2} label="Sound" onClick={() => toast.info("Sound controls are in the live room")} />
+        <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
+        <ActionBtn icon={Share2} label="Share" onClick={shareRoom} />
+        <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
+        <button
+          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
+          className="flex items-center gap-1.5 rounded-full border border-[color:var(--secondary)]/60 bg-[color:var(--secondary)]/10 px-3.5 py-2 text-[12px] font-bold text-white"
+        >
+          <Hand className="h-4 w-4 text-[color:var(--gold)]" /> Live Room
+
         </button>
       </div>
 
@@ -657,9 +819,9 @@ function PkMatchPage() {
   );
 }
 
-function ActionBtn({ icon: Icon, label }: { icon: any; label: string }) {
+function ActionBtn({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) {
   return (
-    <button className="flex flex-col items-center gap-0.5 text-white/70">
+    <button onClick={onClick} className="flex flex-col items-center gap-0.5 text-white/70 active:scale-95">
       <Icon className="h-5 w-5" />
       <span className="text-[10px]">{label}</span>
     </button>
