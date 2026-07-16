@@ -1554,8 +1554,16 @@ function RoomPage() {
       >
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           {/* Host chip */}
-          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] backdrop-blur-md">
-            <div className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20">
+          <div className={`flex min-w-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] ${
+            isVideo
+              ? "border-white/10 bg-black/40"
+              : "border-violet-300/35 bg-white/10 rounded-2xl py-1.5 pl-1.5"
+          }`}>
+            <div className={`relative shrink-0 overflow-hidden rounded-full ${
+              isVideo
+                ? "h-9 w-9 border-2 border-amber-400"
+                : "glow-4d grid h-11 w-11 place-items-center bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20"
+            }`}>
               {r.host?.avatar ? (
                 <img
                   src={r.host.avatar}
@@ -1577,7 +1585,7 @@ function RoomPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
+                <span className={`truncate font-black leading-tight ${isVideo ? "text-[11px]" : "text-[13px] sm:text-sm"}`}>
                   {r.title}
                 </span>
                 {!isHost && (
@@ -1590,9 +1598,19 @@ function RoomPage() {
                   />
                 )}
               </div>
-              <div className="truncate text-[10px] font-semibold text-white/60">
-                ID:{roomCode}
-              </div>
+              {isVideo ? (
+                <div className="flex items-center gap-1 leading-none">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[9px] font-bold text-pink-400">
+                    {Math.max(r.viewer_count, members.length)} viewing
+                  </span>
+                  <span className="text-[9px] text-white/40">· ID:{roomCode}</span>
+                </div>
+              ) : (
+                <div className="truncate text-[10px] font-semibold text-white/60">
+                  ID:{roomCode}
+                </div>
+              )}
             </div>
           </div>
           {/* Action icons */}
@@ -1875,19 +1893,43 @@ function RoomPage() {
 
           return (
             <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-              {/* Top: 2 camera screens side-by-side (host fixed on seat 0, seat 1 swappable) */}
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="relative h-[220px] overflow-hidden rounded-2xl border border-[color:var(--gold)]/60 bg-black/60 shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--gold)_60%,transparent)]">
+              {/* Neon Royale: 2 camera tiles — host (amber neon) + cam 2 (violet neon) */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Host tile */}
+                <div className="group relative aspect-[3/4] overflow-hidden rounded-2xl border-2 border-amber-400/50 bg-black shadow-[0_0_24px_-4px_rgba(251,191,36,0.35)] transition-shadow duration-500 hover:shadow-[0_0_32px_-2px_rgba(251,191,36,0.55)]">
                   <VideoTile data={hostTile} coverUrl={r.cover_url} />
-                  <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-[color:var(--gold)]/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-[#1a0b2e]">
+                  {/* Cinematic gradient overlay */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
+                  {/* HOST badge — top-left */}
+                  <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase italic tracking-tighter text-black shadow-lg">
                     Host
                   </div>
+                  {/* Coin count pill — top-right */}
+                  <div className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full bg-amber-400/90 px-2 py-0.5 text-[9px] font-black text-black shadow-lg">
+                    <span className="h-1.5 w-1.5 rounded-full bg-black/25" />
+                    {formatGiftPoints(hostTile.giftPoints)}
+                  </div>
+                  {/* Name pill — bottom-left */}
+                  <div className="pointer-events-none absolute bottom-2 left-2 max-w-[85%] truncate rounded-full border border-white/10 bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
+                    {hostM?.user?.username ?? r.host?.username ?? "Host"}
+                  </div>
                 </div>
-                <div className="relative h-[220px] overflow-hidden rounded-2xl border border-[color:var(--primary)]/60 bg-black/60 shadow-[0_0_28px_-6px_color-mix(in_oklab,var(--primary)_60%,transparent)]">
+                {/* Cam 2 tile */}
+                <div className="group relative aspect-[3/4] overflow-hidden rounded-2xl border-2 border-violet-400/50 bg-black shadow-[0_0_24px_-4px_rgba(167,139,250,0.35)] transition-shadow duration-500 hover:shadow-[0_0_32px_-2px_rgba(167,139,250,0.55)]">
                   <VideoTile data={camTile} coverUrl={r.cover_url} />
-                  <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-[color:var(--primary)]/90 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/40" />
+                  <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-fuchsia-500 px-2 py-0.5 text-[9px] font-black uppercase italic tracking-tighter text-white shadow-lg">
                     Cam 2
                   </div>
+                  <div className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full bg-fuchsia-500/90 px-2 py-0.5 text-[9px] font-black text-white shadow-lg">
+                    <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
+                    {formatGiftPoints(camTile.giftPoints)}
+                  </div>
+                  {camM?.user?.username ? (
+                    <div className="pointer-events-none absolute bottom-2 left-2 max-w-[85%] truncate rounded-full border border-white/10 bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
+                      {camM.user.username}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
