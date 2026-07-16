@@ -1626,18 +1626,38 @@ function RoomPage() {
                 <span>Room ID: {roomCode}</span>
               </div>
             </div>
-            {!isHost ? (
-              <button
-                onClick={() => void followHost()}
-                className={`shrink-0 rounded-full border px-4 py-1.5 text-[12px] font-bold backdrop-blur-md transition ${
-                  followsHost.data
-                    ? "border-white/15 bg-white/5 text-white/70"
-                    : "border-violet-400/60 bg-transparent text-white"
-                }`}
-              >
-                {followsHost.data ? "Following" : "Follow"}
-              </button>
-            ) : null}
+            <div className="flex shrink-0 items-center gap-2">
+              {!isHost && !followsHost.data ? (
+                <button
+                  onClick={() => void followHost()}
+                  aria-label="Follow host"
+                  title="Follow"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_0_12px_-2px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition active:scale-90"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={3} />
+                </button>
+              ) : null}
+              <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md">
+                <div className="flex -space-x-2">
+                  {members.slice(0, 2).map((m) => (
+                    <div
+                      key={m.user_id}
+                      className="grid h-5 w-5 place-items-center overflow-hidden rounded-full border border-white/40 bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 text-[8px] font-black"
+                    >
+                      {m.user?.avatar ? (
+                        <img src={m.user.avatar} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        (m.user?.username ?? "?").slice(0, 1).toUpperCase()
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <Users className="h-3 w-3 text-white/70" />
+                <span className="text-[11px] font-black text-white">
+                  {Math.max(r.viewer_count, members.length)}
+                </span>
+              </div>
+            </div>
           </div>
 
         </div>
