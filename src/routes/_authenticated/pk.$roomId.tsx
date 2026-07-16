@@ -548,54 +548,9 @@ function PkMatchPage() {
       {/* PK MODE removed — shown as popup on Start PK Battle */}
 
 
-      {/* Stake — only host who is setting up the match can see this */}
-      {isHost && (
-      <section className="mx-3 mt-3">
-        <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">Stake (Entry)</h2>
-        <div className="grid grid-cols-5 gap-2">
-          {STAKES.map((s) => {
-            const active = !customOpen && stake === s;
-            return (
-              <button
-                key={s}
-                onClick={() => { setCustomOpen(false); setStake(s); }}
-                className={`relative flex flex-col items-center gap-0.5 rounded-xl border bg-white/[0.03] py-2 transition ${
-                  active ? "border-sky-400 ring-2 ring-sky-400/50" : "border-white/10"
-                }`}
-              >
-                {active && (
-                  <span className="absolute right-1 top-1 grid h-3.5 w-3.5 place-items-center rounded-full bg-sky-500">
-                    <Check className="h-2.5 w-2.5" />
-                  </span>
-                )}
-                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--gold)] text-[10px] font-black text-black">$</span>
-                <span className="text-[12px] font-bold">{s >= 1000 ? `${s / 1000}k` : s}</span>
-                <span className="text-[9px] text-white/50">Coins</span>
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setCustomOpen(true)}
-            className={`flex flex-col items-center justify-center gap-0.5 rounded-xl border py-2 ${
-              customOpen ? "border-sky-400 ring-2 ring-sky-400/50" : "border-white/10"
-            } bg-white/[0.03]`}
-          >
-            <Pencil className="h-4 w-4 text-white/70" />
-            <span className="text-[11px] font-bold">Custom</span>
-          </button>
-        </div>
-        {customOpen && (
-          <input
-            type="number"
-            min={0}
-            placeholder="Enter coins…"
-            value={customStake}
-            onChange={(e) => setCustomStake(e.target.value)}
-            className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[13px] outline-none placeholder:text-white/40 focus:border-sky-400"
-          />
-        )}
-      </section>
-      )}
+      {/* Stake (Entry) moved into the Start PK Battle popup */}
+
+
 
       {/* Winner banner */}
       <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-white/5 bg-gradient-to-r from-[#1a0625]/70 to-[#0d0620]/70 px-3 py-2.5">
