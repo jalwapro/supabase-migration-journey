@@ -255,16 +255,8 @@ function PkMatchPage() {
         </button>
       </div>
 
-      {/* Welcome banner */}
-      <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.04] px-3 py-2.5">
-        <div className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--primary)]/20 text-[color:var(--primary)]">
-          <Volume2 className="h-4 w-4" />
-        </div>
-        <div className="min-w-0 flex-1 truncate text-[12.5px] text-white/80">
-          Welcome to {room?.title ?? "the room"}! Battle fair, tip your favorites.
-        </div>
-        <span className="text-white/40">›</span>
-      </div>
+
+
 
       {/* VS panels */}
       <div className="mx-3 mt-3 grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
