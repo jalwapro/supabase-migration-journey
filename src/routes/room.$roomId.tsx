@@ -2095,6 +2095,17 @@ function RoomPage() {
                           <span className="absolute -left-1 -top-1 grid h-4 w-4 place-items-center rounded-full border border-violet-400/70 bg-black text-[9px] font-bold text-white">
                             {displayNum}
                           </span>
+                          {m ? (
+                            <span className={`absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full border-2 border-black ${
+                              seatMuted ? "bg-rose-500" : "bg-emerald-500"
+                            }`}>
+                              {seatMuted ? (
+                                <MicOff className="h-2.5 w-2.5 text-white" />
+                              ) : (
+                                <Mic className="h-2.5 w-2.5 text-white" />
+                              )}
+                            </span>
+                          ) : null}
                         </div>
                         <span className="max-w-[60px] truncate text-[11px] font-semibold text-white">
                           {m?.user?.username ?? "Empty"}
@@ -2107,15 +2118,6 @@ function RoomPage() {
                         ) : (
                           <span className="text-[10px] text-white/30">—</span>
                         )}
-                        <span className={`grid h-6 w-6 place-items-center rounded-full ${
-                          seatMuted ? "bg-rose-500/15" : "bg-emerald-500/15"
-                        }`}>
-                          {seatMuted ? (
-                            <MicOff className="h-3 w-3 text-rose-400" />
-                          ) : (
-                            <Mic className="h-3 w-3 text-emerald-400" />
-                          )}
-                        </span>
                       </button>
                     );
                   })}
