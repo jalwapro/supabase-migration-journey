@@ -262,6 +262,18 @@ function PkMatchPage() {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   }
 
+  // Auto-end match when clock hits 0
+  const endTriggeredRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (match?.status === "active" && endsInSec === 0 && endTriggeredRef.current !== match.id) {
+      endTriggeredRef.current = match.id;
+      void supabase.rpc("pk_end_match", { _match_id: match.id }).then(() => {
+        matchQ.refetch();
+        roomQ.refetch();
+      });
+    }
+  }, [match?.id, match?.status, endsInSec]);
+
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
   function openStartFlow() {
@@ -277,6 +289,7 @@ function PkMatchPage() {
   }
 
   async function startBattle(chosenMode: PkMode) {
+    if (!isHost) return toast.error("Only the host can start a PK");
     if (!opponent) return;
     setMode(chosenMode);
     setModeSheetOpen(false);
@@ -297,6 +310,22 @@ function PkMatchPage() {
     toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[chosenMode].minutes} min`);
     setOpponent(null);
   }
+
+  async function shareRoom() {
+    const url = `${window.location.origin}/room/${roomId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: room?.title ?? "Live Room", url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success("Link copied");
+      }
+    } catch {
+      /* user cancelled */
+    }
+  }
+
+
 
 
   async function sendMessage() {
