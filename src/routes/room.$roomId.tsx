@@ -1933,12 +1933,45 @@ function RoomPage() {
                 </div>
               </div>
 
-              {/* Bottom row: 4 audio seats (2–5) */}
+              {/* Neon Royale: Welcome + Top Gifter mini cards */}
+              <div className="mt-3 grid grid-cols-2 gap-2.5">
+                <div className="rounded-xl border border-white/5 bg-gradient-to-r from-violet-600/25 to-fuchsia-600/25 p-2 backdrop-blur-sm">
+                  <div className="mb-0.5 flex items-center gap-1.5">
+                    <span className="grid h-4 w-4 place-items-center rounded bg-amber-400 text-[9px] font-black text-black">!</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-fuchsia-200">Welcome</span>
+                  </div>
+                  <p className="text-[9px] leading-snug text-white/70">Room rules · Be respectful & have fun</p>
+                </div>
+                <button
+                  onClick={() => setGifterListReceiver({ id: r.host_id, name: r.host?.username ?? "Host" })}
+                  className="rounded-xl border border-white/5 bg-gradient-to-r from-amber-600/25 to-orange-600/25 p-2 text-left backdrop-blur-sm"
+                >
+                  <div className="mb-0.5 flex items-center gap-1.5">
+                    <Trophy className="h-3 w-3 text-amber-300" />
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-amber-200">Top Gifter</span>
+                  </div>
+                  {topGifters[0] ? (
+                    <p className="truncate text-[10px] font-black text-white">
+                      {topGifters[0].username ?? "Guest"}
+                      <span className="ml-1 text-[9px] font-bold text-amber-400">
+                        {formatGiftPoints(topGifters[0].total_coins)}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-[9px] text-white/50">Be the first to gift</p>
+                  )}
+                </button>
+              </div>
+
+              {/* Guest seats header */}
               <div className="mt-3 flex items-center justify-between px-1">
-                <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/60">
-                  Guest Seats · 4
-                </span>
-                <span className="text-[10px] font-bold text-white/40">Audio only</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400 shadow-[0_0_6px_rgba(232,121,249,0.9)]" />
+                  <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/70">
+                    Guest Seats · 4
+                  </span>
+                </div>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300/70">Audio only</span>
               </div>
               <div className="mt-1.5 grid grid-cols-4 gap-2">
                 {[2, 3, 4, 5].map((i) => renderSeat(i))}
@@ -2134,33 +2167,31 @@ function RoomPage() {
       {/* ─── Composer + footer dock ─────────────────────────────── */}
       {isVideo ? (
         <div
-          className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+          className="relative z-10 mx-auto w-full max-w-md shrink-0 bg-gradient-to-t from-black via-black/85 to-transparent px-3 pt-6"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => void toggleMuteWithSync()}
               aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
               title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
-              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border backdrop-blur-md transition-transform active:scale-90 ${
                 agora.micBlocked
                   ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
-                  : "border-white/15 bg-black/50 text-white"
+                  : "border-white/10 bg-white/5 text-white"
               }`}
             >
               {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
-
-
             {isVideo && (isHost || mySeatIndex === 0 || mySeatIndex === 1) ? (
               <button
                 onClick={() => void toggleVideoWithPipeline()}
                 aria-label={agora.videoOn ? "Turn camera off" : "Turn camera on"}
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border backdrop-blur-md transition-transform active:scale-90 ${
                   agora.videoOn
-                    ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white"
-                    : "border-white/15 bg-black/50 text-white"
+                    ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white shadow-[0_0_12px_rgba(219,39,119,0.35)]"
+                    : "border-white/10 bg-white/5 text-white"
                 }`}
               >
                 {agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
@@ -2171,13 +2202,11 @@ function RoomPage() {
               <button
                 onClick={() => setFilterSheetOpen(true)}
                 aria-label="Filters & beauty"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition-transform active:scale-90"
               >
                 <Sparkles className="h-4 w-4 text-pink-400" />
               </button>
             ) : null}
-
-
 
             {isHost && isVideo && mySeatIndex !== 0 ? (
               <button
@@ -2188,13 +2217,12 @@ function RoomPage() {
                   if (error) toast.error(error.message);
                   else toast.success("Host seat reclaimed 👑");
                 }}
-                className="grid h-9 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
+                className="grid h-10 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
                 aria-label="Return to host seat"
               >
                 👑 Host Seat
               </button>
             ) : null}
-
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
@@ -2225,14 +2253,14 @@ function RoomPage() {
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
-              className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 via-fuchsia-500 to-violet-600 text-white ring-2 ring-fuchsia-400/40 shadow-[0_0_18px_rgba(219,39,119,0.55)] transition-transform active:scale-90"
             >
-              <Gift className="h-4 w-4" />
+              <Gift className="h-5 w-5 drop-shadow" />
             </button>
             <button
               onClick={() => setVideoSettingsOpen(true)}
               aria-label="Room settings"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition-transform active:scale-90"
             >
               <Settings className="h-4 w-4" />
             </button>
