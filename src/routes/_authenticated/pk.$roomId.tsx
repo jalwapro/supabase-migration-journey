@@ -1060,6 +1060,8 @@ function HostPanel({
   coins,
   accentClass,
   crown,
+  videoTrack,
+  mirror,
 }: {
   label: string;
   username: string;
@@ -1067,7 +1069,17 @@ function HostPanel({
   coins: number;
   accentClass: string;
   crown?: boolean;
+  videoTrack?: { play: (el: HTMLElement, opts?: { fit?: "cover" | "contain" }) => void; stop: () => void } | null;
+  mirror?: boolean;
 }) {
+  const videoRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !videoTrack) return;
+    try { videoTrack.play(el, { fit: "cover" }); } catch { /* ignore */ }
+    return () => { try { videoTrack.stop(); } catch { /* ignore */ } };
+  }, [videoTrack]);
+
   return (
     <div className={`relative flex flex-col items-center overflow-hidden rounded-2xl border p-2 ${accentClass}`}>
       {label.includes("OPPONENT") && (
@@ -1075,8 +1087,14 @@ function HostPanel({
           {label}
         </span>
       )}
-      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40`}>
-        {avatar ? (
+      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} relative aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40`}>
+        {videoTrack ? (
+          <div
+            ref={videoRef}
+            className="absolute inset-0 h-full w-full"
+            style={mirror ? { transform: "scaleX(-1)" } : undefined}
+          />
+        ) : avatar ? (
           <img src={avatar} className="h-full w-full object-cover" alt={username} />
         ) : (
           <div className="grid h-full w-full place-items-center text-4xl font-black uppercase text-white/60">
