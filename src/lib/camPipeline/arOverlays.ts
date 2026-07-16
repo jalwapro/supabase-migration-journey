@@ -33,11 +33,11 @@ export interface AROverlayDef {
 }
 
 export const AR_OVERLAYS: Record<string, AROverlayDef> = {
-  puppy:          { id: "puppy",        src: puppyPtr.url, anchor: "head-top", widthScale: 1.6, offsetY: -0.55 },
+  puppy:          { id: "puppy",        src: puppyPtr.url, anchor: "head-top", widthScale: 1.7, offsetY: -0.95 },
   cat:            { id: "cat",          src: catPtr.url,   anchor: "head-top", widthScale: 1.4, offsetY: -0.45 },
   bunny:          { id: "bunny",        src: bunnyPtr.url, anchor: "head-top", widthScale: 1.2, offsetY: -0.9  },
-  devil:          { id: "devil",        src: devilPtr.url, anchor: "forehead", widthScale: 1.5, offsetY: -0.35 },
-  angel:          { id: "angel",        src: anglePtr.url, anchor: "behind",   widthScale: 3.2, offsetY:  0.1  },
+  devil:          { id: "devil",        src: devilPtr.url, anchor: "forehead", widthScale: 1.6, offsetY: -0.75 },
+  angel:          { id: "angel",        src: anglePtr.url, anchor: "behind",   widthScale: 4.5, offsetY:  0.55 },
   "golden-crown": { id: "golden-crown", src: crownPtr.url, anchor: "head-top", widthScale: 1.5, offsetY: -0.7  },
 };
 
