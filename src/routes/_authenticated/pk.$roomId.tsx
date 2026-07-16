@@ -286,20 +286,12 @@ function PkMatchPage() {
               <span className="bg-gradient-to-b from-pink-400 to-fuchsia-600 bg-clip-text text-transparent">S</span>
             </div>
           </div>
-          <div className="mt-2 flex w-full flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2 py-1.5">
-            <span className="text-[9px] uppercase tracking-wider text-white/50">
-              {endsInSec != null ? "Ends in" : "LIVE"}
-            </span>
-            <span className="text-[15px] font-black tabular-nums">
-              {endsInSec != null ? fmt(endsInSec) : "● PK"}
-            </span>
-          </div>
-          <button
-            onClick={() => setRulesOpen(true)}
-            className="mt-2 flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-[10px] font-semibold text-white/70"
-          >
-            <FileText className="h-3 w-3" /> PK Rules
-          </button>
+          {endsInSec != null && (
+            <div className="mt-2 flex w-full flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2 py-1.5">
+              <span className="text-[9px] uppercase tracking-wider text-white/50">Ends in</span>
+              <span className="text-[15px] font-black tabular-nums">{fmt(endsInSec)}</span>
+            </div>
+          )}
         </div>
 
         {/* Opponent side */}
