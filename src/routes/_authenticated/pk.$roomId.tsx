@@ -136,8 +136,11 @@ function PkMatchPage() {
     publish: isHost,
     video: true,
     kind: "video",
-    enabled: !!user && !!room && room.status === "live",
+    // Enable as soon as we have room + channel — don't gate on room.status,
+    // otherwise mic/camera never come on if the row isn't flagged "live".
+    enabled: !!user && !!room?.rtc_channel,
   });
+
 
   // Host: auto-start mic + camera when connected (single user gesture flow —
   // the tap that entered the room counts on mobile once we're inside the
