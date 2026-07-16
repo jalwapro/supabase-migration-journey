@@ -78,6 +78,8 @@ function PkMatchPage() {
   const [customStake, setCustomStake] = useState<string>("");
   const [customOpen, setCustomOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerMode, setPickerMode] = useState<"choice" | "random" | "pick">("choice");
+  const [randomIdx, setRandomIdx] = useState(0);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [modeSheetOpen, setModeSheetOpen] = useState(false);
   const [opponent, setOpponent] = useState<LiveHost | null>(null);
