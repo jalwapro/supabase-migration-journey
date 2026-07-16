@@ -563,6 +563,16 @@ function PkMatchPage() {
               : (room?.host_id ? agora.remotes.get(uidFromUuid(room.host_id))?.videoTrack ?? null : null)
           }
           mirror={isHost}
+          micOn={
+            isHost
+              ? (!agora.muted && !!agora.localAudioPublished.current)
+              : (room?.host_id ? !!agora.remotes.get(uidFromUuid(room.host_id))?.hasAudio : undefined)
+          }
+          camOn={
+            isHost
+              ? !!agora.videoOn
+              : (room?.host_id ? !!agora.remotes.get(uidFromUuid(room.host_id))?.hasVideo : undefined)
+          }
         />
 
 
