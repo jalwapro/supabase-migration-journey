@@ -64,7 +64,7 @@ import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
-import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay, PkChallengerToasts } from "@/components/room/PkBattleSheet";
+
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
   AlertDialog,
