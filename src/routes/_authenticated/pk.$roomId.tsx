@@ -331,36 +331,8 @@ function PkMatchPage() {
         )}
       </div>
 
-      {/* PK MODE */}
-      <section className="mx-3 mt-4 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
-        <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">PK Mode</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {(Object.keys(MODE_META) as PkMode[]).map((k) => {
-            const meta = MODE_META[k];
-            const Icon = meta.icon;
-            const active = mode === k;
-            return (
-              <button
-                key={k}
-                onClick={() => setMode(k)}
-                className={`relative flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-b ${meta.accent} p-2 text-center transition ${
-                  active ? "ring-2 ring-white/60" : "opacity-80"
-                }`}
-              >
-                {active && (
-                  <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-sky-500">
-                    <Check className="h-3 w-3" />
-                  </span>
-                )}
-                <Icon className="h-6 w-6 text-white" />
-                <span className="text-[12px] font-bold">{meta.label}</span>
-                <span className="text-[10px] text-white/70">{meta.minutes} Minutes</span>
-                <span className="text-[9px] text-white/50">{meta.sub}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      {/* PK MODE removed — shown as popup on Start PK Battle */}
+
 
       {/* Stake */}
       <section className="mx-3 mt-3">
