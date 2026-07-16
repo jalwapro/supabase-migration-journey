@@ -31,7 +31,9 @@ if (args.length === 0) {
   process.exit(2);
 }
 
-const opts = { minAlpha: 0.02, minSize: 2048, minVisibleFrac: 0.005 };
+// Defaults tuned for sticker-style PNGs (small subject on transparent bg).
+// visibleFrac is the primary signal; meanAlpha stays low as a soft check.
+const opts = { minAlpha: 0.003, minSize: 4096, minVisibleFrac: 0.005 };
 const targets = [];
 for (const a of args) {
   if (a.startsWith("--min-alpha=")) opts.minAlpha = Number(a.split("=")[1]);
