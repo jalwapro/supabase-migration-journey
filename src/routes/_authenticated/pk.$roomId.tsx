@@ -162,12 +162,94 @@ function PkMatchPage() {
     },
   });
 
+  // Opponent host profile (once a match is active)
+  const opponentHostId = match ? (match.host_a === user?.id ? match.host_b : match.host_a) : null;
+  const opponentQ = useQuery({
+    enabled: !!opponentHostId,
+    queryKey: ["pk-opponent", opponentHostId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("id,username,avatar")
+        .eq("id", opponentHostId!)
+        .maybeSingle();
+      return data as { id: string; username: string | null; avatar: string | null } | null;
+    },
+  });
+
+  // Follow state
+  const followQ = useQuery({
+    enabled: !!user && !!room?.host_id && user?.id !== room?.host_id,
+    queryKey: ["pk-follows-host", user?.id, room?.host_id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", user!.id)
+        .eq("following_id", room!.host_id)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+  async function toggleFollow() {
+    if (!user || !room) return;
+    if (followQ.data) {
+      const { error } = await supabase
+        .from("follows")
+        .delete()
+        .eq("follower_id", user.id)
+        .eq("following_id", room.host_id);
+      if (error) return toast.error(error.message);
+      toast.success("Unfollowed");
+    } else {
+      const { error } = await supabase
+        .from("follows")
+        .insert({ follower_id: user.id, following_id: room.host_id });
+      if (error && error.code !== "23505") return toast.error(error.message);
+      toast.success("Following host");
+    }
+    followQ.refetch();
+  }
+
+  // Incoming pending invites addressed to me
+  const incomingQ = useQuery({
+    enabled: !!user,
+    queryKey: ["pk-incoming", user?.id],
+    refetchInterval: 3000,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pk_invites")
+        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins,from:profiles!pk_invites_from_host_fkey(username,avatar)")
+        .eq("to_host", user!.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+        .limit(1);
+      return (data ?? [])[0] ?? null;
+    },
+  });
+  const incoming = incomingQ.data as any;
+
+  async function respondInvite(accept: boolean) {
+    if (!incoming) return;
+    const { error } = await supabase.rpc("pk_respond_invite", {
+      _invite_id: incoming.id,
+      _accept: accept,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(accept ? "Match started!" : "Declined");
+    incomingQ.refetch();
+    matchQ.refetch();
+    roomQ.refetch();
+  }
+
   // Countdown for match starts / ends
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
+
 
   const endsInSec = useMemo(() => {
     if (!match?.ends_at) return null;
