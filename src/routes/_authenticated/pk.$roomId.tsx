@@ -481,11 +481,16 @@ function PkMatchPage() {
 
   async function togglePkMic() {
     if (!isHost) return toast.info("Only host controls the mic");
-    if (agora.status !== "connected") {
-      return toast.info("Room connect ho raha hai — 1 second baad mic dobara tap karein");
+    if (!rtcChannel) return toast.info("Room ready nahi hai — thodi der ruk kar dobara try karein");
+    if (agora.status === "error" || agora.status === "disabled") {
+      return toast.error(agora.error ?? "Voice service unavailable");
     }
+    // If mic isn't up yet (or is blocked), request it — requestMic() itself
+    // waits internally until Zego reaches CONNECTED, so no pre-guard needed.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
+      const pending = toast.loading("Mic start ho raha hai…");
       const result = await agora.requestMic();
+      toast.dismiss(pending);
       if (!result.ok) {
         const message = result.error ?? agora.micError ?? "Microphone unavailable";
         const permissionIssue = /permission|blocked|allow|browser settings|site settings/i.test(message);
@@ -505,11 +510,14 @@ function PkMatchPage() {
 
   async function togglePkCamera() {
     if (!isHost) return toast.info("Only host controls the camera");
-    if (agora.status !== "connected") {
-      return toast.info("Room connect ho raha hai — 1 second baad camera dobara tap karein");
+    if (!rtcChannel) return toast.info("Room ready nahi hai — thodi der ruk kar dobara try karein");
+    if (agora.status === "error" || agora.status === "disabled") {
+      return toast.error(agora.error ?? "Voice service unavailable");
     }
     const turningOn = !agora.videoOn;
+    const pending = turningOn ? toast.loading("Camera start ho raha hai…") : null;
     const ok = await agora.toggleVideo();
+    if (pending) toast.dismiss(pending);
     if (!ok) {
       toast.error(agora.micError ?? "Camera unavailable", {
         description: "Browser ke address bar me 🔒/ⓘ par tap karein → Site settings → Camera → Allow.",
@@ -519,6 +527,7 @@ function PkMatchPage() {
     }
     toast.success(turningOn ? "Camera enabled" : "Camera off");
   }
+
 
   const hostSideScore = scoreQ.data?.score_a ?? 0;
   const oppSideScore = scoreQ.data?.score_b ?? 0;
