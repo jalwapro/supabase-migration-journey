@@ -1102,6 +1102,22 @@ function RoomPage() {
     if (error) toast.error(error.message);
   }
 
+  async function takeAvailableVoiceSeat() {
+    if (!user) {
+      toast.error("Sign in first");
+      return;
+    }
+    const { data, error } = await supabase.rpc("take_available_voice_seat", {
+      _room_id: roomId,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Joined seat ${Number(data) + 1} 🎤`);
+  }
+
+
   async function send() {
     if (!user) {
       toast.error("Sign in to chat");
