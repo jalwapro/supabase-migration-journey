@@ -301,12 +301,12 @@ function PkMatchPage() {
             username={opponent?.host?.username ?? "Opponent"}
             avatar={opponent?.host?.avatar}
             coins={oppSideScore}
-            accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60"
+            accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
           />
         ) : (
           <button
             onClick={() => setPickerOpen(true)}
-            className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border border-[color:var(--destructive)]/50 bg-gradient-to-b from-[#3f0d1d]/30 to-black/60 px-2 py-3"
+            className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/50 bg-gradient-to-b from-[#3f0d1d]/30 to-black/60 px-2 py-3"
           >
             <span className="rounded-md bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase">Opponent</span>
             <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50">
