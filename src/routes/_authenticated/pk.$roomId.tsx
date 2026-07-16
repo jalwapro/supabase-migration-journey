@@ -76,6 +76,7 @@ function PkMatchPage() {
   const [customOpen, setCustomOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [modeSheetOpen, setModeSheetOpen] = useState(false);
   const [opponent, setOpponent] = useState<LiveHost | null>(null);
   const [message, setMessage] = useState("");
   const [starting, setStarting] = useState(false);
@@ -177,7 +178,7 @@ function PkMatchPage() {
 
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
-  async function startBattle() {
+  function openStartFlow() {
     if (!isHost) return toast.error("Only the host can start a PK");
     if (!opponent) {
       setPickerOpen(true);
@@ -186,25 +187,31 @@ function PkMatchPage() {
     if ((profile?.coins ?? 0) < effectiveStake) {
       return toast.error("Not enough coins for this stake");
     }
+    setModeSheetOpen(true);
+  }
+
+  async function startBattle(chosenMode: PkMode) {
+    if (!opponent) return;
+    setMode(chosenMode);
+    setModeSheetOpen(false);
     setStarting(true);
-    // Send invite. Backend RPC stores duration; stake persisted via update after.
     const { data, error } = await supabase.rpc("pk_send_invite", {
       _to_host: opponent.host_id,
-      _duration_sec: MODE_META[mode].sec,
+      _duration_sec: MODE_META[chosenMode].sec,
     });
     if (error) {
       setStarting(false);
       return toast.error(error.message);
     }
-    // Best-effort: attach stake to the invite row we just created
     const inviteId = (Array.isArray(data) ? data[0]?.id : (data as any)?.id) ?? null;
     if (inviteId && effectiveStake > 0) {
       await supabase.from("pk_invites").update({ stake_coins: effectiveStake }).eq("id", inviteId);
     }
     setStarting(false);
-    toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[mode].minutes} min`);
+    toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[chosenMode].minutes} min`);
     setOpponent(null);
   }
+
 
   async function sendMessage() {
     const body = message.trim();
@@ -324,36 +331,8 @@ function PkMatchPage() {
         )}
       </div>
 
-      {/* PK MODE */}
-      <section className="mx-3 mt-4 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
-        <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">PK Mode</h2>
-        <div className="grid grid-cols-3 gap-2">
-          {(Object.keys(MODE_META) as PkMode[]).map((k) => {
-            const meta = MODE_META[k];
-            const Icon = meta.icon;
-            const active = mode === k;
-            return (
-              <button
-                key={k}
-                onClick={() => setMode(k)}
-                className={`relative flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-b ${meta.accent} p-2 text-center transition ${
-                  active ? "ring-2 ring-white/60" : "opacity-80"
-                }`}
-              >
-                {active && (
-                  <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-sky-500">
-                    <Check className="h-3 w-3" />
-                  </span>
-                )}
-                <Icon className="h-6 w-6 text-white" />
-                <span className="text-[12px] font-bold">{meta.label}</span>
-                <span className="text-[10px] text-white/70">{meta.minutes} Minutes</span>
-                <span className="text-[9px] text-white/50">{meta.sub}</span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+      {/* PK MODE removed — shown as popup on Start PK Battle */}
+
 
       {/* Stake */}
       <section className="mx-3 mt-3">
@@ -416,7 +395,7 @@ function PkMatchPage() {
 
       {/* Start button */}
       <button
-        onClick={startBattle}
+        onClick={openStartFlow}
         disabled={starting || !isHost || match?.status === "active"}
         className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 py-3.5 text-[15px] font-black uppercase tracking-wider text-white shadow-[0_10px_40px_-10px_rgba(217,70,239,0.7)] disabled:opacity-60"
       >
@@ -544,6 +523,34 @@ function PkMatchPage() {
               <div className="py-10 text-center text-[12px] text-white/40">No live opponents right now</div>
             )}
           </div>
+        </Sheet>
+      )}
+
+      {/* PK Mode Picker Sheet */}
+      {modeSheetOpen && (
+        <Sheet onClose={() => setModeSheetOpen(false)} title="Select PK Mode">
+          <div className="grid grid-cols-3 gap-2">
+            {(Object.keys(MODE_META) as PkMode[]).map((k) => {
+              const meta = MODE_META[k];
+              const Icon = meta.icon;
+              return (
+                <button
+                  key={k}
+                  onClick={() => void startBattle(k)}
+                  disabled={starting}
+                  className={`relative flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-b ${meta.accent} p-3 text-center transition active:scale-95 disabled:opacity-60`}
+                >
+                  <Icon className="h-7 w-7 text-white" />
+                  <span className="text-[13px] font-bold">{meta.label}</span>
+                  <span className="text-[11px] text-white/70">{meta.minutes} Minutes</span>
+                  <span className="text-[10px] text-white/50">{meta.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 text-center text-[11px] text-white/50">
+            Time select karte hi match {opponent?.host?.username ?? "opponent"} ko challenge chala jayega.
+          </p>
         </Sheet>
       )}
 
