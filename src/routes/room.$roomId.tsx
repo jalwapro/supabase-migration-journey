@@ -1960,10 +1960,12 @@ function RoomPage() {
                     </span>
                     <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
                   </div>
-                  <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
-                    <span className="text-amber-300">★</span>
-                    <span>{formatGiftPoints(hostTile.giftPoints || 12500)}</span>
-                  </div>
+                  {hostTile.giftPoints > 0 ? (
+                    <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
+                      <span className="text-amber-300">★</span>
+                      <span>{formatGiftPoints(hostTile.giftPoints)}</span>
+                    </div>
+                  ) : null}
                   {/* Mic status bottom-right */}
                   <div className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur">
                     {hostTile.localMuted && hostM?.user_id === user?.id ? (
@@ -1989,14 +1991,18 @@ function RoomPage() {
                   </div>
                   <div className="pointer-events-none absolute inset-x-2 bottom-10 flex items-center gap-1">
                     <span className="truncate text-[15px] font-black text-white drop-shadow">
-                      {camM?.user?.username ?? "Co-Host"}
+                      {camM?.user?.username ?? "Empty"}
                     </span>
-                    <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
+                    {camM ? (
+                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
+                    ) : null}
                   </div>
-                  <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
-                    <span className="text-amber-300">★</span>
-                    <span>{formatGiftPoints(camTile.giftPoints || 8700)}</span>
-                  </div>
+                  {camTile.giftPoints > 0 ? (
+                    <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
+                      <span className="text-amber-300">★</span>
+                      <span>{formatGiftPoints(camTile.giftPoints)}</span>
+                    </div>
+                  ) : null}
                   <button
                     onClick={() => agora.toggleSpeaker()}
                     aria-label="Toggle sound"
@@ -2016,7 +2022,7 @@ function RoomPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Mic className="h-3.5 w-3.5 text-violet-300" />
-                    <span className="text-[12px] font-bold text-white">Voice Seats (4)</span>
+                    <span className="text-[12px] font-bold text-white">Voice Seats ({Math.max(0, r.seat_count - 2)})</span>
                   </div>
                   {(isHost || isModerator) && (
                     <button
@@ -2029,7 +2035,8 @@ function RoomPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {[2, 3, 4, 5].map((i, idx) => {
+                  {Array.from({ length: Math.max(0, r.seat_count - 2) }).map((_, idx) => {
+                    const i = idx + 2;
                     const m = seatsByIndex.get(i);
                     const displayNum = idx + 1;
                     const speaking = m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false;
