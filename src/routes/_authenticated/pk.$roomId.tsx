@@ -185,7 +185,9 @@ function PkMatchPage() {
   });
 
   // Opponent host profile (once a match is active)
-  const opponentHostId = match ? (match.host_a === user?.id ? match.host_b : match.host_a) : null;
+  const ourHostId = room?.host_id ?? user?.id ?? null;
+  const opponentHostId = match ? (match.host_a === ourHostId ? match.host_b : match.host_a) : null;
+
   const opponentQ = useQuery({
     enabled: !!opponentHostId,
     queryKey: ["pk-opponent", opponentHostId],
