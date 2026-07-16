@@ -1588,10 +1588,6 @@ function RoomPage() {
               </div>
               <div className="mt-0.5 flex items-center gap-2.5 text-[10px] font-semibold text-white/60">
                 <span>Room ID: {roomCode}</span>
-                <span className="flex items-center gap-1">
-                  <Users className="h-3 w-3" />
-                  {Math.max(r.viewer_count, members.length)}
-                </span>
               </div>
             </div>
             {!isHost ? (
@@ -1606,13 +1602,6 @@ function RoomPage() {
                 {followsHost.data ? "Following" : "Follow"}
               </button>
             ) : null}
-            <button
-              onClick={() => setViewersSheetOpen(true)}
-              aria-label="More"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 backdrop-blur-md active:scale-90"
-            >
-              <MoreHorizontal className="h-4 w-4 text-white" />
-            </button>
           </div>
 
         </div>
@@ -1955,27 +1944,6 @@ function RoomPage() {
                   <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-gradient-to-r from-pink-500 to-fuchsia-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
                     Host
                   </div>
-                  {/* Menu */}
-                  <button
-                    onClick={() => setViewersSheetOpen(true)}
-                    aria-label="Options"
-                    className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-black/40 text-white/80 backdrop-blur"
-                  >
-                    <MoreHorizontal className="h-3.5 w-3.5" />
-                  </button>
-                  {/* Name + verify + star rating */}
-                  <div className="pointer-events-none absolute inset-x-2 bottom-10 flex items-center gap-1">
-                    <span className="truncate text-[15px] font-black text-white drop-shadow">
-                      {hostM?.user?.username ?? r.host?.username ?? "Host"}
-                    </span>
-                    <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
-                  </div>
-                  {hostTile.giftPoints > 0 ? (
-                    <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
-                      <span className="text-amber-300">★</span>
-                      <span>{formatGiftPoints(hostTile.giftPoints)}</span>
-                    </div>
-                  ) : null}
                   {/* Mic status bottom-right */}
                   <div className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur">
                     {hostTile.localMuted && hostM?.user_id === user?.id ? (
@@ -1993,26 +1961,6 @@ function RoomPage() {
                   <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-gradient-to-r from-violet-500 to-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
                     Co-Host
                   </div>
-                  {/* Signal bars */}
-                  <div className="pointer-events-none absolute right-2 top-2 flex items-end gap-[2px]">
-                    <span className="h-1.5 w-1 rounded-sm bg-emerald-400" />
-                    <span className="h-2.5 w-1 rounded-sm bg-emerald-400" />
-                    <span className="h-3.5 w-1 rounded-sm bg-emerald-400" />
-                  </div>
-                  <div className="pointer-events-none absolute inset-x-2 bottom-10 flex items-center gap-1">
-                    <span className="truncate text-[15px] font-black text-white drop-shadow">
-                      {camM?.user?.username ?? "Empty"}
-                    </span>
-                    {camM ? (
-                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
-                    ) : null}
-                  </div>
-                  {camTile.giftPoints > 0 ? (
-                    <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
-                      <span className="text-amber-300">★</span>
-                      <span>{formatGiftPoints(camTile.giftPoints)}</span>
-                    </div>
-                  ) : null}
                   <button
                     onClick={() => agora.toggleSpeaker()}
                     aria-label="Toggle sound"
@@ -3135,24 +3083,13 @@ function VideoTile({
       )}
 
       {/* footer chip */}
-      <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
-        <span className="flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10.5px] font-bold text-white backdrop-blur">
-          {effectiveMuted && <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />}
-          <span className="truncate max-w-[90px]">
-            {displayName ? `@${displayName}` : "Empty"}
+      {effectiveMuted && (
+        <div className="absolute bottom-2 left-2">
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-black/60 backdrop-blur">
+            <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />
           </span>
-        </span>
-        {member && (
-          <span className="flex items-center gap-1">
-            <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white/90 backdrop-blur">
-              <Gift className="h-2.5 w-2.5 text-[color:var(--gold)]" /> {formatGiftPoints(giftPoints)}
-            </span>
-            <span className="flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-bold text-white/90 backdrop-blur">
-              <Heart className="h-2.5 w-2.5 text-rose-400" /> {likeCount}
-            </span>
-          </span>
-        )}
-      </div>
+        </div>
+      )}
     </button>
   );
 }
