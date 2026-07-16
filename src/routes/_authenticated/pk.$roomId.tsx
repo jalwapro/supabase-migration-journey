@@ -238,7 +238,7 @@ function PkMatchPage() {
 
   // Incoming pending invites addressed to me
   const incomingQ = useQuery({
-    enabled: !!user,
+    enabled: !!user && isHost,
     queryKey: ["pk-incoming", user?.id],
     refetchInterval: 3000,
     queryFn: async () => {
