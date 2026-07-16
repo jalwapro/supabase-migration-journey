@@ -947,7 +947,7 @@ function HostPanel({
           {label}
         </span>
       )}
-      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-square w-full overflow-hidden rounded-xl bg-black/40`}>
+      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40`}>
         {avatar ? (
           <img src={avatar} className="h-full w-full object-cover" alt={username} />
         ) : (
