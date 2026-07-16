@@ -1,84 +1,100 @@
-# Real AR Face-Mesh Overlays (MediaPipe + Canvas Compositing)
+# PK Match Feature
 
-Broadcaster ke camera pe har frame face-landmark detect karke transparent PNG overlays (puppy ears, crown, horns, wings, etc.) attach karega. Composited stream Zego pe publish hoga, so viewers ko already-rendered video milega — koi extra CPU nahi.
+Reference image ke mutabiq ek complete PK (Player Knockout) battle system banayenge — layout, UI, aur backend sab.
 
-## Architecture
+## New Route
+`src/routes/pk.$roomId.tsx` — Full PK setup + live battle screen.
+
+## UI Layout (reference image ke exact match)
 
 ```text
-raw camera stream
-   │
-   ▼
-CamProcessor (canvas 2D, 30 fps)
-   │  1. draw src video with ctx.filter tint (existing)
-   │  2. every 2nd frame → FaceLandmarker.detectForVideo() → 478 landmarks
-   │  3. per active AR preset → drawImage(overlayPNG) anchored on landmarks
-   │  4. canvas.captureStream() → Zego publish
-   ▼
-output MediaStream
+┌────────────────────────────────────┐
+│ ← Chill Vibes ✨   [Follow] [⋮]   │
+│   Room ID • 128 viewers            │
+├────────────────────────────────────┤
+│ 📢 Welcome banner                  │
+├────────────────────────────────────┤
+│ ┌────────┐   VS    ┌────────┐     │
+│ │YOU(HOST│  00:30  │OPPONENT│     │
+│ │  img   │ PK Rules│  + Sel │     │
+│ │ Ahsan  │         │  ---   │     │
+│ │ 12.5K  │         │        │     │
+│ └────────┘         └────────┘     │
+├────────────────────────────────────┤
+│ PK MODE                            │
+│ [Normal 5m ✓][Quick 3m][Chall 10m]│
+├────────────────────────────────────┤
+│ STAKE (Entry)                      │
+│ [100][500][1k][5k][Custom]        │
+├────────────────────────────────────┤
+│ 🎁 Winner gets stakes + gifts     │
+├────────────────────────────────────┤
+│ [   START PK BATTLE  ⚡          ] │
+├────────────────────────────────────┤
+│ Chat  [All][Gifts][System][filter] │
+│ ...messages...                     │
+│ Top Gifter highlight               │
+│ [Type msg...] 😊 ➤                │
+├────────────────────────────────────┤
+│ Mic Sound Gift Share More  ✋Raise│
+└────────────────────────────────────┘
 ```
 
-## Overlay definitions
+## Features
 
-Har AR preset ke sath aik `AROverlay` object:
+1. **Setup phase** (host only):
+   - PK Mode select (Normal 5m / Quick 3m / Challenge 10m)
+   - Stake select (100/500/1k/5k coins + Custom input)
+   - Opponent picker sheet (search live hosts, tap to invite)
+   - PK Rules bottom sheet
+   - Start button → creates `pk_matches` row, sends invite
 
-```ts
-interface AROverlay {
-  id: string;          // matches FilterPreset.id
-  src: string;         // .asset.json url
-  anchor: "head" | "forehead" | "nose" | "mouth" | "eyes" | "full-face" | "behind";
-  scaleFactor: number; // relative to face bounding box width
-  offsetY: number;     // fine tune in face-height units
-}
-```
+2. **Live battle phase**:
+   - Countdown timer (match starts in 00:30)
+   - Live coin totals for both sides (from gifts sent during match)
+   - Progress bar showing lead
+   - Chat sidebar with All/Gifts/System filters
+   - Top Gifter callout row
+   - Gift → adds to that side's coin total
 
-Landmark anchors use MediaPipe FaceLandmarker indices:
-- head top: 10, chin: 152, temples: 234/454 → derive face box + tilt angle
-- forehead center: 10, nose tip: 1, mouth center: 13
-- eye centers: 468 (left iris), 473 (right iris)
+3. **Result phase**:
+   - Winner banner + coin payout
+   - Losers get consolation
+   - Match saved to history
 
-## Assets (20 transparent PNGs via `imagegen`)
+## Backend (Supabase migration)
 
-Batch generate karunga `src/assets/ar/` mein, phir `lovable-assets create` se CDN pe move:
+`db/migrations/20260716_pk_matches.sql`:
 
-**Funny (10):** puppy-ears, cat-ears+whiskers, bunny-ears, panda-ears+patches, monkey-ears, dino-scales, alien-eyes, fat-cheeks (semi-transparent tint), tiny-face-frame, big-eyes-overlay
+- `pk_mode` enum: `normal | quick | challenge`
+- `pk_status` enum: `pending | active | completed | cancelled`
+- `pk_matches` table: id, host_id, opponent_id, mode, stake_coins, host_score, opponent_score, winner_id, status, started_at, ends_at, created_at
+- `pk_match_gifts` table: id, match_id, sender_id, recipient_id, gift_id, coins, created_at
+- Indexes on host_id, opponent_id, status, ends_at
+- RLS: authenticated read; only host creates; only participants + admin update scores via edge logic
+- GRANTs to authenticated + service_role
+- Realtime enabled on both tables
 
-**AR (10):** butterflies (animated sprite sheet, 4 frames), angel-wings+halo, devil-horns, fire-aura (looping sprite), ice-crown+snowflakes, galaxy-bg (behind-user, needs selfie-segmentation), magic-runes (rotating), laser-eyes (procedural — draw beams from eye landmarks, no PNG), neon-rgb-frame, golden-crown
+## Server functions
 
-Notes:
-- `galaxy` — uses existing `ImageSegmenter` (already in `mediapipe.ts`) to swap background
-- `laser-eyes`, `fire-aura`, `magic-runes` — procedural canvas draw + PNG, animated via `performance.now()`
-- Butterflies — sprite atlas cycled per frame
+`src/lib/pk-matches.functions.ts` (with `requireSupabaseAuth`):
+- `createPkMatch({ mode, stake, opponentId })`
+- `acceptPkMatch({ matchId })` / `declinePkMatch`
+- `sendPkGift({ matchId, recipientId, giftId, coins })` — deducts sender coins, adds to score
+- `endPkMatch({ matchId })` — computes winner, credits payout
+- `listActivePkMatches()`, `getPkMatch(id)`
 
-## Files to create/change
+## Frontend wiring
+- React Query for match state
+- Supabase realtime channel for `pk_matches:id=eq.<id>` and gift inserts
+- Existing gold/violet tokens from voice room design (Royal Violet Palace)
+- Reuse existing components: viewers sheet, gift sheet, chat feed
 
-- **NEW** `src/lib/camPipeline/arOverlays.ts` — 20 overlay defs + `preloadOverlays()` + `drawOverlay(ctx, landmarks, def, tMs)`
-- **NEW** `src/lib/camPipeline/faceTracker.ts` — throttled FaceLandmarker wrapper, computes face box + roll angle from landmarks
-- **NEW** `src/assets/ar/*.png.asset.json` — 15-18 transparent overlay pointers (procedural ones don't need PNGs)
-- **EDIT** `src/lib/camPipeline/CamProcessor.ts` — add face tracking + overlay compositing in `drawFrame()`; keep existing tint path unchanged; auto-skip tracking when active preset is not in AR/funny category (zero overhead)
-- **EDIT** `src/lib/camPipeline/filters.ts` — for AR/funny presets, replace CSS filter with a marker so CamProcessor knows to load overlay instead of tint (or keep tint AND overlay for combo look)
-- **EDIT** `src/hooks/useCamPipeline.tsx` — call `preloadOverlays()` after processor start
+## Entry point
+Add a "PK Battle" tile on the room screen (`src/routes/room.$roomId.tsx`) header actions — tap navigates to `/pk/<roomId>`.
 
-## Performance guardrails
-
-- FaceLandmarker runs every **2nd frame** (~15 Hz), interpolate landmarks between frames
-- Overlays only load lazily on first use (per-preset PNG fetch)
-- If FaceLandmarker init fails (WASM CDN blocked, low-end device) → fallback to existing CSS tint only, log warning, don't crash
-- All PNGs pre-decoded to `ImageBitmap` (GPU-friendly on Chromium)
-- Total added weight: ~2 MB WASM (already cached from mediapipe.ts if used) + ~1.5 MB of overlay PNGs (loaded on demand)
-
-## Delivery in this turn
-
-Given the scope (20 asset generations, 3 new files, MediaPipe wiring), aik hi turn mein:
-1. Foundation likhunga: `faceTracker.ts`, `arOverlays.ts`, CamProcessor edits, useCamPipeline preload
-2. Pehli 5 AR PNGs generate karunga (puppy, cat, bunny, angel-wings, golden-crown) + laser-eyes procedural
-3. Baaki 14 overlays ko "coming soon" mark karunga; agli turn mein aap ke feedback ke baad batch generate karunga
-
-Ye is liye kyunki 20 alag `imagegen` calls + 20 `lovable-assets create` uploads ek turn mein bohat time lega aur agar aap ko koi asset pasand nahi to sab ko regenerate karna parega. Pehle 5 se style/quality validate karlein, phir baaki 15 batch mein.
-
-## Out of scope
-
-- Face tracking on viewers' devices (broadcaster-side only per aap ke decision)
-- Sound effects (bark/meow/roar) — separate feature, agli iteration
-- Real physics (ears bouncing with head movement) — v2
-
-Approve karne ke baad implementation start.
+## Scale
+- Paginate match history
+- Filter realtime by match id only
+- Indexes on all query columns
+- Server-side score aggregation, no client trust
