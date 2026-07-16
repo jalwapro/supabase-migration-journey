@@ -1723,8 +1723,48 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Members row (rank bar removed) */}
-        <div className="mt-2 flex items-center justify-end gap-1.5">
+        {/* Rank bar + members row */}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            onClick={() => void navigate({ to: "/rank" })}
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 px-2 py-1 backdrop-blur"
+            aria-label="Open leaderboard"
+          >
+            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Top</span>
+            {topGifters.length === 0 ? (
+              <span className="text-[10px] font-semibold text-white/50">No gifters yet</span>
+            ) : (
+              <div className="flex items-center -space-x-2">
+                {topGifters.slice(0, 3).map((g, i) => (
+                  <div key={g.user_id} className="relative">
+                    <img
+                      src={g.avatar || `https://api.dicebear.com/9.x/thumbs/svg?seed=${g.user_id}`}
+                      alt={g.username ?? "gifter"}
+                      className={`h-6 w-6 rounded-full border-2 object-cover ${
+                        i === 0
+                          ? "border-[color:var(--gold)]"
+                          : i === 1
+                            ? "border-slate-300"
+                            : "border-amber-700"
+                      }`}
+                    />
+                    <span
+                      className={`absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-black text-black ${
+                        i === 0 ? "bg-[color:var(--gold)]" : i === 1 ? "bg-slate-300" : "bg-amber-600 text-white"
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {topGifters[0] && (
+              <span className="ml-1 truncate text-[10px] font-bold text-white/80">
+                {(topGifters[0].total_coins / 1000).toFixed(1)}k 💎
+              </span>
+            )}
+          </button>
           {!isHost && (
             <button
               onClick={() => void joinFamily()}
@@ -1732,7 +1772,7 @@ function RoomPage() {
               className="rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
               aria-label="Join premium family"
             >
-              {familyMember.data ? "👑 PREMIUM" : "👑 PREMIUM"}
+              👑 PREMIUM
             </button>
           )}
           <button
