@@ -197,7 +197,7 @@ function RoomPage() {
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
     beauty: true,
-    mirror: true,
+    mirror: false,
     hd: true,
     blur: false,
   });
