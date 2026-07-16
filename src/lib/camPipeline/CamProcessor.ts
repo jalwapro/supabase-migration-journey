@@ -102,6 +102,7 @@ export class CamProcessor {
     try { this.outStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
     try { this.srcVideo.pause(); } catch { /* ignore */ }
     try { this.srcVideo.srcObject = null; } catch { /* ignore */ }
+    try { this.srcVideo.remove(); } catch { /* ignore */ }
     try { this.tracker?.dispose(); } catch { /* ignore */ }
     this.tracker = null;
     this.overlayBitmap = null;
