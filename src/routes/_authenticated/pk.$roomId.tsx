@@ -143,7 +143,7 @@ function PkMatchPage() {
 
   // Live hosts for opponent picker
   const hostsQ = useQuery({
-    enabled: pickerOpen,
+    enabled: pickerOpen || (isHost && !opponent && !match),
     queryKey: ["pk-live-hosts", roomId],
     queryFn: async () => {
       const { data, error } = await supabase
