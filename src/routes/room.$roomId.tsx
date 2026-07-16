@@ -2167,33 +2167,31 @@ function RoomPage() {
       {/* ─── Composer + footer dock ─────────────────────────────── */}
       {isVideo ? (
         <div
-          className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
+          className="relative z-10 mx-auto w-full max-w-md shrink-0 bg-gradient-to-t from-black via-black/85 to-transparent px-3 pt-6"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => void toggleMuteWithSync()}
               aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
               title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
-              className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border backdrop-blur-md transition-transform active:scale-90 ${
                 agora.micBlocked
                   ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
-                  : "border-white/15 bg-black/50 text-white"
+                  : "border-white/10 bg-white/5 text-white"
               }`}
             >
               {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
 
-
-
             {isVideo && (isHost || mySeatIndex === 0 || mySeatIndex === 1) ? (
               <button
                 onClick={() => void toggleVideoWithPipeline()}
                 aria-label={agora.videoOn ? "Turn camera off" : "Turn camera on"}
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border backdrop-blur-md transition-transform active:scale-90 ${
                   agora.videoOn
-                    ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white"
-                    : "border-white/15 bg-black/50 text-white"
+                    ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white shadow-[0_0_12px_rgba(219,39,119,0.35)]"
+                    : "border-white/10 bg-white/5 text-white"
                 }`}
               >
                 {agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
@@ -2204,13 +2202,11 @@ function RoomPage() {
               <button
                 onClick={() => setFilterSheetOpen(true)}
                 aria-label="Filters & beauty"
-                className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition-transform active:scale-90"
               >
                 <Sparkles className="h-4 w-4 text-pink-400" />
               </button>
             ) : null}
-
-
 
             {isHost && isVideo && mySeatIndex !== 0 ? (
               <button
@@ -2221,13 +2217,12 @@ function RoomPage() {
                   if (error) toast.error(error.message);
                   else toast.success("Host seat reclaimed 👑");
                 }}
-                className="grid h-9 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
+                className="grid h-10 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
                 aria-label="Return to host seat"
               >
                 👑 Host Seat
               </button>
             ) : null}
-
 
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
               <button
@@ -2258,14 +2253,14 @@ function RoomPage() {
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
-              className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 via-fuchsia-500 to-violet-600 text-white ring-2 ring-fuchsia-400/40 shadow-[0_0_18px_rgba(219,39,119,0.55)] transition-transform active:scale-90"
             >
-              <Gift className="h-4 w-4" />
+              <Gift className="h-5 w-5 drop-shadow" />
             </button>
             <button
               onClick={() => setVideoSettingsOpen(true)}
               aria-label="Room settings"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition-transform active:scale-90"
             >
               <Settings className="h-4 w-4" />
             </button>
