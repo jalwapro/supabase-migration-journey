@@ -452,28 +452,28 @@ function PkMatchPage() {
             <div className="py-6 text-center text-[11px] text-white/40">No messages yet — say hi 👋</div>
           )}
         </div>
-
-        {/* Composer */}
-        <div className="mt-2 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/40 px-3 py-2">
-          <input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
-            placeholder="Type a message..."
-            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40"
-          />
-          <button className="text-white/60"><Smile className="h-5 w-5" /></button>
-          <button
-            onClick={sendMessage}
-            className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--primary)] text-white"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
       </section>
 
+      {/* Composer — sticky above bottom action bar */}
+      <div className="sticky bottom-[64px] z-20 mx-3 mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
+        <input
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
+          placeholder="Type a message..."
+          className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40"
+        />
+        <button className="text-white/60"><Smile className="h-5 w-5" /></button>
+        <button
+          onClick={sendMessage}
+          className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--primary)] text-white"
+        >
+          <Send className="h-4 w-4" />
+        </button>
+      </div>
+
       {/* Bottom action bar */}
-      <div className="sticky bottom-0 z-30 mt-3 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
+      <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
         <ActionBtn icon={Mic} label="Mic" />
         <ActionBtn icon={Volume2} label="Sound" />
         <ActionBtn icon={Gift} label="Gift" />
