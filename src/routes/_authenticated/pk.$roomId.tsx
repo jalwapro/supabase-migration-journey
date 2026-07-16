@@ -37,6 +37,8 @@ import {
   Share2,
   Mic,
   MicOff,
+  Video,
+  VideoOff,
   Volume2,
   VolumeX,
   MoreHorizontal,
