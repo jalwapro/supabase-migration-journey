@@ -2035,7 +2035,8 @@ function RoomPage() {
                   )}
                 </div>
                 <div className="grid grid-cols-4 gap-2">
-                  {[2, 3, 4, 5].map((i, idx) => {
+                  {Array.from({ length: Math.max(0, r.seat_count - 2) }).map((_, idx) => {
+                    const i = idx + 2;
                     const m = seatsByIndex.get(i);
                     const displayNum = idx + 1;
                     const speaking = m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false;
