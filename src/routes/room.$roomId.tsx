@@ -4007,6 +4007,8 @@ function VideoSettingsSheet({
   speakerMuted,
   onToggleSpeaker,
   isVideo,
+  canUseFilters,
+  onOpenFilters,
   onOpenMusic,
   onOpenGames,
   onShare,
@@ -4028,6 +4030,8 @@ function VideoSettingsSheet({
   speakerMuted: boolean;
   onToggleSpeaker: () => void;
   isVideo: boolean;
+  canUseFilters: boolean;
+  onOpenFilters: () => void;
   onOpenMusic: () => void;
   onOpenGames: () => void;
   onShare: () => void;
@@ -4037,6 +4041,7 @@ function VideoSettingsSheet({
   onEndLive: () => void;
   onPk: () => void;
 }) {
+
   // Filters disabled — no CamPipeline usage here.
 
   if (!open) return null;
