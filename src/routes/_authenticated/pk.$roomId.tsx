@@ -94,6 +94,8 @@ function PkMatchPage() {
   const [opponent, setOpponent] = useState<LiveHost | null>(null);
   const [message, setMessage] = useState("");
   const [starting, setStarting] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [exiting, setExiting] = useState(false);
 
   // Current room + host profile
   const roomQ = useQuery({
