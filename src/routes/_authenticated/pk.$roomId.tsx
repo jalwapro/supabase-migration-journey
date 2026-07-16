@@ -395,7 +395,7 @@ function PkMatchPage() {
 
       {/* Start button */}
       <button
-        onClick={startBattle}
+        onClick={openStartFlow}
         disabled={starting || !isHost || match?.status === "active"}
         className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 py-3.5 text-[15px] font-black uppercase tracking-wider text-white shadow-[0_10px_40px_-10px_rgba(217,70,239,0.7)] disabled:opacity-60"
       >
