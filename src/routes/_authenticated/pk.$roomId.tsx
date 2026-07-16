@@ -76,6 +76,7 @@ function PkMatchPage() {
   const [customOpen, setCustomOpen] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [modeSheetOpen, setModeSheetOpen] = useState(false);
   const [opponent, setOpponent] = useState<LiveHost | null>(null);
   const [message, setMessage] = useState("");
   const [starting, setStarting] = useState(false);
