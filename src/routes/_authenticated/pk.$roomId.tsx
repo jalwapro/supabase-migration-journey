@@ -238,7 +238,7 @@ function PkMatchPage() {
 
   // Incoming pending invites addressed to me
   const incomingQ = useQuery({
-    enabled: !!user,
+    enabled: !!user && isHost,
     queryKey: ["pk-incoming", user?.id],
     refetchInterval: 3000,
     queryFn: async () => {
@@ -508,16 +508,17 @@ function PkMatchPage() {
 
       {/* VS panels */}
       <div className="relative mx-3 mt-3 grid grid-cols-2 items-stretch gap-0">
-        {/* Host side */}
+        {/* Host side — always the room host */}
         <HostPanel
-          label="YOU"
-          username={profile?.username ?? room?.host?.username ?? "You"}
-          avatar={profile?.avatar ?? room?.host?.avatar}
-          coins={hostSideScore || (profile?.coins ?? room?.host?.coins ?? 0)}
+          label={isHost ? "YOU" : "HOST"}
+          username={room?.host?.username ?? "Host"}
+          avatar={room?.host?.avatar ?? null}
+          coins={hostSideScore || (room?.host?.coins ?? 0)}
           accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 rounded-r-none border-r-0"
           crown
 
         />
+
 
         {/* VS badge overlay */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
@@ -552,6 +553,7 @@ function PkMatchPage() {
 
         {/* Opponent side */}
         {opponent || match ? (
+
           <HostPanel
             label="OPPONENT"
             username={opponent?.host?.username ?? opponentQ.data?.username ?? "Opponent"}
@@ -559,6 +561,21 @@ function PkMatchPage() {
             coins={oppSideScore}
             accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
           />
+        ) : !isHost ? (
+          <div className="relative flex select-none flex-col items-center justify-center overflow-hidden rounded-2xl rounded-l-none border border-white/10 bg-gradient-to-b from-[#25060f]/60 to-[#0d0620]/60 p-4 text-center">
+            <span className="mb-2 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70">
+              Waiting
+            </span>
+            <div className="grid aspect-[9/14] w-full place-items-center rounded-xl bg-black/40 text-white/50">
+              <div className="flex flex-col items-center gap-1 px-2">
+                <Swords className="h-6 w-6" />
+                <span className="text-[11px]">Match not started yet</span>
+              </div>
+            </div>
+            <div className="mt-2 text-[10px] uppercase tracking-wider text-white/40">
+              Enjoy the show & send gifts
+            </div>
+          </div>
         ) : (() => {
           const list = hostsQ.data ?? [];
           const rnd = list.length ? list[randomIdx % list.length] : null;
@@ -610,6 +627,7 @@ function PkMatchPage() {
           );
 
         })()}
+
 
       </div>
 
