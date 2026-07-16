@@ -114,7 +114,7 @@ function PkMatchPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("live_rooms")
-        .select("id,title,host_id,viewer_count,active_pk_match_id,host:profiles!live_rooms_host_id_fkey(username,avatar,coins)")
+        .select("id,title,host_id,viewer_count,active_pk_match_id,rtc_channel,status,host:profiles!live_rooms_host_id_fkey(username,avatar,coins)")
         .eq("id", roomId)
         .maybeSingle();
       if (error) throw error;
