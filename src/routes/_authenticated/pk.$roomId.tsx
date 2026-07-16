@@ -27,6 +27,9 @@ import {
   Trophy,
   Shield,
   Swords,
+  Shuffle,
+  X,
+  SkipForward,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pk/$roomId")({
