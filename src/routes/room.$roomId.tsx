@@ -2022,7 +2022,7 @@ function RoomPage() {
                 <div className="mb-3 flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Mic className="h-3.5 w-3.5 text-violet-300" />
-                    <span className="text-[12px] font-bold text-white">Voice Seats ({Math.max(0, r.seat_count - 2)})</span>
+                    <span className="text-[12px] font-bold text-white">Voice Seats (4)</span>
                   </div>
                   {(isHost || isModerator) && (
                     <button
