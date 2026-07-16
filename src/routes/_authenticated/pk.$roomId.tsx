@@ -5,6 +5,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ArrowLeft,
   Users,
   
@@ -84,6 +94,8 @@ function PkMatchPage() {
   const [opponent, setOpponent] = useState<LiveHost | null>(null);
   const [message, setMessage] = useState("");
   const [starting, setStarting] = useState(false);
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [exiting, setExiting] = useState(false);
 
   // Current room + host profile
   const roomQ = useQuery({
@@ -276,6 +288,40 @@ function PkMatchPage() {
 
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
+  async function doExit() {
+    if (user && isHost) {
+      try {
+        // End any active PK match first
+        if (match?.status === "active") {
+          await supabase.rpc("pk_end_match", { _match_id: match.id });
+        }
+        // Finalize accumulated gifts → diamonds and mark room ended
+        await supabase.rpc("finalize_room_gifts", { _room_id: roomId }).then(({ error }) => {
+          if (error) throw error;
+        });
+        const { error: updErr } = await supabase
+          .from("live_rooms")
+          .update({ status: "ended", ended_at: new Date().toISOString() })
+          .eq("id", roomId);
+        if (updErr) throw updErr;
+      } catch (e) {
+        toast.error(`Couldn't end room: ${(e as Error).message}`);
+        return;
+      }
+    } else if (user) {
+      await supabase
+        .from("room_members")
+        .delete()
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+    }
+    setExitConfirmOpen(false);
+    setExiting(true);
+    setTimeout(() => {
+      navigate({ to: "/" });
+    }, 700);
+  }
+
   function openStartFlow() {
     if (!isHost) return toast.error("Only the host can start a PK");
     if (!opponent) {
@@ -351,7 +397,7 @@ function PkMatchPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/5 bg-black/60 px-3 py-2.5 backdrop-blur-xl">
         <button
-          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
+          onClick={() => setExitConfirmOpen(true)}
           className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
           aria-label="Back"
         >
@@ -814,6 +860,39 @@ function PkMatchPage() {
             <li className="flex gap-2"><Timer className="mt-0.5 h-4 w-4 text-[color:var(--gold)]" /> Round length is set by mode: Quick 3m, Normal 5m, Challenge 10m.</li>
           </ul>
         </Sheet>
+      )}
+
+      <AlertDialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
+        <AlertDialogContent className="border-violet-400/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              {isHost ? "Close the PK room?" : "Leave the PK room?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              {isHost
+                ? "Yeh PK room band ho jayega aur active match end ho jayega. Sure?"
+                : "Kya aap is PK room say bahar jana chahtay hain?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-white/20 bg-transparent text-white hover:bg-white/10">
+              Nahi
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void doExit();
+              }}
+              className="bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90"
+            >
+              {isHost ? "Haan, band karo" : "Haan, exit"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {exiting && (
+        <div className="pointer-events-none fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md animate-in fade-in duration-500" />
       )}
     </div>
   );
