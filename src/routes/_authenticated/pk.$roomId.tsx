@@ -4,6 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useZegoRoom as useAgoraRoom } from "@/hooks/useZegoRoom";
+
+function uidFromUuid(uuid: string): number {
+  let h = 0;
+  for (let i = 0; i < uuid.length; i++) h = ((h << 5) - h + uuid.charCodeAt(i)) | 0;
+  return (Math.abs(h) % 2_000_000_000) + 1;
+}
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,7 +36,9 @@ import {
   Gift,
   Share2,
   Mic,
+  MicOff,
   Volume2,
+  VolumeX,
   MoreHorizontal,
   Hand,
   Send,
@@ -105,7 +114,7 @@ function PkMatchPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("live_rooms")
-        .select("id,title,host_id,viewer_count,active_pk_match_id,host:profiles!live_rooms_host_id_fkey(username,avatar,coins)")
+        .select("id,title,host_id,viewer_count,active_pk_match_id,rtc_channel,status,host:profiles!live_rooms_host_id_fkey(username,avatar,coins)")
         .eq("id", roomId)
         .maybeSingle();
       if (error) throw error;
@@ -116,6 +125,36 @@ function PkMatchPage() {
   const room = roomQ.data;
   const isHost = !!(user?.id && room?.host_id === user.id);
   const activeMatchId: string | null = room?.active_pk_match_id ?? null;
+
+  // ── Live audio + video via Zego ───────────────────────────────
+  const myUid = user ? uidFromUuid(user.id) : null;
+  const agora = useAgoraRoom({
+    channel: room?.rtc_channel ?? null,
+    uid: myUid,
+    publish: isHost,
+    video: true,
+    kind: "video",
+    enabled: !!user && !!room && room.status === "live",
+  });
+
+  // Host: auto-start mic + camera when connected (single user gesture flow —
+  // the tap that entered the room counts on mobile once we're inside the
+  // route; we still guard against re-toggling).
+  const autoCamRef = useRef(false);
+  useEffect(() => {
+    if (!isHost) return;
+    if (agora.status !== "connected") return;
+    if (autoCamRef.current) return;
+    autoCamRef.current = true;
+    void (async () => {
+      try { await agora.requestMic(); } catch { /* ignore */ }
+      try {
+        if (!agora.videoOn) await agora.toggleVideo();
+      } catch { /* ignore */ }
+    })();
+  }, [isHost, agora.status, agora.videoOn, agora]);
+
+
 
   // Active match if any
   const matchQ = useQuery({
@@ -516,8 +555,14 @@ function PkMatchPage() {
           coins={hostSideScore || (room?.host?.coins ?? 0)}
           accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 rounded-r-none border-r-0"
           crown
-
+          videoTrack={
+            isHost
+              ? (agora.localVideoTrack ?? null)
+              : (room?.host_id ? agora.remotes.get(uidFromUuid(room.host_id))?.videoTrack ?? null : null)
+          }
+          mirror={isHost}
         />
+
 
 
         {/* VS badge overlay */}
@@ -736,8 +781,23 @@ function PkMatchPage() {
 
       {/* Bottom action bar */}
       <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
-        <ActionBtn icon={Mic} label="Mic" onClick={() => toast.info("Mic controls are in the live room")} />
-        <ActionBtn icon={Volume2} label="Sound" onClick={() => toast.info("Sound controls are in the live room")} />
+        <ActionBtn
+          icon={isHost ? (agora.muted ? MicOff : Mic) : Mic}
+          label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"}
+          onClick={async () => {
+            if (!isHost) return toast.info("Only host controls the mic");
+            if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
+              const r = await agora.requestMic();
+              if (!r.ok) return toast.error(r.error ?? agora.micError ?? "Microphone unavailable");
+            }
+            await agora.toggleMute();
+          }}
+        />
+        <ActionBtn
+          icon={agora.speakerMuted ? VolumeX : Volume2}
+          label={agora.speakerMuted ? "Muted" : "Sound"}
+          onClick={() => agora.toggleSpeaker()}
+        />
         <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
         <ActionBtn icon={Share2} label="Share" onClick={shareRoom} />
         <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
@@ -1015,6 +1075,8 @@ function HostPanel({
   coins,
   accentClass,
   crown,
+  videoTrack,
+  mirror,
 }: {
   label: string;
   username: string;
@@ -1022,7 +1084,17 @@ function HostPanel({
   coins: number;
   accentClass: string;
   crown?: boolean;
+  videoTrack?: { play: (el: HTMLElement, opts?: { fit?: "cover" | "contain" }) => void; stop: () => void } | null;
+  mirror?: boolean;
 }) {
+  const videoRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !videoTrack) return;
+    try { videoTrack.play(el, { fit: "cover" }); } catch { /* ignore */ }
+    return () => { try { videoTrack.stop(); } catch { /* ignore */ } };
+  }, [videoTrack]);
+
   return (
     <div className={`relative flex flex-col items-center overflow-hidden rounded-2xl border p-2 ${accentClass}`}>
       {label.includes("OPPONENT") && (
@@ -1030,8 +1102,14 @@ function HostPanel({
           {label}
         </span>
       )}
-      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40`}>
-        {avatar ? (
+      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} relative aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40`}>
+        {videoTrack ? (
+          <div
+            ref={videoRef}
+            className="absolute inset-0 h-full w-full"
+            style={mirror ? { transform: "scaleX(-1)" } : undefined}
+          />
+        ) : avatar ? (
           <img src={avatar} className="h-full w-full object-cover" alt={username} />
         ) : (
           <div className="grid h-full w-full place-items-center text-4xl font-black uppercase text-white/60">
