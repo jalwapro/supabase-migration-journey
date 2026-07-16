@@ -1,0 +1,41 @@
+name: overlay-assets-qc
+
+on:
+  pull_request:
+    paths:
+      - "src/assets/ar/**"
+      - "scripts/check-overlay-assets.mjs"
+      - ".github/workflows/overlay-assets-qc.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/assets/ar/**"
+      - "scripts/check-overlay-assets.mjs"
+  workflow_dispatch:
+
+jobs:
+  qc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Resolve each .asset.json pointer under src/assets/ar/ and download the
+      # CDN PNG into /tmp/ar-check/, then run the QC script over that dir.
+      - name: Fetch overlay PNGs from CDN
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ar-check
+          shopt -s nullglob
+          for ptr in src/assets/ar/*.png.asset.json; do
+            url=$(node -e "console.log(require('./'+process.argv[1]).url)" "$ptr")
+            name=$(basename "$ptr" .asset.json)
+            # /__l5e/... is a project-relative CDN path; hit the published host.
+            curl -fsSL "https://cloud-to-soul.lovable.app${url}" -o "/tmp/ar-check/${name}"
+          done
+          ls -la /tmp/ar-check
+
+      - name: Run overlay quality check
+        run: node scripts/check-overlay-assets.mjs /tmp/ar-check
