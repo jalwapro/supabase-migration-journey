@@ -1960,10 +1960,12 @@ function RoomPage() {
                     </span>
                     <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
                   </div>
-                  <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
-                    <span className="text-amber-300">★</span>
-                    <span>{formatGiftPoints(hostTile.giftPoints || 12500)}</span>
-                  </div>
+                  {hostTile.giftPoints > 0 ? (
+                    <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
+                      <span className="text-amber-300">★</span>
+                      <span>{formatGiftPoints(hostTile.giftPoints)}</span>
+                    </div>
+                  ) : null}
                   {/* Mic status bottom-right */}
                   <div className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur">
                     {hostTile.localMuted && hostM?.user_id === user?.id ? (
