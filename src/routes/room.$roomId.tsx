@@ -2709,7 +2709,13 @@ function RoomPage() {
         speakerMuted={agora.speakerMuted}
         onToggleSpeaker={agora.toggleSpeaker}
         isVideo={isVideo}
+        canUseFilters={isVideo && (isHost || (myMember?.seat_index ?? -1) === 1)}
+        onOpenFilters={() => {
+          setVideoSettingsOpen(false);
+          setFilterSheetOpen(true);
+        }}
         onOpenMusic={() => {
+
           setVideoSettingsOpen(false);
           setMusicOpen(true);
         }}
