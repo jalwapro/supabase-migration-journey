@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
