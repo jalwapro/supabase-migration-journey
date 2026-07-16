@@ -787,7 +787,7 @@ function PkMatchPage() {
   );
 }
 
-function ActionBtn({ icon: Icon, label }: { icon: any; label: string }) {
+function ActionBtn({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) {
   return (
     <button className="flex flex-col items-center gap-0.5 text-white/70">
       <Icon className="h-5 w-5" />
