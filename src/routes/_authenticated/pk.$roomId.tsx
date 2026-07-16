@@ -689,6 +689,11 @@ function PkMatchPage() {
             avatar={opponent?.host?.avatar ?? opponentQ.data?.avatar ?? null}
             coins={oppSideScore}
             accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
+            videoTrack={
+              opponentHostId ? agora.remotes.get(uidFromUuid(opponentHostId))?.videoTrack ?? null : null
+            }
+            micOn={opponentHostId ? !!agora.remotes.get(uidFromUuid(opponentHostId))?.hasAudio : undefined}
+            camOn={opponentHostId ? !!agora.remotes.get(uidFromUuid(opponentHostId))?.hasVideo : undefined}
           />
         ) : !isHost ? (
           <div className="relative flex select-none flex-col items-center justify-center overflow-hidden rounded-2xl rounded-l-none border border-white/10 bg-gradient-to-b from-[#25060f]/60 to-[#0d0620]/60 p-4 text-center">
@@ -870,32 +875,14 @@ function PkMatchPage() {
           label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"}
           active={isHost && !agora.muted && !!agora.localAudioPublished.current}
           danger={isHost && agora.muted}
-          onClick={async () => {
-            if (!isHost) return toast.info("Only host controls the mic");
-            if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
-              const r = await agora.requestMic();
-              if (!r.ok) return toast.error(r.error ?? agora.micError ?? "Microphone unavailable");
-            }
-            await agora.toggleMute();
-          }}
+          onClick={() => void togglePkMic()}
         />
         <ActionBtn
           icon={isHost ? (agora.videoOn ? Video : VideoOff) : Video}
           label={isHost ? (agora.videoOn ? "Cam On" : "Cam Off") : "Cam"}
           active={isHost && !!agora.videoOn}
           danger={isHost && !agora.videoOn}
-          onClick={async () => {
-            if (!isHost) return toast.info("Only host controls the camera");
-            if (agora.status !== "connected") {
-              return toast.info("Connecting to room… try again in a moment");
-            }
-            try {
-              const ok = await agora.toggleVideo();
-              if (!ok && !agora.videoOn) toast.error("Camera unavailable — check permissions");
-            } catch {
-              toast.error("Camera unavailable");
-            }
-          }}
+          onClick={() => void togglePkCamera()}
         />
         <ActionBtn
           icon={agora.speakerMuted ? VolumeX : Volume2}
