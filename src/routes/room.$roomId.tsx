@@ -1991,14 +1991,18 @@ function RoomPage() {
                   </div>
                   <div className="pointer-events-none absolute inset-x-2 bottom-10 flex items-center gap-1">
                     <span className="truncate text-[15px] font-black text-white drop-shadow">
-                      {camM?.user?.username ?? "Co-Host"}
+                      {camM?.user?.username ?? "Empty"}
                     </span>
-                    <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
+                    {camM ? (
+                      <span className="grid h-3.5 w-3.5 shrink-0 place-items-center rounded-full bg-sky-500 text-[8px] text-white">✓</span>
+                    ) : null}
                   </div>
-                  <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
-                    <span className="text-amber-300">★</span>
-                    <span>{formatGiftPoints(camTile.giftPoints || 8700)}</span>
-                  </div>
+                  {camTile.giftPoints > 0 ? (
+                    <div className="pointer-events-none absolute bottom-3 left-2 flex items-center gap-1 text-[11px] font-bold text-white/85">
+                      <span className="text-amber-300">★</span>
+                      <span>{formatGiftPoints(camTile.giftPoints)}</span>
+                    </div>
+                  ) : null}
                   <button
                     onClick={() => agora.toggleSpeaker()}
                     aria-label="Toggle sound"
