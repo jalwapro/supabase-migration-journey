@@ -197,7 +197,7 @@ function RoomPage() {
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
     beauty: true,
-    mirror: true,
+    mirror: false,
     hd: true,
     blur: false,
   });
@@ -3134,7 +3134,7 @@ function VideoTile({
   useEffect(() => {
     const el = localVideoRef.current;
     if (el && showLocalPreview && localVideoTrack) {
-      localVideoTrack.play(el, { fit: "cover" });
+      localVideoTrack.play(el, { fit: "contain" });
     }
     return () => { localVideoTrack?.stop(); };
   }, [showLocalPreview, localVideoTrack]);
