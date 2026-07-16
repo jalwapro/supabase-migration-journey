@@ -178,7 +178,7 @@ function PkMatchPage() {
 
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
-  async function startBattle() {
+  function openStartFlow() {
     if (!isHost) return toast.error("Only the host can start a PK");
     if (!opponent) {
       setPickerOpen(true);
@@ -187,25 +187,31 @@ function PkMatchPage() {
     if ((profile?.coins ?? 0) < effectiveStake) {
       return toast.error("Not enough coins for this stake");
     }
+    setModeSheetOpen(true);
+  }
+
+  async function startBattle(chosenMode: PkMode) {
+    if (!opponent) return;
+    setMode(chosenMode);
+    setModeSheetOpen(false);
     setStarting(true);
-    // Send invite. Backend RPC stores duration; stake persisted via update after.
     const { data, error } = await supabase.rpc("pk_send_invite", {
       _to_host: opponent.host_id,
-      _duration_sec: MODE_META[mode].sec,
+      _duration_sec: MODE_META[chosenMode].sec,
     });
     if (error) {
       setStarting(false);
       return toast.error(error.message);
     }
-    // Best-effort: attach stake to the invite row we just created
     const inviteId = (Array.isArray(data) ? data[0]?.id : (data as any)?.id) ?? null;
     if (inviteId && effectiveStake > 0) {
       await supabase.from("pk_invites").update({ stake_coins: effectiveStake }).eq("id", inviteId);
     }
     setStarting(false);
-    toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[mode].minutes} min`);
+    toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[chosenMode].minutes} min`);
     setOpponent(null);
   }
+
 
   async function sendMessage() {
     const body = message.trim();
