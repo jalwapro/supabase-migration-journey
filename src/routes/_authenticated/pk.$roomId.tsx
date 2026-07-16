@@ -438,11 +438,13 @@ function PkMatchPage() {
         <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
           {(chatQ.data ?? []).map((m: any) => (
             <div key={m.id} className="flex items-start gap-2 text-[12px]">
-              <img
-                src={m.profiles?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${m.user_id}`}
-                className="mt-0.5 h-6 w-6 rounded-full object-cover"
-                alt=""
-              />
+              {m.profiles?.avatar ? (
+                <img src={m.profiles.avatar} className="mt-0.5 h-6 w-6 rounded-full object-cover" alt="" />
+              ) : (
+                <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-white/10 text-[10px] font-bold uppercase text-white/70">
+                  {(m.profiles?.username ?? "?").charAt(0)}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <span className="mr-1 font-semibold text-white/80">{m.profiles?.username ?? "user"}</span>
                 <span className="rounded-lg bg-white/5 px-2 py-1 text-white/90">{m.body}</span>
@@ -532,11 +534,13 @@ function PkMatchPage() {
             return (
               <div className="flex flex-col items-center gap-3">
                 <div className="relative">
-                  <img
-                    src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
-                    className="h-28 w-28 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/60"
-                    alt=""
-                  />
+                  {h.host?.avatar ? (
+                    <img src={h.host.avatar} className="h-28 w-28 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/60" alt="" />
+                  ) : (
+                    <div className="grid h-28 w-28 place-items-center rounded-2xl bg-white/10 text-3xl font-black uppercase text-white/70 ring-2 ring-[color:var(--primary)]/60">
+                      {(h.host?.username ?? "?").charAt(0)}
+                    </div>
+                  )}
                   <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase">Live</span>
                 </div>
                 <div className="mt-2 text-center">
@@ -580,11 +584,13 @@ function PkMatchPage() {
                   onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
                   className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
                 >
-                  <img
-                    src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
-                    className="h-10 w-10 rounded-full object-cover"
-                    alt=""
-                  />
+                  {h.host?.avatar ? (
+                    <img src={h.host.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
+                  ) : (
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-[13px] font-bold uppercase text-white/70">
+                      {(h.host?.username ?? "?").charAt(0)}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1 text-left">
                     <div className="truncate text-[13px] font-bold">{h.host?.username ?? "Host"}</div>
                     <div className="truncate text-[11px] text-white/50">{h.title ?? "Live"}</div>
@@ -683,11 +689,13 @@ function HostPanel({
         </span>
       )}
       <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-square w-full overflow-hidden rounded-xl bg-black/40`}>
-        <img
-          src={avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${username}`}
-          className="h-full w-full object-cover"
-          alt={username}
-        />
+        {avatar ? (
+          <img src={avatar} className="h-full w-full object-cover" alt={username} />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-4xl font-black uppercase text-white/60">
+            {(username ?? "?").charAt(0)}
+          </div>
+        )}
       </div>
       <div className="mt-2 truncate text-[13px] font-bold">{username}</div>
     </div>
