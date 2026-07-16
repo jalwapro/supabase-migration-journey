@@ -234,13 +234,21 @@ function PkMatchPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("pk_invites")
-        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins,from:profiles!pk_invites_from_host_fkey(username,avatar)")
+        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins")
         .eq("to_host", user!.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
         .limit(1);
-      return (data ?? [])[0] ?? null;
+      const inv = (data ?? [])[0];
+      if (!inv) return null;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("username,avatar")
+        .eq("id", inv.from_host)
+        .maybeSingle();
+      return { ...inv, from: prof ?? null } as any;
     },
+
   });
   const incoming = incomingQ.data as any;
 
