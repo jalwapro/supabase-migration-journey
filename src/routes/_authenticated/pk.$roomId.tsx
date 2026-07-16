@@ -796,6 +796,8 @@ function PkMatchPage() {
         <ActionBtn
           icon={isHost ? (agora.muted ? MicOff : Mic) : Mic}
           label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"}
+          active={isHost && !agora.muted && !!agora.localAudioPublished.current}
+          danger={isHost && agora.muted}
           onClick={async () => {
             if (!isHost) return toast.info("Only host controls the mic");
             if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
@@ -806,12 +808,23 @@ function PkMatchPage() {
           }}
         />
         <ActionBtn
+          icon={isHost ? (agora.videoOn ? Video : VideoOff) : Video}
+          label={isHost ? (agora.videoOn ? "Camera" : "Cam Off") : "Cam"}
+          active={isHost && !!agora.videoOn}
+          danger={isHost && !agora.videoOn}
+          onClick={async () => {
+            if (!isHost) return toast.info("Only host controls the camera");
+            try { await agora.toggleVideo(); } catch { toast.error("Camera unavailable"); }
+          }}
+        />
+        <ActionBtn
           icon={agora.speakerMuted ? VolumeX : Volume2}
           label={agora.speakerMuted ? "Muted" : "Sound"}
+          active={!agora.speakerMuted}
+          danger={agora.speakerMuted}
           onClick={() => agora.toggleSpeaker()}
         />
         <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
-        <ActionBtn icon={Share2} label="Share" onClick={shareRoom} />
         <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
         <button
           onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
