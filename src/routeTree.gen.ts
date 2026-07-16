@@ -50,6 +50,7 @@ import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/pu
 import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
+import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
@@ -293,6 +294,11 @@ const AuthenticatedSettingsNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedPkRoomIdRoute = AuthenticatedPkRoomIdRouteImport.update({
+  id: '/pk/$roomId',
+  path: '/pk/$roomId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
     id: '/lucky-spin',
@@ -555,6 +561,7 @@ export interface FileRoutesByFullPath {
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
@@ -629,6 +636,7 @@ export interface FileRoutesByTo {
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
@@ -707,6 +715,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
@@ -785,6 +794,7 @@ export interface FileRouteTypes {
     | '/admin/withdrawals'
     | '/games/daily-spin'
     | '/games/lucky-spin'
+    | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
     | '/api/public/firebase-config'
@@ -859,6 +869,7 @@ export interface FileRouteTypes {
     | '/admin/withdrawals'
     | '/games/daily-spin'
     | '/games/lucky-spin'
+    | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
     | '/api/public/firebase-config'
@@ -936,6 +947,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/daily-spin'
     | '/_authenticated/games/lucky-spin'
+    | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings/notifications'
     | '/_authenticated/u/$userId'
     | '/api/public/firebase-config'
@@ -1253,6 +1265,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/pk/$roomId': {
+      id: '/_authenticated/pk/$roomId'
+      path: '/pk/$roomId'
+      fullPath: '/pk/$roomId'
+      preLoaderRoute: typeof AuthenticatedPkRoomIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/games/lucky-spin': {
       id: '/_authenticated/games/lucky-spin'
@@ -1623,6 +1642,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
+  AuthenticatedPkRoomIdRoute: typeof AuthenticatedPkRoomIdRoute
   AuthenticatedUUserIdRoute: typeof AuthenticatedUUserIdRoute
 }
 
@@ -1647,6 +1667,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
+  AuthenticatedPkRoomIdRoute: AuthenticatedPkRoomIdRoute,
   AuthenticatedUUserIdRoute: AuthenticatedUUserIdRoute,
 }
 

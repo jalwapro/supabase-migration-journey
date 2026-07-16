@@ -1899,13 +1899,22 @@ function RoomPage() {
                       </span>
                     </div>
                     {isHost && (
-                      <button
-                        onClick={() => setPkOpen(true)}
-                        className="mt-2 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[color:var(--destructive)] via-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-black shadow-[0_0_20px_rgba(255,45,135,0.55)]"
-                      >
-                        <Swords className="h-3 w-3" />
-                        Invite
-                      </button>
+                      <div className="mt-2 flex items-center gap-2">
+                        <Link
+                          to="/pk/$roomId"
+                          params={{ roomId }}
+                          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white shadow-[0_0_20px_rgba(217,70,239,0.55)]"
+                        >
+                          <Swords className="h-3 w-3" />
+                          PK Match
+                        </Link>
+                        <button
+                          onClick={() => setPkOpen(true)}
+                          className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white"
+                        >
+                          Quick
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
