@@ -9,6 +9,8 @@
  */
 
 import { buildFilterString } from "./filters";
+import { AR_OVERLAYS, isAROverlayId, preloadOverlay, drawOverlay } from "./arOverlays";
+import { FaceTracker } from "./faceTracker";
 
 export interface CamPipelineConfig {
   filterId: string;
@@ -33,6 +35,10 @@ export class CamProcessor {
   private outStream: MediaStream | null = null;
   private cfg: CamPipelineConfig;
   private started = false;
+  private tracker: FaceTracker | null = null;
+  private overlayBitmap: ImageBitmap | HTMLImageElement | null = null;
+  private overlayLoadingFor: string | null = null;
+  private t0 = performance.now();
 
   constructor(srcStream: MediaStream, cfg: CamPipelineConfig) {
     this.cfg = cfg;
@@ -50,6 +56,25 @@ export class CamProcessor {
 
   updateConfig(cfg: CamPipelineConfig) {
     this.cfg = cfg;
+    this.maybeInitAr();
+  }
+
+  private maybeInitAr() {
+    const id = this.cfg.filterId;
+    if (!isAROverlayId(id)) return;
+    if (this.overlayLoadingFor !== id) {
+      this.overlayLoadingFor = id;
+      this.overlayBitmap = null;
+      preloadOverlay(AR_OVERLAYS[id].src)
+        .then((bmp) => {
+          if (this.overlayLoadingFor === id) this.overlayBitmap = bmp;
+        })
+        .catch(() => { /* silent */ });
+    }
+    if (!this.tracker) {
+      this.tracker = new FaceTracker();
+      this.tracker.init().catch(() => { /* silent */ });
+    }
   }
 
   async start(): Promise<MediaStream> {
@@ -57,6 +82,7 @@ export class CamProcessor {
     this.started = true;
     await this.srcVideo.play().catch(() => {});
     this.outStream = this.canvas.captureStream(FPS);
+    this.maybeInitAr();
     this.loop();
     return this.outStream;
   }
@@ -68,6 +94,10 @@ export class CamProcessor {
     try { this.outStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
     try { this.srcVideo.pause(); } catch { /* ignore */ }
     try { this.srcVideo.srcObject = null; } catch { /* ignore */ }
+    try { this.tracker?.dispose(); } catch { /* ignore */ }
+    this.tracker = null;
+    this.overlayBitmap = null;
+    this.overlayLoadingFor = null;
     this.outStream = null;
   }
 
@@ -109,5 +139,21 @@ export class CamProcessor {
     this.ctx.drawImage(src, dx, dy, dw, dh);
     this.ctx.restore();
     this.ctx.filter = "none";
+
+    // AR overlay pass
+    if (isAROverlayId(cfg.filterId) && this.overlayBitmap && this.tracker) {
+      const pose = this.tracker.update(src, performance.now() - this.t0);
+      if (pose) {
+        drawOverlay(
+          this.ctx,
+          this.overlayBitmap,
+          AR_OVERLAYS[cfg.filterId],
+          pose,
+          w,
+          h,
+          false,
+        );
+      }
+    }
   }
 }
