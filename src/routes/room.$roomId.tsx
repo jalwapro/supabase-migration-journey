@@ -2269,10 +2269,10 @@ function RoomPage() {
       ) : (
         <div className="pointer-events-none absolute inset-x-0 bottom-[160px] z-20 mx-auto flex w-full max-w-md flex-col px-3">
           <div
-            className="pointer-events-auto max-h-[38vh] space-y-1 overflow-y-auto pr-1 scrollbar-hide"
+            className="pointer-events-auto max-h-[26vh] space-y-1 overflow-y-auto pr-1 scrollbar-hide"
             style={{
-              maskImage: "linear-gradient(to bottom, transparent 0%, black 22%, black 100%)",
-              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 22%, black 100%)",
+              maskImage: "linear-gradient(to bottom, transparent 0%, black 30%, black 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 30%, black 100%)",
             }}
           >
             {messages
