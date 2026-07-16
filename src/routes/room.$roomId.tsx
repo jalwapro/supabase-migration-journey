@@ -1933,12 +1933,45 @@ function RoomPage() {
                 </div>
               </div>
 
-              {/* Bottom row: 4 audio seats (2–5) */}
+              {/* Neon Royale: Welcome + Top Gifter mini cards */}
+              <div className="mt-3 grid grid-cols-2 gap-2.5">
+                <div className="rounded-xl border border-white/5 bg-gradient-to-r from-violet-600/25 to-fuchsia-600/25 p-2 backdrop-blur-sm">
+                  <div className="mb-0.5 flex items-center gap-1.5">
+                    <span className="grid h-4 w-4 place-items-center rounded bg-amber-400 text-[9px] font-black text-black">!</span>
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-fuchsia-200">Welcome</span>
+                  </div>
+                  <p className="text-[9px] leading-snug text-white/70">Room rules · Be respectful & have fun</p>
+                </div>
+                <button
+                  onClick={() => setGifterListReceiver({ id: r.host_id, name: r.host?.username ?? "Host" })}
+                  className="rounded-xl border border-white/5 bg-gradient-to-r from-amber-600/25 to-orange-600/25 p-2 text-left backdrop-blur-sm"
+                >
+                  <div className="mb-0.5 flex items-center gap-1.5">
+                    <Trophy className="h-3 w-3 text-amber-300" />
+                    <span className="text-[9px] font-bold uppercase tracking-wide text-amber-200">Top Gifter</span>
+                  </div>
+                  {topGifters[0] ? (
+                    <p className="truncate text-[10px] font-black text-white">
+                      {topGifters[0].username ?? "Guest"}
+                      <span className="ml-1 text-[9px] font-bold text-amber-400">
+                        {formatGiftPoints(topGifters[0].total_coins)}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-[9px] text-white/50">Be the first to gift</p>
+                  )}
+                </button>
+              </div>
+
+              {/* Guest seats header */}
               <div className="mt-3 flex items-center justify-between px-1">
-                <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/60">
-                  Guest Seats · 4
-                </span>
-                <span className="text-[10px] font-bold text-white/40">Audio only</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-fuchsia-400 shadow-[0_0_6px_rgba(232,121,249,0.9)]" />
+                  <span className="text-[10px] font-black uppercase tracking-[1.5px] text-white/70">
+                    Guest Seats · 4
+                  </span>
+                </div>
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300/70">Audio only</span>
               </div>
               <div className="mt-1.5 grid grid-cols-4 gap-2">
                 {[2, 3, 4, 5].map((i) => renderSeat(i))}
