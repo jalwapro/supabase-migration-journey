@@ -2369,23 +2369,35 @@ function RoomPage() {
               <MoreHorizontal className="h-5 w-5" />
               <span className="text-[10px] font-semibold">More</span>
             </button>
-            {isHost ? (
-              <button
-                onClick={() => void toggleVideoWithPipeline()}
-                className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
-              >
-                <Video className="h-4 w-4" />
-                {agora.videoOn ? "Camera On" : "Camera Off"}
-              </button>
-            ) : (
-              <button
-                onClick={() => void raiseHand()}
-                className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
-              >
-                <span className="text-base leading-none">✋</span>
-                Raise Hand
-              </button>
-            )}
+            {(() => {
+              const mySeat = myMember?.seat_index ?? null;
+              const isSeated = mySeat != null;
+              const isCoHostSeat = mySeat === 1;
+              // Host OR co-host seat holder → camera toggle
+              if (isHost || isCoHostSeat) {
+                return (
+                  <button
+                    onClick={() => void toggleVideoWithPipeline()}
+                    className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+                  >
+                    <Video className="h-4 w-4" />
+                    {agora.videoOn ? "Camera On" : "Camera Off"}
+                  </button>
+                );
+              }
+              // Any other seated user (voice seats) → no raise hand
+              if (isSeated) return null;
+              // Viewer → raise hand
+              return (
+                <button
+                  onClick={() => void raiseHand()}
+                  className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+                >
+                  <span className="text-base leading-none">✋</span>
+                  Raise Hand
+                </button>
+              );
+            })()}
           </div>
 
         </div>
