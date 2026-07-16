@@ -2040,13 +2040,28 @@ function RoomPage() {
                     <Mic className="h-3.5 w-3.5 text-violet-300" />
                     <span className="text-[12px] font-bold text-white">Voice Seats (4)</span>
                   </div>
-                  {(isHost || isModerator) && (
+                  {isHost || isModerator ? (
                     <button
                       onClick={() => setViewersSheetOpen(true)}
                       className="flex items-center gap-1 text-[11px] font-semibold text-white/60"
                     >
                       Manage
                       <Settings className="h-3 w-3" />
+                    </button>
+                  ) : mySeatIndex != null && mySeatIndex >= 2 ? (
+                    <button
+                      onClick={() => void leaveSeat()}
+                      className="flex items-center gap-1 rounded-full border border-rose-400/50 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold text-rose-200"
+                    >
+                      Leave Seat
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => void takeAvailableVoiceSeat()}
+                      className="flex items-center gap-1 rounded-full border border-violet-400/60 bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-100"
+                    >
+                      <Mic className="h-3 w-3" />
+                      Take Seat
                     </button>
                   )}
                 </div>
