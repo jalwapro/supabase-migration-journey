@@ -1865,44 +1865,18 @@ function RoomPage() {
                   <div className="pointer-events-none absolute bottom-1 left-1 h-6 w-6 border-b-4 border-l-4 border-[color:var(--gold)]" />
                 </div>
 
-                {/* Empty opponent slot — waiting */}
-                <div className="relative overflow-hidden rounded-r-2xl border-y-2 border-r-2 border-dashed border-[color:var(--gold)]/60 bg-gradient-to-b from-black via-[#1a0b2e] to-black">
-                  <div className="pointer-events-none absolute right-1 top-1 h-6 w-6 border-r-4 border-t-4 border-[color:var(--gold)]/70" />
-                  <div className="pointer-events-none absolute bottom-1 right-1 h-6 w-6 border-b-4 border-r-4 border-[color:var(--gold)]/70" />
-
+                {/* Empty opponent slot */}
+                <div className="relative overflow-hidden rounded-r-2xl border-y-2 border-r-2 border-dashed border-white/15 bg-gradient-to-b from-black via-[#0f0a1a] to-black">
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-3 text-center">
-                    <div className="flex items-center gap-1.5">
-                      <Swords className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                      <span className="text-[9px] font-black uppercase tracking-[2px] text-[color:var(--gold)]">
-                        PK Battle
-                      </span>
+                    <div className="grid h-14 w-14 place-items-center rounded-full border border-white/10 bg-white/5">
+                      <Users className="h-6 w-6 text-white/50" />
                     </div>
-                    <div
-                      className="text-[22px] font-black leading-tight text-white"
-                      style={{
-                        fontFamily: "'Bebas Neue', system-ui, sans-serif",
-                        letterSpacing: "1.5px",
-                        textShadow: "0 0 18px rgba(255,207,92,0.55)",
-                      }}
-                    >
-                      WAITING
-                      <br />
-                      FOR RIVAL
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="relative flex h-1.5 w-1.5">
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[color:var(--destructive)] opacity-75" />
-                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[color:var(--destructive)]" />
-                      </span>
-                      <span className="text-[9px] font-bold uppercase tracking-[1.5px] text-white/70">
-                        Scouting…
-                      </span>
-                    </div>
+                    <span className="text-[11px] font-semibold text-white/60">Waiting for guest…</span>
                     {isHost && (
                       <Link
                         to="/pk/$roomId"
                         params={{ roomId }}
-                        className="mt-2 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white shadow-[0_0_20px_rgba(217,70,239,0.55)]"
+                        className="mt-1 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white shadow-[0_0_20px_rgba(217,70,239,0.55)]"
                       >
                         <Swords className="h-3 w-3" />
                         Start PK Match
