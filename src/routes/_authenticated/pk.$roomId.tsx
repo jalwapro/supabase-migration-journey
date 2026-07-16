@@ -843,8 +843,8 @@ function PkMatchPage() {
         </button>
       </div>
 
-      {/* Bottom action bar */}
-      <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
+      {/* Bottom action bar — PK-tuned */}
+      <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(4,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
         <ActionBtn
           icon={isHost ? (agora.muted ? MicOff : Mic) : Mic}
           label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"}
@@ -861,12 +861,20 @@ function PkMatchPage() {
         />
         <ActionBtn
           icon={isHost ? (agora.videoOn ? Video : VideoOff) : Video}
-          label={isHost ? (agora.videoOn ? "Camera" : "Cam Off") : "Cam"}
+          label={isHost ? (agora.videoOn ? "Cam On" : "Cam Off") : "Cam"}
           active={isHost && !!agora.videoOn}
           danger={isHost && !agora.videoOn}
           onClick={async () => {
             if (!isHost) return toast.info("Only host controls the camera");
-            try { await agora.toggleVideo(); } catch { toast.error("Camera unavailable"); }
+            if (agora.status !== "connected") {
+              return toast.info("Connecting to room… try again in a moment");
+            }
+            try {
+              const ok = await agora.toggleVideo();
+              if (!ok && !agora.videoOn) toast.error("Camera unavailable — check permissions");
+            } catch {
+              toast.error("Camera unavailable");
+            }
           }}
         />
         <ActionBtn
@@ -877,15 +885,35 @@ function PkMatchPage() {
           onClick={() => agora.toggleSpeaker()}
         />
         <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
-        <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
-        <button
-          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
-          className="flex items-center gap-1.5 rounded-full border border-[color:var(--secondary)]/60 bg-[color:var(--secondary)]/10 px-3.5 py-2 text-[12px] font-bold text-white"
-        >
-          <Hand className="h-4 w-4 text-[color:var(--gold)]" /> Live Room
-
-        </button>
+        {isHost && match?.status === "active" ? (
+          <button
+            onClick={async () => {
+              await supabase.rpc("pk_end_match", { _match_id: match.id });
+              matchQ.refetch(); roomQ.refetch();
+              toast.success("PK ended");
+            }}
+            className="flex items-center gap-1.5 rounded-full border border-rose-400/60 bg-gradient-to-r from-rose-500 to-rose-600 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_0_18px_-2px_rgba(244,63,94,0.6)] active:scale-95"
+          >
+            <Swords className="h-4 w-4" /> End PK
+          </button>
+        ) : isHost ? (
+          <button
+            onClick={openStartFlow}
+            disabled={starting}
+            className="flex items-center gap-1.5 rounded-full border border-amber-300/50 bg-gradient-to-r from-amber-400 via-rose-500 to-fuchsia-600 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_0_18px_-2px_rgba(244,63,94,0.6)] active:scale-95 disabled:opacity-60"
+          >
+            <Swords className="h-4 w-4" /> Start PK
+          </button>
+        ) : (
+          <button
+            onClick={() => setRulesOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-2 text-[12px] font-bold text-white/85 active:scale-95"
+          >
+            <MoreHorizontal className="h-4 w-4" /> Rules
+          </button>
+        )}
       </div>
+
 
       {/* Opponent Picker Sheet */}
       {pickerOpen && (
