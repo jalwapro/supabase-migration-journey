@@ -1976,7 +1976,7 @@ function RoomPage() {
               </div>
 
               {/* Voice Seats card — matches reference */}
-              <div className="mt-3 rounded-2xl border border-violet-400/15 bg-black/40 p-3 backdrop-blur-md">
+              <div className="mt-3 p-1">
                 <div className="grid grid-cols-4 gap-2">
                   {[2, 3, 4, 5].map((i, idx) => {
                     const m = seatsByIndex.get(i);
