@@ -46,6 +46,14 @@ export class CamProcessor {
     this.srcVideo.playsInline = true;
     this.srcVideo.muted = true;
     this.srcVideo.autoplay = true;
+    this.srcVideo.setAttribute("playsinline", "");
+    this.srcVideo.setAttribute("muted", "");
+    // Attach off-screen so mobile browsers (esp. iOS Safari) reliably start
+    // playback. A detached <video> often stays readyState<2, which would
+    // freeze the canvas pipeline → filters appear to "do nothing".
+    this.srcVideo.style.cssText =
+      "position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;opacity:0;pointer-events:none;";
+    try { document.body.appendChild(this.srcVideo); } catch { /* ignore */ }
     this.srcVideo.srcObject = srcStream;
 
     this.canvas = document.createElement("canvas");
@@ -81,6 +89,19 @@ export class CamProcessor {
     if (this.started && this.outStream) return this.outStream;
     this.started = true;
     await this.srcVideo.play().catch(() => {});
+    // Wait briefly for the source video to produce a real frame so the
+    // captured canvas stream begins with actual content and Zego doesn't
+    // publish a frozen black track.
+    const t0 = performance.now();
+    while (
+      (this.srcVideo.readyState < 2 || this.srcVideo.videoWidth === 0) &&
+      performance.now() - t0 < 2000
+    ) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    // Prime the canvas with one frame before capture so the outbound track
+    // is never empty.
+    try { this.drawFrame(); } catch { /* ignore */ }
     this.outStream = this.canvas.captureStream(FPS);
     this.maybeInitAr();
     this.loop();
@@ -94,6 +115,7 @@ export class CamProcessor {
     try { this.outStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
     try { this.srcVideo.pause(); } catch { /* ignore */ }
     try { this.srcVideo.srcObject = null; } catch { /* ignore */ }
+    try { this.srcVideo.remove(); } catch { /* ignore */ }
     try { this.tracker?.dispose(); } catch { /* ignore */ }
     this.tracker = null;
     this.overlayBitmap = null;
