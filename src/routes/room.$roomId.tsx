@@ -2167,7 +2167,7 @@ function RoomPage() {
       {/* ─── Composer + footer dock ─────────────────────────────── */}
       {isVideo ? (
         <div
-          className="relative z-10 mx-auto w-full max-w-md shrink-0 bg-gradient-to-t from-black via-black/85 to-transparent px-3 pt-6"
+          className="relative z-10 mx-auto mt-auto w-full max-w-md shrink-0 bg-gradient-to-t from-black via-black/85 to-transparent px-3 pt-6"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
         >
           <div className="flex items-center gap-1.5">
