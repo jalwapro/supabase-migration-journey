@@ -516,7 +516,20 @@ function PkMatchPage() {
               <span className="text-[12px] font-black tabular-nums">{fmt(endsInSec)}</span>
             </div>
           )}
+          {isHost && match?.status !== "active" && (
+            <button
+              onClick={openStartFlow}
+              disabled={starting}
+              className="pointer-events-auto mt-2 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-xl shadow-[0_6px_24px_-4px_rgba(244,63,94,0.7)] ring-2 ring-white/20 transition active:scale-90 disabled:opacity-60"
+              title="Send challenge"
+              aria-label="Send match challenge"
+            >
+              🥊
+            </button>
+          )}
         </div>
+
+
 
         {/* Opponent side */}
         {opponent || match ? (
@@ -600,18 +613,8 @@ function PkMatchPage() {
         <Trophy className="h-6 w-6 text-[color:var(--gold)]" />
       </div>
 
-      {/* Gloves match button — hidden once match is live */}
-      {isHost && match?.status !== "active" && (
-        <button
-          onClick={openStartFlow}
-          disabled={starting}
-          className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 via-rose-500 to-fuchsia-600 py-3.5 text-[15px] font-black uppercase tracking-wider text-white shadow-[0_10px_40px_-10px_rgba(244,63,94,0.7)] active:scale-[0.98] disabled:opacity-60"
-        >
-          <span className="text-xl">🥊</span>
-          <span>{starting ? "Sending challenge…" : "Match"}</span>
-          <span className="text-xl">🥊</span>
-        </button>
-      )}
+      {/* Gloves match button moved between VS panels above */}
+
       {match?.status === "active" && (
         <div className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--primary)]/40 bg-gradient-to-r from-sky-500/20 via-fuchsia-500/20 to-pink-500/20 py-3 text-[13px] font-bold uppercase tracking-wider text-white">
           <Zap className="h-4 w-4" /> PK Live
