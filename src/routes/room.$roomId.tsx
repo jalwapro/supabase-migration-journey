@@ -2118,15 +2118,6 @@ function RoomPage() {
                         ) : (
                           <span className="text-[10px] text-white/30">—</span>
                         )}
-                        <span className={`grid h-6 w-6 place-items-center rounded-full ${
-                          seatMuted ? "bg-rose-500/15" : "bg-emerald-500/15"
-                        }`}>
-                          {seatMuted ? (
-                            <MicOff className="h-3 w-3 text-rose-400" />
-                          ) : (
-                            <Mic className="h-3 w-3 text-emerald-400" />
-                          )}
-                        </span>
                       </button>
                     );
                   })}
