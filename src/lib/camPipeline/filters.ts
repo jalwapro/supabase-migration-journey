@@ -7,7 +7,7 @@
  * saturate/sepia/hue-rotate/blur). No real ML inference runs.
  */
 
-export type FilterCategory = "beauty" | "makeup";
+export type FilterCategory = "beauty" | "makeup" | "funny" | "ar";
 
 export interface FilterPreset {
   id: string;
