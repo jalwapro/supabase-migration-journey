@@ -89,6 +89,19 @@ export class CamProcessor {
     if (this.started && this.outStream) return this.outStream;
     this.started = true;
     await this.srcVideo.play().catch(() => {});
+    // Wait briefly for the source video to produce a real frame so the
+    // captured canvas stream begins with actual content and Zego doesn't
+    // publish a frozen black track.
+    const t0 = performance.now();
+    while (
+      (this.srcVideo.readyState < 2 || this.srcVideo.videoWidth === 0) &&
+      performance.now() - t0 < 2000
+    ) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    // Prime the canvas with one frame before capture so the outbound track
+    // is never empty.
+    try { this.drawFrame(); } catch { /* ignore */ }
     this.outStream = this.canvas.captureStream(FPS);
     this.maybeInitAr();
     this.loop();
