@@ -240,7 +240,7 @@ function PkMatchPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/5 bg-black/60 px-3 py-2.5 backdrop-blur-xl">
         <button
-          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
+          onClick={() => navigate({ to: "/rooms" })}
           className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
           aria-label="Back"
         >
