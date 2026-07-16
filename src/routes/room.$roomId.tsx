@@ -2000,6 +2000,11 @@ function RoomPage() {
                   <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-gradient-to-r from-pink-500 to-fuchsia-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
                     Host
                   </div>
+                  {/* Gift points */}
+                  <div className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/50 bg-black/70 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-[0_0_10px_-2px_rgba(251,191,36,0.6)] backdrop-blur">
+                    <span>🎁</span>
+                    <span>{formatGiftPoints(hostTile.giftPoints ?? 0)}</span>
+                  </div>
                   {/* Mic status bottom-right */}
                   <div className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur">
                     {hostTile.localMuted && hostM?.user_id === user?.id ? (
