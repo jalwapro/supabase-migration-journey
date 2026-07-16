@@ -277,17 +277,23 @@ function PkMatchPage() {
     followQ.refetch();
   }
 
-  // Incoming pending invites addressed to me
+  // Incoming pending invites addressed to me.
+  // Only surface invites that were CREATED after this room mount — reopening
+  // the room should not re-show a stale challenge the user ignored earlier.
+  const mountedAtRef = useRef<string>(new Date().toISOString());
   const incomingQ = useQuery({
     enabled: !!user && isHost,
-    queryKey: ["pk-incoming", user?.id],
+    queryKey: ["pk-incoming", user?.id, roomId],
     refetchInterval: 3000,
     queryFn: async () => {
+      const nowIso = new Date().toISOString();
       const { data } = await supabase
         .from("pk_invites")
-        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins")
+        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins,created_at")
         .eq("to_host", user!.id)
         .eq("status", "pending")
+        .gt("expires_at", nowIso)
+        .gt("created_at", mountedAtRef.current)
         .order("created_at", { ascending: false })
         .limit(1);
       const inv = (data ?? [])[0];
