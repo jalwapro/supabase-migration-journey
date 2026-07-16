@@ -530,8 +530,21 @@ function PkMatchPage() {
         ) : (() => {
           const list = hostsQ.data ?? [];
           const rnd = list.length ? list[randomIdx % list.length] : null;
+          const nextOpponent = () => {
+            if (list.length > 1) setRandomIdx((i) => (i + 1) % list.length);
+          };
+          let touchStartY = 0;
           return (
-            <div className="relative flex flex-col items-stretch overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 p-2">
+            <div
+              onClick={() => { if (rnd && isHost) { setOpponent(rnd); openStartFlow(); } }}
+              onWheel={(e) => { if (e.deltaY > 10) nextOpponent(); }}
+              onTouchStart={(e) => { touchStartY = e.touches[0]?.clientY ?? 0; }}
+              onTouchEnd={(e) => {
+                const endY = e.changedTouches[0]?.clientY ?? 0;
+                if (touchStartY - endY > 40) nextOpponent();
+              }}
+              className="relative flex cursor-pointer select-none flex-col items-stretch overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 p-2 transition active:scale-[0.98]"
+            >
               <span className="mx-auto rounded-md bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
                 {rnd ? "Random Opponent" : "Opponent"}
               </span>
@@ -556,18 +569,14 @@ function PkMatchPage() {
               <div className="mt-2 truncate text-center text-[13px] font-bold">
                 {rnd?.host?.username ?? "—"}
               </div>
-              {rnd && list.length > 1 && (
-                <button
-                  onClick={() => setRandomIdx((i) => (i + 1) % list.length)}
-                  className="mt-1 text-center text-[10px] text-white/40 underline"
-                >
-                  Change
-                </button>
+              {rnd && (
+                <div className="mt-1 text-center text-[9.5px] uppercase tracking-wider text-white/40">
+                  Tap to match • Swipe up for next
+                </div>
               )}
-
-
             </div>
           );
+
         })()}
 
       </div>
