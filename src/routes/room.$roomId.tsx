@@ -2376,23 +2376,13 @@ function RoomPage() {
               // Host OR co-host seat holder → camera toggle
               if (isHost || isCoHostSeat) {
                 return (
-                  <>
-                    <button
-                      onClick={() => setFilterSheetOpen(true)}
-                      aria-label="Camera filters & effects"
-                      className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-fuchsia-400/60 bg-transparent px-3 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(232,121,249,0.35)] active:scale-95"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Filters
-                    </button>
-                    <button
-                      onClick={() => void toggleVideoWithPipeline()}
-                      className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
-                    >
-                      <Video className="h-4 w-4" />
-                      {agora.videoOn ? "Camera On" : "Camera Off"}
-                    </button>
-                  </>
+                  <button
+                    onClick={() => void toggleVideoWithPipeline()}
+                    className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+                  >
+                    <Video className="h-4 w-4" />
+                    {agora.videoOn ? "Camera On" : "Camera Off"}
+                  </button>
                 );
               }
               // Any other seated user (voice seats) → no raise hand
@@ -2408,6 +2398,7 @@ function RoomPage() {
                 </button>
               );
             })()}
+
           </div>
 
         </div>
