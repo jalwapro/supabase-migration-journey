@@ -2060,7 +2060,11 @@ function RoomPage() {
                     return (
                       <button
                         key={i}
-                        onClick={() => (m ? onSeatTap(i) : takeSeat(i))}
+                        onClick={() => {
+                          if (!m) return void takeSeat(i);
+                          if (m.user_id === user?.id) return void leaveSeat();
+                          return onSeatTap(i);
+                        }}
                         className="flex flex-col items-center gap-1.5"
                       >
                         <div className="relative">
