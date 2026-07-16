@@ -606,13 +606,17 @@ function PkMatchPage() {
 
       {/* Bottom action bar */}
       <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
-        <ActionBtn icon={Mic} label="Mic" />
-        <ActionBtn icon={Volume2} label="Sound" />
-        <ActionBtn icon={Gift} label="Gift" />
-        <ActionBtn icon={Share2} label="Share" />
-        <ActionBtn icon={MoreHorizontal} label="More" />
-        <button className="flex items-center gap-1.5 rounded-full border border-[color:var(--secondary)]/60 bg-[color:var(--secondary)]/10 px-3.5 py-2 text-[12px] font-bold text-white">
-          <Hand className="h-4 w-4 text-[color:var(--gold)]" /> Raise Hand
+        <ActionBtn icon={Mic} label="Mic" onClick={() => toast.info("Mic controls are in the live room")} />
+        <ActionBtn icon={Volume2} label="Sound" onClick={() => toast.info("Sound controls are in the live room")} />
+        <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
+        <ActionBtn icon={Share2} label="Share" onClick={shareRoom} />
+        <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
+        <button
+          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
+          className="flex items-center gap-1.5 rounded-full border border-[color:var(--secondary)]/60 bg-[color:var(--secondary)]/10 px-3.5 py-2 text-[12px] font-bold text-white"
+        >
+          <Hand className="h-4 w-4 text-[color:var(--gold)]" /> Live Room
+
         </button>
       </div>
 
