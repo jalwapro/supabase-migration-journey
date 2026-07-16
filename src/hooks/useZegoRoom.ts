@@ -1122,7 +1122,9 @@ export function useZegoRoom({
         // Show the real (un-mirrored) camera view in the local self-preview
         // so what the user sees matches what viewers see.
         mirror: false,
-        useZegoPlayer: !usedProcessing,
+        // Force raw <video> fallback so we control mirror/transform directly —
+        // Zego's playVideo may still apply an internal mirror on some builds.
+        useZegoPlayer: false,
       }));
       setVideoOn(true);
       setMicIssue(null, false);
