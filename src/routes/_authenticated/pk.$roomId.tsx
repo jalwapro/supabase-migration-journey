@@ -127,39 +127,18 @@ function PkMatchPage() {
   const room = roomQ.data;
   const isHost = !!(user?.id && room?.host_id === user.id);
   const activeMatchId: string | null = room?.active_pk_match_id ?? null;
+  const rtcChannel = activeMatchId ? `pk-${activeMatchId}` : room?.rtc_channel ?? null;
 
   // ── Live audio + video via Zego ───────────────────────────────
   const myUid = user ? uidFromUuid(user.id) : null;
   const agora = useAgoraRoom({
-    channel: room?.rtc_channel ?? null,
+    channel: rtcChannel,
     uid: myUid,
     publish: isHost,
     video: true,
-    kind: "video",
-    // Enable as soon as we have room + channel — don't gate on room.status,
-    // otherwise mic/camera never come on if the row isn't flagged "live".
-    enabled: !!user && !!room?.rtc_channel,
+    kind: "pk",
+    enabled: !!user && !!rtcChannel,
   });
-
-
-  // Host: auto-start mic + camera when connected (single user gesture flow —
-  // the tap that entered the room counts on mobile once we're inside the
-  // route; we still guard against re-toggling).
-  const autoCamRef = useRef(false);
-  useEffect(() => {
-    if (!isHost) return;
-    if (agora.status !== "connected") return;
-    if (autoCamRef.current) return;
-    autoCamRef.current = true;
-    void (async () => {
-      try { await agora.requestMic(); } catch { /* ignore */ }
-      try {
-        if (!agora.videoOn) await agora.toggleVideo();
-      } catch { /* ignore */ }
-    })();
-  }, [isHost, agora.status, agora.videoOn, agora]);
-
-
 
   // Active match if any
   const matchQ = useQuery({
@@ -498,6 +477,47 @@ function PkMatchPage() {
       kind: "text",
     } as any);
     if (error) toast.error(error.message);
+  }
+
+  async function togglePkMic() {
+    if (!isHost) return toast.info("Only host controls the mic");
+    if (agora.status !== "connected") {
+      return toast.info("Room connect ho raha hai — 1 second baad mic dobara tap karein");
+    }
+    if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
+      const result = await agora.requestMic();
+      if (!result.ok) {
+        const message = result.error ?? agora.micError ?? "Microphone unavailable";
+        const permissionIssue = /permission|blocked|allow|browser settings|site settings/i.test(message);
+        toast.error(message, {
+          description: permissionIssue
+            ? "Browser ke address bar me 🔒/ⓘ par tap karein → Site settings → Microphone → Allow."
+            : "Mic kisi aur app me use ho raha ho to band karke dobara try karein.",
+          duration: 8000,
+        });
+        return;
+      }
+      toast.success("Microphone enabled");
+      return;
+    }
+    await agora.toggleMute();
+  }
+
+  async function togglePkCamera() {
+    if (!isHost) return toast.info("Only host controls the camera");
+    if (agora.status !== "connected") {
+      return toast.info("Room connect ho raha hai — 1 second baad camera dobara tap karein");
+    }
+    const turningOn = !agora.videoOn;
+    const ok = await agora.toggleVideo();
+    if (!ok) {
+      toast.error(agora.micError ?? "Camera unavailable", {
+        description: "Browser ke address bar me 🔒/ⓘ par tap karein → Site settings → Camera → Allow.",
+        duration: 8000,
+      });
+      return;
+    }
+    toast.success(turningOn ? "Camera enabled" : "Camera off");
   }
 
   const hostSideScore = scoreQ.data?.score_a ?? 0;
