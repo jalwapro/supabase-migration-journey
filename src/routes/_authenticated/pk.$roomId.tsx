@@ -1072,11 +1072,13 @@ function HostPanel({
   label,
   username,
   avatar,
-  coins,
+  coins: _coins,
   accentClass,
-  crown,
+  crown: _crown,
   videoTrack,
   mirror,
+  micOn,
+  camOn,
 }: {
   label: string;
   username: string;
@@ -1086,6 +1088,8 @@ function HostPanel({
   crown?: boolean;
   videoTrack?: { play: (el: HTMLElement, opts?: { fit?: "cover" | "contain" }) => void; stop: () => void } | null;
   mirror?: boolean;
+  micOn?: boolean;
+  camOn?: boolean;
 }) {
   const videoRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -1095,6 +1099,9 @@ function HostPanel({
     return () => { try { videoTrack.stop(); } catch { /* ignore */ } };
   }, [videoTrack]);
 
+  const showCamOff = camOn === false;
+  const showMicOff = micOn === false;
+
   return (
     <div className={`relative flex flex-col items-center overflow-hidden rounded-2xl border p-2 ${accentClass}`}>
       {label.includes("OPPONENT") && (
@@ -1103,7 +1110,7 @@ function HostPanel({
         </span>
       )}
       <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} relative aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40`}>
-        {videoTrack ? (
+        {videoTrack && !showCamOff ? (
           <div
             ref={videoRef}
             className="absolute inset-0 h-full w-full"
@@ -1114,6 +1121,48 @@ function HostPanel({
         ) : (
           <div className="grid h-full w-full place-items-center text-4xl font-black uppercase text-white/60">
             {(username ?? "?").charAt(0)}
+          </div>
+        )}
+
+        {showCamOff && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 backdrop-blur-[2px]">
+            <div className="grid h-10 w-10 place-items-center rounded-full bg-black/60 ring-1 ring-white/20">
+              <VideoOff className="h-5 w-5 text-white/85" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">Camera Off</span>
+          </div>
+        )}
+
+        {(micOn !== undefined || camOn !== undefined) && (
+          <div className="absolute right-1.5 top-1.5 flex flex-col items-end gap-1">
+            {micOn !== undefined && (
+              <span
+                className={`grid h-6 w-6 place-items-center rounded-full ring-1 backdrop-blur ${
+                  micOn ? "bg-emerald-500/80 ring-emerald-200/40" : "bg-rose-600/85 ring-rose-200/40"
+                }`}
+                title={micOn ? "Mic on" : "Muted"}
+              >
+                {micOn ? <Mic className="h-3.5 w-3.5 text-white" /> : <MicOff className="h-3.5 w-3.5 text-white" />}
+              </span>
+            )}
+            {camOn !== undefined && (
+              <span
+                className={`grid h-6 w-6 place-items-center rounded-full ring-1 backdrop-blur ${
+                  camOn ? "bg-sky-500/80 ring-sky-200/40" : "bg-zinc-800/85 ring-white/20"
+                }`}
+                title={camOn ? "Camera on" : "Camera off"}
+              >
+                {camOn ? <Video className="h-3.5 w-3.5 text-white" /> : <VideoOff className="h-3.5 w-3.5 text-white" />}
+              </span>
+            )}
+          </div>
+        )}
+
+        {(showMicOff || showCamOff) && (
+          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full bg-black/65 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/90 ring-1 ring-white/10">
+            {showMicOff && <MicOff className="h-3 w-3 text-rose-300" />}
+            {showCamOff && <VideoOff className="h-3 w-3 text-white/70" />}
+            <span>{showMicOff && showCamOff ? "Offline" : showMicOff ? "Muted" : "No Cam"}</span>
           </div>
         )}
       </div>
