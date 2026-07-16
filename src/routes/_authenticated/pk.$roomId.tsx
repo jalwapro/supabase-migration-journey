@@ -491,32 +491,121 @@ function PkMatchPage() {
 
       {/* Opponent Picker Sheet */}
       {pickerOpen && (
-        <Sheet onClose={() => setPickerOpen(false)} title="Select Opponent">
-          <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-            {(hostsQ.data ?? []).map((h) => (
+        <Sheet
+          onClose={() => { setPickerOpen(false); setPickerMode("choice"); }}
+          title={pickerMode === "choice" ? "Select Opponent" : pickerMode === "random" ? "Random Opponent" : "Pick a Host"}
+        >
+          {pickerMode === "choice" && (
+            <div className="grid grid-cols-2 gap-3">
               <button
-                key={h.id}
-                onClick={() => { setOpponent(h); setPickerOpen(false); }}
-                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
+                onClick={() => {
+                  const list = hostsQ.data ?? [];
+                  setRandomIdx(list.length ? Math.floor(Math.random() * list.length) : 0);
+                  setPickerMode("random");
+                }}
+                className="flex flex-col items-center gap-2 rounded-2xl border border-[color:var(--primary)]/50 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 p-5 active:scale-95"
               >
-                <img
-                  src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
-                  className="h-10 w-10 rounded-full object-cover"
-                  alt=""
-                />
-                <div className="min-w-0 flex-1 text-left">
-                  <div className="truncate text-[13px] font-bold">{h.host?.username ?? "Host"}</div>
-                  <div className="truncate text-[11px] text-white/50">{h.title ?? "Live"}</div>
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--primary)]/25">
+                  <Shuffle className="h-6 w-6 text-[color:var(--primary)]" />
                 </div>
-                <span className="flex items-center gap-1 text-[11px] text-white/60">
-                  <Users className="h-3 w-3" /> {h.viewer_count ?? 0}
-                </span>
+                <span className="text-[14px] font-bold">Random Find</span>
+                <span className="text-[11px] text-white/50">Match with a random host</span>
               </button>
-            ))}
-            {hostsQ.data && hostsQ.data.length === 0 && (
-              <div className="py-10 text-center text-[12px] text-white/40">No live opponents right now</div>
-            )}
-          </div>
+              <button
+                onClick={() => setPickerMode("pick")}
+                className="flex flex-col items-center gap-2 rounded-2xl border border-[color:var(--secondary)]/50 bg-gradient-to-b from-[#1a0b2e]/60 to-[#0d0620]/60 p-5 active:scale-95"
+              >
+                <div className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--secondary)]/25">
+                  <Users className="h-6 w-6 text-[color:var(--secondary)]" />
+                </div>
+                <span className="text-[14px] font-bold">Pick Host</span>
+                <span className="text-[11px] text-white/50">Browse & choose yourself</span>
+              </button>
+            </div>
+          )}
+
+          {pickerMode === "random" && (() => {
+            const list = hostsQ.data ?? [];
+            const h = list[randomIdx];
+            if (!list.length) {
+              return <div className="py-10 text-center text-[12px] text-white/40">No live opponents right now</div>;
+            }
+            return (
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <img
+                    src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
+                    className="h-28 w-28 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/60"
+                    alt=""
+                  />
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase">Live</span>
+                </div>
+                <div className="mt-2 text-center">
+                  <div className="text-[15px] font-bold">{h.host?.username ?? "Host"}</div>
+                  <div className="mt-0.5 flex items-center justify-center gap-1 text-[11px] text-white/50">
+                    <Users className="h-3 w-3" /> {h.viewer_count ?? 0} viewers
+                  </div>
+                </div>
+                <div className="mt-2 grid w-full grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      const next = list.length ? (randomIdx + 1 + Math.floor(Math.random() * Math.max(1, list.length - 1))) % list.length : 0;
+                      setRandomIdx(next);
+                    }}
+                    className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-[13px] font-semibold text-white/80 active:scale-95"
+                  >
+                    <SkipForward className="h-4 w-4" /> Next
+                  </button>
+                  <button
+                    onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
+                    className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-fuchsia-500 py-2.5 text-[13px] font-bold text-white active:scale-95"
+                  >
+                    <Check className="h-4 w-4" /> Match
+                  </button>
+                </div>
+                <button
+                  onClick={() => setPickerMode("choice")}
+                  className="mt-1 text-[11px] text-white/40 underline"
+                >
+                  Back
+                </button>
+              </div>
+            );
+          })()}
+
+          {pickerMode === "pick" && (
+            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+              {(hostsQ.data ?? []).map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
+                  className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
+                >
+                  <img
+                    src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
+                    className="h-10 w-10 rounded-full object-cover"
+                    alt=""
+                  />
+                  <div className="min-w-0 flex-1 text-left">
+                    <div className="truncate text-[13px] font-bold">{h.host?.username ?? "Host"}</div>
+                    <div className="truncate text-[11px] text-white/50">{h.title ?? "Live"}</div>
+                  </div>
+                  <span className="flex items-center gap-1 text-[11px] text-white/60">
+                    <Users className="h-3 w-3" /> {h.viewer_count ?? 0}
+                  </span>
+                </button>
+              ))}
+              {hostsQ.data && hostsQ.data.length === 0 && (
+                <div className="py-10 text-center text-[12px] text-white/40">No live opponents right now</div>
+              )}
+              <button
+                onClick={() => setPickerMode("choice")}
+                className="mt-1 w-full text-center text-[11px] text-white/40 underline"
+              >
+                Back
+              </button>
+            </div>
+          )}
         </Sheet>
       )}
 
