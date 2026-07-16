@@ -288,6 +288,40 @@ function PkMatchPage() {
 
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
+  async function doExit() {
+    if (user && isHost) {
+      try {
+        // End any active PK match first
+        if (match?.status === "active") {
+          await supabase.rpc("pk_end_match", { _match_id: match.id });
+        }
+        // Finalize accumulated gifts → diamonds and mark room ended
+        await supabase.rpc("finalize_room_gifts", { _room_id: roomId }).then(({ error }) => {
+          if (error) throw error;
+        });
+        const { error: updErr } = await supabase
+          .from("live_rooms")
+          .update({ status: "ended", ended_at: new Date().toISOString() })
+          .eq("id", roomId);
+        if (updErr) throw updErr;
+      } catch (e) {
+        toast.error(`Couldn't end room: ${(e as Error).message}`);
+        return;
+      }
+    } else if (user) {
+      await supabase
+        .from("room_members")
+        .delete()
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+    }
+    setExitConfirmOpen(false);
+    setExiting(true);
+    setTimeout(() => {
+      navigate({ to: "/" });
+    }, 700);
+  }
+
   function openStartFlow() {
     if (!isHost) return toast.error("Only the host can start a PK");
     if (!opponent) {
