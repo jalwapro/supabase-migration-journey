@@ -528,13 +528,14 @@ function PkMatchPage() {
             <button
               onClick={openStartFlow}
               disabled={starting}
-              className="pointer-events-auto mt-2 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-xl shadow-[0_6px_24px_-4px_rgba(244,63,94,0.7)] ring-2 ring-white/20 transition active:scale-90 disabled:opacity-60"
+              className="pointer-events-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-3xl shadow-[0_8px_30px_-4px_rgba(244,63,94,0.8)] ring-2 ring-white/30 transition active:scale-90 disabled:opacity-60 animate-pulse"
               title="Send challenge"
               aria-label="Send match challenge"
             >
               🥊
             </button>
           )}
+
         </div>
 
 
