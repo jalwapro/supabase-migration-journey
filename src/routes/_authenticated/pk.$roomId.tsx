@@ -289,10 +289,10 @@ function PkMatchPage() {
           </div>
           <div className="mt-2 flex w-full flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2 py-1.5">
             <span className="text-[9px] uppercase tracking-wider text-white/50">
-              {match?.status === "active" ? "Ends in" : "Match starts in"}
+              {endsInSec != null ? "Ends in" : "LIVE"}
             </span>
             <span className="text-[15px] font-black tabular-nums">
-              {endsInSec != null ? fmt(endsInSec) : "00:30"}
+              {endsInSec != null ? fmt(endsInSec) : "● PK"}
             </span>
           </div>
           <button
