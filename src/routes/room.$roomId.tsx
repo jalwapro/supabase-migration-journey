@@ -2033,7 +2033,7 @@ function RoomPage() {
                     const m = seatsByIndex.get(i);
                     const displayNum = idx + 1;
                     const speaking = m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false;
-                    const seatMuted = m ? !!m.mic_muted : false;
+                    const seatMuted = m ? !!m.is_muted : false;
                     const points = giftPoints[m?.user_id ?? ""] ?? 0;
                     return (
                       <button
