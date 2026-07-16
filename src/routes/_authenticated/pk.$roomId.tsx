@@ -234,13 +234,21 @@ function PkMatchPage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("pk_invites")
-        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins,from:profiles!pk_invites_from_host_fkey(username,avatar)")
+        .select("id,from_host,from_room,duration_sec,expires_at,status,stake_coins")
         .eq("to_host", user!.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false })
         .limit(1);
-      return (data ?? [])[0] ?? null;
+      const inv = (data ?? [])[0];
+      if (!inv) return null;
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("username,avatar")
+        .eq("id", inv.from_host)
+        .maybeSingle();
+      return { ...inv, from: prof ?? null } as any;
     },
+
   });
   const incoming = incomingQ.data as any;
 
@@ -520,13 +528,14 @@ function PkMatchPage() {
             <button
               onClick={openStartFlow}
               disabled={starting}
-              className="pointer-events-auto mt-2 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-xl shadow-[0_6px_24px_-4px_rgba(244,63,94,0.7)] ring-2 ring-white/20 transition active:scale-90 disabled:opacity-60"
+              className="pointer-events-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-3xl shadow-[0_8px_30px_-4px_rgba(244,63,94,0.8)] ring-2 ring-white/30 transition active:scale-90 disabled:opacity-60 animate-pulse"
               title="Send challenge"
               aria-label="Send match challenge"
             >
               🥊
             </button>
           )}
+
         </div>
 
 
