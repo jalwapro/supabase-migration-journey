@@ -424,15 +424,10 @@ function PkMatchPage() {
 
       {/* Chat */}
       <section className="mx-3 mt-4 flex-1 rounded-2xl border border-white/5 bg-white/[0.02] p-3">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2">
           <h2 className="text-[13px] font-bold">
             <span className="border-b-2 border-[color:var(--primary)] pb-1">Chat</span>
           </h2>
-          <div className="flex items-center gap-1 text-[10.5px]">
-            <span className="rounded-md bg-[color:var(--secondary)]/30 px-2 py-0.5 font-semibold text-[color:var(--secondary)]">All</span>
-            <span className="rounded-md px-2 py-0.5 text-white/50">Gifts</span>
-            <span className="rounded-md px-2 py-0.5 text-white/50">System</span>
-          </div>
         </div>
         <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
           {(chatQ.data ?? []).map((m: any) => (
