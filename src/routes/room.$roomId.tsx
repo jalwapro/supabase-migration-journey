@@ -2344,7 +2344,7 @@ function RoomPage() {
               </button>
             ) : (
               <button
-                onClick={() => toast.info("Raised hand ✋")}
+                onClick={() => void raiseHand()}
                 className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
               >
                 <span className="text-base leading-none">✋</span>
