@@ -148,16 +148,24 @@ function PkMatchPage() {
     enabled: pickerOpen || (isHost && !opponent && !match),
     queryKey: ["pk-live-hosts", roomId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Only rooms in the PK category can be challenged
+      const { data: cat } = await supabase
+        .from("categories")
+        .select("id")
+        .eq("slug", "pk")
+        .maybeSingle();
+      const pkCatId = (cat as any)?.id ?? null;
+      let q = supabase
         .from("live_rooms")
-        .select("id,host_id,title,viewer_count,host:profiles!live_rooms_host_id_fkey(username,avatar)")
+        .select("id,host_id,title,viewer_count,category_id,host:profiles!live_rooms_host_id_fkey(username,avatar)")
         .eq("status", "live")
-        .neq("id", roomId)
-        .order("viewer_count", { ascending: false })
-        .limit(30);
+        .neq("id", roomId);
+      if (pkCatId) q = q.eq("category_id", pkCatId);
+      const { data, error } = await q.order("viewer_count", { ascending: false }).limit(30);
       if (error) throw error;
       return (data ?? []) as unknown as LiveHost[];
     },
+
   });
 
   // Chat messages (last 30) for the room
