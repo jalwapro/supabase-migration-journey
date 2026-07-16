@@ -1580,7 +1580,6 @@ function RoomPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 leading-tight">
                 <span className="truncate text-[15px] font-black text-white">{r.title}</span>
-                <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" />
               </div>
               <div className="mt-0.5 flex items-center gap-2.5 text-[10px] font-semibold text-white/60">
                 <span>Room ID: {roomCode}</span>
@@ -1611,16 +1610,6 @@ function RoomPage() {
             </button>
           </div>
 
-          {/* Welcome banner */}
-          <div className="mt-3 flex items-center gap-2.5 rounded-2xl border border-violet-400/15 bg-black/40 px-3 py-2.5 backdrop-blur-md">
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-violet-500/25 text-[14px]">
-              📣
-            </span>
-            <p className="min-w-0 flex-1 truncate text-[11px] text-white/80">
-              Welcome to {r.title}! Be respectful and enjoy the conversation.
-            </p>
-            <ChevronRight className="h-4 w-4 shrink-0 text-white/40" />
-          </div>
         </div>
       ) : (
       <div
@@ -2035,36 +2024,6 @@ function RoomPage() {
 
               {/* Voice Seats card — matches reference */}
               <div className="mt-3 rounded-2xl border border-violet-400/15 bg-black/40 p-3 backdrop-blur-md">
-                <div className="mb-3 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Mic className="h-3.5 w-3.5 text-violet-300" />
-                    <span className="text-[12px] font-bold text-white">Voice Seats (4)</span>
-                  </div>
-                  {isHost || isModerator ? (
-                    <button
-                      onClick={() => setViewersSheetOpen(true)}
-                      className="flex items-center gap-1 text-[11px] font-semibold text-white/60"
-                    >
-                      Manage
-                      <Settings className="h-3 w-3" />
-                    </button>
-                  ) : mySeatIndex != null && mySeatIndex >= 2 ? (
-                    <button
-                      onClick={() => void leaveSeat()}
-                      className="flex items-center gap-1 rounded-full border border-rose-400/50 bg-rose-500/10 px-2.5 py-1 text-[10px] font-bold text-rose-200"
-                    >
-                      Leave Seat
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => void takeAvailableVoiceSeat()}
-                      className="flex items-center gap-1 rounded-full border border-violet-400/60 bg-violet-500/15 px-2.5 py-1 text-[10px] font-bold text-violet-100"
-                    >
-                      <Mic className="h-3 w-3" />
-                      Take Seat
-                    </button>
-                  )}
-                </div>
                 <div className="grid grid-cols-4 gap-2">
                   {[2, 3, 4, 5].map((i, idx) => {
                     const m = seatsByIndex.get(i);
