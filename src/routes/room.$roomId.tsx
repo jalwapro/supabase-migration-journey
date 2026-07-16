@@ -2706,6 +2706,48 @@ function RoomPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Room exit animation — door-close / warp out */}
+      {exiting && (
+        <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
+          {/* Left door panel */}
+          <div
+            className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-black via-[#1a0b2e] to-[#2d0b4d] border-r-2 border-rose-400/60 shadow-[10px_0_40px_rgba(244,63,94,0.5)]"
+            style={{
+              transform: "translateX(-100%)",
+              animation: "room-exit-left 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+          />
+          {/* Right door panel */}
+          <div
+            className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-black via-[#1a0b2e] to-[#2d0b4d] border-l-2 border-rose-400/60 shadow-[-10px_0_40px_rgba(244,63,94,0.5)]"
+            style={{
+              transform: "translateX(100%)",
+              animation: "room-exit-right 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+          />
+          {/* Centered "leaving" tag */}
+          <div
+            className="absolute inset-0 grid place-items-center opacity-0"
+            style={{ animation: "room-exit-fade 0.6s ease-out 0.35s forwards" }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="grid h-16 w-16 place-items-center rounded-2xl border border-rose-400/60 bg-black/70 shadow-[0_0_28px_rgba(244,63,94,0.6)]">
+                <DoorOpen className="h-8 w-8 text-rose-300" />
+              </div>
+              <span className="text-[13px] font-black uppercase tracking-[3px] text-rose-200">
+                Leaving room…
+              </span>
+            </div>
+          </div>
+          <style>{`
+            @keyframes room-exit-left { to { transform: translateX(0); } }
+            @keyframes room-exit-right { to { transform: translateX(0); } }
+            @keyframes room-exit-fade { to { opacity: 1; transform: scale(1); } }
+          `}</style>
+        </div>
+      )}
+
+
 
       <SeatActionSheet
         member={manageMember}
