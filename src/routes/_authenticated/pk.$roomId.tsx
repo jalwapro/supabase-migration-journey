@@ -600,18 +600,13 @@ function PkMatchPage() {
         <Trophy className="h-6 w-6 text-[color:var(--gold)]" />
       </div>
 
-      {/* Start button */}
-      <button
-        onClick={openStartFlow}
-        disabled={starting || !isHost || match?.status === "active"}
-        className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 py-3.5 text-[15px] font-black uppercase tracking-wider text-white shadow-[0_10px_40px_-10px_rgba(217,70,239,0.7)] disabled:opacity-60"
-      >
-        <span>{starting ? "Sending challenge…" : match?.status === "active" ? "PK Live" : "Start PK Battle"}</span>
-        <Zap className="h-5 w-5" />
-      </button>
-      <div className="mx-3 mt-1.5 flex items-center justify-center gap-1 text-[10.5px] text-white/40">
-        <Shield className="h-3 w-3" /> No bad words or behavior. Maintain a positive atmosphere.
-      </div>
+      {/* Start button removed — tap opponent card to match, swipe up for next */}
+      {match?.status === "active" && (
+        <div className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--primary)]/40 bg-gradient-to-r from-sky-500/20 via-fuchsia-500/20 to-pink-500/20 py-3 text-[13px] font-bold uppercase tracking-wider text-white">
+          <Zap className="h-4 w-4" /> PK Live
+        </div>
+      )}
+
 
 
 
