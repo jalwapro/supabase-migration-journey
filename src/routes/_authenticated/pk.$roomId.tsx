@@ -789,7 +789,7 @@ function PkMatchPage() {
 
 function ActionBtn({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) {
   return (
-    <button className="flex flex-col items-center gap-0.5 text-white/70">
+    <button onClick={onClick} className="flex flex-col items-center gap-0.5 text-white/70 active:scale-95">
       <Icon className="h-5 w-5" />
       <span className="text-[10px]">{label}</span>
     </button>
