@@ -781,8 +781,23 @@ function PkMatchPage() {
 
       {/* Bottom action bar */}
       <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(5,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
-        <ActionBtn icon={Mic} label="Mic" onClick={() => toast.info("Mic controls are in the live room")} />
-        <ActionBtn icon={Volume2} label="Sound" onClick={() => toast.info("Sound controls are in the live room")} />
+        <ActionBtn
+          icon={isHost ? (agora.muted ? MicOff : Mic) : Mic}
+          label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"}
+          onClick={async () => {
+            if (!isHost) return toast.info("Only host controls the mic");
+            if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
+              const r = await agora.requestMic();
+              if (!r.ok) return toast.error(r.error ?? agora.micError ?? "Microphone unavailable");
+            }
+            await agora.toggleMute();
+          }}
+        />
+        <ActionBtn
+          icon={agora.speakerMuted ? VolumeX : Volume2}
+          label={agora.speakerMuted ? "Muted" : "Sound"}
+          onClick={() => agora.toggleSpeaker()}
+        />
         <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
         <ActionBtn icon={Share2} label="Share" onClick={shareRoom} />
         <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
