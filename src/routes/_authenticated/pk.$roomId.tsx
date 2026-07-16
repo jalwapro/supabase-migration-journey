@@ -2,8 +2,15 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { toast } from "sonner";
+import { useZegoRoom as useAgoraRoom, type RemoteUser } from "@/hooks/useZegoRoom";
+
+function uidFromUuid(uuid: string): number {
+  let h = 0;
+  for (let i = 0; i < uuid.length; i++) h = ((h << 5) - h + uuid.charCodeAt(i)) | 0;
+  return (Math.abs(h) % 2_000_000_000) + 1;
+}
 import {
   AlertDialog,
   AlertDialogAction,
