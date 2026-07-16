@@ -2272,105 +2272,96 @@ function RoomPage() {
       {/* ─── Composer + footer dock ─────────────────────────────── */}
       {isVideo ? (
         <div
-          className="relative z-10 mx-auto mt-auto w-full max-w-md shrink-0 bg-gradient-to-t from-black via-black/85 to-transparent px-3 pt-6"
-          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+          className="relative z-10 mx-auto mt-auto w-full max-w-md shrink-0 bg-gradient-to-t from-black via-black/90 to-transparent px-3 pt-4"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => void toggleMuteWithSync()}
-              aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
-              title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
-              className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border backdrop-blur-md transition-transform active:scale-90 ${
-                agora.micBlocked
-                  ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
-                  : "border-white/10 bg-white/5 text-white"
-              }`}
-            >
-              {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-            </button>
-
-            {isVideo && (isHost || mySeatIndex === 0 || mySeatIndex === 1) ? (
-              <button
-                onClick={() => void toggleVideoWithPipeline()}
-                aria-label={agora.videoOn ? "Turn camera off" : "Turn camera on"}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border backdrop-blur-md transition-transform active:scale-90 ${
-                  agora.videoOn
-                    ? "border-[color:var(--primary)]/60 bg-[color:var(--primary)]/25 text-white shadow-[0_0_12px_rgba(219,39,119,0.35)]"
-                    : "border-white/10 bg-white/5 text-white"
-                }`}
-              >
-                {agora.videoOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-              </button>
-            ) : null}
-
-            {isVideo && (isHost || mySeatIndex === 0 || mySeatIndex === 1) ? (
-              <button
-                onClick={() => setFilterSheetOpen(true)}
-                aria-label="Filters & beauty"
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition-transform active:scale-90"
-              >
-                <Sparkles className="h-4 w-4 text-pink-400" />
-              </button>
-            ) : null}
-
-            {isHost && isVideo && mySeatIndex !== 0 ? (
-              <button
-                onClick={async () => {
-                  const { error } = await supabase.rpc("host_reclaim_video_seat", {
-                    _room_id: roomId,
-                  });
-                  if (error) toast.error(error.message);
-                  else toast.success("Host seat reclaimed 👑");
-                }}
-                className="grid h-10 shrink-0 place-items-center rounded-full border border-[color:var(--gold)]/60 bg-[color:var(--gold)]/20 px-3 text-[11px] font-black text-[color:var(--gold)] backdrop-blur-md"
-                aria-label="Return to host seat"
-              >
-                👑 Host Seat
-              </button>
-            ) : null}
-
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
-              <button
-                aria-label="Emoji"
-                onClick={() => setText((t) => t + "😊")}
-                className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
-              >
-                <Smile className="h-3.5 w-3.5" />
-              </button>
+          {/* Composer row */}
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 pl-4 pr-1.5 py-2 backdrop-blur-md">
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Say hi…"
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-white placeholder:text-white/40 outline-none"
+                placeholder="Type a message..."
+                className="min-w-0 flex-1 bg-transparent text-[13px] text-white placeholder:text-white/40 outline-none"
                 disabled={!user}
               />
               <button
-                onClick={send}
-                aria-label="Send"
-                disabled={!text.trim()}
-                className="glow-4d grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+                aria-label="Emoji"
+                onClick={() => setText((t) => t + "😊")}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-white/60"
               >
-                <Send className="h-3.5 w-3.5" />
+                <Smile className="h-4 w-4" />
               </button>
             </div>
+            <button
+              onClick={send}
+              aria-label="Send"
+              disabled={!text.trim()}
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_16px_rgba(167,139,250,0.5)] disabled:opacity-40"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
 
+          {/* Footer icon row */}
+          <div className="flex items-center justify-between gap-1.5">
+            <button
+              onClick={() => void toggleMuteWithSync()}
+              aria-label={agora.muted ? "Unmute" : "Mute"}
+              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
+            >
+              {agora.micBlocked || agora.muted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+              <span className="text-[10px] font-semibold">Mic</span>
+            </button>
+            <button
+              onClick={() => agora.toggleSpeaker()}
+              aria-label="Sound"
+              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
+            >
+              {agora.speakerMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+              <span className="text-[10px] font-semibold">Sound</span>
+            </button>
             <button
               onClick={() => setGiftOpen(true)}
-              aria-label="Send gift"
-              className="glow-4d relative grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-amber-400 via-fuchsia-500 to-violet-600 text-white ring-2 ring-fuchsia-400/40 shadow-[0_0_18px_rgba(219,39,119,0.55)] transition-transform active:scale-90"
+              aria-label="Gift"
+              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
             >
-              <Gift className="h-5 w-5 drop-shadow" />
+              <Gift className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Gift</span>
+            </button>
+            <button
+              onClick={share}
+              aria-label="Share"
+              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
+            >
+              <Share2 className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Share</span>
             </button>
             <button
               onClick={() => setVideoSettingsOpen(true)}
-              aria-label="Room settings"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white backdrop-blur-md transition-transform active:scale-90"
+              aria-label="More"
+              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
             >
-              <Settings className="h-4 w-4" />
+              <MoreHorizontal className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">More</span>
+            </button>
+            <button
+              onClick={() => {
+                if (isHost || mySeatIndex === 0 || mySeatIndex === 1) {
+                  void toggleVideoWithPipeline();
+                } else {
+                  toast.info("Raised hand ✋");
+                }
+              }}
+              className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
+            >
+              <span className="text-base leading-none">✋</span>
+              Raise Hand
             </button>
           </div>
         </div>
+
       ) : (
         <div
           className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
