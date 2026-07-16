@@ -1081,6 +1081,11 @@ function RoomPage() {
       toast.error("Seat 1 is for the host");
       return;
     }
+    // In a video room, host is locked to seat 0 — cannot move to any other seat.
+    if (isHost && isVideo && seatIndex !== 0) {
+      toast.error("Host apni video seat change nahi kar sakta");
+      return;
+    }
     // Host/moderator seats directly. Everyone else must request approval.
     if (!isHost && !isModerator) {
       if (lockedSeats.includes(seatIndex)) {
