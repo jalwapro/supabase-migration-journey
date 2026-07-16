@@ -839,6 +839,54 @@ function PkMatchPage() {
       {/* PK Mode Picker Sheet */}
       {modeSheetOpen && (
         <Sheet onClose={() => setModeSheetOpen(false)} title="Select PK Mode">
+          {/* Stake entry — pick or type coins to stake */}
+          <div className="mb-4">
+            <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">
+              Stake (Entry) • Balance {(profile?.coins ?? 0).toLocaleString()}
+            </h3>
+            <div className="grid grid-cols-5 gap-1.5">
+              {STAKES.map((s) => {
+                const active = !customOpen && stake === s;
+                return (
+                  <button
+                    key={s}
+                    onClick={() => { setCustomOpen(false); setStake(s); }}
+                    className={`rounded-lg border px-1 py-2 text-[12px] font-bold transition ${
+                      active
+                        ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 text-[color:var(--gold)]"
+                        : "border-white/15 bg-white/5 text-white/80"
+                    }`}
+                  >
+                    {s >= 1000 ? `${s / 1000}k` : s}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => setCustomOpen((v) => !v)}
+                className={`rounded-lg border px-1 py-2 text-[12px] font-bold transition ${
+                  customOpen
+                    ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 text-[color:var(--gold)]"
+                    : "border-white/15 bg-white/5 text-white/80"
+                }`}
+              >
+                Custom
+              </button>
+            </div>
+            {customOpen && (
+              <input
+                type="number"
+                inputMode="numeric"
+                placeholder="Enter coins"
+                value={customStake}
+                onChange={(e) => setCustomStake(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-[13px] text-white placeholder:text-white/30 focus:border-[color:var(--gold)] focus:outline-none"
+              />
+            )}
+            <p className="mt-1.5 text-[10.5px] text-white/50">
+              Stake: <span className="font-bold text-[color:var(--gold)]">{effectiveStake.toLocaleString()}</span> coins • Winner takes the pot
+            </p>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             {(Object.keys(MODE_META) as PkMode[]).map((k) => {
               const meta = MODE_META[k];
@@ -862,6 +910,7 @@ function PkMatchPage() {
             Time select karte hi match {opponent?.host?.username ?? "opponent"} ko challenge chala jayega.
           </p>
         </Sheet>
+
       )}
 
       {/* Rules Sheet */}
