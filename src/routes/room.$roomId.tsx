@@ -1548,22 +1548,73 @@ function RoomPage() {
       />
 
       {/* ─── Header ─────────────────────────────────────────────── */}
+      {isVideo ? (
+        <div
+          className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
+          style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+        >
+          <div className="flex items-center gap-2">
+            <button
+              onClick={leaveRoom}
+              aria-label="Back"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 backdrop-blur-md active:scale-90"
+            >
+              <ChevronRight className="h-4 w-4 rotate-180 text-white" />
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span className="truncate text-[15px] font-black text-white">{r.title}</span>
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+              </div>
+              <div className="mt-0.5 flex items-center gap-2.5 text-[10px] font-semibold text-white/60">
+                <span>Room ID: {roomCode}</span>
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  {Math.max(r.viewer_count, members.length)}
+                </span>
+              </div>
+            </div>
+            {!isHost ? (
+              <button
+                onClick={() => void followHost()}
+                className={`shrink-0 rounded-full border px-4 py-1.5 text-[12px] font-bold backdrop-blur-md transition ${
+                  followsHost.data
+                    ? "border-white/15 bg-white/5 text-white/70"
+                    : "border-violet-400/60 bg-transparent text-white"
+                }`}
+              >
+                {followsHost.data ? "Following" : "Follow"}
+              </button>
+            ) : null}
+            <button
+              onClick={() => setViewersSheetOpen(true)}
+              aria-label="More"
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 backdrop-blur-md active:scale-90"
+            >
+              <MoreHorizontal className="h-4 w-4 text-white" />
+            </button>
+          </div>
+
+          {/* Welcome banner */}
+          <div className="mt-3 flex items-center gap-2.5 rounded-2xl border border-violet-400/15 bg-black/40 px-3 py-2.5 backdrop-blur-md">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-violet-500/25 text-[14px]">
+              📣
+            </span>
+            <p className="min-w-0 flex-1 truncate text-[11px] text-white/80">
+              Welcome to {r.title}! Be respectful and enjoy the conversation.
+            </p>
+            <ChevronRight className="h-4 w-4 shrink-0 text-white/40" />
+          </div>
+        </div>
+      ) : (
       <div
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           {/* Host chip */}
-          <div className={`flex min-w-0 items-center gap-2 rounded-full border py-1 pl-1 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)] ${
-            isVideo
-              ? "border-white/10 bg-black/40"
-              : "border-violet-300/35 bg-white/10 rounded-2xl py-1.5 pl-1.5"
-          }`}>
-            <div className={`relative shrink-0 overflow-hidden rounded-full ${
-              isVideo
-                ? "h-9 w-9 border-2 border-amber-400"
-                : "glow-4d grid h-11 w-11 place-items-center bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20"
-            }`}>
+          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)]">
+            <div className="glow-4d grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
               {r.host?.avatar ? (
                 <img
                   src={r.host.avatar}
@@ -1585,7 +1636,7 @@ function RoomPage() {
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
-                <span className={`truncate font-black leading-tight ${isVideo ? "text-[11px]" : "text-[13px] sm:text-sm"}`}>
+                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
                   {r.title}
                 </span>
                 {!isHost && (
@@ -1598,19 +1649,9 @@ function RoomPage() {
                   />
                 )}
               </div>
-              {isVideo ? (
-                <div className="flex items-center gap-1 leading-none">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-[9px] font-bold text-pink-400">
-                    {Math.max(r.viewer_count, members.length)} viewing
-                  </span>
-                  <span className="text-[9px] text-white/40">· ID:{roomCode}</span>
-                </div>
-              ) : (
-                <div className="truncate text-[10px] font-semibold text-white/60">
-                  ID:{roomCode}
-                </div>
-              )}
+              <div className="truncate text-[10px] font-semibold text-white/60">
+                ID:{roomCode}
+              </div>
             </div>
           </div>
           {/* Action icons */}
@@ -1649,8 +1690,9 @@ function RoomPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           </button>
         </div>
-
       </div>
+      )}
+
 
       {/* Host AFK banner */}
       {(hostAfk || afkExitLeft !== null) && (
