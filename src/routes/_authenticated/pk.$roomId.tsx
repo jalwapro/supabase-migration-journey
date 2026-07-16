@@ -126,6 +126,36 @@ function PkMatchPage() {
   const isHost = !!(user?.id && room?.host_id === user.id);
   const activeMatchId: string | null = room?.active_pk_match_id ?? null;
 
+  // ── Live audio + video via Zego ───────────────────────────────
+  const myUid = user ? uidFromUuid(user.id) : null;
+  const agora = useAgoraRoom({
+    channel: room?.rtc_channel ?? null,
+    uid: myUid,
+    publish: isHost,
+    video: true,
+    kind: "video",
+    enabled: !!user && !!room && room.status === "live",
+  });
+
+  // Host: auto-start mic + camera when connected (single user gesture flow —
+  // the tap that entered the room counts on mobile once we're inside the
+  // route; we still guard against re-toggling).
+  const autoCamRef = useRef(false);
+  useEffect(() => {
+    if (!isHost) return;
+    if (agora.status !== "connected") return;
+    if (autoCamRef.current) return;
+    autoCamRef.current = true;
+    void (async () => {
+      try { await agora.requestMic(); } catch { /* ignore */ }
+      try {
+        if (!agora.videoOn) await agora.toggleVideo();
+      } catch { /* ignore */ }
+    })();
+  }, [isHost, agora.status, agora.videoOn, agora]);
+
+
+
   // Active match if any
   const matchQ = useQuery({
     enabled: !!activeMatchId,
