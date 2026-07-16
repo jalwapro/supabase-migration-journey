@@ -28,7 +28,6 @@ import {
   Shield,
   Swords,
   Shuffle,
-  X,
   SkipForward,
 } from "lucide-react";
 
