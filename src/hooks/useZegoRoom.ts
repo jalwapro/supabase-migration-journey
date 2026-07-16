@@ -956,9 +956,10 @@ export function useZegoRoom({
       return { ok: false, error: message };
     }
     // Wait for the room to reach CONNECTED before publishing.
-    for (let i = 0; i < 80 && (status as string) !== "connected"; i++) {
+    for (let i = 0; i < 80 && statusRef.current !== "connected"; i++) {
       await new Promise((r) => setTimeout(r, 100));
     }
+
 
     if (!localStreamRef.current) {
       let raw: MediaStream | null = null;
