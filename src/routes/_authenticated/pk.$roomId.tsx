@@ -581,7 +581,7 @@ function PkMatchPage() {
               {(hostsQ.data ?? []).map((h) => (
                 <button
                   key={h.id}
-                  onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
+                  onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); setModeSheetOpen(true); }}
                   className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
                 >
                   {h.host?.avatar ? (
