@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -80,6 +80,9 @@ import {
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
 
 export const Route = createFileRoute("/room/$roomId")({
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: "/pk/$roomId", params: { roomId: params.roomId }, replace: true });
+  },
   component: RoomPage,
 });
 
