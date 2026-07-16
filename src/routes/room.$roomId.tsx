@@ -1077,20 +1077,42 @@ function RoomPage() {
       toast.error("Sign in first");
       return;
     }
-    if (!isHost && lockedSeats.includes(seatIndex)) {
-      toast.error("This seat is locked");
-      return;
-    }
     if (seatIndex === 0 && !isHost) {
       toast.error("Seat 1 is for the host");
       return;
     }
-    // Any authenticated viewer can claim an open, unlocked seat directly.
+    // Host/moderator seats directly. Everyone else must request approval.
+    if (!isHost && !isModerator) {
+      if (lockedSeats.includes(seatIndex)) {
+        toast.error("This seat is locked");
+        return;
+      }
+      const { error } = await supabase.rpc("request_seat", {
+        _room_id: roomId,
+        _seat_index: seatIndex,
+      });
+      if (error) toast.error(error.message);
+      else toast.success("Request sent ✋ — host approval ka wait karein");
+      return;
+    }
     const { error } = await supabase.rpc("take_seat", {
       _room_id: roomId,
       _seat_index: seatIndex,
     });
     if (error) toast.error(error.message);
+  }
+
+  async function raiseHand() {
+    if (!user) {
+      toast.error("Sign in first");
+      return;
+    }
+    const { error } = await supabase.rpc("request_seat", {
+      _room_id: roomId,
+      _seat_index: null,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Hand raised ✋ — host approve karega");
   }
 
 
@@ -2322,7 +2344,7 @@ function RoomPage() {
               </button>
             ) : (
               <button
-                onClick={() => toast.info("Raised hand ✋")}
+                onClick={() => void raiseHand()}
                 className="ml-1 flex shrink-0 items-center gap-1.5 rounded-full border border-violet-400/60 bg-transparent px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_0_16px_rgba(167,139,250,0.35)] active:scale-95"
               >
                 <span className="text-base leading-none">✋</span>
