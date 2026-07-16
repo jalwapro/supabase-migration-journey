@@ -46,6 +46,14 @@ export class CamProcessor {
     this.srcVideo.playsInline = true;
     this.srcVideo.muted = true;
     this.srcVideo.autoplay = true;
+    this.srcVideo.setAttribute("playsinline", "");
+    this.srcVideo.setAttribute("muted", "");
+    // Attach off-screen so mobile browsers (esp. iOS Safari) reliably start
+    // playback. A detached <video> often stays readyState<2, which would
+    // freeze the canvas pipeline → filters appear to "do nothing".
+    this.srcVideo.style.cssText =
+      "position:fixed;left:-9999px;top:-9999px;width:2px;height:2px;opacity:0;pointer-events:none;";
+    try { document.body.appendChild(this.srcVideo); } catch { /* ignore */ }
     this.srcVideo.srcObject = srcStream;
 
     this.canvas = document.createElement("canvas");
