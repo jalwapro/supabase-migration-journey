@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  ArrowLeft,
+  DoorOpen,
   Users,
   
   Timer,
@@ -394,48 +394,62 @@ function PkMatchPage() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-gradient-to-b from-[#0a0416] via-[#0d0620] to-black text-white">
-      {/* Header */}
-      <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/5 bg-black/60 px-3 py-2.5 backdrop-blur-xl">
-        <button
-          onClick={() => setExitConfirmOpen(true)}
-          className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
-          aria-label="Back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 truncate text-[15px] font-bold">
-            <span className="truncate">{room?.title ?? "Live Room"}</span>
-            <Zap className="h-4 w-4 text-[color:var(--gold)]" />
-          </div>
-          <div className="flex items-center gap-2 text-[11px] text-white/50">
-            <span>Room ID: {roomId.slice(0, 6)}</span>
-            <span className="flex items-center gap-1">
-              <Users className="h-3 w-3" /> {room?.viewer_count ?? 0}
+      {/* Header — same as Video Room */}
+      <div
+        className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
+        style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
+      >
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setExitConfirmOpen(true)}
+            aria-label="Exit room"
+            className="group relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-rose-400/50 bg-gradient-to-br from-rose-500/30 via-rose-600/20 to-black/60 text-white shadow-[0_0_16px_-2px_rgba(244,63,94,0.6)] backdrop-blur-md active:scale-90"
+          >
+            <DoorOpen className="h-5 w-5 text-rose-200 transition-transform group-active:-translate-x-0.5" />
+            <span className="pointer-events-none absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-[1.5px] text-rose-200/90">
+              Exit
             </span>
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 leading-tight">
+              <span className="truncate text-[15px] font-black text-white">
+                {room?.title ?? "Live Room"}
+              </span>
+              <Zap className="h-4 w-4 shrink-0 text-[color:var(--gold)]" />
+            </div>
+            <div className="mt-0.5 flex items-center gap-2.5 text-[10px] font-semibold text-white/60">
+              <span>Room ID: {roomId.slice(0, 6)}</span>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {!isHost && !followQ.data ? (
+              <button
+                onClick={toggleFollow}
+                aria-label="Follow host"
+                title="Follow"
+                className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_0_12px_-2px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition active:scale-90"
+              >
+                <Plus className="h-4 w-4" strokeWidth={3} />
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={shareRoom}
+              aria-label="Share"
+              className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 backdrop-blur-md active:scale-95"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md">
+              <Users className="h-3 w-3 text-white/70" />
+              <span className="text-[11px] font-black text-white">
+                {room?.viewer_count ?? 0}
+              </span>
+            </div>
           </div>
         </div>
-        {!isHost && (
-          <button
-            onClick={toggleFollow}
-            className={`rounded-full border px-4 py-1.5 text-[12px] font-semibold ${
-              followQ.data
-                ? "border-white/20 text-white/60"
-                : "border-[color:var(--secondary)]/50 text-[color:var(--secondary)] hover:bg-[color:var(--secondary)]/10"
-            }`}
-          >
-            {followQ.data ? "Following" : "Follow"}
-          </button>
-        )}
-        <button
-          onClick={shareRoom}
-          className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
-          aria-label="Share"
-        >
-          <Share2 className="h-5 w-5" />
-        </button>
-
       </div>
+
 
       {/* Incoming challenge banner */}
       {incoming && (
