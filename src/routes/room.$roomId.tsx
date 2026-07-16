@@ -2609,19 +2609,6 @@ function RoomPage() {
       <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
         <GiftAudioControl />
       </div>
-      <PkIncomingInvite currentRoomId={roomId} />
-      <PkChallengerToasts currentRoomId={roomId} />
-      {room.data?.active_pk_match_id && (
-        <PkMatchOverlay
-          matchId={room.data.active_pk_match_id}
-          meHostId={isHost ? user?.id ?? null : null}
-        />
-      )}
-      <PkBattleSheet
-        open={pkOpen}
-        onClose={() => setPkOpen(false)}
-        currentRoomId={roomId}
-      />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
