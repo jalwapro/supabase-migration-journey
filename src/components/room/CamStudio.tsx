@@ -29,6 +29,9 @@ export function CamStudio({ open, onClose }: Props) {
   );
   const beautyAll = useMemo(() => FILTERS.filter((f) => f.category === "beauty" && f.id !== "none"), []);
   const makeupAll = useMemo(() => FILTERS.filter((f) => f.category === "makeup"), []);
+  const funnyAll = useMemo(() => FILTERS.filter((f) => f.category === "funny"), []);
+  const arAll = useMemo(() => FILTERS.filter((f) => f.category === "ar"), []);
+
 
   if (!open) return null;
 
