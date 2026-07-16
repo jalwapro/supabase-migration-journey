@@ -524,25 +524,82 @@ function PkMatchPage() {
             coins={oppSideScore}
             accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
           />
-        ) : (
-
-          <button
-            onClick={() => setPickerOpen(true)}
-            className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/50 bg-gradient-to-b from-[#3f0d1d]/30 to-black/60 px-2 py-3"
-          >
-            <span className="rounded-md bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase">Opponent</span>
-            <div className="grid h-16 w-16 place-items-center rounded-full border border-white/10 bg-white/5 text-white/50">
-              <Users className="h-6 w-6" />
-              <span className="absolute bottom-14 right-3 grid h-6 w-6 place-items-center rounded-full bg-[color:var(--destructive)] text-white shadow-lg">
-                <Plus className="h-3.5 w-3.5" />
+        ) : (() => {
+          const list = hostsQ.data ?? [];
+          const rnd = list.length ? list[randomIdx % list.length] : null;
+          return (
+            <div className="relative flex flex-col items-stretch overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 p-2">
+              <span className="mx-auto rounded-md bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                {rnd ? "Random Opponent" : "Opponent"}
               </span>
+              <div className="mt-2 aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40">
+                {rnd?.host?.avatar ? (
+                  <img src={rnd.host.avatar} className="h-full w-full object-cover" alt={rnd.host?.username ?? "opponent"} />
+                ) : (
+                  <div className="grid h-full w-full place-items-center text-center text-white/50">
+                    {hostsQ.isLoading ? (
+                      <span className="text-[11px]">Finding live hosts…</span>
+                    ) : rnd ? (
+                      <span className="text-4xl font-black uppercase">{(rnd.host?.username ?? "?").charAt(0)}</span>
+                    ) : (
+                      <div className="flex flex-col items-center gap-1 px-2">
+                        <Users className="h-6 w-6" />
+                        <span className="text-[11px]">No live hosts right now</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 truncate text-center text-[13px] font-bold">
+                {rnd?.host?.username ?? "—"}
+              </div>
+              {rnd && (
+                <div className="text-center text-[10px] text-white/50">
+                  <Users className="mr-0.5 inline h-2.5 w-2.5" /> {rnd.viewer_count ?? 0} viewers
+                </div>
+              )}
+              {rnd ? (
+                <div className="mt-2 grid grid-cols-3 gap-1">
+                  <button
+                    onClick={() => {
+                      if (list.length <= 1) return;
+                      setRandomIdx((i) => (i + 1) % list.length);
+                    }}
+                    className="flex items-center justify-center gap-0.5 rounded-lg border border-white/15 bg-white/[0.04] py-1.5 text-[10.5px] font-semibold text-white/80 active:scale-95"
+                  >
+                    <SkipForward className="h-3 w-3" /> Next
+                  </button>
+                  <button
+                    onClick={() => navigate({ to: "/messages/$peerId", params: { peerId: rnd.host_id } })}
+                    className="flex items-center justify-center gap-0.5 rounded-lg border border-white/15 bg-white/[0.04] py-1.5 text-[10.5px] font-semibold text-white/80 active:scale-95"
+                  >
+                    <MessageCircle className="h-3 w-3" /> Chat
+                  </button>
+                  <button
+                    onClick={() => { setOpponent(rnd); setModeSheetOpen(true); }}
+                    className="flex items-center justify-center gap-0.5 rounded-lg bg-gradient-to-r from-sky-500 to-fuchsia-500 py-1.5 text-[10.5px] font-bold text-white active:scale-95"
+                  >
+                    <Check className="h-3 w-3" /> Match
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setPickerOpen(true)}
+                  className="mt-2 rounded-lg border border-white/15 bg-white/[0.04] py-1.5 text-[11px] font-semibold text-white/80 active:scale-95"
+                >
+                  Browse hosts
+                </button>
+              )}
+              <button
+                onClick={() => setPickerOpen(true)}
+                className="mt-1 text-center text-[10px] text-white/40 underline"
+              >
+                Pick manually
+              </button>
             </div>
-            <span className="text-[13px] font-bold">Select Opponent</span>
-            <span className="flex items-center gap-1 text-[11px] text-white/50">
-              <Coins className="h-3 w-3" /> ---
-            </span>
-          </button>
-        )}
+          );
+        })()}
+
       </div>
 
       {/* PK MODE removed — shown as popup on Start PK Battle */}
