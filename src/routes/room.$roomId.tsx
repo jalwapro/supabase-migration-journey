@@ -4143,7 +4143,11 @@ function VideoSettingsSheet({
           Room Tools
         </div>
         <div className="grid grid-cols-4 gap-2">
+          {canUseFilters && (
+            <ToolBtn icon={<Sparkles className="h-5 w-5" />} label="Filters" onClick={onOpenFilters} />
+          )}
           <ToolBtn icon={<Music className="h-5 w-5" />} label="Music" onClick={onOpenMusic} disabled={!isHost} />
+
           <ToolBtn icon={<Gamepad2 className="h-5 w-5" />} label="Games" onClick={onOpenGames} />
           <ToolBtn icon={<Share2 className="h-5 w-5" />} label="Invite" onClick={onShare} />
           <ToolBtn icon={<Users className="h-5 w-5" />} label="Guests" onClick={onOpenGuests} />
