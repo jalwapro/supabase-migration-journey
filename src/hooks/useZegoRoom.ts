@@ -286,6 +286,9 @@ export function useZegoRoom({
   const localPipelineReleaseRef = useRef<(() => void) | null>(null);
 
   const [status, setStatus] = useState<AgoraStatus>("idle");
+  const statusRef = useRef<AgoraStatus>("idle");
+  useEffect(() => { statusRef.current = status; }, [status]);
+
   const [error, setError] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
   const [muted, setMuted] = useState(true);
