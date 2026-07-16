@@ -2022,6 +2022,11 @@ function RoomPage() {
                   <div className="pointer-events-none absolute left-2 top-2 rounded-md bg-gradient-to-r from-violet-500 to-indigo-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg">
                     Co-Host
                   </div>
+                  {/* Gift points */}
+                  <div className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full border border-amber-300/50 bg-black/70 px-2 py-0.5 text-[10px] font-black text-amber-300 shadow-[0_0_10px_-2px_rgba(251,191,36,0.6)] backdrop-blur">
+                    <span>🎁</span>
+                    <span>{formatGiftPoints(camTile.giftPoints ?? 0)}</span>
+                  </div>
                   <button
                     onClick={() => agora.toggleSpeaker()}
                     aria-label="Toggle sound"
