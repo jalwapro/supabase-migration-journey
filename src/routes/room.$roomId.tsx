@@ -1664,45 +1664,6 @@ function RoomPage() {
               </button>
             </div>
           </div>
-
-          {/* Rank bar (top gifters) */}
-          <button
-            type="button"
-            onClick={() => void navigate({ to: "/rank" })}
-            className="mt-2 flex w-full items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 px-2 py-1 backdrop-blur active:scale-[0.98]"
-            aria-label="Open leaderboard"
-          >
-            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Top</span>
-            {topGifters.length === 0 ? (
-              <span className="text-[10px] font-semibold text-white/50">No gifters yet</span>
-            ) : (
-              <div className="flex items-center -space-x-2">
-                {topGifters.slice(0, 3).map((g, i) => (
-                  <div key={g.user_id} className="relative">
-                    <img
-                      src={g.avatar || `https://api.dicebear.com/9.x/thumbs/svg?seed=${g.user_id}`}
-                      alt={g.username ?? "gifter"}
-                      className={`h-6 w-6 rounded-full border-2 object-cover ${
-                        i === 0 ? "border-[color:var(--gold)]" : i === 1 ? "border-slate-300" : "border-amber-700"
-                      }`}
-                    />
-                    <span
-                      className={`absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-black ${
-                        i === 0 ? "bg-[color:var(--gold)] text-black" : i === 1 ? "bg-slate-300 text-black" : "bg-amber-600 text-white"
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {topGifters[0] && (
-              <span className="ml-auto truncate text-[10px] font-bold text-white/80">
-                {(topGifters[0].total_coins / 1000).toFixed(1)}k 💎
-              </span>
-            )}
-          </button>
         </div>
       ) : (
       <div
@@ -2350,9 +2311,10 @@ function RoomPage() {
           </div>
         </div>
       ) : (
+        <>
         <div className="pointer-events-none absolute inset-x-0 bottom-[160px] z-20 mx-auto flex w-full max-w-md flex-col px-3">
           <div
-            className="pointer-events-auto max-h-[26vh] space-y-1 overflow-y-auto pr-1 scrollbar-hide"
+            className="pointer-events-auto mr-[70px] max-h-[26vh] space-y-1 overflow-y-auto pr-1 scrollbar-hide"
             style={{
               maskImage: "linear-gradient(to bottom, transparent 0%, black 30%, black 100%)",
               WebkitMaskImage: "linear-gradient(to bottom, transparent 0%, black 30%, black 100%)",
@@ -2367,6 +2329,61 @@ function RoomPage() {
             <div ref={chatEndVideoRef} />
           </div>
         </div>
+
+        {/* Vertical rank/milestone widget (video room) */}
+        <div className="pointer-events-none absolute right-3 bottom-[160px] z-20 flex w-[60px]">
+          <button
+            onClick={() => openMilestoneSheet()}
+            className="pointer-events-auto relative flex h-[280px] w-full flex-col items-stretch overflow-hidden rounded-[22px] border border-[color:var(--secondary)]/40 bg-gradient-to-b from-[#1a0b2e]/90 to-[#2d0b4d]/90 px-1.5 pt-1.5 pb-1.5 shadow-2xl backdrop-blur-md"
+            aria-label="Open leaderboard"
+          >
+            <div className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-[color:var(--primary)]/25 blur-[30px]" />
+            <div className="z-10 flex w-full items-center justify-center">
+              {isRanked ? (
+                <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1 py-0.5">
+                  <span className="text-[7px] font-extrabold uppercase tracking-tight text-emerald-300">Ranked</span>
+                </div>
+              ) : (
+                <span className="text-[8px] font-extrabold uppercase tracking-wider text-[color:var(--gold)]">Top</span>
+              )}
+            </div>
+            <div className="z-10 mt-1 text-center">
+              <span
+                className="text-lg font-extrabold leading-none tabular-nums"
+                style={{
+                  color: isRanked ? "#34d399" : `hsl(${Math.round((popularityPct / 100) * 120)} 90% 55%)`,
+                }}
+              >
+                {popularityPct}%
+              </span>
+            </div>
+            <div className="z-10 mt-1.5 flex w-full flex-1 min-h-0 flex-col-reverse gap-[2px] px-1.5">
+              {Array.from({ length: 12 }).map((_, i) => {
+                const filledCount = Math.round((popularityPct / 100) * 12);
+                const isFilled = i < filledCount;
+                const rungPct = ((i + 1) / 12) * 100;
+                const hue = isRanked ? 140 : Math.round((rungPct / 100) * 120);
+                return (
+                  <div
+                    key={i}
+                    className="w-full flex-1 rounded-[2px]"
+                    style={{
+                      background: isFilled
+                        ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
+                        : `linear-gradient(90deg, hsl(${hue} 70% 45% / 0.18), hsl(${Math.min(hue + 20, 140)} 70% 55% / 0.18))`,
+                      boxShadow: isFilled ? `0 0 6px hsl(${hue} 95% 55% / 0.5)` : undefined,
+                      border: isFilled ? undefined : `1px solid hsl(${hue} 70% 50% / 0.22)`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <div className="z-10 mt-1 w-full rounded-lg border border-white/10 bg-white/5 py-0.5 text-center text-[7px] font-bold text-white/80">
+              🏆
+            </div>
+          </button>
+        </div>
+        </>
       )}
 
 
