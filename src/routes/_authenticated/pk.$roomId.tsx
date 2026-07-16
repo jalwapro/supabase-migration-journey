@@ -427,12 +427,13 @@ function PkMatchPage() {
         {opponent || match ? (
           <HostPanel
             label="OPPONENT"
-            username={opponent?.host?.username ?? "Opponent"}
-            avatar={opponent?.host?.avatar}
+            username={opponent?.host?.username ?? opponentQ.data?.username ?? "Opponent"}
+            avatar={opponent?.host?.avatar ?? opponentQ.data?.avatar ?? null}
             coins={oppSideScore}
             accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
           />
         ) : (
+
           <button
             onClick={() => setPickerOpen(true)}
             className="relative flex flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/50 bg-gradient-to-b from-[#3f0d1d]/30 to-black/60 px-2 py-3"
