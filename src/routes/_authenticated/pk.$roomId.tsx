@@ -689,11 +689,13 @@ function HostPanel({
         </span>
       )}
       <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-square w-full overflow-hidden rounded-xl bg-black/40`}>
-        <img
-          src={avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${username}`}
-          className="h-full w-full object-cover"
-          alt={username}
-        />
+        {avatar ? (
+          <img src={avatar} className="h-full w-full object-cover" alt={username} />
+        ) : (
+          <div className="grid h-full w-full place-items-center text-4xl font-black uppercase text-white/60">
+            {(username ?? "?").charAt(0)}
+          </div>
+        )}
       </div>
       <div className="mt-2 truncate text-[13px] font-bold">{username}</div>
     </div>
