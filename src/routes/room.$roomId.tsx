@@ -2331,10 +2331,10 @@ function RoomPage() {
         </div>
 
         {/* Vertical rank/milestone widget (video room) */}
-        <div className="pointer-events-none absolute right-3 bottom-[160px] z-20 flex w-[60px]">
+        <div className="pointer-events-none absolute right-3 bottom-[110px] z-20 flex w-[60px]">
           <button
             onClick={() => openMilestoneSheet()}
-            className="pointer-events-auto relative flex h-[180px] w-full flex-col items-stretch overflow-hidden rounded-[22px] border border-[color:var(--secondary)]/40 bg-gradient-to-b from-[#1a0b2e]/90 to-[#2d0b4d]/90 px-1.5 pt-1.5 pb-1.5 shadow-2xl backdrop-blur-md"
+            className="pointer-events-auto relative flex h-[130px] w-full flex-col items-stretch overflow-hidden rounded-[22px] border border-[color:var(--secondary)]/40 bg-gradient-to-b from-[#1a0b2e]/90 to-[#2d0b4d]/90 px-1.5 pt-1.5 pb-1.5 shadow-2xl backdrop-blur-md"
             aria-label="Open leaderboard"
           >
             <div className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-[color:var(--primary)]/25 blur-[30px]" />
