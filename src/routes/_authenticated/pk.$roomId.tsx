@@ -516,7 +516,20 @@ function PkMatchPage() {
               <span className="text-[12px] font-black tabular-nums">{fmt(endsInSec)}</span>
             </div>
           )}
+          {isHost && match?.status !== "active" && (
+            <button
+              onClick={openStartFlow}
+              disabled={starting}
+              className="pointer-events-auto mt-2 flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-xl shadow-[0_6px_24px_-4px_rgba(244,63,94,0.7)] ring-2 ring-white/20 transition active:scale-90 disabled:opacity-60"
+              title="Send challenge"
+              aria-label="Send match challenge"
+            >
+              🥊
+            </button>
+          )}
         </div>
+
+
 
         {/* Opponent side */}
         {opponent || match ? (
