@@ -64,7 +64,7 @@ import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
-import { PkBattleSheet, PkIncomingInvite, PkMatchOverlay, PkChallengerToasts } from "@/components/room/PkBattleSheet";
+
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
   AlertDialog,
@@ -183,7 +183,7 @@ function RoomPage() {
   const [ludoOpen, setLudoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [pkOpen, setPkOpen] = useState(false);
+  
   const [seatsSheetOpen, setSeatsSheetOpen] = useState(false);
   const [gifterListReceiver, setGifterListReceiver] = useState<{ id: string; name: string } | null>(null);
   const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);
@@ -1899,22 +1899,14 @@ function RoomPage() {
                       </span>
                     </div>
                     {isHost && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <Link
-                          to="/pk/$roomId"
-                          params={{ roomId }}
-                          className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white shadow-[0_0_20px_rgba(217,70,239,0.55)]"
-                        >
-                          <Swords className="h-3 w-3" />
-                          PK Match
-                        </Link>
-                        <button
-                          onClick={() => setPkOpen(true)}
-                          className="flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white"
-                        >
-                          Quick
-                        </button>
-                      </div>
+                      <Link
+                        to="/pk/$roomId"
+                        params={{ roomId }}
+                        className="mt-2 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 px-3 py-1.5 text-[10px] font-black uppercase tracking-[1.5px] text-white shadow-[0_0_20px_rgba(217,70,239,0.55)]"
+                      >
+                        <Swords className="h-3 w-3" />
+                        Start PK Match
+                      </Link>
                     )}
                   </div>
                 </div>
@@ -2609,19 +2601,6 @@ function RoomPage() {
       <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
         <GiftAudioControl />
       </div>
-      <PkIncomingInvite currentRoomId={roomId} />
-      <PkChallengerToasts currentRoomId={roomId} />
-      {room.data?.active_pk_match_id && (
-        <PkMatchOverlay
-          matchId={room.data.active_pk_match_id}
-          meHostId={isHost ? user?.id ?? null : null}
-        />
-      )}
-      <PkBattleSheet
-        open={pkOpen}
-        onClose={() => setPkOpen(false)}
-        currentRoomId={roomId}
-      />
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
@@ -2858,7 +2837,7 @@ function RoomPage() {
             toast.info("Only the host can start a PK match");
             return;
           }
-          setPkOpen(true);
+          navigate({ to: "/pk/$roomId", params: { roomId } });
         }}
       />
 
