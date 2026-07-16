@@ -584,11 +584,13 @@ function PkMatchPage() {
                   onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
                   className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
                 >
-                  <img
-                    src={h.host?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${h.host_id}`}
-                    className="h-10 w-10 rounded-full object-cover"
-                    alt=""
-                  />
+                  {h.host?.avatar ? (
+                    <img src={h.host.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
+                  ) : (
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-[13px] font-bold uppercase text-white/70">
+                      {(h.host?.username ?? "?").charAt(0)}
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1 text-left">
                     <div className="truncate text-[13px] font-bold">{h.host?.username ?? "Host"}</div>
                     <div className="truncate text-[11px] text-white/50">{h.title ?? "Live"}</div>
