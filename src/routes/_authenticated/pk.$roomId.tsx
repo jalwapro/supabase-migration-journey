@@ -508,16 +508,17 @@ function PkMatchPage() {
 
       {/* VS panels */}
       <div className="relative mx-3 mt-3 grid grid-cols-2 items-stretch gap-0">
-        {/* Host side */}
+        {/* Host side — always the room host */}
         <HostPanel
-          label="YOU"
-          username={profile?.username ?? room?.host?.username ?? "You"}
-          avatar={profile?.avatar ?? room?.host?.avatar}
-          coins={hostSideScore || (profile?.coins ?? room?.host?.coins ?? 0)}
+          label={isHost ? "YOU" : "HOST"}
+          username={room?.host?.username ?? "Host"}
+          avatar={room?.host?.avatar ?? null}
+          coins={hostSideScore || (room?.host?.coins ?? 0)}
           accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 rounded-r-none border-r-0"
           crown
 
         />
+
 
         {/* VS badge overlay */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
