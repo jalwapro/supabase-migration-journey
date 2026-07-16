@@ -39,6 +39,8 @@ import {
   Swords,
   Shuffle,
   SkipForward,
+  MessageCircle,
+
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/pk/$roomId")({
