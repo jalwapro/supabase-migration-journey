@@ -556,14 +556,15 @@ function PkMatchPage() {
               <div className="mt-2 truncate text-center text-[13px] font-bold">
                 {rnd?.host?.username ?? "—"}
               </div>
-              {rnd && (
+              {rnd && list.length > 1 && (
                 <button
-                  onClick={() => setOpponent(rnd)}
+                  onClick={() => setRandomIdx((i) => (i + 1) % list.length)}
                   className="mt-1 text-center text-[10px] text-white/40 underline"
                 >
                   Change
                 </button>
               )}
+
 
             </div>
           );
