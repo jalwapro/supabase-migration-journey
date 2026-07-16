@@ -2201,7 +2201,7 @@ function RoomPage() {
           </div>
         </div>
       ) : (
-        <div className="pointer-events-none absolute inset-x-0 bottom-[68px] z-20 mx-auto flex w-full max-w-md flex-col px-3">
+        <div className="pointer-events-none absolute inset-x-0 bottom-[160px] z-20 mx-auto flex w-full max-w-md flex-col px-3">
           <div
             className="pointer-events-auto max-h-[38vh] space-y-1 overflow-y-auto pr-1 scrollbar-hide"
             style={{
@@ -2232,7 +2232,7 @@ function RoomPage() {
         >
           {/* Composer row */}
           <div className="mb-3 flex items-center gap-2">
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 pl-4 pr-1.5 py-2 backdrop-blur-md">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/70 pl-4 pr-1.5 py-2 backdrop-blur-md">
               <input
                 value={text}
                 onChange={(e) => setText(e.target.value)}
