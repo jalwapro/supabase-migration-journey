@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft,
   Users,
-  MoreVertical,
+  
   Timer,
   Zap,
   Crown,
