@@ -266,30 +266,30 @@ function PkMatchPage() {
 
 
       {/* VS panels */}
-      <div className="mx-3 mt-3 grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
+      <div className="relative mx-3 mt-3 grid grid-cols-2 items-stretch gap-0">
         {/* Host side */}
         <HostPanel
           label={isHost ? "YOU (HOST)" : "HOST"}
           username={room?.host?.username ?? "Host"}
           avatar={room?.host?.avatar}
           coins={hostSideScore || (room?.host?.coins ?? 0)}
-          accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60"
+          accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 rounded-r-none border-r-0"
           crown
         />
 
-        {/* VS center */}
-        <div className="flex flex-col items-center justify-between py-2">
-          <div className="relative grid h-16 w-16 place-items-center">
+        {/* VS badge overlay */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+          <div className="relative grid h-14 w-14 place-items-center rounded-full border border-[color:var(--destructive)]/60 bg-black/70 shadow-[0_0_24px_rgba(255,45,135,0.5)]">
             <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,45,135,0.35),transparent_60%)]" />
-            <div className="relative flex items-baseline text-[36px] font-black tracking-tighter">
+            <div className="relative flex items-baseline text-[26px] font-black tracking-tighter">
               <span className="bg-gradient-to-b from-sky-300 to-blue-600 bg-clip-text text-transparent">V</span>
               <span className="bg-gradient-to-b from-pink-400 to-fuchsia-600 bg-clip-text text-transparent">S</span>
             </div>
           </div>
           {endsInSec != null && (
-            <div className="mt-2 flex w-full flex-col items-center rounded-xl border border-white/10 bg-black/40 px-2 py-1.5">
-              <span className="text-[9px] uppercase tracking-wider text-white/50">Ends in</span>
-              <span className="text-[15px] font-black tabular-nums">{fmt(endsInSec)}</span>
+            <div className="mt-1 flex w-full flex-col items-center rounded-lg border border-white/10 bg-black/70 px-2 py-1">
+              <span className="text-[8px] uppercase tracking-wider text-white/50">Ends in</span>
+              <span className="text-[12px] font-black tabular-nums">{fmt(endsInSec)}</span>
             </div>
           )}
         </div>
