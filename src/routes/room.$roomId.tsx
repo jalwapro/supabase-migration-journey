@@ -1637,7 +1637,12 @@ function RoomPage() {
                   <Plus className="h-4 w-4" strokeWidth={3} />
                 </button>
               ) : null}
-              <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md">
+              <button
+                type="button"
+                onClick={() => setViewersSheetOpen(true)}
+                aria-label="View viewers"
+                className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md active:scale-95"
+              >
                 <div className="flex -space-x-2">
                   {members.filter((m) => m.user_id !== r.host_id).slice(0, 2).map((m) => (
                     <div
@@ -1656,10 +1661,48 @@ function RoomPage() {
                 <span className="text-[11px] font-black text-white">
                   {Math.max(r.viewer_count, members.length)}
                 </span>
-              </div>
+              </button>
             </div>
           </div>
 
+          {/* Rank bar (top gifters) */}
+          <button
+            type="button"
+            onClick={() => void navigate({ to: "/rank" })}
+            className="mt-2 flex w-full items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 px-2 py-1 backdrop-blur active:scale-[0.98]"
+            aria-label="Open leaderboard"
+          >
+            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Top</span>
+            {topGifters.length === 0 ? (
+              <span className="text-[10px] font-semibold text-white/50">No gifters yet</span>
+            ) : (
+              <div className="flex items-center -space-x-2">
+                {topGifters.slice(0, 3).map((g, i) => (
+                  <div key={g.user_id} className="relative">
+                    <img
+                      src={g.avatar || `https://api.dicebear.com/9.x/thumbs/svg?seed=${g.user_id}`}
+                      alt={g.username ?? "gifter"}
+                      className={`h-6 w-6 rounded-full border-2 object-cover ${
+                        i === 0 ? "border-[color:var(--gold)]" : i === 1 ? "border-slate-300" : "border-amber-700"
+                      }`}
+                    />
+                    <span
+                      className={`absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-black ${
+                        i === 0 ? "bg-[color:var(--gold)] text-black" : i === 1 ? "bg-slate-300 text-black" : "bg-amber-600 text-white"
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {topGifters[0] && (
+              <span className="ml-auto truncate text-[10px] font-bold text-white/80">
+                {(topGifters[0].total_coins / 1000).toFixed(1)}k 💎
+              </span>
+            )}
+          </button>
         </div>
       ) : (
       <div
