@@ -240,7 +240,7 @@ function PkMatchPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/5 bg-black/60 px-3 py-2.5 backdrop-blur-xl">
         <button
-          onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })}
+          onClick={() => navigate({ to: "/rooms" })}
           className="grid h-9 w-9 place-items-center rounded-full text-white/80 hover:bg-white/5"
           aria-label="Back"
         >
@@ -560,7 +560,7 @@ function PkMatchPage() {
                     <SkipForward className="h-4 w-4" /> Next
                   </button>
                   <button
-                    onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
+                    onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); setModeSheetOpen(true); }}
                     className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-fuchsia-500 py-2.5 text-[13px] font-bold text-white active:scale-95"
                   >
                     <Check className="h-4 w-4" /> Match
@@ -581,7 +581,7 @@ function PkMatchPage() {
               {(hostsQ.data ?? []).map((h) => (
                 <button
                   key={h.id}
-                  onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); }}
+                  onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); setModeSheetOpen(true); }}
                   className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
                 >
                   {h.host?.avatar ? (
