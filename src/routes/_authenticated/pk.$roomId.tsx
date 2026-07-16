@@ -326,7 +326,8 @@ function PkMatchPage() {
       {/* PK MODE removed — shown as popup on Start PK Battle */}
 
 
-      {/* Stake */}
+      {/* Stake — only host who is setting up the match can see this */}
+      {isHost && (
       <section className="mx-3 mt-3">
         <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">Stake (Entry)</h2>
         <div className="grid grid-cols-5 gap-2">
@@ -372,6 +373,7 @@ function PkMatchPage() {
           />
         )}
       </section>
+      )}
 
       {/* Winner banner */}
       <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-white/5 bg-gradient-to-r from-[#1a0625]/70 to-[#0d0620]/70 px-3 py-2.5">
