@@ -861,6 +861,39 @@ function PkMatchPage() {
           </ul>
         </Sheet>
       )}
+
+      <AlertDialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
+        <AlertDialogContent className="border-violet-400/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white">
+              {isHost ? "Close the PK room?" : "Leave the PK room?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              {isHost
+                ? "Yeh PK room band ho jayega aur active match end ho jayega. Sure?"
+                : "Kya aap is PK room say bahar jana chahtay hain?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="border-white/20 bg-transparent text-white hover:bg-white/10">
+              Nahi
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void doExit();
+              }}
+              className="bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90"
+            >
+              {isHost ? "Haan, band karo" : "Haan, exit"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {exiting && (
+        <div className="pointer-events-none fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md animate-in fade-in duration-500" />
+      )}
     </div>
   );
 }
