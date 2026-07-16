@@ -309,6 +309,49 @@ function PkMatchPage() {
   });
   const incoming = incomingQ.data as any;
 
+  // Sweep stale pending invites in DB once on mount so old rows don't linger.
+  useEffect(() => {
+    if (!user || !isHost) return;
+    void supabase.rpc("pk_expire_stale_invites").then(() => incomingQ.refetch());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isHost]);
+
+  // Realtime: any change to pk_invites addressed to me → refetch incoming.
+  useEffect(() => {
+    if (!user?.id) return;
+    const ch = supabase
+      .channel(`pk-invites:${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pk_invites", filter: `to_host=eq.${user.id}` },
+        () => { incomingQ.refetch(); },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  // Realtime: pk_matches changes for this room → refetch match + room.
+  useEffect(() => {
+    if (!roomId) return;
+    const ch = supabase
+      .channel(`pk-matches:${roomId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pk_matches" },
+        () => { matchQ.refetch(); roomQ.refetch(); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` },
+        () => { roomQ.refetch(); },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomId]);
+
+
   async function respondInvite(accept: boolean) {
     if (!incoming) return;
     const { error } = await supabase.rpc("pk_respond_invite", {
