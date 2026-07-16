@@ -49,6 +49,7 @@ import {
   Play,
   Pause,
   X,
+  DoorOpen,
 } from "lucide-react";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -192,6 +193,7 @@ function RoomPage() {
     releaseProcessor: () => void;
   } | null>(null);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const [manageMember, setManageMember] = useState<Member | null>(null);
   const [videoFx, setVideoFx] = useState({
     beauty: true,
@@ -1296,7 +1298,11 @@ function RoomPage() {
         .eq("user_id", user.id);
     }
     setExitConfirmOpen(false);
-    navigate({ to: "/" });
+    setExiting(true);
+    // Let the exit animation play before navigating home.
+    setTimeout(() => {
+      navigate({ to: "/" });
+    }, 950);
   }
 
 
@@ -1577,10 +1583,13 @@ function RoomPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={leaveRoom}
-              aria-label="Back"
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 backdrop-blur-md active:scale-90"
+              aria-label="Exit room"
+              className="group relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-rose-400/50 bg-gradient-to-br from-rose-500/30 via-rose-600/20 to-black/60 text-white shadow-[0_0_16px_-2px_rgba(244,63,94,0.6)] backdrop-blur-md active:scale-90"
             >
-              <ChevronRight className="h-4 w-4 rotate-180 text-white" />
+              <DoorOpen className="h-5 w-5 text-rose-200 transition-transform group-active:-translate-x-0.5" />
+              <span className="pointer-events-none absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-[1.5px] text-rose-200/90">
+                Exit
+              </span>
             </button>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5 leading-tight">
@@ -2696,6 +2705,48 @@ function RoomPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Room exit animation — door-close / warp out */}
+      {exiting && (
+        <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden">
+          {/* Left door panel */}
+          <div
+            className="absolute inset-y-0 left-0 w-1/2 bg-gradient-to-r from-black via-[#1a0b2e] to-[#2d0b4d] border-r-2 border-rose-400/60 shadow-[10px_0_40px_rgba(244,63,94,0.5)]"
+            style={{
+              transform: "translateX(-100%)",
+              animation: "room-exit-left 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+          />
+          {/* Right door panel */}
+          <div
+            className="absolute inset-y-0 right-0 w-1/2 bg-gradient-to-l from-black via-[#1a0b2e] to-[#2d0b4d] border-l-2 border-rose-400/60 shadow-[-10px_0_40px_rgba(244,63,94,0.5)]"
+            style={{
+              transform: "translateX(100%)",
+              animation: "room-exit-right 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+            }}
+          />
+          {/* Centered "leaving" tag */}
+          <div
+            className="absolute inset-0 grid place-items-center opacity-0"
+            style={{ animation: "room-exit-fade 0.6s ease-out 0.35s forwards" }}
+          >
+            <div className="flex flex-col items-center gap-3">
+              <div className="grid h-16 w-16 place-items-center rounded-2xl border border-rose-400/60 bg-black/70 shadow-[0_0_28px_rgba(244,63,94,0.6)]">
+                <DoorOpen className="h-8 w-8 text-rose-300" />
+              </div>
+              <span className="text-[13px] font-black uppercase tracking-[3px] text-rose-200">
+                Leaving room…
+              </span>
+            </div>
+          </div>
+          <style>{`
+            @keyframes room-exit-left { to { transform: translateX(0); } }
+            @keyframes room-exit-right { to { transform: translateX(0); } }
+            @keyframes room-exit-fade { to { opacity: 1; transform: scale(1); } }
+          `}</style>
+        </div>
+      )}
+
 
 
       <SeatActionSheet
