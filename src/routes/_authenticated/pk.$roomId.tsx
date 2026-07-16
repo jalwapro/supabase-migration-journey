@@ -332,7 +332,110 @@ function PkMatchPage() {
         )}
       </div>
 
-      {/* Prematch setup removed — PK design starts directly */}
+      {/* PK MODE */}
+      <section className="mx-3 mt-4 rounded-2xl border border-white/5 bg-white/[0.03] p-3">
+        <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">PK Mode</h2>
+        <div className="grid grid-cols-3 gap-2">
+          {(Object.keys(MODE_META) as PkMode[]).map((k) => {
+            const meta = MODE_META[k];
+            const Icon = meta.icon;
+            const active = mode === k;
+            return (
+              <button
+                key={k}
+                onClick={() => setMode(k)}
+                className={`relative flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-b ${meta.accent} p-2 text-center transition ${
+                  active ? "ring-2 ring-white/60" : "opacity-80"
+                }`}
+              >
+                {active && (
+                  <span className="absolute right-1.5 top-1.5 grid h-4 w-4 place-items-center rounded-full bg-sky-500">
+                    <Check className="h-3 w-3" />
+                  </span>
+                )}
+                <Icon className="h-6 w-6 text-white" />
+                <span className="text-[12px] font-bold">{meta.label}</span>
+                <span className="text-[10px] text-white/70">{meta.minutes} Minutes</span>
+                <span className="text-[9px] text-white/50">{meta.sub}</span>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Stake */}
+      <section className="mx-3 mt-3">
+        <h2 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">Stake (Entry)</h2>
+        <div className="grid grid-cols-5 gap-2">
+          {STAKES.map((s) => {
+            const active = !customOpen && stake === s;
+            return (
+              <button
+                key={s}
+                onClick={() => { setCustomOpen(false); setStake(s); }}
+                className={`relative flex flex-col items-center gap-0.5 rounded-xl border bg-white/[0.03] py-2 transition ${
+                  active ? "border-sky-400 ring-2 ring-sky-400/50" : "border-white/10"
+                }`}
+              >
+                {active && (
+                  <span className="absolute right-1 top-1 grid h-3.5 w-3.5 place-items-center rounded-full bg-sky-500">
+                    <Check className="h-2.5 w-2.5" />
+                  </span>
+                )}
+                <span className="grid h-5 w-5 place-items-center rounded-full bg-[color:var(--gold)] text-[10px] font-black text-black">$</span>
+                <span className="text-[12px] font-bold">{s >= 1000 ? `${s / 1000}k` : s}</span>
+                <span className="text-[9px] text-white/50">Coins</span>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setCustomOpen(true)}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-xl border py-2 ${
+              customOpen ? "border-sky-400 ring-2 ring-sky-400/50" : "border-white/10"
+            } bg-white/[0.03]`}
+          >
+            <Pencil className="h-4 w-4 text-white/70" />
+            <span className="text-[11px] font-bold">Custom</span>
+          </button>
+        </div>
+        {customOpen && (
+          <input
+            type="number"
+            min={0}
+            placeholder="Enter coins…"
+            value={customStake}
+            onChange={(e) => setCustomStake(e.target.value)}
+            className="mt-2 w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-[13px] outline-none placeholder:text-white/40 focus:border-sky-400"
+          />
+        )}
+      </section>
+
+      {/* Winner banner */}
+      <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-white/5 bg-gradient-to-r from-[#1a0625]/70 to-[#0d0620]/70 px-3 py-2.5">
+        <div className="grid h-9 w-9 place-items-center rounded-lg bg-[color:var(--destructive)]/20">
+          <Gift className="h-5 w-5 text-[color:var(--destructive)]" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-[12.5px] font-bold">Winner will get the stakes + gifts</div>
+          <div className="text-[11px] text-white/50">Be respectful and enjoy the PK!</div>
+        </div>
+        <Trophy className="h-6 w-6 text-[color:var(--gold)]" />
+      </div>
+
+      {/* Start button */}
+      <button
+        onClick={startBattle}
+        disabled={starting || !isHost || match?.status === "active"}
+        className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-fuchsia-500 to-pink-500 py-3.5 text-[15px] font-black uppercase tracking-wider text-white shadow-[0_10px_40px_-10px_rgba(217,70,239,0.7)] disabled:opacity-60"
+      >
+        <span>{starting ? "Sending challenge…" : match?.status === "active" ? "PK Live" : "Start PK Battle"}</span>
+        <Zap className="h-5 w-5" />
+      </button>
+      <div className="mx-3 mt-1.5 flex items-center justify-center gap-1 text-[10.5px] text-white/40">
+        <Shield className="h-3 w-3" /> No bad words or behavior. Maintain a positive atmosphere.
+      </div>
+
+
 
 
       {/* Live score bar when match active */}
