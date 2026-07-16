@@ -424,15 +424,10 @@ function PkMatchPage() {
 
       {/* Chat */}
       <section className="mx-3 mt-4 flex-1 rounded-2xl border border-white/5 bg-white/[0.02] p-3">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2">
           <h2 className="text-[13px] font-bold">
             <span className="border-b-2 border-[color:var(--primary)] pb-1">Chat</span>
           </h2>
-          <div className="flex items-center gap-1 text-[10.5px]">
-            <span className="rounded-md bg-[color:var(--secondary)]/30 px-2 py-0.5 font-semibold text-[color:var(--secondary)]">All</span>
-            <span className="rounded-md px-2 py-0.5 text-white/50">Gifts</span>
-            <span className="rounded-md px-2 py-0.5 text-white/50">System</span>
-          </div>
         </div>
         <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
           {(chatQ.data ?? []).map((m: any) => (
@@ -587,15 +582,12 @@ function HostPanel({
 }) {
   return (
     <div className={`relative flex flex-col items-center overflow-hidden rounded-2xl border p-2 ${accentClass}`}>
-      <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase ${
-        label.includes("HOST") && !label.includes("OPPONENT")
-          ? "bg-[color:var(--primary)] text-white"
-          : "bg-[color:var(--destructive)] text-white"
-      }`}>
-        {label}
-      </span>
-      {crown && <Crown className="absolute right-2 top-2 h-4 w-4 text-[color:var(--gold)]" />}
-      <div className="mt-2 aspect-square w-full overflow-hidden rounded-xl bg-black/40">
+      {label.includes("OPPONENT") && (
+        <span className="rounded-md bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+          {label}
+        </span>
+      )}
+      <div className={`${label.includes("OPPONENT") ? "mt-2" : ""} aspect-square w-full overflow-hidden rounded-xl bg-black/40`}>
         <img
           src={avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${username}`}
           className="h-full w-full object-cover"
@@ -603,10 +595,6 @@ function HostPanel({
         />
       </div>
       <div className="mt-2 truncate text-[13px] font-bold">{username}</div>
-      <div className="flex items-center gap-1 text-[11px] text-sky-300">
-        <span className="grid h-3 w-3 place-items-center rounded-sm bg-sky-400/30">◆</span>
-        {coins >= 1000 ? `${(coins / 1000).toFixed(1)}K` : coins}
-      </div>
     </div>
   );
 }
