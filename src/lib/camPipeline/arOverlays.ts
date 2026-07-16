@@ -19,6 +19,20 @@ import bunnyPtr from "@/assets/ar/bunny-ears.png.asset.json";
 import devilPtr from "@/assets/ar/devil-horns.png.asset.json";
 import anglePtr from "@/assets/ar/angel-wings.png.asset.json";
 import crownPtr from "@/assets/ar/golden-crown.png.asset.json";
+import pandaPtr from "@/assets/ar/panda.png.asset.json";
+import monkeyPtr from "@/assets/ar/monkey.png.asset.json";
+import dinoPtr from "@/assets/ar/dinosaur.png.asset.json";
+import alienPtr from "@/assets/ar/alien.png.asset.json";
+import fatFacePtr from "@/assets/ar/fat-face.png.asset.json";
+import tinyFacePtr from "@/assets/ar/tiny-face.png.asset.json";
+import bigEyesPtr from "@/assets/ar/big-eyes.png.asset.json";
+import butterflyPtr from "@/assets/ar/butterfly.png.asset.json";
+import firePtr from "@/assets/ar/fire-aura.png.asset.json";
+import icePtr from "@/assets/ar/ice-kingdom.png.asset.json";
+import galaxyPtr from "@/assets/ar/galaxy.png.asset.json";
+import wizardPtr from "@/assets/ar/magic-wizard.png.asset.json";
+import laserPtr from "@/assets/ar/laser-eyes.png.asset.json";
+import neonPtr from "@/assets/ar/neon-rgb.png.asset.json";
 
 export type OverlayAnchor = "head-top" | "forehead" | "behind";
 
@@ -33,12 +47,29 @@ export interface AROverlayDef {
 }
 
 export const AR_OVERLAYS: Record<string, AROverlayDef> = {
-  puppy:          { id: "puppy",        src: puppyPtr.url, anchor: "head-top", widthScale: 1.7, offsetY: -0.95 },
-  cat:            { id: "cat",          src: catPtr.url,   anchor: "head-top", widthScale: 1.4, offsetY: -0.45 },
-  bunny:          { id: "bunny",        src: bunnyPtr.url, anchor: "head-top", widthScale: 1.2, offsetY: -0.9  },
-  devil:          { id: "devil",        src: devilPtr.url, anchor: "forehead", widthScale: 1.6, offsetY: -0.75 },
-  angel:          { id: "angel",        src: anglePtr.url, anchor: "behind",   widthScale: 4.5, offsetY:  0.55 },
-  "golden-crown": { id: "golden-crown", src: crownPtr.url, anchor: "head-top", widthScale: 1.5, offsetY: -0.7  },
+  // Funny (head-top ears / forehead cheek stickers)
+  puppy:          { id: "puppy",        src: puppyPtr.url,     anchor: "head-top", widthScale: 1.7, offsetY: -0.95 },
+  cat:            { id: "cat",          src: catPtr.url,       anchor: "head-top", widthScale: 1.4, offsetY: -0.45 },
+  bunny:          { id: "bunny",        src: bunnyPtr.url,     anchor: "head-top", widthScale: 1.2, offsetY: -0.9  },
+  panda:          { id: "panda",        src: pandaPtr.url,     anchor: "head-top", widthScale: 1.6, offsetY: -0.55 },
+  monkey:         { id: "monkey",       src: monkeyPtr.url,    anchor: "head-top", widthScale: 1.5, offsetY: -0.45 },
+  dinosaur:       { id: "dinosaur",     src: dinoPtr.url,      anchor: "head-top", widthScale: 1.8, offsetY: -0.55 },
+  alien:          { id: "alien",        src: alienPtr.url,     anchor: "head-top", widthScale: 1.3, offsetY: -1.05 },
+  "fat-face":     { id: "fat-face",     src: fatFacePtr.url,   anchor: "forehead", widthScale: 1.9, offsetY:  0.55 },
+  "tiny-face":    { id: "tiny-face",    src: tinyFacePtr.url,  anchor: "head-top", widthScale: 1.1, offsetY: -0.6  },
+  "big-eyes":     { id: "big-eyes",     src: bigEyesPtr.url,   anchor: "forehead", widthScale: 1.5, offsetY:  0.25 },
+
+  // AR effects
+  devil:          { id: "devil",        src: devilPtr.url,     anchor: "forehead", widthScale: 1.6, offsetY: -0.75 },
+  angel:          { id: "angel",        src: anglePtr.url,     anchor: "behind",   widthScale: 4.5, offsetY:  0.55 },
+  "golden-crown": { id: "golden-crown", src: crownPtr.url,     anchor: "head-top", widthScale: 1.5, offsetY: -0.7  },
+  butterfly:      { id: "butterfly",    src: butterflyPtr.url, anchor: "forehead", widthScale: 1.1, offsetY:  0.15 },
+  "fire-aura":    { id: "fire-aura",    src: firePtr.url,      anchor: "behind",   widthScale: 3.2, offsetY: -0.15 },
+  "ice-kingdom":  { id: "ice-kingdom",  src: icePtr.url,       anchor: "head-top", widthScale: 1.7, offsetY: -0.55 },
+  galaxy:         { id: "galaxy",       src: galaxyPtr.url,    anchor: "behind",   widthScale: 3.0, offsetY:  0.0  },
+  "magic-wizard": { id: "magic-wizard", src: wizardPtr.url,    anchor: "head-top", widthScale: 1.8, offsetY: -1.0  },
+  "laser-eyes":   { id: "laser-eyes",   src: laserPtr.url,     anchor: "forehead", widthScale: 3.0, offsetY:  0.35 },
+  "neon-rgb":     { id: "neon-rgb",     src: neonPtr.url,      anchor: "behind",   widthScale: 2.8, offsetY:  0.05 },
 };
 
 export function isAROverlayId(id: string): boolean {
