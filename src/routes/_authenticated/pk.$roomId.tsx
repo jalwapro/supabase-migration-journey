@@ -438,11 +438,13 @@ function PkMatchPage() {
         <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
           {(chatQ.data ?? []).map((m: any) => (
             <div key={m.id} className="flex items-start gap-2 text-[12px]">
-              <img
-                src={m.profiles?.avatar ?? `https://api.dicebear.com/8.x/thumbs/svg?seed=${m.user_id}`}
-                className="mt-0.5 h-6 w-6 rounded-full object-cover"
-                alt=""
-              />
+              {m.profiles?.avatar ? (
+                <img src={m.profiles.avatar} className="mt-0.5 h-6 w-6 rounded-full object-cover" alt="" />
+              ) : (
+                <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-white/10 text-[10px] font-bold uppercase text-white/70">
+                  {(m.profiles?.username ?? "?").charAt(0)}
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <span className="mr-1 font-semibold text-white/80">{m.profiles?.username ?? "user"}</span>
                 <span className="rounded-lg bg-white/5 px-2 py-1 text-white/90">{m.body}</span>
