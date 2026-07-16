@@ -1071,11 +1071,23 @@ function PkMatchPage() {
   );
 }
 
-function ActionBtn({ icon: Icon, label, onClick }: { icon: any; label: string; onClick?: () => void }) {
+function ActionBtn({ icon: Icon, label, onClick, active, danger }: { icon: any; label: string; onClick?: () => void; active?: boolean; danger?: boolean }) {
+  const tone = danger
+    ? "text-rose-300"
+    : active
+      ? "text-emerald-300"
+      : "text-white/70";
+  const ring = danger
+    ? "bg-rose-500/15 ring-1 ring-rose-400/40"
+    : active
+      ? "bg-emerald-500/15 ring-1 ring-emerald-400/40"
+      : "bg-white/[0.04] ring-1 ring-white/10";
   return (
-    <button onClick={onClick} className="flex flex-col items-center gap-0.5 text-white/70 active:scale-95">
-      <Icon className="h-5 w-5" />
-      <span className="text-[10px]">{label}</span>
+    <button onClick={onClick} className={`flex flex-col items-center gap-0.5 active:scale-95 ${tone}`}>
+      <span className={`grid h-9 w-9 place-items-center rounded-full ${ring}`}>
+        <Icon className="h-4.5 w-4.5" style={{ width: 18, height: 18 }} />
+      </span>
+      <span className="text-[10px] font-semibold">{label}</span>
     </button>
   );
 }
