@@ -284,6 +284,10 @@ export function useZegoRoom({
   const localRawCameraRef = useRef<MediaStream | null>(null);
   // Callback to tear down the CamPipeline processor set by the room UI.
   const localPipelineReleaseRef = useRef<(() => void) | null>(null);
+  // ZEGO renegotiates WebRTC signaling per publish/unpublish. Serializing
+  // mic + camera actions prevents “signaling state” errors when users tap
+  // both controls quickly or while the room is still finishing connection.
+  const publishQueueRef = useRef<Promise<unknown>>(Promise.resolve());
 
   const [status, setStatus] = useState<AgoraStatus>("idle");
   const statusRef = useRef<AgoraStatus>("idle");
@@ -378,6 +382,12 @@ export function useZegoRoom({
     micErrorRef.current = message;
     setMicError(message);
     setMicBlocked(blocked);
+  }, []);
+
+  const runPublishTask = useCallback(<T,>(task: () => Promise<T>): Promise<T> => {
+    const next = publishQueueRef.current.then(task, task);
+    publishQueueRef.current = next.catch(() => undefined);
+    return next;
   }, []);
 
   const getRemoteMediaStream = useCallback((engine: ZegoEngine, streamID: string) => {
@@ -933,7 +943,7 @@ export function useZegoRoom({
   // -----------------------------------------------------------------------
   // Publish mic — same contract as Agora hook.
   // -----------------------------------------------------------------------
-  const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+  const requestMicNow = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const pendingRaw = !localStreamRef.current
       ? requestBrowserMedia(
           { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false },
@@ -958,6 +968,14 @@ export function useZegoRoom({
     // Wait for the room to reach CONNECTED before publishing.
     for (let i = 0; i < 80 && statusRef.current !== "connected"; i++) {
       await new Promise((r) => setTimeout(r, 100));
+    }
+    if (statusRef.current !== "connected") {
+      if (pendingRaw) {
+        try { (await pendingRaw).getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      }
+      const message = "Room connection not ready yet. Please try again in a moment.";
+      setMicIssue(message, false);
+      return { ok: false, error: message };
     }
 
 
@@ -1005,29 +1023,36 @@ export function useZegoRoom({
     setMuted(false);
     setMicIssue(null, false);
     return { ok: true };
-  }, [setMicIssue, status]);
+  }, [setMicIssue]);
+
+  const requestMic = useCallback(
+    () => runPublishTask(() => requestMicNow()),
+    [requestMicNow, runPublishTask],
+  );
 
   const toggleMute = useCallback(async () => {
-    if (!localStreamRef.current || !localAudioPublishedRef.current) {
-      await requestMic();
-      return;
-    }
-    const next = !muted;
-    if (next) {
-      // Fully stop the mic — matches Agora hook's mobile-safety cleanup so
-      // users don't keep hearing themselves after a mute tap.
-      await stopMicTrack(engineRef.current);
-      setMicIssue(null, false);
-      return;
-    }
-    try {
-      engineRef.current?.mutePublishStreamAudio(localStreamRef.current, false);
-      setMuted(false);
-      setMicIssue(null, false);
-    } catch (e) {
-      console.error("[zego] unmute failed", e);
-    }
-  }, [muted, requestMic, setMicIssue, stopMicTrack]);
+    await runPublishTask(async () => {
+      if (!localStreamRef.current || !localAudioPublishedRef.current) {
+        await requestMicNow();
+        return;
+      }
+      const next = !muted;
+      if (next) {
+        // Fully stop the mic — matches Agora hook's mobile-safety cleanup so
+        // users don't keep hearing themselves after a mute tap.
+        await stopMicTrack(engineRef.current);
+        setMicIssue(null, false);
+        return;
+      }
+      try {
+        engineRef.current?.mutePublishStreamAudio(localStreamRef.current, false);
+        setMuted(false);
+        setMicIssue(null, false);
+      } catch (e) {
+        console.error("[zego] unmute failed", e);
+      }
+    });
+  }, [muted, requestMicNow, runPublishTask, setMicIssue, stopMicTrack]);
 
   const toggleSpeaker = useCallback(() => {
     setSpeakerMuted((prev) => {
@@ -1049,21 +1074,16 @@ export function useZegoRoom({
     });
   }, []);
 
-  const toggleVideo = useCallback(async (options?: {
+  const toggleVideoNow = useCallback(async (options?: {
     processStream?: (raw: MediaStream) => Promise<MediaStream>;
     releaseProcessor?: () => void;
   }) => {
-    const engine = engineRef.current;
-    const room = currentRoomRef.current;
-    const localUid = currentUserRef.current;
-    if (!engine || !room || !localUid) {
-      setMicIssue("Not connected to room yet — try again in a moment", false);
-      return false;
-    }
-
     if (localVideoStreamRef.current) {
+      const engine = engineRef.current;
+      const room = currentRoomRef.current;
+      const localUid = currentUserRef.current;
       // Stop the video-only companion stream.
-      try {
+      if (engine && room && localUid) try {
         engine.stopPublishingStream(streamIdFor(room, `${localUid}_cam`));
       } catch { /* ignore */ }
       try { engine.destroyStream(localVideoStreamRef.current); } catch { /* ignore */ }
@@ -1080,21 +1100,43 @@ export function useZegoRoom({
       setVideoOn(false);
       return true;
     }
-    if (status !== "connected") {
+
+    const pendingRaw = requestBrowserMedia({
+      video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
+      audio: false,
+    }, "camera");
+
+    let engine = engineRef.current;
+    for (let i = 0; i < 20 && !engineRef.current; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    engine = engineRef.current;
+    const room = currentRoomRef.current;
+    const localUid = currentUserRef.current;
+    if (!engine || !room || !localUid) {
+      try { (await pendingRaw).getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+      setMicIssue("Not connected to room yet — try again in a moment", false);
+      return false;
+    }
+
+    for (let i = 0; i < 80 && statusRef.current !== "connected"; i++) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    if (statusRef.current !== "connected") {
+      try { (await pendingRaw).getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
       setMicIssue("Still connecting to room — try again in a moment", false);
       return false;
     }
+
     try {
       let publishStream: MediaStream;
       let usedProcessing = false;
-      let raw: MediaStream | null = null;
+      let raw: MediaStream | null = await pendingRaw;
+      if (!raw) throw new Error("Camera unavailable");
+      localRawCameraRef.current = raw;
       if (options?.processStream) {
-        // Grab raw camera ourselves so we can hand it to the processor.
-        raw = await requestBrowserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
-          audio: false,
-        }, "camera");
-        localRawCameraRef.current = raw;
+        // Hand the raw camera to the processor so filters/beauty are baked
+        // into the stream before it is published.
         const processed = await options.processStream(raw);
         usedProcessing = processed !== raw;
         if (usedProcessing) {
@@ -1105,11 +1147,6 @@ export function useZegoRoom({
         }
         localPipelineReleaseRef.current = options.releaseProcessor ?? null;
       } else {
-        raw = await requestBrowserMedia({
-          video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: "user" },
-          audio: false,
-        }, "camera");
-        localRawCameraRef.current = raw;
         publishStream = await engine.createZegoStream(zegoCustomVideo(raw));
       }
       try {
@@ -1151,7 +1188,15 @@ export function useZegoRoom({
       setMicIssue(issue.message, issue.blocked);
       return false;
     }
-  }, [status, setMicIssue]);
+  }, [setMicIssue]);
+
+  const toggleVideo = useCallback(
+    (options?: {
+      processStream?: (raw: MediaStream) => Promise<MediaStream>;
+      releaseProcessor?: () => void;
+    }) => runPublishTask(() => toggleVideoNow(options)),
+    [runPublishTask, toggleVideoNow],
+  );
 
   // -----------------------------------------------------------------------
   // Host music playback via ZEGO MediaPlayer + enableAux(true) so remote
