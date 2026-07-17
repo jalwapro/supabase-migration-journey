@@ -1086,7 +1086,7 @@ export function useZegoRoom({
       if (engine && room && localUid) try {
         engine.stopPublishingStream(streamIdFor(room, `${localUid}_cam`));
       } catch { /* ignore */ }
-      try { engine.destroyStream(localVideoStreamRef.current); } catch { /* ignore */ }
+      try { engine?.destroyStream(localVideoStreamRef.current); } catch { /* ignore */ }
       try {
         localVideoStreamRef.current.getTracks().forEach((t) => t.stop());
       } catch { /* ignore */ }
