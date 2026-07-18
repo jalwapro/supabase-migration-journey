@@ -1,11 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 type Props = {
   src: string;
   loops?: number; // 0 = infinite
   clearsAfterStop?: boolean;
   className?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
   onFinished?: () => void;
 };
 
@@ -22,22 +22,32 @@ export default function SvgaPlayer({
   style,
   onFinished,
 }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<any>(null);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     let player: any = null;
+    setFailed(false);
 
     (async () => {
-      const mod: any = await import('svgaplayerweb');
+      const [{ default: JSZip }, JSZipUtilsModule, mod]: any[] = await Promise.all([
+        import('jszip'),
+        import('jszip-utils'),
+        import('svgaplayerweb'),
+      ]);
+      window.JSZip = JSZip;
+      window.JSZipUtils = JSZipUtilsModule.default ?? JSZipUtilsModule;
+
       const SVGA = mod.default ?? mod;
-      if (cancelled || !canvasRef.current) return;
+      if (cancelled || !containerRef.current) return;
 
       const parser = new SVGA.Parser();
-      player = new SVGA.Player(canvasRef.current);
+      player = new SVGA.Player(containerRef.current);
       player.loops = loops;
       player.clearsAfterStop = clearsAfterStop;
+      player.setContentMode?.('AspectFit');
       if (onFinished) player.onFinished(onFinished);
       playerRef.current = player;
 
@@ -45,6 +55,10 @@ export default function SvgaPlayer({
         if (cancelled) return;
         player.setVideoItem(videoItem);
         player.startAnimation();
+      }, (error: Error) => {
+        if (cancelled) return;
+        console.error('SVGA load failed:', src, error);
+        setFailed(true);
       });
     })();
 
@@ -58,5 +72,20 @@ export default function SvgaPlayer({
     };
   }, [src, loops, clearsAfterStop, onFinished]);
 
-  return <canvas ref={canvasRef} className={className} style={style} />;
+  return (
+    <div ref={containerRef} className={className} style={{ position: 'relative', ...style }}>
+      {failed && (
+        <div className="absolute inset-0 grid place-items-center text-[10px] font-semibold text-white/55">
+          SVGA
+        </div>
+      )}
+    </div>
+  );
+}
+
+declare global {
+  interface Window {
+    JSZip?: unknown;
+    JSZipUtils?: unknown;
+  }
 }
