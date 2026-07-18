@@ -10,7 +10,6 @@ export const Route = createFileRoute('/svga-preview')({
 const gifts = [
   { name: 'Royal Crown',   file: '/animations/gifts/svga/kingset.svga',        price: 999,  emoji: '👑' },
   { name: 'Porsche',       file: '/animations/gifts/svga/posche.svga',         price: 1999, emoji: '🏎️' },
-  { name: 'Rocket',        file: '/animations/gifts/svga/Rocket.svga',         price: 499,  emoji: '🚀' },
   { name: 'Heartbeat',     file: '/animations/gifts/svga/heartbeat.svga',      price: 199,  emoji: '💗' },
   { name: 'Pin Jump',      file: '/animations/gifts/svga/PinJump.svga',        price: 99,   emoji: '📍' },
   { name: 'Empty State',   file: '/animations/gifts/svga/EmptyState.svga',     price: 49,   emoji: '📭' },
