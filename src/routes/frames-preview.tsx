@@ -79,6 +79,23 @@ function FramesPreview() {
         Behance style ornate jeweled frames — rotating aura + sway animation. Jo pasand hain batao, shop me seed kar denge.
       </p>
 
+      <h2 className="text-center text-xs uppercase tracking-widest text-emerald-300/90 mt-6 mb-4">🎬 Live Animated Frames (Transparent WebM)</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-10">
+        {[
+          { id: "boss-emerald",   name: "Boss Emerald (Live)",   url: "/animations/frames/webm/boss-emerald.webm",   tier: "Mythic" },
+          { id: "lion-ruby",      name: "Lion Ruby (Live)",      url: "/animations/frames/webm/lion-ruby.webm",      tier: "Mythic" },
+          { id: "sapphire-crown", name: "Sapphire Crown (Live)", url: "/animations/frames/webm/sapphire-crown.webm", tier: "Legendary" },
+        ].map((f) => (
+          <div key={f.id} className="rounded-2xl border border-emerald-400/20 bg-gradient-to-b from-black/60 to-black/30 p-6 flex flex-col items-center gap-3 hover:border-emerald-400/60 transition">
+            <div className="mt-2 mb-2">
+              <LevelAvatar name="Jalwa" level={60} size="xl" frame={f.url} showBadge={false} />
+            </div>
+            <div className="text-sm font-bold text-center mt-4">{f.name}</div>
+            <div className="text-[10px] uppercase tracking-widest text-emerald-300/80">{f.tier}</div>
+          </div>
+        ))}
+      </div>
+
       <h2 className="text-center text-xs uppercase tracking-widest text-yellow-300/80 mt-6 mb-4">✨ Premium Ornate Frames</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
         {premiumFrames.map((f) => <PremiumFrameCard key={f.id} f={f} />)}
