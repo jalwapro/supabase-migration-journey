@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SvgaPreviewRouteImport } from './routes/svga-preview'
 import { Route as SplashRouteImport } from './routes/splash'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -87,6 +88,11 @@ import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
 
+const SvgaPreviewRoute = SvgaPreviewRouteImport.update({
+  id: '/svga-preview',
+  path: '/svga-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SplashRoute = SplashRouteImport.update({
   id: '/splash',
   path: '/splash',
@@ -510,6 +516,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/svga-preview': typeof SvgaPreviewRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
@@ -588,6 +595,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/svga-preview': typeof SvgaPreviewRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
@@ -666,6 +674,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/rooms': typeof RoomsRoute
   '/splash': typeof SplashRoute
+  '/svga-preview': typeof SvgaPreviewRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
@@ -746,6 +755,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/svga-preview'
     | '/admin'
     | '/blocked'
     | '/create-room'
@@ -824,6 +834,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/svga-preview'
     | '/blocked'
     | '/create-room'
     | '/custom-theme'
@@ -901,6 +912,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/rooms'
     | '/splash'
+    | '/svga-preview'
     | '/_authenticated/admin'
     | '/_authenticated/blocked'
     | '/_authenticated/create-room'
@@ -981,6 +993,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   RoomsRoute: typeof RoomsRoute
   SplashRoute: typeof SplashRoute
+  SvgaPreviewRoute: typeof SvgaPreviewRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
@@ -992,6 +1005,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/svga-preview': {
+      id: '/svga-preview'
+      path: '/svga-preview'
+      fullPath: '/svga-preview'
+      preLoaderRoute: typeof SvgaPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/splash': {
       id: '/splash'
       path: '/splash'
@@ -1706,6 +1726,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   RoomsRoute: RoomsRoute,
   SplashRoute: SplashRoute,
+  SvgaPreviewRoute: SvgaPreviewRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
