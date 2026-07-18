@@ -4,6 +4,7 @@ import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
 import { useGiftAudioPrefs } from "@/lib/giftAudio";
+import SvgaPlayer from "./SvgaPlayer";
 
 
 /**
@@ -200,7 +201,7 @@ function AnimatedGiftVideo({
 
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
+    <div className="pointer-events-none absolute inset-0 z-[70] grid place-items-center bg-transparent">
       {/* No placeholder while video buffers — avoids the static PNG/emoji
           flash before the clip actually plays. Video fades in on `onPlaying`. */}
       <video
@@ -504,7 +505,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const giftClip = current ? getEffectiveGiftClip(current) : { url: null, type: null };
   const giftClipUrl = giftClip.url;
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
-  const hasSvg = !!giftClipUrl && !hasVideo;
+  const hasSvga = !!giftClipUrl && (giftClip.type === "svga" || giftClipUrl.toLowerCase().endsWith(".svga"));
+  const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
   const isBlackBg = isBlackBgGift(current?.giftName);
@@ -528,9 +530,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     setReadyKey(null);
     setVideoDurationMs(null);
     if (current && !hasVideo && !hasSvg) {
+      // svga renders via canvas, mark ready immediately so play timer starts
       setReadyKey(current.key);
     }
-  }, [current?.key, current, hasVideo, hasSvg]);
+  }, [current?.key, current, hasVideo, hasSvg, hasSvga]);
 
   // Safety net: never let a broken asset keep the gift invisible forever.
   // Long enough that a slow first-fetch of the video doesn't fall back to
@@ -605,11 +608,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] top-1/2 z-[60] overflow-hidden"
       aria-live="polite"
     >
       {/* Subtle vignette only — keep the room visible behind the gift */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 rounded-t-3xl" />
 
       {/* Cinematic 9-phase overlay (rarity + combo aware) */}
       <CinematicGiftFX
@@ -621,7 +624,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
 
       {/* sender chip */}
-      <div className="absolute left-4 top-6 flex items-center gap-2 gift-anim-sender">
+      <div className="absolute left-4 top-2 flex items-center gap-2 gift-anim-sender">
         {current.senderAvatar ? (
           <img
             src={current.senderAvatar}
@@ -642,7 +645,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       </div>
 
       {/* center/front-screen gift animation */}
-      <div className="absolute inset-x-0 top-[14vh] z-10 flex flex-col items-center px-2">
+      <div className="absolute inset-x-0 top-10 bottom-24 z-10 flex flex-col items-center px-2">
         {hasVideo ? (
 
 
@@ -659,6 +662,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             screenBlend={isBlackBg}
           />
 
+        ) : hasSvga ? (
+          <div className="relative w-full h-full flex items-center justify-center" onLoad={markCurrentReady}>
+            <SvgaPlayer
+              src={giftClipUrl ?? ""}
+              className="w-full h-full"
+              style={{ width: "100%", height: "100%", maxHeight: "44vh" }}
+            />
+          </div>
         ) : hasSvg ? (
           <AnimatedGiftImage
             src={giftClipUrl ?? ""}
@@ -689,7 +700,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* receiver DP */}
       {(current.receiverAvatar || current.receiverName) && (
-        <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-10 flex flex-col items-center gift-anim-caption">
+        <div className="absolute inset-x-0 bottom-2 z-10 flex flex-col items-center gift-anim-caption">
           <div className="relative">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
             {current.receiverAvatar ? (
