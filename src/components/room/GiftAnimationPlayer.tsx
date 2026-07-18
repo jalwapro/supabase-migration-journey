@@ -605,11 +605,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.5rem)] top-1/2 z-[60] overflow-hidden"
       aria-live="polite"
     >
       {/* Subtle vignette only — keep the room visible behind the gift */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 rounded-t-3xl" />
 
       {/* Cinematic 9-phase overlay (rarity + combo aware) */}
       <CinematicGiftFX
@@ -621,7 +621,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
 
       {/* sender chip */}
-      <div className="absolute left-4 top-6 flex items-center gap-2 gift-anim-sender">
+      <div className="absolute left-4 top-2 flex items-center gap-2 gift-anim-sender">
         {current.senderAvatar ? (
           <img
             src={current.senderAvatar}
@@ -642,7 +642,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       </div>
 
       {/* center/front-screen gift animation */}
-      <div className="absolute inset-x-0 top-[14vh] z-10 flex flex-col items-center px-2">
+      <div className="absolute inset-x-0 top-10 bottom-24 z-10 flex flex-col items-center px-2">
         {hasVideo ? (
 
 
