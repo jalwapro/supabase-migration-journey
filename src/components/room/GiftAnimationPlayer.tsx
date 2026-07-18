@@ -661,6 +661,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             screenBlend={isBlackBg}
           />
 
+        ) : hasSvga ? (
+          <div className="relative w-full h-full flex items-center justify-center" onLoad={markCurrentReady}>
+            <SvgaPlayer
+              src={giftClipUrl ?? ""}
+              className="w-full h-full"
+              style={{ width: "100%", height: "100%", maxHeight: "44vh" }}
+            />
+          </div>
         ) : hasSvg ? (
           <AnimatedGiftImage
             src={giftClipUrl ?? ""}
