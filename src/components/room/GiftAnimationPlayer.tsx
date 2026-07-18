@@ -529,7 +529,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     setReadyKey(null);
     setVideoDurationMs(null);
-    if (current && !hasVideo && !hasSvg && !hasSvga) {
+    if (current && !hasVideo && !hasSvg) {
+      // svga renders via canvas, mark ready immediately so play timer starts
       setReadyKey(current.key);
     }
   }, [current?.key, current, hasVideo, hasSvg, hasSvga]);
