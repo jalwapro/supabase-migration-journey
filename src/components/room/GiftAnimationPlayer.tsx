@@ -504,7 +504,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const giftClip = current ? getEffectiveGiftClip(current) : { url: null, type: null };
   const giftClipUrl = giftClip.url;
   const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
-  const hasSvg = !!giftClipUrl && !hasVideo;
+  const hasSvga = !!giftClipUrl && (giftClip.type === "svga" || giftClipUrl.toLowerCase().endsWith(".svga"));
+  const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
   const isBlackBg = isBlackBgGift(current?.giftName);
