@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RankRouteImport } from './routes/rank'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as GiftPreviewRouteImport } from './routes/gift-preview'
+import { Route as FramesPreviewRouteImport } from './routes/frames-preview'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ArTestRouteImport } from './routes/ar-test'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -114,6 +115,11 @@ const MessagesRoute = MessagesRouteImport.update({
 const GiftPreviewRoute = GiftPreviewRouteImport.update({
   id: '/gift-preview',
   path: '/gift-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FramesPreviewRoute = FramesPreviewRouteImport.update({
+  id: '/frames-preview',
+  path: '/frames-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -497,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRoute
+  '/frames-preview': typeof FramesPreviewRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
@@ -574,6 +581,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRoute
+  '/frames-preview': typeof FramesPreviewRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
@@ -651,6 +659,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRoute
+  '/frames-preview': typeof FramesPreviewRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
@@ -730,6 +739,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ar-test'
     | '/auth'
+    | '/frames-preview'
     | '/gift-preview'
     | '/messages'
     | '/rank'
@@ -807,6 +817,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ar-test'
     | '/auth'
+    | '/frames-preview'
     | '/gift-preview'
     | '/messages'
     | '/rank'
@@ -883,6 +894,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/ar-test'
     | '/auth'
+    | '/frames-preview'
     | '/gift-preview'
     | '/messages'
     | '/rank'
@@ -962,6 +974,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ArTestRoute: typeof ArTestRoute
   AuthRoute: typeof AuthRoute
+  FramesPreviewRoute: typeof FramesPreviewRoute
   GiftPreviewRoute: typeof GiftPreviewRoute
   MessagesRoute: typeof MessagesRoute
   RankRoute: typeof RankRoute
@@ -1019,6 +1032,13 @@ declare module '@tanstack/react-router' {
       path: '/gift-preview'
       fullPath: '/gift-preview'
       preLoaderRoute: typeof GiftPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/frames-preview': {
+      id: '/frames-preview'
+      path: '/frames-preview'
+      fullPath: '/frames-preview'
+      preLoaderRoute: typeof FramesPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1679,6 +1699,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ArTestRoute: ArTestRoute,
   AuthRoute: AuthRoute,
+  FramesPreviewRoute: FramesPreviewRoute,
   GiftPreviewRoute: GiftPreviewRoute,
   MessagesRoute: MessagesRoute,
   RankRoute: RankRoute,
@@ -1696,13 +1717,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
