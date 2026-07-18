@@ -132,9 +132,10 @@ export function GiftSheet({
   const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
   const giftVideoUrl = (g: Gift | null) => {
-    if (!g?.clip_path || !["mp4", "webm"].includes(g.clip_type ?? "")) return null;
+    if (!g?.clip_path || !["mp4", "webm", "svga"].includes(g.clip_type ?? "")) return null;
     return resolvePlayableGiftUrl(g.clip_path);
   };
+
 
   useEffect(() => {
     if (!open) return;
