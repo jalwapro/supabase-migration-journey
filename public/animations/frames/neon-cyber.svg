@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <linearGradient id="nc-1" x1="0" x2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset=".5" stop-color="#a855f7"/>
+      <stop offset="1" stop-color="#ec4899"/>
+    </linearGradient>
+    <filter id="nc-glow"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+  <g transform="translate(150 150)">
+    <g filter="url(#nc-glow)" opacity=".7">
+      <circle r="120" fill="none" stroke="url(#nc-1)" stroke-width="6"/>
+    </g>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/>
+      <circle r="120" fill="none" stroke="url(#nc-1)" stroke-width="3" stroke-dasharray="120 400"/>
+    </g>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="10s" repeatCount="indefinite"/>
+      <circle r="130" fill="none" stroke="#22d3ee" stroke-width="1.5" stroke-dasharray="2 10" opacity=".8"/>
+    </g>
+    <!-- corner brackets -->
+    <g stroke="url(#nc-1)" stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M-125 -95 L-125 -125 L-95 -125"/>
+      <path d="M125 -95 L125 -125 L95 -125"/>
+      <path d="M-125 95 L-125 125 L-95 125"/>
+      <path d="M125 95 L125 125 L95 125"/>
+      <animateTransform attributeName="transform" type="scale" values="1;1.05;1" dur="1.6s" repeatCount="indefinite"/>
+    </g>
+    <!-- scanning dot -->
+    <circle r="6" fill="#22d3ee" filter="url(#nc-glow)">
+      <animateMotion dur="4s" repeatCount="indefinite" path="M 0 -120 A 120 120 0 1 1 -0.1 -120 Z"/>
+    </circle>
+  </g>
+</svg>

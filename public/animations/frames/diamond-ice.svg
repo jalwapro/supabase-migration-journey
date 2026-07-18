@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <linearGradient id="di-shine" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".5" stop-color="#b6e5ff"/>
+      <stop offset="1" stop-color="#5aa9ff"/>
+    </linearGradient>
+    <radialGradient id="di-glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#cfefff" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#5aa9ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(150 150)">
+    <circle r="130" fill="url(#di-glow)">
+      <animate attributeName="opacity" values=".5;.9;.5" dur="2.6s" repeatCount="indefinite"/>
+    </circle>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="18s" repeatCount="indefinite"/>
+      <!-- diamond gems around the ring -->
+      <g fill="url(#di-shine)" stroke="#e6f6ff" stroke-width="1">
+        <path d="M0 -128 L8 -118 L0 -108 L-8 -118 Z"/>
+        <path d="M90 -90 L100 -82 L92 -72 L82 -80 Z"/>
+        <path d="M128 0 L118 8 L108 0 L118 -8 Z"/>
+        <path d="M90 90 L100 82 L92 72 L82 80 Z" transform="rotate(180)"/>
+        <path d="M0 -128 L8 -118 L0 -108 L-8 -118 Z" transform="rotate(180)"/>
+        <path d="M90 -90 L100 -82 L92 -72 L82 -80 Z" transform="rotate(180)"/>
+        <path d="M128 0 L118 8 L108 0 L118 -8 Z" transform="rotate(180)"/>
+        <path d="M90 90 L100 82 L92 72 L82 80 Z" transform="rotate(-90)"/>
+      </g>
+      <circle r="118" fill="none" stroke="url(#di-shine)" stroke-width="2" opacity=".7"/>
+    </g>
+    <!-- sparkle stars -->
+    <g fill="#ffffff">
+      <g transform="translate(-100 -30)">
+        <path d="M0 -6 L1.5 -1.5 L6 0 L1.5 1.5 L0 6 L-1.5 1.5 L-6 0 L-1.5 -1.5 Z">
+          <animateTransform attributeName="transform" type="scale" values="0;1.2;0" dur="1.8s" repeatCount="indefinite"/>
+        </path>
+      </g>
+      <g transform="translate(90 40)">
+        <path d="M0 -8 L2 -2 L8 0 L2 2 L0 8 L-2 2 L-8 0 L-2 -2 Z">
+          <animateTransform attributeName="transform" type="scale" values="0;1;0" dur="2s" begin=".5s" repeatCount="indefinite"/>
+        </path>
+      </g>
+      <g transform="translate(-40 90)">
+        <path d="M0 -5 L1.2 -1.2 L5 0 L1.2 1.2 L0 5 L-1.2 1.2 L-5 0 L-1.2 -1.2 Z">
+          <animateTransform attributeName="transform" type="scale" values="0;1;0" dur="1.5s" begin="1s" repeatCount="indefinite"/>
+        </path>
+      </g>
+    </g>
+  </g>
+</svg>
