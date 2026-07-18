@@ -614,12 +614,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       {/* Subtle vignette only — keep the room visible behind the gift */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 rounded-t-3xl" />
 
-      {/* Cinematic 9-phase overlay (rarity + combo aware) */}
-      <CinematicGiftFX
-        giftKey={current.key}
-        tier={coinsToTier(current.coins, current.quantity)}
-        combo={comboTier(current.quantity)}
-      />
+      {/* Cinematic pre-play overlay removed per user request */}
+
 
 
 
@@ -667,9 +663,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             <SvgaPlayer
               src={giftClipUrl ?? ""}
               className="w-full h-full"
-              style={{ width: "100%", height: "100%", maxHeight: "44vh" }}
+              style={{ width: "100%", height: "100%", minHeight: "60vh" }}
             />
           </div>
+
         ) : hasSvg ? (
           <AnimatedGiftImage
             src={giftClipUrl ?? ""}
