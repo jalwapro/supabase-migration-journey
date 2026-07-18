@@ -17,6 +17,13 @@ const svgFrames = [
 
 // Premium PNG frames (Behance style — ornate jeweled) with rotating aura + subtle sway
 const premiumFrames = [
+  // NEW — Behance ref inspired (svga/gif/vap style live streaming frames)
+  { id: "golden-fire-ring", name: "Golden Fire Ring", url: "/animations/frames/golden-fire-ring.png", tier: "Mythic",    aura: "from-orange-500/70 to-yellow-300/50",  spin: true,  sway: false },
+  { id: "dragon-coil",      name: "Dragon Coil",      url: "/animations/frames/dragon-coil.png",      tier: "Mythic",    aura: "from-red-500/60 to-yellow-400/50",     spin: false, sway: true  },
+  { id: "thunder-phoenix",  name: "Thunder Phoenix",  url: "/animations/frames/thunder-phoenix.png",  tier: "Legendary", aura: "from-blue-400/70 to-purple-500/50",    spin: true,  sway: false },
+  { id: "sakura-petals",    name: "Sakura Petals",    url: "/animations/frames/sakura-petals.png",    tier: "Epic",      aura: "from-pink-300/70 to-rose-400/40",      spin: false, sway: true  },
+  { id: "emperor-crown",    name: "Emperor Crown",    url: "/animations/frames/emperor-crown.png",    tier: "Mythic",    aura: "from-emerald-400/60 to-yellow-400/50", spin: false, sway: true  },
+  // Existing
   { id: "boss-emerald",    name: "Boss Emerald",     url: "/animations/frames/boss-emerald.png",    tier: "Mythic",    aura: "from-emerald-400/60 to-yellow-300/40",  spin: false, sway: true  },
   { id: "royal-elephant",  name: "Royal Elephant",   url: "/animations/frames/royal-elephant.png",  tier: "Legendary", aura: "from-yellow-300/60 to-pink-400/40",     spin: true,  sway: false },
   { id: "lion-ruby",       name: "Lion Ruby",        url: "/animations/frames/lion-ruby.png",       tier: "Mythic",    aura: "from-red-500/60 to-yellow-400/40",      spin: false, sway: true  },
