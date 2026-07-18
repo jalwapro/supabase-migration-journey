@@ -3,6 +3,7 @@ import { Mic, Video, Bell, MapPin, Loader2, Check, X } from "lucide-react";
 import { isNative } from "@/lib/native";
 
 const FLAG_KEY = "jalwa_install_perms_asked_v5";
+const PREVIEW_ONLY_PATHS = new Set(["/svga-preview", "/svga-frames-preview", "/frames-preview"]);
 
 type PermState = "idle" | "asking" | "granted" | "denied";
 type PermKey = "mic" | "camera" | "notifications" | "location";
@@ -37,6 +38,7 @@ export function InstallPermissionGate() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;
     // Show on native app, installed PWA, AND regular browser tab —
     // har user ko first-launch pe mic/camera/notif/location maangna hai.
     try {
