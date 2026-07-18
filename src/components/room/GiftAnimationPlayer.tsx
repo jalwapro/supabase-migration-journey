@@ -528,10 +528,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     setReadyKey(null);
     setVideoDurationMs(null);
-    if (current && !hasVideo && !hasSvg) {
+    if (current && !hasVideo && !hasSvg && !hasSvga) {
       setReadyKey(current.key);
     }
-  }, [current?.key, current, hasVideo, hasSvg]);
+  }, [current?.key, current, hasVideo, hasSvg, hasSvga]);
 
   // Safety net: never let a broken asset keep the gift invisible forever.
   // Long enough that a slow first-fetch of the video doesn't fall back to
