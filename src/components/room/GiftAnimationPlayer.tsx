@@ -200,7 +200,7 @@ function AnimatedGiftVideo({
 
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-[70] grid place-items-center bg-transparent">
+    <div className="pointer-events-none absolute inset-0 z-[70] grid place-items-center bg-transparent">
       {/* No placeholder while video buffers — avoids the static PNG/emoji
           flash before the clip actually plays. Video fades in on `onPlaying`. */}
       <video
