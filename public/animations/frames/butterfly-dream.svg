@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300">
+  <defs>
+    <linearGradient id="bd-1" x1="0" x2="1">
+      <stop offset="0" stop-color="#ffc4f2"/>
+      <stop offset=".5" stop-color="#c084fc"/>
+      <stop offset="1" stop-color="#7c3aed"/>
+    </linearGradient>
+    <radialGradient id="bd-glow" cx=".5" cy=".5" r=".5">
+      <stop offset="0" stop-color="#ffd6f7" stop-opacity=".8"/>
+      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <g transform="translate(150 150)">
+    <circle r="135" fill="url(#bd-glow)">
+      <animate attributeName="opacity" values=".4;.85;.4" dur="3s" repeatCount="indefinite"/>
+    </circle>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite"/>
+      <circle r="120" fill="none" stroke="url(#bd-1)" stroke-width="4" stroke-dasharray="1 6" stroke-linecap="round"/>
+    </g>
+
+    <!-- butterflies floating around -->
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="12s" repeatCount="indefinite"/>
+      <g transform="translate(0 -125)">
+        <g>
+          <path d="M0 0 Q-14 -12 -20 -4 Q-24 6 -8 8 Z" fill="url(#bd-1)"/>
+          <path d="M0 0 Q14 -12 20 -4 Q24 6 8 8 Z" fill="url(#bd-1)"/>
+          <animateTransform attributeName="transform" type="scale" values="1 1;1 .6;1 1" dur=".4s" repeatCount="indefinite"/>
+        </g>
+      </g>
+    </g>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="180" to="540" dur="12s" repeatCount="indefinite"/>
+      <g transform="translate(0 -125)">
+        <g>
+          <path d="M0 0 Q-12 -10 -18 -3 Q-22 6 -6 7 Z" fill="#ffc4f2"/>
+          <path d="M0 0 Q12 -10 18 -3 Q22 6 6 7 Z" fill="#ffc4f2"/>
+          <animateTransform attributeName="transform" type="scale" values="1 1;1 .6;1 1" dur=".45s" repeatCount="indefinite"/>
+        </g>
+      </g>
+    </g>
+
+    <!-- floating hearts -->
+    <g fill="#ff6ec4">
+      <path d="M-95 30 q0 -6 6 -6 q6 0 6 6 q0 6 -6 12 q-6 -6 -6 -12 Z">
+        <animate attributeName="opacity" values="0;1;0" dur="2s" repeatCount="indefinite"/>
+      </path>
+      <path d="M85 -20 q0 -5 5 -5 q5 0 5 5 q0 5 -5 10 q-5 -5 -5 -10 Z" transform="scale(1.4)">
+        <animate attributeName="opacity" values="0;1;0" dur="2.4s" begin=".6s" repeatCount="indefinite"/>
+      </path>
+    </g>
+  </g>
+</svg>
