@@ -446,14 +446,11 @@ function Page() {
                         </div>
                       ) : media ? (
                         isVideo ? (
-                          gridImage ? (
-                            <img src={gridImage} alt={it.name} loading="lazy" decoding="async" className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
-                          ) : (
-                            <video src={media} muted playsInline preload="metadata" className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
-                          )
+                          <video src={media} autoPlay loop muted playsInline preload="auto" poster={gridImage || undefined} className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
                         ) : (
                           <img src={media} alt={it.name} className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
                         )
+
                       ) : (
                         <div
                           className="relative h-[62%] w-full overflow-hidden rounded-xl shadow-[0_6px_16px_rgba(0,0,0,0.5)]"
