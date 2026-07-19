@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins, vipTierForLevel } from "@/lib/vip-levels";
-import { frameForLevel, seriesForLevel } from "@/lib/levelFrames";
+import { frameForLevel, seriesForLevel, LEVEL_FRAME_SERIES } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { Loader2, Save, Search, Crown, TrendingUp, Users, Coins } from "lucide-react";
 import { toast } from "sonner";
