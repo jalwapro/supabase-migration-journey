@@ -339,3 +339,38 @@ function JsonField({
     </div>
   );
 }
+
+function FramePreview({ url, label, size = 44 }: { url?: string | null; label?: string; size?: number }) {
+  const resolved = resolveAssetUrl(url ?? undefined);
+  const isVideo = !!resolved && /\.(webm|mp4|mov)(\?|$)/i.test(resolved);
+  if (!resolved) {
+    return (
+      <div
+        className="grid place-items-center rounded-lg border border-dashed border-border text-[9px] text-muted-foreground"
+        style={{ width: size, height: size }}
+      >
+        —
+      </div>
+    );
+  }
+  return (
+    <div
+      className="relative overflow-hidden rounded-lg bg-black/40"
+      style={{ width: size, height: size }}
+      title={label}
+    >
+      {isVideo ? (
+        <video
+          src={resolved}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="h-full w-full object-contain"
+        />
+      ) : (
+        <img src={resolved} alt={label ?? "frame"} className="h-full w-full object-contain" />
+      )}
+    </div>
+  );
+}
