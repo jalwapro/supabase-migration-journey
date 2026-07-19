@@ -411,7 +411,7 @@ function EditItemModal({
   async function pickFile(kind: "animation" | "preview" | "bg") {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*,video/mp4";
+    input.accept = "image/*,video/mp4,video/webm";
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -517,7 +517,7 @@ function EditItemModal({
                   {uploading === k ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                   {label}
                 </span>
-                {url ? <img src={url} alt="" className="h-10 w-10 rounded object-cover" /> : <span className="text-[10px] text-muted-foreground">Choose</span>}
+                {url ? <ThemeMediaPreview url={url} name={form.name || label} compact /> : <span className="text-[10px] text-muted-foreground">Choose</span>}
               </button>
             );
           })}

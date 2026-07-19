@@ -60,7 +60,18 @@ export function LevelAvatar({
       {ring && (
         <div className="pointer-events-none absolute inset-[-28%] z-0 dp-ring-spin" aria-hidden>
           {ringIsVideo ? (
-            <video src={ring} autoPlay muted loop playsInline className="h-full w-full object-contain" />
+            <video
+              key={ring}
+              src={ring}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="h-full w-full object-contain"
+              style={{ backgroundColor: "transparent" }}
+              onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
+            />
           ) : (
             <img src={ring} alt="" className="h-full w-full object-contain" draggable={false} />
           )}
@@ -103,12 +114,16 @@ export function LevelAvatar({
           >
             {frameIsVideo ? (
               <video
+                key={frame}
                 src={frame}
                 autoPlay
                 muted
                 loop
                 playsInline
+                preload="auto"
                 className="h-full w-full object-contain"
+                style={{ backgroundColor: "transparent" }}
+                onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
               />
             ) : (
               <img
