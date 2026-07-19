@@ -33,8 +33,12 @@ type FrameItem = {
   preview_url: string | null;
   bg_image: string | null;
   is_active: boolean;
-  theme_categories?: { name: string | null; slug: string | null } | null;
+  theme_categories?: { name: string | null; slug: string | null } | { name: string | null; slug: string | null }[] | null;
 };
+
+function frameCategory(item: FrameItem) {
+  return Array.isArray(item.theme_categories) ? item.theme_categories[0] : item.theme_categories;
+}
 
 function UsersAdmin() {
   const qc = useQueryClient();
@@ -66,8 +70,9 @@ function UsersAdmin() {
         .order("sort", { ascending: true });
       if (error) throw error;
       return ((data ?? []) as FrameItem[]).filter((item) => {
-        const slug = item.theme_categories?.slug?.toLowerCase() ?? "";
-        const name = item.theme_categories?.name?.toLowerCase() ?? "";
+        const category = frameCategory(item);
+        const slug = category?.slug?.toLowerCase() ?? "";
+        const name = category?.name?.toLowerCase() ?? "";
         return slug === "frame" || slug === "frames" || name.includes("frame");
       });
     },
