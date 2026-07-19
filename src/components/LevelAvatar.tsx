@@ -142,10 +142,11 @@ export function LevelAvatar({
         return (
           <div
             key={item.level}
-            className="pointer-events-none absolute inset-[-42%]"
-            style={{ transform: "translateY(-6%)", zIndex: 5 + idx }}
+            className="pointer-events-none absolute inset-[-38%] flex items-center justify-center"
+            style={{ zIndex: 5 + idx }}
             aria-hidden
           >
+
             {isVideo ? (
               <video
                 src={url}
