@@ -207,6 +207,8 @@ function Page() {
       ? (profile?.diamonds ?? 0) >= it.price_diamonds
       : (profile?.coins ?? 0) >= it.price;
   };
+  const userLevel = (profile as any)?.vip_level ?? (profile as any)?.level ?? 0;
+  const isLocked = (it: ShopItem) => (it.min_level ?? 0) > userLevel;
   const activeCatObj = cats.find((c) => c.id === currentCat) ?? null;
 
   return (
