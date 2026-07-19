@@ -66,6 +66,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/vip", label: "VIP Tiers", icon: Crown },
       { to: "/admin/vip-levels", label: "VIP Levels (100)", icon: Crown },
       { to: "/admin/profile-admin", label: "Profile Admin", icon: UserCog },
+      { to: "/admin/assign-frame", label: "Assign DP Frame", icon: Crown },
     ],
   },
 ];
