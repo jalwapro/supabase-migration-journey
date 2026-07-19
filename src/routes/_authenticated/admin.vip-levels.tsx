@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins, vipTierForLevel } from "@/lib/vip-levels";
+import { frameForLevel, seriesForLevel } from "@/lib/levelFrames";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 import { Loader2, Save, Search, Crown, TrendingUp, Users, Coins } from "lucide-react";
 import { toast } from "sonner";
 
@@ -138,18 +140,21 @@ function VipLevelsAdmin() {
         </div>
       ) : (
         <div className="glass overflow-hidden rounded-2xl">
-          <div className="hidden grid-cols-[64px_1fr_1fr_1fr_120px_100px] gap-2 border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground md:grid">
-            <span>Lvl</span><span>Tier</span><span>Title</span><span>Threshold</span><span>Reward</span><span></span>
+          <div className="hidden grid-cols-[64px_64px_1fr_1fr_1fr_120px_100px] gap-2 border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground md:grid">
+            <span>Lvl</span><span>Frame</span><span>Tier</span><span>Title</span><span>Threshold</span><span>Reward</span><span></span>
           </div>
           <ul className="divide-y divide-border">
             {filtered.map((r) => {
               const tier = vipTierForLevel(r.level);
+              const frameUrl = r.frame_url || frameForLevel(r.level);
+              const series = seriesForLevel(r.level);
               return (
                 <li
                   key={r.level}
-                  className="grid grid-cols-[64px_1fr_120px] items-center gap-2 px-3 py-2 md:grid-cols-[64px_1fr_1fr_1fr_120px_100px]"
+                  className="grid grid-cols-[64px_64px_1fr_120px] items-center gap-2 px-3 py-2 md:grid-cols-[64px_64px_1fr_1fr_1fr_120px_100px]"
                 >
                   <VipBadge level={r.level} size="sm" />
+                  <FramePreview url={frameUrl} label={series?.series} />
                   <span className="truncate text-xs font-semibold" style={{ color: tier.glow }}>
                     {r.tier}
                   </span>
@@ -242,8 +247,22 @@ function EditModal({
           <Field label="Badge URL">
             <input value={draft.badge_url ?? ""} onChange={(e) => set("badge_url", e.target.value || null)} className={input} />
           </Field>
-          <Field label="Frame URL">
+          <Field label="Frame URL (leave blank to auto-use level series frame)">
             <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} />
+            <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
+              <FramePreview
+                url={draft.frame_url || frameForLevel(draft.level)}
+                label={seriesForLevel(draft.level)?.series}
+                size={72}
+              />
+              <div className="text-[11px] text-muted-foreground">
+                <p className="font-bold text-foreground">{seriesForLevel(draft.level)?.series ?? "—"}</p>
+                <p>{seriesForLevel(draft.level)?.label}</p>
+                <p className="mt-0.5 opacity-70">
+                  {draft.frame_url ? "Custom frame" : "Auto (level series)"}
+                </p>
+              </div>
+            </div>
           </Field>
           <Field label="Bubble URL">
             <input value={draft.bubble_url ?? ""} onChange={(e) => set("bubble_url", e.target.value || null)} className={input} />
@@ -317,6 +336,41 @@ function JsonField({
         className={`${input} font-mono`}
       />
       {err && <p className="mt-0.5 text-[10px] text-red-400">{err}</p>}
+    </div>
+  );
+}
+
+function FramePreview({ url, label, size = 44 }: { url?: string | null; label?: string; size?: number }) {
+  const resolved = resolveAssetUrl(url ?? undefined);
+  const isVideo = !!resolved && /\.(webm|mp4|mov)(\?|$)/i.test(resolved);
+  if (!resolved) {
+    return (
+      <div
+        className="grid place-items-center rounded-lg border border-dashed border-border text-[9px] text-muted-foreground"
+        style={{ width: size, height: size }}
+      >
+        —
+      </div>
+    );
+  }
+  return (
+    <div
+      className="relative overflow-hidden rounded-lg bg-black/40"
+      style={{ width: size, height: size }}
+      title={label}
+    >
+      {isVideo ? (
+        <video
+          src={resolved}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="h-full w-full object-contain"
+        />
+      ) : (
+        <img src={resolved} alt={label ?? "frame"} className="h-full w-full object-contain" />
+      )}
     </div>
   );
 }
