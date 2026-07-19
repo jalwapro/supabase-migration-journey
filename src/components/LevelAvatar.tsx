@@ -89,7 +89,7 @@ export function LevelAvatar({
       {/* Gradient ring removed — DP frames now handle level visuals */}
 
       {/* Inner disc */}
-      <div className="absolute inset-[8%] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
+      <div className="absolute inset-0 overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
         {src ? (
           <img src={src} alt="" className="h-full w-full object-cover" />
         ) : (
