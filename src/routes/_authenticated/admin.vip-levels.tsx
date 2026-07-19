@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins, vipTierForLevel } from "@/lib/vip-levels";
-import { frameForLevel, seriesForLevel } from "@/lib/levelFrames";
+import { frameForLevel, seriesForLevel, LEVEL_FRAME_SERIES } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { Loader2, Save, Search, Crown, TrendingUp, Users, Coins } from "lucide-react";
 import { toast } from "sonner";
@@ -122,6 +122,46 @@ function VipLevelsAdmin() {
         <StatCard icon={Coins} label="Total gifted" value={stats.data ? formatCoins(stats.data.totalCoins) : "—"} />
         <StatCard icon={TrendingUp} label="Top level" value={stats.data ? `L${stats.data.topLevel}` : "—"} />
         <StatCard icon={Crown} label="Max tier holders" value={stats.data?.topCount.toLocaleString() ?? "—"} />
+      </div>
+
+      {/* 10 Series Gallery — Jalwa Level 1 → 100 DP Frame Collection */}
+      <div className="glass mb-4 rounded-2xl p-3">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-black tracking-wide text-[color:var(--gold,#f5c542)]">
+              JALWA · LEVEL 1 → 100 DP FRAME COLLECTION
+            </p>
+            <p className="text-[10px] text-muted-foreground">
+              10 premium series · auto-assigned per level · users equip via level-up
+            </p>
+          </div>
+          <span className="rounded-full bg-[color:var(--gold,#f5c542)]/15 px-2 py-0.5 text-[10px] font-bold text-[color:var(--gold,#f5c542)]">
+            AUTO-UNLOCK
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
+          {LEVEL_FRAME_SERIES.map((s, i) => (
+            <div
+              key={s.series}
+              className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-b from-black/40 to-black/10 p-2"
+            >
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-[9px] font-black tracking-widest text-[color:var(--gold,#f5c542)]">
+                  {i + 1}. {s.series.toUpperCase()}
+                </span>
+                <span className="rounded-full bg-primary/20 px-1.5 py-[1px] text-[9px] font-bold text-primary">
+                  L{s.minLevel}-{s.maxLevel}
+                </span>
+              </div>
+              <div className="grid place-items-center py-1">
+                <FramePreview url={s.url} label={s.series} size={88} />
+              </div>
+              <p className="mt-1 truncate text-center text-[9px] font-semibold text-muted-foreground">
+                {s.label}
+              </p>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="glass mb-4 flex items-center gap-2 rounded-full px-3 py-2">
