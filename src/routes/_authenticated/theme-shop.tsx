@@ -430,15 +430,12 @@ function Page() {
                         >
                           {media ? (
                             isVideo ? (
-                              gridImage ? (
-                                <img src={gridImage} alt={it.name} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-                              ) : (
-                                <video src={media} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
-                              )
+                              <video src={media} autoPlay loop muted playsInline preload="auto" poster={gridImage || undefined} className="absolute inset-0 h-full w-full object-cover" />
                             ) : (
                               <img src={media} alt={it.name} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
                             )
                           ) : null}
+
                           <div className="absolute inset-x-0 top-2 flex flex-col items-center">
                             <div className="h-6 w-6 rounded-full border-2 border-white/80 bg-gradient-to-br from-pink-400 to-fuchsia-600" />
                             <div className="mt-0.5 text-[9px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
@@ -449,14 +446,11 @@ function Page() {
                         </div>
                       ) : media ? (
                         isVideo ? (
-                          gridImage ? (
-                            <img src={gridImage} alt={it.name} loading="lazy" decoding="async" className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
-                          ) : (
-                            <video src={media} muted playsInline preload="metadata" className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
-                          )
+                          <video src={media} autoPlay loop muted playsInline preload="auto" poster={gridImage || undefined} className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
                         ) : (
                           <img src={media} alt={it.name} className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
                         )
+
                       ) : (
                         <div
                           className="relative h-[62%] w-full overflow-hidden rounded-xl shadow-[0_6px_16px_rgba(0,0,0,0.5)]"
