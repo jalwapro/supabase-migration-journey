@@ -61,7 +61,7 @@ export function LevelAvatar({
 
       {/* Equipped aura ring behind avatar */}
       {ringUrl && (
-        <div className="pointer-events-none absolute inset-[-28%] z-0 dp-ring-spin" aria-hidden>
+        <div className="pointer-events-none absolute inset-[-28%] z-0" aria-hidden>
           {ringIsVideo ? (
             <video
               key={ringUrl}
