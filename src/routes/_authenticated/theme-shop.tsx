@@ -615,7 +615,19 @@ function Page() {
                   </div>
                 </div>
 
-                {owned ? (
+                {isLocked(it) && !owned ? (
+                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500/15 to-fuchsia-500/15 p-3 ring-1 ring-amber-300/40">
+                    <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 shadow-[0_0_18px_rgba(212,175,55,0.5)]">
+                      <Lock className="h-5 w-5 text-amber-950" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-black text-white">Locked · Reach Level {it.min_level}</p>
+                      <p className="text-[11px] text-white/60">
+                        You're Lv {userLevel}. Send gifts to level up and auto-unlock this frame.
+                      </p>
+                    </div>
+                  </div>
+                ) : owned ? (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toast.info("Choose a friend to send this to (coming soon)")}
