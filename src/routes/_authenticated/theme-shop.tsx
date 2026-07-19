@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight, X, Crown, Gem, Gift } from "lucide-react";
+import { Play, Check, Coins, Loader2, Sparkles, ChevronLeft, ChevronRight, X, Crown, Gem, Gift, Lock } from "lucide-react";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { toast } from "sonner";
 
@@ -31,6 +31,7 @@ type ShopItem = {
   is_free: boolean;
   primary_color: string;
   accent_color: string;
+  min_level: number | null;
 };
 type OwnedRow = { theme_id: string; expires_at: string | null };
 
@@ -206,6 +207,8 @@ function Page() {
       ? (profile?.diamonds ?? 0) >= it.price_diamonds
       : (profile?.coins ?? 0) >= it.price;
   };
+  const userLevel = (profile as any)?.vip_level ?? (profile as any)?.level ?? 0;
+  const isLocked = (it: ShopItem) => (it.min_level ?? 0) > userLevel;
   const activeCatObj = cats.find((c) => c.id === currentCat) ?? null;
 
   return (
@@ -493,6 +496,16 @@ function Page() {
                         Owned
                       </span>
                     )}
+                    {isLocked(it) && !owned && (
+                      <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-1 rounded-2xl bg-black/70 backdrop-blur-[2px]">
+                        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 ring-2 ring-amber-200/60 shadow-[0_0_16px_rgba(212,175,55,0.5)]">
+                          <Lock className="h-4 w-4 text-amber-950" />
+                        </div>
+                        <span className="rounded-full bg-black/80 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-200 ring-1 ring-amber-300/40">
+                          Lv {it.min_level}
+                        </span>
+                      </div>
+                    )}
                   </button>
                 );
               })}
@@ -602,7 +615,19 @@ function Page() {
                   </div>
                 </div>
 
-                {owned ? (
+                {isLocked(it) && !owned ? (
+                  <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500/15 to-fuchsia-500/15 p-3 ring-1 ring-amber-300/40">
+                    <div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 shadow-[0_0_18px_rgba(212,175,55,0.5)]">
+                      <Lock className="h-5 w-5 text-amber-950" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-black text-white">Locked · Reach Level {it.min_level}</p>
+                      <p className="text-[11px] text-white/60">
+                        You're Lv {userLevel}. Send gifts to level up and auto-unlock this frame.
+                      </p>
+                    </div>
+                  </div>
+                ) : owned ? (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => toast.info("Choose a friend to send this to (coming soon)")}
