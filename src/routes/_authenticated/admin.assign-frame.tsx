@@ -67,28 +67,20 @@ function AssignFrameAdmin() {
 
   const assign = useMutation({
     mutationFn: async ({ theme, userId }: { theme: Theme; userId: string }) => {
-      const url = theme.animation_url || theme.preview_url;
-      if (!url) throw new Error("Frame has no media");
-      const expires = permanent
-        ? null
-        : new Date(Date.now() + days * 86400_000).toISOString();
-      const { error } = await supabase
-        .from("profiles")
-        .update({ frame: url, theme_id: theme.id, frame_expires_at: expires })
-        .eq("id", userId);
+      if (!(theme.animation_url || theme.preview_url)) throw new Error("Frame has no media");
+      const expires = permanent ? null : new Date(Date.now() + days * 86400_000).toISOString();
+      const { error } = await supabase.rpc("admin_assign_frame", {
+        _user_id: userId,
+        _theme_id: theme.id,
+        _equip: true,
+        _expires_at: expires,
+      });
       if (error) throw error;
-      // Grant inventory entry too (ignore duplicate)
-      await supabase
-        .from("user_themes")
-        .upsert(
-          { user_id: userId, theme_id: theme.id, expires_at: expires },
-          { onConflict: "user_id,theme_id" },
-        );
     },
     onSuccess: () => {
       toast.success("Frame assigned & equipped");
       qc.invalidateQueries({ queryKey: ["admin_assign_users"] });
-      setSelectedUser((u) => u); // keep
+      setSelectedUser((u) => u); // keep current selection while the list refreshes
     },
     onError: (e: any) => toast.error(e.message ?? "Failed"),
   });
@@ -108,8 +100,8 @@ function AssignFrameAdmin() {
     onError: (e: any) => toast.error(e.message ?? "Failed"),
   });
 
-  const activeThemes = useMemo(
-    () => (themes.data ?? []).filter((t) => t.is_active && (t.animation_url || t.preview_url)),
+  const availableThemes = useMemo(
+    () => (themes.data ?? []).filter((t) => t.animation_url || t.preview_url),
     [themes.data],
   );
 
@@ -144,11 +136,13 @@ function AssignFrameAdmin() {
                     : "border-white/10 hover:bg-white/5"
                 }`}
               >
-                <img
-                  src={u.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${u.username}`}
-                  className="w-10 h-10 rounded-full object-cover"
-                  alt=""
-                />
+                {u.avatar ? (
+                  <img src={u.avatar} className="w-10 h-10 rounded-full object-cover" alt="" />
+                ) : (
+                  <span className="grid h-10 w-10 place-items-center rounded-full bg-primary/20 text-sm font-black text-primary">
+                    {(u.username || u.full_name || "J").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium truncate">{u.username || u.full_name || "—"}</div>
                   <div className="text-[11px] opacity-60 truncate">
@@ -167,11 +161,13 @@ function AssignFrameAdmin() {
         <div className="rounded-2xl border border-primary/40 bg-primary/5 p-4 space-y-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <img
-                src={selectedUser.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${selectedUser.username}`}
-                className="w-14 h-14 rounded-full object-cover"
-                alt=""
-              />
+                {selectedUser.avatar ? (
+                  <img src={selectedUser.avatar} className="w-14 h-14 rounded-full object-cover" alt="" />
+                ) : (
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-primary/20 text-lg font-black text-primary">
+                    {(selectedUser.username || selectedUser.full_name || "J").slice(0, 1).toUpperCase()}
+                  </span>
+                )}
               <div>
                 <div className="font-semibold">{selectedUser.username || selectedUser.full_name}</div>
                 <div className="text-xs opacity-60">
@@ -224,12 +220,12 @@ function AssignFrameAdmin() {
 
       {/* Frames grid */}
       <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-        <div className="text-sm font-semibold mb-3">Available Frames ({activeThemes.length})</div>
+        <div className="text-sm font-semibold mb-3">Available Frames ({availableThemes.length})</div>
         {themes.isLoading ? (
           <Loader2 className="w-5 h-5 animate-spin" />
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-            {activeThemes.map((t) => {
+            {availableThemes.map((t) => {
               const url = t.animation_url || t.preview_url!;
               return (
                 <div key={t.id} className="rounded-xl border border-white/10 bg-black/30 p-2 flex flex-col">
@@ -241,6 +237,7 @@ function AssignFrameAdmin() {
                     )}
                   </div>
                   <div className="text-xs font-medium mt-2 truncate">{t.name}</div>
+                  {!t.is_active && <div className="text-[10px] text-[color:var(--gold)]">Admin only</div>}
                   <button
                     disabled={!selectedUser || assign.isPending}
                     onClick={() => selectedUser && assign.mutate({ theme: t, userId: selectedUser.id })}

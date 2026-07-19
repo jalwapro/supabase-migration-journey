@@ -25,6 +25,45 @@ type Theme = {
 };
 type Cat = { id: string; name: string };
 
+const VIDEO_MEDIA_RE = /\.(mp4|webm|mov)($|\?)/i;
+
+function isVideoMedia(url?: string | null) {
+  return !!url && VIDEO_MEDIA_RE.test(url);
+}
+
+function ThemeMediaPreview({
+  url,
+  name,
+  compact = false,
+}: {
+  url?: string | null;
+  name: string;
+  compact?: boolean;
+}) {
+  const mediaClass = compact ? "h-10 w-10 rounded object-contain" : "h-full w-full object-contain";
+
+  if (!url) {
+    return compact ? null : <span className="text-[10px] text-muted-foreground">No media</span>;
+  }
+
+  return isVideoMedia(url) ? (
+    <video
+      key={url}
+      src={url}
+      autoPlay
+      loop
+      muted
+      playsInline
+      preload="auto"
+      className={mediaClass}
+      style={{ backgroundColor: "transparent" }}
+      onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
+    />
+  ) : (
+    <img src={url} alt={name} className={mediaClass} draggable={false} />
+  );
+}
+
 async function uploadToShop(file: File, folder: string) {
   const ext = file.name.split(".").pop() ?? "bin";
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;
@@ -79,7 +118,7 @@ function ThemesAdmin() {
   async function pickFile(kind: "animation" | "preview") {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = kind === "animation" ? "image/gif,image/webp,image/png,video/mp4" : "image/*";
+    input.accept = kind === "animation" ? "image/gif,image/webp,image/png,video/mp4,video/webm" : "image/*,video/webm,video/mp4";
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -202,7 +241,7 @@ function ThemesAdmin() {
               Animation (gif / webp / mp4)
             </span>
             {draft.animation_url ? (
-              <img src={draft.animation_url} alt="" className="h-10 w-10 rounded object-cover" />
+              <ThemeMediaPreview url={draft.animation_url} name={draft.name || "Animation"} compact />
             ) : (
               <span className="text-[10px] text-muted-foreground">Choose file</span>
             )}
@@ -218,7 +257,7 @@ function ThemesAdmin() {
               Static preview image (optional)
             </span>
             {draft.preview_url ? (
-              <img src={draft.preview_url} alt="" className="h-10 w-10 rounded object-cover" />
+              <ThemeMediaPreview url={draft.preview_url} name={draft.name || "Preview"} compact />
             ) : (
               <span className="text-[10px] text-muted-foreground">Choose file</span>
             )}
@@ -293,20 +332,16 @@ function ThemesAdmin() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {list.data?.filter((t) => filterCat === "all" || t.category_id === filterCat).map((t) => (
           <div key={t.id} className="glass overflow-hidden rounded-2xl">
-            <div className="grid aspect-square place-items-center bg-black/40 p-3">
-              {t.animation_url ? (
-                t.animation_url.match(/\.(mp4|webm|mov)($|\?)/i) ? (
-                  <video src={t.animation_url} autoPlay loop muted playsInline className="max-h-full" />
-                ) : (
-                  <img src={t.animation_url} alt={t.name} className="max-h-full object-contain" />
-                )
-              ) : t.preview_url || t.bg_image ? (
-                (t.preview_url ?? t.bg_image!).match(/\.(mp4|webm|mov)($|\?)/i) ? (
-                  <video src={t.preview_url ?? t.bg_image!} autoPlay loop muted playsInline className="max-h-full" />
-                ) : (
-                  <img src={t.preview_url ?? t.bg_image!} alt={t.name} className="max-h-full object-contain" />
-                )
-              ) : null}
+            <div
+              className="grid aspect-square place-items-center bg-black/20 p-3"
+              style={{
+                backgroundImage:
+                  "linear-gradient(45deg, rgba(255,255,255,0.07) 25%, transparent 25%), linear-gradient(-45deg, rgba(255,255,255,0.07) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.07) 75%), linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.07) 75%)",
+                backgroundSize: "18px 18px",
+                backgroundPosition: "0 0, 0 9px, 9px -9px, -9px 0px",
+              }}
+            >
+              <ThemeMediaPreview url={t.animation_url || t.preview_url || t.bg_image} name={t.name} />
             </div>
             <div className="p-2 text-xs">
               <p className="truncate font-bold">{t.name}</p>
@@ -376,7 +411,7 @@ function EditItemModal({
   async function pickFile(kind: "animation" | "preview" | "bg") {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*,video/mp4";
+    input.accept = "image/*,video/mp4,video/webm";
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) return;
@@ -482,7 +517,7 @@ function EditItemModal({
                   {uploading === k ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
                   {label}
                 </span>
-                {url ? <img src={url} alt="" className="h-10 w-10 rounded object-cover" /> : <span className="text-[10px] text-muted-foreground">Choose</span>}
+                {url ? <ThemeMediaPreview url={url} name={form.name || label} compact /> : <span className="text-[10px] text-muted-foreground">Choose</span>}
               </button>
             );
           })}
