@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { lazy, Suspense, useEffect, useState } from "react";
-
-const Lottie = lazy(() => import("lottie-react"));
+import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/lottie-preview")({
   component: LottiePreview,
@@ -18,22 +16,43 @@ const SAMPLES = [
 ];
 
 function Card({ name, file }: { name: string; file: string }) {
-  const [data, setData] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
+  const container = useRef<HTMLDivElement>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
   useEffect(() => {
-    setMounted(true);
-    fetch(file).then((r) => (r.ok ? r.json() : null)).then(setData).catch(() => setData(null));
+    let anim: any;
+    let cancelled = false;
+    (async () => {
+      try {
+        const mod: any = await import("lottie-web/build/player/lottie_light.js");
+        const lottie = mod.default ?? mod;
+        const res = await fetch(file);
+        if (!res.ok) throw new Error("404");
+        const data = await res.json();
+        if (cancelled || !container.current) return;
+        anim = lottie.loadAnimation({
+          container: container.current,
+          renderer: "svg",
+          loop: true,
+          autoplay: true,
+          animationData: data,
+        });
+        setLoaded(true);
+      } catch (e: any) {
+        setErr(e.message || "failed");
+      }
+    })();
+    return () => {
+      cancelled = true;
+      anim?.destroy?.();
+    };
   }, [file]);
+
   return (
     <div className="bg-black/40 border border-purple-500/30 rounded-2xl p-4 flex flex-col items-center">
-      <div className="w-full aspect-square flex items-center justify-center">
-        {mounted && data ? (
-          <Suspense fallback={<div className="text-white/40 text-sm">…</div>}>
-            <Lottie animationData={data} loop autoplay style={{ width: "100%", height: "100%" }} />
-          </Suspense>
-        ) : (
-          <div className="text-white/40 text-sm">{data === null && mounted ? "not found" : "loading…"}</div>
-        )}
+      <div ref={container} className="w-full aspect-square flex items-center justify-center">
+        {!loaded && <div className="text-white/40 text-sm">{err ?? "loading…"}</div>}
       </div>
       <div className="text-white font-semibold mt-2">{name}</div>
     </div>
