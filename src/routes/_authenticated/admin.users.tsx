@@ -102,7 +102,7 @@ function UsersAdmin() {
 
   const assignFrame = useMutation({
     mutationFn: async ({ id, themeId }: { id: string; themeId: string }) => {
-      const { error } = await supabase.rpc("admin_assign_frame", { _user_id: id, _theme_id: themeId, _equip: true });
+      const { error } = await supabase.rpc("admin_assign_frame", { _user_id: id, _theme_id: themeId, _equip: true, _expires_at: null });
       if (error) throw error;
     },
     onSuccess: () => {
