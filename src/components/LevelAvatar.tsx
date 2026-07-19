@@ -2,7 +2,7 @@ import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
-import { frameForLevel } from "@/lib/levelFrames";
+import { frameForLevel, framesForLevelStack } from "@/lib/levelFrames";
 
 
 type Size = "sm" | "md" | "lg" | "xl";
@@ -38,7 +38,10 @@ export function LevelAvatar({
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
-  // Auto-assign frame from level series if user has none equipped.
+  // Auto-assign frame(s) from level series if user has none equipped.
+  // Stack every frame from the current series' first level up to the user's
+  // current level so progression is visible on the avatar.
+  const stackFrames = frame ? [] : framesForLevelStack(level);
   const effectiveFrame = frame ?? frameForLevel(level);
   const frameUrl = resolveAssetUrl(effectiveFrame);
   const ringUrl = resolveAssetUrl(ring);
@@ -108,20 +111,51 @@ export function LevelAvatar({
       </div>
 
       {/* Equipped DP frame overlay with sparkles.
-          Frame art (crown+wings) has its transparent hole roughly centered but
-          content extends outward — use a larger inset so the hole matches the
-          avatar disc, and a small upward shift so crown-style frames align. */}
-      {frameUrl && (
-        <>
+          When no custom frame is equipped, stack every frame in the current
+          10-level series up to the user's level so progression is visible. */}
+      {frame && frameUrl && (
+        <div
+          className="pointer-events-none absolute inset-[-42%] z-[5]"
+          style={{ transform: "translateY(-6%)" }}
+          aria-hidden
+        >
+          {frameIsVideo ? (
+            <video
+              key={frameUrl}
+              src={frameUrl}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="h-full w-full object-contain"
+              style={{ backgroundColor: "transparent" }}
+              onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
+            />
+          ) : (
+            <img
+              src={frameUrl}
+              alt=""
+              className="h-full w-full object-contain"
+              draggable={false}
+            />
+          )}
+        </div>
+      )}
+      {!frame && stackFrames.map((item, idx) => {
+        const url = resolveAssetUrl(item.url);
+        if (!url) return null;
+        const isVideo = /\.(mp4|webm|mov)($|\?)/i.test(url);
+        return (
           <div
-            className="pointer-events-none absolute inset-[-42%] z-[5]"
-            style={{ transform: "translateY(-6%)" }}
+            key={item.level}
+            className="pointer-events-none absolute inset-[-42%]"
+            style={{ transform: "translateY(-6%)", zIndex: 5 + idx }}
             aria-hidden
           >
-            {frameIsVideo ? (
+            {isVideo ? (
               <video
-                key={frameUrl}
-                src={frameUrl}
+                src={url}
                 autoPlay
                 muted
                 loop
@@ -132,22 +166,18 @@ export function LevelAvatar({
                 onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
               />
             ) : (
-              <img
-                src={frameUrl}
-                alt=""
-                className="h-full w-full object-contain"
-                draggable={false}
-              />
+              <img src={url} alt="" className="h-full w-full object-contain" draggable={false} />
             )}
           </div>
-          {/* Sparkle particles */}
-          <span className="pointer-events-none absolute inset-[-22%] z-[6]" aria-hidden>
-            <span className="dp-sparkle dp-sparkle-a" />
-            <span className="dp-sparkle dp-sparkle-b" />
-            <span className="dp-sparkle dp-sparkle-c" />
-            <span className="dp-sparkle dp-sparkle-d" />
-          </span>
-        </>
+        );
+      })}
+      {(frameUrl || stackFrames.length > 0) && (
+        <span className="pointer-events-none absolute inset-[-22%] z-[20]" aria-hidden>
+          <span className="dp-sparkle dp-sparkle-a" />
+          <span className="dp-sparkle dp-sparkle-b" />
+          <span className="dp-sparkle dp-sparkle-c" />
+          <span className="dp-sparkle dp-sparkle-d" />
+        </span>
       )}
 
       {/* Level chip */}
