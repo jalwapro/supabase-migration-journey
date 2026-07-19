@@ -140,18 +140,21 @@ function VipLevelsAdmin() {
         </div>
       ) : (
         <div className="glass overflow-hidden rounded-2xl">
-          <div className="hidden grid-cols-[64px_1fr_1fr_1fr_120px_100px] gap-2 border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground md:grid">
-            <span>Lvl</span><span>Tier</span><span>Title</span><span>Threshold</span><span>Reward</span><span></span>
+          <div className="hidden grid-cols-[64px_64px_1fr_1fr_1fr_120px_100px] gap-2 border-b border-border px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground md:grid">
+            <span>Lvl</span><span>Frame</span><span>Tier</span><span>Title</span><span>Threshold</span><span>Reward</span><span></span>
           </div>
           <ul className="divide-y divide-border">
             {filtered.map((r) => {
               const tier = vipTierForLevel(r.level);
+              const frameUrl = r.frame_url || frameForLevel(r.level);
+              const series = seriesForLevel(r.level);
               return (
                 <li
                   key={r.level}
-                  className="grid grid-cols-[64px_1fr_120px] items-center gap-2 px-3 py-2 md:grid-cols-[64px_1fr_1fr_1fr_120px_100px]"
+                  className="grid grid-cols-[64px_64px_1fr_120px] items-center gap-2 px-3 py-2 md:grid-cols-[64px_64px_1fr_1fr_1fr_120px_100px]"
                 >
                   <VipBadge level={r.level} size="sm" />
+                  <FramePreview url={frameUrl} label={series?.series} />
                   <span className="truncate text-xs font-semibold" style={{ color: tier.glow }}>
                     {r.tier}
                   </span>
