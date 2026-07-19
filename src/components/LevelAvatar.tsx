@@ -2,7 +2,7 @@ import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
-import { frameForLevel } from "@/lib/levelFrames";
+import { frameForLevel, framesForLevelStack } from "@/lib/levelFrames";
 
 
 type Size = "sm" | "md" | "lg" | "xl";
