@@ -213,309 +213,329 @@ function Page() {
 
   return (
     <>
-      <div className="shop-premium mx-auto min-h-[100dvh] max-w-md pb-28">
-        {/* Premium header */}
+      <div className="shop-premium mx-auto min-h-[100dvh] max-w-md bg-[#0f071d] pb-28 text-white">
+        {/* Sticky header */}
         <header
-          className="sticky top-0 z-30 border-b border-[color:var(--gold)]/25 bg-[#0a0603]/95 backdrop-blur"
+          className="sticky top-0 z-30 bg-[#0f071d]/95 backdrop-blur"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
-          <div className="flex items-center justify-between px-3 py-2.5">
+          <div className="flex items-center justify-between px-4 py-3">
             <button
               onClick={() => router.history.back()}
-              className="grid h-9 w-9 place-items-center rounded-full bg-white/5 text-white ring-1 ring-white/10"
               aria-label="Back"
+              className="grid h-10 w-10 place-items-center rounded-full bg-white/5 text-white/70 ring-1 ring-white/10 transition hover:bg-white/10"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <div className="flex flex-col items-center">
-              <h1 className="shop-gold-shimmer text-base font-black uppercase tracking-[0.32em]">
-                ✦ Royal Shop ✦
-              </h1>
-              <span className="mt-0.5 h-[2px] w-20 rounded-full bg-gradient-to-r from-transparent via-[color:var(--gold)] to-transparent" />
-            </div>
+            <h1
+              className="bg-gradient-to-r from-amber-200 via-amber-400 to-amber-200 bg-clip-text text-lg font-bold uppercase tracking-[0.28em] text-transparent"
+              style={{ fontFamily: "'Cinzel', serif" }}
+            >
+              ✦ Royal Shop ✦
+            </h1>
             <Link
               to="/wallet"
               aria-label="Wallet"
-              className="grid h-9 w-9 place-items-center rounded-full bg-white/5 text-[color:var(--gold)] ring-1 ring-[color:var(--gold)]/40"
+              className="grid h-10 w-10 place-items-center rounded-full bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20"
             >
-              <Crown className="h-4 w-4" />
+              <Crown className="h-5 w-5" />
             </Link>
           </div>
 
-          {/* Balance strip */}
-          <div className="flex items-center gap-2 px-3 pb-2">
-            <div className="flex flex-1 items-center gap-2 rounded-full bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent px-3 py-1.5 ring-1 ring-[color:var(--gold)]/30">
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-700">
-                <Coins className="h-3 w-3 text-amber-950" />
-              </span>
-              <span className="text-sm font-black text-white">{(profile?.coins ?? 0).toLocaleString()}</span>
-              <span className="mx-1 h-3 w-px bg-white/20" />
-              <span className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500">
-                <Gem className="h-3 w-3 text-white" />
-              </span>
-              <span className="text-sm font-black text-white">{(profile?.diamonds ?? 0).toLocaleString()}</span>
+          {/* Wallet */}
+          <div className="flex items-center gap-3 px-4 pb-3">
+            <div className="flex flex-1 items-center justify-between rounded-2xl border border-white/5 bg-white/5 p-2">
+              <div className="flex items-center gap-2 pl-2">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/20">
+                  <Coins className="h-3 w-3 text-amber-950" />
+                </span>
+                <span className="text-xs font-semibold text-amber-200">
+                  {(profile?.coins ?? 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="ml-3 flex items-center gap-2 border-l border-white/10 pl-3 pr-2">
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-violet-400 to-purple-600 shadow-lg shadow-purple-500/20">
+                  <Gem className="h-3 w-3 text-white" />
+                </span>
+                <span className="text-xs font-semibold text-purple-200">
+                  {(profile?.diamonds ?? 0).toLocaleString()}
+                </span>
+              </div>
             </div>
             <Link
               to="/recharge"
-              className="rounded-full bg-gradient-to-r from-amber-400 to-amber-600 px-3 py-1.5 text-xs font-black text-amber-950 shadow-[0_0_18px_rgba(212,175,55,0.35)]"
+              className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 text-xs font-bold text-black shadow-lg shadow-orange-500/20 transition active:scale-95"
             >
-              Top up
+              TOP UP
             </Link>
           </div>
 
-          {/* Custom theme upload CTA */}
-          <div className="px-3 pb-2">
+          {/* Custom bg CTA */}
+          <div className="px-4 pb-3">
             <Link
               to="/custom-theme"
-              className="flex items-center justify-between rounded-full bg-gradient-to-r from-fuchsia-500/20 via-purple-500/15 to-transparent px-3 py-1.5 text-xs ring-1 ring-fuchsia-400/40"
+              className="flex items-center justify-between rounded-full border border-fuchsia-400/30 bg-gradient-to-r from-fuchsia-500/15 via-purple-500/10 to-transparent px-3 py-1.5 text-xs"
             >
               <span className="flex items-center gap-1.5 font-bold text-white">
                 <Sparkles className="h-3 w-3 text-fuchsia-300" /> Upload your own background
               </span>
-              <span className="text-[10px] text-fuchsia-200">24h · admin approval</span>
+              <span className="text-[10px] text-fuchsia-200/80">24h · admin approval</span>
             </Link>
           </div>
         </header>
 
-        {/* Body */}
-        <div className="flex">
-          {/* Sidebar categories */}
-          <aside className="w-[80px] shrink-0 space-y-2 py-3 pl-2 pr-1">
-            {cats.map((c) => {
-              const active = c.id === currentCat;
-              return (
-                <button
-                  key={c.id}
-                  onClick={() => {
-                    setActiveCat(c.id);
-                    setSelectedId(null);
-                  }}
-                  className={`relative flex w-full flex-col items-center gap-1 rounded-2xl py-2.5 transition ${
-                    active
-                      ? "shop-cat-active"
-                      : "hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {active && (
-                    <span className="absolute left-0 top-1/2 h-9 w-[3px] -translate-y-1/2 rounded-r bg-gradient-to-b from-amber-200 to-amber-500 shadow-[0_0_10px_rgba(212,175,55,0.6)]" />
-                  )}
-                  <div
-                    className={`grid h-11 w-11 place-items-center overflow-hidden rounded-full ${
-                      active
-                        ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_16px_rgba(212,175,55,0.45)]"
-                        : "ring-1 ring-white/10"
-                    }`}
-                  >
-                    {c.icon_url ? (
-                      <img src={c.icon_url} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="grid h-full w-full place-items-center bg-gradient-to-br from-amber-400/40 to-fuchsia-600/40">
-                        <Sparkles className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </div>
-                  <span
-                    className={`text-[10px] font-bold tracking-wide ${
-                      active ? "text-[color:var(--gold)]" : "text-white/60"
-                    }`}
-                  >
-                    {c.name}
-                  </span>
-                </button>
-              );
-            })}
-          </aside>
-
-          {/* Items grid */}
-          <main className="min-w-0 flex-1 px-2 py-3">
-            {/* Featured hero */}
-            {featured && (
+        {/* Horizontal categories */}
+        <div className="no-scrollbar flex items-center gap-5 overflow-x-auto px-4 py-4">
+          {cats.map((c) => {
+            const active = c.id === currentCat;
+            return (
               <button
-                onClick={() => setSelectedId(featured.id)}
-                className="shop-featured group relative mb-3 block w-full overflow-hidden rounded-2xl text-left"
+                key={c.id}
+                onClick={() => {
+                  setActiveCat(c.id);
+                  setSelectedId(null);
+                }}
+                className="flex shrink-0 flex-col items-center gap-2"
               >
                 <div
-                  className="relative aspect-[16/8] w-full"
-                  style={{ background: `linear-gradient(120deg, ${featured.primary_color}, ${featured.accent_color})` }}
+                  className={`grid h-14 w-14 place-items-center overflow-hidden rounded-2xl transition ${
+                    active
+                      ? "bg-gradient-to-br from-amber-400 to-amber-600 shadow-lg shadow-amber-500/30"
+                      : "bg-white/10 opacity-60"
+                  }`}
                 >
-                  {(featured.animation_url || featured.bg_image || featured.preview_url) && (
-                    <img
-                      src={featured.bg_image || featured.preview_url || featured.animation_url || ""}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover opacity-90"
+                  {c.icon_url ? (
+                    <img src={c.icon_url} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <Sparkles
+                      className={`h-6 w-6 ${active ? "text-amber-950" : "text-white"}`}
                     />
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/20 to-transparent" />
-                  <div className="pointer-events-none absolute inset-0 shop-featured-shine" />
-                  <div className="absolute inset-y-0 left-0 flex flex-col justify-center gap-1 p-3">
-                    <span className="inline-flex w-fit items-center gap-1 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-amber-200 ring-1 ring-[color:var(--gold)]/50">
-                      <Crown className="h-3 w-3" /> Featured
-                    </span>
-                    <h2 className="text-lg font-black text-white drop-shadow">{featured.name}</h2>
-                    <div className="flex items-center gap-1 text-xs font-bold text-white/90">
-                      {currencyFor(featured) === "diamonds" ? (
-                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500 text-[9px] text-white">
-                          <Gem className="h-2.5 w-2.5" />
-                        </span>
-                      ) : (
-                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[9px] text-amber-950">
-                          <Coins className="h-2.5 w-2.5" />
-                        </span>
-                      )}
-                      {priceFor(featured).toLocaleString()}
-                      <span className="mx-1 opacity-40">·</span>
-                      <span className="text-[10px] uppercase tracking-wide text-amber-200/90">
-                        {featured.duration_days && featured.duration_days > 0 ? `${featured.duration_days} days` : "Permanent"}
-                      </span>
-                    </div>
-                  </div>
                 </div>
+                <span
+                  className={`text-[10px] font-bold uppercase tracking-tighter ${
+                    active ? "text-amber-400" : "text-white/70"
+                  }`}
+                >
+                  {c.name}
+                </span>
               </button>
-            )}
+            );
+          })}
+        </div>
 
-            {/* Category title */}
-            {activeCatObj && (
-              <div className="mb-2 flex items-baseline justify-between px-1">
-                <h3 className="text-sm font-black uppercase tracking-[0.18em] text-white/90">
-                  {activeCatObj.name}
-                </h3>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
-                  {items.length} items
+        {/* Featured hero */}
+        {featured && (
+          <div className="px-4">
+            <button
+              onClick={() => setSelectedId(featured.id)}
+              className="relative block h-44 w-full overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#2a1254] to-[#16082e] text-left"
+            >
+              {(featured.animation_url || featured.bg_image || featured.preview_url) && (
+                <img
+                  src={
+                    featured.bg_image ||
+                    featured.preview_url ||
+                    featured.animation_url ||
+                    ""
+                  }
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-overlay"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0f071d] via-transparent to-transparent" />
+              <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/20 px-3 py-1 backdrop-blur-md">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-amber-400">
+                  Featured
                 </span>
               </div>
-            )}
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <h2 className="text-2xl font-bold text-white">{featured.name}</h2>
+                <div className="mt-2 flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    {currencyFor(featured) === "diamonds" ? (
+                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500">
+                        <Gem className="h-2.5 w-2.5 text-white" />
+                      </span>
+                    ) : (
+                      <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600">
+                        <Coins className="h-2.5 w-2.5 text-amber-950" />
+                      </span>
+                    )}
+                    <span className="text-sm font-bold text-white">
+                      {priceFor(featured).toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-widest text-white/40">
+                    {featured.duration_days && featured.duration_days > 0
+                      ? `${featured.duration_days} Days`
+                      : "Permanent"}
+                  </span>
+                </div>
+              </div>
+              <span className="absolute bottom-5 right-5 grid h-12 w-12 place-items-center rounded-full bg-white text-black shadow-xl">
+                <Play className="ml-0.5 h-6 w-6 fill-current" />
+              </span>
+            </button>
+          </div>
+        )}
 
-            <div className="grid grid-cols-2 gap-2.5">
-              {items.map((it) => {
-                const owned = isOwned(it.id);
-                const frameUrl = it.animation_url || it.preview_url || it.bg_image;
-                const isEquipped = isItemEquipped(it);
-                const isSelected = selectedId === it.id;
-                const badge = it.duration_days && it.duration_days > 0 ? `${it.duration_days}d` : "Perm";
-                const cat = cats.find((c) => c.id === it.category_id);
-                const catKey = `${cat?.slug ?? ""} ${cat?.name ?? ""}`.toLowerCase();
-                const isBackground =
-                  !!it.bg_image ||
-                  /theme|background|wallpaper|bg|skin/.test(catKey);
-                const media = it.animation_url || it.bg_image || it.preview_url;
-                const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
-                const gridImage = isVideo ? it.bg_image || it.preview_url : media;
+        {/* Grid header */}
+        <div className="mb-4 mt-8 flex items-center justify-between px-4">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-1 rounded-full bg-amber-500" />
+            <h3 className="text-sm font-bold uppercase tracking-widest text-white/90">
+              {activeCatObj?.name ?? "All Items"}
+            </h3>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-tighter text-white/30">
+            {items.length} Items Available
+          </span>
+        </div>
 
-                return (
-                  <button
-                    key={it.id}
-                    onClick={() => setSelectedId(it.id)}
-                    className={`shop-item-card group relative overflow-hidden rounded-2xl text-left transition ${
-                      isSelected ? "shop-item-selected" : ""
-                    } ${it.is_premium ? "shop-item-premium" : ""}`}
-                  >
-                    {/* Badges */}
-                    <span className="absolute left-1.5 top-1.5 z-20 rounded-md bg-black/65 px-1.5 py-0.5 text-[10px] font-black text-white/95 ring-1 ring-white/10">
+        {/* Grid */}
+        <div className="grid grid-cols-2 gap-4 px-4 pb-24">
+          {items.map((it) => {
+            const owned = isOwned(it.id);
+            const isEquipped = isItemEquipped(it);
+            const locked = isLocked(it) && !owned;
+            const badge =
+              it.duration_days && it.duration_days > 0 ? `${it.duration_days}d` : "Perm";
+            const cat = cats.find((c) => c.id === it.category_id);
+            const catKey = `${cat?.slug ?? ""} ${cat?.name ?? ""}`.toLowerCase();
+            const isBackground =
+              !!it.bg_image || /theme|background|wallpaper|bg|skin/.test(catKey);
+            const media = it.animation_url || it.bg_image || it.preview_url;
+            const isVideo = !!media && /\.(mp4|webm|mov)($|\?)/i.test(media);
+            const gridImage = isVideo ? it.bg_image || it.preview_url : media;
+
+            return (
+              <button
+                key={it.id}
+                onClick={() => setSelectedId(it.id)}
+                className="group relative text-left"
+              >
+                <div
+                  className={`relative aspect-[3/4] overflow-hidden rounded-[32px] border bg-[#1a0b2e] ${
+                    isEquipped
+                      ? "border-emerald-400/60"
+                      : it.is_premium || owned
+                      ? "border-amber-500/40"
+                      : "border-white/5"
+                  }`}
+                  style={
+                    !media
+                      ? {
+                          background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})`,
+                        }
+                      : undefined
+                  }
+                >
+                  {media ? (
+                    isVideo ? (
+                      <video
+                        src={media}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="auto"
+                        poster={gridImage || undefined}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={media}
+                        alt={it.name}
+                        loading="lazy"
+                        decoding="async"
+                        className={`absolute inset-0 h-full w-full ${
+                          isBackground ? "object-cover" : "object-contain p-4"
+                        }`}
+                      />
+                    )
+                  ) : (
+                    <div className="absolute inset-0 grid place-items-center">
+                      <ItemAnimation
+                        slug={cat?.slug}
+                        name={it.name}
+                        primary={it.primary_color}
+                        accent={it.accent_color}
+                        fill
+                      />
+                    </div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f071d] via-transparent to-transparent" />
+
+                  <div className="absolute left-3 top-3 z-10 flex flex-col gap-1.5">
+                    <span className="rounded-full border border-white/10 bg-black/60 px-2 py-0.5 text-[9px] font-bold text-white backdrop-blur-md">
                       {badge}
                     </span>
                     {it.is_premium && (
-                      <span className="absolute left-1.5 top-8 z-20 flex items-center gap-0.5 rounded-md bg-gradient-to-r from-amber-300 to-amber-500 px-1.5 py-0.5 text-[9px] font-black text-amber-950">
-                        <Crown className="h-2.5 w-2.5" /> VIP
+                      <span className="flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5">
+                        <Crown className="h-2 w-2 text-black" />
+                        <span className="text-[9px] font-black text-black">VIP</span>
                       </span>
                     )}
-                    <span className="absolute right-1.5 top-1.5 z-20 grid h-5 w-5 place-items-center rounded-full bg-black/55 text-white ring-1 ring-white/10">
-                      <Play className="h-2.5 w-2.5 fill-current" />
-                    </span>
+                  </div>
 
-                    {/* Media area */}
-                    <div
-                      className={`relative z-10 grid place-items-center px-2.5 py-2.5 ${isBackground ? "aspect-[3/4]" : "aspect-square"}`}
+                  <div className="absolute right-3 top-3 z-10">
+                    {isEquipped ? (
+                      <span className="flex items-center gap-1 rounded-lg bg-emerald-500 px-2 py-1 shadow-lg shadow-emerald-500/30">
+                        <Check className="h-3 w-3 text-black" />
+                        <span className="text-[9px] font-black text-black">ON</span>
+                      </span>
+                    ) : owned ? (
+                      <span className="rounded-lg bg-amber-500 px-2 py-1 shadow-lg shadow-amber-500/20">
+                        <span className="text-[9px] font-black text-black">OWNED</span>
+                      </span>
+                    ) : locked ? (
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-white/10 backdrop-blur-md">
+                        <Lock className="h-3 w-3 text-white/70" />
+                      </span>
+                    ) : (
+                      <span className="grid h-6 w-6 place-items-center rounded-full bg-black/50 backdrop-blur-md">
+                        <Play className="h-3 w-3 fill-white text-white" />
+                      </span>
+                    )}
+                  </div>
+
+                  {locked && (
+                    <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-center gap-1 bg-gradient-to-t from-black/85 to-transparent pb-3 pt-8">
+                      <span className="rounded-full border border-amber-300/40 bg-black/80 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-200">
+                        Lv {it.min_level}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-3 px-1">
+                  <p className="truncate text-xs font-bold text-white">{it.name}</p>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    {currencyFor(it) === "diamonds" ? (
+                      <span className="h-3 w-3 rounded-full bg-purple-500" />
+                    ) : (
+                      <span className="h-3 w-3 rounded-full bg-amber-400" />
+                    )}
+                    <span
+                      className={`text-[11px] font-bold ${
+                        currencyFor(it) === "diamonds" ? "text-purple-200" : "text-amber-200"
+                      }`}
                     >
-                      {isBackground ? (
-                        <div
-                          className="relative h-full w-full overflow-hidden rounded-xl shadow-[0_10px_28px_rgba(0,0,0,0.6)]"
-                          style={{ background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})` }}
-                        >
-                          {media ? (
-                            isVideo ? (
-                              <video src={media} autoPlay loop muted playsInline preload="auto" poster={gridImage || undefined} className="absolute inset-0 h-full w-full object-cover" />
-                            ) : (
-                              <img src={media} alt={it.name} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
-                            )
-                          ) : null}
-
-                          <div className="absolute inset-x-0 top-2 flex flex-col items-center">
-                            <div className="h-6 w-6 rounded-full border-2 border-white/80 bg-gradient-to-br from-pink-400 to-fuchsia-600" />
-                            <div className="mt-0.5 text-[9px] font-black text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                              {it.name}
-                            </div>
-                          </div>
-                          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/60 to-transparent" />
-                        </div>
-                      ) : media ? (
-                        isVideo ? (
-                          <video src={media} autoPlay loop muted playsInline preload="auto" poster={gridImage || undefined} className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
-                        ) : (
-                          <img src={media} alt={it.name} className="max-h-full max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.6)]" />
-                        )
-
-                      ) : (
-                        <div
-                          className="relative h-[62%] w-full overflow-hidden rounded-xl shadow-[0_6px_16px_rgba(0,0,0,0.5)]"
-                          style={{ background: `linear-gradient(135deg, ${it.primary_color}, ${it.accent_color})` }}
-                        >
-                          <div className="absolute inset-0 opacity-40 shop-chip-shimmer" />
-                          <div className="absolute inset-0 grid place-items-center">
-                            <ItemAnimation slug={cat?.slug} name={it.name} primary={it.primary_color} accent={it.accent_color} fill />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Name */}
-                    <div className="relative z-10 -mt-1 px-2 text-center">
-                      <p className="truncate text-[11px] font-bold text-white/85">{it.name}</p>
-                    </div>
-
-                    {/* Price footer */}
-                    <div className="relative z-10 flex items-center justify-center gap-1 pb-2 pt-1 text-sm font-black text-white">
-                      {currencyFor(it) === "diamonds" ? (
-                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-cyan-300 to-fuchsia-500 text-[10px] text-white">
-                          <Gem className="h-2.5 w-2.5" />
-                        </span>
-                      ) : (
-                        <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 text-[10px] text-amber-950">
-                          <Coins className="h-2.5 w-2.5" />
-                        </span>
-                      )}
-                      {priceFor(it).toLocaleString()}
-                    </div>
-
-                    {isEquipped && (
-                      <span className="absolute right-1.5 top-8 z-20 flex items-center gap-0.5 rounded-full bg-[color:var(--gold)] px-1.5 py-0.5 text-[9px] font-black text-black">
-                        <Check className="h-2 w-2" /> Wearing
-                      </span>
-                    )}
-                    {owned && !isEquipped && (
-                      <span className="absolute right-1.5 top-8 z-20 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-black text-black">
-                        Owned
-                      </span>
-                    )}
-                    {isLocked(it) && !owned && (
-                      <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-1 rounded-2xl bg-black/70 backdrop-blur-[2px]">
-                        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 ring-2 ring-amber-200/60 shadow-[0_0_16px_rgba(212,175,55,0.5)]">
-                          <Lock className="h-4 w-4 text-amber-950" />
-                        </div>
-                        <span className="rounded-full bg-black/80 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-200 ring-1 ring-amber-300/40">
-                          Lv {it.min_level}
-                        </span>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-              {items.length === 0 && (
-                <p className="col-span-2 py-10 text-center text-xs text-white/60">
-                  No items in this category yet.
-                </p>
-              )}
-            </div>
-          </main>
+                      {it.is_free ? "Free" : priceFor(it).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+          {items.length === 0 && (
+            <p className="col-span-2 py-10 text-center text-xs text-white/60">
+              No items in this category yet.
+            </p>
+          )}
         </div>
       </div>
 

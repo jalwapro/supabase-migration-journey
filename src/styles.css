@@ -1030,3 +1030,9 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class
   animation: tap-heart-rise 2.1s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
   user-select: none;
 }
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar { display: none; }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
