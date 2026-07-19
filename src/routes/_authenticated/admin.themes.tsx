@@ -295,13 +295,17 @@ function ThemesAdmin() {
           <div key={t.id} className="glass overflow-hidden rounded-2xl">
             <div className="grid aspect-square place-items-center bg-black/40 p-3">
               {t.animation_url ? (
-                t.animation_url.match(/\.mp4($|\?)/i) ? (
+                t.animation_url.match(/\.(mp4|webm|mov)($|\?)/i) ? (
                   <video src={t.animation_url} autoPlay loop muted playsInline className="max-h-full" />
                 ) : (
                   <img src={t.animation_url} alt={t.name} className="max-h-full object-contain" />
                 )
               ) : t.preview_url || t.bg_image ? (
-                <img src={t.preview_url ?? t.bg_image!} alt={t.name} className="max-h-full object-contain" />
+                (t.preview_url ?? t.bg_image!).match(/\.(mp4|webm|mov)($|\?)/i) ? (
+                  <video src={t.preview_url ?? t.bg_image!} autoPlay loop muted playsInline className="max-h-full" />
+                ) : (
+                  <img src={t.preview_url ?? t.bg_image!} alt={t.name} className="max-h-full object-contain" />
+                )
               ) : null}
             </div>
             <div className="p-2 text-xs">
