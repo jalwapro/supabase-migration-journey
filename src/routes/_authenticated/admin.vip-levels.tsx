@@ -247,8 +247,22 @@ function EditModal({
           <Field label="Badge URL">
             <input value={draft.badge_url ?? ""} onChange={(e) => set("badge_url", e.target.value || null)} className={input} />
           </Field>
-          <Field label="Frame URL">
+          <Field label="Frame URL (leave blank to auto-use level series frame)">
             <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} />
+            <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
+              <FramePreview
+                url={draft.frame_url || frameForLevel(draft.level)}
+                label={seriesForLevel(draft.level)?.series}
+                size={72}
+              />
+              <div className="text-[11px] text-muted-foreground">
+                <p className="font-bold text-foreground">{seriesForLevel(draft.level)?.series ?? "—"}</p>
+                <p>{seriesForLevel(draft.level)?.label}</p>
+                <p className="mt-0.5 opacity-70">
+                  {draft.frame_url ? "Custom frame" : "Auto (level series)"}
+                </p>
+              </div>
+            </div>
           </Field>
           <Field label="Bubble URL">
             <input value={draft.bubble_url ?? ""} onChange={(e) => set("bubble_url", e.target.value || null)} className={input} />
