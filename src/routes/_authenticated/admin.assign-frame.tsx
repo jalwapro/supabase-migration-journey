@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Loader2, Search, Crown, X } from "lucide-react";
 import { toast } from "sonner";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 
 export const Route = createFileRoute("/_authenticated/admin/assign-frame")({
   component: AssignFrameAdmin,
@@ -226,7 +227,7 @@ function AssignFrameAdmin() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {availableThemes.map((t) => {
-              const url = t.animation_url || t.preview_url!;
+              const url = resolveAssetUrl(t.animation_url || t.preview_url) ?? "";
               return (
                 <div key={t.id} className="rounded-xl border border-white/10 bg-black/30 p-2 flex flex-col">
                   <div className="aspect-square rounded-lg overflow-hidden bg-black/40 flex items-center justify-center">

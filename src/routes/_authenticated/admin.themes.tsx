@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Upload, Loader2, Gem, Pencil, X, Save } from "lucide-react";
 import { toast } from "sonner";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 
 export const Route = createFileRoute("/_authenticated/admin/themes")({
   component: ThemesAdmin,
@@ -46,10 +47,12 @@ function ThemeMediaPreview({
     return compact ? null : <span className="text-[10px] text-muted-foreground">No media</span>;
   }
 
-  return isVideoMedia(url) ? (
+  const mediaUrl = resolveAssetUrl(url);
+
+  return isVideoMedia(mediaUrl) ? (
     <video
-      key={url}
-      src={url}
+      key={mediaUrl}
+      src={mediaUrl ?? undefined}
       autoPlay
       loop
       muted
@@ -60,7 +63,7 @@ function ThemeMediaPreview({
       onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
     />
   ) : (
-    <img src={url} alt={name} className={mediaClass} draggable={false} />
+    <img src={mediaUrl ?? undefined} alt={name} className={mediaClass} draggable={false} />
   );
 }
 
