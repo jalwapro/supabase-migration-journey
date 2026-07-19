@@ -124,3 +124,17 @@ export function seriesForLevel(level: number | null | undefined): string | null 
   const lvl = Math.min(100, raw);
   return LEVEL_FRAMES.find((item) => item.level === lvl)?.series ?? null;
 }
+
+/**
+ * Returns every frame from the start of the current 10-level series up to
+ * (and including) the user's current level. When the user crosses into a
+ * new series (e.g. 10 → 11) the previous series' frames drop off and the
+ * new series starts stacking from a single frame again.
+ */
+export function framesForLevelStack(level: number | null | undefined): LevelFrame[] {
+  const raw = Math.floor(level ?? 0);
+  if (raw < 1) return [];
+  const lvl = Math.min(100, raw);
+  const seriesStart = Math.floor((lvl - 1) / 10) * 10 + 1;
+  return LEVEL_FRAMES.filter((item) => item.level >= seriesStart && item.level <= lvl);
+}
