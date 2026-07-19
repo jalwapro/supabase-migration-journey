@@ -16,6 +16,7 @@ import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RankRouteImport } from './routes/rank'
 import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as LottiePreviewRouteImport } from './routes/lottie-preview'
 import { Route as GiftPreviewRouteImport } from './routes/gift-preview'
 import { Route as FramesPreviewRouteImport } from './routes/frames-preview'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -123,6 +124,11 @@ const RankRoute = RankRouteImport.update({
 const MessagesRoute = MessagesRouteImport.update({
   id: '/messages',
   path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LottiePreviewRoute = LottiePreviewRouteImport.update({
+  id: '/lottie-preview',
+  path: '/lottie-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GiftPreviewRoute = GiftPreviewRouteImport.update({
@@ -524,6 +530,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/frames-preview': typeof FramesPreviewRoute
   '/gift-preview': typeof GiftPreviewRoute
+  '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -605,6 +612,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/frames-preview': typeof FramesPreviewRoute
   '/gift-preview': typeof GiftPreviewRoute
+  '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -686,6 +694,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/frames-preview': typeof FramesPreviewRoute
   '/gift-preview': typeof GiftPreviewRoute
+  '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -769,6 +778,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/frames-preview'
     | '/gift-preview'
+    | '/lottie-preview'
     | '/messages'
     | '/rank'
     | '/reset-password'
@@ -850,6 +860,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/frames-preview'
     | '/gift-preview'
+    | '/lottie-preview'
     | '/messages'
     | '/rank'
     | '/reset-password'
@@ -930,6 +941,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/frames-preview'
     | '/gift-preview'
+    | '/lottie-preview'
     | '/messages'
     | '/rank'
     | '/reset-password'
@@ -1013,6 +1025,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   FramesPreviewRoute: typeof FramesPreviewRoute
   GiftPreviewRoute: typeof GiftPreviewRoute
+  LottiePreviewRoute: typeof LottiePreviewRoute
   MessagesRoute: typeof MessagesRoute
   RankRoute: typeof RankRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -1078,6 +1091,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages'
       preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lottie-preview': {
+      id: '/lottie-preview'
+      path: '/lottie-preview'
+      fullPath: '/lottie-preview'
+      preLoaderRoute: typeof LottiePreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/gift-preview': {
@@ -1763,6 +1783,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   FramesPreviewRoute: FramesPreviewRoute,
   GiftPreviewRoute: GiftPreviewRoute,
+  LottiePreviewRoute: LottiePreviewRoute,
   MessagesRoute: MessagesRoute,
   RankRoute: RankRoute,
   ResetPasswordRoute: ResetPasswordRoute,
