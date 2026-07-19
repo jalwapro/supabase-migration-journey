@@ -86,17 +86,10 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {/* Gradient ring (static for mobile GPU stability) */}
-      <div
-        className={`absolute inset-0 rounded-full bg-gradient-to-tr ${tier.ringGradient}`}
-        style={{
-          boxShadow: `0 0 18px -2px ${tier.glow}`,
-          maskImage: "radial-gradient(circle, transparent 58%, black 60%)",
-          WebkitMaskImage: "radial-gradient(circle, transparent 58%, black 60%)",
-        }}
-      />
+      {/* Gradient ring removed — DP frames now handle level visuals */}
+
       {/* Inner disc */}
-      <div className="absolute inset-[8%] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
+      <div className="absolute inset-0 overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
         {src ? (
           <img src={src} alt="" className="h-full w-full object-cover" />
         ) : (
@@ -115,10 +108,10 @@ export function LevelAvatar({
           10-level series up to the user's level so progression is visible. */}
       {frame && frameUrl && (
         <div
-          className="pointer-events-none absolute inset-[-42%] z-[5]"
-          style={{ transform: "translateY(-6%)" }}
+          className="pointer-events-none absolute inset-[-38%] z-[5] flex items-center justify-center"
           aria-hidden
         >
+
           {frameIsVideo ? (
             <video
               key={frameUrl}
@@ -149,10 +142,11 @@ export function LevelAvatar({
         return (
           <div
             key={item.level}
-            className="pointer-events-none absolute inset-[-42%]"
-            style={{ transform: "translateY(-6%)", zIndex: 5 + idx }}
+            className="pointer-events-none absolute inset-[-38%] flex items-center justify-center"
+            style={{ zIndex: 5 + idx }}
             aria-hidden
           >
+
             {isVideo ? (
               <video
                 src={url}
