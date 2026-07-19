@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins, vipTierForLevel } from "@/lib/vip-levels";
-import { frameForLevel, seriesForLevel, LEVEL_FRAME_SERIES } from "@/lib/levelFrames";
+import { frameForLevel, seriesForLevel, LEVEL_FRAMES } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { Loader2, Save, Search, Crown, TrendingUp, Users, Coins } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +28,27 @@ type Row = {
   reward_bundle: Record<string, unknown>;
   privileges: Record<string, unknown>;
 };
+
+type LevelSeriesCard = {
+  series: string;
+  minLevel: number;
+  maxLevel: number;
+  url: string;
+  label: string;
+};
+
+const LEVEL_SERIES_CARDS: LevelSeriesCard[] = Array.from({ length: 10 }, (_, i) => {
+  const minLevel = i * 10 + 1;
+  const maxLevel = minLevel + 9;
+  const first = LEVEL_FRAMES.find((frame) => frame.level === minLevel)!;
+  return {
+    series: first.series,
+    minLevel,
+    maxLevel,
+    url: first.url,
+    label: `Levels ${minLevel}-${maxLevel}`,
+  };
+});
 
 function VipLevelsAdmin() {
   const qc = useQueryClient();
@@ -140,7 +161,7 @@ function VipLevelsAdmin() {
           </span>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-5">
-          {LEVEL_FRAME_SERIES.map((s, i) => (
+          {LEVEL_SERIES_CARDS.map((s: LevelSeriesCard, i: number) => (
             <div
               key={s.series}
               className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-b from-black/40 to-black/10 p-2"
@@ -187,14 +208,14 @@ function VipLevelsAdmin() {
             {filtered.map((r) => {
               const tier = vipTierForLevel(r.level);
               const frameUrl = r.frame_url || frameForLevel(r.level);
-              const series = seriesForLevel(r.level);
+              const seriesName = seriesForLevel(r.level) ?? "—";
               return (
                 <li
                   key={r.level}
                   className="grid grid-cols-[64px_64px_1fr_120px] items-center gap-2 px-3 py-2 md:grid-cols-[64px_64px_1fr_1fr_1fr_120px_100px]"
                 >
                   <VipBadge level={r.level} size="sm" />
-                  <FramePreview url={frameUrl} label={series?.series} />
+                  <FramePreview url={frameUrl} label={seriesName} />
                   <span className="truncate text-xs font-semibold" style={{ color: tier.glow }}>
                     {r.tier}
                   </span>
