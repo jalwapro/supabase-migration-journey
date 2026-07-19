@@ -496,6 +496,16 @@ function Page() {
                         Owned
                       </span>
                     )}
+                    {isLocked(it) && !owned && (
+                      <div className="pointer-events-none absolute inset-0 z-30 flex flex-col items-center justify-center gap-1 rounded-2xl bg-black/70 backdrop-blur-[2px]">
+                        <div className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-600 ring-2 ring-amber-200/60 shadow-[0_0_16px_rgba(212,175,55,0.5)]">
+                          <Lock className="h-4 w-4 text-amber-950" />
+                        </div>
+                        <span className="rounded-full bg-black/80 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-amber-200 ring-1 ring-amber-300/40">
+                          Lv {it.min_level}
+                        </span>
+                      </div>
+                    )}
                   </button>
                 );
               })}
