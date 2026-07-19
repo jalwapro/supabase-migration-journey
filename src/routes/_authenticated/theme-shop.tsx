@@ -31,6 +31,7 @@ type ShopItem = {
   is_free: boolean;
   primary_color: string;
   accent_color: string;
+  min_level: number | null;
 };
 type OwnedRow = { theme_id: string; expires_at: string | null };
 
