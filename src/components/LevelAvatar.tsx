@@ -1,6 +1,7 @@
 import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 
 
 type Size = "sm" | "md" | "lg" | "xl";
@@ -36,8 +37,10 @@ export function LevelAvatar({
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
-  const frameIsVideo = !!frame && /\.(mp4|webm|mov)($|\?)/i.test(frame);
-  const ringIsVideo = !!ring && /\.(mp4|webm|mov)($|\?)/i.test(ring);
+  const frameUrl = resolveAssetUrl(frame);
+  const ringUrl = resolveAssetUrl(ring);
+  const frameIsVideo = !!frameUrl && /\.(mp4|webm|mov)($|\?)/i.test(frameUrl);
+  const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
 
   const Wrapper: any = userId ? Link : "div";
   const wrapperProps: any = userId
@@ -57,12 +60,12 @@ export function LevelAvatar({
     >
 
       {/* Equipped aura ring behind avatar */}
-      {ring && (
+      {ringUrl && (
         <div className="pointer-events-none absolute inset-[-28%] z-0 dp-ring-spin" aria-hidden>
           {ringIsVideo ? (
             <video
-              key={ring}
-              src={ring}
+              key={ringUrl}
+              src={ringUrl}
               autoPlay
               muted
               loop
@@ -73,7 +76,7 @@ export function LevelAvatar({
               onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
             />
           ) : (
-            <img src={ring} alt="" className="h-full w-full object-contain" draggable={false} />
+            <img src={ringUrl} alt="" className="h-full w-full object-contain" draggable={false} />
           )}
         </div>
       )}
@@ -105,7 +108,7 @@ export function LevelAvatar({
           Frame art (crown+wings) has its transparent hole roughly centered but
           content extends outward — use a larger inset so the hole matches the
           avatar disc, and a small upward shift so crown-style frames align. */}
-      {frame && (
+      {frameUrl && (
         <>
           <div
             className="pointer-events-none absolute inset-[-42%] z-[5]"
@@ -114,8 +117,8 @@ export function LevelAvatar({
           >
             {frameIsVideo ? (
               <video
-                key={frame}
-                src={frame}
+                key={frameUrl}
+                src={frameUrl}
                 autoPlay
                 muted
                 loop
@@ -127,7 +130,7 @@ export function LevelAvatar({
               />
             ) : (
               <img
-                src={frame}
+                src={frameUrl}
                 alt=""
                 className="h-full w-full object-contain"
                 draggable={false}

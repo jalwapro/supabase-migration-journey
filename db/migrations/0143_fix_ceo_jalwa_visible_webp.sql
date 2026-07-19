@@ -1,11 +1,12 @@
--- 0143 — Replace CEO Jalwa with a verified transparent animated WebP.
--- The previous WebM URL was reachable, but the media stream had no alpha
--- channel and rendered as black/blank in previews and DP overlays.
+-- 0143 — Replace CEO Jalwa with a verified transparent PNG fallback.
+-- The earlier WebM/WebP assets either rendered black/blank or were blocked
+-- by relative asset URL resolution in previews and DP overlays.
 
 DO $$
 DECLARE
   _ceo_theme_id uuid;
-  _frame_url text := '/__l5e/assets-v1/7d5a7f68-682c-4137-947b-40f4427eaf45/ceo-jalwa-v4-transparent-fixed.webp';
+  _frame_url text := 'https://project--269a4b2a-bb70-44e1-bd04-6acc825e6f84.lovable.app/__l5e/assets-v1/832baf19-ff34-4d30-9368-bd766eecc513/ceo-jalwa-v4-visible-alpha.png';
+  _phoenix_url text := 'https://project--269a4b2a-bb70-44e1-bd04-6acc825e6f84.lovable.app/__l5e/assets-v1/b17696dc-8ded-49e8-af08-95eabcd23b9e/frame-phoenix-gold.webm';
 BEGIN
   SELECT id INTO _ceo_theme_id
   FROM public.themes
@@ -41,6 +42,17 @@ BEGIN
   WHERE theme_id = _ceo_theme_id
      OR frame ILIKE '%ceo-jalwa%'
      OR frame ILIKE '%frame-ceo-jalwa%';
+
+  UPDATE public.themes
+  SET animation_url = _phoenix_url,
+      preview_url = _phoenix_url,
+      bg_image = NULL
+  WHERE name = 'Golden Phoenix Live';
+
+  UPDATE public.profiles
+  SET frame = _phoenix_url,
+      updated_at = now()
+  WHERE frame = '/__l5e/assets-v1/b17696dc-8ded-49e8-af08-95eabcd23b9e/frame-phoenix-gold.webm';
 END $$;
 
 NOTIFY pgrst, 'reload schema';
