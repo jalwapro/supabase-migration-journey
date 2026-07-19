@@ -38,7 +38,9 @@ export function LevelAvatar({
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
-  const frameUrl = resolveAssetUrl(frame);
+  // Auto-assign frame from level series if user has none equipped.
+  const effectiveFrame = frame ?? frameForLevel(level);
+  const frameUrl = resolveAssetUrl(effectiveFrame);
   const ringUrl = resolveAssetUrl(ring);
   const frameIsVideo = !!frameUrl && /\.(mp4|webm|mov)($|\?)/i.test(frameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
