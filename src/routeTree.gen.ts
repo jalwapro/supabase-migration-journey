@@ -87,6 +87,7 @@ import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
+import { Route as AuthenticatedAdminAssignFrameRouteImport } from './routes/_authenticated/admin.assign-frame'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
 
 const SvgaPreviewRoute = SvgaPreviewRouteImport.update({
@@ -505,6 +506,12 @@ const AuthenticatedAdminBannersRoute =
     path: '/banners',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminAssignFrameRoute =
+  AuthenticatedAdminAssignFrameRouteImport.update({
+    id: '/assign-frame',
+    path: '/assign-frame',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
   id: '/ads',
   path: '/ads',
@@ -549,6 +556,7 @@ export interface FileRoutesByFullPath {
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
@@ -627,6 +635,7 @@ export interface FileRoutesByTo {
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
@@ -709,6 +718,7 @@ export interface FileRoutesById {
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/_authenticated/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
@@ -791,6 +801,7 @@ export interface FileRouteTypes {
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
+    | '/admin/assign-frame'
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
@@ -869,6 +880,7 @@ export interface FileRouteTypes {
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
+    | '/admin/assign-frame'
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
@@ -950,6 +962,7 @@ export interface FileRouteTypes {
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
+    | '/_authenticated/admin/assign-frame'
     | '/_authenticated/admin/banners'
     | '/_authenticated/admin/cms'
     | '/_authenticated/admin/coins'
@@ -1564,6 +1577,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBannersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/assign-frame': {
+      id: '/_authenticated/admin/assign-frame'
+      path: '/assign-frame'
+      fullPath: '/admin/assign-frame'
+      preLoaderRoute: typeof AuthenticatedAdminAssignFrameRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/ads': {
       id: '/_authenticated/admin/ads'
       path: '/ads'
@@ -1576,6 +1596,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAdsRoute: typeof AuthenticatedAdminAdsRoute
+  AuthenticatedAdminAssignFrameRoute: typeof AuthenticatedAdminAssignFrameRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
@@ -1612,6 +1633,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAdsRoute: AuthenticatedAdminAdsRoute,
+  AuthenticatedAdminAssignFrameRoute: AuthenticatedAdminAssignFrameRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
@@ -1759,13 +1781,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

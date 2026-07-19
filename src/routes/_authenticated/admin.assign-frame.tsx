@@ -118,7 +118,6 @@ function AssignFrameAdmin() {
       <AdminPageHeader
         title="Assign DP Frame"
         subtitle="Kisi bhi user ko frame gift/assign karo (CEO, VIP, exclusive frames)"
-        icon={Crown}
       />
 
       {/* Search user */}
