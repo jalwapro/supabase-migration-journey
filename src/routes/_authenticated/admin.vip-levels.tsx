@@ -313,14 +313,14 @@ function EditModal({
             <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
               <FramePreview
                 url={draft.frame_url || frameForLevel(draft.level)}
-                label={seriesForLevel(draft.level)?.series}
+                label={seriesForLevel(draft.level) ?? "—"}
                 size={72}
               />
               <div className="text-[11px] text-muted-foreground">
-                <p className="font-bold text-foreground">{seriesForLevel(draft.level)?.series ?? "—"}</p>
-                <p>{seriesForLevel(draft.level)?.label}</p>
+                <p className="font-bold text-foreground">{seriesForLevel(draft.level) ?? "—"}</p>
+                <p>Level {draft.level}</p>
                 <p className="mt-0.5 opacity-70">
-                  {draft.frame_url ? "Custom frame" : "Auto (level series)"}
+                  {draft.frame_url ? "Custom frame" : "Auto (exact level frame)"}
                 </p>
               </div>
             </div>
