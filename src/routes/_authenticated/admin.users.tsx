@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Loader2, Search, Shield, Ban, Coins as CoinsIcon } from "lucide-react";
+import { Loader2, Search, Shield, Ban, Coins as CoinsIcon, Crown, X } from "lucide-react";
 import { toast } from "sonner";
+import { LevelAvatar } from "@/components/LevelAvatar";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   component: UsersAdmin,
@@ -15,6 +16,7 @@ type Row = {
   username: string | null;
   full_name: string | null;
   avatar: string | null;
+  frame: string | null;
   coins: number;
   diamonds: number;
   level: number;
@@ -22,6 +24,16 @@ type Row = {
   status: string;
   user_code: string | null;
   last_seen: string | null;
+};
+
+type FrameItem = {
+  id: string;
+  name: string;
+  animation_url: string | null;
+  preview_url: string | null;
+  bg_image: string | null;
+  is_active: boolean;
+  theme_categories?: { name: string | null; slug: string | null } | null;
 };
 
 function UsersAdmin() {
@@ -33,7 +45,7 @@ function UsersAdmin() {
     queryFn: async () => {
       let query = supabase
         .from("profiles")
-        .select("id,username,full_name,avatar,coins,diamonds,level,is_vip,status,user_code,last_seen")
+        .select("id,username,full_name,avatar,frame,coins,diamonds,level,is_vip,status,user_code,last_seen")
         .order("last_seen", { ascending: false, nullsFirst: false })
         .limit(50);
       if (q.trim()) {
@@ -42,6 +54,22 @@ function UsersAdmin() {
       const { data, error } = await query;
       if (error) throw error;
       return (data ?? []) as Row[];
+    },
+  });
+
+  const frames = useQuery({
+    queryKey: ["admin_assignable_frames"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("themes")
+        .select("id,name,animation_url,preview_url,bg_image,is_active,theme_categories:category_id(name,slug)")
+        .order("sort", { ascending: true });
+      if (error) throw error;
+      return ((data ?? []) as FrameItem[]).filter((item) => {
+        const slug = item.theme_categories?.slug?.toLowerCase() ?? "";
+        const name = item.theme_categories?.name?.toLowerCase() ?? "";
+        return slug === "frame" || slug === "frames" || name.includes("frame");
+      });
     },
   });
 
@@ -64,6 +92,30 @@ function UsersAdmin() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_users"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const assignFrame = useMutation({
+    mutationFn: async ({ id, themeId }: { id: string; themeId: string }) => {
+      const { error } = await supabase.rpc("admin_assign_frame", { _user_id: id, _theme_id: themeId, _equip: true });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Frame assigned");
+      qc.invalidateQueries({ queryKey: ["admin_users"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const clearFrame = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_clear_frame", { _user_id: id });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Frame removed");
+      qc.invalidateQueries({ queryKey: ["admin_users"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -105,11 +157,7 @@ function UsersAdmin() {
                   <tr key={u.id} className="border-b border-border/60 last:border-0">
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
-                        {u.avatar ? (
-                          <img src={u.avatar} alt="" className="h-8 w-8 rounded-full object-cover" />
-                        ) : (
-                          <div className="h-8 w-8 rounded-full bg-card/60" />
-                        )}
+                        <LevelAvatar src={u.avatar} name={u.username ?? u.full_name} level={u.level} frame={u.frame} size="sm" showBadge={false} />
                         <div className="min-w-0">
                           <p className="truncate font-semibold">{u.username ?? u.full_name ?? "—"}</p>
                           <p className="truncate text-[10px] text-muted-foreground">Lvl {u.level} {u.is_vip && "· VIP"}</p>
@@ -126,6 +174,34 @@ function UsersAdmin() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex justify-end gap-1">
+                        <div className="relative flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-1 text-fuchsia-300">
+                          <Crown className="h-3.5 w-3.5" />
+                          <select
+                            value=""
+                            onChange={(e) => {
+                              if (e.target.value) assignFrame.mutate({ id: u.id, themeId: e.target.value });
+                            }}
+                            disabled={frames.isLoading || assignFrame.isPending}
+                            className="w-24 bg-transparent text-[10px] font-bold outline-none"
+                            title="Assign DP frame"
+                          >
+                            <option value="">Frame</option>
+                            {frames.data?.map((frame) => (
+                              <option key={frame.id} value={frame.id}>
+                                {frame.name}{frame.is_active ? "" : " (hidden)"}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        {u.frame && (
+                          <button
+                            onClick={() => clearFrame.mutate(u.id)}
+                            className="rounded-full bg-red-500/15 p-1.5 text-red-400"
+                            title="Remove frame"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             const v = Number(prompt("Add coins (negative to deduct):", "100"));
