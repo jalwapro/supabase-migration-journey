@@ -38,7 +38,10 @@ export function LevelAvatar({
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
-  // Auto-assign frame from level series if user has none equipped.
+  // Auto-assign frame(s) from level series if user has none equipped.
+  // Stack every frame from the current series' first level up to the user's
+  // current level so progression is visible on the avatar.
+  const stackFrames = frame ? [] : framesForLevelStack(level);
   const effectiveFrame = frame ?? frameForLevel(level);
   const frameUrl = resolveAssetUrl(effectiveFrame);
   const ringUrl = resolveAssetUrl(ring);
