@@ -367,6 +367,63 @@ function StatCell({
   );
 }
 
+function ProfileChip({
+  label,
+  icon: Icon,
+  onClick,
+}: {
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+  onClick?: () => void;
+}) {
+  const className = "inline-flex items-center gap-1 rounded-full border border-white/10 bg-black/30 px-2.5 py-1 text-[10px] uppercase tracking-[0.14em] text-white/55 transition hover:text-white";
+  if (onClick) {
+    return (
+      <button onClick={onClick} className={className} style={HEADING}>
+        <Icon className="h-3 w-3" /> {label}
+      </button>
+    );
+  }
+  return (
+    <span className={className} style={HEADING}>
+      <Icon className="h-3 w-3" /> {label}
+    </span>
+  );
+}
+
+function ProfileSideCard({
+  label,
+  value,
+  icon: Icon,
+  place,
+}: {
+  label: string;
+  value: number;
+  icon: ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  place: 2 | 3;
+}) {
+  const theme = place === 2
+    ? { border: "border-violet-500/30", chip: "bg-violet-500 text-white", rot: "rotate-[-4deg]", chipRot: "rotate-[4deg]", chipPos: "-top-2 -left-2", num: "text-[#8b5cf6]", glow: "shadow-[0_0_20px_rgba(139,92,246,0.15)]", color: "#8b5cf6" }
+    : { border: "border-amber-500/30", chip: "bg-amber-500 text-black", rot: "rotate-[4deg]", chipRot: "rotate-[-4deg]", chipPos: "-top-2 -right-2", num: "text-[#fbbf24]", glow: "shadow-[0_0_20px_rgba(245,158,11,0.15)]", color: "#fbbf24" };
+
+  return (
+    <Link to={label === "Coins" ? "/wallet" : "/withdraw"} className="flex flex-1 flex-col items-center gap-3">
+      <div className="relative">
+        <div className={`grid h-20 w-20 place-items-center rounded-2xl border bg-white/5 p-1.5 backdrop-blur-xl ${theme.border} ${theme.rot} ${theme.glow}`}>
+          <Icon className="h-9 w-9" style={{ color: theme.color, filter: `drop-shadow(0 0 10px ${theme.color}88)` }} />
+          <div className={`absolute ${theme.chipPos} flex h-8 w-8 items-center justify-center rounded-lg text-xs shadow-lg ${theme.chip} ${theme.chipRot}`} style={HEADING}>
+            {place}
+          </div>
+        </div>
+      </div>
+      <div className="text-center">
+        <p className="max-w-[92px] truncate text-sm font-bold tracking-tight text-white" style={BODY}>{label}</p>
+        <p className={`text-[10px] uppercase tracking-widest ${theme.num}`} style={HEADING}>{formatCompact(value)}</p>
+      </div>
+    </Link>
+  );
+}
+
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <div>
@@ -396,6 +453,7 @@ function Quick({
 }
 
 function Tile({
+  index,
   to,
   icon,
   title,
@@ -403,6 +461,7 @@ function Tile({
   color,
   elite,
 }: {
+  index: number;
   to: string;
   icon: ComponentType<{ className?: string; style?: React.CSSProperties }>;
   title: string;
@@ -411,8 +470,10 @@ function Tile({
   elite?: boolean;
 }) {
   return (
-    <Link to={to} className="group relative block active:scale-[0.985] transition-transform">
+    <Link to={to} className="group flex items-center gap-4 rounded-3xl border border-white/5 bg-white/5 p-4 transition-all hover:border-[#ff2d95]/30 active:scale-[0.985]">
+      <span className="w-8 text-lg italic text-white/25" style={HEADING}>{String(index).padStart(2, "0")}</span>
       <TileInner icon={icon} title={title} sub={sub} color={color} elite={elite} />
+      <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
     </Link>
   );
 }
@@ -431,24 +492,19 @@ function TileInner({
   elite?: boolean;
 }) {
   return (
-    <div
-      className="relative h-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-[#1a0b2e]/85 to-[#0a0614]/95 p-3"
-      style={{ boxShadow: `inset 0 0 40px -18px ${color}55` }}
-    >
-      {/* concentric arcs */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-8 -right-8 h-24 w-24 rounded-full opacity-20"
-        style={{ background: `radial-gradient(closest-side, ${color}, transparent 70%)` }}
-      />
+    <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 p-1">
+        <Icon className="h-6 w-6" style={{ color, filter: `drop-shadow(0 0 10px ${color}88)` }} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-bold leading-tight text-white" style={BODY}>{title}</p>
+        <p className="truncate text-[10px] leading-snug text-white/55">{sub}</p>
+      </div>
       {elite && (
-        <span className="absolute right-2 top-2 rounded-md bg-[color:var(--secondary)]/40 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-white ring-1 ring-[color:var(--secondary)]/60">
+        <span className="rounded-sm bg-black/40 px-1 py-0.5 text-[9px] tracking-[0.1em] text-[#fbbf24]" style={HEADING}>
           Elite
         </span>
       )}
-      <Icon className="h-7 w-7" style={{ color, filter: `drop-shadow(0 0 10px ${color}88)` }} />
-      <p className="mt-2 text-[13px] font-black leading-tight text-white">{title}</p>
-      <p className="text-[10px] leading-snug text-white/55">{sub}</p>
     </div>
   );
 }
