@@ -43,6 +43,7 @@ import {
 import { toast } from "sonner";
 import { useRef, useState, type ComponentType } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
 import { vipTierForLevel, vipProgressFor, formatCoins, MILESTONE_REWARDS } from "@/lib/vip-levels";
