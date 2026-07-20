@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -56,6 +56,27 @@ function RankPage() {
       return (data ?? []) as Entry[];
     },
   });
+
+  // Realtime: refresh leaderboard when new gifts arrive
+  const qc = useQueryClient();
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const scheduleRefresh = () => {
+      if (refreshTimer.current) return;
+      refreshTimer.current = setTimeout(() => {
+        refreshTimer.current = null;
+        qc.invalidateQueries({ queryKey: ["vip-rank"] });
+      }, 1500);
+    };
+    const channel = supabase
+      .channel("rank-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_events" }, scheduleRefresh)
+      .subscribe();
+    return () => {
+      if (refreshTimer.current) { clearTimeout(refreshTimer.current); refreshTimer.current = null; }
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
 
   const list = q.data ?? [];
   const top3 = list.slice(0, 3);
