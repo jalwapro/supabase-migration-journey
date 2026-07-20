@@ -164,8 +164,8 @@ function MePage() {
               </div>
             )}
 
-            <div className="relative flex items-start gap-3">
-              <div className="relative w-[132px] shrink-0 pl-3 pt-3">
+            <div className="relative flex items-start gap-6">
+              <div className="relative w-[108px] shrink-0 pl-1 pt-3">
                 <LevelAvatar
                   src={profile?.avatar}
                   name={profile?.username}
