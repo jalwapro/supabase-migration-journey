@@ -154,16 +154,9 @@ function MePage() {
     navigator.clipboard.writeText(profile.user_code);
     toast.success("ID copied");
   };
-  const handleShare = async () => {
-    const url = `${window.location.origin}/u/${profile?.user_code ?? user?.id}`;
-    try {
-      if (navigator.share) await navigator.share({ title: userName, url });
-      else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Profile link copied");
-      }
-    } catch { /* dismissed */ }
-  };
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://cloud-to-soul.lovable.app"}/u/${profile?.user_code ?? user?.id ?? ""}`;
+  const handleShare = () => setShareOpen(true);
 
   return (
     <>

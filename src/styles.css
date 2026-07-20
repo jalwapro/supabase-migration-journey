@@ -199,6 +199,33 @@ html:not(.dark) body.theme-background-active [class*="text-black/"] {
   color: rgba(255, 255, 255, 0.92) !important;
 }
 
+/* ============================================================================
+ * Global light-mode legibility safety net.
+ * Many pages were designed against the dark palette and use raw
+ * `text-white` / `text-white/xx` utilities on plain surfaces. In pure light
+ * mode (no shop theme) those become invisible. Remap them to the current
+ * foreground token globally — components that must stay pure white on a
+ * dark surface can opt out with `data-keep-dark`.
+ * ==========================================================================*/
+html:not(.dark) body:not(.themed):not(.theme-background-active) {
+  & .text-white:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: var(--foreground) !important;
+  }
+  & [class*="text-white/"]:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: var(--muted-foreground) !important;
+  }
+  /* Chat / message bubbles on the app-primary background stay light. */
+  & [data-role="bubble-primary"] { color: var(--primary-foreground) !important; }
+  & [data-role="bubble-primary"] * { color: inherit !important; }
+}
+
+/* Chat message text tokens — used by DM + support to stay readable in both
+   themes. Bubbles on a card surface follow --card-foreground automatically. */
+html.dark, html:not(.dark) body.themed, html:not(.dark) body.theme-background-active {
+  --chat-user-bg: var(--primary);
+  --chat-user-fg: var(--primary-foreground);
+}
+
 
 
 @utility text-gradient {
