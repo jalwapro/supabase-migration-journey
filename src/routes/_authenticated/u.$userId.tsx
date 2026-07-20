@@ -4,7 +4,6 @@ import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { vipTierForLevel } from "@/lib/vip-levels";
-import { VipBadge } from "@/components/vip/VipBadge";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useVipProfile } from "@/hooks/useVipProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -371,7 +370,6 @@ function UserProfilePage() {
             />
           </div>
           <div className="mt-1 flex items-center gap-2 text-[11px] text-white/70">
-            <VipBadge level={p.vip_level ?? 0} size="sm" showLabel />
             {p.country && (
               <span className="flex items-center gap-1">
                 <MapPin className="h-3 w-3" /> {p.country}
