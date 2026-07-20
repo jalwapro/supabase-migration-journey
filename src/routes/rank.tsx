@@ -57,6 +57,28 @@ function RankPage() {
     },
   });
 
+  // Realtime: refresh leaderboard when new gifts arrive
+  const qc = useQueryClient();
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    const scheduleRefresh = () => {
+      if (refreshTimer.current) return;
+      refreshTimer.current = setTimeout(() => {
+        refreshTimer.current = null;
+        qc.invalidateQueries({ queryKey: ["vip-rank"] });
+      }, 1500);
+    };
+    const channel = supabase
+      .channel("rank-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_transactions" }, scheduleRefresh)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "coin_transactions" }, scheduleRefresh)
+      .subscribe();
+    return () => {
+      if (refreshTimer.current) { clearTimeout(refreshTimer.current); refreshTimer.current = null; }
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
   const list = q.data ?? [];
   const top3 = list.slice(0, 3);
   const rest = list.slice(3);
