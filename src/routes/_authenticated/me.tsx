@@ -176,18 +176,18 @@ function MePage() {
           </div>
 
           {/* Neon Jalwa logo */}
-          <div className="relative z-10 mt-1 text-center leading-none">
+          <div className="relative z-10 mt-5 text-center leading-none">
             <h1
-              className="bg-gradient-to-b from-[#ff9ad0] to-[#ff2d95] bg-clip-text text-[54px] text-transparent"
+              className="bg-gradient-to-b from-[#ff9ad0] to-[#ff2d95] bg-clip-text text-[56px] text-transparent"
               style={{ ...NEON, filter: "drop-shadow(0 0 14px rgba(255,45,149,0.75)) drop-shadow(0 0 4px rgba(255,45,149,0.9))" }}
             >
               Jalwa
             </h1>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.4em] text-white/80" style={HEADING}>Live your moment</p>
+            <p className="mt-2 text-[10px] uppercase tracking-[0.45em] text-white/80" style={HEADING}>Live your moment</p>
           </div>
 
-          {/* Profile hero: avatar + info + stats box */}
-          <div className="relative z-10 mt-3 flex items-start gap-3 px-4">
+          {/* Profile hero: avatar + info */}
+          <div className="relative z-10 mt-5 flex items-start gap-4 px-4">
             {/* Avatar with wing frame */}
             <div className="relative shrink-0">
               <div className="absolute -inset-3 rounded-full bg-[#ff2d95]/25 blur-2xl" />
@@ -226,25 +226,25 @@ function MePage() {
             </div>
 
             {/* Info column */}
-            <div className="min-w-0 flex-1 pt-1">
+            <div className="min-w-0 flex-1 space-y-1.5 pt-1">
               <div className="flex items-center gap-1.5">
-                <p className="truncate text-[17px] font-bold text-white" style={HEADING}>{userName}</p>
+                <p className="truncate text-[18px] font-bold leading-tight text-white" style={HEADING}>{userName}</p>
                 <BadgeCheck className="h-4 w-4 shrink-0 text-[#38bdf8]" />
               </div>
-              <p className="truncate text-xs text-white/60">@{userName.toLowerCase()}</p>
+              <p className="truncate text-xs leading-tight text-white/60">@{userName.toLowerCase()}</p>
               {profile?.user_code && (
-                <button onClick={handleCopyId} className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-white/70 hover:text-white">
+                <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 text-[11px] leading-tight text-white/70 hover:text-white">
                   ID: <span className="font-bold text-white">{profile.user_code}</span>
                   <Copy className="h-3 w-3" />
                 </button>
               )}
               {user?.email && (
-                <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-white/60">
+                <p className="flex items-center gap-1.5 truncate text-[11px] leading-tight text-white/60">
                   <Mail className="h-3 w-3 shrink-0" />
                   <span className="truncate">{user.email}</span>
                 </p>
               )}
-              <div className="mt-2 flex items-center gap-2">
+              <div className="pt-1.5">
                 <Link
                   to="/vip"
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#c88a2b]/60 bg-gradient-to-r from-[#3d1f08] to-[#1a0a02] px-3 py-1.5 text-[11px] text-[#f5c46a] shadow-[0_0_16px_rgba(200,138,43,0.35)]"
@@ -252,7 +252,6 @@ function MePage() {
                 >
                   <Shield className="h-3.5 w-3.5" /> {tier.label}
                 </Link>
-                <span className="text-lg" title="Medal">🥉</span>
               </div>
             </div>
 
@@ -271,15 +270,14 @@ function MePage() {
                 {/* Progress info */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-[15px] font-bold text-white" style={HEADING}>{tier.label}</p>
-                    <span className="text-base">🥉</span>
+                    <p className="text-[15px] font-bold leading-tight text-white" style={HEADING}>{tier.label}</p>
                   </div>
-                  <p className="mt-1 text-[11px] uppercase tracking-widest text-white/50" style={HEADING}>Lifetime Gift</p>
-                  <div className="mt-1 flex items-baseline justify-between gap-2">
-                    <p className="text-2xl font-black text-white" style={HEADING}>{formatCoins(p.totalGifted)}</p>
+                  <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-white/50" style={HEADING}>Lifetime Gift</p>
+                  <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                    <p className="text-2xl font-black leading-none text-white" style={HEADING}>{formatCoins(p.totalGifted)}</p>
                     <p className="text-xs text-white/75" style={HEADING}>Lv {p.level}</p>
                   </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
@@ -463,8 +461,8 @@ function FeatureInner({
           </span>
         )}
       </div>
-      <p className="mt-3 truncate text-[15px] font-bold text-white" style={HEADING}>{title}</p>
-      <p className="mt-1 line-clamp-2 pr-6 text-[11px] leading-snug text-white/55">{sub}</p>
+      <p className="mt-3.5 truncate text-[15px] font-bold leading-tight text-white" style={HEADING}>{title}</p>
+      <p className="mt-1.5 line-clamp-2 pr-6 text-[11px] leading-relaxed text-white/60">{sub}</p>
     </div>
   );
 }
