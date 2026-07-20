@@ -335,6 +335,12 @@ function MePage() {
           </div>
         </div>
       </AppShell>
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title="Share profile"
+        target={{ title: `${userName} on Jalwa Live`, text: "Check out my Jalwa Live profile", url: shareUrl }}
+      />
       <BottomNav />
     </>
   );
