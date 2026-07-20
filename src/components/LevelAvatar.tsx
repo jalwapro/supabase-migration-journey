@@ -82,8 +82,8 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {/* Tier ring — only when no custom frame is equipped (frame supersedes ring) */}
-      {!frameUrl && level > 0 && (
+      {/* Tier ring — hidden only when a custom shop frame is equipped (frame supersedes ring) */}
+      {!frameUrl && (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-[-6%] z-[1] rounded-full"
