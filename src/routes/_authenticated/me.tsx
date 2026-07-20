@@ -256,15 +256,6 @@ function MePage() {
               </div>
             </div>
 
-            {/* Quick actions (compact 2x2) */}
-            <div className="shrink-0 rounded-2xl border border-white/10 bg-black/50 p-2 backdrop-blur-md shadow-[0_0_20px_rgba(139,92,246,0.2)]">
-              <div className="grid grid-cols-2 gap-2">
-                <Quick to="/create-room" icon={Mic} label="Go Live" color="#ff2d95" />
-                <Quick to="/pk" icon={Swords} label="PK" color="#fbbf24" />
-                <Quick to="/shop" icon={ShoppingBag} label="Shop" color="#38bdf8" />
-                <Quick to="/games" icon={Gamepad2} label="Games" color="#22c55e" />
-              </div>
-            </div>
           </div>
 
           {/* Main body */}
