@@ -176,14 +176,14 @@ function MePage() {
           </div>
 
           {/* Neon Jalwa logo */}
-          <div className="relative z-10 mt-1 text-center leading-none">
+          <div className="relative z-10 mt-5 text-center leading-none">
             <h1
-              className="bg-gradient-to-b from-[#ff9ad0] to-[#ff2d95] bg-clip-text text-[54px] text-transparent"
+              className="bg-gradient-to-b from-[#ff9ad0] to-[#ff2d95] bg-clip-text text-[56px] text-transparent"
               style={{ ...NEON, filter: "drop-shadow(0 0 14px rgba(255,45,149,0.75)) drop-shadow(0 0 4px rgba(255,45,149,0.9))" }}
             >
               Jalwa
             </h1>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.4em] text-white/80" style={HEADING}>Live your moment</p>
+            <p className="mt-2 text-[10px] uppercase tracking-[0.45em] text-white/80" style={HEADING}>Live your moment</p>
           </div>
 
           {/* Profile hero: avatar + info + stats box */}
