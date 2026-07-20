@@ -262,10 +262,15 @@ function MePage() {
                   )}
                 </div>
 
-                <div className="mt-2.5 flex items-center gap-2">
+                <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
                   <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
                     <Crown className="h-3.5 w-3.5" /> {tier.label}
                   </Link>
+                  {adminVipTier && (
+                    <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#a855f7]/70 bg-gradient-to-b from-[#3a0f5c] to-[#180329] px-3 py-1.5 text-[12px] font-black text-white shadow-[0_0_18px_rgba(168,85,247,0.5)]" style={HEADING}>
+                      <span className="text-sm leading-none">{adminVipTier.badge_emoji ?? "👑"}</span> {adminVipTier.name}
+                    </Link>
+                  )}
                   <span className="text-[22px] leading-none" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🏅</span>
                 </div>
 
