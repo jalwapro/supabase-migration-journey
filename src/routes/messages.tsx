@@ -281,7 +281,7 @@ function MessagesPage() {
   if (!user) {
     return (
       <>
-        <div className="min-h-dvh bg-[#07030f] pb-24 pt-6 text-white" style={BODY}>
+        <div className="min-h-dvh pb-24 pt-6 text-white" style={BODY}>
           <div className="px-6 pt-16 text-center">
             <MessageSquarePlus className="mx-auto h-10 w-10 text-white/50" />
             <p className="mt-3 text-sm text-white/60">Sign in to chat with friends</p>
