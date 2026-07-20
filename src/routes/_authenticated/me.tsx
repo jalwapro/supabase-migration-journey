@@ -330,17 +330,23 @@ function MePage() {
               </div>
             </div>
 
-            {/* Quick action bar */}
-            <div className="rounded-[22px] border border-white/10 bg-black/50 p-3 backdrop-blur-md">
-              <div className="grid grid-cols-4 gap-y-3 sm:grid-cols-8">
-                <Quick to="/create-room" icon={Mic} label="Go Live" color="#ff2d95" />
-                <Quick to="/my-rooms" icon={Home} label="My Rooms" color="#38bdf8" />
-                <Quick to="/pk-history" icon={Swords} label="PK Battle" color="#ff2d95" />
-                <Quick to="/games" icon={Gamepad2} label="Games" color="#8b5cf6" />
-                <Quick to="/theme-shop" icon={ShoppingBag} label="Shop" color="#fbbf24" />
-                <Quick to="/gallery" icon={ImageIcon} label="Gallery" color="#22c55e" />
-                <Quick to="/rank" icon={Trophy} label="Rankings" color="#fbbf24" />
-                <Quick to="/settings" icon={LayoutGrid} label="More" color="#8b5cf6" />
+            {/* Followers / Following line */}
+            <div className="rounded-[22px] border border-white/10 bg-black/50 p-1 backdrop-blur-md">
+              <div className="grid grid-cols-2 divide-x divide-white/10">
+                <Link to="/friends" className="flex items-center justify-center gap-2 py-3">
+                  <Users className="h-4 w-4 text-[#8b5cf6]" />
+                  <span className="text-sm font-bold text-white" style={HEADING}>
+                    {formatCompact(counts?.followers ?? 0)}
+                  </span>
+                  <span className="text-xs text-white/60">Followers</span>
+                </Link>
+                <Link to="/friends" className="flex items-center justify-center gap-2 py-3">
+                  <UserPlus className="h-4 w-4 text-[#38bdf8]" />
+                  <span className="text-sm font-bold text-white" style={HEADING}>
+                    {formatCompact(counts?.following ?? 0)}
+                  </span>
+                  <span className="text-xs text-white/60">Following</span>
+                </Link>
               </div>
             </div>
 
