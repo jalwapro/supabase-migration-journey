@@ -175,6 +175,31 @@ html:not(.dark) [data-adaptive="neon"] {
   & [data-keep-dark] [class*="border-white/"] { border-color: rgba(255,255,255,0.15) !important; }
 }
 
+/* ============================================================================
+ * Themed background text rescue.
+ * When a shop/custom theme paints a dark image behind the app AND the user
+ * is in LIGHT mode, the default foreground token is near-black — invisible
+ * against the dark overlay. Force text tokens to their dark-mode equivalents
+ * while a theme background is active, without touching normal light mode.
+ * ==========================================================================*/
+html:not(.dark) body.themed,
+html:not(.dark) body.theme-background-active {
+  --foreground: oklch(0.98 0.005 300);
+  --card-foreground: oklch(0.98 0.005 300);
+  --popover-foreground: oklch(0.98 0.005 300);
+  --muted-foreground: oklch(0.85 0.02 300);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 10%);
+  color: var(--foreground);
+}
+html:not(.dark) body.themed .text-black,
+html:not(.dark) body.theme-background-active .text-black,
+html:not(.dark) body.themed [class*="text-black/"],
+html:not(.dark) body.theme-background-active [class*="text-black/"] {
+  color: rgba(255, 255, 255, 0.92) !important;
+}
+
+
 
 @utility text-gradient {
   background-image: linear-gradient(
