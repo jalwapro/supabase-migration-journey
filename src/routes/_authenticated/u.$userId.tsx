@@ -363,7 +363,7 @@ function UserProfilePage() {
 
   return (
     <AppShell showHeader={false}>
-      <div className="relative min-h-[100dvh] bg-[#07070D] pb-28 text-white">
+      <div data-adaptive="neon" className="relative min-h-[100dvh] bg-background pb-28 text-foreground">
         {/* Ambient neon backdrop */}
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] overflow-hidden">
           <div
@@ -452,7 +452,7 @@ function UserProfilePage() {
                   background: "conic-gradient(from 0deg, #ffd76a, #ec4899, #a855f7, #22d3ee, #ffd76a)",
                   animationDuration: "8s",
                 }}>
-                  <div className="rounded-full bg-[#07070D] p-1">
+                  <div data-keep-dark className="rounded-full bg-[#07070D] p-1">
                     <LevelAvatar
                       src={p.avatar}
                       name={displayName}

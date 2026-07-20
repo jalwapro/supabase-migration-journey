@@ -138,9 +138,9 @@ function MePage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div className="relative min-h-full overflow-hidden bg-[#080212] text-white">
+        <div data-adaptive="neon" className="relative min-h-full overflow-hidden bg-background text-foreground">
           {/* Cyberpunk header background */}
-          <div aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
+          <div data-keep-dark aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,#3b1360_0%,#1a0733_40%,#080812_85%)]" />
             <div className="absolute inset-0 opacity-40 bg-[linear-gradient(180deg,transparent_0%,transparent_60%,rgba(255,45,149,0.35)_100%)]" />
             {/* skyline silhouette */}
@@ -158,7 +158,7 @@ function MePage() {
           </div>
 
           {/* Top action row */}
-          <div className="relative z-10 flex items-center justify-between px-4 pt-5">
+          <div data-keep-dark className="relative z-10 flex items-center justify-between px-4 pt-5">
             <Link
               to="/"
               className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 text-white/90 backdrop-blur-md transition hover:bg-black/70"
@@ -176,7 +176,7 @@ function MePage() {
           </div>
 
           {/* Neon Jalwa logo */}
-          <div className="relative z-10 mt-4 px-4 text-center leading-none">
+          <div data-keep-dark className="relative z-10 mt-4 px-4 text-center leading-none">
             <h1
               className="bg-gradient-to-b from-[#ffb3dc] via-[#ff6fb5] to-[#ff2d95] bg-clip-text text-[52px] text-transparent"
               style={{ ...NEON, filter: "drop-shadow(0 0 14px rgba(255,45,149,0.6)) drop-shadow(0 0 3px rgba(255,45,149,0.85))" }}
@@ -189,6 +189,7 @@ function MePage() {
           {/* ============ PROFILE CARD (Neon Royal design) ============ */}
           <div className="relative z-10 mt-6 px-3">
             <div
+              data-keep-dark
               className="relative overflow-hidden rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4"
               style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
             >

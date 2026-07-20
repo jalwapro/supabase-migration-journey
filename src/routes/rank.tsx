@@ -153,7 +153,7 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div className="relative min-h-full overflow-hidden pb-32 text-white">
+        <div data-adaptive="neon" className="relative min-h-full overflow-hidden pb-32 text-foreground">
           {/* ambient glows */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/15 blur-[100px]" />
@@ -377,7 +377,7 @@ function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: strin
 
       <div className={`relative mt-3 grid ${theme.pad} place-items-center rounded-full ${theme.ring}`}>
         <span className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent" />
-        <span className="relative grid h-[86%] w-[86%] place-items-center overflow-hidden rounded-full bg-[#120820] text-2xl font-black text-white/80">
+        <span data-keep-dark className="relative grid h-[86%] w-[86%] place-items-center overflow-hidden rounded-full bg-[#120820] text-2xl font-black text-white/80">
           {row?.avatar
             ? <img src={row.avatar} alt="" className="h-full w-full object-cover" />
             : initial}
@@ -421,7 +421,7 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
 
         <div className="flex min-w-0 items-center gap-3">
           <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full ring-2 ring-fuchsia-400/40 p-[2px]">
-            <span className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] text-sm font-black text-white/80">
+            <span data-keep-dark className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] text-sm font-black text-white/80">
               {row.avatar ? <img src={row.avatar} alt="" className="h-full w-full object-cover" /> : initial}
             </span>
           </span>
@@ -547,7 +547,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
         {value} <ChevronDown className="h-3.5 w-3.5" />
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-white/10 bg-[#12081e]/95 p-1 shadow-2xl backdrop-blur-xl">
+        <div data-keep-dark className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-white/10 bg-[#12081e]/95 p-1 shadow-2xl backdrop-blur-xl">
           {options.length === 1 ? (
             <p className="px-3 py-2 text-[11px] text-white/50">No country data yet</p>
           ) : options.map((c) => (
