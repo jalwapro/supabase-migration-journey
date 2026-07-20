@@ -158,7 +158,7 @@ function MePage() {
           </div>
 
           {/* Top action row */}
-          <div className="relative z-10 flex items-center justify-between px-4 pt-5">
+          <div data-keep-dark className="relative z-10 flex items-center justify-between px-4 pt-5">
             <Link
               to="/"
               className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 text-white/90 backdrop-blur-md transition hover:bg-black/70"
@@ -176,7 +176,7 @@ function MePage() {
           </div>
 
           {/* Neon Jalwa logo */}
-          <div className="relative z-10 mt-4 px-4 text-center leading-none">
+          <div data-keep-dark className="relative z-10 mt-4 px-4 text-center leading-none">
             <h1
               className="bg-gradient-to-b from-[#ffb3dc] via-[#ff6fb5] to-[#ff2d95] bg-clip-text text-[52px] text-transparent"
               style={{ ...NEON, filter: "drop-shadow(0 0 14px rgba(255,45,149,0.6)) drop-shadow(0 0 3px rgba(255,45,149,0.85))" }}
