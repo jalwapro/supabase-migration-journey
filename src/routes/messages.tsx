@@ -291,12 +291,16 @@ function MessagesPage() {
               Messages
             </h1>
             <div className="flex items-center gap-2">
-              <IconBtn ariaLabel="New chat" badge={notifQ.data ?? 0}>
-                <MessageSquarePlus className="h-4 w-4" />
-              </IconBtn>
-              <IconBtn ariaLabel="Compose">
-                <PencilLine className="h-4 w-4" />
-              </IconBtn>
+              <Link to="/notifications" aria-label="Notifications">
+                <IconBtn ariaLabel="Notifications" badge={notifQ.data ?? 0}>
+                  <Bell className="h-4 w-4" />
+                </IconBtn>
+              </Link>
+              <button onClick={() => setComposeOpen(true)} aria-label="New chat">
+                <IconBtn ariaLabel="New chat">
+                  <PencilLine className="h-4 w-4" />
+                </IconBtn>
+              </button>
             </div>
           </header>
 
