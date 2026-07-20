@@ -401,6 +401,9 @@ function MessagesPage() {
         </div>
       </div>
       <BottomNav />
+      {composeOpen && (
+        <ComposeSheet uid={uid!} onClose={() => setComposeOpen(false)} />
+      )}
     </>
   );
 }
