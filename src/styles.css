@@ -299,6 +299,31 @@ body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-dvh"][cl
 body.theme-background-active .app-frame > .relative.z-10 [class*="min-h-"][class*="bg-background"] {
   background-color: transparent !important;
 }
+/* When a room/shop background image is active, force the dark palette so the
+   sticky header, chips, and text stay legible over the (typically dark) photo
+   regardless of the user's light/dark setting. */
+body.themed,
+body.theme-background-active {
+  --background: oklch(0.12 0.005 300);
+  --foreground: oklch(0.98 0.005 300);
+  --card: oklch(0.17 0.01 300);
+  --card-foreground: oklch(0.98 0.005 300);
+  --popover: oklch(0.17 0.01 300);
+  --popover-foreground: oklch(0.98 0.005 300);
+  --muted: oklch(0.22 0.015 300);
+  --muted-foreground: oklch(0.78 0.03 300);
+  --border: oklch(1 0 0 / 14%);
+  --input: oklch(1 0 0 / 10%);
+  color-scheme: dark;
+}
+/* Make AppShell header blend with theme background instead of a hard bar */
+body.themed header.sticky,
+body.theme-background-active header.sticky {
+  background-color: color-mix(in oklab, black 35%, transparent) !important;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom-color: color-mix(in oklab, white 10%, transparent) !important;
+}
 @media (min-width: 481px) {
   .app-frame {
     box-shadow: 0 30px 80px -20px color-mix(in oklab, var(--primary) 35%, transparent),
