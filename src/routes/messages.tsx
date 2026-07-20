@@ -414,6 +414,7 @@ function MessagesPage() {
               <InboxList
                 loading={inboxQ.isLoading}
                 rows={inboxList}
+                onlineSet={onlineSet}
                 emptyTitle="No conversations yet"
                 emptyHint="Follow someone or open a live room to start chatting."
               />
@@ -422,12 +423,13 @@ function MessagesPage() {
               <InboxList
                 loading={inboxQ.isLoading}
                 rows={unreadList}
+                onlineSet={onlineSet}
                 emptyTitle="You're all caught up"
                 emptyHint="No unread messages right now."
               />
             )}
             {tab === "followers" && (
-              <FollowersList loading={followersQ.isLoading} rows={filteredFollowers} />
+              <FollowersList loading={followersQ.isLoading} rows={filteredFollowers} onlineSet={onlineSet} />
             )}
             {tab === "rooms" && (
               <RoomsList loading={roomsQ.isLoading} rows={filteredRooms} />
