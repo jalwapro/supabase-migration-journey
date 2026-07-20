@@ -17,7 +17,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
@@ -122,12 +122,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // Set theme class from localStorage BEFORE React hydrates to avoid flash.
+  const themeInit = `(() => { try { var m = localStorage.getItem('jalwa_theme_mode'); if (m !== 'light' && m !== 'dark') m = 'dark'; var r = document.documentElement; r.classList.toggle('dark', m === 'dark'); r.classList.toggle('light', m === 'light'); r.style.colorScheme = m; } catch(_) {} })();`;
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head suppressHydrationWarning>
         <HeadContent />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="bg-background" suppressHydrationWarning>
+      <body className="bg-background text-foreground" suppressHydrationWarning>
         <div className="app-frame-outer" suppressHydrationWarning>
           <div className="app-frame" suppressHydrationWarning>{children}</div>
         </div>
@@ -136,6 +139,7 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 
 // Splash plays only when the app has been closed/backgrounded for 5+ minutes.
 // A regular refresh, seat change, or brief tab switch will NOT replay it.
@@ -207,8 +211,20 @@ function GlobalRealtimeBridge() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useWakeLock();
+  const [toastTheme, setToastTheme] = useState<"light" | "dark">(() => {
+    if (typeof document === "undefined") return "dark";
+    return document.documentElement.classList.contains("light") ? "light" : "dark";
+  });
   useEffect(() => {
     void import("../lib/native").then((m) => m.initNativeShell());
+  }, []);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const d = (e as CustomEvent<"light" | "dark">).detail;
+      if (d === "light" || d === "dark") setToastTheme(d);
+    };
+    window.addEventListener("jalwa:theme-mode", onChange);
+    return () => window.removeEventListener("jalwa:theme-mode", onChange);
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
@@ -217,15 +233,16 @@ function RootComponent() {
         <SplashGate />
         <InstallPermissionGate />
         <GlobalRealtimeBridge />
-        
+
         <div className="relative z-10" suppressHydrationWarning>
 
           <Outlet />
         </div>
-        <Toaster position="top-center" theme="dark" richColors />
+        <Toaster position="top-center" theme={toastTheme} richColors />
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+
 
 
