@@ -290,11 +290,84 @@ function MePage() {
             </div>
           </div>
 
+          {/* Feature grid */}
+          <div className="relative z-10 mt-4 space-y-3 px-3 pb-28">
+            <div className="grid grid-cols-2 gap-2.5">
+              {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
+              {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
+              <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
+              <FeatureCard to="/wallet" icon={Wallet} title="Wallet & Coins" sub="Recharge your balance" color="#fbbf24" />
+              <FeatureCard to="/recharge-history" icon={Receipt} title="Recharge History" sub="Your top-up requests & status" color="#38bdf8" />
+              <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
+              <FeatureCard to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
+              <FeatureCard to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
+              <FeatureCard to="/vip" icon={Crown} title="VIP Membership" sub="Upgrade & unlock milestone rewards" color="#fbbf24" />
+              <FeatureCard to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
+              <FeatureCard to="/games" icon={Gamepad2} title="Games" sub="Daily spin, lucky spin & more" color="#8b5cf6" />
+              <FeatureCard to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
+              <FeatureCard to="/create-room" icon={Mic} title="Go Live" sub="Start a voice room now" color="#8b5cf6" />
+              <FeatureCard to="/pk-history" icon={Swords} title="PK History" sub="Battle wins & losses" color="#ff2d95" />
+              <FeatureCard to="/friends" icon={Users} title="Friends" sub="Followers & following" color="#8b5cf6" />
+              <FeatureCard to="/notifications" icon={Bell} title="Notifications" sub="Gifts, follows & room alerts" color="#ff2d95" />
+              <FeatureCard to="/settings/notifications" icon={SlidersHorizontal} title="Notification Settings" sub="Choose what alerts you get" color="#ff2d95" />
+              <FeatureCard to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
+              <FeatureCard to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
+              <FeatureCard to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
+              <button onClick={() => signOut()} className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-left transition-all hover:border-[#ff2d95]/40 active:scale-[0.98]">
+                <FeatureInner icon={LogOut} title="Log Out" sub="Sign out from your account" color="#ff2d95" />
+              </button>
+            </div>
+          </div>
+        </div>
       </AppShell>
       <BottomNav />
     </>
   );
 }
+
+function CornerBrackets() {
+  const c = "absolute h-6 w-6 border-[#fbbf24]";
+  return (
+    <>
+      <span aria-hidden className={`${c} left-2 top-2 border-l-2 border-t-2 rounded-tl-2xl`} style={{ boxShadow: "0 0 8px rgba(251,191,36,0.6)" }} />
+      <span aria-hidden className={`${c} right-2 top-2 border-r-2 border-t-2 rounded-tr-2xl`} style={{ boxShadow: "0 0 8px rgba(251,191,36,0.6)" }} />
+      <span aria-hidden className={`${c} left-2 bottom-2 border-l-2 border-b-2 rounded-bl-2xl`} style={{ boxShadow: "0 0 8px rgba(251,191,36,0.6)" }} />
+      <span aria-hidden className={`${c} right-2 bottom-2 border-r-2 border-b-2 rounded-br-2xl`} style={{ boxShadow: "0 0 8px rgba(251,191,36,0.6)" }} />
+    </>
+  );
+}
+
+function Chip({ color, icon, label, outline }: { color: string; icon: string; label: string; outline?: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold"
+      style={{
+        color: outline ? color : "#fff",
+        background: outline ? "transparent" : `linear-gradient(135deg, ${color}66, ${color}22)`,
+        border: `1px solid ${color}${outline ? "" : "80"}`,
+        boxShadow: `0 0 10px ${color}55`,
+      }}
+    >
+      <span>{icon}</span>{label}
+    </span>
+  );
+}
+
+function StatBox({ icon, color, value, label }: { icon: React.ReactNode; color: string; value: number; label: string }) {
+  return (
+    <div
+      className="flex flex-col items-center gap-0.5 rounded-2xl border border-white/10 bg-black/40 px-2 py-2.5 backdrop-blur-sm"
+      style={{ boxShadow: `inset 0 0 12px ${color}22` }}
+    >
+      <span style={{ color, filter: `drop-shadow(0 0 6px ${color}aa)` }}>{icon}</span>
+      <p className="mt-0.5 text-[15px] font-black leading-none text-white" style={HEADING} title={value.toLocaleString()}>
+        {formatCompact(value)}
+      </p>
+      <p className="text-[9px] uppercase tracking-widest text-white/55">{label}</p>
+    </div>
+  );
+}
+
 
 function IconBtn({ children, onClick, label }: { children: React.ReactNode; onClick?: () => void; label: string }) {
   return (
