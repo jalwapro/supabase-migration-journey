@@ -85,6 +85,29 @@ function MePage() {
     },
   });
   const isPartner = !!partnerRow?.is_active;
+  const isVipActive = !!profile?.is_vip && (!profile?.vip_expiry || new Date(profile.vip_expiry) > new Date());
+  const { data: adminVipTier } = useQuery({
+    queryKey: ["me-admin-vip-tier", user?.id, isVipActive],
+    enabled: !!user?.id && isVipActive,
+    queryFn: async () => {
+      const { data: tx } = await supabase
+        .from("wallet_transactions")
+        .select("note")
+        .eq("user_id", user!.id)
+        .eq("kind", "vip")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const noteName = tx?.note?.replace(/^Bought VIP\s*/i, "").trim();
+      const { data: tiers } = await supabase.from("vip_tiers").select("*").eq("is_active", true).order("sort");
+      const list = (tiers ?? []) as { id: string; name: string; badge_emoji: string | null; sort: number }[];
+      if (noteName) {
+        const hit = list.find((t) => t.name.toLowerCase() === noteName.toLowerCase());
+        if (hit) return hit;
+      }
+      return list[list.length - 1] ?? null;
+    },
+  });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -197,27 +220,12 @@ function MePage() {
               <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
               <div aria-hidden className="pointer-events-none absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#ff2d95]/20 blur-3xl" />
 
-              {/* Avatar block */}
+              {/* Avatar block — clean DP, equipped frame renders outside via LevelAvatar */}
               <div className="relative z-10 flex flex-col items-center">
-                <div className="relative -mb-4 text-[38px] leading-none" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,0.85))" }}>👑</div>
                 <div className="relative">
-                  <div aria-hidden className="pointer-events-none absolute -left-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>
-                    <span className="inline-block -scale-x-100">🪶</span>
-                  </div>
-                  <div aria-hidden className="pointer-events-none absolute -right-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🪶</div>
-                  <div className="relative grid h-[140px] w-[140px] place-items-center rounded-full p-[3px]" style={{ background: "conic-gradient(from 0deg, #a855f7, #ec4899, #a855f7, #7c3aed, #a855f7)", boxShadow: "0 0 32px rgba(168,85,247,0.7), 0 0 60px rgba(236,72,153,0.35)" }}>
-                    <div className="grid h-full w-full place-items-center rounded-full bg-black p-1">
-                      <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} />
-                    </div>
-                    <span className="absolute bottom-2 right-2 z-30 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
-                  </div>
-                  <div
-                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 text-[13px] font-black text-white shadow-[0_0_14px_rgba(251,191,36,0.7)]"
-                    style={{ ...HEADING, background: "linear-gradient(180deg, #1a0733 0%, #0a0416 100%)", border: "2px solid #fbbf24", clipPath: "polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%)" }}
-                  >
-                    Lv {p.level}
-                  </div>
-                  <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute right-0 top-1 grid h-8 w-8 place-items-center rounded-full border-2 border-black bg-[#ec4899] text-white shadow-[0_4px_12px_rgba(236,72,153,0.7)] disabled:opacity-60">
+                  <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} showBadge={false} />
+                  <span className="absolute bottom-1 right-1 z-30 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
+                  <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute -right-1 top-0 z-30 grid h-8 w-8 place-items-center rounded-full border-2 border-black bg-[#ec4899] text-white shadow-[0_4px_12px_rgba(236,72,153,0.7)] disabled:opacity-60">
                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   </button>
                   <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
@@ -254,10 +262,15 @@ function MePage() {
                   )}
                 </div>
 
-                <div className="mt-2.5 flex items-center gap-2">
+                <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
                   <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
                     <Crown className="h-3.5 w-3.5" /> {tier.label}
                   </Link>
+                  {adminVipTier && (
+                    <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#a855f7]/70 bg-gradient-to-b from-[#3a0f5c] to-[#180329] px-3 py-1.5 text-[12px] font-black text-white shadow-[0_0_18px_rgba(168,85,247,0.5)]" style={HEADING}>
+                      <span className="text-sm leading-none">{adminVipTier.badge_emoji ?? "👑"}</span> {adminVipTier.name}
+                    </Link>
+                  )}
                   <span className="text-[22px] leading-none" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🏅</span>
                 </div>
 
