@@ -282,7 +282,80 @@ function RankPage() {
   );
 }
 
+/* ─────────────────────────────  Header  ───────────────────────────── */
+
+function RankHeader({ onBack, onHelp, profile, userId }: {
+  onBack: () => void; onHelp: () => void;
+  profile: { coins: number } | null | undefined; userId: string | undefined;
+}) {
+  const unread = useUnreadCount();
+  const unreadCount = userId ? (unread.data ?? 0) : 0;
+  return (
+    <header className="relative z-10 px-4 pt-4" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
+      {/* Top row: notifications + wallet */}
+      <div className="flex items-center justify-end gap-2">
+        {userId && (
+          <Link
+            to="/notifications"
+            aria-label="Notifications"
+            className="relative grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md"
+          >
+            <Bell className="h-4 w-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-fuchsia-500 px-1 text-[9px] font-bold text-white">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </Link>
+        )}
+        {profile && (
+          <Link
+            to="/wallet"
+            className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold backdrop-blur-md"
+          >
+            <WalletIcon className="h-3.5 w-3.5 text-amber-300" />
+            <span title={profile.coins.toLocaleString()}>{formatCompact(profile.coins)}</span>
+          </Link>
+        )}
+      </div>
+
+      {/* Title row */}
+      <div className="mt-3 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+        <button
+          onClick={onBack}
+          aria-label="Back"
+          className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition hover:border-fuchsia-400/50 hover:bg-white/10 shadow-[0_0_18px_-6px_rgba(217,70,239,0.6)]"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+
+        <div className="min-w-0 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <Laurel side="left" />
+            <h1 className="truncate text-[26px] font-black tracking-tight leading-none drop-shadow-[0_0_12px_rgba(217,70,239,0.55)]">
+              Rankings
+            </h1>
+            <Laurel side="right" />
+          </div>
+          <p className="mt-1 text-[11px] tracking-[0.22em] text-white/50">
+            <span className="text-fuchsia-300">◆</span> Top hosts, gifters &amp; wealth <span className="text-fuchsia-300">◆</span>
+          </p>
+        </div>
+
+        <button
+          onClick={onHelp}
+          aria-label="Ranking rules"
+          className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition hover:border-violet-400/50 hover:bg-white/10 shadow-[0_0_18px_-6px_rgba(139,92,246,0.55)]"
+        >
+          <HelpCircle className="h-5 w-5" />
+        </button>
+      </div>
+    </header>
+  );
+}
+
 /* ─────────────────────────────  Podium  ───────────────────────────── */
+
 
 function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
   const theme = place === 1
