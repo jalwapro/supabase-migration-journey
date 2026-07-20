@@ -460,3 +460,77 @@ function RechargePage() {
     </>
   );
 }
+
+function DepositBox({ method, accounts }: { method: Method; accounts: Record<string, string> }) {
+  const copy = (v: string) => {
+    navigator.clipboard.writeText(v);
+    toast.success("Copied");
+  };
+  const Row = ({ label, value }: { label: string; value?: string }) =>
+    value ? (
+      <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-input/60 px-3 py-2 text-xs">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+          <p className="truncate font-bold">{value}</p>
+        </div>
+        <button type="button" onClick={() => copy(value)} className="grid h-8 w-8 place-items-center rounded-lg bg-card">
+          <Copy className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    ) : null;
+
+  let title = "Deposit to";
+  let rows: React.ReactNode = null;
+
+  if (method === "easypaisa") {
+    title = "Send payment to our Easypaisa";
+    const hasMerchant = !!accounts.easypaisaMerchantId;
+    rows = (
+      <>
+        {hasMerchant && (
+          <>
+            <Row label="Merchant ID" value={accounts.easypaisaMerchantId} />
+            <Row label="Store ID" value={accounts.easypaisaStoreId} />
+            <Row label="Account title" value={accounts.easypaisaAccountTitle} />
+            <Row label="IBAN" value={accounts.easypaisaIban} />
+          </>
+        )}
+        <Row label={hasMerchant ? "Also accepted (personal)" : "Easypaisa number"} value={accounts.easypaisa} />
+      </>
+    );
+  } else if (method === "jazzcash") {
+    title = "Send payment to our JazzCash";
+    rows = <Row label="JazzCash number" value={accounts.jazzcash} />;
+  } else if (method === "bank") {
+    title = "Bank transfer to";
+    rows = (
+      <>
+        <Row label="Bank" value={accounts.bankName} />
+        <Row label="Account title" value={accounts.bankTitle} />
+        <Row label="Account #" value={accounts.bankAccount} />
+      </>
+    );
+  } else if (method === "card") {
+    return (
+      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
+        Card payments are handled manually — chat with support in the app after selecting your amount.
+      </div>
+    );
+  } else if (method === "paypal") {
+    title = "PayPal";
+    rows = <Row label="Send to" value={accounts.paypal ?? accounts.crypto} />;
+  }
+
+  const anything = !!(rows && (rows as { props?: { children?: unknown } }).props);
+  if (!anything && method !== "easypaisa" && method !== "bank" && method !== "jazzcash") return null;
+
+  return (
+    <section>
+      <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h2>
+      <div className="space-y-2">{rows}</div>
+      <p className="mt-2 text-[11px] text-muted-foreground">
+        Transfer the exact amount, then submit your details below. Coins are credited after admin verifies the payment.
+      </p>
+    </section>
+  );
+}
