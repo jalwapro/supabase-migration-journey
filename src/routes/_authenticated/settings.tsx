@@ -29,7 +29,9 @@ export const Route = createFileRoute("/_authenticated/settings")({ component: Pa
 
 function Page() {
   const { user, profile, refresh } = useAuth() as any;
+  const { mode, setMode } = useThemeMode();
   const [username, setUsername] = useState("");
+
   const [fullName, setFullName] = useState("");
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
