@@ -269,6 +269,15 @@ function MessagesPage() {
 
   const liveRing = roomsQ.data ?? [];
 
+  const presenceIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of inboxQ.data ?? []) set.add(r.peer_id);
+    for (const p of followersQ.data ?? []) set.add(p.id);
+    return Array.from(set);
+  }, [inboxQ.data, followersQ.data]);
+  const presenceQ = usePresence(presenceIds);
+  const onlineSet = presenceQ.data ?? new Set<string>();
+
   if (!user) {
     return (
       <>
