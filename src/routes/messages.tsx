@@ -51,6 +51,7 @@ type LiveRoom = {
   cover_url: string | null;
   room_type: string | null;
   viewer_count: number | null;
+  host_id: string | null;
   host_username: string | null;
   host_avatar: string | null;
 };
