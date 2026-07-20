@@ -45,50 +45,50 @@
 :root {
   --radius: 1rem;
 
-  --background: oklch(0.15 0.035 300);
-  --foreground: oklch(0.98 0.005 300);
+  /* Light mode (default when no `.dark` class on <html>) — clean white/black. */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0.02 300);
 
-  --card: oklch(0.19 0.045 300);
-  --card-foreground: oklch(0.98 0.005 300);
+  --card: oklch(0.99 0.003 300);
+  --card-foreground: oklch(0.15 0.02 300);
 
-  --popover: oklch(0.19 0.045 300);
-  --popover-foreground: oklch(0.98 0.005 300);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.02 300);
 
-  --primary: oklch(0.64 0.27 348);            /* hot pink / magenta */
-  --primary-foreground: oklch(0.98 0.005 300);
+  --primary: oklch(0.64 0.27 348);
+  --primary-foreground: oklch(0.99 0.003 300);
 
-  --secondary: oklch(0.55 0.24 295);          /* violet */
-  --secondary-foreground: oklch(0.98 0.005 300);
+  --secondary: oklch(0.55 0.24 295);
+  --secondary-foreground: oklch(0.99 0.003 300);
 
-  --muted: oklch(0.24 0.04 300);
-  --muted-foreground: oklch(0.72 0.03 300);
+  --muted: oklch(0.96 0.005 300);
+  --muted-foreground: oklch(0.45 0.02 300);
 
   --accent: oklch(0.6 0.25 300);
-  --accent-foreground: oklch(0.98 0.005 300);
+  --accent-foreground: oklch(0.99 0.003 300);
 
-  --gold: oklch(0.82 0.16 85);                /* VIP / coins */
+  --gold: oklch(0.75 0.16 85);
 
   --destructive: oklch(0.62 0.24 25);
-  --destructive-foreground: oklch(0.98 0.005 300);
+  --destructive-foreground: oklch(0.99 0.003 300);
 
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 8%);
+  --border: oklch(0.15 0.02 300 / 12%);
+  --input: oklch(0.15 0.02 300 / 6%);
   --ring: oklch(0.64 0.27 348);
 }
 
 .dark {
-  /* App is dark-first; keep .dark identical so any accidental toggle is a no-op */
-  --background: oklch(0.15 0.035 300);
+  --background: oklch(0.12 0.005 300);
   --foreground: oklch(0.98 0.005 300);
-  --card: oklch(0.19 0.045 300);
+  --card: oklch(0.17 0.01 300);
   --card-foreground: oklch(0.98 0.005 300);
-  --popover: oklch(0.19 0.045 300);
+  --popover: oklch(0.17 0.01 300);
   --popover-foreground: oklch(0.98 0.005 300);
   --primary: oklch(0.64 0.27 348);
   --primary-foreground: oklch(0.98 0.005 300);
   --secondary: oklch(0.55 0.24 295);
   --secondary-foreground: oklch(0.98 0.005 300);
-  --muted: oklch(0.24 0.04 300);
+  --muted: oklch(0.22 0.015 300);
   --muted-foreground: oklch(0.72 0.03 300);
   --accent: oklch(0.6 0.25 300);
   --accent-foreground: oklch(0.98 0.005 300);
@@ -99,6 +99,7 @@
   --input: oklch(1 0 0 / 8%);
   --ring: oklch(0.64 0.27 348);
 }
+
 
 @layer base {
   * {
