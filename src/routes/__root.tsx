@@ -211,8 +211,20 @@ function GlobalRealtimeBridge() {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useWakeLock();
+  const [toastTheme, setToastTheme] = useState<"light" | "dark">(() => {
+    if (typeof document === "undefined") return "dark";
+    return document.documentElement.classList.contains("light") ? "light" : "dark";
+  });
   useEffect(() => {
     void import("../lib/native").then((m) => m.initNativeShell());
+  }, []);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const d = (e as CustomEvent<"light" | "dark">).detail;
+      if (d === "light" || d === "dark") setToastTheme(d);
+    };
+    window.addEventListener("jalwa:theme-mode", onChange);
+    return () => window.removeEventListener("jalwa:theme-mode", onChange);
   }, []);
   return (
     <QueryClientProvider client={queryClient}>
@@ -221,15 +233,16 @@ function RootComponent() {
         <SplashGate />
         <InstallPermissionGate />
         <GlobalRealtimeBridge />
-        
+
         <div className="relative z-10" suppressHydrationWarning>
 
           <Outlet />
         </div>
-        <Toaster position="top-center" theme="dark" richColors />
+        <Toaster position="top-center" theme={toastTheme} richColors />
       </AuthProvider>
     </QueryClientProvider>
   );
 }
+
 
 
