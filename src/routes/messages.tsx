@@ -87,6 +87,32 @@ function previewText(r: InboxRow): { text: string; icon?: string } {
   }
 }
 
+/** Online = profile.last_seen within last 90 seconds. */
+const ONLINE_WINDOW_MS = 90_000;
+function usePresence(ids: string[]) {
+  const key = useMemo(() => Array.from(new Set(ids)).filter(Boolean).sort(), [ids]);
+  return useQuery({
+    queryKey: ["presence", key],
+    enabled: key.length > 0,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,last_seen")
+        .in("id", key);
+      if (error) throw error;
+      const cutoff = Date.now() - ONLINE_WINDOW_MS;
+      const online = new Set<string>();
+      for (const r of data ?? []) {
+        const t = r.last_seen ? new Date(r.last_seen).getTime() : 0;
+        if (t >= cutoff) online.add(r.id as string);
+      }
+      return online;
+    },
+  });
+}
+
 function MessagesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
@@ -243,6 +269,15 @@ function MessagesPage() {
 
   const liveRing = roomsQ.data ?? [];
 
+  const presenceIds = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of inboxQ.data ?? []) set.add(r.peer_id);
+    for (const p of followersQ.data ?? []) set.add(p.id);
+    return Array.from(set);
+  }, [inboxQ.data, followersQ.data]);
+  const presenceQ = usePresence(presenceIds);
+  const onlineSet = presenceQ.data ?? new Set<string>();
+
   if (!user) {
     return (
       <>
@@ -379,6 +414,7 @@ function MessagesPage() {
               <InboxList
                 loading={inboxQ.isLoading}
                 rows={inboxList}
+                onlineSet={onlineSet}
                 emptyTitle="No conversations yet"
                 emptyHint="Follow someone or open a live room to start chatting."
               />
@@ -387,12 +423,13 @@ function MessagesPage() {
               <InboxList
                 loading={inboxQ.isLoading}
                 rows={unreadList}
+                onlineSet={onlineSet}
                 emptyTitle="You're all caught up"
                 emptyHint="No unread messages right now."
               />
             )}
             {tab === "followers" && (
-              <FollowersList loading={followersQ.isLoading} rows={filteredFollowers} />
+              <FollowersList loading={followersQ.isLoading} rows={filteredFollowers} onlineSet={onlineSet} />
             )}
             {tab === "rooms" && (
               <RoomsList loading={roomsQ.isLoading} rows={filteredRooms} />
@@ -525,12 +562,13 @@ function EmptyBlock({ title, hint }: { title: string; hint: string }) {
 }
 
 function InboxList({
-  loading, rows, emptyTitle, emptyHint,
+  loading, rows, emptyTitle, emptyHint, onlineSet,
 }: {
   loading: boolean;
   rows: InboxRow[];
   emptyTitle: string;
   emptyHint: string;
+  onlineSet: Set<string>;
 }) {
   if (loading) {
     return (
@@ -543,13 +581,13 @@ function InboxList({
   return (
     <ul className="space-y-2.5">
       {rows.map((r) => (
-        <InboxRowCard key={r.peer_id} row={r} />
+        <InboxRowCard key={r.peer_id} row={r} online={onlineSet.has(r.peer_id)} />
       ))}
     </ul>
   );
 }
 
-function InboxRowCard({ row }: { row: InboxRow }) {
+function InboxRowCard({ row, online }: { row: InboxRow; online: boolean }) {
   const p = previewText(row);
   const initial = (row.peer_username ?? "?").slice(0, 1).toUpperCase();
   const vip = row.peer_vip_level ?? 0;
@@ -566,7 +604,9 @@ function InboxRowCard({ row }: { row: InboxRow }) {
               ? <img src={row.peer_avatar} alt="" className="h-full w-full object-cover" />
               : initial}
           </span>
-          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07030f] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+          {online && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07030f] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
@@ -595,7 +635,7 @@ function InboxRowCard({ row }: { row: InboxRow }) {
   );
 }
 
-function FollowersList({ loading, rows }: { loading: boolean; rows: PeerProfile[] }) {
+function FollowersList({ loading, rows, onlineSet }: { loading: boolean; rows: PeerProfile[]; onlineSet: Set<string> }) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const followBack = useMutation({
@@ -632,11 +672,14 @@ function FollowersList({ loading, rows }: { loading: boolean; rows: PeerProfile[
           <Link
             to="/u/$userId"
             params={{ userId: p.id }}
-            className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-fuchsia-500/60 to-purple-600/60 p-[2px]"
+            className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-fuchsia-500/60 to-purple-600/60 p-[2px]"
           >
             <span className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] font-bold text-white/80">
               {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
             </span>
+            {onlineSet.has(p.id) && (
+              <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07030f] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+            )}
           </Link>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"}</p>
