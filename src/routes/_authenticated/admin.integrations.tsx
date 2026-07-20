@@ -56,9 +56,9 @@ function Integrations() {
       <div className="glass mb-4 rounded-2xl p-4">
         <h3 className="font-bold">ZEGOCLOUD — Voice &amp; Video RTC</h3>
         <p className="mt-0.5 text-[11px] text-muted-foreground">
-          RTC ab ZEGOCLOUD se chalta hai. AppID aur ServerSecret environment secrets
-          (<code>ZEGO_APP_ID</code>, <code>ZEGO_SERVER_SECRET</code>) me store hain —
-          yahan edit karne ki zaroorat nahi. Change karne ke liye Project Secrets use karein.
+          RTC runs on ZEGOCLOUD. The AppID and ServerSecret are stored as environment
+          secrets (<code>ZEGO_APP_ID</code>, <code>ZEGO_SERVER_SECRET</code>) — no need
+          to edit them here. To rotate them, use Project Secrets.
         </p>
       </div>
       {list.isLoading ? (
