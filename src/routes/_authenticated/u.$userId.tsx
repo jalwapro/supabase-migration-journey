@@ -363,7 +363,7 @@ function UserProfilePage() {
 
   return (
     <AppShell showHeader={false}>
-      <div className="relative min-h-[100dvh] bg-[#07070D] pb-28 text-white">
+      <div data-adaptive="neon" className="relative min-h-[100dvh] bg-background pb-28 text-foreground">
         {/* Ambient neon backdrop */}
         <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] overflow-hidden">
           <div
