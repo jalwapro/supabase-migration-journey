@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ShareSheet } from "@/components/ShareSheet";
 import {
   Radio,
   Users,
@@ -37,6 +38,9 @@ import {
   Palette,
   Rocket,
   Bell,
+  MoreVertical,
+  LifeBuoy,
+  Share2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
