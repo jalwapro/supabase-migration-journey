@@ -628,7 +628,45 @@ function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+        <DialogContent className="max-w-sm rounded-3xl p-5">
+          <DialogHeader>
+            <DialogTitle>Menu</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); setShareOpen(true); }}
+              className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs"
+            >
+              <Share2 className="h-5 w-5 text-[color:var(--primary)]" />
+              Share app
+            </button>
+            <Link to="/support" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs">
+              <LifeBuoy className="h-5 w-5 text-[color:var(--primary)]" />
+              Support
+            </Link>
+            <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs">
+              <Sparkles className="h-5 w-5 text-[color:var(--primary)]" />
+              Settings
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title="Share Jalwa Live"
+        target={{
+          title: "Jalwa Live",
+          text: "Join me on Jalwa Live — live rooms, PK battles, and more.",
+          url: typeof window !== "undefined" ? window.location.origin : "https://cloud-to-soul.lovable.app",
+        }}
+      />
     </>
+
   );
 }
 
