@@ -82,7 +82,21 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {/* Gradient ring removed — DP frames now handle level visuals */}
+      {/* Tier ring — only when no custom frame is equipped (frame supersedes ring) */}
+      {!frameUrl && level > 0 && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-[-6%] z-[1] rounded-full"
+          style={{
+            padding: 2,
+            background: `conic-gradient(from 0deg, ${tier.color}, #fff2, ${tier.color})`,
+            WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+            boxShadow: `0 0 12px ${tier.glow}`,
+          }}
+        />
+      )}
 
       {/* Inner disc */}
       <div className="absolute inset-0 overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
@@ -104,7 +118,7 @@ export function LevelAvatar({
           10-level series up to the user's level so progression is visible. */}
       {frame && frameUrl && (
         <div
-          className="pointer-events-none absolute inset-[-38%] z-[5] flex items-center justify-center"
+          className="pointer-events-none absolute inset-[-14%] z-[5] flex items-center justify-center"
           aria-hidden
         >
 

@@ -448,9 +448,8 @@ function UserProfilePage() {
                     background: `conic-gradient(from 0deg, #a855f7, #ec4899, #f59e0b, #a855f7)`,
                   }}
                 />
-                <div className="relative animate-spin-slow rounded-full p-[3px]" style={{
+                <div className="relative rounded-full p-[3px]" style={{
                   background: "conic-gradient(from 0deg, #ffd76a, #ec4899, #a855f7, #22d3ee, #ffd76a)",
-                  animationDuration: "8s",
                 }}>
                   <div data-keep-dark className="rounded-full bg-[#07070D] p-1">
                     <LevelAvatar
