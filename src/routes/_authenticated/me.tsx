@@ -327,19 +327,7 @@ function MePage() {
               </div>
             </div>
 
-            {/* Quick Action bar */}
-            <div className="rounded-[22px] border border-white/10 bg-black/50 p-3 backdrop-blur-md shadow-[0_0_20px_rgba(139,92,246,0.15)]">
-              <div className="grid grid-cols-4 gap-y-3 sm:grid-cols-8">
-                <Quick to="/create-room" icon={Mic} label="Go Live" color="#ff2d95" />
-                <Quick to="/my-rooms" icon={Home} label="My Rooms" color="#8b5cf6" />
-                <Quick to="/pk" icon={Swords} label="PK" color="#fbbf24" />
-                <Quick to="/games" icon={Gamepad2} label="Games" color="#22c55e" />
-                <Quick to="/shop" icon={ShoppingBag} label="Shop" color="#38bdf8" />
-                <Quick to="/rank" icon={Trophy} label="Rank" color="#fbbf24" />
-                <Quick to="/friends" icon={Users} label="Friends" color="#8b5cf6" />
-                <Quick to="/vip" icon={Crown} label="VIP" color="#fbbf24" />
-              </div>
-            </div>
+
 
             {/* Feature grid */}
             <div className="grid grid-cols-2 gap-2.5">
