@@ -174,15 +174,8 @@ export function LevelAvatar({
         </span>
       )}
 
-      {/* Level chip */}
-      {showBadge && (
-        <span
-          className={`absolute -bottom-1 left-1/2 z-10 -translate-x-1/2 rounded-full bg-gradient-to-r ${tier.gradient} px-2 py-[1px] text-[9px] font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40`}
-        >
-          <span className="mr-0.5">{tier.icon}</span>
-          Lv {level}
-        </span>
-      )}
+      {/* Level chip hidden — DP frame already indicates level */}
+
     </Wrapper>
 
   );
