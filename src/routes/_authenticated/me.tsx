@@ -140,7 +140,7 @@ function MePage() {
       <AppShell title="" subtitle="" showHeader={false}>
         <div data-adaptive="neon" className="relative min-h-full overflow-hidden bg-background text-foreground">
           {/* Cyberpunk header background */}
-          <div aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
+          <div data-keep-dark aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,#3b1360_0%,#1a0733_40%,#080812_85%)]" />
             <div className="absolute inset-0 opacity-40 bg-[linear-gradient(180deg,transparent_0%,transparent_60%,rgba(255,45,149,0.35)_100%)]" />
             {/* skyline silhouette */}
@@ -189,6 +189,7 @@ function MePage() {
           {/* ============ PROFILE CARD (Neon Royal design) ============ */}
           <div className="relative z-10 mt-6 px-3">
             <div
+              data-keep-dark
               className="relative overflow-hidden rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4"
               style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
             >
