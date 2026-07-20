@@ -336,10 +336,13 @@ function RechargePage() {
                 </div>
               </section>
 
+              {/* Deposit destination (admin-configured) */}
+              <DepositBox method={method} accounts={paymentAccounts.data ?? {}} />
+
               {/* Account input */}
               <section>
                 <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  {activeMethod.label} account
+                  Your {activeMethod.label} account
                 </h2>
                 <input
                   value={accountRef}
@@ -348,7 +351,7 @@ function RechargePage() {
                   className="w-full rounded-xl border border-border bg-input px-4 py-3 text-base font-semibold outline-none focus:border-primary"
                 />
                 <p className="mt-2 text-[11px] text-muted-foreground">
-                  OTP will be sent to this account by {activeMethod.label}. Enter it on next screen to confirm.
+                  After you transfer the amount above, enter your sending account here. Support will confirm the payment.
                 </p>
               </section>
 
