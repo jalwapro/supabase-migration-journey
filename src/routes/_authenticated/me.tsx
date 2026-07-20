@@ -200,10 +200,10 @@ function MePage() {
                 />
               </div>
 
-              <div className="min-w-0 flex-1 pt-3">
+              <div className="min-w-0 flex-1 pt-4">
 
                 <div className="flex items-center gap-2">
-                  <h2 className="truncate text-xl font-black">
+                  <h2 className="truncate text-2xl font-black tracking-tight">
                     {profile?.username ?? "you"}
                   </h2>
                   {profile?.is_vip && (
@@ -217,7 +217,7 @@ function MePage() {
                     <Pencil className="h-3.5 w-3.5" />
                   </Link>
                 </div>
-                <p className="mt-0.5 truncate text-[11px] text-white/60">
+                <p className="mt-2 truncate text-[12px] text-white/60">
                   {user?.email}
                 </p>
                 {profile?.user_code && (
@@ -226,7 +226,7 @@ function MePage() {
                       navigator.clipboard.writeText(profile.user_code!);
                       toast.success("ID copied");
                     }}
-                    className="relative mt-2 inline-flex items-center gap-1 overflow-hidden rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-white/90"
+                    className="relative mt-3 inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11px] text-white/90"
                   >
                     {profile?.special_id && (
                       <span
@@ -235,7 +235,7 @@ function MePage() {
                         style={{ backgroundImage: `url(${profile.special_id})`, backgroundSize: "cover", backgroundPosition: "center" }}
                       />
                     )}
-                    <span className="relative z-10 flex items-center gap-1 font-black drop-shadow">
+                    <span className="relative z-10 flex items-center gap-1.5 font-black drop-shadow whitespace-nowrap">
                       ID · {profile.user_code} <Copy className="h-3 w-3" />
                     </span>
                   </button>
