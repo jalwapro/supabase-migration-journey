@@ -6,9 +6,10 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Search, Filter, PencilLine, MessageSquarePlus, Bell, BellOff,
-  BadgeCheck, Crown, Loader2, Users, Home, Sparkles, UserPlus,
+  BadgeCheck, Crown, Loader2, Users, Home, Sparkles, UserPlus, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/messages")({
   component: MessagesPage,
