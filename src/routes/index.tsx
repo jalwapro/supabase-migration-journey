@@ -98,6 +98,8 @@ function Home() {
   const [q, setQ] = useState("");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const query = q.trim();
 
