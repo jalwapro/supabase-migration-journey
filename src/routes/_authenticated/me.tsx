@@ -270,15 +270,14 @@ function MePage() {
                 {/* Progress info */}
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-[15px] font-bold text-white" style={HEADING}>{tier.label}</p>
-                    <span className="text-base">🥉</span>
+                    <p className="text-[15px] font-bold leading-tight text-white" style={HEADING}>{tier.label}</p>
                   </div>
-                  <p className="mt-1 text-[11px] uppercase tracking-widest text-white/50" style={HEADING}>Lifetime Gift</p>
-                  <div className="mt-1 flex items-baseline justify-between gap-2">
-                    <p className="text-2xl font-black text-white" style={HEADING}>{formatCoins(p.totalGifted)}</p>
+                  <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-white/50" style={HEADING}>Lifetime Gift</p>
+                  <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                    <p className="text-2xl font-black leading-none text-white" style={HEADING}>{formatCoins(p.totalGifted)}</p>
                     <p className="text-xs text-white/75" style={HEADING}>Lv {p.level}</p>
                   </div>
-                  <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{
