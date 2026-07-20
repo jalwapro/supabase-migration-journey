@@ -55,16 +55,15 @@ const PERIODS: { k: Period; label: string }[] = [
   { k: "all", label: "Overall Ranking" },
 ];
 
-/* Common country choices — extend as needed. */
-const COUNTRIES = [
-  "Global","Pakistan","India","Bangladesh","Saudi Arabia","UAE","Turkey",
-  "Egypt","Indonesia","Malaysia","United States","United Kingdom",
-];
-
+/* Country flags — extended dynamically with countries actually present in DB. */
 const COUNTRY_FLAG: Record<string, string> = {
   Pakistan: "🇵🇰", India: "🇮🇳", Bangladesh: "🇧🇩", "Saudi Arabia": "🇸🇦",
   UAE: "🇦🇪", Turkey: "🇹🇷", Egypt: "🇪🇬", Indonesia: "🇮🇩", Malaysia: "🇲🇾",
-  "United States": "🇺🇸", "United Kingdom": "🇬🇧",
+  "United States": "🇺🇸", "United Kingdom": "🇬🇧", Philippines: "🇵🇭",
+  Nigeria: "🇳🇬", Morocco: "🇲🇦", Iraq: "🇮🇶", Kuwait: "🇰🇼", Qatar: "🇶🇦",
+  Oman: "🇴🇲", Bahrain: "🇧🇭", Jordan: "🇯🇴", Syria: "🇸🇾", Yemen: "🇾🇪",
+  Afghanistan: "🇦🇫", Iran: "🇮🇷", Russia: "🇷🇺", China: "🇨🇳", Japan: "🇯🇵",
+  Germany: "🇩🇪", France: "🇫🇷", Canada: "🇨🇦", Brazil: "🇧🇷", Mexico: "🇲🇽",
 };
 
 /* ─────────────────────────────  Page  ───────────────────────────── */
