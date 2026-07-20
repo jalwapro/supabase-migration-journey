@@ -8,8 +8,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatCoins } from "@/lib/vip-levels";
 import {
   ArrowLeft, HelpCircle, Crown, Star, Heart, Mic, Gift, Swords, Gem, Sparkles,
-  Flame, Globe2, ChevronDown, Coins,
+  Flame, Globe2, ChevronDown, Coins, Bell, Wallet as WalletIcon,
 } from "lucide-react";
+import { formatCompact } from "@/lib/utils";
+import { useUnreadCount } from "@/hooks/useNotifications";
+
 
 export const Route = createFileRoute("/rank")({
   component: RankPage,
