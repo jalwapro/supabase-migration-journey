@@ -202,8 +202,41 @@ function Page() {
             </button>
           </div>
 
+          {/* Appearance card */}
+          <div className="space-y-4 rounded-3xl border border-border bg-card/70 p-5 backdrop-blur">
+            <SectionTitle icon={<Sparkles className="h-3.5 w-3.5" />} title="Appearance" />
+            <p className="text-[11px] text-muted-foreground">
+              Choose how the app looks. Room and shop themes stay unchanged.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode("light")}
+                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold transition ${
+                  mode === "light"
+                    ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-foreground"
+                    : "border-border bg-background/60 text-muted-foreground"
+                }`}
+              >
+                <Sun className="h-4 w-4" /> Light
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("dark")}
+                className={`flex items-center justify-center gap-2 rounded-2xl border py-3 text-sm font-bold transition ${
+                  mode === "dark"
+                    ? "border-[color:var(--primary)] bg-[color:var(--primary)]/10 text-foreground"
+                    : "border-border bg-background/60 text-muted-foreground"
+                }`}
+              >
+                <Moon className="h-4 w-4" /> Dark
+              </button>
+            </div>
+          </div>
+
           {/* Password card */}
           <div className="space-y-4 rounded-3xl border border-border bg-card/70 p-5 backdrop-blur">
+
             <SectionTitle icon={<Lock className="h-3.5 w-3.5" />} title="Security" />
             <FancyField
               icon={<Lock className="h-4 w-4" />}
