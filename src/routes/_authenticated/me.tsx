@@ -176,18 +176,18 @@ function MePage() {
           </div>
 
           {/* Neon Jalwa logo */}
-          <div className="relative z-10 mt-6 text-center leading-none">
+          <div className="relative z-10 mt-4 px-4 text-center leading-none">
             <h1
-              className="bg-gradient-to-b from-[#ffb3dc] via-[#ff6fb5] to-[#ff2d95] bg-clip-text text-[64px] text-transparent"
-              style={{ ...NEON, filter: "drop-shadow(0 0 18px rgba(255,45,149,0.7)) drop-shadow(0 0 4px rgba(255,45,149,0.9))" }}
+              className="bg-gradient-to-b from-[#ffb3dc] via-[#ff6fb5] to-[#ff2d95] bg-clip-text text-[52px] text-transparent"
+              style={{ ...NEON, filter: "drop-shadow(0 0 14px rgba(255,45,149,0.6)) drop-shadow(0 0 3px rgba(255,45,149,0.85))" }}
             >
               Jalwa
             </h1>
-            <p className="mt-2.5 text-[10px] uppercase tracking-[0.5em] text-white/70" style={HEADING}>Live your moment</p>
+            <p className="mt-2 text-[10px] uppercase tracking-[0.5em] text-white/70" style={HEADING}>Live your moment</p>
           </div>
 
           {/* Profile hero: avatar + info */}
-          <div className="relative z-10 mt-7 flex items-start gap-5 px-5">
+          <div className="relative z-10 mt-6 flex flex-col items-center gap-3 px-5">
             {/* Avatar with wing frame */}
             <div className="relative shrink-0">
               <div className="absolute -inset-3 rounded-full bg-[#ff2d95]/25 blur-2xl" />
@@ -222,28 +222,29 @@ function MePage() {
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
             </div>
 
-
-            {/* Info column */}
-            <div className="min-w-0 flex-1 space-y-1.5 pt-1">
-              <div className="flex items-center gap-1.5">
-                <p className="truncate text-[18px] font-bold leading-tight text-white" style={HEADING}>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; {userName}</p>
+            {/* Info column - centered */}
+            <div className="mt-3 flex w-full max-w-full flex-col items-center gap-1.5 text-center">
+              <div className="flex items-center justify-center gap-1.5">
+                <p className="max-w-[220px] truncate text-[20px] font-bold leading-tight text-white" style={HEADING}>{userName}</p>
                 <BadgeCheck className="h-4 w-4 shrink-0 text-[#38bdf8]" />
               </div>
-              <p className="truncate text-xs leading-tight text-white/60">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</p>
-              {profile?.user_code && (
-                <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 text-[11px] leading-tight text-white/70 hover:text-white">
-                  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ID:
-                  <span className="font-bold text-white">{profile.user_code}</span>
-                  <Copy className="h-3 w-3" />
-                </button>
-              )}
-              {user?.email && (
-                <p className="flex items-center gap-1.5 truncate text-[11px] leading-tight text-white/60">
-                  <Mail className="h-3 w-3 shrink-0" />
-                  <span className="truncate">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;{user.email}</span>
-                </p>
-              )}
-              <div className="pt-1.5">
+              <p className="text-xs leading-tight text-white/60">@{userName.toLowerCase()}</p>
+              <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+                {profile?.user_code && (
+                  <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] leading-none text-white/80 hover:bg-white/10">
+                    <span className="text-white/50">ID</span>
+                    <span className="font-bold text-white">{profile.user_code}</span>
+                    <Copy className="h-3 w-3" />
+                  </button>
+                )}
+                {user?.email && (
+                  <span className="inline-flex max-w-[220px] items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] leading-none text-white/70">
+                    <Mail className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{user.email}</span>
+                  </span>
+                )}
+              </div>
+              <div className="pt-2">
                 <Link
                   to="/vip"
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#c88a2b]/60 bg-gradient-to-r from-[#3d1f08] to-[#1a0a02] px-3 py-1.5 text-[11px] text-[#f5c46a] shadow-[0_0_16px_rgba(200,138,43,0.35)]"
@@ -252,9 +253,21 @@ function MePage() {
                   <Shield className="h-3.5 w-3.5" /> {tier.label}
                 </Link>
               </div>
+              {counts && (
+                <div className="mt-2 flex items-center gap-5 text-[11px] text-white/70">
+                  <Link to="/friends" className="hover:text-white">
+                    <span className="font-bold text-white" style={HEADING}>{formatCompact(counts.followers)}</span> Followers
+                  </Link>
+                  <span className="h-3 w-px bg-white/15" />
+                  <Link to="/friends" className="hover:text-white">
+                    <span className="font-bold text-white" style={HEADING}>{formatCompact(counts.following)}</span> Following
+                  </Link>
+                </div>
+              )}
             </div>
 
           </div>
+
 
           {/* Main body */}
           <div className="relative z-10 mt-4 space-y-3 px-3 pb-28">
