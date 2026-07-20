@@ -158,36 +158,36 @@ function MePage() {
           </div>
 
           {/* Top action row */}
-          <div className="relative z-10 flex items-center justify-between px-4 pt-4">
+          <div className="relative z-10 flex items-center justify-between px-4 pt-5">
             <Link
               to="/"
-              className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/40 text-white/90 backdrop-blur-md"
+              className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 text-white/90 backdrop-blur-md transition hover:bg-black/70"
               aria-label="Back"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
-            <div className="flex items-center gap-2">
-              <IconBtn onClick={() => toast.info("QR code coming soon")} label="QR code"><QrCode className="h-4 w-4" /></IconBtn>
-              <Link to="/settings" className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/40 backdrop-blur-md" aria-label="Edit profile">
-                <Pencil className="h-4 w-4" />
+            <div className="flex items-center gap-2.5">
+              <IconBtn onClick={() => toast.info("QR code coming soon")} label="QR code"><QrCode className="h-[18px] w-[18px]" /></IconBtn>
+              <Link to="/settings" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 backdrop-blur-md transition hover:bg-black/70" aria-label="Edit profile">
+                <Pencil className="h-[18px] w-[18px]" />
               </Link>
-              <IconBtn onClick={handleShare} label="More"><MoreVertical className="h-4 w-4" /></IconBtn>
+              <IconBtn onClick={handleShare} label="More"><MoreVertical className="h-[18px] w-[18px]" /></IconBtn>
             </div>
           </div>
 
           {/* Neon Jalwa logo */}
-          <div className="relative z-10 mt-5 text-center leading-none">
+          <div className="relative z-10 mt-6 text-center leading-none">
             <h1
-              className="bg-gradient-to-b from-[#ff9ad0] to-[#ff2d95] bg-clip-text text-[56px] text-transparent"
-              style={{ ...NEON, filter: "drop-shadow(0 0 14px rgba(255,45,149,0.75)) drop-shadow(0 0 4px rgba(255,45,149,0.9))" }}
+              className="bg-gradient-to-b from-[#ffb3dc] via-[#ff6fb5] to-[#ff2d95] bg-clip-text text-[64px] text-transparent"
+              style={{ ...NEON, filter: "drop-shadow(0 0 18px rgba(255,45,149,0.7)) drop-shadow(0 0 4px rgba(255,45,149,0.9))" }}
             >
               Jalwa
             </h1>
-            <p className="mt-2 text-[10px] uppercase tracking-[0.45em] text-white/80" style={HEADING}>Live your moment</p>
+            <p className="mt-2.5 text-[10px] uppercase tracking-[0.5em] text-white/70" style={HEADING}>Live your moment</p>
           </div>
 
           {/* Profile hero: avatar + info */}
-          <div className="relative z-10 mt-5 flex items-start gap-4 px-4">
+          <div className="relative z-10 mt-7 flex items-start gap-5 px-5">
             {/* Avatar with wing frame */}
             <div className="relative shrink-0">
               <div className="absolute -inset-3 rounded-full bg-[#ff2d95]/25 blur-2xl" />
@@ -205,10 +205,7 @@ function MePage() {
                 </div>
               </div>
               {/* Crown */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 text-2xl" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.9))" }}>👑</div>
-              {/* Wings decorative */}
-              <span aria-hidden className="pointer-events-none absolute top-1/2 -left-3 -translate-y-1/2 text-2xl opacity-80" style={{ filter: "drop-shadow(0 0 6px rgba(255,45,149,0.7))" }}>❰</span>
-              <span aria-hidden className="pointer-events-none absolute top-1/2 -right-3 -translate-y-1/2 text-2xl opacity-80" style={{ filter: "drop-shadow(0 0 6px rgba(139,92,246,0.7))" }}>❱</span>
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[26px] leading-none" style={{ filter: "drop-shadow(0 0 8px rgba(251,191,36,0.9))" }}>👑</div>
               {/* Lv badge */}
               <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-md border border-[#fbbf24] bg-gradient-to-b from-[#fbbf24] to-[#b8791b] px-3 py-0.5 text-[11px] text-black shadow-[0_0_10px_rgba(251,191,36,0.6)]" style={HEADING}>
                 Lv {p.level}
@@ -224,6 +221,7 @@ function MePage() {
               </button>
               <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
             </div>
+
 
             {/* Info column */}
             <div className="min-w-0 flex-1 space-y-1.5 pt-1">
