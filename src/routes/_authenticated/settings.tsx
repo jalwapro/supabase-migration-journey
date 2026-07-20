@@ -19,7 +19,11 @@ import {
   Venus,
   Mars,
   CircleDot,
+  Sun,
+  Moon,
 } from "lucide-react";
+import { useThemeMode } from "@/hooks/useThemeMode";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: Page });
 
