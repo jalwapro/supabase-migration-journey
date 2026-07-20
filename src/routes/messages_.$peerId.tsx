@@ -772,6 +772,8 @@ function DmThread() {
                 >
                   <Lock className="h-[16px] w-[16px]" />
                 </button>
+                  <Lock className="h-[16px] w-[16px]" />
+                </button>
                 <button
                   type="button"
                   onClick={() => fileRef.current?.click()}
