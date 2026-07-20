@@ -119,6 +119,42 @@
   }
 }
 
+/* ============================================================================
+ * Light-mode adaptive layer for neon-designed pages.
+ * Pages marked with `data-adaptive="neon"` are designed for a dark canvas but
+ * must stay readable when the app is in light mode. This layer remaps the
+ * common hardcoded dark-only Tailwind utilities to sensible light-mode values,
+ * without touching any dark-mode styling.
+ * ==========================================================================*/
+html:not(.dark) [data-adaptive="neon"] {
+  /* Text: solid white → foreground; white with opacity → muted text. */
+  & .text-white { color: var(--foreground) !important; }
+  & [class*="text-white/"] { color: var(--muted-foreground) !important; }
+
+  /* Translucent white surfaces (bg-white/5, bg-white/[0.03], etc.) become
+     subtle darkened surfaces so cards remain visible on a white app bg. */
+  & [class*="bg-white/"]:not([class*="from-"]):not([class*="via-"]):not([class*="to-"]) {
+    background-color: color-mix(in oklab, black 5%, transparent) !important;
+  }
+
+  /* Translucent black surfaces (bg-black/40, bg-black/50) become translucent
+     light surfaces so they read as elevated cards on a white bg. */
+  & [class*="bg-black/"]:not([class*="from-"]):not([class*="via-"]):not([class*="to-"]) {
+    background-color: color-mix(in oklab, white 75%, transparent) !important;
+  }
+
+  /* Borders */
+  & [class*="border-white/"] {
+    border-color: color-mix(in oklab, black 12%, transparent) !important;
+  }
+  & [class*="ring-black/"] { --tw-ring-color: color-mix(in oklab, black 15%, transparent) !important; }
+
+  /* Chip/button labels forced to pure #fff via inline style read poorly on
+     light gradient chips — nudge with a soft shadow for legibility. */
+  & .chip-neon { text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+}
+
+
 @utility text-gradient {
   background-image: linear-gradient(
     100deg,
