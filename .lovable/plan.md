@@ -1,100 +1,41 @@
-# PK Match Feature
+## Problem
 
-Reference image ke mutabiq ek complete PK (Player Knockout) battle system banayenge — layout, UI, aur backend sab.
+Several pages (`/me`, `/rank`, `/u/$userId`, and a few others) were designed as always-dark neon canvases with hardcoded `bg-black`, `text-white`, `bg-white/[0.03]`, `border-white/10`. In light mode these become white-on-white and unreadable. Forcing a dark background on the whole page (what I just did to `/me`) hides light mode entirely — not what you want.
 
-## New Route
-`src/routes/pk.$roomId.tsx` — Full PK setup + live battle screen.
+## Approach
 
-## UI Layout (reference image ke exact match)
+Refactor each affected page to use **semantic tokens** so it auto-adapts to light/dark:
 
-```text
-┌────────────────────────────────────┐
-│ ← Chill Vibes ✨   [Follow] [⋮]   │
-│   Room ID • 128 viewers            │
-├────────────────────────────────────┤
-│ 📢 Welcome banner                  │
-├────────────────────────────────────┤
-│ ┌────────┐   VS    ┌────────┐     │
-│ │YOU(HOST│  00:30  │OPPONENT│     │
-│ │  img   │ PK Rules│  + Sel │     │
-│ │ Ahsan  │         │  ---   │     │
-│ │ 12.5K  │         │        │     │
-│ └────────┘         └────────┘     │
-├────────────────────────────────────┤
-│ PK MODE                            │
-│ [Normal 5m ✓][Quick 3m][Chall 10m]│
-├────────────────────────────────────┤
-│ STAKE (Entry)                      │
-│ [100][500][1k][5k][Custom]        │
-├────────────────────────────────────┤
-│ 🎁 Winner gets stakes + gifts     │
-├────────────────────────────────────┤
-│ [   START PK BATTLE  ⚡          ] │
-├────────────────────────────────────┤
-│ Chat  [All][Gifts][System][filter] │
-│ ...messages...                     │
-│ Top Gifter highlight               │
-│ [Type msg...] 😊 ➤                │
-├────────────────────────────────────┤
-│ Mic Sound Gift Share More  ✋Raise│
-└────────────────────────────────────┘
-```
+| Hardcoded (broken in light) | Replace with (auto-adapts) |
+|---|---|
+| `text-white` | `text-foreground` |
+| `text-white/60`, `text-white/70` | `text-muted-foreground` |
+| `bg-black`, `bg-black/40`, `bg-black/50` | `bg-card` or `bg-card/70` |
+| `bg-white/[0.03]`, `bg-white/5` | `bg-card/60` |
+| `border-white/10`, `border-white/15` | `border-border` |
+| `ring-black/40` | `ring-border` |
 
-## Features
+Colored neon accents (icon glows, gradient chips, gold brackets, purple auras, drop-shadows) **stay as-is** — they're brand accents that work on both light and dark surfaces.
 
-1. **Setup phase** (host only):
-   - PK Mode select (Normal 5m / Quick 3m / Challenge 10m)
-   - Stake select (100/500/1k/5k coins + Custom input)
-   - Opponent picker sheet (search live hosts, tap to invite)
-   - PK Rules bottom sheet
-   - Start button → creates `pk_matches` row, sends invite
+Remove the `bg-[#080212]` I added to `/me` and instead let the page use the app's `bg-background`. The dark neon *hero band* at the top stays (it's an intentional design element), but the *feature grid* below adopts semantic tokens.
 
-2. **Live battle phase**:
-   - Countdown timer (match starts in 00:30)
-   - Live coin totals for both sides (from gifts sent during match)
-   - Progress bar showing lead
-   - Chat sidebar with All/Gifts/System filters
-   - Top Gifter callout row
-   - Gift → adds to that side's coin total
+## Pages to fix
 
-3. **Result phase**:
-   - Winner banner + coin payout
-   - Losers get consolation
-   - Match saved to history
+1. **`src/routes/_authenticated/me.tsx`** — revert the forced black canvas; convert `FeatureCard`, `FeatureInner`, `StatBox`, `IconBtn`, `Quick`, `Chip` helpers to semantic tokens. Keep the neon profile card intact (it's a self-contained dark royal card, and that's fine — it's bounded, not the whole page).
+2. **`src/routes/_authenticated/u.$userId.tsx`** — same treatment for the visitor profile.
+3. **`src/routes/rank.tsx`** — leaderboard cards and rows to semantic tokens.
+4. **Audit sweep**: `rg -l "text-white|bg-white/\[|bg-black"` across `src/routes/_authenticated/` and `src/components/` — for each hit, decide: is this on an always-dark surface (like a room camera, the profile card, a video panel)? Leave it. Otherwise convert to semantic tokens.
 
-## Backend (Supabase migration)
+## Result
 
-`db/migrations/20260716_pk_matches.sql`:
+- Light mode: white app, white cards with dark text, subtle borders — clean and readable everywhere.
+- Dark mode: unchanged from today.
+- The neon profile card on `/me` stays a bounded dark "royal" element inside the page, contrasted against a light or dark app surface depending on user's setting.
+- Same fix pattern applied to rank, visitor profile, and any other page found in the sweep.
 
-- `pk_mode` enum: `normal | quick | challenge`
-- `pk_status` enum: `pending | active | completed | cancelled`
-- `pk_matches` table: id, host_id, opponent_id, mode, stake_coins, host_score, opponent_score, winner_id, status, started_at, ends_at, created_at
-- `pk_match_gifts` table: id, match_id, sender_id, recipient_id, gift_id, coins, created_at
-- Indexes on host_id, opponent_id, status, ends_at
-- RLS: authenticated read; only host creates; only participants + admin update scores via edge logic
-- GRANTs to authenticated + service_role
-- Realtime enabled on both tables
+## Technical details
 
-## Server functions
-
-`src/lib/pk-matches.functions.ts` (with `requireSupabaseAuth`):
-- `createPkMatch({ mode, stake, opponentId })`
-- `acceptPkMatch({ matchId })` / `declinePkMatch`
-- `sendPkGift({ matchId, recipientId, giftId, coins })` — deducts sender coins, adds to score
-- `endPkMatch({ matchId })` — computes winner, credits payout
-- `listActivePkMatches()`, `getPkMatch(id)`
-
-## Frontend wiring
-- React Query for match state
-- Supabase realtime channel for `pk_matches:id=eq.<id>` and gift inserts
-- Existing gold/violet tokens from voice room design (Royal Violet Palace)
-- Reuse existing components: viewers sheet, gift sheet, chat feed
-
-## Entry point
-Add a "PK Battle" tile on the room screen (`src/routes/room.$roomId.tsx`) header actions — tap navigates to `/pk/<roomId>`.
-
-## Scale
-- Paginate match history
-- Filter realtime by match id only
-- Indexes on all query columns
-- Server-side score aggregation, no client trust
+- No changes to `src/styles.css` tokens — they're already correct.
+- Pure Tailwind class swaps; no logic changes.
+- Semantic tokens I'll use: `bg-background`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `text-[color:var(--primary)]`, `text-[color:var(--gold)]`.
+- The `body.themed` header softening (dark blur bar over shop-theme backgrounds) stays — it's independent of this.
