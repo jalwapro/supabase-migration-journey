@@ -186,8 +186,8 @@ function MePage() {
             <p className="mt-2 text-[10px] uppercase tracking-[0.45em] text-white/80" style={HEADING}>Live your moment</p>
           </div>
 
-          {/* Profile hero: avatar + info + stats box */}
-          <div className="relative z-10 mt-3 flex items-start gap-3 px-4">
+          {/* Profile hero: avatar + info */}
+          <div className="relative z-10 mt-5 flex items-start gap-4 px-4">
             {/* Avatar with wing frame */}
             <div className="relative shrink-0">
               <div className="absolute -inset-3 rounded-full bg-[#ff2d95]/25 blur-2xl" />
@@ -226,25 +226,25 @@ function MePage() {
             </div>
 
             {/* Info column */}
-            <div className="min-w-0 flex-1 pt-1">
+            <div className="min-w-0 flex-1 space-y-1.5 pt-1">
               <div className="flex items-center gap-1.5">
-                <p className="truncate text-[17px] font-bold text-white" style={HEADING}>{userName}</p>
+                <p className="truncate text-[18px] font-bold leading-tight text-white" style={HEADING}>{userName}</p>
                 <BadgeCheck className="h-4 w-4 shrink-0 text-[#38bdf8]" />
               </div>
-              <p className="truncate text-xs text-white/60">@{userName.toLowerCase()}</p>
+              <p className="truncate text-xs leading-tight text-white/60">@{userName.toLowerCase()}</p>
               {profile?.user_code && (
-                <button onClick={handleCopyId} className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-white/70 hover:text-white">
+                <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 text-[11px] leading-tight text-white/70 hover:text-white">
                   ID: <span className="font-bold text-white">{profile.user_code}</span>
                   <Copy className="h-3 w-3" />
                 </button>
               )}
               {user?.email && (
-                <p className="mt-0.5 flex items-center gap-1.5 truncate text-[11px] text-white/60">
+                <p className="flex items-center gap-1.5 truncate text-[11px] leading-tight text-white/60">
                   <Mail className="h-3 w-3 shrink-0" />
                   <span className="truncate">{user.email}</span>
                 </p>
               )}
-              <div className="mt-2 flex items-center gap-2">
+              <div className="pt-1.5">
                 <Link
                   to="/vip"
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#c88a2b]/60 bg-gradient-to-r from-[#3d1f08] to-[#1a0a02] px-3 py-1.5 text-[11px] text-[#f5c46a] shadow-[0_0_16px_rgba(200,138,43,0.35)]"
@@ -252,7 +252,6 @@ function MePage() {
                 >
                   <Shield className="h-3.5 w-3.5" /> {tier.label}
                 </Link>
-                <span className="text-lg" title="Medal">🥉</span>
               </div>
             </div>
 
