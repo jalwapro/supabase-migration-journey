@@ -87,6 +87,32 @@ function previewText(r: InboxRow): { text: string; icon?: string } {
   }
 }
 
+/** Online = profile.last_seen within last 90 seconds. */
+const ONLINE_WINDOW_MS = 90_000;
+function usePresence(ids: string[]) {
+  const key = useMemo(() => Array.from(new Set(ids)).filter(Boolean).sort(), [ids]);
+  return useQuery({
+    queryKey: ["presence", key],
+    enabled: key.length > 0,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,last_seen")
+        .in("id", key);
+      if (error) throw error;
+      const cutoff = Date.now() - ONLINE_WINDOW_MS;
+      const online = new Set<string>();
+      for (const r of data ?? []) {
+        const t = r.last_seen ? new Date(r.last_seen).getTime() : 0;
+        if (t >= cutoff) online.add(r.id as string);
+      }
+      return online;
+    },
+  });
+}
+
 function MessagesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
