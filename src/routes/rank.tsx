@@ -379,3 +379,78 @@ function EmptyRoyalState({ board }: { board: Board }) {
     </div>
   );
 }
+
+/* ══════════ REWARD BANNER (fire throne) ══════════ */
+
+function RewardBanner({ board, period }: { board: Board; period: Period }) {
+  const periodLabel =
+    period === "daily" ? "Daily" :
+    period === "weekly" ? "Weekly" :
+    period === "monthly" ? "Monthly" :
+    period === "yearly" ? "Yearly" : "All-time";
+  const badgeName = board === "gifters" ? "Champion" : "Boss";
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--gold)]/30 bg-gradient-to-r from-[#3a1400] via-[#5a2404] to-[#3a1400] p-3 shadow-[inset_0_1px_0_rgba(255,220,150,0.25)]">
+      {/* ember rays */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70">
+        <div className="absolute -left-6 top-0 h-full w-24 bg-[radial-gradient(closest-side,rgba(255,180,60,0.35),transparent)] blur-xl" />
+      </div>
+      <div className="relative flex items-center gap-3">
+        {/* Throne icon */}
+        <div className="relative grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-[#ffd070] to-[#8a4a10] shadow-[0_4px_14px_rgba(255,150,50,0.35)]">
+          <Flame className="h-5 w-5 text-[#3a1400]" strokeWidth={2.4} />
+          <span className="absolute -bottom-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-[color:var(--gold)] text-[8px] font-black text-[#3a1400]">👑</span>
+        </div>
+        <p className="min-w-0 flex-1 text-[12px] leading-snug text-white/90">
+          <span className="font-bold text-[color:var(--gold)]">{periodLabel} Top 1</span>{" "}
+          {board === "gifters" ? "gifter" : "host"} earns the honorable{" "}
+          <span className="font-bold text-white">{badgeName} badge</span>
+          <span className="text-white/60"> · unlocks room aura & profile crown</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════ COUNTDOWN STRIP ══════════ */
+
+function CountdownStrip({ period }: { period: Period }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  if (period === "all") {
+    return <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[color:var(--gold)]">∞ Forever</span>;
+  }
+
+  const d = new Date(now);
+  let end: Date;
+  if (period === "daily") {
+    end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0);
+  } else if (period === "weekly") {
+    const day = d.getDay(); // 0 Sun
+    const daysToMon = (8 - day) % 7 || 7;
+    end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysToMon, 0, 0, 0);
+  } else if (period === "monthly") {
+    end = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0);
+  } else {
+    end = new Date(d.getFullYear() + 1, 0, 1, 0, 0, 0);
+  }
+
+  const diff = Math.max(0, end.getTime() - now);
+  const hh = Math.floor(diff / 3_600_000);
+  const mm = Math.floor((diff % 3_600_000) / 60_000);
+  const ss = Math.floor((diff % 60_000) / 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-black/40 px-2 py-0.5 text-[10px] font-black tracking-wider text-[color:var(--gold)]">
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--gold)]" />
+      {pad(hh)}:{pad(mm)}:{pad(ss)}
+    </span>
+  );
+}
+
