@@ -152,7 +152,7 @@ function RankPage() {
 
   return (
     <>
-      <AppShell title="" subtitle="">
+      <AppShell title="" subtitle="" showHeader={false}>
         <div className="relative min-h-full overflow-hidden bg-[#090A14] pb-32 text-white">
           {/* ambient glows */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -162,38 +162,8 @@ function RankPage() {
           </div>
 
           {/* ── Header ───────────────────────────────────────────────── */}
-          <header className="relative z-10 px-4 pt-5">
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-              <button
-                onClick={() => router.history.back()}
-                aria-label="Back"
-                className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition hover:border-fuchsia-400/50 hover:bg-white/10 shadow-[0_0_18px_-6px_rgba(217,70,239,0.6)]"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </button>
+          <RankHeader onBack={() => router.history.back()} onHelp={() => setHelpOpen(true)} profile={profile} userId={user?.id} />
 
-              <div className="min-w-0 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Laurel side="left" />
-                  <h1 className="truncate text-[26px] font-black tracking-tight leading-none drop-shadow-[0_0_12px_rgba(217,70,239,0.55)]">
-                    Rankings
-                  </h1>
-                  <Laurel side="right" />
-                </div>
-                <p className="mt-1 text-[11px] tracking-[0.22em] text-white/50">
-                  <span className="text-fuchsia-300">◆</span> Top hosts, gifters &amp; wealth <span className="text-fuchsia-300">◆</span>
-                </p>
-              </div>
-
-              <button
-                onClick={() => setHelpOpen(true)}
-                aria-label="Ranking rules"
-                className="grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/[0.04] backdrop-blur-md transition hover:border-violet-400/50 hover:bg-white/10 shadow-[0_0_18px_-6px_rgba(139,92,246,0.55)]"
-              >
-                <HelpCircle className="h-5 w-5" />
-              </button>
-            </div>
-          </header>
 
           {/* ── Category tabs ────────────────────────────────────────── */}
           <nav className="relative z-10 mt-5 overflow-x-auto no-scrollbar">
