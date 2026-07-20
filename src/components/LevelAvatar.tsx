@@ -131,38 +131,7 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {!frame && stackFrames.map((item, idx) => {
-        const url = resolveAssetUrl(item.url);
-        if (!url) return null;
-        const isVideo = /\.(mp4|webm|mov)($|\?)/i.test(url);
-        return (
-          <div
-            key={item.level}
-            className="pointer-events-none absolute inset-[-18%] flex items-center justify-center"
-            style={{ zIndex: 5 + idx }}
-            aria-hidden
-          >
-
-
-            {isVideo ? (
-              <video
-                src={url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                className="h-full w-full object-contain"
-                style={{ backgroundColor: "transparent" }}
-                onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
-              />
-            ) : (
-              <img src={url} alt="" className="h-full w-full object-contain" draggable={false} />
-            )}
-          </div>
-        );
-      })}
-      {(frameUrl || stackFrames.length > 0) && (
+      {frameUrl && (
         <span className="pointer-events-none absolute inset-[-22%] z-[20]" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
           <span className="dp-sparkle dp-sparkle-b" />
