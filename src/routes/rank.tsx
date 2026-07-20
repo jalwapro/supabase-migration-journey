@@ -185,8 +185,19 @@ function RankPage() {
           </div>
         </div>
 
+        {/* ═══════ REWARD BANNER + COUNTDOWN ═══════ */}
+        <section className="relative z-10 -mt-1 rounded-t-[26px] bg-[#100416] px-4 pb-2 pt-5">
+          <RewardBanner board={board} period={period} />
+          <div className="mt-3 flex items-center justify-between px-1">
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
+              {board === "gifters" ? "Gifters" : "Hosts"} · {period}
+            </span>
+            <CountdownStrip period={period} />
+          </div>
+        </section>
+
         {/* ═══════ RANKS 4+ LIST ═══════ */}
-        <section className="relative z-10 -mt-2 rounded-t-[24px] bg-[#100416] px-4 pb-8 pt-4">
+        <section className="relative z-10 bg-[#100416] px-4 pb-8 pt-4">
           {q.isLoading ? (
             <div className="space-y-2">
               {[0,1,2,3].map((i) => (
@@ -201,6 +212,7 @@ function RankPage() {
             </ul>
           )}
         </section>
+
       </AppShell>
       <BottomNav />
     </>
