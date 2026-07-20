@@ -186,181 +186,110 @@ function MePage() {
             <p className="mt-2 text-[10px] uppercase tracking-[0.5em] text-white/70" style={HEADING}>Live your moment</p>
           </div>
 
-          {/* Profile hero: avatar + info */}
-          <div className="relative z-10 mt-6 flex flex-col items-center gap-3 px-5">
-            {/* Avatar with wing frame */}
-            <div className="relative shrink-0">
-              <div className="absolute -inset-3 rounded-full bg-[#ff2d95]/25 blur-2xl" />
-              <div className="relative rounded-full p-[3px] shadow-[0_0_30px_rgba(255,45,149,0.5)]"
-                   style={{ background: "conic-gradient(from 0deg, #ff2d95, #8b5cf6, #38bdf8, #fbbf24, #ff2d95)" }}>
-                <div className="rounded-full bg-black p-1">
-                  <LevelAvatar
-                    src={profile?.avatar}
-                    name={profile?.username}
-                    level={vipLevel}
-                    size="xl"
-                    frame={profile?.frame}
-                    ring={profile?.ring}
-                  />
-                </div>
-              </div>
-              {/* Crown */}
-              <div className="absolute -top-5 left-1/2 -translate-x-1/2 text-[26px] leading-none" style={{ filter: "drop-shadow(0 0 8px rgba(251,191,36,0.9))" }}>👑</div>
-              {/* Lv badge */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-md border border-[#fbbf24] bg-gradient-to-b from-[#fbbf24] to-[#b8791b] px-3 py-0.5 text-[11px] text-black shadow-[0_0_10px_rgba(251,191,36,0.6)]" style={HEADING}>
-                Lv {p.level}
-              </div>
-              {/* Camera */}
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                aria-label="Change photo"
-                className="absolute -right-1 top-1 grid h-7 w-7 place-items-center rounded-full border-2 border-black bg-[#ff2d95] text-white shadow-[0_4px_12px_rgba(255,45,149,0.6)] disabled:opacity-60"
-              >
-                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Camera className="h-3.5 w-3.5" />}
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
-            </div>
+          {/* ============ PROFILE CARD (Neon Royal design) ============ */}
+          <div className="relative z-10 mt-6 px-3">
+            <div
+              className="relative overflow-hidden rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4"
+              style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
+            >
+              <CornerBrackets />
+              <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
+              <div aria-hidden className="pointer-events-none absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#ff2d95]/20 blur-3xl" />
 
-            {/* Info column - centered */}
-            <div className="mt-3 flex w-full max-w-full flex-col items-center gap-1.5 text-center">
-              <div className="flex items-center justify-center gap-1.5">
-                <p className="max-w-[220px] truncate text-[20px] font-bold leading-tight text-white" style={HEADING}>{userName}</p>
-                <BadgeCheck className="h-4 w-4 shrink-0 text-[#38bdf8]" />
-              </div>
-              <p className="text-xs leading-tight text-white/60">@{userName.toLowerCase()}</p>
-              <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
-                {profile?.user_code && (
-                  <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] leading-none text-white/80 hover:bg-white/10">
-                    <span className="text-white/50">ID</span>
-                    <span className="font-bold text-white">{profile.user_code}</span>
-                    <Copy className="h-3 w-3" />
-                  </button>
-                )}
-                {user?.email && (
-                  <span className="inline-flex max-w-[220px] items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] leading-none text-white/70">
-                    <Mail className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{user.email}</span>
-                  </span>
-                )}
-              </div>
-              <div className="pt-2">
-                <Link
-                  to="/vip"
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#c88a2b]/60 bg-gradient-to-r from-[#3d1f08] to-[#1a0a02] px-3 py-1.5 text-[11px] text-[#f5c46a] shadow-[0_0_16px_rgba(200,138,43,0.35)]"
-                  style={HEADING}
-                >
-                  <Shield className="h-3.5 w-3.5" /> {tier.label}
-                </Link>
-              </div>
-              {counts && (
-                <div className="mt-2 flex items-center gap-5 text-[11px] text-white/70">
-                  <Link to="/friends" className="hover:text-white">
-                    <span className="font-bold text-white" style={HEADING}>{formatCompact(counts.followers)}</span> Followers
-                  </Link>
-                  <span className="h-3 w-px bg-white/15" />
-                  <Link to="/friends" className="hover:text-white">
-                    <span className="font-bold text-white" style={HEADING}>{formatCompact(counts.following)}</span> Following
-                  </Link>
-                </div>
-              )}
-            </div>
-
-          </div>
-
-
-          {/* Main body */}
-          <div className="relative z-10 mt-4 space-y-3 px-3 pb-28">
-            {/* VIP Progress card */}
-            <div className="relative overflow-hidden rounded-[22px] border border-[#8b5cf6]/25 bg-gradient-to-br from-[#1a0733]/90 via-[#0f0620]/90 to-[#0a0416]/90 p-4 backdrop-blur-md shadow-[0_0_30px_rgba(139,92,246,0.2)]">
-              <div aria-hidden className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#ff2d95]/20 blur-3xl" />
-              <div className="relative grid grid-cols-[auto_1fr] gap-4 sm:grid-cols-[auto_1fr_1fr]">
-                {/* Shield */}
-                <div className="grid h-24 w-24 place-items-center rounded-2xl text-5xl" style={{ filter: "drop-shadow(0 0 12px rgba(251,191,36,0.5))" }}>
-                  🛡️
-                </div>
-                {/* Progress info */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[15px] font-bold leading-tight text-white" style={HEADING}>{tier.label}</p>
+              {/* Avatar block */}
+              <div className="relative z-10 flex flex-col items-center">
+                <div className="relative -mb-4 text-[38px] leading-none" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,0.85))" }}>👑</div>
+                <div className="relative">
+                  <div aria-hidden className="pointer-events-none absolute -left-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>
+                    <span className="inline-block -scale-x-100">🪶</span>
                   </div>
-                  <p className="mt-2 text-[10px] uppercase tracking-[0.25em] text-white/50" style={HEADING}>Lifetime Gift</p>
-                  <div className="mt-1.5 flex items-baseline justify-between gap-3">
-                    <p className="text-2xl font-black leading-none text-white" style={HEADING}>{formatCoins(p.totalGifted)}</p>
-                    <p className="text-xs text-white/75" style={HEADING}>Lv {p.level}</p>
-                  </div>
-                  <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${p.percent}%`,
-                        background: "linear-gradient(90deg, #fbbf24, #ff9a2d)",
-                        boxShadow: "0 0 10px rgba(251,191,36,0.6)",
-                      }}
-                    />
-                  </div>
-                </div>
-                {/* Milestone */}
-                <div className="col-span-2 sm:col-span-1">
-                  <p className="text-[11px] text-white/60">Next milestone • <span className="text-white">Lv {nextMilestone}</span></p>
-                  <Link to="/vip" className="mt-1 flex items-center gap-2 rounded-xl border border-[#8b5cf6]/30 bg-black/40 p-2">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-bold text-white" style={HEADING}>{reward?.bundle ?? "Max reward"}</p>
-                      <p className="text-[11px] text-[#fbbf24]" style={HEADING}>
-                        +{(reward?.coins ?? 0).toLocaleString()} <Coins className="inline h-3 w-3" />
-                      </p>
+                  <div aria-hidden className="pointer-events-none absolute -right-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🪶</div>
+                  <div className="relative h-[168px] w-[168px] rounded-full p-[4px]" style={{ background: "conic-gradient(from 0deg, #a855f7, #ec4899, #a855f7, #7c3aed, #a855f7)", boxShadow: "0 0 32px rgba(168,85,247,0.7), 0 0 60px rgba(236,72,153,0.35)" }}>
+                    <div className="h-full w-full rounded-full bg-black p-1.5">
+                      <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} />
                     </div>
-                    <div className="text-2xl">🎁</div>
-                  </Link>
-                  <Link to="/vip" className="mt-2 block">
-                    <p className="text-xs font-bold text-white" style={HEADING}>Milestone Rewards</p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-white/60">
-                      View all 10 VIP milestone bundles <ChevronRight className="h-3 w-3" />
-                    </p>
-                  </Link>
+                    <span className="absolute bottom-3 right-3 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
+                  </div>
+                  <div
+                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 text-[13px] font-black text-white shadow-[0_0_14px_rgba(251,191,36,0.7)]"
+                    style={{ ...HEADING, background: "linear-gradient(180deg, #1a0733 0%, #0a0416 100%)", border: "2px solid #fbbf24", clipPath: "polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%)" }}
+                  >
+                    Lv {p.level}
+                  </div>
+                  <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute right-0 top-1 grid h-8 w-8 place-items-center rounded-full border-2 border-black bg-[#ec4899] text-white shadow-[0_4px_12px_rgba(236,72,153,0.7)] disabled:opacity-60">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
                 </div>
               </div>
-              {/* Bottom stats row */}
-              <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/10 pt-3 text-center">
-                <div><p className="text-[10px] uppercase tracking-widest text-white/50">Current</p><p className="text-base font-black text-white" style={HEADING}>{formatCoins(p.totalGifted - p.currentLevelStart)}</p></div>
-                <div><p className="text-[10px] uppercase tracking-widest text-white/50">{p.isMax ? "Max" : "Next Lv"}</p><p className="text-base font-black text-white" style={HEADING}>{p.isMax ? "MAX" : formatCoins(p.nextLevelAt)}</p></div>
-                <div><p className="text-[10px] uppercase tracking-widest text-white/50">Remaining</p><p className="text-base font-black text-white" style={HEADING}>{p.isMax ? "0" : formatCoins(p.remaining)}</p></div>
+
+              {/* Name + info */}
+              <div className="relative z-10 mt-8 flex flex-col items-center gap-1.5 text-center">
+                <div className="flex items-center justify-center gap-1.5">
+                  <p className="max-w-[240px] truncate text-[22px] font-black leading-tight text-white" style={HEADING}>{userName}</p>
+                  <BadgeCheck className="h-5 w-5 shrink-0 fill-[#6366f1] text-white" />
+                </div>
+                <p className="text-[13px] leading-tight text-white/60">@{userName.toLowerCase()}</p>
+
+                <div className="mt-1.5 flex w-full flex-col items-center gap-1.5 text-[12px] text-white/75">
+                  {profile?.user_code && (
+                    <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 hover:text-white">
+                      <span className="text-white/50">ID:</span>
+                      <span className="font-bold text-white">{profile.user_code}</span>
+                      <Copy className="h-3 w-3 text-white/50" />
+                    </button>
+                  )}
+                  {user?.email && (
+                    <span className="inline-flex max-w-[280px] items-center gap-1.5">
+                      <Mail className="h-3.5 w-3.5 shrink-0 text-white/50" />
+                      <span className="truncate">{user.email}</span>
+                    </span>
+                  )}
+                  {profile?.country && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="text-sm">🌍</span>
+                      <span className="text-white">{profile.country}</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-2.5 flex items-center gap-2">
+                  <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
+                    <Crown className="h-3.5 w-3.5" /> {tier.label}
+                  </Link>
+                  <span className="text-[22px] leading-none" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🏅</span>
+                </div>
+
+                <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                  <Chip color="#8b5cf6" icon="⚜️" label="Host" />
+                  <Chip color="#ec4899" icon="🥊" label="PK King" />
+                  <Chip color="#38bdf8" icon="✓" label="Official Host" outline />
+                </div>
+
+                <div className="mt-3 grid w-full grid-cols-2 gap-2.5">
+                  <Link to="/settings" className="flex items-center justify-center gap-2 rounded-2xl border border-[#8b5cf6]/50 bg-[#1a0733]/70 px-3 py-2.5 text-[13px] font-bold text-white shadow-[0_0_14px_rgba(139,92,246,0.35)] transition active:scale-95" style={HEADING}>
+                    <Pencil className="h-4 w-4 text-[#a855f7]" /> Edit Profile
+                  </Link>
+                  <button onClick={handleShare} className="flex items-center justify-center gap-2 rounded-2xl border border-[#c88a2b]/60 bg-gradient-to-b from-[#3d1f08] to-[#1a0a02] px-3 py-2.5 text-[13px] font-bold text-[#fbbf24] shadow-[0_0_14px_rgba(200,138,43,0.35)] transition active:scale-95" style={HEADING}>
+                    <ChevronRight className="h-4 w-4 rotate-[-45deg]" /> Share Profile
+                  </button>
+                </div>
+
+                <div className="mt-4 grid w-full grid-cols-3 gap-2">
+                  <StatBox icon={<Users className="h-4 w-4" />} color="#a855f7" value={counts?.followers ?? 0} label="Followers" />
+                  <StatBox icon={<UserPlus className="h-4 w-4" />} color="#38bdf8" value={counts?.following ?? 0} label="Following" />
+                  <StatBox icon={<Users className="h-4 w-4" />} color="#ec4899" value={0} label="Friends" />
+                  <StatBox icon={<Star className="h-4 w-4" />} color="#22c55e" value={profile?.xp ?? 0} label="Points" />
+                  <StatBox icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
+                  <StatBox icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
+                  <StatBox icon={<Trophy className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
+                  <StatBox icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Host Lv" />
+                  <StatBox icon={<Home className="h-4 w-4" />} color="#38bdf8" value={0} label="Live Rooms" />
+                </div>
               </div>
             </div>
-
-
-
-            {/* Feature grid */}
-            <div className="grid grid-cols-2 gap-2.5">
-              {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
-              {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
-              <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
-              <FeatureCard to="/wallet" icon={Wallet} title="Wallet & Coins" sub="Recharge your balance" color="#fbbf24" />
-              <FeatureCard to="/recharge-history" icon={Receipt} title="Recharge History" sub="Your top-up requests & status" color="#38bdf8" />
-              <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
-              <FeatureCard to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
-              <FeatureCard to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
-              <FeatureCard to="/vip" icon={Crown} title="VIP Membership" sub="Upgrade & unlock milestone rewards" color="#fbbf24" />
-              <FeatureCard to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
-              <FeatureCard to="/games" icon={Gamepad2} title="Games" sub="Daily spin, lucky spin & more" color="#8b5cf6" />
-              <FeatureCard to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
-              <FeatureCard to="/create-room" icon={Mic} title="Go Live" sub="Start a voice room now" color="#8b5cf6" />
-              <FeatureCard to="/pk-history" icon={Swords} title="PK History" sub="Battle wins & losses" color="#ff2d95" />
-              <FeatureCard to="/friends" icon={Users} title="Friends" sub="Followers & following" color="#8b5cf6" />
-              <FeatureCard to="/notifications" icon={Bell} title="Notifications" sub="Gifts, follows & room alerts" color="#ff2d95" />
-              <FeatureCard to="/settings/notifications" icon={SlidersHorizontal} title="Notification Settings" sub="Choose what alerts you get" color="#ff2d95" />
-              <FeatureCard to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
-              <FeatureCard to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
-              <FeatureCard to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
-              <button
-                onClick={() => signOut()}
-                className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-left transition-all hover:border-[#ff2d95]/40 active:scale-[0.98]"
-              >
-                <FeatureInner icon={LogOut} title="Log Out" sub="Sign out from your account" color="#ff2d95" />
-              </button>
-            </div>
           </div>
-        </div>
+
       </AppShell>
       <BottomNav />
     </>
