@@ -333,6 +333,16 @@ function MePage() {
                 <Tile index={18} to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
                 <Tile index={19} to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
                 <Tile index={20} to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
+                <li>
+                  <button
+                    onClick={() => signOut()}
+                    className="group flex w-full items-center gap-4 rounded-3xl border border-white/5 bg-white/5 p-4 text-left transition-all hover:border-[#ff2d95]/40 active:scale-[0.985]"
+                  >
+                    <span className="w-8 text-lg italic text-white/25" style={HEADING}>21</span>
+                    <TileInner icon={LogOut} title="Log Out" sub="Sign out from your account" color="#ff2d95" />
+                    <ChevronRight className="h-4 w-4 shrink-0 text-white/30" />
+                  </button>
+                </li>
               </ul>
             </div>
           </div>
