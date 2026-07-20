@@ -2,7 +2,6 @@ import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
-import { frameForLevel, framesForLevelStack } from "@/lib/levelFrames";
 
 
 type Size = "sm" | "md" | "lg" | "xl";
@@ -38,12 +37,9 @@ export function LevelAvatar({
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
-  // Auto-assign frame(s) from level series if user has none equipped.
-  // Stack every frame from the current series' first level up to the user's
-  // current level so progression is visible on the avatar.
-  const stackFrames = frame ? [] : framesForLevelStack(level);
-  const effectiveFrame = frame ?? frameForLevel(level);
-  const frameUrl = resolveAssetUrl(effectiveFrame);
+  // Only render the user-equipped frame/ring. Auto level-based frame
+  // stacking was removed — it produced an oversized, busy overlay.
+  const frameUrl = resolveAssetUrl(frame);
   const ringUrl = resolveAssetUrl(ring);
   const frameIsVideo = !!frameUrl && /\.(mp4|webm|mov)($|\?)/i.test(frameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
@@ -135,38 +131,7 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {!frame && stackFrames.map((item, idx) => {
-        const url = resolveAssetUrl(item.url);
-        if (!url) return null;
-        const isVideo = /\.(mp4|webm|mov)($|\?)/i.test(url);
-        return (
-          <div
-            key={item.level}
-            className="pointer-events-none absolute inset-[-18%] flex items-center justify-center"
-            style={{ zIndex: 5 + idx }}
-            aria-hidden
-          >
-
-
-            {isVideo ? (
-              <video
-                src={url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                className="h-full w-full object-contain"
-                style={{ backgroundColor: "transparent" }}
-                onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
-              />
-            ) : (
-              <img src={url} alt="" className="h-full w-full object-contain" draggable={false} />
-            )}
-          </div>
-        );
-      })}
-      {(frameUrl || stackFrames.length > 0) && (
+      {frameUrl && (
         <span className="pointer-events-none absolute inset-[-22%] z-[20]" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
           <span className="dp-sparkle dp-sparkle-b" />

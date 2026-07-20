@@ -23,13 +23,14 @@ export function VipBadge({
 
   return (
     <span
+      data-keep-dark
       className={`inline-flex items-center rounded-full font-black uppercase tracking-widest text-white shadow-lg ring-1 ring-black/40 bg-gradient-to-r ${tier.gradient} ${sizeCls} ${className}`}
-      style={{ boxShadow: `0 0 12px -2px ${tier.glow}` }}
+      style={{ boxShadow: `0 0 12px -2px ${tier.glow}`, color: "#fff" }}
       title={`${tier.label} · Level ${level}`}
     >
-      <span className="leading-none">{tier.icon}</span>
-      <span className="leading-none">Lv {level}</span>
-      {showLabel && <span className="ml-1 opacity-90 normal-case tracking-normal">{tier.label}</span>}
+      <span className="leading-none" style={{ color: "#fff" }}>{tier.icon}</span>
+      <span className="leading-none" style={{ color: "#fff" }}>Lv {level}</span>
+      {showLabel && <span className="ml-1 opacity-90 normal-case tracking-normal" style={{ color: "#fff" }}>{tier.label}</span>}
     </span>
   );
 }
