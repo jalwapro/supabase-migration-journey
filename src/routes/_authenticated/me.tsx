@@ -226,20 +226,21 @@ function MePage() {
             {/* Info column */}
             <div className="min-w-0 flex-1 space-y-1.5 pt-1">
               <div className="flex items-center gap-1.5">
-                <p className="truncate text-[18px] font-bold leading-tight text-white" style={HEADING}>{userName}</p>
+                <p className="truncate text-[18px] font-bold leading-tight text-white" style={HEADING}>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; {userName}</p>
                 <BadgeCheck className="h-4 w-4 shrink-0 text-[#38bdf8]" />
               </div>
-              <p className="truncate text-xs leading-tight text-white/60">@{userName.toLowerCase()}</p>
+              <p className="truncate text-xs leading-tight text-white/60">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;</p>
               {profile?.user_code && (
                 <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 text-[11px] leading-tight text-white/70 hover:text-white">
-                  ID: <span className="font-bold text-white">{profile.user_code}</span>
+                  &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;ID:
+                  <span className="font-bold text-white">{profile.user_code}</span>
                   <Copy className="h-3 w-3" />
                 </button>
               )}
               {user?.email && (
                 <p className="flex items-center gap-1.5 truncate text-[11px] leading-tight text-white/60">
                   <Mail className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{user.email}</span>
+                  <span className="truncate">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;{user.email}</span>
                 </p>
               )}
               <div className="pt-1.5">
