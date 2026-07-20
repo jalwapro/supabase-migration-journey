@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Crown, Globe2, Users, Trophy, Flame, Gift, Mic2, Sparkles } from "lucide-react";
+import { Crown, Globe2, Users, Trophy, Flame, Gift, Mic2, Sparkles, Medal } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins } from "@/lib/vip-levels";
