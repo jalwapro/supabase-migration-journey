@@ -140,28 +140,12 @@ export function ThemeBackground() {
   if (suppressed) return null;
   if (loading && !customBg) return null;
 
-  // No custom/shop theme active → render DEFAULT Jalwa branded background.
-  if (!media) {
-    return (
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
-      >
-        <img
-          src={DEFAULT_BG_URL}
-          alt=""
-          draggable={false}
-          decoding="async"
-          onError={(e) => {
-            const img = e.currentTarget;
-            if (img.src !== defaultBgAsset.url) img.src = defaultBgAsset.url;
-          }}
-          className="h-full w-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black" style={{ opacity: 1 - bgVisibility / 100 }} />
-      </div>
-    );
-  }
+  // No shop/custom theme → let the solid app background (light/dark) show.
+  if (!media) return null;
+  void bgVisibility;
+  void DEFAULT_BG_URL;
+  void defaultBgAsset;
+
 
 
 
