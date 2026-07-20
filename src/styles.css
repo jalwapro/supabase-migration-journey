@@ -152,6 +152,15 @@ html:not(.dark) [data-adaptive="neon"] {
   /* Chip/button labels forced to pure #fff via inline style read poorly on
      light gradient chips — nudge with a soft shadow for legibility. */
   & .chip-neon { text-shadow: 0 1px 2px rgba(0,0,0,0.25); }
+
+  /* Escape hatch: containers marked `data-keep-dark` retain the original
+     white text / white-alpha surfaces (used by bounded always-dark cards
+     like the neon Royal profile card). */
+  & [data-keep-dark] .text-white,
+  & [data-keep-dark] [class*="text-white/"] { color: revert !important; }
+  & [data-keep-dark] [class*="bg-white/"] { background-color: revert !important; }
+  & [data-keep-dark] [class*="bg-black/"] { background-color: revert !important; }
+  & [data-keep-dark] [class*="border-white/"] { border-color: revert !important; }
 }
 
 
