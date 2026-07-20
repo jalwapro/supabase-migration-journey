@@ -153,7 +153,7 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div className="relative min-h-full overflow-hidden bg-[#090A14] pb-32 text-white">
+        <div className="relative min-h-full overflow-hidden pb-32 text-white">
           {/* ambient glows */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
             <div className="absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/15 blur-[100px]" />
