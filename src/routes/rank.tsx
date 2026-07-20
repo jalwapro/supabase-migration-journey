@@ -345,9 +345,10 @@ function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: strin
         {row?.username ?? "—"}
         {row?.country && COUNTRY_FLAG[row.country] && <span className="ml-1">{COUNTRY_FLAG[row.country]}</span>}
       </p>
-      <span className="rounded-lg bg-black/40 px-2 py-0.5 text-[10px] uppercase tracking-widest text-white/60">
-        {unit}
+      <span className="rounded-lg bg-black/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-fuchsia-200">
+        Lv {row?.level ?? 0}
       </span>
+
     </div>
   );
 
