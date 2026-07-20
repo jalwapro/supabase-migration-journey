@@ -461,8 +461,8 @@ function FeatureInner({
           </span>
         )}
       </div>
-      <p className="mt-3 truncate text-[15px] font-bold text-white" style={HEADING}>{title}</p>
-      <p className="mt-1 line-clamp-2 pr-6 text-[11px] leading-snug text-white/55">{sub}</p>
+      <p className="mt-3.5 truncate text-[15px] font-bold leading-tight text-white" style={HEADING}>{title}</p>
+      <p className="mt-1.5 line-clamp-2 pr-6 text-[11px] leading-relaxed text-white/60">{sub}</p>
     </div>
   );
 }
