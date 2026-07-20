@@ -452,7 +452,7 @@ function UserProfilePage() {
                   background: "conic-gradient(from 0deg, #ffd76a, #ec4899, #a855f7, #22d3ee, #ffd76a)",
                   animationDuration: "8s",
                 }}>
-                  <div className="rounded-full bg-[#07070D] p-1">
+                  <div data-keep-dark className="rounded-full bg-[#07070D] p-1">
                     <LevelAvatar
                       src={p.avatar}
                       name={displayName}
