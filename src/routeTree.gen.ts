@@ -32,6 +32,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
+import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
@@ -64,6 +65,7 @@ import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
+import { Route as AuthenticatedAdminSupportChatRouteImport } from './routes/_authenticated/admin.support-chat'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenticated/admin.splash'
 import { Route as AuthenticatedAdminSpinPrizesRouteImport } from './routes/_authenticated/admin.spin-prizes'
@@ -204,6 +206,11 @@ const AuthenticatedVipRoute = AuthenticatedVipRouteImport.update({
 const AuthenticatedThemeShopRoute = AuthenticatedThemeShopRouteImport.update({
   id: '/theme-shop',
   path: '/theme-shop',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -374,6 +381,12 @@ const AuthenticatedAdminThemeCategoriesRoute =
   AuthenticatedAdminThemeCategoriesRouteImport.update({
     id: '/theme-categories',
     path: '/theme-categories',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSupportChatRoute =
+  AuthenticatedAdminSupportChatRouteImport.update({
+    id: '/support-chat',
+    path: '/support-chat',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSupportRoute =
@@ -560,6 +573,7 @@ export interface FileRoutesByFullPath {
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
@@ -596,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -641,6 +656,7 @@ export interface FileRoutesByTo {
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/support': typeof AuthenticatedSupportRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
@@ -677,6 +693,7 @@ export interface FileRoutesByTo {
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -726,6 +743,7 @@ export interface FileRoutesById {
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
@@ -762,6 +780,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/_authenticated/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
+  '/_authenticated/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -811,6 +830,7 @@ export interface FileRouteTypes {
     | '/recharge'
     | '/recharge-history'
     | '/settings'
+    | '/support'
     | '/theme-shop'
     | '/vip'
     | '/visitors'
@@ -847,6 +867,7 @@ export interface FileRouteTypes {
     | '/admin/spin-prizes'
     | '/admin/splash'
     | '/admin/support'
+    | '/admin/support-chat'
     | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
@@ -892,6 +913,7 @@ export interface FileRouteTypes {
     | '/recharge'
     | '/recharge-history'
     | '/settings'
+    | '/support'
     | '/theme-shop'
     | '/vip'
     | '/visitors'
@@ -928,6 +950,7 @@ export interface FileRouteTypes {
     | '/admin/spin-prizes'
     | '/admin/splash'
     | '/admin/support'
+    | '/admin/support-chat'
     | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
@@ -976,6 +999,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recharge'
     | '/_authenticated/recharge-history'
     | '/_authenticated/settings'
+    | '/_authenticated/support'
     | '/_authenticated/theme-shop'
     | '/_authenticated/vip'
     | '/_authenticated/visitors'
@@ -1012,6 +1036,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/spin-prizes'
     | '/_authenticated/admin/splash'
     | '/_authenticated/admin/support'
+    | '/_authenticated/admin/support-chat'
     | '/_authenticated/admin/theme-categories'
     | '/_authenticated/admin/themes'
     | '/_authenticated/admin/users'
@@ -1215,6 +1240,13 @@ declare module '@tanstack/react-router' {
       path: '/theme-shop'
       fullPath: '/theme-shop'
       preLoaderRoute: typeof AuthenticatedThemeShopRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/support': {
+      id: '/_authenticated/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof AuthenticatedSupportRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -1441,6 +1473,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminThemeCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/support-chat': {
+      id: '/_authenticated/admin/support-chat'
+      path: '/support-chat'
+      fullPath: '/admin/support-chat'
+      preLoaderRoute: typeof AuthenticatedAdminSupportChatRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/support': {
       id: '/_authenticated/admin/support'
       path: '/support'
@@ -1661,6 +1700,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSpinPrizesRoute: typeof AuthenticatedAdminSpinPrizesRoute
   AuthenticatedAdminSplashRoute: typeof AuthenticatedAdminSplashRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
+  AuthenticatedAdminSupportChatRoute: typeof AuthenticatedAdminSupportChatRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -1700,6 +1740,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSpinPrizesRoute: AuthenticatedAdminSpinPrizesRoute,
   AuthenticatedAdminSplashRoute: AuthenticatedAdminSplashRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
+  AuthenticatedAdminSupportChatRoute: AuthenticatedAdminSupportChatRoute,
   AuthenticatedAdminThemeCategoriesRoute:
     AuthenticatedAdminThemeCategoriesRoute,
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
@@ -1745,6 +1786,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedVisitorsRoute: typeof AuthenticatedVisitorsRoute
@@ -1772,6 +1814,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedVisitorsRoute: AuthenticatedVisitorsRoute,
