@@ -53,7 +53,7 @@ import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smt
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
 import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
-import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings.notifications'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
@@ -315,9 +315,9 @@ const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
 } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedSettingsRoute,
+    id: '/settings_/notifications',
+    path: '/settings/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedPkRoomIdRoute = AuthenticatedPkRoomIdRouteImport.update({
   id: '/pk/$roomId',
@@ -553,7 +553,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -633,7 +633,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/settings': typeof AuthenticatedSettingsRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/wallet': typeof AuthenticatedWalletRoute
@@ -717,7 +717,7 @@ export interface FileRoutesById {
   '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
-  '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
@@ -762,7 +762,7 @@ export interface FileRoutesById {
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
-  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
@@ -1009,7 +1009,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games/daily-spin'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/pk/$roomId'
-    | '/_authenticated/settings/notifications'
+    | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
@@ -1352,12 +1352,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUUserIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/settings/notifications': {
-      id: '/_authenticated/settings/notifications'
-      path: '/notifications'
+    '/_authenticated/settings_/notifications': {
+      id: '/_authenticated/settings_/notifications'
+      path: '/settings/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pk/$roomId': {
       id: '/_authenticated/pk/$roomId'
@@ -1709,20 +1709,6 @@ const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
 const AuthenticatedGamesRouteWithChildren =
   AuthenticatedGamesRoute._addFileChildren(AuthenticatedGamesRouteChildren)
 
-interface AuthenticatedSettingsRouteChildren {
-  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
-}
-
-const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
-  AuthenticatedSettingsNotificationsRoute:
-    AuthenticatedSettingsNotificationsRoute,
-}
-
-const AuthenticatedSettingsRouteWithChildren =
-  AuthenticatedSettingsRoute._addFileChildren(
-    AuthenticatedSettingsRouteChildren,
-  )
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
@@ -1739,12 +1725,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
-  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedPkRoomIdRoute: typeof AuthenticatedPkRoomIdRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedUUserIdRoute: typeof AuthenticatedUUserIdRoute
 }
 
@@ -1764,12 +1751,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
-  AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedPkRoomIdRoute: AuthenticatedPkRoomIdRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRoute,
   AuthenticatedUUserIdRoute: AuthenticatedUUserIdRoute,
 }
 
@@ -1802,13 +1791,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

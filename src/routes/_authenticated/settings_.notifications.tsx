@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { currentPushStatus, isWebPushSupported, subscribeToPush, unsubscribeFromPush } from "@/lib/webpush";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/settings/notifications")({ component: Page });
+export const Route = createFileRoute("/_authenticated/settings_/notifications")({ component: Page });
 
 
 const GROUPS: { label: string; kinds: { key: NotificationKind; label: string }[] }[] = [
