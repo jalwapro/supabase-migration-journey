@@ -137,7 +137,7 @@ function MePage() {
 
   return (
     <>
-      <AppShell title="" subtitle="">
+      <AppShell title="" subtitle="" showHeader={false}>
         <div className="relative min-h-full overflow-hidden text-white">
           {/* Cyberpunk header background */}
           <div aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
@@ -204,11 +204,11 @@ function MePage() {
                     <span className="inline-block -scale-x-100">🪶</span>
                   </div>
                   <div aria-hidden className="pointer-events-none absolute -right-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🪶</div>
-                  <div className="relative h-[168px] w-[168px] rounded-full p-[4px]" style={{ background: "conic-gradient(from 0deg, #a855f7, #ec4899, #a855f7, #7c3aed, #a855f7)", boxShadow: "0 0 32px rgba(168,85,247,0.7), 0 0 60px rgba(236,72,153,0.35)" }}>
-                    <div className="h-full w-full rounded-full bg-black p-1.5">
+                  <div className="relative grid h-[140px] w-[140px] place-items-center rounded-full p-[3px]" style={{ background: "conic-gradient(from 0deg, #a855f7, #ec4899, #a855f7, #7c3aed, #a855f7)", boxShadow: "0 0 32px rgba(168,85,247,0.7), 0 0 60px rgba(236,72,153,0.35)" }}>
+                    <div className="grid h-full w-full place-items-center rounded-full bg-black p-1">
                       <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} />
                     </div>
-                    <span className="absolute bottom-3 right-3 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
+                    <span className="absolute bottom-2 right-2 z-30 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
                   </div>
                   <div
                     className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 text-[13px] font-black text-white shadow-[0_0_14px_rgba(251,191,36,0.7)]"
