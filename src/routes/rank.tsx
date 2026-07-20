@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Crown, Globe2, Users, Trophy, Flame, Gift, Mic2, Sparkles, TrendingUp, Zap } from "lucide-react";
+import { Globe2, Users, Sparkles } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins } from "@/lib/vip-levels";
@@ -38,14 +38,11 @@ const BODY = { fontFamily: "'Hind', system-ui, sans-serif" } as const;
 
 function RankPage() {
   const { profile } = useAuth();
-  const [board,  setBoard]  = useState<Board>("gifters");
-  const [period, setPeriod] = useState<Period>("daily");
-  const [scope,  setScope]  = useState<Scope>("global");
+  const [board, setBoard]   = useState<Board>("gifters");
+  const [period, setPeriod] = useState<Period>("weekly");
+  const [scope, setScope]   = useState<Scope>("global");
 
-  const scopeValue =
-    scope === "country" ? profile?.country ?? null :
-    scope === "family"  ? null :
-    null;
+  const scopeValue = scope === "country" ? profile?.country ?? null : null;
 
   const q = useQuery({
     queryKey: ["vip-rank", board, period, scope, scopeValue],
@@ -62,88 +59,129 @@ function RankPage() {
 
   // Realtime refresh on new gifts (debounced)
   const qc = useQueryClient();
-  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    const scheduleRefresh = () => {
-      if (refreshTimer.current) return;
-      refreshTimer.current = setTimeout(() => {
-        refreshTimer.current = null;
+    const bump = () => {
+      if (timer.current) return;
+      timer.current = setTimeout(() => {
+        timer.current = null;
         qc.invalidateQueries({ queryKey: ["vip-rank"] });
       }, 1500);
     };
-    const channel = supabase
-      .channel("rank-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_events" }, scheduleRefresh)
+    const ch = supabase.channel("rank-live")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_events" }, bump)
       .subscribe();
     return () => {
-      if (refreshTimer.current) { clearTimeout(refreshTimer.current); refreshTimer.current = null; }
-      supabase.removeChannel(channel);
+      if (timer.current) { clearTimeout(timer.current); timer.current = null; }
+      supabase.removeChannel(ch);
     };
   }, [qc]);
 
   const list = q.data ?? [];
-  const champion = list[0];
-  const runners  = list.slice(1, 3);
-  const rest     = list.slice(3);
+  const c1 = list[0]; const c2 = list[1]; const c3 = list[2];
+  const rest = list.slice(3);
 
   return (
     <>
-      <AppShell title="Rankings" subtitle="">
-        <div className="relative min-h-full overflow-hidden" style={BODY}>
-          {/* Neon arena backdrop */}
-          <ArenaBackdrop />
+      <AppShell title="" subtitle="">
+        <div className="relative min-h-full overflow-hidden bg-[#0a0a0f]" style={BODY}>
+          {/* Ambient glows */}
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-10 left-1/4 h-64 w-64 rounded-full bg-[#ff2d95]/15 blur-[100px]" />
+            <div className="absolute top-40 -right-10 h-52 w-52 rounded-full bg-[#8b5cf6]/15 blur-[80px]" />
+            <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,45,149,0.08),transparent_70%)]" />
+          </div>
 
-          <div className="relative z-10 px-3 pb-6 pt-2">
-            {/* ── Board Tabs ── */}
-            <BoardTabs board={board} setBoard={setBoard} />
+          <div className="relative z-10 flex flex-col">
+            {/* Header */}
+            <div className="px-5 pt-6 pb-3 space-y-5">
+              <div className="flex items-center justify-between">
+                <h1 className="text-2xl uppercase italic tracking-tighter text-white" style={HEADING}>
+                  Rankings
+                </h1>
+                <div className="flex p-1 rounded-full border border-white/10 bg-white/5 backdrop-blur-md">
+                  {(["gifters","hosts"] as Board[]).map((k) => {
+                    const active = board === k;
+                    return (
+                      <button
+                        key={k}
+                        onClick={() => setBoard(k)}
+                        className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition ${
+                          active
+                            ? "bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] text-white shadow-lg"
+                            : "text-white/40 hover:text-white"
+                        }`}
+                        style={HEADING}
+                      >
+                        {k}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-            {/* ── Period Segmented Bar ── */}
-            <div className="mt-3 mb-2">
-              <PeriodBar period={period} setPeriod={setPeriod} />
+              {/* Period bar */}
+              <div className="flex justify-between items-center bg-black/40 rounded-2xl p-1.5 border border-white/5">
+                {([
+                  { k: "daily",   label: "24H"   },
+                  { k: "weekly",  label: "Week"  },
+                  { k: "monthly", label: "Month" },
+                  { k: "yearly",  label: "Year"  },
+                  { k: "all",     label: "All"   },
+                ] as { k: Period; label: string }[]).map(({ k, label }) => {
+                  const active = period === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setPeriod(k)}
+                      className={`flex-1 py-2 text-[10px] font-bold uppercase tracking-wider transition rounded-xl ${
+                        active
+                          ? "text-white bg-white/10 border border-white/10 shadow-inner"
+                          : "text-white/40 hover:text-white"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Scope chips + countdown */}
+              <div className="flex items-center justify-between gap-2">
+                <ScopeChips scope={scope} setScope={setScope} country={profile?.country} />
+                <CountdownPill period={period} />
+              </div>
             </div>
 
-            {/* ── Scope chips + Countdown ── */}
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <ScopeChips scope={scope} setScope={setScope} country={profile?.country} />
-              <CountdownPill period={period} />
+            {/* Podium */}
+            <div className="px-5 py-4 flex items-end justify-center gap-3">
+              <PodiumSide entry={c2} place={2} />
+              <PodiumCenter entry={c1} />
+              <PodiumSide entry={c3} place={3} />
             </div>
 
-            {/* ═════════════ HERO CHAMPION ═════════════ */}
-            {q.isLoading ? (
-              <ChampionSkeleton />
-            ) : champion ? (
-              <ChampionCard entry={champion} board={board} />
-            ) : (
-              <EmptyThrone board={board} />
-            )}
-
-            {/* ═════════════ RUNNERS UP GRID ═════════════ */}
-            {runners.length > 0 && (
-              <div className="mt-3 grid grid-cols-2 gap-2.5">
-                {runners.map((e, i) => (
-                  <RunnerCard key={e.user_id} entry={e} place={(i + 2) as 2 | 3} />
-                ))}
+            {/* List container */}
+            <div className="flex-1 bg-black/60 backdrop-blur-md rounded-t-[48px] border-t border-white/10 p-5 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] pb-28">
+              <div className="flex px-3 py-2 text-[10px] uppercase text-white/30 tracking-[0.2em]" style={HEADING}>
+                <span className="w-10">Pos</span>
+                <span className="flex-1">Challenger</span>
+                <span className="text-right">Score</span>
               </div>
-            )}
 
-            {/* ── Section separator ── */}
-            <SectionBar label={board === "gifters" ? "Top Gifters" : "Top Hosts"} count={rest.length} />
-
-            {/* ── Ranks 4+ grid ── */}
-            {q.isLoading ? (
-              <div className="grid gap-2">
-                {[0,1,2,3,4].map((i) => (
-                  <div key={i} className="h-[68px] animate-pulse rounded-2xl bg-white/5" />
-                ))}
-              </div>
-            ) : rest.length > 0 ? (
-              <ul className="space-y-2">
-                {rest.map((e) => <RankRow key={e.user_id} entry={e} />)}
-              </ul>
-            ) : list.length > 0 ? null : null}
-
-            {/* ── Reward footer ── */}
-            {list.length > 0 && <RewardFooter board={board} period={period} />}
+              {q.isLoading ? (
+                <div className="space-y-2.5">
+                  {[0,1,2,3,4].map((i) => (
+                    <div key={i} className="h-[68px] animate-pulse rounded-3xl bg-white/5" />
+                  ))}
+                </div>
+              ) : rest.length > 0 ? (
+                <ul className="space-y-2.5">
+                  {rest.map((e) => <RankRow key={e.user_id} entry={e} board={board} />)}
+                </ul>
+              ) : list.length === 0 ? (
+                <EmptyState board={board} />
+              ) : null}
+            </div>
           </div>
         </div>
       </AppShell>
@@ -152,108 +190,7 @@ function RankPage() {
   );
 }
 
-/* ══════════ ARENA BACKDROP ══════════ */
-function ArenaBackdrop() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-      {/* Radial glow anchors */}
-      <div className="absolute -top-32 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.35)_0%,rgba(139,92,246,0.18)_35%,transparent_70%)]" />
-      <div className="absolute top-40 -left-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(139,92,246,0.35),transparent_70%)] blur-2xl" />
-      <div className="absolute top-96 -right-24 h-72 w-72 rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.28),transparent_70%)] blur-2xl" />
-      {/* Grid floor */}
-      <div
-        className="absolute inset-x-0 bottom-0 h-64 opacity-25"
-        style={{
-          background:
-            "linear-gradient(180deg,transparent,rgba(139,92,246,0.35)),repeating-linear-gradient(90deg,rgba(236,72,153,0.35) 0 1px,transparent 1px 32px),repeating-linear-gradient(0deg,rgba(236,72,153,0.35) 0 1px,transparent 1px 32px)",
-          maskImage: "linear-gradient(180deg,transparent 0%,black 100%)",
-        }}
-      />
-      {/* Floating sparks */}
-      {Array.from({ length: 14 }).map((_, i) => (
-        <span
-          key={i}
-          className="absolute h-1 w-1 rounded-full bg-[#ffcf6a] shadow-[0_0_8px_rgba(255,207,106,0.9)] animate-pulse"
-          style={{
-            top: `${(i * 37) % 90}%`,
-            left: `${(i * 53) % 95}%`,
-            animationDelay: `${(i % 6) * 0.3}s`,
-            animationDuration: `${2 + (i % 4)}s`,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-/* ══════════ BOARD TABS ══════════ */
-function BoardTabs({ board, setBoard }: { board: Board; setBoard: (b: Board) => void }) {
-  return (
-    <div className="relative flex rounded-2xl border border-white/10 bg-black/45 p-1 backdrop-blur-lg">
-      <span
-        className="pointer-events-none absolute inset-y-1 w-[calc(50%-4px)] rounded-xl transition-all duration-300"
-        style={{
-          left: board === "gifters" ? 4 : "calc(50% + 0px)",
-          background: "linear-gradient(135deg,#ec4899 0%,#a855f7 60%,#7c3aed 100%)",
-          boxShadow: "0 8px 30px -6px rgba(236,72,153,0.6), inset 0 1px 0 rgba(255,255,255,0.35)",
-        }}
-      />
-      {([
-        { k: "gifters", label: "GIFTERS", Icon: Gift },
-        { k: "hosts",   label: "HOSTS",   Icon: Mic2 },
-      ] as { k: Board; label: string; Icon: typeof Gift }[]).map(({ k, label, Icon }) => {
-        const active = board === k;
-        return (
-          <button
-            key={k}
-            onClick={() => setBoard(k)}
-            className={`relative z-10 flex flex-1 items-center justify-center gap-2 py-2.5 text-[13px] tracking-[0.15em] transition ${
-              active ? "text-white" : "text-white/50"
-            }`}
-            style={HEADING}
-          >
-            <Icon className="h-4 w-4" strokeWidth={2.5} />
-            {label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ══════════ PERIOD BAR ══════════ */
-function PeriodBar({ period, setPeriod }: { period: Period; setPeriod: (p: Period) => void }) {
-  const items: { k: Period; label: string }[] = [
-    { k: "daily",   label: "24H"  },
-    { k: "weekly",  label: "WEEK" },
-    { k: "monthly", label: "MONTH"},
-    { k: "yearly",  label: "YEAR" },
-    { k: "all",     label: "ALL"  },
-  ];
-  return (
-    <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
-      {items.map(({ k, label }) => {
-        const active = period === k;
-        return (
-          <button
-            key={k}
-            onClick={() => setPeriod(k)}
-            className={`shrink-0 rounded-full px-4 py-1.5 text-[11px] tracking-[0.18em] transition ${
-              active
-                ? "bg-gradient-to-r from-[#ffe08a] via-[#ffcf6a] to-[#c48a1a] text-[#2a0f00] shadow-[0_6px_18px_rgba(255,207,106,0.45)]"
-                : "border border-white/10 bg-white/[0.04] text-white/60 hover:text-white"
-            }`}
-            style={HEADING}
-          >
-            {label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ══════════ SCOPE CHIPS ══════════ */
+/* ── Scope chips ── */
 function ScopeChips({
   scope, setScope, country,
 }: { scope: Scope; setScope: (s: Scope) => void; country?: string | null }) {
@@ -274,8 +211,8 @@ function ScopeChips({
             onClick={() => setScope(k)}
             className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] tracking-[0.14em] transition disabled:opacity-30 ${
               active
-                ? "bg-white/15 text-white border border-white/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
-                : "bg-black/30 text-white/50 border border-white/8"
+                ? "bg-white/15 text-white border border-white/25"
+                : "bg-black/30 text-white/50 border border-white/10"
             }`}
             style={HEADING}
           >
@@ -287,284 +224,154 @@ function ScopeChips({
   );
 }
 
-/* ══════════ COUNTDOWN PILL ══════════ */
+/* ── Countdown pill ── */
 function CountdownPill({ period }: { period: Period }) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-
   if (period === "all") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-[#ffcf6a]/40 bg-black/40 px-2.5 py-1 text-[10px] tracking-[0.2em] text-[#ffcf6a]" style={HEADING}>
+      <span className="inline-flex items-center gap-1 rounded-full border border-[#fbbf24]/40 bg-black/40 px-2.5 py-1 text-[10px] tracking-[0.2em] text-[#fbbf24]" style={HEADING}>
         ∞ FOREVER
       </span>
     );
   }
-
   const d = new Date(now);
   let end: Date;
-  if (period === "daily") end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 0, 0, 0);
+  if (period === "daily") end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
   else if (period === "weekly") {
     const day = d.getDay();
     const daysToMon = (8 - day) % 7 || 7;
-    end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysToMon, 0, 0, 0);
-  } else if (period === "monthly") end = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0, 0);
-  else end = new Date(d.getFullYear() + 1, 0, 1, 0, 0, 0);
-
+    end = new Date(d.getFullYear(), d.getMonth(), d.getDate() + daysToMon);
+  } else if (period === "monthly") end = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  else end = new Date(d.getFullYear() + 1, 0, 1);
   const diff = Math.max(0, end.getTime() - now);
   const hh = Math.floor(diff / 3_600_000);
   const mm = Math.floor((diff % 3_600_000) / 60_000);
   const ss = Math.floor((diff % 60_000) / 1000);
   const pad = (n: number) => String(n).padStart(2, "0");
-
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ff4d94]/45 bg-black/60 px-2.5 py-1 text-[10px] tracking-[0.18em] text-white shadow-[0_0_16px_-4px_rgba(255,77,148,0.7)]" style={HEADING}>
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff4d94] shadow-[0_0_8px_#ff4d94]" />
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#ff2d95]/45 bg-black/60 px-2.5 py-1 text-[10px] tracking-[0.18em] text-white shadow-[0_0_16px_-4px_rgba(255,45,149,0.7)]" style={HEADING}>
+      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#ff2d95] shadow-[0_0_8px_#ff2d95]" />
       {pad(hh)}:{pad(mm)}:{pad(ss)}
     </span>
   );
 }
 
-/* ══════════ HERO CHAMPION CARD ══════════ */
-function ChampionCard({ entry, board }: { entry: Entry; board: Board }) {
+/* ── Podium sides (#2 / #3) ── */
+function PodiumSide({ entry, place }: { entry?: Entry; place: 2 | 3 }) {
+  const theme = place === 2
+    ? { border: "border-violet-500/30", chip: "bg-violet-500 text-white", rot: "rotate-[-4deg]", chipRot: "rotate-[4deg]", chipPos: "-top-2 -left-2", num: "text-[#8b5cf6]", glow: "shadow-[0_0_20px_rgba(139,92,246,0.15)]" }
+    : { border: "border-amber-500/30", chip: "bg-amber-500 text-black", rot: "rotate-[4deg]",  chipRot: "rotate-[-4deg]", chipPos: "-top-2 -right-2", num: "text-[#fbbf24]", glow: "shadow-[0_0_20px_rgba(245,158,11,0.15)]" };
+
+  if (!entry) {
+    return (
+      <div className="flex-1 flex flex-col items-center gap-3 opacity-40">
+        <div className={`w-20 h-20 rounded-2xl bg-white/5 backdrop-blur-xl border ${theme.border} ${theme.rot} ${theme.glow} grid place-items-center`}>
+          <span className="text-2xl text-white/30" style={HEADING}>{place}</span>
+        </div>
+        <p className="text-white/40 text-xs">—</p>
+      </div>
+    );
+  }
+  const initial = (entry.username ?? "?").slice(0, 1).toUpperCase();
   return (
-    <Link
-      to="/u/$userId"
-      params={{ userId: entry.user_id }}
-      className="relative block overflow-hidden rounded-[26px] border border-[#ffcf6a]/40 shadow-[0_25px_60px_-15px_rgba(236,72,153,0.55)]"
-      style={{
-        background:
-          "linear-gradient(140deg,#3a0a4a 0%,#5c1170 35%,#8d1a5c 65%,#c22a56 100%)",
-      }}
-    >
-      {/* Beam sweep */}
-      <div aria-hidden className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 bg-[radial-gradient(circle,rgba(255,220,140,0.55),transparent_60%)] blur-2xl" />
-        <div className="absolute inset-0 opacity-30" style={{
-          backgroundImage: "repeating-linear-gradient(115deg,rgba(255,255,255,0.08) 0 2px,transparent 2px 14px)",
-        }}/>
-      </div>
-
-      {/* CHAMPION Banner */}
-      <div className="relative flex items-center justify-between px-5 pt-4">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[10px] tracking-[0.25em] text-[#ffe08a] border border-[#ffcf6a]/40" style={HEADING}>
-          <Crown className="h-3 w-3 fill-current" /> CHAMPION
-        </span>
-        <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] tracking-[0.2em] text-white border border-white/15" style={HEADING}>
-          <Zap className="h-3 w-3" /> LIVE
-        </span>
-      </div>
-
-      {/* Avatar + laurels */}
-      <div className="relative mt-3 flex justify-center">
-        {/* Laurel wreath simulation */}
-        <div className="absolute inset-x-0 top-3 mx-auto h-32 w-32 rounded-full border-[3px] border-[#ffcf6a]/25 [mask-image:linear-gradient(180deg,black,transparent)]" />
-        <div className="relative h-28 w-28">
-          <div
-            className="absolute inset-0 rounded-full p-[3px] animate-[spin_10s_linear_infinite]"
-            style={{
-              background:
-                "conic-gradient(from 0deg,#ffe8a8,#ec4899,#a855f7,#ffe8a8,#ec4899,#a855f7,#ffe8a8)",
-            }}
-          >
-            <div className="h-full w-full overflow-hidden rounded-full border-4 border-[#1a0522] bg-[#0a0514]">
-              {entry.avatar ? (
-                <img src={entry.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="grid h-full w-full place-items-center text-3xl text-white/80" style={HEADING}>
-                  {(entry.username ?? "?").slice(0, 1).toUpperCase()}
-                </div>
-              )}
-            </div>
+    <Link to="/u/$userId" params={{ userId: entry.user_id }} className="flex-1 flex flex-col items-center gap-3">
+      <div className="relative">
+        <div className={`w-20 h-20 rounded-2xl bg-white/5 backdrop-blur-xl border ${theme.border} p-1.5 ${theme.rot} ${theme.glow}`}>
+          <div className="w-full h-full rounded-xl overflow-hidden bg-[#1a1a25] grid place-items-center">
+            {entry.avatar
+              ? <img src={entry.avatar} alt="" className="h-full w-full object-cover" />
+              : <span className="text-2xl text-white/70" style={HEADING}>{initial}</span>}
           </div>
-          {/* #1 medallion */}
-          <div className="absolute -bottom-2 left-1/2 -translate-x-1/2">
-            <div className="rounded-full bg-gradient-to-b from-[#ffe08a] to-[#c48a1a] px-3 py-0.5 text-[12px] text-[#2a0f00] shadow-[0_4px_12px_rgba(255,207,106,0.55)] border border-[#3a1e00]/40" style={HEADING}>
-              #1
-            </div>
+          <div className={`absolute ${theme.chipPos} w-8 h-8 ${theme.chip} flex items-center justify-center text-xs rounded-lg shadow-lg ${theme.chipRot}`} style={HEADING}>
+            {place}
           </div>
         </div>
       </div>
+      <div className="text-center">
+        <p className="text-white font-bold text-sm tracking-tight truncate max-w-[92px]" style={BODY}>{entry.username ?? "user"}</p>
+        <p className={`text-[10px] uppercase tracking-widest ${theme.num}`} style={HEADING}>{formatCoins(entry.total_coins)}</p>
+      </div>
+    </Link>
+  );
+}
 
-      {/* Name */}
-      <div className="relative mt-4 px-5 text-center">
-        <p className="truncate text-[22px] leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]" style={HEADING}>
+/* ── Podium center (#1) ── */
+function PodiumCenter({ entry }: { entry?: Entry }) {
+  if (!entry) {
+    return (
+      <div className="flex-[1.2] flex flex-col items-center gap-4 -mt-6 opacity-50">
+        <div className="w-28 h-28 rounded-3xl border-2 border-[#ff2d95]/40 grid place-items-center bg-white/5">
+          <span className="text-4xl text-white/40" style={HEADING}>1</span>
+        </div>
+        <p className="text-white/50 text-sm uppercase" style={HEADING}>Throne awaits</p>
+      </div>
+    );
+  }
+  const initial = (entry.username ?? "?").slice(0, 1).toUpperCase();
+  return (
+    <Link to="/u/$userId" params={{ userId: entry.user_id }} className="flex-[1.2] flex flex-col items-center gap-4 -mt-6">
+      <div className="relative">
+        <div className="absolute -inset-4 bg-[#ff2d95]/20 blur-2xl rounded-full animate-pulse" />
+        <div className="w-28 h-28 rounded-3xl bg-white/10 backdrop-blur-2xl border-2 border-[#ff2d95] p-2 shadow-[0_0_30px_rgba(255,45,149,0.3)] relative">
+          <div className="w-full h-full rounded-2xl overflow-hidden bg-[#1a1a25] grid place-items-center">
+            {entry.avatar
+              ? <img src={entry.avatar} alt="" className="h-full w-full object-cover" />
+              : <span className="text-4xl text-white/80" style={HEADING}>{initial}</span>}
+          </div>
+          <div className="absolute -top-4 left-1/2 -translate-x-1/2 drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]">
+            <svg className="w-10 h-10 fill-[#fbbf24]" viewBox="0 0 24 24">
+              <path d="M12 2l2.4 7.4h7.6l-6.2 4.5 2.4 7.4-6.2-4.5-6.2 4.5 2.4-7.4-6.2-4.5h7.6z" />
+            </svg>
+          </div>
+          <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-[#ff2d95] flex items-center justify-center text-sm text-white px-4 py-1 rounded-full shadow-[0_4px_15px_rgba(255,45,149,0.5)] border-2 border-[#0a0a0f]" style={HEADING}>
+            1
+          </div>
+        </div>
+      </div>
+      <div className="text-center">
+        <p className="text-white text-lg italic tracking-tight uppercase leading-none truncate max-w-[160px]" style={HEADING}>
           {entry.username ?? "user"}
         </p>
-        <div className="mt-2 flex items-center justify-center gap-2">
-          <VipBadge level={entry.vip_level ?? 0} size="sm" />
-          {entry.country && (
-            <span className="rounded-md bg-black/40 px-2 py-0.5 text-[10px] tracking-[0.12em] text-white/70 border border-white/10" style={HEADING}>
-              {entry.country.toUpperCase()}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Coin trophy */}
-      <div className="relative mt-4 flex items-center justify-center gap-2 px-5 pb-5">
-        <div className="flex items-center gap-2 rounded-2xl border border-[#ffcf6a]/40 bg-black/50 px-4 py-2 backdrop-blur">
-          <span className="grid h-6 w-6 place-items-center rounded-full bg-gradient-to-b from-[#ffe58a] to-[#c48a1a] text-[11px] text-[#2a0f00]" style={HEADING}>$</span>
-          <span className="text-[20px] text-[#ffe08a] drop-shadow-[0_0_12px_rgba(255,207,106,0.6)]" style={HEADING}>
-            {formatCoins(entry.total_coins)}
-          </span>
-          <span className="text-[10px] tracking-[0.2em] text-white/50" style={HEADING}>
-            {board === "gifters" ? "SENT" : "EARNED"}
-          </span>
+        <p className="text-[#ff2d95] text-[11px] uppercase tracking-[0.2em] mt-1" style={HEADING}>
+          {formatCoins(entry.total_coins)} PTS
+        </p>
+        <div className="mt-1.5 flex justify-center">
+          <VipBadge level={entry.vip_level ?? 0} size="xs" />
         </div>
       </div>
     </Link>
   );
 }
 
-function ChampionSkeleton() {
-  return <div className="h-[340px] animate-pulse rounded-[26px] bg-white/5" />;
-}
-
-/* ══════════ RUNNER-UP CARD ══════════ */
-function RunnerCard({ entry, place }: { entry: Entry; place: 2 | 3 }) {
-  const theme =
-    place === 2
-      ? {
-          bg: "linear-gradient(150deg,#1c1830 0%,#2b2154 45%,#4a3aa8 100%)",
-          accent: "#a5b8ff",
-          ring: "conic-gradient(from 210deg,#4a5bbf,#c9d3ff,#7188dc,#4a5bbf,#c9d3ff)",
-          glow: "rgba(122,148,255,0.5)",
-          label: "#2",
-        }
-      : {
-          bg: "linear-gradient(150deg,#2a1005 0%,#5a2010 45%,#c94a1a 100%)",
-          accent: "#ffbe8a",
-          ring: "conic-gradient(from 210deg,#a83d10,#ffcfa3,#e07640,#a83d10,#ffcfa3)",
-          glow: "rgba(255,140,80,0.45)",
-          label: "#3",
-        };
-
-  return (
-    <Link
-      to="/u/$userId"
-      params={{ userId: entry.user_id }}
-      className="relative block overflow-hidden rounded-2xl border border-white/10 p-3 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)]"
-      style={{ background: theme.bg, boxShadow: `0 10px 30px -10px ${theme.glow}` }}
-    >
-      <div className="flex items-start justify-between">
-        <span
-          className="rounded-full bg-black/45 px-2 py-0.5 text-[10px] tracking-[0.18em] border"
-          style={{ ...HEADING, color: theme.accent, borderColor: `${theme.accent}55` }}
-        >
-          {theme.label}
-        </span>
-        <Crown className="h-4 w-4 opacity-70" style={{ color: theme.accent }} fill="currentColor" strokeWidth={0.8} />
-      </div>
-
-      <div className="mt-1 flex justify-center">
-        <div className="relative h-16 w-16">
-          <div className="absolute inset-0 rounded-full p-[2px]" style={{ background: theme.ring }}>
-            <div className="h-full w-full overflow-hidden rounded-full border-2 border-black/50 bg-[#0a0514]">
-              {entry.avatar ? (
-                <img src={entry.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="grid h-full w-full place-items-center text-lg text-white/80" style={HEADING}>
-                  {(entry.username ?? "?").slice(0, 1).toUpperCase()}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p className="mt-2 truncate text-center text-[12px] text-white" style={HEADING}>
-        {entry.username ?? "user"}
-      </p>
-      <div className="mt-1 flex justify-center">
-        <VipBadge level={entry.vip_level ?? 0} size="xs" />
-      </div>
-      <div className="mt-2 flex items-center justify-center gap-1 rounded-lg bg-black/45 px-2 py-1 border border-white/10">
-        <span className="grid h-3.5 w-3.5 place-items-center rounded-full bg-gradient-to-b from-[#ffe58a] to-[#c48a1a] text-[8px] text-[#2a0f00]" style={HEADING}>$</span>
-        <span className="text-[12px]" style={{ ...HEADING, color: theme.accent }}>
-          {formatCoins(entry.total_coins)}
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-/* ══════════ SECTION BAR ══════════ */
-function SectionBar({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="mt-5 mb-2.5 flex items-center gap-2">
-      <span
-        className="inline-flex items-center gap-1.5 rounded-full border border-[#ffcf6a]/40 bg-black/45 px-3 py-1 text-[10px] tracking-[0.22em] text-[#ffe08a]"
-        style={HEADING}
-      >
-        <TrendingUp className="h-3 w-3" strokeWidth={2.5} /> {label.toUpperCase()}
-      </span>
-      <div className="h-[1px] flex-1 bg-gradient-to-r from-[#ffcf6a]/40 via-[#ec4899]/25 to-transparent" />
-      {count > 0 && (
-        <span className="text-[10px] tracking-widest text-white/40" style={HEADING}>{count}</span>
-      )}
-    </div>
-  );
-}
-
-/* ══════════ RANK ROW (4+) ══════════ */
-function RankRow({ entry }: { entry: Entry }) {
-  const isTopTen = entry.rnk <= 10;
+/* ── Row 4+ ── */
+function RankRow({ entry, board }: { entry: Entry; board: Board }) {
+  const initial = (entry.username ?? "?").slice(0, 1).toUpperCase();
+  const accent = board === "gifters" ? "#ff2d95" : "#8b5cf6";
   return (
     <li>
       <Link
         to="/u/$userId"
         params={{ userId: entry.user_id }}
-        className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2.5 backdrop-blur transition active:scale-[0.99] hover:border-[#ec4899]/40"
+        className="group flex items-center gap-4 bg-white/5 p-4 rounded-3xl border border-white/5 hover:border-[#ff2d95]/30 transition-all"
       >
-        {/* Rank number capsule */}
-        <div
-          className="relative grid h-10 w-10 shrink-0 place-items-center rounded-xl border"
-          style={
-            isTopTen
-              ? {
-                  background: "linear-gradient(160deg,#ec4899,#a855f7)",
-                  borderColor: "rgba(255,207,106,0.5)",
-                  boxShadow: "0 4px 14px -4px rgba(236,72,153,0.6)",
-                }
-              : { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.08)" }
-          }
-        >
-          <span
-            className={`text-[14px] leading-none ${isTopTen ? "text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]" : "text-white/60"}`}
-            style={HEADING}
-          >
-            {entry.rnk}
-          </span>
+        <div className="w-8 italic text-white/25 text-lg" style={HEADING}>
+          {String(entry.rnk).padStart(2, "0")}
         </div>
-
-        {/* Avatar */}
-        <div className="relative h-11 w-11 shrink-0">
-          <div
-            className="absolute inset-0 rounded-full p-[2px]"
-            style={{
-              background: isTopTen
-                ? "conic-gradient(from 210deg,#ec4899,#ffe8a8,#a855f7,#ec4899,#ffe8a8)"
-                : "linear-gradient(135deg,rgba(255,255,255,0.15),rgba(255,255,255,0.05))",
-            }}
-          >
-            <div className="h-full w-full overflow-hidden rounded-full border border-black/40 bg-[#0a0514]">
-              {entry.avatar ? (
-                <img src={entry.avatar} alt="" className="h-full w-full object-cover" />
-              ) : (
-                <div className="grid h-full w-full place-items-center text-sm text-white/70" style={HEADING}>
-                  {(entry.username ?? "?").slice(0, 1).toUpperCase()}
-                </div>
-              )}
-            </div>
+        <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 p-1 shrink-0">
+          <div className="w-full h-full rounded-xl overflow-hidden bg-[#1a1a25] grid place-items-center">
+            {entry.avatar
+              ? <img src={entry.avatar} alt="" className="h-full w-full object-cover" />
+              : <span className="text-sm text-white/70" style={HEADING}>{initial}</span>}
           </div>
         </div>
-
-        {/* Name + VIP */}
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[13px] text-white" style={HEADING}>{entry.username ?? "user"}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-white font-bold text-sm leading-tight truncate" style={BODY}>
+            {entry.username ?? "user"}
+          </p>
           <div className="mt-1 flex items-center gap-1.5">
             <VipBadge level={entry.vip_level ?? 0} size="xs" />
             {entry.country && (
@@ -574,73 +381,30 @@ function RankRow({ entry }: { entry: Entry }) {
             )}
           </div>
         </div>
-
-        {/* Coins */}
-        <div className="flex shrink-0 items-center gap-1.5">
-          <span className="text-[14px] text-white" style={HEADING}>{formatCoins(entry.total_coins)}</span>
-          <span className="grid h-4 w-4 place-items-center rounded-full bg-gradient-to-b from-[#ffe58a] to-[#c48a1a] text-[9px] text-[#2a0f00]" style={HEADING}>$</span>
+        <div className="text-right shrink-0">
+          <p className="text-white text-sm tracking-tighter" style={HEADING}>
+            {formatCoins(entry.total_coins)}
+          </p>
+          <p className="text-[9px] uppercase tracking-widest opacity-60" style={{ ...HEADING, color: accent }}>
+            Points
+          </p>
         </div>
       </Link>
     </li>
   );
 }
 
-/* ══════════ REWARD FOOTER ══════════ */
-function RewardFooter({ board, period }: { board: Board; period: Period }) {
-  const periodLabel =
-    period === "daily" ? "Daily" :
-    period === "weekly" ? "Weekly" :
-    period === "monthly" ? "Monthly" :
-    period === "yearly" ? "Yearly" : "All-time";
-  const badgeName = board === "gifters" ? "Champion" : "Boss";
-
+/* ── Empty state ── */
+function EmptyState({ board }: { board: Board }) {
   return (
-    <div
-      className="relative mt-5 overflow-hidden rounded-2xl border border-[#ffcf6a]/35 p-3.5"
-      style={{
-        background:
-          "linear-gradient(120deg,rgba(58,10,74,0.85) 0%,rgba(140,26,92,0.7) 55%,rgba(58,10,74,0.85) 100%)",
-      }}
-    >
-      <div aria-hidden className="pointer-events-none absolute inset-0 opacity-70">
-        <div className="absolute -left-6 top-1/2 h-32 w-32 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,180,60,0.4),transparent_65%)] blur-xl" />
-        <div className="absolute -right-6 top-1/2 h-32 w-32 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(236,72,153,0.35),transparent_65%)] blur-xl" />
+    <div className="mt-6 mx-auto max-w-[280px] text-center py-10">
+      <div className="mx-auto mb-4 w-16 h-16 rounded-2xl border border-[#ff2d95]/40 bg-white/5 grid place-items-center">
+        <span className="text-2xl">👑</span>
       </div>
-      <div className="relative flex items-center gap-3">
-        <div className="relative grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-gradient-to-b from-[#ffe08a] to-[#8a4a10] shadow-[0_4px_18px_rgba(255,180,80,0.5)]">
-          <Trophy className="h-6 w-6 text-[#2a0f00]" strokeWidth={2.4} />
-          <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[14px] leading-none">👑</span>
-        </div>
-        <p className="min-w-0 flex-1 text-[12px] leading-snug text-white/90" style={BODY}>
-          <span className="text-[#ffe08a]" style={HEADING}>{periodLabel} #1</span>{" "}
-          {board === "gifters" ? "gifter" : "host"} unlocks the{" "}
-          <span className="text-white" style={HEADING}>{badgeName}</span> badge
-          <span className="text-white/60"> · room aura + profile crown</span>
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ══════════ EMPTY THRONE ══════════ */
-function EmptyThrone({ board }: { board: Board }) {
-  return (
-    <div className="relative overflow-hidden rounded-[26px] border border-[#ffcf6a]/25 p-8 text-center backdrop-blur"
-      style={{ background: "linear-gradient(140deg,#1a0730 0%,#2b0a48 100%)" }}
-    >
-      <div className="absolute -top-16 left-1/2 h-40 w-40 -translate-x-1/2 rounded-full bg-[#ec4899]/25 blur-3xl" />
-      <div className="relative mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full bg-gradient-to-b from-[#ffe08a] to-[#7a5210] p-[3px]">
-        <div className="grid h-full w-full place-items-center rounded-full bg-[#0a0514]">
-          <Trophy className="h-8 w-8 text-[#ffcf6a]" />
-        </div>
-      </div>
-      <h2 className="text-lg tracking-[0.25em] text-white" style={HEADING}>THRONE AWAITS</h2>
-      <p className="mx-auto mt-2 max-w-[240px] text-xs leading-relaxed text-white/60" style={BODY}>
+      <p className="text-white text-sm uppercase tracking-[0.2em]" style={HEADING}>Throne awaits</p>
+      <p className="text-white/50 text-xs mt-2" style={BODY}>
         Send gifts to claim the crown on the {board} board.
       </p>
-      <div className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-[#ff3b8c]/40 bg-[#ff3b8c]/10 px-3 py-1 text-[10px] tracking-[0.2em] text-[#ff88b8]" style={HEADING}>
-        <Flame className="h-3 w-3" /> SEASON LIVE
-      </div>
     </div>
   );
 }
