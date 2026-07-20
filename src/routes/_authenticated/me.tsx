@@ -350,26 +350,67 @@ function StatLink({ to, value, label, gold }: { to: string; value: number; label
 
 function Row({ to, icon, title, sub, gold }: { to: string; icon: string; title: string; sub: string; gold?: boolean }) {
   return (
-    <Link
-      to={to}
-      className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 px-4 py-3.5 active:scale-[0.98] transition-transform"
-    >
+    <Link to={to} className="group relative block active:scale-[0.985] transition-transform">
+      {/* Outer glow halo */}
       <div
-        className={`grid h-10 w-10 place-items-center rounded-xl text-xl ${
-          gold ? "bg-[color:var(--gold)]/20" : "bg-[color:var(--primary)]/15"
+        className={`absolute -inset-0.5 rounded-[22px] blur-md transition-opacity duration-500 pointer-events-none ${
+          gold
+            ? "opacity-60 bg-gradient-to-r from-[color:var(--gold)] via-[color:var(--gold)]/30 to-transparent"
+            : "opacity-30 bg-gradient-to-r from-[color:var(--primary)] to-transparent group-hover:opacity-60"
+        }`}
+      />
+      {/* Card */}
+      <div
+        className={`relative flex items-center gap-4 rounded-[22px] p-4 backdrop-blur-2xl overflow-hidden ${
+          gold
+            ? "border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#1a0b2e] shadow-[0_0_30px_rgba(255,215,0,0.12)]"
+            : "border border-white/10 bg-gradient-to-b from-[#2d0b4d]/70 to-[#1a0b2e]/90"
         }`}
       >
-        <span>{icon}</span>
+        {/* Top glass shine */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+
+        {/* Icon tile */}
+        <div
+          className={`relative flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl ${
+            gold
+              ? "bg-gradient-to-br from-[color:var(--gold)]/25 to-transparent border border-[color:var(--gold)]/50"
+              : "bg-[color:var(--primary)]/10 border border-[color:var(--primary)]/25 shadow-[inset_0_0_14px_rgba(255,45,133,0.22)]"
+          }`}
+        >
+          <span className="drop-shadow-[0_2px_8px_rgba(0,0,0,0.5)]">{icon}</span>
+          {gold && <div className="absolute inset-0 rounded-2xl bg-[color:var(--gold)]/5 animate-pulse" />}
+          {!gold && (
+            <div className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full bg-[color:var(--primary)] blur-[2px] opacity-60" />
+          )}
+        </div>
+
+        {/* Title + sub */}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[15px] font-semibold tracking-tight text-white">{title}</h3>
+            {gold && (
+              <span className="px-1.5 py-0.5 rounded-md bg-[color:var(--gold)] text-[#1a0b2e] text-[9px] font-black uppercase tracking-widest">
+                Elite
+              </span>
+            )}
+          </div>
+          <p className={`truncate text-xs font-light ${gold ? "text-[color:var(--gold)]/70" : "text-white/45"}`}>{sub}</p>
+        </div>
+
+        {/* Chevron pill */}
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+            gold ? "bg-[color:var(--gold)]/15 border border-[color:var(--gold)]/25" : "bg-white/5 border border-white/10"
+          }`}
+        >
+          {gold ? (
+            <Shield className="h-4 w-4 text-[color:var(--gold)]" />
+          ) : (
+            <ChevronRight className="h-4 w-4 text-white/40 group-hover:text-white/80 transition-colors" />
+          )}
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className={`text-sm font-bold ${gold ? "text-[color:var(--gold)]" : ""}`}>{title}</p>
-        <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
-      </div>
-      {gold ? (
-        <Shield className="h-4 w-4 text-[color:var(--gold)]" />
-      ) : (
-        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-      )}
     </Link>
   );
 }
