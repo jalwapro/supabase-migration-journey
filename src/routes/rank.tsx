@@ -386,9 +386,8 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1 text-[13px] font-black text-white">
-          {formatCoins(row.score)} <Coins className="h-3.5 w-3.5 text-amber-300" />
-        </span>
+        <span />
+
 
         <span className="hidden text-[11px] text-white/60 xs:inline-flex items-center gap-1 sm:inline-flex">
           {row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🌐"}
