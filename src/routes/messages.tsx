@@ -90,12 +90,14 @@ function previewText(r: InboxRow): { text: string; icon?: string } {
 function MessagesPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const uid = user?.id ?? null;
 
   const [tab, setTab] = useState<Tab>("all");
   const [rawQuery, setRawQuery] = useState("");
   const [query, setQuery] = useState("");
   const [muteFilter, setMuteFilter] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   // Debounce search
   useEffect(() => {
