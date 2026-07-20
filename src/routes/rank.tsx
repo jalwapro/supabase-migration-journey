@@ -472,6 +472,28 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
     document.addEventListener("mousedown", off);
     return () => document.removeEventListener("mousedown", off);
   }, []);
+
+  // Live list of countries from actual users in DB
+  const { data: dbCountries } = useQuery({
+    queryKey: ["rank-countries"],
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("country")
+        .not("country", "is", null)
+        .limit(2000);
+      if (error) throw error;
+      const set = new Set<string>();
+      for (const r of (data ?? []) as { country: string | null }[]) {
+        if (r.country && r.country.trim()) set.add(r.country.trim());
+      }
+      return Array.from(set).sort();
+    },
+  });
+
+  const options = useMemo(() => ["Global", ...(dbCountries ?? [])], [dbCountries]);
+
   return (
     <div ref={ref} className="relative">
       <button
@@ -483,7 +505,9 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
       </button>
       {open && (
         <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-white/10 bg-[#12081e]/95 p-1 shadow-2xl backdrop-blur-xl">
-          {COUNTRIES.map((c) => (
+          {options.length === 1 ? (
+            <p className="px-3 py-2 text-[11px] text-white/50">No country data yet</p>
+          ) : options.map((c) => (
             <button
               key={c}
               onClick={() => { onChange(c); setOpen(false); }}
