@@ -7,7 +7,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 
 import {
   ArrowLeft, Loader2, CheckCircle2, Smartphone, Building2,
-  CreditCard, Wallet, Sparkles, Crown, Gem, Flame, Hourglass,
+  CreditCard, Wallet, Sparkles, Crown, Gem, Flame, Hourglass, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 import jalwaCoin from "@/assets/jalwa-coin.png.asset.json";
@@ -83,6 +83,20 @@ function RechargePage() {
   const [otp, setOtp] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [creditedCoins, setCreditedCoins] = useState(0);
+
+  // Deposit destinations set by admin
+  const paymentAccounts = useQuery({
+    queryKey: ["app_kv", "payments"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("app_kv")
+        .select("value")
+        .eq("key", "payments")
+        .maybeSingle();
+      return (data?.value ?? {}) as Record<string, string>;
+    },
+  });
+
 
   const packages = useQuery({
     queryKey: ["coin_packages_v2"],
