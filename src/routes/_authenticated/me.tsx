@@ -197,27 +197,12 @@ function MePage() {
               <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
               <div aria-hidden className="pointer-events-none absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#ff2d95]/20 blur-3xl" />
 
-              {/* Avatar block */}
+              {/* Avatar block — clean DP, equipped frame renders outside via LevelAvatar */}
               <div className="relative z-10 flex flex-col items-center">
-                <div className="relative -mb-4 text-[38px] leading-none" style={{ filter: "drop-shadow(0 0 10px rgba(251,191,36,0.85))" }}>👑</div>
                 <div className="relative">
-                  <div aria-hidden className="pointer-events-none absolute -left-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>
-                    <span className="inline-block -scale-x-100">🪶</span>
-                  </div>
-                  <div aria-hidden className="pointer-events-none absolute -right-7 top-1/2 -translate-y-1/2 text-[56px]" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🪶</div>
-                  <div className="relative grid h-[140px] w-[140px] place-items-center rounded-full p-[3px]" style={{ background: "conic-gradient(from 0deg, #a855f7, #ec4899, #a855f7, #7c3aed, #a855f7)", boxShadow: "0 0 32px rgba(168,85,247,0.7), 0 0 60px rgba(236,72,153,0.35)" }}>
-                    <div className="grid h-full w-full place-items-center rounded-full bg-black p-1">
-                      <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} />
-                    </div>
-                    <span className="absolute bottom-2 right-2 z-30 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
-                  </div>
-                  <div
-                    className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 text-[13px] font-black text-white shadow-[0_0_14px_rgba(251,191,36,0.7)]"
-                    style={{ ...HEADING, background: "linear-gradient(180deg, #1a0733 0%, #0a0416 100%)", border: "2px solid #fbbf24", clipPath: "polygon(10% 0, 90% 0, 100% 50%, 90% 100%, 10% 100%, 0 50%)" }}
-                  >
-                    Lv {p.level}
-                  </div>
-                  <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute right-0 top-1 grid h-8 w-8 place-items-center rounded-full border-2 border-black bg-[#ec4899] text-white shadow-[0_4px_12px_rgba(236,72,153,0.7)] disabled:opacity-60">
+                  <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} showBadge={false} />
+                  <span className="absolute bottom-1 right-1 z-30 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
+                  <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute -right-1 top-0 z-30 grid h-8 w-8 place-items-center rounded-full border-2 border-black bg-[#ec4899] text-white shadow-[0_4px_12px_rgba(236,72,153,0.7)] disabled:opacity-60">
                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
                   </button>
                   <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
