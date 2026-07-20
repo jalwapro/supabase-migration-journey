@@ -256,18 +256,15 @@ function MePage() {
               </div>
             </div>
 
-            {/* 2x2 Stats box */}
-            <Link
-              to="/friends"
-              className="shrink-0 rounded-2xl border border-white/10 bg-black/50 p-2 backdrop-blur-md shadow-[0_0_20px_rgba(139,92,246,0.2)]"
-            >
-              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-center">
-                <StatCell icon={<Users className="h-3.5 w-3.5 text-[#8b5cf6]" />} value={counts?.followers ?? 0} label="Followers" />
-                <StatCell icon={<UserPlus className="h-3.5 w-3.5 text-[#38bdf8]" />} value={counts?.following ?? 0} label="Following" />
-                <StatCell icon={<Star className="h-3.5 w-3.5 text-[#22c55e]" />} value={profile?.diamonds ?? 0} label="Points" />
-                <StatCell icon={<Coins className="h-3.5 w-3.5 text-[#fbbf24]" />} value={profile?.coins ?? 0} label="Coins" />
+            {/* Quick actions (compact 2x2) */}
+            <div className="shrink-0 rounded-2xl border border-white/10 bg-black/50 p-2 backdrop-blur-md shadow-[0_0_20px_rgba(139,92,246,0.2)]">
+              <div className="grid grid-cols-2 gap-2">
+                <Quick to="/create-room" icon={Mic} label="Go Live" color="#ff2d95" />
+                <Quick to="/pk" icon={Swords} label="PK" color="#fbbf24" />
+                <Quick to="/shop" icon={ShoppingBag} label="Shop" color="#38bdf8" />
+                <Quick to="/games" icon={Gamepad2} label="Games" color="#22c55e" />
               </div>
-            </Link>
+            </div>
           </div>
 
           {/* Main body */}
