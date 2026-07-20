@@ -335,15 +335,17 @@ function MessagesPage() {
             <div className="flex items-start gap-4 pb-2">
               <StoryTile
                 label="Add Story"
-                onClick={() => toast.message("Stories coming soon ✨")}
+                onClick={() => navigate({ to: "/create-room" })}
                 addBadge
               />
-              <StoryTile
-                label="My Story"
-                avatar={(user.user_metadata as any)?.avatar_url ?? null}
-                username={(user.user_metadata as any)?.username ?? "Me"}
-                ringClass="from-amber-300 via-yellow-500 to-amber-600"
-              />
+              <Link to="/me" className="shrink-0">
+                <StoryTile
+                  label="My Story"
+                  avatar={(user.user_metadata as any)?.avatar_url ?? null}
+                  username={(user.user_metadata as any)?.username ?? "Me"}
+                  ringClass="from-amber-300 via-yellow-500 to-amber-600"
+                />
+              </Link>
               {liveRing.slice(0, 12).map((r) => (
                 <Link
                   key={r.id}
