@@ -562,12 +562,13 @@ function EmptyBlock({ title, hint }: { title: string; hint: string }) {
 }
 
 function InboxList({
-  loading, rows, emptyTitle, emptyHint,
+  loading, rows, emptyTitle, emptyHint, onlineSet,
 }: {
   loading: boolean;
   rows: InboxRow[];
   emptyTitle: string;
   emptyHint: string;
+  onlineSet: Set<string>;
 }) {
   if (loading) {
     return (
@@ -580,13 +581,13 @@ function InboxList({
   return (
     <ul className="space-y-2.5">
       {rows.map((r) => (
-        <InboxRowCard key={r.peer_id} row={r} />
+        <InboxRowCard key={r.peer_id} row={r} online={onlineSet.has(r.peer_id)} />
       ))}
     </ul>
   );
 }
 
-function InboxRowCard({ row }: { row: InboxRow }) {
+function InboxRowCard({ row, online }: { row: InboxRow; online: boolean }) {
   const p = previewText(row);
   const initial = (row.peer_username ?? "?").slice(0, 1).toUpperCase();
   const vip = row.peer_vip_level ?? 0;
@@ -603,7 +604,9 @@ function InboxRowCard({ row }: { row: InboxRow }) {
               ? <img src={row.peer_avatar} alt="" className="h-full w-full object-cover" />
               : initial}
           </span>
-          <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07030f] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+          {online && (
+            <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[#07030f] bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.7)]" />
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
