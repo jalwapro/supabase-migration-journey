@@ -8,6 +8,7 @@ import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 
 import { useZegoRoom as useAgoraRoom, type RemoteUser, type RemoteVideoTrack } from "@/hooks/useZegoRoom";
+import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
 import { RoomDiagnostics } from "@/components/room/RoomDiagnostics";
 import {
   Flag,
@@ -279,6 +280,7 @@ function RoomPage() {
   });
 
   const isHost = user?.id === room.data?.host_id;
+  useRoomHeartbeat(room.data?.id, isHost);
   const myUid = user ? uidFromUuid(user.id) : null;
   const myMember = members.find((m) => m.user_id === user?.id) ?? null;
   const iAmOnSeat = myMember?.seat_index != null;

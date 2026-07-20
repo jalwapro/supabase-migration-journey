@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useZegoRoom as useAgoraRoom } from "@/hooks/useZegoRoom";
+import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
 
 function uidFromUuid(uuid: string): number {
   let h = 0;
@@ -126,6 +127,7 @@ function PkMatchPage() {
 
   const room = roomQ.data;
   const isHost = !!(user?.id && room?.host_id === user.id);
+  useRoomHeartbeat(room?.id, isHost);
   const activeMatchId: string | null = room?.active_pk_match_id ?? null;
   const rtcChannel = activeMatchId ? `pk-${activeMatchId}` : room?.rtc_channel ?? null;
 
