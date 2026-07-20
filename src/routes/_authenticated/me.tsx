@@ -50,6 +50,9 @@ export const Route = createFileRoute("/_authenticated/me")({
   component: MePage,
 });
 
+const HEADING = { fontFamily: "'Archivo Black', system-ui, sans-serif" } as const;
+const BODY = { fontFamily: "'Hind', system-ui, sans-serif" } as const;
+
 function useCounts(userId: string | undefined) {
   return useQuery({
     queryKey: ["me-counts", userId],
@@ -127,272 +130,213 @@ function MePage() {
     }
   }
 
+  const userName = profile?.username ?? "you";
+  const handleCopyId = () => {
+    if (!profile?.user_code) return;
+    navigator.clipboard.writeText(profile.user_code);
+    toast.success("ID copied");
+  };
+
   return (
     <>
-      <AppShell title="Profile">
-        <div className="space-y-4 px-4 pb-6 pt-4">
-          {/* ============ HERO ============ */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a0b2e] via-[#2d0b4d] to-[#050510] p-4 text-white shadow-2xl">
-            {/* neon city glow ambient */}
-            <div className="pointer-events-none absolute -top-16 right-0 h-56 w-72 rounded-full opacity-30" style={{ background: "radial-gradient(closest-side, #ff2d85aa, transparent 70%)" }} />
-            <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full opacity-20" style={{ background: "radial-gradient(closest-side, #7c3aedaa, transparent 70%)" }} />
+      <AppShell title="" subtitle="">
+        <div className="relative min-h-full overflow-hidden bg-[#0a0a0f] text-white" style={BODY}>
+          <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -top-10 left-1/4 h-64 w-64 rounded-full bg-[#ff2d95]/15 blur-[100px]" />
+            <div className="absolute top-40 -right-10 h-52 w-52 rounded-full bg-[#8b5cf6]/15 blur-[80px]" />
+            <div className="absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(255,45,149,0.08),transparent_70%)]" />
+          </div>
 
-            {/* Top: avatar + Jalwa neon header */}
-            <div className="relative flex items-start gap-3">
-              {/* Avatar w/ level frame */}
-              <div className="relative shrink-0">
-                <LevelAvatar
-                  src={profile?.avatar}
-                  name={profile?.username}
-                  level={vipLevel}
-                  size="xl"
-                  showBadge
-                  frame={profile?.frame}
-                  ring={profile?.ring}
-                />
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
-                  aria-label="Change photo"
-                  className="absolute right-0 top-2 z-20 grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-lg ring-2 ring-black/60 disabled:opacity-60"
-                >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void onPickAvatar(f);
-                  }}
-                />
-              </div>
-
-              {/* Neon Jalwa title */}
-              <div className="relative ml-auto flex flex-col items-end pt-1">
-                <div
-                  className="text-3xl font-black italic leading-none"
-                  style={{
-                    fontFamily: "'Brush Script MT', cursive",
-                    color: "#ff2d85",
-                    textShadow: "0 0 8px #ff2d85, 0 0 18px #ff2d85, 0 0 28px #ff1478",
-                  }}
-                >
-                  Jalwa
-                </div>
-                <div className="mt-1 text-[9px] font-black uppercase tracking-[0.28em] text-white/85">
-                  Live your moment
-                </div>
-              </div>
-            </div>
-
-            {/* Info + stats */}
-            <div className="relative mt-3 grid grid-cols-2 gap-3">
-              {/* left: user info */}
-              <div className="min-w-0 space-y-1.5">
-                <div className="flex items-center gap-1.5">
-                  <h2 className="truncate text-lg font-black tracking-tight">{profile?.username ?? "you"}</h2>
-                  <BadgeCheck className="h-4 w-4 shrink-0 text-sky-400" />
-                </div>
-                {profile?.username && (
-                  <p className="truncate text-[11px] text-white/55">@{profile.username.toLowerCase()}</p>
-                )}
-                {profile?.user_code && (
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(profile.user_code!);
-                      toast.success("ID copied");
-                    }}
-                    className="inline-flex items-center gap-1 text-[11px] font-bold text-white/80"
-                  >
-                    ID: {profile.user_code} <Copy className="h-3 w-3" />
-                  </button>
-                )}
-                {user?.email && (
-                  <div className="flex items-center gap-1 truncate text-[11px] text-white/60">
-                    <Mail className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{user.email}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-1.5 pt-1">
-                  <Link
-                    to="/vip"
-                    className="inline-flex items-center gap-1 rounded-full border border-[color:var(--gold)]/50 bg-gradient-to-r from-[color:var(--gold)]/25 to-transparent px-2.5 py-1 text-[11px] font-black text-white"
-                  >
-                    <Shield className="h-3 w-3 text-[color:var(--gold)]" /> {tier.label}
-                  </Link>
-                  <span className="text-base">🥇</span>
+          <div className="relative z-10 flex flex-col">
+            <div className="space-y-5 px-5 pb-3 pt-6">
+              <div className="flex items-center justify-between gap-3">
+                <h1 className="text-2xl uppercase italic tracking-tighter text-white" style={HEADING}>
+                  Profile
+                </h1>
+                <div className="flex rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur-md">
                   <Link
                     to="/settings"
-                    aria-label="Edit profile"
-                    className="ml-auto grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/85"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#ff2d95] to-[#8b5cf6] px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg"
+                    style={HEADING}
                   >
-                    <Pencil className="h-3.5 w-3.5" />
+                    <Pencil className="h-3 w-3" /> Edit
                   </Link>
+                  <button
+                    onClick={() => signOut()}
+                    className="inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/45 transition hover:text-white"
+                    style={HEADING}
+                  >
+                    <LogOut className="h-3 w-3" /> Exit
+                  </button>
                 </div>
               </div>
 
-              {/* right: stats 2x2 box */}
-              <div className="rounded-2xl border border-white/10 bg-black/30 p-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <StatCell
-                    to="/friends"
-                    icon={<Users className="h-4 w-4 text-[color:var(--secondary)]" />}
-                    value={counts?.followers ?? 0}
-                    label="Followers"
-                  />
-                  <StatCell
-                    to="/friends"
-                    icon={<Users className="h-4 w-4 text-sky-400" />}
-                    value={counts?.following ?? 0}
-                    label="Following"
-                  />
-                  <StatCell
-                    to="/withdraw"
-                    icon={<Star className="h-4 w-4 text-emerald-400" />}
-                    value={profile?.diamonds ?? 0}
-                    label="Points"
-                  />
-                  <StatCell
-                    to="/wallet"
-                    icon={<Coins className="h-4 w-4 text-[color:var(--gold)]" />}
-                    value={profile?.coins ?? 0}
-                    label="Coins"
-                  />
+              <div className="flex justify-between gap-1.5 rounded-2xl border border-white/5 bg-black/40 p-1.5">
+                <StatCell to="/friends" icon={<Users className="h-3.5 w-3.5" />} value={counts?.followers ?? 0} label="Followers" />
+                <StatCell to="/friends" icon={<Users className="h-3.5 w-3.5" />} value={counts?.following ?? 0} label="Following" />
+                <StatCell to="/wallet" icon={<Coins className="h-3.5 w-3.5" />} value={profile?.coins ?? 0} label="Coins" />
+                <StatCell to="/withdraw" icon={<Star className="h-3.5 w-3.5" />} value={profile?.diamonds ?? 0} label="Points" />
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap gap-1.5">
+                  <ProfileChip label={`@${userName.toLowerCase()}`} icon={BadgeCheck} />
+                  {profile?.user_code && <ProfileChip label={`ID ${profile.user_code}`} icon={Copy} onClick={handleCopyId} />}
+                  {user?.email && <ProfileChip label="Verified" icon={Mail} />}
                 </div>
+                <Link
+                  to="/vip"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[#fbbf24]/40 bg-black/40 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-[#fbbf24]"
+                  style={HEADING}
+                >
+                  <Shield className="h-3 w-3" /> {tier.label}
+                </Link>
               </div>
             </div>
-          </div>
 
-          {/* ============ VIP MILESTONE CARD ============ */}
-          <div
-            className="relative overflow-hidden rounded-3xl border border-[color:var(--secondary)]/40 p-4 text-white"
-            style={{
-              background: `linear-gradient(135deg, ${tier.color}22, transparent 60%), linear-gradient(180deg, #1a0b2e, #0a0614)`,
-              boxShadow: `0 0 40px -20px ${tier.glow}`,
-            }}
-          >
-            <div className="grid grid-cols-2 gap-3">
-              {/* Left: bronze shield medal + progress */}
-              <div className="flex gap-3">
-                <div className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-amber-700 to-amber-900 text-4xl shadow-inner">
-                  🛡️
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <p className="text-sm font-black">{tier.label}</p>
-                    <span className="text-sm">🥇</span>
-                  </div>
-                  <p className="text-[10px] uppercase tracking-widest text-white/60">Lifetime Gift</p>
-                  <div className="flex items-baseline justify-between gap-1">
-                    <p className="text-lg font-black text-[color:var(--gold)]">{formatCoins(p.totalGifted)}</p>
-                    <p className="text-[10px] font-bold text-white/70">Lv {p.level}</p>
-                  </div>
-                  <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${p.percent}%`,
-                        background: `linear-gradient(90deg, ${tier.color}, #fde68a)`,
-                        boxShadow: `0 0 10px ${tier.glow}`,
+            <div className="flex items-end justify-center gap-3 px-5 py-4">
+              <ProfileSideCard label="Coins" value={profile?.coins ?? 0} icon={Coins} place={2} />
+              <div className="flex-[1.2] -mt-6 flex flex-col items-center gap-4">
+                <div className="relative">
+                  <div className="absolute -inset-4 animate-pulse rounded-full bg-[#ff2d95]/20 blur-2xl" />
+                  <div className="relative rounded-3xl border-2 border-[#ff2d95] bg-white/10 p-2 shadow-[0_0_30px_rgba(255,45,149,0.3)] backdrop-blur-2xl">
+                    <LevelAvatar
+                      src={profile?.avatar}
+                      name={profile?.username}
+                      level={vipLevel}
+                      size="xl"
+                      showBadge
+                      frame={profile?.frame}
+                      ring={profile?.ring}
+                    />
+                    <button
+                      onClick={() => fileRef.current?.click()}
+                      disabled={uploading}
+                      aria-label="Change photo"
+                      className="absolute -right-2 -top-2 grid h-10 w-10 place-items-center rounded-2xl border-2 border-[#0a0a0f] bg-[#ff2d95] text-white shadow-[0_4px_15px_rgba(255,45,149,0.5)] disabled:opacity-60"
+                    >
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    </button>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) void onPickAvatar(f);
                       }}
                     />
+                    <div className="absolute -bottom-3 left-1/2 flex -translate-x-1/2 items-center justify-center rounded-full border-2 border-[#0a0a0f] bg-[#ff2d95] px-4 py-1 text-sm text-white shadow-[0_4px_15px_rgba(255,45,149,0.5)]" style={HEADING}>
+                      Lv {p.level}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="max-w-[190px] truncate text-lg uppercase italic leading-none tracking-tight text-white" style={HEADING}>
+                    {userName}
+                  </p>
+                  <p className="mt-1 text-[11px] uppercase tracking-[0.2em] text-[#ff2d95]" style={HEADING}>
+                    {formatCoins(p.totalGifted)} Gifted
+                  </p>
+                </div>
+              </div>
+              <ProfileSideCard label="Points" value={profile?.diamonds ?? 0} icon={Gem} place={3} />
+            </div>
+
+            <div className="rounded-t-[48px] border-t border-white/10 bg-black/60 p-5 pb-28 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] backdrop-blur-md">
+              <div
+                className="relative mb-4 overflow-hidden rounded-3xl border border-white/5 bg-white/5 p-4"
+                style={{ boxShadow: `inset 0 0 40px -18px ${tier.glow}` }}
+              >
+                <div aria-hidden className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-[#ff2d95]/15 blur-2xl" />
+                <div className="relative flex items-start gap-3">
+                  <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[#fbbf24]/35 bg-black/40 text-3xl shadow-[0_0_18px_rgba(251,191,36,0.15)]">
+                    🛡️
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm uppercase text-white" style={HEADING}>{tier.label}</p>
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/40" style={HEADING}>Lifetime Gift</p>
+                      </div>
+                      <Sheet>
+                        <SheetTrigger asChild>
+                          <button className="rounded-full border border-white/10 bg-white/10 px-3 py-1.5 text-[10px] uppercase tracking-widest text-white/75" style={HEADING}>
+                            Rewards
+                          </button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto border-white/10 bg-[#0a0614] text-white">
+                          <SheetHeader>
+                            <SheetTitle className="text-white">Milestone Rewards</SheetTitle>
+                          </SheetHeader>
+                          <div className="mt-3">
+                            <VipRewardsGrid currentLevel={vipLevel} />
+                          </div>
+                        </SheetContent>
+                      </Sheet>
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${p.percent}%`,
+                          background: `linear-gradient(90deg, #ff2d95, #8b5cf6, #fbbf24)`,
+                          boxShadow: `0 0 12px ${tier.glow}`,
+                        }}
+                      />
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                      <MiniStat label="Current" value={formatCoins(p.totalGifted - p.currentLevelStart)} />
+                      <MiniStat label={p.isMax ? "Max" : "Next Lv"} value={p.isMax ? "MAX" : formatCoins(p.nextLevelAt)} />
+                      <MiniStat label="Remain" value={p.isMax ? "0" : formatCoins(p.remaining)} />
+                    </div>
+                    {!p.isMax && reward && (
+                      <div className="mt-3 rounded-2xl border border-[#fbbf24]/20 bg-black/30 px-3 py-2">
+                        <p className="text-[10px] uppercase tracking-widest text-white/40" style={HEADING}>Next milestone • Lv {nextMilestone}</p>
+                        <p className="truncate text-xs font-bold text-white">{reward.bundle} <span className="text-[#fbbf24]">+{reward.coins.toLocaleString()} 🪙</span></p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
 
-              {/* Right: next milestone bundle + rewards link */}
-              <div className="space-y-2">
-                {!p.isMax && reward && (
-                  <div className="rounded-2xl border border-[color:var(--gold)]/30 bg-black/30 p-2">
-                    <p className="text-[10px] uppercase tracking-widest text-white/60">Next milestone • Lv {nextMilestone}</p>
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-[12px] font-black">{reward.bundle}</p>
-                        <p className="text-sm font-black text-[color:var(--gold)]">+{reward.coins.toLocaleString()} 🪙</p>
-                      </div>
-                      <span className="text-2xl">🎁</span>
-                    </div>
-                  </div>
-                )}
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <button className="flex w-full items-center justify-between text-left">
-                      <div>
-                        <p className="text-[12px] font-black">Milestone Rewards</p>
-                        <p className="text-[10px] text-white/60">View all 10 VIP milestone bundles</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-white/60" />
-                    </button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto border-white/10 bg-[#0a0614] text-white">
-                    <SheetHeader>
-                      <SheetTitle className="text-white">Milestone Rewards</SheetTitle>
-                    </SheetHeader>
-                    <div className="mt-3">
-                      <VipRewardsGrid currentLevel={vipLevel} />
-                    </div>
-                  </SheetContent>
-                </Sheet>
+              <div className="mb-4 grid grid-cols-4 gap-2">
+                <Quick to="/create-room" icon={Mic} label="Live" color="#ff2d95" />
+                <Quick to="/theme-shop" icon={ShoppingBag} label="Shop" color="#fbbf24" />
+                <Quick to="/rank" icon={Trophy} label="Rank" color="#8b5cf6" />
+                <Quick to="/games" icon={Gamepad2} label="Games" color="#22c55e" />
               </div>
-            </div>
 
-            {/* Bottom stats row */}
-            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-              <MiniStat label="Current" value={formatCoins(p.totalGifted - p.currentLevelStart)} />
-              <MiniStat label={p.isMax ? "Max" : "Next Lv"} value={p.isMax ? "MAX" : formatCoins(p.nextLevelAt)} />
-              <MiniStat label="Remaining" value={p.isMax ? "0" : formatCoins(p.remaining)} />
-            </div>
-          </div>
+              <div className="flex px-3 py-2 text-[10px] uppercase tracking-[0.2em] text-white/30" style={HEADING}>
+                <span className="w-10">No</span>
+                <span className="flex-1">Profile Menu</span>
+                <span className="text-right">Open</span>
+              </div>
 
-          {/* ============ QUICK ACTIONS RAIL ============ */}
-          <div className="rounded-3xl border border-white/10 bg-gradient-to-b from-[#1a0b2e]/80 to-[#0a0614]/90 p-3">
-            <div className="grid grid-cols-4 gap-y-3 sm:grid-cols-8">
-              <Quick to="/create-room" icon={Mic} label="Go Live" color="#ff2d85" />
-              <Quick to="/my-rooms" icon={Home} label="My Rooms" color="#38bdf8" />
-              <Quick to="/pk-history" icon={Swords} label="PK Battle" color="#ff2d85" />
-              <Quick to="/games" icon={Gamepad2} label="Games" color="#a855f7" />
-              <Quick to="/theme-shop" icon={ShoppingBag} label="Shop" color="#f59e0b" />
-              <Quick to="/gallery" icon={ImageIcon} label="Gallery" color="#22c55e" />
-              <Quick to="/rank" icon={Trophy} label="Rankings" color="#f59e0b" />
-              <Quick to="/settings" icon={LayoutGrid} label="More" color="#a855f7" />
+              <ul className="space-y-2.5">
+                {isAdmin && <Tile index={1} to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
+                {isPartner && <Tile index={2} to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
+                <Tile index={3} to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
+                <Tile index={4} to="/wallet" icon={Wallet} title="Wallet & Coins" sub="Recharge your balance" color="#fbbf24" />
+                <Tile index={5} to="/recharge-history" icon={Receipt} title="Recharge History" sub="Your top-up requests & status" color="#38bdf8" />
+                <Tile index={6} to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
+                <Tile index={7} to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
+                <Tile index={8} to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
+                <Tile index={9} to="/vip" icon={Crown} title="VIP Membership" sub="Upgrade & unlock milestone rewards" color="#fbbf24" />
+                <Tile index={10} to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
+                <Tile index={11} to="/games" icon={Gamepad2} title="Games" sub="Daily spin, lucky spin & more" color="#8b5cf6" />
+                <Tile index={12} to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
+                <Tile index={13} to="/create-room" icon={Mic} title="Go Live" sub="Start a voice room now" color="#8b5cf6" />
+                <Tile index={14} to="/pk-history" icon={Swords} title="PK History" sub="Battle wins & losses" color="#ff2d95" />
+                <Tile index={15} to="/friends" icon={Users} title="Friends" sub="Followers & following" color="#8b5cf6" />
+                <Tile index={16} to="/notifications" icon={Bell} title="Notifications" sub="Gifts, follows & room alerts" color="#ff2d95" />
+                <Tile index={17} to="/settings/notifications" icon={SlidersHorizontal} title="Notification Settings" sub="Choose what alerts you get" color="#ff2d95" />
+                <Tile index={18} to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
+                <Tile index={19} to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
+                <Tile index={20} to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
+              </ul>
             </div>
-          </div>
-
-          {/* ============ MENU GRID ============ */}
-          <div className="grid grid-cols-2 gap-3">
-            {isAdmin && (
-              <Tile to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#f59e0b" elite />
-            )}
-            {isPartner && (
-              <Tile to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#f59e0b" elite />
-            )}
-            <Tile to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
-            <Tile to="/wallet" icon={Wallet} title="Wallet & Coins" sub="Recharge your balance" color="#f59e0b" />
-            <Tile to="/recharge-history" icon={Receipt} title="Recharge History" sub="Your top-up requests & status" color="#38bdf8" />
-            <Tile to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
-            <Tile to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#f59e0b" />
-            <Tile to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#a855f7" />
-            <Tile to="/vip" icon={Crown} title="VIP Membership" sub="Upgrade & unlock milestone rewards" color="#f59e0b" />
-            <Tile to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
-            <Tile to="/games" icon={Gamepad2} title="Games" sub="Daily spin, lucky spin & more" color="#a855f7" />
-            <Tile to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
-            <Tile to="/create-room" icon={Mic} title="Go Live" sub="Start a voice room now" color="#a855f7" />
-            <Tile to="/pk-history" icon={Swords} title="PK History" sub="Battle wins & losses" color="#ff2d85" />
-            <Tile to="/friends" icon={Users} title="Friends" sub="Followers & following" color="#a855f7" />
-            <Tile to="/notifications" icon={Bell} title="Notifications" sub="Gifts, follows & room alerts" color="#ff2d85" />
-            <Tile to="/settings/notifications" icon={SlidersHorizontal} title="Notification Settings" sub="Choose what alerts you get" color="#ff2d85" />
-            <Tile to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d85" />
-            <Tile to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
-            <Tile to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
-            <button
-              onClick={() => signOut()}
-              className="group relative block text-left active:scale-[0.985] transition-transform"
-            >
-              <TileInner icon={LogOut} title="Log Out" sub="Sign out from your account" color="#ef4444" />
-            </button>
           </div>
         </div>
       </AppShell>
