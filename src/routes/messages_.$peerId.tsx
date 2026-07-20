@@ -772,17 +772,6 @@ function DmThread() {
                 >
                   <Lock className="h-[16px] w-[16px]" />
                 </button>
-                  <Lock className="h-[16px] w-[16px]" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileRef.current?.click()}
-                  disabled={attachBusy}
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-muted/40 disabled:opacity-40 transition"
-                  aria-label="Attach"
-                >
-                  {attachBusy ? <Loader2 className="h-[16px] w-[16px] animate-spin" /> : <Paperclip className="h-[16px] w-[16px]" />}
-                </button>
               </div>
 
               {text.trim() ? (
