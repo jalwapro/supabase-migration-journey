@@ -315,7 +315,7 @@ function MessagesPage() {
   return (
     <>
       {/* Ambient neon background */}
-      <div className="relative min-h-dvh pb-28 text-white" style={BODY}>
+      <div data-adaptive="neon" className="relative min-h-dvh pb-28 text-white" style={BODY}>
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute -left-24 -top-24 h-72 w-72 rounded-full bg-fuchsia-600/25 blur-[110px]" />
           <div className="absolute -right-20 top-40 h-72 w-72 rounded-full bg-purple-600/25 blur-[110px]" />
