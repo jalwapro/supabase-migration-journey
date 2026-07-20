@@ -710,3 +710,124 @@ function RoomsList({ loading, rows }: { loading: boolean; rows: LiveRoom[] }) {
     </ul>
   );
 }
+
+/* ---------- compose new chat sheet ---------- */
+
+function ComposeSheet({ uid, onClose }: { uid: string; onClose: () => void }) {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q.trim()), 250);
+    return () => clearTimeout(t);
+  }, [q]);
+
+  // People you follow — start point for compose
+  const followingQ = useQuery({
+    queryKey: ["compose-following", uid],
+    queryFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("follows")
+        .select("following_id, created_at")
+        .eq("follower_id", uid)
+        .order("created_at", { ascending: false })
+        .limit(80);
+      if (error) throw error;
+      const ids = (rows ?? []).map((r: any) => r.following_id);
+      if (!ids.length) return [] as PeerProfile[];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id,username,avatar,user_code,vip_level")
+        .in("id", ids);
+      return (profs ?? []) as PeerProfile[];
+    },
+  });
+
+  // Search by username / user_code
+  const searchQ = useQuery({
+    queryKey: ["compose-search", debouncedQ],
+    enabled: debouncedQ.length >= 2,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,username,avatar,user_code,vip_level")
+        .or(`username.ilike.%${debouncedQ}%,user_code.ilike.%${debouncedQ}%`)
+        .neq("id", uid)
+        .limit(30);
+      if (error) throw error;
+      return (data ?? []) as PeerProfile[];
+    },
+  });
+
+  const rows = debouncedQ.length >= 2 ? (searchQ.data ?? []) : (followingQ.data ?? []);
+  const loading = debouncedQ.length >= 2 ? searchQ.isLoading : followingQ.isLoading;
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="relative w-full max-w-[520px] rounded-t-3xl border-t border-white/10 bg-[#0d0620] p-4 pb-8"
+        style={{ ...BODY, maxHeight: "85vh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        <div className="flex items-center justify-between">
+          <h2 className="text-base text-white" style={HEADING}>New Message</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/[0.06] text-white/70 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="relative mt-3">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search username or ID…"
+            className="w-full rounded-2xl border border-white/10 bg-white/[0.04] py-3 pl-10 pr-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-fuchsia-400/60"
+          />
+        </div>
+        <p className="mt-3 text-[10px] font-semibold uppercase tracking-widest text-white/40">
+          {debouncedQ.length >= 2 ? "Results" : "Following"}
+        </p>
+        <div className="mt-2 space-y-2 overflow-y-auto pr-1" style={{ maxHeight: "55vh" }}>
+          {loading && (
+            <div className="py-8 text-center">
+              <Loader2 className="mx-auto h-5 w-5 animate-spin text-white/50" />
+            </div>
+          )}
+          {!loading && rows.length === 0 && (
+            <p className="py-8 text-center text-xs text-white/50">
+              {debouncedQ.length >= 2 ? "No users found" : "Follow people to start chatting"}
+            </p>
+          )}
+          {rows.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => {
+                onClose();
+                navigate({ to: "/messages/$peerId", params: { peerId: p.id } });
+              }}
+              className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-2.5 text-left transition hover:border-fuchsia-400/50 hover:bg-white/[0.06]"
+            >
+              <span className="grid h-11 w-11 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-fuchsia-500/60 to-purple-600/60 p-[2px]">
+                <span className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] text-sm font-bold text-white/80">
+                  {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : (p.username ?? "?").slice(0, 1).toUpperCase()}
+                </span>
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"}</p>
+                <p className="truncate text-[10px] text-white/50">ID {p.user_code ?? "—"}</p>
+              </div>
+              <MessageSquarePlus className="h-4 w-4 text-fuchsia-300" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
