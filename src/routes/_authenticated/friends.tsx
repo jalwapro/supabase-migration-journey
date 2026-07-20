@@ -9,14 +9,20 @@ import { useState } from "react";
 
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/friends")({ component: Page });
+export const Route = createFileRoute("/_authenticated/friends")({
+  component: Page,
+  validateSearch: (s: Record<string, unknown>) => ({
+    tab: (s.tab === "followers" ? "followers" : "following") as Tab,
+  }),
+});
 
 type Tab = "following" | "followers";
 
 function Page() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("following");
+  const { tab: initialTab } = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(initialTab);
   useRealtimeInvalidate(`friends-live-${user?.id ?? "anon"}`, [
     { table: "follows", invalidate: [["friends"], ["me-counts"]] },
   ]);
