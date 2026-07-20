@@ -70,8 +70,7 @@ function RankPage() {
     };
     const channel = supabase
       .channel("rank-live")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_transactions" }, scheduleRefresh)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "coin_transactions" }, scheduleRefresh)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_events" }, scheduleRefresh)
       .subscribe();
     return () => {
       if (refreshTimer.current) { clearTimeout(refreshTimer.current); refreshTimer.current = null; }
