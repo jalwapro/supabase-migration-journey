@@ -335,6 +335,16 @@ function Home() {
                   <Shield className="h-4 w-4" />
                 </Link>
               )}
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(true)}
+                  aria-label="More"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
+              )}
               {!loading && !user && (
                 <Link
                   to="/auth"
