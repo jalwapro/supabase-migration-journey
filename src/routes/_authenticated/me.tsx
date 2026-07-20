@@ -59,11 +59,18 @@ function useCounts(userId: string | undefined) {
     queryKey: ["me-counts", userId],
     enabled: !!userId,
     queryFn: async () => {
-      const [followers, following] = await Promise.all([
+      const [followers, following, visitors, liveRooms] = await Promise.all([
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("following_id", userId!),
         supabase.from("follows").select("*", { count: "exact", head: true }).eq("follower_id", userId!),
+        supabase.from("profile_views").select("*", { count: "exact", head: true }).eq("owner_id", userId!),
+        supabase.from("live_rooms").select("*", { count: "exact", head: true }).eq("host_id", userId!).eq("status", "live"),
       ]);
-      return { followers: followers.count ?? 0, following: following.count ?? 0 };
+      return {
+        followers: followers.count ?? 0,
+        following: following.count ?? 0,
+        visitors: visitors.count ?? 0,
+        liveRooms: liveRooms.count ?? 0,
+      };
     },
   });
 }
@@ -290,15 +297,15 @@ function MePage() {
                 </div>
 
                 <div className="mt-4 grid w-full grid-cols-3 gap-2">
-                  <StatBox icon={<Users className="h-4 w-4" />} color="#a855f7" value={counts?.followers ?? 0} label="Followers" />
-                  <StatBox icon={<UserPlus className="h-4 w-4" />} color="#38bdf8" value={counts?.following ?? 0} label="Following" />
-                  <StatBox icon={<Users className="h-4 w-4" />} color="#ec4899" value={0} label="Friends" />
+                  <StatBox to="/friends" search={{ tab: "followers" }} icon={<Users className="h-4 w-4" />} color="#a855f7" value={counts?.followers ?? 0} label="Followers" />
+                  <StatBox to="/friends" search={{ tab: "following" }} icon={<UserPlus className="h-4 w-4" />} color="#38bdf8" value={counts?.following ?? 0} label="Following" />
+                  <StatBox to="/visitors" icon={<Users className="h-4 w-4" />} color="#ec4899" value={counts?.visitors ?? 0} label="Visitors" />
                   <StatBox icon={<Star className="h-4 w-4" />} color="#22c55e" value={profile?.xp ?? 0} label="Points" />
-                  <StatBox icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
-                  <StatBox icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
-                  <StatBox icon={<Trophy className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
-                  <StatBox icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Host Lv" />
-                  <StatBox icon={<Home className="h-4 w-4" />} color="#38bdf8" value={0} label="Live Rooms" />
+                  <StatBox to="/wallet" icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
+                  <StatBox to="/wallet" icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
+                  <StatBox to="/rank" icon={<Trophy className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
+                  <StatBox to="/vip" icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Host Lv" />
+                  <StatBox to="/my-rooms" icon={<Home className="h-4 w-4" />} color="#38bdf8" value={counts?.liveRooms ?? 0} label="Live Rooms" />
                 </div>
               </div>
             </div>
@@ -367,19 +374,24 @@ function Chip({ color, icon, label, outline }: { color: string; icon: string; la
   );
 }
 
-function StatBox({ icon, color, value, label }: { icon: React.ReactNode; color: string; value: number; label: string }) {
-  return (
-    <div
-      className="flex flex-col items-center gap-0.5 rounded-2xl border border-white/10 bg-black/40 px-2 py-2.5 backdrop-blur-sm"
-      style={{ boxShadow: `inset 0 0 12px ${color}22` }}
-    >
+function StatBox({ icon, color, value, label, to, search }: { icon: React.ReactNode; color: string; value: number; label: string; to?: string; search?: Record<string, unknown> }) {
+  const inner = (
+    <>
       <span style={{ color, filter: `drop-shadow(0 0 6px ${color}aa)` }}>{icon}</span>
       <p className="mt-0.5 text-[15px] font-black leading-none text-white" style={HEADING} title={value.toLocaleString()}>
         {formatCompact(value)}
       </p>
       <p className="text-[9px] uppercase tracking-widest text-white/55">{label}</p>
-    </div>
+    </>
   );
+  const cls = "flex flex-col items-center gap-0.5 rounded-2xl border border-white/10 bg-black/40 px-2 py-2.5 backdrop-blur-sm transition active:scale-95";
+  const style = { boxShadow: `inset 0 0 12px ${color}22` } as const;
+  if (to) {
+    return (
+      <Link to={to as any} search={search as any} className={cls} style={style}>{inner}</Link>
+    );
+  }
+  return <div className={cls} style={style}>{inner}</div>;
 }
 
 

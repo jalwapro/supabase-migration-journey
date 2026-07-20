@@ -51,6 +51,7 @@ type LiveRoom = {
   cover_url: string | null;
   room_type: string | null;
   viewer_count: number | null;
+  host_id: string | null;
   host_username: string | null;
   host_avatar: string | null;
 };
@@ -166,6 +167,18 @@ function MessagesPage() {
     },
   });
 
+  // Following ids — used to filter the story ring to friends who are live
+  const followingIdsQ = useQuery({
+    queryKey: ["chat-following-ids", uid],
+    enabled: !!uid,
+    queryFn: async () => {
+      if (!uid) return new Set<string>();
+      const { data } = await supabase.from("follows").select("following_id").eq("follower_id", uid).limit(500);
+      return new Set<string>((data ?? []).map((r: any) => r.following_id));
+    },
+    staleTime: 30_000,
+  });
+
   // Live rooms (Rooms tab + story ring)
   const roomsQ = useQuery({
     queryKey: ["messages-live-rooms"],
@@ -267,7 +280,8 @@ function MessagesPage() {
     );
   }, [followersQ.data, query]);
 
-  const liveRing = roomsQ.data ?? [];
+  const followingSet = followingIdsQ.data ?? new Set<string>();
+  const liveRing = (roomsQ.data ?? []).filter((r) => r.host_id && followingSet.has(r.host_id));
 
   const presenceIds = useMemo(() => {
     const set = new Set<string>();
