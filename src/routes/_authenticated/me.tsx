@@ -85,6 +85,29 @@ function MePage() {
     },
   });
   const isPartner = !!partnerRow?.is_active;
+  const isVipActive = !!profile?.is_vip && (!profile?.vip_expiry || new Date(profile.vip_expiry) > new Date());
+  const { data: adminVipTier } = useQuery({
+    queryKey: ["me-admin-vip-tier", user?.id, isVipActive],
+    enabled: !!user?.id && isVipActive,
+    queryFn: async () => {
+      const { data: tx } = await supabase
+        .from("wallet_transactions")
+        .select("note")
+        .eq("user_id", user!.id)
+        .eq("kind", "vip")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const noteName = tx?.note?.replace(/^Bought VIP\s*/i, "").trim();
+      const { data: tiers } = await supabase.from("vip_tiers").select("*").eq("is_active", true).order("sort");
+      const list = (tiers ?? []) as { id: string; name: string; badge_emoji: string | null; sort: number }[];
+      if (noteName) {
+        const hit = list.find((t) => t.name.toLowerCase() === noteName.toLowerCase());
+        if (hit) return hit;
+      }
+      return list[list.length - 1] ?? null;
+    },
+  });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
