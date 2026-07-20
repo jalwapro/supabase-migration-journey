@@ -43,6 +43,7 @@ import {
 import { toast } from "sonner";
 import { useRef, useState, type ComponentType } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
 import { vipTierForLevel, vipProgressFor, formatCoins, MILESTONE_REWARDS } from "@/lib/vip-levels";
@@ -154,16 +155,9 @@ function MePage() {
     navigator.clipboard.writeText(profile.user_code);
     toast.success("ID copied");
   };
-  const handleShare = async () => {
-    const url = `${window.location.origin}/u/${profile?.user_code ?? user?.id}`;
-    try {
-      if (navigator.share) await navigator.share({ title: userName, url });
-      else {
-        await navigator.clipboard.writeText(url);
-        toast.success("Profile link copied");
-      }
-    } catch { /* dismissed */ }
-  };
+  const [shareOpen, setShareOpen] = useState(false);
+  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://cloud-to-soul.lovable.app"}/u/${profile?.user_code ?? user?.id ?? ""}`;
+  const handleShare = () => setShareOpen(true);
 
   return (
     <>
@@ -341,6 +335,12 @@ function MePage() {
           </div>
         </div>
       </AppShell>
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title="Share profile"
+        target={{ title: `${userName} on Jalwa Live`, text: "Check out my Jalwa Live profile", url: shareUrl }}
+      />
       <BottomNav />
     </>
   );

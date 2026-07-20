@@ -17,7 +17,11 @@ type Setting = {
 
 const FIELDS = [
   { name: "jazzcash", label: "JazzCash number" },
-  { name: "easypaisa", label: "Easypaisa number" },
+  { name: "easypaisa", label: "Easypaisa personal number" },
+  { name: "easypaisaMerchantId", label: "Easypaisa Merchant ID" },
+  { name: "easypaisaStoreId", label: "Easypaisa Store ID" },
+  { name: "easypaisaAccountTitle", label: "Easypaisa merchant account title" },
+  { name: "easypaisaIban", label: "Easypaisa merchant IBAN" },
   { name: "bankName", label: "Bank name" },
   { name: "bankAccount", label: "Bank account #" },
   { name: "bankTitle", label: "Bank account title" },

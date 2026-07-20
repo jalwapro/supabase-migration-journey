@@ -17,6 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ShareSheet } from "@/components/ShareSheet";
 import {
   Radio,
   Users,
@@ -37,6 +38,9 @@ import {
   Palette,
   Rocket,
   Bell,
+  MoreVertical,
+  LifeBuoy,
+  Share2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -94,6 +98,8 @@ function Home() {
   const [q, setQ] = useState("");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const query = q.trim();
 
@@ -328,6 +334,16 @@ function Home() {
                 >
                   <Shield className="h-4 w-4" />
                 </Link>
+              )}
+              {user && (
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(true)}
+                  aria-label="More"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </button>
               )}
               {!loading && !user && (
                 <Link
@@ -612,7 +628,45 @@ function Home() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
+        <DialogContent className="max-w-sm rounded-3xl p-5">
+          <DialogHeader>
+            <DialogTitle>Menu</DialogTitle>
+          </DialogHeader>
+          <div className="mt-2 grid grid-cols-3 gap-3">
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); setShareOpen(true); }}
+              className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs"
+            >
+              <Share2 className="h-5 w-5 text-[color:var(--primary)]" />
+              Share app
+            </button>
+            <Link to="/support" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs">
+              <LifeBuoy className="h-5 w-5 text-[color:var(--primary)]" />
+              Support
+            </Link>
+            <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs">
+              <Sparkles className="h-5 w-5 text-[color:var(--primary)]" />
+              Settings
+            </Link>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <ShareSheet
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        title="Share Jalwa Live"
+        target={{
+          title: "Jalwa Live",
+          text: "Join me on Jalwa Live — live rooms, PK battles, and more.",
+          url: typeof window !== "undefined" ? window.location.origin : "https://cloud-to-soul.lovable.app",
+        }}
+      />
     </>
+
   );
 }
 

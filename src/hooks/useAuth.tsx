@@ -188,7 +188,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [hydrate, loadInitialSession]);
 
-  // Presence heartbeat — update last_seen every 15s + on focus/visibility
+  // Presence heartbeat — update profiles.last_seen AND user_presence every
+  // 15s + on focus/visibility. user_presence powers online-only gates
+  // (challenge picker, invites); profiles.last_seen powers list ordering.
   useEffect(() => {
     if (!user) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
@@ -203,6 +205,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .then(({ error }) => {
           if (error) console.warn("[useAuth] heartbeat", error);
         });
+      supabase.rpc("touch_presence").then(({ error }) => {
+        if (error) console.warn("[useAuth] presence", error);
+      });
     };
     tick();
     heartbeatRef.current = setInterval(tick, 15_000);
