@@ -122,12 +122,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // Set theme class from localStorage BEFORE React hydrates to avoid flash.
+  const themeInit = `(() => { try { var m = localStorage.getItem('jalwa_theme_mode'); if (m !== 'light' && m !== 'dark') m = 'dark'; var r = document.documentElement; r.classList.toggle('dark', m === 'dark'); r.classList.toggle('light', m === 'light'); r.style.colorScheme = m; } catch(_) {} })();`;
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head suppressHydrationWarning>
         <HeadContent />
+        <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: themeInit }} />
       </head>
-      <body className="bg-background" suppressHydrationWarning>
+      <body className="bg-background text-foreground" suppressHydrationWarning>
         <div className="app-frame-outer" suppressHydrationWarning>
           <div className="app-frame" suppressHydrationWarning>{children}</div>
         </div>
@@ -136,6 +139,7 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 
 // Splash plays only when the app has been closed/backgrounded for 5+ minutes.
 // A regular refresh, seat change, or brief tab switch will NOT replay it.
