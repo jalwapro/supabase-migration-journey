@@ -409,7 +409,7 @@ function IconBtn({
   children, ariaLabel, badge,
 }: { children: React.ReactNode; ariaLabel: string; badge?: number }) {
   return (
-    <button
+    <span
       aria-label={ariaLabel}
       className="relative grid h-10 w-10 place-items-center rounded-2xl border border-white/10 bg-white/[0.04] text-white/80 backdrop-blur-md transition hover:border-fuchsia-400/50 hover:text-white"
     >
@@ -419,7 +419,7 @@ function IconBtn({
           {badge > 99 ? "99+" : badge}
         </span>
       )}
-    </button>
+    </span>
   );
 }
 
