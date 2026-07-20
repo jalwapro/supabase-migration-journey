@@ -108,7 +108,7 @@ export function LevelAvatar({
           10-level series up to the user's level so progression is visible. */}
       {frame && frameUrl && (
         <div
-          className="pointer-events-none absolute inset-[-38%] z-[5] flex items-center justify-center"
+          className="pointer-events-none absolute inset-[-18%] z-[5] flex items-center justify-center"
           aria-hidden
         >
 
@@ -142,10 +142,11 @@ export function LevelAvatar({
         return (
           <div
             key={item.level}
-            className="pointer-events-none absolute inset-[-38%] flex items-center justify-center"
+            className="pointer-events-none absolute inset-[-18%] flex items-center justify-center"
             style={{ zIndex: 5 + idx }}
             aria-hidden
           >
+
 
             {isVideo ? (
               <video
