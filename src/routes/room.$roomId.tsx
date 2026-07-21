@@ -3935,15 +3935,11 @@ function Seat({
                 <span className="text-lg">🔒</span>
               ) : (
                 <div className="flex flex-col items-center leading-none">
-                  <span
-                    className="text-2xl font-light drop-shadow-[0_0_6px_currentColor]"
+                  <Armchair
+                    className="h-1/2 w-1/2 drop-shadow-[0_0_6px_currentColor]"
                     style={{ color: ringHue }}
-                  >
-                    +
-                  </span>
-                  <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.15em] text-white/85">
-                    Invite
-                  </span>
+                    strokeWidth={1.5}
+                  />
                 </div>
               )}
             </div>
