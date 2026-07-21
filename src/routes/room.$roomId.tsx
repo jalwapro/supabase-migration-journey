@@ -3847,14 +3847,27 @@ function Seat({
 
   // Host seat (index 0) turns red + locked when the host is NOT sitting on it.
   const hostAwayFromSeat = isHostSeat && !member;
+  const seatNo = index + 1;
+
+  // Neon Core Prime palette
+  const ringHue = isHostSeat
+    ? "#ffd166"
+    : hostAwayFromSeat
+      ? "#ef4444"
+      : "#bf00ff";
+  const activeRing = !!member || isHostSeat;
+  const outerRingCls = activeRing
+    ? `border-2 shadow-[0_0_12px_${ringHue},inset_0_0_8px_${ringHue}]`
+    : "border-2 opacity-70 shadow-[0_0_10px_rgba(191,0,255,0.55)]";
+  const innerRingCls = activeRing
+    ? "border-2 shadow-[inset_0_0_10px_currentColor]"
+    : "border-2 opacity-40";
 
   return (
     <div
       data-seat-index={index}
-      className={`relative flex flex-col items-center gap-0.5 rounded-full transition-shadow duration-300 ${
-        glowing
-          ? "shadow-[0_0_28px_6px_color-mix(in_oklab,var(--gold)_65%,transparent)] animate-pulse"
-          : ""
+      className={`relative flex flex-col items-center gap-1 transition-shadow duration-300 ${
+        glowing ? "drop-shadow-[0_0_18px_rgba(255,209,102,0.75)] animate-pulse" : ""
       }`}
     >
       <button
@@ -3863,45 +3876,52 @@ function Seat({
           if (locked && onEmptyManage) return onEmptyManage();
           if (locked) return;
           if (onEmptyManage) return onEmptyManage();
-          // For seat 0 (host seat) the take_seat RPC and takeSeat() guard
-          // will reject non-hosts with a clear toast — the host themselves
-          // must be able to tap to return here.
           return onClaim();
         }}
         className="relative aspect-square w-full"
-        aria-label={member ? `Manage seat ${label}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked ${label}` : `Take ${label}`}
-
+        aria-label={member ? `Manage seat No.${seatNo}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked No.${seatNo}` : `Take No.${seatNo}`}
       >
-        {isHostSeat && (
-          <div className={`pointer-events-none absolute inset-[-6%] rounded-full border-2 border-dashed animate-spin-slow ${
-            hostAwayFromSeat ? "border-red-500/80" : "border-[color:var(--gold)]/60"
-          }`} />
-        )}
-        {locked && !member && !hostAwayFromSeat && (
-          <div className="pointer-events-none absolute inset-[8%] z-20 grid place-items-center rounded-full bg-black/60 backdrop-blur-sm">
-            <span className="text-lg">🔒</span>
-          </div>
-        )}
-        {hostAwayFromSeat && (
-          <div className="pointer-events-none absolute inset-[8%] z-20 grid place-items-center rounded-full bg-red-600/40 backdrop-blur-sm ring-2 ring-red-500">
-            <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">Host</span>
-          </div>
-        )}
+        {/* Outer neon ring */}
+        <div
+          className={`pointer-events-none absolute inset-0 rounded-full ${outerRingCls}`}
+          style={{ borderColor: ringHue, color: ringHue }}
+        />
+        {/* Gold accent ring */}
+        <div
+          className="pointer-events-none absolute inset-[3px] rounded-full border opacity-60"
+          style={{ borderColor: "#ffd700" }}
+        />
+        {/* Inner neon ring */}
+        <div
+          className={`pointer-events-none absolute inset-[6px] rounded-full ${innerRingCls}`}
+          style={{ borderColor: ringHue, color: ringHue }}
+        />
+
+        {/* Speaking glow */}
         {speaking && !hostAwayFromSeat && (
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-[-8%] z-0 rounded-full animate-pulse"
+            className="pointer-events-none absolute inset-[-10%] z-0 rounded-full animate-pulse"
             style={{
-              background: "radial-gradient(circle, color-mix(in oklab, var(--primary) 55%, transparent) 0%, transparent 70%)",
+              background: `radial-gradient(circle, ${ringHue}66 0%, transparent 70%)`,
               filter: "blur(6px)",
             }}
           />
         )}
-        <div className={`absolute overflow-hidden rounded-full bg-white/5 ${
-          displayFrame ? "inset-[22%]" : "inset-[8%]"
-        } ${
-          hostAwayFromSeat ? "ring-2 ring-red-500 shadow-[0_0_18px_-2px_rgba(239,68,68,0.7)]" : ringClass
-        }`}>
+
+        {/* Halftone dot texture for empty state */}
+        {!member && !hostAwayFromSeat && !locked && (
+          <div
+            className="pointer-events-none absolute inset-[8px] rounded-full opacity-15"
+            style={{
+              backgroundImage: `radial-gradient(${ringHue} 1px, transparent 1px)`,
+              backgroundSize: "4px 4px",
+            }}
+          />
+        )}
+
+        {/* Inner disc (avatar / content) */}
+        <div className="absolute inset-[10%] overflow-hidden rounded-full">
           {isHostSeat && !displayAvatar && cover && !hostAwayFromSeat && (
             <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
           )}
@@ -3911,14 +3931,36 @@ function Seat({
           {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
           {!displayAvatar && !remote?.videoTrack && !hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center">
-              <Armchair className={`h-1/2 w-1/2 ${isHostSeat ? "text-[color:var(--gold)]/90" : "text-white/60"}`} strokeWidth={1.5} />
+              {locked ? (
+                <span className="text-lg">🔒</span>
+              ) : (
+                <div className="flex flex-col items-center leading-none">
+                  <span
+                    className="text-2xl font-light drop-shadow-[0_0_6px_currentColor]"
+                    style={{ color: ringHue }}
+                  >
+                    +
+                  </span>
+                  <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.15em] text-white/85">
+                    Invite
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          {hostAwayFromSeat && (
+            <div className="absolute inset-0 grid place-items-center bg-red-600/30 backdrop-blur-sm">
+              <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">
+                Host
+              </span>
             </div>
           )}
         </div>
+
+        {/* Shop frame overlay */}
         {displayFrame && (
           <div
-            className="pointer-events-none absolute inset-[-2%] z-[15]"
-            style={{ transform: "translateY(-3%)" }}
+            className="pointer-events-none absolute inset-[-8%] z-[15]"
             aria-hidden
           >
             {frameIsVideo ? (
@@ -3929,8 +3971,29 @@ function Seat({
           </div>
         )}
 
+        {/* Hex seat number badge (top center) */}
+        <div
+          className="pointer-events-none absolute -top-2.5 left-1/2 z-30 flex h-6 w-[22px] -translate-x-1/2 items-center justify-center"
+          style={{ filter: activeRing ? `drop-shadow(0 0 4px ${ringHue})` : "none" }}
+        >
+          <svg viewBox="0 0 100 115" className="absolute inset-0 h-full w-full">
+            <polygon
+              points="50 5, 95 30, 95 85, 50 110, 5 85, 5 30"
+              fill={activeRing ? "#1a0033" : "#05000a"}
+              stroke={ringHue}
+              strokeOpacity={activeRing ? 1 : 0.6}
+              strokeWidth={6}
+            />
+          </svg>
+          <span
+            className={`relative text-[10px] font-bold ${activeRing ? "text-white" : "text-white/70"}`}
+          >
+            {seatNo}
+          </span>
+        </div>
+
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
-          <span className="absolute bottom-0.5 right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
+          <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
             <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
           </span>
         )}
@@ -3941,21 +4004,19 @@ function Seat({
           />
         )}
         {likeCount > 0 && (
-          <span className="absolute -bottom-0.5 left-0.5 z-10 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[8px] font-bold text-white/80 backdrop-blur">
+          <span className="absolute -bottom-0.5 left-0.5 z-20 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[8px] font-bold text-white/80 backdrop-blur">
             <Heart className="h-2 w-2 text-[color:var(--destructive)]" />
             {likeCount}
           </span>
         )}
-        {/* King crown — bigger, corner-mounted */}
         {isKing && (
           <span
             title="Top gifter"
-            className="pointer-events-none absolute -top-2 -right-2 z-30 grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-amber-400 to-orange-500 text-base leading-none shadow-[0_0_14px_rgba(255,200,60,0.95)] ring-2 ring-black animate-bounce"
+            className="pointer-events-none absolute -top-2 -right-2 z-30 grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-amber-400 to-orange-500 text-sm leading-none shadow-[0_0_14px_rgba(255,200,60,0.95)] ring-2 ring-black animate-bounce"
           >
             👑
           </span>
         )}
-        {/* Gift sparkle burst removed per user request */}
       </button>
       {member ? (
         <button
@@ -3964,20 +4025,18 @@ function Seat({
             e.stopPropagation();
             onOpenGifters?.();
           }}
-          className={`max-w-full rounded-full border px-1.5 py-[1px] text-[9px] font-black leading-tight shadow-sm backdrop-blur ${
+          className={`max-w-full truncate rounded-full border px-1.5 py-[1px] text-[9px] font-black leading-tight shadow-sm backdrop-blur ${
             recentlyGifted
               ? "animate-pulse border-[color:var(--gold)]/70 bg-[color:var(--gold)]/25 text-[color:var(--gold)]"
               : "border-[color:var(--gold)]/35 bg-black/55 text-[color:var(--gold)]"
           }`}
           aria-label={`Gift points ${formatGiftPoints(giftPoints ?? 0)}`}
         >
-          🎁 {formatGiftPoints(giftPoints ?? 0)}
+          {displayName ? `@${displayName}` : `🎁 ${formatGiftPoints(giftPoints ?? 0)}`}
         </button>
       ) : (
-        <span className={`text-[10px] font-black leading-tight ${
-          hostAwayFromSeat ? "text-red-400" : isHostSeat ? "text-[color:var(--gold)]" : "text-white/90"
-        }`}>
-          {hostAwayFromSeat && (giftPoints ?? 0) > 0 ? `🎁 ${formatGiftPoints(giftPoints ?? 0)}` : hostAwayFromSeat ? "Host" : label}
+        <span className="text-[9px] font-medium leading-tight text-white/60">
+          {hostAwayFromSeat ? "Tap to return" : locked ? "Locked" : ""}
         </span>
       )}
     </div>
