@@ -85,20 +85,22 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {/* Tier ring — always render behind the frame so tier progression stays
-          visible even when a custom shop frame or admin-assigned frame is on. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[-6%] z-[1] rounded-full"
-        style={{
-          padding: 2,
-          background: `conic-gradient(from 0deg, ${tier.color}, #fff2, ${tier.color})`,
-          WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          boxShadow: `0 0 12px ${tier.glow}`,
-        }}
-      />
+      {/* Tier ring — only when no frame is present (frame already indicates level) */}
+      {!frameUrl && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-[-6%] z-[1] rounded-full"
+          style={{
+            padding: 2,
+            background: `conic-gradient(from 0deg, ${tier.color}, #fff2, ${tier.color})`,
+            WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+            boxShadow: `0 0 12px ${tier.glow}`,
+          }}
+        />
+      )}
+
 
       {/* Inner disc */}
       <div className="absolute inset-0 overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
@@ -118,9 +120,10 @@ export function LevelAvatar({
       {/* Equipped DP frame (or auto level-based frame) overlay */}
       {frameUrl && (
         <div
-          className="pointer-events-none absolute inset-[-38%] z-[5] flex items-center justify-center"
+          className="pointer-events-none absolute inset-[-20%] z-[5] flex items-center justify-center"
           aria-hidden
         >
+
 
           {frameIsVideo ? (
             <video
@@ -146,7 +149,7 @@ export function LevelAvatar({
         </div>
       )}
       {frameUrl && (
-        <span className="pointer-events-none absolute inset-[-22%] z-[20]" aria-hidden>
+        <span className="pointer-events-none absolute inset-[-14%] z-[20]" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
           <span className="dp-sparkle dp-sparkle-b" />
           <span className="dp-sparkle dp-sparkle-c" />
