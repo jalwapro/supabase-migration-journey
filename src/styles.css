@@ -210,6 +210,84 @@ html:not(.dark) body.theme-background-active [class*="text-black/"] {
   color: rgba(255, 255, 255, 0.92) !important;
 }
 
+html:not(.dark) body.themed,
+html:not(.dark) body.theme-background-active {
+  & .text-foreground,
+  & .text-card-foreground,
+  & .text-popover-foreground {
+    color: var(--foreground) !important;
+  }
+
+  & .text-muted-foreground {
+    color: var(--muted-foreground) !important;
+  }
+
+  & .text-gray-950,
+  & .text-gray-900,
+  & .text-gray-800,
+  & .text-slate-950,
+  & .text-slate-900,
+  & .text-slate-800,
+  & .text-zinc-950,
+  & .text-zinc-900,
+  & .text-zinc-800,
+  & .text-neutral-950,
+  & .text-neutral-900,
+  & .text-neutral-800,
+  & .text-stone-950,
+  & .text-stone-900,
+  & .text-stone-800,
+  & [class*="text-gray-9"],
+  & [class*="text-gray-8"],
+  & [class*="text-slate-9"],
+  & [class*="text-slate-8"],
+  & [class*="text-zinc-9"],
+  & [class*="text-zinc-8"],
+  & [class*="text-neutral-9"],
+  & [class*="text-neutral-8"],
+  & [class*="text-stone-9"],
+  & [class*="text-stone-8"] {
+    color: rgba(255, 255, 255, 0.94) !important;
+  }
+
+  & .text-gray-700,
+  & .text-gray-600,
+  & .text-slate-700,
+  & .text-slate-600,
+  & .text-zinc-700,
+  & .text-zinc-600,
+  & .text-neutral-700,
+  & .text-neutral-600,
+  & .text-stone-700,
+  & .text-stone-600,
+  & [class*="text-gray-7"],
+  & [class*="text-gray-6"],
+  & [class*="text-slate-7"],
+  & [class*="text-slate-6"],
+  & [class*="text-zinc-7"],
+  & [class*="text-zinc-6"],
+  & [class*="text-neutral-7"],
+  & [class*="text-neutral-6"],
+  & [class*="text-stone-7"],
+  & [class*="text-stone-6"] {
+    color: rgba(255, 255, 255, 0.82) !important;
+  }
+
+  & input,
+  & textarea,
+  & select {
+    color: var(--foreground) !important;
+    background-color: color-mix(in oklab, var(--card) 72%, transparent);
+    border-color: var(--border);
+  }
+
+  & input::placeholder,
+  & textarea::placeholder {
+    color: color-mix(in oklab, var(--foreground) 58%, transparent) !important;
+    opacity: 1;
+  }
+}
+
 /* ============================================================================
  * Global light-mode legibility safety net.
  * Many pages were designed against the dark palette and use raw
@@ -242,9 +320,35 @@ html:not(.dark) body:not(.themed):not(.theme-background-active) {
   }
   /* Muted-foreground labels can wash out on white — boost contrast. */
   & .text-muted-foreground { color: color-mix(in oklab, var(--foreground) 72%, transparent) !important; }
+  & input,
+  & textarea,
+  & select { color: var(--foreground) !important; }
+  & input::placeholder,
+  & textarea::placeholder { color: color-mix(in oklab, var(--foreground) 52%, transparent) !important; opacity: 1; }
   /* Chat / message bubbles on the app-primary background stay light. */
   & [data-role="bubble-primary"] { color: var(--primary-foreground) !important; }
   & [data-role="bubble-primary"] * { color: inherit !important; }
+}
+
+/* Contrast rescue for dark surfaces that appear inside plain light mode. */
+html:not(.dark) body:not(.themed):not(.theme-background-active) {
+  & [class*="bg-black/"] .text-black,
+  & [class*="bg-black/"] [class*="text-black/"],
+  & [class*="bg-black/"] .text-gray-950,
+  & [class*="bg-black/"] .text-gray-900,
+  & [class*="bg-black/"] .text-gray-800,
+  & [class*="bg-black/"] .text-slate-950,
+  & [class*="bg-black/"] .text-slate-900,
+  & [class*="bg-black/"] .text-slate-800,
+  & [class*="bg-black/"] .text-zinc-950,
+  & [class*="bg-black/"] .text-zinc-900,
+  & [class*="bg-black/"] .text-zinc-800,
+  & [class*="from-black"] .text-black,
+  & [class*="from-black"] .text-gray-900,
+  & [class*="from-black"] .text-slate-900,
+  & [class*="from-black"] .text-zinc-900 {
+    color: rgba(255, 255, 255, 0.92) !important;
+  }
 }
 
 /* Chat message text tokens — used by DM + support to stay readable in both
