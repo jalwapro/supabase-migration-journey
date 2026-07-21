@@ -103,7 +103,7 @@ export function LevelAvatar({
 
 
       {/* Inner disc */}
-      <div className="absolute inset-0 overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
+      <div className="absolute inset-0 z-[4] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
         {src ? (
           <img src={src} alt="" className="h-full w-full object-cover" />
         ) : (
@@ -120,7 +120,7 @@ export function LevelAvatar({
       {/* Equipped DP frame (or auto level-based frame) overlay */}
       {frameUrl && (
         <div
-          className="pointer-events-none absolute inset-[-18%] z-[5] flex items-center justify-center"
+          className="pointer-events-none absolute inset-[-42%] z-[2] flex items-center justify-center"
           aria-hidden
         >
 
@@ -149,7 +149,7 @@ export function LevelAvatar({
         </div>
       )}
       {frameUrl && (
-        <span className="pointer-events-none absolute inset-[-14%] z-[20]" aria-hidden>
+        <span className="pointer-events-none absolute inset-[-30%] z-[6]" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
           <span className="dp-sparkle dp-sparkle-b" />
           <span className="dp-sparkle dp-sparkle-c" />
