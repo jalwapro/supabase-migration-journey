@@ -47,13 +47,13 @@
 
   /* Light mode (default when no `.dark` class on <html>) — clean white/black. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.15 0.02 300);
+  --foreground: oklch(0.08 0.02 300);
 
   --card: oklch(0.99 0.003 300);
-  --card-foreground: oklch(0.15 0.02 300);
+  --card-foreground: oklch(0.08 0.02 300);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 300);
+  --popover-foreground: oklch(0.08 0.02 300);
 
   --primary: oklch(0.64 0.27 348);
   --primary-foreground: oklch(0.99 0.003 300);
@@ -62,7 +62,7 @@
   --secondary-foreground: oklch(0.99 0.003 300);
 
   --muted: oklch(0.96 0.005 300);
-  --muted-foreground: oklch(0.45 0.02 300);
+  --muted-foreground: oklch(0.32 0.02 300);
 
   --accent: oklch(0.6 0.25 300);
   --accent-foreground: oklch(0.99 0.003 300);
