@@ -447,7 +447,7 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
 /* ─────────────────────────────  My Rank sticky  ───────────────────────────── */
 
 function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit: string }) {
-  void fallback;
+  
   const avatar = row?.avatar ?? fallback?.avatar ?? null;
   const country = row?.country ?? fallback?.country ?? null;
   const rank = row?.rnk ?? null;
