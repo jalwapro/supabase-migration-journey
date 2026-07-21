@@ -475,7 +475,7 @@ function UserProfilePage() {
 
               {/* Name row */}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <h1 className="bg-gradient-to-b from-white to-white/70 bg-clip-text text-2xl font-black text-transparent">
+                <h1 className="text-2xl font-black text-white" data-keep-dark>
                   {displayName}
                 </h1>
                 <BadgeCheck className="h-5 w-5 text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
