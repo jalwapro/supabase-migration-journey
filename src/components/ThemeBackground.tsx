@@ -42,7 +42,11 @@ export function ThemeBackground() {
   const [theme, setTheme] = useState<ThemeRow | null>(null);
   const [customBg, setCustomBg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const backgroundReady = !suppressed && (!loading || !!customBg);
+  // Only activate the global themed/background CSS when an actual background
+  // image/video exists. Previously this class was applied after loading even
+  // with no media, turning light-mode text white on a plain light canvas.
+  const media = customBg || theme?.bg_image || theme?.preview_url || theme?.animation_url;
+  const backgroundReady = !suppressed && !!media && (!loading || !!customBg);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -117,7 +121,12 @@ export function ThemeBackground() {
         setLoading(false);
         if (typeof document !== "undefined") {
           if (themeData) {
-            document.body.classList.add("themed");
+            const hasThemeMedia = !!(
+              themeData.bg_image ||
+              themeData.preview_url ||
+              themeData.animation_url
+            );
+            document.body.classList.toggle("themed", hasThemeMedia);
             if (themeData.primary_color)
               document.body.style.setProperty("--primary", themeData.primary_color);
             if (themeData.accent_color)
@@ -136,7 +145,6 @@ export function ThemeBackground() {
   }, [themeId, authLoading]);
 
   // Custom uploaded background takes precedence over shop theme image
-  const media = customBg || theme?.bg_image || theme?.preview_url || theme?.animation_url;
   if (suppressed) return null;
   if (loading && !customBg) return null;
 
