@@ -684,6 +684,12 @@ function RoomCard({ room }: { room: Room }) {
           alt=""
           className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
         />
+      ) : room.host?.avatar ? (
+        <img
+          src={room.host.avatar}
+          alt=""
+          className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
+        />
       ) : (
         <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
       )}
