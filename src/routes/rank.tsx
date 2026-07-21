@@ -406,7 +406,6 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
 /* ─────────────────────────────  Row  ───────────────────────────── */
 
 function RankRow({ row, unit }: { row: Row; unit: string }) {
-  const initial = (row.username ?? "?").slice(0, 1).toUpperCase();
   return (
     <li>
       <Link
@@ -417,11 +416,13 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
         <span className="text-center text-lg font-black text-white/60">{row.rnk}</span>
 
         <div className="flex min-w-0 items-center gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full ring-2 ring-fuchsia-400/40 p-[2px]">
-            <span data-keep-dark className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] text-sm font-black text-white/80">
-              {row.avatar ? <img src={row.avatar} alt="" className="h-full w-full object-cover" /> : initial}
-            </span>
-          </span>
+          <LevelAvatar
+            src={row.avatar ?? undefined}
+            name={row.username ?? undefined}
+            level={row.level ?? 0}
+            size="sm"
+            showBadge={false}
+          />
           <div className="min-w-0">
             <p className="truncate text-[14px] font-bold leading-tight">{row.username ?? "user"}</p>
             <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-fuchsia-400/30 bg-fuchsia-500/10 px-1.5 py-[1px] text-[10px] font-bold text-fuchsia-200">
@@ -432,7 +433,6 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
 
         <span />
 
-
         <span className="hidden text-[11px] text-white/60 xs:inline-flex items-center gap-1 sm:inline-flex">
           {row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🌐"}
           <span className="max-w-[70px] truncate">{row.country ?? "—"}</span>
@@ -442,6 +442,7 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
     </li>
   );
 }
+
 
 /* ─────────────────────────────  My Rank sticky  ───────────────────────────── */
 
