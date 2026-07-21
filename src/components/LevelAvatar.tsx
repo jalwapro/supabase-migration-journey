@@ -120,7 +120,7 @@ export function LevelAvatar({
       {/* Equipped DP frame (or auto level-based frame) overlay */}
       {frameUrl && (
         <div
-          className="pointer-events-none absolute inset-[-26%] z-[5] flex items-center justify-center"
+          className="pointer-events-none absolute inset-[-100%] z-[5] flex items-center justify-center"
           aria-hidden
         >
 
