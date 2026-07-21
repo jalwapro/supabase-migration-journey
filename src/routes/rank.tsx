@@ -358,34 +358,30 @@ function RankHeader({ onBack, onHelp, profile, userId }: {
 /* ─────────────────────────────  Podium  ───────────────────────────── */
 
 
-function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
+function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
   const theme = place === 1
-    ? { ring: "ring-2 ring-amber-300/80 shadow-[0_0_40px_-8px_rgba(251,191,36,0.75)]", border: "border-amber-300/50", chip: "from-amber-400 to-yellow-500 text-black", num: "text-amber-300", pad: "-mt-6 h-32 w-32", crown: "text-amber-300" }
+    ? { border: "border-amber-300/50", chip: "from-amber-400 to-yellow-500 text-black", size: "xl" as const, pad: "-mt-2" }
     : place === 2
-    ? { ring: "ring-2 ring-violet-400/70 shadow-[0_0_28px_-8px_rgba(139,92,246,0.75)]", border: "border-violet-400/40", chip: "from-violet-500 to-indigo-500 text-white", num: "text-violet-300", pad: "h-24 w-24", crown: "text-violet-300" }
-    : { ring: "ring-2 ring-orange-400/70 shadow-[0_0_28px_-8px_rgba(251,146,60,0.75)]", border: "border-orange-400/40", chip: "from-orange-500 to-amber-600 text-white", num: "text-orange-300", pad: "h-24 w-24", crown: "text-orange-300" };
-
-  const initial = (row?.username ?? "?").slice(0, 1).toUpperCase();
+    ? { border: "border-violet-400/40", chip: "from-violet-500 to-indigo-500 text-white", size: "lg" as const, pad: "" }
+    : { border: "border-orange-400/40", chip: "from-orange-500 to-amber-600 text-white", size: "lg" as const, pad: "" };
 
   const content = (
-    <div className={`relative flex flex-col items-center gap-2 rounded-3xl border ${theme.border} bg-white/[0.04] p-3 backdrop-blur-md ${place === 1 ? "shadow-[0_0_28px_-10px_rgba(251,191,36,0.7)]" : ""}`}>
-      {/* rank crown chip */}
+    <div className={`relative flex flex-col items-center gap-2 rounded-3xl border ${theme.border} bg-white/[0.04] p-3 backdrop-blur-md`}>
+      {/* rank chip */}
       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
         <span className={`grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-b ${theme.chip} text-sm font-black shadow-lg`}>
           {place}
         </span>
       </div>
 
-      <div className={`relative mt-3 grid ${theme.pad} place-items-center rounded-full ${theme.ring}`}>
-        <span className="absolute inset-0 rounded-full bg-gradient-to-br from-white/10 to-transparent" />
-        <span data-keep-dark className="relative grid h-[86%] w-[86%] place-items-center overflow-hidden rounded-full bg-[#120820] text-2xl font-black text-white/80">
-          {row?.avatar
-            ? <img src={row.avatar} alt="" className="h-full w-full object-cover" />
-            : initial}
-        </span>
-        {place === 1 && (
-          <Crown className={`absolute -top-4 h-6 w-6 ${theme.crown} drop-shadow-[0_0_10px_rgba(251,191,36,0.8)]`} />
-        )}
+      <div className={`mt-4 ${theme.pad} flex items-center justify-center`}>
+        <LevelAvatar
+          src={row?.avatar ?? undefined}
+          name={row?.username ?? undefined}
+          level={row?.level ?? 0}
+          size={theme.size}
+          showBadge={false}
+        />
       </div>
 
       <p className="mt-1 max-w-full truncate text-center text-[13px] font-bold">
@@ -395,7 +391,6 @@ function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: strin
       <span className="rounded-lg bg-black/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-fuchsia-200">
         Lv {row?.level ?? 0}
       </span>
-
     </div>
   );
 
@@ -406,6 +401,7 @@ function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: strin
     </Link>
   );
 }
+
 
 /* ─────────────────────────────  Row  ───────────────────────────── */
 
