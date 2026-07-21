@@ -38,9 +38,11 @@ export function LevelAvatar({
   const tier = tierForLevel(level);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
-  // Only render the user-equipped frame/ring. Auto level-based frame
-  // stacking was removed — it produced an oversized, busy overlay.
-  const frameUrl = resolveAssetUrl(frame);
+  // If the user has an equipped shop frame, use it. Otherwise auto-apply the
+  // VIP level frame so every profile shows a frame matching its current level.
+  const autoFrame = frameForLevel(level);
+  const effectiveFrame = frame ?? autoFrame;
+  const frameUrl = resolveAssetUrl(effectiveFrame);
   const ringUrl = resolveAssetUrl(ring);
   const frameIsVideo = !!frameUrl && /\.(mp4|webm|mov)($|\?)/i.test(frameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
