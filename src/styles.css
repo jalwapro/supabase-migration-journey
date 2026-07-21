@@ -330,6 +330,66 @@ html:not(.dark) body:not(.themed):not(.theme-background-active) {
   & [data-role="bubble-primary"] * { color: inherit !important; }
 }
 
+/* Profile page keeps a royal dark card/header even in light mode, so its
+   text must stay light instead of being remapped by global light rescue. */
+html:not(.dark) .me-profile-screen [data-keep-dark],
+html:not(.dark) .me-profile-card,
+html:not(.dark) .me-profile-card * {
+  color-scheme: dark;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] .text-white,
+html:not(.dark) .me-profile-screen [data-keep-dark].text-white,
+html:not(.dark) .me-profile-card .text-white,
+html:not(.dark) .me-profile-card.text-white {
+  color: rgb(255, 255, 255) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/30"],
+html:not(.dark) .me-profile-card [class*="text-white/30"] {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/50"],
+html:not(.dark) .me-profile-card [class*="text-white/50"] {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/55"],
+html:not(.dark) .me-profile-card [class*="text-white/55"] {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/60"],
+html:not(.dark) .me-profile-card [class*="text-white/60"] {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/70"],
+html:not(.dark) .me-profile-card [class*="text-white/70"] {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/75"],
+html:not(.dark) .me-profile-card [class*="text-white/75"] {
+  color: rgba(255, 255, 255, 0.75) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/80"],
+html:not(.dark) .me-profile-card [class*="text-white/80"] {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/85"],
+html:not(.dark) .me-profile-card [class*="text-white/85"] {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/90"],
+html:not(.dark) .me-profile-card [class*="text-white/90"] {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
 /* Contrast rescue for dark surfaces that appear inside plain light mode. */
 html:not(.dark) body:not(.themed):not(.theme-background-active) {
   & [class*="bg-black/"] .text-black,
