@@ -349,6 +349,33 @@ html:not(.dark) body:not(.themed):not(.theme-background-active) {
   & [class*="from-black"] .text-zinc-900 {
     color: rgba(255, 255, 255, 0.92) !important;
   }
+
+  /* Keep labels white when they intentionally sit on dark media/overlays or
+     strong status chips. The global light-mode rescue above remaps raw
+     text-white to dark text for plain white pages, but image cards, live
+     badges, and black overlays still need true white text. */
+  & .bg-black.text-white,
+  & .bg-black .text-white,
+  & [class*="bg-black"].text-white,
+  & [class*="bg-black"] .text-white,
+  & [class*="from-black"].text-white,
+  & [class*="from-black"] .text-white,
+  & [class*="via-black"].text-white,
+  & [class*="via-black"] .text-white,
+  & [class*="to-black"].text-white,
+  & [class*="to-black"] .text-white,
+  & [class*="bg-emerald"].text-white,
+  & [class*="bg-red"].text-white,
+  & [class*="bg-[color:var(--destructive)]"].text-white {
+    color: rgb(255, 255, 255) !important;
+  }
+
+  & [class*="bg-black"] [class*="text-white/"],
+  & [class*="from-black"] [class*="text-white/"],
+  & [class*="via-black"] [class*="text-white/"],
+  & [class*="to-black"] [class*="text-white/"] {
+    color: rgba(255, 255, 255, 0.86) !important;
+  }
 }
 
 /* Chat message text tokens — used by DM + support to stay readable in both
