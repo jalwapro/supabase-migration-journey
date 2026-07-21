@@ -47,13 +47,13 @@
 
   /* Light mode (default when no `.dark` class on <html>) — clean white/black. */
   --background: oklch(1 0 0);
-  --foreground: oklch(0.15 0.02 300);
+  --foreground: oklch(0.08 0.02 300);
 
   --card: oklch(0.99 0.003 300);
-  --card-foreground: oklch(0.15 0.02 300);
+  --card-foreground: oklch(0.08 0.02 300);
 
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 300);
+  --popover-foreground: oklch(0.08 0.02 300);
 
   --primary: oklch(0.64 0.27 348);
   --primary-foreground: oklch(0.99 0.003 300);
@@ -62,7 +62,7 @@
   --secondary-foreground: oklch(0.99 0.003 300);
 
   --muted: oklch(0.96 0.005 300);
-  --muted-foreground: oklch(0.45 0.02 300);
+  --muted-foreground: oklch(0.32 0.02 300);
 
   --accent: oklch(0.6 0.25 300);
   --accent-foreground: oklch(0.99 0.003 300);
@@ -127,9 +127,15 @@
  * without touching any dark-mode styling.
  * ==========================================================================*/
 html:not(.dark) [data-adaptive="neon"] {
-  /* Text: solid white → foreground; white with opacity → muted text. */
+  /* Text: solid white → foreground; white with opacity → strong foreground with light fade. */
   & .text-white { color: var(--foreground) !important; }
-  & [class*="text-white/"] { color: var(--muted-foreground) !important; }
+  & [class*="text-white/"] { color: color-mix(in oklab, var(--foreground) 82%, transparent) !important; }
+  & [class*="text-white/50"] { color: color-mix(in oklab, var(--foreground) 65%, transparent) !important; }
+  & [class*="text-white/40"] { color: color-mix(in oklab, var(--foreground) 55%, transparent) !important; }
+  & [class*="text-white/60"] { color: color-mix(in oklab, var(--foreground) 72%, transparent) !important; }
+  & [class*="text-white/70"] { color: color-mix(in oklab, var(--foreground) 80%, transparent) !important; }
+  & [class*="text-white/80"] { color: color-mix(in oklab, var(--foreground) 88%, transparent) !important; }
+  & [class*="text-white/90"] { color: color-mix(in oklab, var(--foreground) 94%, transparent) !important; }
 
   /* Translucent white surfaces (bg-white/5, bg-white/[0.03], etc.) become
      subtle darkened surfaces so cards remain visible on a white app bg. */
@@ -212,8 +218,25 @@ html:not(.dark) body:not(.themed):not(.theme-background-active) {
     color: var(--foreground) !important;
   }
   & [class*="text-white/"]:not([data-keep-dark]):not([data-keep-dark] *) {
-    color: var(--muted-foreground) !important;
+    color: color-mix(in oklab, var(--foreground) 78%, transparent) !important;
   }
+  & [class*="text-white/50"]:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: color-mix(in oklab, var(--foreground) 62%, transparent) !important;
+  }
+  & [class*="text-white/60"]:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: color-mix(in oklab, var(--foreground) 70%, transparent) !important;
+  }
+  & [class*="text-white/70"]:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: color-mix(in oklab, var(--foreground) 78%, transparent) !important;
+  }
+  & [class*="text-white/80"]:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: color-mix(in oklab, var(--foreground) 86%, transparent) !important;
+  }
+  & [class*="text-white/90"]:not([data-keep-dark]):not([data-keep-dark] *) {
+    color: color-mix(in oklab, var(--foreground) 92%, transparent) !important;
+  }
+  /* Muted-foreground labels can wash out on white — boost contrast. */
+  & .text-muted-foreground { color: color-mix(in oklab, var(--foreground) 72%, transparent) !important; }
   /* Chat / message bubbles on the app-primary background stay light. */
   & [data-role="bubble-primary"] { color: var(--primary-foreground) !important; }
   & [data-role="bubble-primary"] * { color: inherit !important; }
