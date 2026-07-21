@@ -464,11 +464,14 @@ function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit:
             <p className="text-xl font-black leading-none">{rank ? `#${rank}` : "—"}</p>
           </div>
 
-          <span className="grid h-12 w-12 place-items-center rounded-full ring-2 ring-amber-300/70 p-[2px]">
-            <span className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#120820] text-sm font-black text-white/80">
-              {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" /> : initial}
-            </span>
-          </span>
+          <LevelAvatar
+            src={avatar ?? undefined}
+            name={row?.username ?? fallback?.username ?? undefined}
+            level={level}
+            size="sm"
+            showBadge={false}
+          />
+
 
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 truncate text-[13px] font-bold">
