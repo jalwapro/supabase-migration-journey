@@ -464,6 +464,41 @@ html:not(.dark) body:not(.themed):not(.theme-background-active) {
   }
 }
 
+/* Me profile light mode must stay black-on-light, including stat tiles that
+   still carry legacy bg-black/text-white utility names. Keep this after the
+   dark-surface rescue so those global rules cannot turn the stat text white. */
+html:not(.dark) .me-profile-card,
+html:not(.dark) .me-profile-card :where(p, span, a, button, div) {
+  color: rgb(9, 9, 11);
+}
+
+html:not(.dark) .me-profile-card :where(.text-white, [class*="text-white/"]) {
+  color: rgb(9, 9, 11) !important;
+}
+
+html:not(.dark) .me-profile-card :where([class*="text-white/30"]) { color: rgba(9, 9, 11, 0.3) !important; }
+html:not(.dark) .me-profile-card :where([class*="text-white/50"], [class*="text-white/55"]) { color: rgba(9, 9, 11, 0.56) !important; }
+html:not(.dark) .me-profile-card :where([class*="text-white/60"], [class*="text-white/70"], [class*="text-white/75"]) { color: rgba(9, 9, 11, 0.72) !important; }
+html:not(.dark) .me-profile-card :where([class*="text-white/80"], [class*="text-white/85"], [class*="text-white/90"]) { color: rgba(9, 9, 11, 0.88) !important; }
+
+html:not(.dark) .me-profile-card :where([class*="bg-black/"]) {
+  background-color: rgba(255, 255, 255, 0.76) !important;
+}
+
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="bg-black"] .text-white,
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="from-black"] .text-white,
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="via-black"] .text-white,
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="to-black"] .text-white {
+  color: rgb(9, 9, 11) !important;
+}
+
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="bg-black"] [class*="text-white/"],
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="from-black"] [class*="text-white/"],
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="via-black"] [class*="text-white/"],
+html:not(.dark) body:not(.themed):not(.theme-background-active) .me-profile-card [class*="to-black"] [class*="text-white/"] {
+  color: rgba(9, 9, 11, 0.72) !important;
+}
+
 /* Chat message text tokens — used by DM + support to stay readable in both
    themes. Bubbles on a card surface follow --card-foreground automatically. */
 html.dark, html:not(.dark) body.themed, html:not(.dark) body.theme-background-active {
