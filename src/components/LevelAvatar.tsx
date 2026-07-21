@@ -115,10 +115,8 @@ export function LevelAvatar({
         )}
       </div>
 
-      {/* Equipped DP frame overlay with sparkles.
-          When no custom frame is equipped, stack every frame in the current
-          10-level series up to the user's level so progression is visible. */}
-      {frame && frameUrl && (
+      {/* Equipped DP frame (or auto level-based frame) overlay */}
+      {frameUrl && (
         <div
           className="pointer-events-none absolute inset-[-14%] z-[5] flex items-center justify-center"
           aria-hidden
