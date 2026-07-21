@@ -393,6 +393,29 @@ html:not(.dark) .me-profile-card [class*="border-white/"] {
   border-color: rgba(9, 9, 11, 0.12) !important;
 }
 
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] .text-white,
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark].text-white {
+  color: rgb(9, 9, 11) !important;
+}
+
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/30"] { color: rgba(9, 9, 11, 0.3) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/50"] { color: rgba(9, 9, 11, 0.5) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/55"] { color: rgba(9, 9, 11, 0.55) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/60"] { color: rgba(9, 9, 11, 0.6) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/70"] { color: rgba(9, 9, 11, 0.7) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/75"] { color: rgba(9, 9, 11, 0.75) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/80"] { color: rgba(9, 9, 11, 0.8) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/85"] { color: rgba(9, 9, 11, 0.85) !important; }
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="text-white/90"] { color: rgba(9, 9, 11, 0.9) !important; }
+
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="bg-black/"] {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html:not(.dark) [data-adaptive="neon"] .me-profile-card[data-keep-dark] [class*="border-white/"] {
+  border-color: rgba(9, 9, 11, 0.12) !important;
+}
+
 /* Contrast rescue for dark surfaces that appear inside plain light mode. */
 html:not(.dark) body:not(.themed):not(.theme-background-active) {
   & [class*="bg-black/"] .text-black,
