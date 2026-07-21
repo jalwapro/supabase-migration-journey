@@ -85,20 +85,22 @@ export function LevelAvatar({
           )}
         </div>
       )}
-      {/* Tier ring — always render behind the frame so tier progression stays
-          visible even when a custom shop frame or admin-assigned frame is on. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-[-6%] z-[1] rounded-full"
-        style={{
-          padding: 2,
-          background: `conic-gradient(from 0deg, ${tier.color}, #fff2, ${tier.color})`,
-          WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
-          WebkitMaskComposite: "xor",
-          maskComposite: "exclude",
-          boxShadow: `0 0 12px ${tier.glow}`,
-        }}
-      />
+      {/* Tier ring — only when no frame is present (frame already indicates level) */}
+      {!frameUrl && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-[-6%] z-[1] rounded-full"
+          style={{
+            padding: 2,
+            background: `conic-gradient(from 0deg, ${tier.color}, #fff2, ${tier.color})`,
+            WebkitMask: "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+            WebkitMaskComposite: "xor",
+            maskComposite: "exclude",
+            boxShadow: `0 0 12px ${tier.glow}`,
+          }}
+        />
+      )}
+
 
       {/* Inner disc */}
       <div className="absolute inset-0 overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
