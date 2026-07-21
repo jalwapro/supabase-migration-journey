@@ -149,7 +149,7 @@ export function LevelAvatar({
         </div>
       )}
       {frameUrl && (
-        <span className="pointer-events-none absolute inset-[-22%] z-[20]" aria-hidden>
+        <span className="pointer-events-none absolute inset-[-14%] z-[20]" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
           <span className="dp-sparkle dp-sparkle-b" />
           <span className="dp-sparkle dp-sparkle-c" />
