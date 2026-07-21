@@ -330,64 +330,67 @@ html:not(.dark) body:not(.themed):not(.theme-background-active) {
   & [data-role="bubble-primary"] * { color: inherit !important; }
 }
 
-/* Profile page keeps a royal dark card/header even in light mode, so its
-   text must stay light instead of being remapped by global light rescue. */
+/* Profile page: in light mode, the selected Me card should read as a clean
+   light profile card with dark black text; dark mode keeps the royal neon UI. */
 html:not(.dark) .me-profile-screen [data-keep-dark],
 html:not(.dark) .me-profile-card,
 html:not(.dark) .me-profile-card * {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] .text-white,
-html:not(.dark) .me-profile-screen [data-keep-dark].text-white,
+html:not(.dark) .me-profile-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 245, 255, 0.96)) !important;
+  border-color: rgba(24, 24, 27, 0.12) !important;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12), inset 0 0 24px rgba(168, 85, 247, 0.08) !important;
+}
+
 html:not(.dark) .me-profile-card .text-white,
 html:not(.dark) .me-profile-card.text-white {
-  color: rgb(255, 255, 255) !important;
+  color: rgb(9, 9, 11) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/30"],
 html:not(.dark) .me-profile-card [class*="text-white/30"] {
-  color: rgba(255, 255, 255, 0.3) !important;
+  color: rgba(9, 9, 11, 0.3) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/50"],
 html:not(.dark) .me-profile-card [class*="text-white/50"] {
-  color: rgba(255, 255, 255, 0.5) !important;
+  color: rgba(9, 9, 11, 0.5) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/55"],
 html:not(.dark) .me-profile-card [class*="text-white/55"] {
-  color: rgba(255, 255, 255, 0.55) !important;
+  color: rgba(9, 9, 11, 0.55) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/60"],
 html:not(.dark) .me-profile-card [class*="text-white/60"] {
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: rgba(9, 9, 11, 0.6) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/70"],
 html:not(.dark) .me-profile-card [class*="text-white/70"] {
-  color: rgba(255, 255, 255, 0.7) !important;
+  color: rgba(9, 9, 11, 0.7) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/75"],
 html:not(.dark) .me-profile-card [class*="text-white/75"] {
-  color: rgba(255, 255, 255, 0.75) !important;
+  color: rgba(9, 9, 11, 0.75) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/80"],
 html:not(.dark) .me-profile-card [class*="text-white/80"] {
-  color: rgba(255, 255, 255, 0.8) !important;
+  color: rgba(9, 9, 11, 0.8) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/85"],
 html:not(.dark) .me-profile-card [class*="text-white/85"] {
-  color: rgba(255, 255, 255, 0.85) !important;
+  color: rgba(9, 9, 11, 0.85) !important;
 }
 
-html:not(.dark) .me-profile-screen [data-keep-dark] [class*="text-white/90"],
 html:not(.dark) .me-profile-card [class*="text-white/90"] {
-  color: rgba(255, 255, 255, 0.9) !important;
+  color: rgba(9, 9, 11, 0.9) !important;
+}
+
+html:not(.dark) .me-profile-card [class*="bg-black/"] {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html:not(.dark) .me-profile-card [class*="border-white/"] {
+  border-color: rgba(9, 9, 11, 0.12) !important;
 }
 
 /* Contrast rescue for dark surfaces that appear inside plain light mode. */
