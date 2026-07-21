@@ -127,9 +127,15 @@
  * without touching any dark-mode styling.
  * ==========================================================================*/
 html:not(.dark) [data-adaptive="neon"] {
-  /* Text: solid white → foreground; white with opacity → muted text. */
+  /* Text: solid white → foreground; white with opacity → strong foreground with light fade. */
   & .text-white { color: var(--foreground) !important; }
-  & [class*="text-white/"] { color: var(--muted-foreground) !important; }
+  & [class*="text-white/"] { color: color-mix(in oklab, var(--foreground) 82%, transparent) !important; }
+  & [class*="text-white/50"] { color: color-mix(in oklab, var(--foreground) 65%, transparent) !important; }
+  & [class*="text-white/40"] { color: color-mix(in oklab, var(--foreground) 55%, transparent) !important; }
+  & [class*="text-white/60"] { color: color-mix(in oklab, var(--foreground) 72%, transparent) !important; }
+  & [class*="text-white/70"] { color: color-mix(in oklab, var(--foreground) 80%, transparent) !important; }
+  & [class*="text-white/80"] { color: color-mix(in oklab, var(--foreground) 88%, transparent) !important; }
+  & [class*="text-white/90"] { color: color-mix(in oklab, var(--foreground) 94%, transparent) !important; }
 
   /* Translucent white surfaces (bg-white/5, bg-white/[0.03], etc.) become
      subtle darkened surfaces so cards remain visible on a white app bg. */
