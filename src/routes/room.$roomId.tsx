@@ -3934,16 +3934,11 @@ function Seat({
               {locked ? (
                 <span className="text-lg">🔒</span>
               ) : (
-                <div className="flex flex-col items-center leading-none">
-                  <Armchair
-                    className="h-1/2 w-1/2 drop-shadow-[0_0_6px_currentColor]"
-                    style={{ color: ringHue }}
-                    strokeWidth={1.5}
-                  />
-                </div>
+                <SofaIcon color={isHostSeat ? "#ef4444" : "#3b82f6"} className="h-[70%] w-[70%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
               )}
             </div>
           )}
+
           {hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center bg-red-600/30 backdrop-blur-sm">
               <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">
