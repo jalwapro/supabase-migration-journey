@@ -3860,10 +3860,12 @@ function Seat({
           </div>
         </div>
 
-        <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 text-[10px] font-medium text-white/72">
-          {effectiveMuted && <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />}
-          <span>{displayName ? `@${displayName}` : "Solo"}</span>
-        </div>
+        {effectiveMuted && (
+          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
+            <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />
+          </div>
+        )}
+
         {member?.is_moderator && !isHostSeat && (
           <span
             title="Moderator"
