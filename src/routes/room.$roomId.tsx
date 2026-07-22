@@ -4027,6 +4027,29 @@ function Seat({
           {hostAwayFromSeat ? "Tap to return" : "Locked"}
         </span>
       )}
+      {/* Bottom hex badge: seat number, or gift points on host seat when host is seated */}
+      <div
+        className="pointer-events-none -mt-1 flex h-5 min-w-[26px] items-center justify-center px-1"
+        style={{ filter: activeRing ? `drop-shadow(0 0 4px ${ringHue})` : "none" }}
+      >
+        <svg viewBox="0 0 100 115" preserveAspectRatio="none" className="absolute h-5 w-full">
+          <polygon
+            points="50 5, 95 30, 95 85, 50 110, 5 85, 5 30"
+            fill={activeRing ? "#1a0033" : "#05000a"}
+            stroke={ringHue}
+            strokeOpacity={activeRing ? 1 : 0.6}
+            strokeWidth={6}
+          />
+        </svg>
+        <span className={`relative px-1 text-[9px] font-bold leading-none ${activeRing ? "text-white" : "text-white/70"}`}>
+          {isHostSeat && member
+            ? (giftPoints ?? 0) >= 1000
+              ? `${((giftPoints ?? 0) / 1000).toFixed(1)}K`
+              : String(giftPoints ?? 0)
+            : `No.${seatNo}`}
+        </span>
+      </div>
+
 
     </div>
   );
