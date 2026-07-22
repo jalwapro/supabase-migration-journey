@@ -3698,7 +3698,36 @@ function DockIcon({
 }
 
 /* ─── Voice seat with No.X label + heart counter ─────────────── */
+function SofaIcon({ color, className }: { color: string; className?: string }) {
+  // Cartoon armchair / sofa. `color` sets the upholstery. Legs stay wood-brown.
+  const dark = color; // base tone
+  return (
+    <svg viewBox="0 0 64 64" className={className} aria-hidden>
+      {/* legs */}
+      <rect x="14" y="48" width="5" height="10" rx="1.5" fill="#8b4a1f" transform="rotate(8 16.5 53)" />
+      <rect x="45" y="48" width="5" height="10" rx="1.5" fill="#8b4a1f" transform="rotate(-8 47.5 53)" />
+      {/* back */}
+      <path d="M12 24c0-6 4-10 10-10h20c6 0 10 4 10 10v18H12V24z" fill={dark} />
+      {/* back highlight */}
+      <path d="M18 22c0-3 2-5 5-5h18c3 0 5 2 5 5v14H18V22z" fill={color} opacity="0.85" />
+      {/* tufting lines */}
+      <path d="M32 20v14M23 22l4 12M41 22l-4 12" stroke={dark} strokeWidth="1.2" strokeLinecap="round" opacity="0.55" fill="none" />
+      {/* arms */}
+      <path d="M8 32c0-4 3-6 6-6v22H8V32z" fill={dark} />
+      <path d="M50 26c3 0 6 2 6 6v20h-6V26z" fill={dark} />
+      {/* seat cushion */}
+      <rect x="14" y="36" width="36" height="12" rx="4" fill={color} />
+      <rect x="16" y="37" width="32" height="4" rx="2" fill="#ffffff" opacity="0.25" />
+      {/* base */}
+      <rect x="12" y="46" width="40" height="6" rx="2" fill={dark} />
+      {/* shadow */}
+      <ellipse cx="32" cy="60" rx="20" ry="1.6" fill="#000" opacity="0.25" />
+    </svg>
+  );
+}
+
 function Seat({
+
   index,
   member,
   remote,
@@ -3934,16 +3963,11 @@ function Seat({
               {locked ? (
                 <span className="text-lg">🔒</span>
               ) : (
-                <div className="flex flex-col items-center leading-none">
-                  <Armchair
-                    className="h-1/2 w-1/2 drop-shadow-[0_0_6px_currentColor]"
-                    style={{ color: ringHue }}
-                    strokeWidth={1.5}
-                  />
-                </div>
+                <SofaIcon color={isHostSeat ? "#ef4444" : "#3b82f6"} className="h-[70%] w-[70%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
               )}
             </div>
           )}
+
           {hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center bg-red-600/30 backdrop-blur-sm">
               <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">
