@@ -4038,27 +4038,12 @@ function Seat({
           </span>
         )}
       </button>
-      {member ? (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenGifters?.();
-          }}
-          className={`max-w-full truncate rounded-full border px-1.5 py-[1px] text-[9px] font-black leading-tight shadow-sm backdrop-blur ${
-            recentlyGifted
-              ? "animate-pulse border-[color:var(--gold)]/70 bg-[color:var(--gold)]/25 text-[color:var(--gold)]"
-              : "border-[color:var(--gold)]/35 bg-black/55 text-[color:var(--gold)]"
-          }`}
-          aria-label={`Gift points ${formatGiftPoints(giftPoints ?? 0)}`}
-        >
-          {displayName ? `@${displayName}` : `🎁 ${formatGiftPoints(giftPoints ?? 0)}`}
-        </button>
-      ) : (
+      {!member && (hostAwayFromSeat || locked) && (
         <span className="text-[9px] font-medium leading-tight text-white/60">
-          {hostAwayFromSeat ? "Tap to return" : locked ? "Locked" : ""}
+          {hostAwayFromSeat ? "Tap to return" : "Locked"}
         </span>
       )}
+
     </div>
   );
 }
