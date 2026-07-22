@@ -3993,26 +3993,8 @@ function Seat({
           </div>
         )}
 
-        {/* Hex seat number badge (top center) */}
-        <div
-          className="pointer-events-none absolute -top-2.5 left-1/2 z-30 flex h-6 w-[22px] -translate-x-1/2 items-center justify-center"
-          style={{ filter: activeRing ? `drop-shadow(0 0 4px ${ringHue})` : "none" }}
-        >
-          <svg viewBox="0 0 100 115" className="absolute inset-0 h-full w-full">
-            <polygon
-              points="50 5, 95 30, 95 85, 50 110, 5 85, 5 30"
-              fill={activeRing ? "#1a0033" : "#05000a"}
-              stroke={ringHue}
-              strokeOpacity={activeRing ? 1 : 0.6}
-              strokeWidth={6}
-            />
-          </svg>
-          <span
-            className={`relative text-[10px] font-bold ${activeRing ? "text-white" : "text-white/70"}`}
-          >
-            {seatNo}
-          </span>
-        </div>
+        {/* (badge moved below DP) */}
+
 
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
           <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
@@ -4045,6 +4027,29 @@ function Seat({
           {hostAwayFromSeat ? "Tap to return" : "Locked"}
         </span>
       )}
+      {/* Bottom hex badge: seat number, or gift points on host seat when host is seated */}
+      <div
+        className="pointer-events-none -mt-1 flex h-5 min-w-[26px] items-center justify-center px-1"
+        style={{ filter: activeRing ? `drop-shadow(0 0 4px ${ringHue})` : "none" }}
+      >
+        <svg viewBox="0 0 100 115" preserveAspectRatio="none" className="absolute h-5 w-full">
+          <polygon
+            points="50 5, 95 30, 95 85, 50 110, 5 85, 5 30"
+            fill={activeRing ? "#1a0033" : "#05000a"}
+            stroke={ringHue}
+            strokeOpacity={activeRing ? 1 : 0.6}
+            strokeWidth={6}
+          />
+        </svg>
+        <span className={`relative px-1 text-[9px] font-bold leading-none ${activeRing ? "text-white" : "text-white/70"}`}>
+          {isHostSeat && member
+            ? (giftPoints ?? 0) >= 1000
+              ? `${((giftPoints ?? 0) / 1000).toFixed(1)}K`
+              : String(giftPoints ?? 0)
+            : `No.${seatNo}`}
+        </span>
+      </div>
+
 
     </div>
   );
