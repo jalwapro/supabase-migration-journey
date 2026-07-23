@@ -722,38 +722,21 @@ function RoomPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, qc, loadRoomState]);
 
-  // Optimistic: when the local user sends a gift, immediately bump the
-  // receiver's gift points and room popularity so the sender sees the
-  // update instantly — realtime just reconciles later.
+  // Local "recent gift" flash only — score/popularity/giftPoints are
+  // driven exclusively by the realtime gift_sends INSERT event to avoid
+  // double-counting (local + realtime were both adding coins).
   useEffect(() => {
     const onLocal = (event: Event) => {
       const d = (event as CustomEvent<{
         receiverId?: string | null;
         receiverIds?: string[];
-        coins?: number;
-        quantity?: number;
         local?: boolean;
       }>).detail;
       if (!d?.local) return;
-      const coins = Number(d.coins ?? 0);
-      const qty = Number(d.quantity ?? 1);
       const targets = (d.receiverIds && d.receiverIds.length > 0)
         ? d.receiverIds
         : d.receiverId ? [d.receiverId] : [];
-      if (targets.length === 0 || coins <= 0) return;
-      const perReceiver = Math.floor(coins / targets.length);
-      setPopularity((p) => ({
-        ...p,
-        coin_score: p.coin_score + coins,
-        gift_count: p.gift_count + qty,
-      }));
-      setGiftPoints((prev) => {
-        const next = { ...prev };
-        for (const rid of targets) {
-          next[rid] = (next[rid] ?? 0) + perReceiver;
-        }
-        return next;
-      });
+      if (targets.length === 0) return;
       const stamp = Date.now();
       setRecentGiftUsers((prev) => {
         const next = { ...prev };
@@ -773,6 +756,8 @@ function RoomPage() {
     window.addEventListener("jalwa:gift-sent", onLocal);
     return () => window.removeEventListener("jalwa:gift-sent", onLocal);
   }, []);
+
+
 
   // Auto-open milestone picker for the host the moment the room hits 100%.
   useEffect(() => {
