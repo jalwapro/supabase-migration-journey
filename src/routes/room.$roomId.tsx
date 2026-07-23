@@ -1194,7 +1194,7 @@ function RoomPage() {
     }
     const { error } = await supabase
       .from("room_members")
-      .update({ seat_index: null })
+      .update({ seat_index: null, seated_at: null })
       .eq("room_id", roomId)
       .eq("user_id", user.id);
     if (error) toast.error(error.message);
@@ -2805,7 +2805,7 @@ function RoomPage() {
               if (next < r.seat_count) {
                 await supabase
                   .from("room_members")
-                  .update({ seat_index: null })
+                  .update({ seat_index: null, seated_at: null })
                   .eq("room_id", roomId)
                   .gte("seat_index", next);
               }
@@ -3011,7 +3011,7 @@ function RoomPage() {
           if (!manageMember) return;
           const { error } = await supabase
             .from("room_members")
-            .update({ seat_index: null, is_moderator: false })
+            .update({ seat_index: null, seated_at: null, is_moderator: false })
             .eq("room_id", roomId)
             .eq("user_id", manageMember.user_id);
           if (error) toast.error(error.message);
