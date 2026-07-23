@@ -438,7 +438,7 @@ function RoomPage() {
       supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
         )
         .eq("room_id", roomId),
       supabase
@@ -461,7 +461,7 @@ function RoomPage() {
         .maybeSingle(),
       supabase
         .from("gift_sends")
-        .select("receiver_id,coins_spent")
+        .select("receiver_id,coins_spent,created_at")
         .eq("room_id", roomId),
     ]);
     // Surface real errors instead of silently rendering empty state.
@@ -495,9 +495,18 @@ function RoomPage() {
         gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
       });
     }
+    const seatStartByUser = new Map<string, number>();
+    ((mData ?? []) as unknown as Member[]).forEach((member) => {
+      if (member.seat_index == null || !member.joined_at) return;
+      seatStartByUser.set(member.user_id, new Date(member.joined_at).getTime());
+    });
     const pts: Record<string, number> = {};
-    (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
+    (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null; created_at?: string | null }) => {
       if (!row.receiver_id) return;
+      const seatStart = seatStartByUser.get(row.receiver_id);
+      if (!seatStart) return;
+      const sentAt = row.created_at ? new Date(row.created_at).getTime() : 0;
+      if (!sentAt || sentAt < seatStart) return;
       pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
     });
     setGiftPoints(pts);
