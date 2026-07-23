@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
+import { frameForLevel } from "@/lib/levelFrames";
 
 import { useZegoRoom as useAgoraRoom, type RemoteUser, type RemoteVideoTrack } from "@/hooks/useZegoRoom";
 import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
@@ -113,6 +114,7 @@ type Room = {
     username: string | null;
     avatar: string | null;
     frame: string | null;
+    vip_level?: number | null;
     theme: {
       bg_image: string | null;
       preview_url: string | null;
@@ -135,7 +137,7 @@ type Member = {
   is_moderator?: boolean;
   joined_at?: string | null;
   seated_at?: string | null;
-  user: { username: string | null; avatar: string | null; frame: string | null } | null;
+  user: { username: string | null; avatar: string | null; frame: string | null; vip_level?: number | null } | null;
 };
 
 type Message = {
@@ -264,7 +266,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -433,7 +435,7 @@ function RoomPage() {
       const withSeatedAt = await supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level)",
         )
         .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
@@ -442,7 +444,7 @@ function RoomPage() {
       return supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level)",
         )
         .eq("room_id", roomId);
     };
@@ -689,7 +691,7 @@ function RoomPage() {
           // INSERT: fetch just this one user's profile (single-row lookup).
           const { data: prof } = await supabase
             .from("profiles")
-            .select("username,avatar,frame")
+            .select("username,avatar,frame,vip_level")
             .eq("id", row.user_id)
             .maybeSingle();
           const newMember: Member = {
@@ -1910,7 +1912,7 @@ function RoomPage() {
           const oppRemote = oppM ? agora.remotes.get(uidFromUuid(oppM.user_id)) : undefined;
           const hasOpponent = !!oppM || !!r.active_pk_match_id;
           const hostFallback = !hostM
-            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
             : null;
           const hostTile: VideoSeatData = {
             index: 0,
@@ -2026,7 +2028,7 @@ function RoomPage() {
           const hostM = seatsByIndex.get(0);
           const hostRemote = hostM ? agora.remotes.get(uidFromUuid(hostM.user_id)) : undefined;
           const hostFallback = !hostM
-            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
             : null;
           const hostTile: VideoSeatData = {
             index: 0,
@@ -2238,7 +2240,7 @@ function RoomPage() {
                     const isHostSeat = i === 0;
                     const fallbackHost =
                       isHostSeat && !m
-                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
                         : null;
                     return (
                       <Seat
@@ -3193,7 +3195,7 @@ type VideoSeatData = {
   isHostSeat: boolean;
   member?: Member;
   remote?: RemoteUser;
-  fallbackUser: { username: string | null; avatar: string | null; frame?: string | null } | null;
+  fallbackUser: { username: string | null; avatar: string | null; frame?: string | null; vip_level?: number | null } | null;
   giftPoints: number;
   onClaim: () => void;
   onLike: () => void;
@@ -3875,7 +3877,7 @@ function Seat({
   remote?: RemoteUser;
   isHostSeat: boolean;
   cover: string | null;
-  fallbackUser?: { username: string | null; avatar: string | null; frame?: string | null } | null;
+  fallbackUser?: { username: string | null; avatar: string | null; frame?: string | null; vip_level?: number | null } | null;
   onClaim: () => void;
   likeCount: number;
   onLike: () => void;
@@ -3915,7 +3917,9 @@ function Seat({
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
-  const displayFrame = member?.user?.frame ?? fallbackUser?.frame ?? null;
+  const shopFrame = member?.user?.frame ?? fallbackUser?.frame ?? null;
+  const vipLevel = member?.user?.vip_level ?? fallbackUser?.vip_level ?? null;
+  const displayFrame = shopFrame || frameForLevel(vipLevel);
   const frameIsVideo = !!displayFrame && /\.(mp4|webm|mov)($|\?)/i.test(displayFrame);
 
   const ringClass = isHostSeat
