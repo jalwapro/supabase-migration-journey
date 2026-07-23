@@ -1395,7 +1395,8 @@ function RoomPage() {
 
   // Host-only: intercept Android/browser hardware back button so a
   // ghalti-se-tap doesn't drop the whole room. Push a sentinel state on
-  // mount; when the user pops it, re-push and open the exit confirm.
+  // mount; when the user pops it, re-push. If any modal/sheet/popover is
+  // open, close IT instead of showing the room-exit dialog.
   useEffect(() => {
     if (!isHost) return;
     if (typeof window === "undefined") return;
@@ -1403,11 +1404,30 @@ function RoomPage() {
     try {
       window.history.pushState({ [SENTINEL]: true }, "");
     } catch { /* no-op */ }
+
+    const closeTopOverlay = (): boolean => {
+      // Radix dialogs / sheets / popovers / dropdowns close on Escape.
+      const radix = document.querySelector(
+        '[data-state="open"][role="dialog"], [data-state="open"][role="menu"], [data-radix-popper-content-wrapper]',
+      );
+      // Custom overlays (GiftSheet etc.) — tagged with data-jalwa-overlay.
+      const custom = document.querySelector<HTMLElement>('[data-jalwa-overlay="true"]');
+      if (!radix && !custom) return false;
+      try {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+        document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      } catch { /* no-op */ }
+      if (custom) {
+        try { custom.click(); } catch { /* no-op */ }
+      }
+      return true;
+    };
+
     const onPop = (_e: PopStateEvent) => {
-      // Re-arm so the next back press is also caught.
       try {
         window.history.pushState({ [SENTINEL]: true }, "");
       } catch { /* no-op */ }
+      if (closeTopOverlay()) return;
       setExitConfirmOpen(true);
     };
     window.addEventListener("popstate", onPop);
