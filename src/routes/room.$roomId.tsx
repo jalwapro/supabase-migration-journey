@@ -467,6 +467,7 @@ function RoomPage() {
       toast.error(`Room data failed: ${firstErr.message}`);
     }
     const loadedMembers = (mData ?? []) as unknown as Member[];
+    membersRef.current = loadedMembers;
     setMembers(loadedMembers);
     setMessages(
       ((msgData ?? []) as unknown as Message[])
@@ -631,8 +632,8 @@ function RoomPage() {
           if (!row?.user_id) return;
           // For UPDATE, merge into existing row (profile already loaded).
           if (evt === "UPDATE") {
-            setMembers((prev) =>
-              prev.map((m) =>
+            setMembers((prev) => {
+              const next = prev.map((m) =>
                 m.user_id === row.user_id
                   ? {
                       ...m,
@@ -644,8 +645,10 @@ function RoomPage() {
                       seated_at: row.seated_at ?? null,
                     }
                   : m,
-              ),
-            );
+              );
+              membersRef.current = next;
+              return next;
+            });
             // If the user just left their seat (seat_index → null),
             // reset their gift points so a re-seat starts from 0.
             if (row.seat_index == null) {
@@ -677,10 +680,11 @@ function RoomPage() {
             user: (prof as Member["user"]) ?? null,
           };
           setMembers((prev) => {
-            if (prev.some((m) => m.user_id === row.user_id)) {
-              return prev.map((m) => (m.user_id === row.user_id ? newMember : m));
-            }
-            return [...prev, newMember];
+            const next = prev.some((m) => m.user_id === row.user_id)
+              ? prev.map((m) => (m.user_id === row.user_id ? newMember : m))
+              : [...prev, newMember];
+            membersRef.current = next;
+            return next;
           });
         },
 
