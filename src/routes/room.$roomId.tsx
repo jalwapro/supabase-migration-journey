@@ -3195,7 +3195,7 @@ type VideoSeatData = {
   isHostSeat: boolean;
   member?: Member;
   remote?: RemoteUser;
-  fallbackUser: { username: string | null; avatar: string | null; frame?: string | null } | null;
+  fallbackUser: { username: string | null; avatar: string | null; frame?: string | null; vip_level?: number | null } | null;
   giftPoints: number;
   onClaim: () => void;
   onLike: () => void;
