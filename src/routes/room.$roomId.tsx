@@ -4085,7 +4085,6 @@ function Seat({
             <div className="absolute inset-0 grid place-items-center">
               {locked ? (
                 <span className="text-lg">🔒</span>
-              ) : (
               ) : isHostSeat ? (
                 <KingThroneIcon className="h-[85%] w-[85%] drop-shadow-[0_2px_6px_rgba(255,215,0,0.5)]" />
               ) : (
