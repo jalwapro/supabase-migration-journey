@@ -7,6 +7,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { frameForLevel } from "@/lib/levelFrames";
+import hostThroneAsset from "@/assets/room/host-throne.png.asset.json";
+import { resolveAssetUrl } from "@/lib/assetUrl";
+const HOST_THRONE_URL = resolveAssetUrl(hostThroneAsset.url)!;
 
 import { useZegoRoom as useAgoraRoom, type RemoteUser, type RemoteVideoTrack } from "@/hooks/useZegoRoom";
 import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
