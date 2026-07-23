@@ -654,27 +654,18 @@ function RoomPage() {
             coins_spent: number;
             quantity: number;
             receiver_id: string | null;
-            sender_id: string | null;
           };
-          // Skip if this is our own send — local optimistic bump already
-          // applied. Otherwise 1999 coins show as 3998 (double-counted).
-          const isSelf = !!user?.id && row.sender_id === user.id;
-          if (!isSelf) {
-            setPopularity((p) => ({
-              ...p,
-              coin_score: p.coin_score + Number(row.coins_spent ?? 0),
-              gift_count: p.gift_count + Number(row.quantity ?? 0),
-            }));
-          }
+          setPopularity((p) => ({
+            ...p,
+            coin_score: p.coin_score + Number(row.coins_spent ?? 0),
+            gift_count: p.gift_count + Number(row.quantity ?? 0),
+          }));
           if (row.receiver_id) {
             const rid = row.receiver_id;
-            if (!isSelf) {
-              setGiftPoints((prev) => ({
-                ...prev,
-                [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
-              }));
-            }
-
+            setGiftPoints((prev) => ({
+              ...prev,
+              [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
+            }));
             const stamp = Date.now();
             setRecentGiftUsers((prev) => ({ ...prev, [rid]: stamp }));
             setTimeout(() => {
@@ -687,6 +678,7 @@ function RoomPage() {
             }, 4500);
           }
         },
+
       )
       .on(
         "postgres_changes",
