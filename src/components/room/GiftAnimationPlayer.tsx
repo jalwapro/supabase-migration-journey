@@ -407,47 +407,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     const ch = supabase
       .channel(`gift-anim-${roomId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "gift_events", filter: `room_id=eq.${roomId}` },
-        async (payload) => {
-          const r = payload.new as {
-            id: string;
-            sender_id: string | null;
-            sender_name: string | null;
-            gift_id: string | null;
-            gift_emoji: string;
-            gift_name: string;
-            coins: number;
-          };
-          const [{ data: prof }, { data: gift }] = await Promise.all([
-            r.sender_id
-              ? supabase.from("profiles").select("avatar").eq("id", r.sender_id).maybeSingle()
-              : Promise.resolve({ data: null }),
-            r.gift_id
-              ? supabase.from("gifts").select("animation,clip_path,clip_type,image_url,sound_url").eq("id", r.gift_id).maybeSingle()
-              : Promise.resolve({ data: null }),
-          ]);
-          const g = (gift ?? {}) as { animation?: string; clip_path?: string | null; clip_type?: string | null; image_url?: string | null; sound_url?: string | null };
-          enqueue({
-            key: `ev-${r.id}`,
-            senderName: r.sender_name ?? "Guest",
-            senderAvatar: (prof as { avatar?: string | null } | null)?.avatar ?? null,
-            receiverName: "",
-            receiverAvatar: null,
-            giftName: r.gift_name,
-            giftEmoji: r.gift_emoji,
-            giftImageUrl: g.image_url ?? null,
-            giftClipUrl: g.image_url ?? g.clip_path ?? null,
-            giftClipType: g.image_url ? "image" : g.clip_path ? (g.clip_type ?? null) : null,
-            coins: r.coins ?? 0,
-            diamonds: 0,
-            quantity: 1,
-            animation: g.animation ?? "pop",
-            soundUrl: g.sound_url ?? null,
-          });
-        },
-      )
+      // PERF: gift_events listener removed — gift_sends is fully denormalized
+      // (see migration 0121) and already broadcasts the same event with all
+      // fields. Listening to both caused double-flash + a per-event DB
+      // round-trip. gift_sends alone is the single source of truth.
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
