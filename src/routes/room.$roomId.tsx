@@ -133,6 +133,7 @@ type Member = {
   is_muted: boolean;
   is_video: boolean;
   is_moderator?: boolean;
+  joined_at?: string | null;
   user: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
@@ -250,6 +251,7 @@ function RoomPage() {
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
+  const membersRef = useRef<Member[]>([]);
   const [milestoneOpen, setMilestoneOpen] = useState(false);
   const [topGifters, setTopGifters] = useState<TopGifter[]>([]);
   const [milestoneGifts, setMilestoneGifts] = useState<Array<{ id: string; name: string; emoji: string | null; icon: string | null; clip_path: string | null; clip_type: string | null }>>([]);
@@ -280,6 +282,10 @@ function RoomPage() {
       return data as unknown as Room | null;
     },
   });
+
+  useEffect(() => {
+    membersRef.current = members;
+  }, [members]);
 
   const isHost = user?.id === room.data?.host_id;
   useRoomHeartbeat(room.data?.id, isHost);
