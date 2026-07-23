@@ -3877,7 +3877,7 @@ function Seat({
   remote?: RemoteUser;
   isHostSeat: boolean;
   cover: string | null;
-  fallbackUser?: { username: string | null; avatar: string | null; frame?: string | null } | null;
+  fallbackUser?: { username: string | null; avatar: string | null; frame?: string | null; vip_level?: number | null } | null;
   onClaim: () => void;
   likeCount: number;
   onLike: () => void;
