@@ -57,7 +57,7 @@ import {
   DoorOpen,
 } from "lucide-react";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/components/GiftSheet";
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
