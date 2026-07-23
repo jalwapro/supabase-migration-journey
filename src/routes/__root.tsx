@@ -231,6 +231,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeBackground />
+        <ThemeChrome />
         <SplashGate />
         <InstallPermissionGate />
         <GlobalRealtimeBridge />
