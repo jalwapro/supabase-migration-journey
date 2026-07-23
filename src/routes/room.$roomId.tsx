@@ -690,7 +690,7 @@ function RoomPage() {
           // INSERT: fetch just this one user's profile (single-row lookup).
           const { data: prof } = await supabase
             .from("profiles")
-            .select("username,avatar,frame")
+            .select("username,avatar,frame,vip_level")
             .eq("id", row.user_id)
             .maybeSingle();
           const newMember: Member = {
