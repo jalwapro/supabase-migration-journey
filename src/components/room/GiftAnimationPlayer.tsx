@@ -54,6 +54,13 @@ function isRoyalRoseGift(name: string | null | undefined) {
   return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
 }
 
+// Royal Crown gift ships with a placeholder DP baked into the SVGA/MP4;
+// we overlay the actual receiver's avatar in the crown's DP slot.
+function isRoyalCrownGift(name: string | null | undefined) {
+  const n = (name ?? "").toLowerCase();
+  return n.includes("royal") && n.includes("crown");
+}
+
 // Gifts rendered on a pure-black background — we screen-blend them so the black
 // disappears against the room and only the effect shows. Also implies the MP4
 // already carries baked-in audio, so we should unmute the video element.
