@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
+import { frameForLevel } from "@/lib/levelFrames";
 
 import { useZegoRoom as useAgoraRoom, type RemoteUser, type RemoteVideoTrack } from "@/hooks/useZegoRoom";
 import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
