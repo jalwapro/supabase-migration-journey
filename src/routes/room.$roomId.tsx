@@ -4123,13 +4123,33 @@ function Seat({
                   className="h-[110%] w-[110%] object-contain drop-shadow-[0_2px_8px_rgba(255,215,0,0.55)]"
                 />
               ) : (
-                <img
-                  src={HOST_THRONE_URL}
-                  alt=""
-                  draggable={false}
-                  className="h-[110%] w-[110%] object-contain drop-shadow-[0_2px_8px_rgba(80,140,255,0.55)]"
-                  style={{ filter: "hue-rotate(210deg) saturate(1.1)" }}
-                />
+                <div className="relative h-[110%] w-[110%]">
+                  <img
+                    src={HOST_THRONE_URL}
+                    alt=""
+                    draggable={false}
+                    className="h-full w-full object-contain drop-shadow-[0_2px_8px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
+                    style={{ filter: "grayscale(0.4) brightness(0.95)" }}
+                  />
+                  {/* Theme-tinted overlay: empty seats adopt the user's shop theme colors */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      mixBlendMode: "color",
+                      opacity: 0.9,
+                      WebkitMaskImage: `url(${HOST_THRONE_URL})`,
+                      maskImage: `url(${HOST_THRONE_URL})`,
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskPosition: "center",
+                      maskPosition: "center",
+                      WebkitMaskSize: "contain",
+                      maskSize: "contain",
+                    }}
+                  />
+                </div>
               )}
             </div>
           )}
