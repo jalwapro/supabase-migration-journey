@@ -3806,6 +3806,47 @@ function SofaIcon({ color, className }: { color: string; className?: string }) {
   );
 }
 
+function KingThroneIcon({ className }: { className?: string }) {
+  // Royal Gold Throne — tall ornate back, red velvet cushion, purple base glow.
+  return (
+    <svg viewBox="0 0 64 72" className={className} aria-hidden>
+      <defs>
+        <linearGradient id="gold-grad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#fff2a8" />
+          <stop offset="45%" stopColor="#FFD700" />
+          <stop offset="100%" stopColor="#8B7500" />
+        </linearGradient>
+        <linearGradient id="velvet-grad" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#c8203a" />
+          <stop offset="100%" stopColor="#5c0a18" />
+        </linearGradient>
+        <radialGradient id="throne-glow" cx="50%" cy="100%" r="60%">
+          <stop offset="0%" stopColor="#4A0E4E" stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#2D0B4D" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <ellipse cx="32" cy="68" rx="28" ry="4" fill="url(#throne-glow)" />
+      <path d="M26 6 L28 12 L32 4 L36 12 L38 6 L38 14 L26 14 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
+      <circle cx="32" cy="3.5" r="1.6" fill="#ff3355" stroke="#5a4200" strokeWidth="0.4" />
+      <path d="M14 16 Q14 12 18 12 H46 Q50 12 50 16 V44 H14 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.6" />
+      <path d="M19 18 Q19 16 21 16 H43 Q45 16 45 18 V40 H19 Z" fill="url(#velvet-grad)" />
+      <g stroke="#8B0000" strokeWidth="0.5" opacity="0.7" fill="none">
+        <path d="M22 20 L32 26 L42 20 M22 32 L32 26 L42 32 M22 20 L22 32 M42 20 L42 32" />
+      </g>
+      <circle cx="32" cy="26" r="0.9" fill="#FFD700" />
+      <path d="M8 36 Q8 30 12 30 V52 H8 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
+      <path d="M56 36 Q56 30 52 30 V52 H56 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
+      <circle cx="10" cy="30" r="2.6" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
+      <circle cx="54" cy="30" r="2.6" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
+      <rect x="12" y="42" width="40" height="12" rx="3" fill="url(#velvet-grad)" stroke="#5a4200" strokeWidth="0.6" />
+      <rect x="14" y="43.5" width="36" height="3" rx="1.5" fill="#ffffff" opacity="0.22" />
+      <path d="M10 52 H54 L50 62 H14 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.6" />
+      <rect x="14" y="60" width="4" height="8" rx="1" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.4" />
+      <rect x="46" y="60" width="4" height="8" rx="1" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.4" />
+    </svg>
+  );
+}
+
 function Seat({
 
   index,
