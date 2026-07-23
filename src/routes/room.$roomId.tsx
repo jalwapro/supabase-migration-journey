@@ -607,6 +607,7 @@ function RoomPage() {
             is_muted: boolean;
             is_video: boolean;
             is_moderator?: boolean;
+            joined_at?: string | null;
           };
           if (!row?.user_id) return;
           // For UPDATE, merge into existing row (profile already loaded).
@@ -620,6 +621,7 @@ function RoomPage() {
                       is_muted: row.is_muted,
                       is_video: row.is_video,
                       is_moderator: row.is_moderator ?? m.is_moderator,
+                      joined_at: row.joined_at ?? m.joined_at ?? null,
                     }
                   : m,
               ),
@@ -650,6 +652,7 @@ function RoomPage() {
             is_muted: row.is_muted,
             is_video: row.is_video,
             is_moderator: row.is_moderator,
+            joined_at: row.joined_at ?? new Date().toISOString(),
             user: (prof as Member["user"]) ?? null,
           };
           setMembers((prev) => {
@@ -691,6 +694,7 @@ function RoomPage() {
             coins_spent: number;
             quantity: number;
             receiver_id: string | null;
+            created_at?: string | null;
           };
           setPopularity((p) => ({
             ...p,
@@ -699,6 +703,10 @@ function RoomPage() {
           }));
           if (row.receiver_id) {
             const rid = row.receiver_id;
+            const receiver = membersRef.current.find((m) => m.user_id === rid && m.seat_index != null);
+            if (!receiver?.joined_at) return;
+            const sentAt = row.created_at ? new Date(row.created_at).getTime() : Date.now();
+            if (sentAt < new Date(receiver.joined_at).getTime()) return;
             setGiftPoints((prev) => ({
               ...prev,
               [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
