@@ -685,6 +685,24 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         ) : (
           <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} />
         )}
+        {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
+          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+            <div className="relative -translate-y-[6%]">
+              <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-lg opacity-70" />
+              {current.receiverAvatar ? (
+                <img
+                  src={current.receiverAvatar}
+                  alt=""
+                  className="relative h-24 w-24 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
+                />
+              ) : (
+                <div className="relative grid h-24 w-24 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-3xl font-black text-white shadow-2xl">
+                  {rInitial}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <div className="mt-2 flex items-center gap-2 gift-anim-caption">
           <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
             {current.giftName}
