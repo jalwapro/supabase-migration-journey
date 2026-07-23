@@ -136,7 +136,7 @@ type Member = {
   is_moderator?: boolean;
   joined_at?: string | null;
   seated_at?: string | null;
-  user: { username: string | null; avatar: string | null; frame: string | null } | null;
+  user: { username: string | null; avatar: string | null; frame: string | null; vip_level?: number | null } | null;
 };
 
 type Message = {
