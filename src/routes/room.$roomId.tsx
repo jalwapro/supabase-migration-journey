@@ -2028,7 +2028,7 @@ function RoomPage() {
           const hostM = seatsByIndex.get(0);
           const hostRemote = hostM ? agora.remotes.get(uidFromUuid(hostM.user_id)) : undefined;
           const hostFallback = !hostM
-            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
             : null;
           const hostTile: VideoSeatData = {
             index: 0,
