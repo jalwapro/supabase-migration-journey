@@ -133,6 +133,8 @@ type Member = {
   is_muted: boolean;
   is_video: boolean;
   is_moderator?: boolean;
+  joined_at?: string | null;
+  seated_at?: string | null;
   user: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
@@ -250,6 +252,7 @@ function RoomPage() {
   const [glowSeats, setGlowSeats] = useState<Record<number, number>>({});
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
+  const membersRef = useRef<Member[]>([]);
   const [milestoneOpen, setMilestoneOpen] = useState(false);
   const [topGifters, setTopGifters] = useState<TopGifter[]>([]);
   const [milestoneGifts, setMilestoneGifts] = useState<Array<{ id: string; name: string; emoji: string | null; icon: string | null; clip_path: string | null; clip_type: string | null }>>([]);
@@ -280,6 +283,10 @@ function RoomPage() {
       return data as unknown as Room | null;
     },
   });
+
+  useEffect(() => {
+    membersRef.current = members;
+  }, [members]);
 
   const isHost = user?.id === room.data?.host_id;
   useRoomHeartbeat(room.data?.id, isHost);
@@ -422,19 +429,31 @@ function RoomPage() {
   }, [afkExitLeft, user, roomId, navigate]);
 
   const loadRoomState = useCallback(async () => {
+    const loadMembers = async () => {
+      const withSeatedAt = await supabase
+        .from("room_members")
+        .select(
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+        )
+        .eq("room_id", roomId);
+      if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
+        return withSeatedAt;
+      }
+      return supabase
+        .from("room_members")
+        .select(
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+        )
+        .eq("room_id", roomId);
+    };
+
     const [
       { data: mData, error: mErr },
       { data: msgData, error: msgErr },
       { data: likeData, error: likeErr },
       { data: popData, error: popErr },
-      { data: giftData, error: giftErr },
     ] = await Promise.all([
-      supabase
-        .from("room_members")
-        .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
-        )
-        .eq("room_id", roomId),
+      loadMembers(),
       supabase
         .from("room_messages")
         .select(
@@ -453,18 +472,16 @@ function RoomPage() {
         .select("coin_score,like_count,gift_count")
         .eq("room_id", roomId)
         .maybeSingle(),
-      supabase
-        .from("gift_sends")
-        .select("receiver_id,coins_spent")
-        .eq("room_id", roomId),
     ]);
     // Surface real errors instead of silently rendering empty state.
-    const firstErr = mErr ?? msgErr ?? likeErr ?? popErr ?? giftErr;
+    const firstErr = mErr ?? msgErr ?? likeErr ?? popErr;
     if (firstErr) {
       console.error("[room load]", firstErr);
       toast.error(`Room data failed: ${firstErr.message}`);
     }
-    setMembers((mData ?? []) as unknown as Member[]);
+    const loadedMembers = (mData ?? []) as unknown as Member[];
+    membersRef.current = loadedMembers;
+    setMembers(loadedMembers);
     setMessages(
       ((msgData ?? []) as unknown as Message[])
         .map((m) => ({
@@ -489,9 +506,41 @@ function RoomPage() {
         gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
       });
     }
+    const getSeatStart = (member: Member) => member.seated_at ?? member.joined_at ?? null;
+    const seatedMembers = loadedMembers.filter((member) => member.seat_index != null && getSeatStart(member));
+    const seatStartByUser = new Map<string, number>();
+    seatedMembers.forEach((member) => {
+      const seatStart = getSeatStart(member);
+      if (!seatStart) return;
+      seatStartByUser.set(member.user_id, new Date(seatStart).getTime());
+    });
+    if (!seatedMembers.length) {
+      setGiftPoints({});
+      return;
+    }
+    const earliestSeatStart = new Date(
+      Math.min(...seatedMembers.map((member) => new Date(getSeatStart(member)!).getTime())),
+    ).toISOString();
+    const { data: giftData, error: giftErr } = await supabase
+      .from("gift_sends")
+      .select("receiver_id,coins_spent,created_at")
+      .eq("room_id", roomId)
+      .in(
+        "receiver_id",
+        seatedMembers.map((member) => member.user_id),
+      )
+      .gte("created_at", earliestSeatStart);
+    if (giftErr) {
+      console.error("[room gifts load]", giftErr);
+      toast.error(`Gift points failed: ${giftErr.message}`);
+    }
     const pts: Record<string, number> = {};
-    (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null }) => {
+    (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null; created_at?: string | null }) => {
       if (!row.receiver_id) return;
+      const seatStart = seatStartByUser.get(row.receiver_id);
+      if (!seatStart) return;
+      const sentAt = row.created_at ? new Date(row.created_at).getTime() : 0;
+      if (!sentAt || sentAt < seatStart) return;
       pts[row.receiver_id] = (pts[row.receiver_id] ?? 0) + Number(row.coins_spent ?? 0);
     });
     setGiftPoints(pts);
@@ -574,7 +623,11 @@ function RoomPage() {
           if (evt === "DELETE") {
             const removed = payload.old as { user_id?: string };
             if (!removed?.user_id) return;
-            setMembers((prev) => prev.filter((m) => m.user_id !== removed.user_id));
+            setMembers((prev) => {
+              const next = prev.filter((m) => m.user_id !== removed.user_id);
+              membersRef.current = next;
+              return next;
+            });
             // Reset gift points when the user leaves the room — rejoining
             // (or retaking a seat) should start from 0.
             setGiftPoints((prev) => {
@@ -592,12 +645,14 @@ function RoomPage() {
             is_muted: boolean;
             is_video: boolean;
             is_moderator?: boolean;
+            joined_at?: string | null;
+            seated_at?: string | null;
           };
           if (!row?.user_id) return;
           // For UPDATE, merge into existing row (profile already loaded).
           if (evt === "UPDATE") {
-            setMembers((prev) =>
-              prev.map((m) =>
+            setMembers((prev) => {
+              const next = prev.map((m) =>
                 m.user_id === row.user_id
                   ? {
                       ...m,
@@ -605,10 +660,19 @@ function RoomPage() {
                       is_muted: row.is_muted,
                       is_video: row.is_video,
                       is_moderator: row.is_moderator ?? m.is_moderator,
+                      joined_at: row.joined_at ?? m.joined_at ?? null,
+                      seated_at:
+                        "seated_at" in row
+                          ? row.seated_at ?? null
+                          : row.seat_index == null
+                            ? null
+                            : m.seated_at ?? row.joined_at ?? m.joined_at ?? null,
                     }
                   : m,
-              ),
-            );
+              );
+              membersRef.current = next;
+              return next;
+            });
             // If the user just left their seat (seat_index → null),
             // reset their gift points so a re-seat starts from 0.
             if (row.seat_index == null) {
@@ -635,13 +699,16 @@ function RoomPage() {
             is_muted: row.is_muted,
             is_video: row.is_video,
             is_moderator: row.is_moderator,
+            joined_at: row.joined_at ?? new Date().toISOString(),
+            seated_at: row.seated_at ?? (row.seat_index == null ? null : row.joined_at ?? new Date().toISOString()),
             user: (prof as Member["user"]) ?? null,
           };
           setMembers((prev) => {
-            if (prev.some((m) => m.user_id === row.user_id)) {
-              return prev.map((m) => (m.user_id === row.user_id ? newMember : m));
-            }
-            return [...prev, newMember];
+            const next = prev.some((m) => m.user_id === row.user_id)
+              ? prev.map((m) => (m.user_id === row.user_id ? newMember : m))
+              : [...prev, newMember];
+            membersRef.current = next;
+            return next;
           });
         },
 
@@ -676,6 +743,7 @@ function RoomPage() {
             coins_spent: number;
             quantity: number;
             receiver_id: string | null;
+            created_at?: string | null;
           };
           setPopularity((p) => ({
             ...p,
@@ -684,6 +752,11 @@ function RoomPage() {
           }));
           if (row.receiver_id) {
             const rid = row.receiver_id;
+            const receiver = membersRef.current.find((m) => m.user_id === rid && m.seat_index != null);
+            const seatStart = receiver?.seated_at ?? receiver?.joined_at ?? null;
+            if (!seatStart) return;
+            const sentAt = row.created_at ? new Date(row.created_at).getTime() : Date.now();
+            if (sentAt < new Date(seatStart).getTime()) return;
             setGiftPoints((prev) => ({
               ...prev,
               [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
