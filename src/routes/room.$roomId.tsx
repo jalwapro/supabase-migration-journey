@@ -575,6 +575,14 @@ function RoomPage() {
             const removed = payload.old as { user_id?: string };
             if (!removed?.user_id) return;
             setMembers((prev) => prev.filter((m) => m.user_id !== removed.user_id));
+            // Reset gift points when the user leaves the room — rejoining
+            // (or retaking a seat) should start from 0.
+            setGiftPoints((prev) => {
+              if (!(removed.user_id! in prev)) return prev;
+              const next = { ...prev };
+              delete next[removed.user_id!];
+              return next;
+            });
             return;
           }
           const row = payload.new as {
@@ -601,8 +609,19 @@ function RoomPage() {
                   : m,
               ),
             );
+            // If the user just left their seat (seat_index → null),
+            // reset their gift points so a re-seat starts from 0.
+            if (row.seat_index == null) {
+              setGiftPoints((prev) => {
+                if (!(row.user_id in prev)) return prev;
+                const next = { ...prev };
+                delete next[row.user_id];
+                return next;
+              });
+            }
             return;
           }
+
           // INSERT: fetch just this one user's profile (single-row lookup).
           const { data: prof } = await supabase
             .from("profiles")
