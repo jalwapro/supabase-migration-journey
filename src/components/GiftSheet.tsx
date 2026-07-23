@@ -264,6 +264,7 @@ export function GiftSheet({
     <div
       className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70"
       onClick={onClose}
+      data-jalwa-overlay="true"
       style={{ contain: "strict", isolation: "isolate" }}
     >
       <div
