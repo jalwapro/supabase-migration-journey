@@ -134,6 +134,7 @@ type Member = {
   is_video: boolean;
   is_moderator?: boolean;
   joined_at?: string | null;
+  seated_at?: string | null;
   user: { username: string | null; avatar: string | null; frame: string | null } | null;
 };
 
@@ -433,12 +434,11 @@ function RoomPage() {
       { data: msgData, error: msgErr },
       { data: likeData, error: likeErr },
       { data: popData, error: popErr },
-      { data: giftData, error: giftErr },
     ] = await Promise.all([
       supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
         )
         .eq("room_id", roomId),
       supabase
@@ -459,18 +459,15 @@ function RoomPage() {
         .select("coin_score,like_count,gift_count")
         .eq("room_id", roomId)
         .maybeSingle(),
-      supabase
-        .from("gift_sends")
-        .select("receiver_id,coins_spent,created_at")
-        .eq("room_id", roomId),
     ]);
     // Surface real errors instead of silently rendering empty state.
-    const firstErr = mErr ?? msgErr ?? likeErr ?? popErr ?? giftErr;
+    const firstErr = mErr ?? msgErr ?? likeErr ?? popErr;
     if (firstErr) {
       console.error("[room load]", firstErr);
       toast.error(`Room data failed: ${firstErr.message}`);
     }
-    setMembers((mData ?? []) as unknown as Member[]);
+    const loadedMembers = (mData ?? []) as unknown as Member[];
+    setMembers(loadedMembers);
     setMessages(
       ((msgData ?? []) as unknown as Message[])
         .map((m) => ({
@@ -495,11 +492,32 @@ function RoomPage() {
         gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
       });
     }
+    const seatedMembers = loadedMembers.filter((member) => member.seat_index != null && member.seated_at);
     const seatStartByUser = new Map<string, number>();
-    ((mData ?? []) as unknown as Member[]).forEach((member) => {
-      if (member.seat_index == null || !member.joined_at) return;
-      seatStartByUser.set(member.user_id, new Date(member.joined_at).getTime());
+    seatedMembers.forEach((member) => {
+      if (!member.seated_at) return;
+      seatStartByUser.set(member.user_id, new Date(member.seated_at).getTime());
     });
+    if (!seatedMembers.length) {
+      setGiftPoints({});
+      return;
+    }
+    const earliestSeatStart = new Date(
+      Math.min(...seatedMembers.map((member) => new Date(member.seated_at!).getTime())),
+    ).toISOString();
+    const { data: giftData, error: giftErr } = await supabase
+      .from("gift_sends")
+      .select("receiver_id,coins_spent,created_at")
+      .eq("room_id", roomId)
+      .in(
+        "receiver_id",
+        seatedMembers.map((member) => member.user_id),
+      )
+      .gte("created_at", earliestSeatStart);
+    if (giftErr) {
+      console.error("[room gifts load]", giftErr);
+      toast.error(`Gift points failed: ${giftErr.message}`);
+    }
     const pts: Record<string, number> = {};
     (giftData ?? []).forEach((row: { receiver_id: string | null; coins_spent: number | null; created_at?: string | null }) => {
       if (!row.receiver_id) return;
@@ -608,6 +626,7 @@ function RoomPage() {
             is_video: boolean;
             is_moderator?: boolean;
             joined_at?: string | null;
+            seated_at?: string | null;
           };
           if (!row?.user_id) return;
           // For UPDATE, merge into existing row (profile already loaded).
@@ -622,6 +641,7 @@ function RoomPage() {
                       is_video: row.is_video,
                       is_moderator: row.is_moderator ?? m.is_moderator,
                       joined_at: row.joined_at ?? m.joined_at ?? null,
+                      seated_at: row.seated_at ?? null,
                     }
                   : m,
               ),
@@ -653,6 +673,7 @@ function RoomPage() {
             is_video: row.is_video,
             is_moderator: row.is_moderator,
             joined_at: row.joined_at ?? new Date().toISOString(),
+            seated_at: row.seated_at ?? (row.seat_index == null ? null : new Date().toISOString()),
             user: (prof as Member["user"]) ?? null,
           };
           setMembers((prev) => {
@@ -704,9 +725,9 @@ function RoomPage() {
           if (row.receiver_id) {
             const rid = row.receiver_id;
             const receiver = membersRef.current.find((m) => m.user_id === rid && m.seat_index != null);
-            if (!receiver?.joined_at) return;
+            if (!receiver?.seated_at) return;
             const sentAt = row.created_at ? new Date(row.created_at).getTime() : Date.now();
-            if (sentAt < new Date(receiver.joined_at).getTime()) return;
+            if (sentAt < new Date(receiver.seated_at).getTime()) return;
             setGiftPoints((prev) => ({
               ...prev,
               [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
