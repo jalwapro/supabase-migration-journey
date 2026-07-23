@@ -1393,6 +1393,29 @@ function RoomPage() {
     setExitConfirmOpen(true);
   }
 
+  // Host-only: intercept Android/browser hardware back button so a
+  // ghalti-se-tap doesn't drop the whole room. Push a sentinel state on
+  // mount; when the user pops it, re-push and open the exit confirm.
+  useEffect(() => {
+    if (!isHost) return;
+    if (typeof window === "undefined") return;
+    const SENTINEL = "jalwa-room-back-guard";
+    try {
+      window.history.pushState({ [SENTINEL]: true }, "");
+    } catch { /* no-op */ }
+    const onPop = (_e: PopStateEvent) => {
+      // Re-arm so the next back press is also caught.
+      try {
+        window.history.pushState({ [SENTINEL]: true }, "");
+      } catch { /* no-op */ }
+      setExitConfirmOpen(true);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+    };
+  }, [isHost]);
+
   async function doLeaveRoom() {
     if (user && isHost) {
       try {
