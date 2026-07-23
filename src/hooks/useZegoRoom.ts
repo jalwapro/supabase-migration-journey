@@ -601,7 +601,9 @@ export function useZegoRoom({
 
       let tokenData: Awaited<ReturnType<typeof fetchToken>>;
       try {
-        tokenData = await fetchToken(channelName, uid, publish ? "publisher" : "audience");
+        // Always request a publisher-capable token so seat-take / camera-toggle
+        // after join doesn't force a full room rejoin (see deps below).
+        tokenData = await fetchToken(channelName, uid, "publisher");
       } catch (e) {
         if (!isCurrentJoin()) return;
         const msg = e instanceof Error ? e.message : String(e);
@@ -937,8 +939,12 @@ export function useZegoRoom({
           .then(async () => { try { await e.logoutRoom(room); } catch { /* ignore */ } });
       }
     };
+    // PERF: publish/video intentionally NOT in deps — flipping them (seat take,
+    // camera toggle) used to logout+relogin the whole room, causing a brief
+    // silence / black frame for every participant. Publish/unpublish is handled
+    // separately by requestMicNow / toggleVideoNow without touching loginRoom.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, channel, uid, publish, video]);
+  }, [enabled, channel, uid]);
 
   // -----------------------------------------------------------------------
   // Publish mic — same contract as Agora hook.

@@ -57,7 +57,7 @@ import {
   DoorOpen,
 } from "lucide-react";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/components/GiftSheet";
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
@@ -3486,7 +3486,7 @@ function MiniAction({
 }
 
 
-function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
+const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
   const body = m.text ?? m.message ?? "";
   if (m.kind === "gift") {
     return (
@@ -3537,7 +3537,7 @@ function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
       </div>
     </div>
   );
-}
+});
 
 function EmptyChat() {
   return (
