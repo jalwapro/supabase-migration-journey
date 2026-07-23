@@ -1911,7 +1911,7 @@ function RoomPage() {
           const oppRemote = oppM ? agora.remotes.get(uidFromUuid(oppM.user_id)) : undefined;
           const hasOpponent = !!oppM || !!r.active_pk_match_id;
           const hostFallback = !hostM
-            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null }
+            ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
             : null;
           const hostTile: VideoSeatData = {
             index: 0,
