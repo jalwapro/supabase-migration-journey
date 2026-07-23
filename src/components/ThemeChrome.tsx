@@ -6,20 +6,20 @@ import { useEffect } from "react";
  * computed `--primary` and `--background` from <body> (set by
  * ThemeBackground / useThemeMode) and pushes them to native.
  */
-function toHex(color: string): string | null {
-  if (!color) return null;
+function toHex(color: string, depth = 0): string | null {
+  if (!color || depth > 2) return null;
   const c = color.trim();
+  if (!c) return null;
   if (c.startsWith("#")) return c;
   const m = c.match(/rgba?\(([^)]+)\)/i);
   if (m) {
-    const parts = m[1].split(",").map((x) => x.trim());
+    const parts = m[1].split(/[,\s/]+/).filter(Boolean);
     const [r, g, b] = parts.map((x) => parseFloat(x));
     if ([r, g, b].some((n) => Number.isNaN(n))) return null;
     const h = (n: number) =>
       Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
     return `#${h(r)}${h(g)}${h(b)}`;
   }
-  // hsl(...) or oklch(...): render via a hidden div to resolve
   if (typeof document !== "undefined") {
     const el = document.createElement("div");
     el.style.color = c;
@@ -27,7 +27,8 @@ function toHex(color: string): string | null {
     document.body.appendChild(el);
     const rgb = getComputedStyle(el).color;
     el.remove();
-    return toHex(rgb);
+    if (!rgb || rgb === c) return null;
+    return toHex(rgb, depth + 1);
   }
   return null;
 }
