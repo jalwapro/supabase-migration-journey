@@ -265,7 +265,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
