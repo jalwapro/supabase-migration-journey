@@ -24,6 +24,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
+import { ThemeChrome } from "../components/ThemeChrome";
 import { useWakeLock } from "../hooks/useWakeLock";
 import { InstallPermissionGate } from "../components/InstallPermissionGate";
 import { NotificationPopup } from "../components/NotificationPopup";
@@ -230,6 +231,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeBackground />
+        <ThemeChrome />
         <SplashGate />
         <InstallPermissionGate />
         <GlobalRealtimeBridge />
