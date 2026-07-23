@@ -114,6 +114,7 @@ type Room = {
     username: string | null;
     avatar: string | null;
     frame: string | null;
+    vip_level?: number | null;
     theme: {
       bg_image: string | null;
       preview_url: string | null;
