@@ -4086,7 +4086,10 @@ function Seat({
               {locked ? (
                 <span className="text-lg">🔒</span>
               ) : (
-                <SofaIcon color={isHostSeat ? "#ef4444" : "#3b82f6"} className="h-[70%] w-[70%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
+              ) : isHostSeat ? (
+                <KingThroneIcon className="h-[85%] w-[85%] drop-shadow-[0_2px_6px_rgba(255,215,0,0.5)]" />
+              ) : (
+                <SofaIcon color="#3b82f6" className="h-[70%] w-[70%] drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]" />
               )}
             </div>
           )}
