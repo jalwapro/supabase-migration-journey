@@ -4116,9 +4116,20 @@ function Seat({
               {locked ? (
                 <span className="text-lg">🔒</span>
               ) : isHostSeat ? (
-                <KingThroneIcon variant="red" className="h-[90%] w-[90%] drop-shadow-[0_2px_6px_rgba(255,215,0,0.55)]" />
+                <img
+                  src={HOST_THRONE_URL}
+                  alt=""
+                  draggable={false}
+                  className="h-[110%] w-[110%] object-contain drop-shadow-[0_2px_8px_rgba(255,215,0,0.55)]"
+                />
               ) : (
-                <KingThroneIcon variant="blue" className="h-[85%] w-[85%] drop-shadow-[0_2px_6px_rgba(80,140,255,0.5)]" />
+                <img
+                  src={HOST_THRONE_URL}
+                  alt=""
+                  draggable={false}
+                  className="h-[110%] w-[110%] object-contain drop-shadow-[0_2px_8px_rgba(80,140,255,0.55)]"
+                  style={{ filter: "hue-rotate(210deg) saturate(1.1)" }}
+                />
               )}
             </div>
           )}
