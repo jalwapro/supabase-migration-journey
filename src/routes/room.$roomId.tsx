@@ -3917,7 +3917,9 @@ function Seat({
 
   const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
   const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
-  const displayFrame = member?.user?.frame ?? fallbackUser?.frame ?? null;
+  const shopFrame = member?.user?.frame ?? fallbackUser?.frame ?? null;
+  const vipLevel = member?.user?.vip_level ?? fallbackUser?.vip_level ?? null;
+  const displayFrame = shopFrame || frameForLevel(vipLevel);
   const frameIsVideo = !!displayFrame && /\.(mp4|webm|mov)($|\?)/i.test(displayFrame);
 
   const ringClass = isHostSeat
