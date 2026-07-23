@@ -1393,12 +1393,14 @@ function RoomPage() {
     setExitConfirmOpen(true);
   }
 
-  // Host-only: intercept Android/browser hardware back button so a
-  // ghalti-se-tap doesn't drop the whole room. Push a sentinel state on
-  // mount; when the user pops it, re-push. If any modal/sheet/popover is
-  // open, close IT instead of showing the room-exit dialog.
+  // Intercept Android/browser hardware back button for EVERYONE in the room.
+  // Rule:
+  //   1) Agar koi overlay khula hai (GiftSheet, dialog, sheet, popover, menu)
+  //      → sirf overlay band ho, room me hi raho.
+  //   2) Room screen top pe hai + host → exit-confirm dialog.
+  //   3) Room screen top pe hai + viewer → seedha room chhod do (viewers ke
+  //      liye confirm irritating hai, wo kabhi bhi easily leave kar sakte hain).
   useEffect(() => {
-    if (!isHost) return;
     if (typeof window === "undefined") return;
     const SENTINEL = "jalwa-room-back-guard";
     try {
@@ -1428,13 +1430,21 @@ function RoomPage() {
         window.history.pushState({ [SENTINEL]: true }, "");
       } catch { /* no-op */ }
       if (closeTopOverlay()) return;
-      setExitConfirmOpen(true);
+      if (isHost) {
+        setExitConfirmOpen(true);
+      } else {
+        // Viewer: leave immediately, no confirm.
+        void doLeaveRoom();
+      }
     };
     window.addEventListener("popstate", onPop);
     return () => {
       window.removeEventListener("popstate", onPop);
     };
+    // doLeaveRoom is stable via closure; re-arm on host flip only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isHost]);
+
 
   async function doLeaveRoom() {
     if (user && isHost) {
