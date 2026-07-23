@@ -661,7 +661,12 @@ function RoomPage() {
                       is_video: row.is_video,
                       is_moderator: row.is_moderator ?? m.is_moderator,
                       joined_at: row.joined_at ?? m.joined_at ?? null,
-                      seated_at: row.seated_at ?? null,
+                      seated_at:
+                        "seated_at" in row
+                          ? row.seated_at ?? null
+                          : row.seat_index == null
+                            ? null
+                            : m.seated_at ?? row.joined_at ?? m.joined_at ?? null,
                     }
                   : m,
               );
@@ -695,7 +700,7 @@ function RoomPage() {
             is_video: row.is_video,
             is_moderator: row.is_moderator,
             joined_at: row.joined_at ?? new Date().toISOString(),
-            seated_at: row.seated_at ?? (row.seat_index == null ? null : new Date().toISOString()),
+            seated_at: row.seated_at ?? (row.seat_index == null ? null : row.joined_at ?? new Date().toISOString()),
             user: (prof as Member["user"]) ?? null,
           };
           setMembers((prev) => {
@@ -748,9 +753,10 @@ function RoomPage() {
           if (row.receiver_id) {
             const rid = row.receiver_id;
             const receiver = membersRef.current.find((m) => m.user_id === rid && m.seat_index != null);
-            if (!receiver?.seated_at) return;
+            const seatStart = receiver?.seated_at ?? receiver?.joined_at ?? null;
+            if (!seatStart) return;
             const sentAt = row.created_at ? new Date(row.created_at).getTime() : Date.now();
-            if (sentAt < new Date(receiver.seated_at).getTime()) return;
+            if (sentAt < new Date(seatStart).getTime()) return;
             setGiftPoints((prev) => ({
               ...prev,
               [rid]: (prev[rid] ?? 0) + Number(row.coins_spent ?? 0),
@@ -1217,7 +1223,7 @@ function RoomPage() {
     }
     const { error } = await supabase
       .from("room_members")
-      .update({ seat_index: null, seated_at: null })
+      .update({ seat_index: null })
       .eq("room_id", roomId)
       .eq("user_id", user.id);
     if (error) toast.error(error.message);
@@ -2828,7 +2834,7 @@ function RoomPage() {
               if (next < r.seat_count) {
                 await supabase
                   .from("room_members")
-                  .update({ seat_index: null, seated_at: null })
+                  .update({ seat_index: null })
                   .eq("room_id", roomId)
                   .gte("seat_index", next);
               }
@@ -3034,7 +3040,7 @@ function RoomPage() {
           if (!manageMember) return;
           const { error } = await supabase
             .from("room_members")
-            .update({ seat_index: null, seated_at: null, is_moderator: false })
+            .update({ seat_index: null, is_moderator: false })
             .eq("room_id", roomId)
             .eq("user_id", manageMember.user_id);
           if (error) toast.error(error.message);
