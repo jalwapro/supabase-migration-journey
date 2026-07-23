@@ -434,7 +434,7 @@ function RoomPage() {
       const withSeatedAt = await supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level)",
         )
         .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
