@@ -608,7 +608,11 @@ function RoomPage() {
           if (evt === "DELETE") {
             const removed = payload.old as { user_id?: string };
             if (!removed?.user_id) return;
-            setMembers((prev) => prev.filter((m) => m.user_id !== removed.user_id));
+            setMembers((prev) => {
+              const next = prev.filter((m) => m.user_id !== removed.user_id);
+              membersRef.current = next;
+              return next;
+            });
             // Reset gift points when the user leaves the room — rejoining
             // (or retaking a seat) should start from 0.
             setGiftPoints((prev) => {
