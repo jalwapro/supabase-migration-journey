@@ -66,17 +66,9 @@ export function ThemeChrome() {
         await StatusBar.setStyle({
           style: isLight ? Style.Light : Style.Dark,
         }).catch(() => {});
-        // Android navigation bar (best effort — plugin optional)
-        try {
-          const mod: any = await import(
-            /* @vite-ignore */ "@capgo/capacitor-navigation-bar"
-          ).catch(() => null);
-          if (mod?.NavigationBar?.setNavigationBarColor) {
-            await mod.NavigationBar.setNavigationBarColor({ color: chrome });
-          }
-        } catch {
-          /* plugin not installed — safe to ignore */
-        }
+        // Android navigation bar tint requires an additional plugin
+        // (e.g. @capgo/capacitor-navigation-bar). Install it and it will
+        // be picked up here; skipped by default to keep the bundle lean.
       } catch {
         /* not native */
       }
