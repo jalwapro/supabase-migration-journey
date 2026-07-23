@@ -641,7 +641,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       </div>
 
       {/* center/front-screen gift animation */}
-      <div className="absolute inset-x-0 top-10 bottom-24 z-10 flex flex-col items-center px-2">
+      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-2">
         {hasVideo ? (
 
 
