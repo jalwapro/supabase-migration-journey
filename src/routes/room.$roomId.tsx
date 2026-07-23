@@ -429,18 +429,31 @@ function RoomPage() {
   }, [afkExitLeft, user, roomId, navigate]);
 
   const loadRoomState = useCallback(async () => {
+    const loadMembers = async () => {
+      const withSeatedAt = await supabase
+        .from("room_members")
+        .select(
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+        )
+        .eq("room_id", roomId);
+      if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
+        return withSeatedAt;
+      }
+      return supabase
+        .from("room_members")
+        .select(
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
+        )
+        .eq("room_id", roomId);
+    };
+
     const [
       { data: mData, error: mErr },
       { data: msgData, error: msgErr },
       { data: likeData, error: likeErr },
       { data: popData, error: popErr },
     ] = await Promise.all([
-      supabase
-        .from("room_members")
-        .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame)",
-        )
-        .eq("room_id", roomId),
+      loadMembers(),
       supabase
         .from("room_messages")
         .select(
@@ -493,18 +506,20 @@ function RoomPage() {
         gift_count: Number((popData as { gift_count: number }).gift_count ?? 0),
       });
     }
-    const seatedMembers = loadedMembers.filter((member) => member.seat_index != null && member.seated_at);
+    const getSeatStart = (member: Member) => member.seated_at ?? member.joined_at ?? null;
+    const seatedMembers = loadedMembers.filter((member) => member.seat_index != null && getSeatStart(member));
     const seatStartByUser = new Map<string, number>();
     seatedMembers.forEach((member) => {
-      if (!member.seated_at) return;
-      seatStartByUser.set(member.user_id, new Date(member.seated_at).getTime());
+      const seatStart = getSeatStart(member);
+      if (!seatStart) return;
+      seatStartByUser.set(member.user_id, new Date(seatStart).getTime());
     });
     if (!seatedMembers.length) {
       setGiftPoints({});
       return;
     }
     const earliestSeatStart = new Date(
-      Math.min(...seatedMembers.map((member) => new Date(member.seated_at!).getTime())),
+      Math.min(...seatedMembers.map((member) => new Date(getSeatStart(member)!).getTime())),
     ).toISOString();
     const { data: giftData, error: giftErr } = await supabase
       .from("gift_sends")
