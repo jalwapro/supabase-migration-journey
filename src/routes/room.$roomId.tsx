@@ -170,10 +170,9 @@ function shortRoomCode(id: string) {
 
 function formatGiftPoints(points: number) {
   const safe = Math.max(0, Math.floor(Number(points) || 0));
-  if (safe >= 1_000_000) return `${(safe / 1_000_000).toFixed(safe >= 10_000_000 ? 0 : 1)}M`;
-  if (safe >= 1_000) return `${(safe / 1_000).toFixed(safe >= 10_000 ? 0 : 1)}K`;
   return safe.toLocaleString();
 }
+
 
 // (Removed unused QUICK_GIFTS strip — it was inserting a chat row with
 // kind:"gift" without charging the sender or crediting the receiver.
