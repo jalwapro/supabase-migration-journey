@@ -4051,11 +4051,10 @@ function Seat({
         </svg>
         <span className={`relative px-1 text-[9px] font-bold leading-none ${activeRing ? "text-white" : "text-white/70"}`}>
           {member || (isHostSeat && member)
-            ? (giftPoints ?? 0) >= 1000
-              ? `${((giftPoints ?? 0) / 1000).toFixed(1)}K`
-              : String(giftPoints ?? 0)
+            ? (giftPoints ?? 0).toLocaleString()
             : `No.${seatNo}`}
         </span>
+
       </div>
 
 
