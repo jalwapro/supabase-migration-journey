@@ -3808,43 +3808,66 @@ function SofaIcon({ color, className }: { color: string; className?: string }) {
   );
 }
 
-function KingThroneIcon({ className }: { className?: string }) {
-  // Royal Gold Throne — tall ornate back, red velvet cushion, purple base glow.
+function KingThroneIcon({ className, variant = "red" }: { className?: string; variant?: "red" | "blue" }) {
+  // Royal Gold Throne — tall ornate back with velvet upholstery + lion-arm accents.
+  // variant controls the velvet color: red for host, blue for guests.
+  const uid = variant === "red" ? "r" : "b";
+  const velvetTop = variant === "red" ? "#c8203a" : "#1e5fd6";
+  const velvetBottom = variant === "red" ? "#5c0a18" : "#0b2a66";
+  const stitchColor = variant === "red" ? "#8B0000" : "#0a1a4a";
   return (
     <svg viewBox="0 0 64 72" className={className} aria-hidden>
       <defs>
-        <linearGradient id="gold-grad" x1="0" x2="0" y1="0" y2="1">
+        <linearGradient id={`gold-grad-${uid}`} x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stopColor="#fff2a8" />
           <stop offset="45%" stopColor="#FFD700" />
           <stop offset="100%" stopColor="#8B7500" />
         </linearGradient>
-        <linearGradient id="velvet-grad" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor="#c8203a" />
-          <stop offset="100%" stopColor="#5c0a18" />
+        <linearGradient id={`velvet-grad-${uid}`} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={velvetTop} />
+          <stop offset="100%" stopColor={velvetBottom} />
         </linearGradient>
-        <radialGradient id="throne-glow" cx="50%" cy="100%" r="60%">
-          <stop offset="0%" stopColor="#4A0E4E" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#2D0B4D" stopOpacity="0" />
+        <radialGradient id={`throne-glow-${uid}`} cx="50%" cy="100%" r="60%">
+          <stop offset="0%" stopColor={variant === "red" ? "#4A0E4E" : "#0a1a55"} stopOpacity="0.7" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <ellipse cx="32" cy="68" rx="28" ry="4" fill="url(#throne-glow)" />
-      <path d="M26 6 L28 12 L32 4 L36 12 L38 6 L38 14 L26 14 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
-      <circle cx="32" cy="3.5" r="1.6" fill="#ff3355" stroke="#5a4200" strokeWidth="0.4" />
-      <path d="M14 16 Q14 12 18 12 H46 Q50 12 50 16 V44 H14 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.6" />
-      <path d="M19 18 Q19 16 21 16 H43 Q45 16 45 18 V40 H19 Z" fill="url(#velvet-grad)" />
-      <g stroke="#8B0000" strokeWidth="0.5" opacity="0.7" fill="none">
-        <path d="M22 20 L32 26 L42 20 M22 32 L32 26 L42 32 M22 20 L22 32 M42 20 L42 32" />
+      <ellipse cx="32" cy="68" rx="28" ry="4" fill={`url(#throne-glow-${uid})`} />
+      {/* Crown finial */}
+      <path d="M26 5 L28 11 L32 3 L36 11 L38 5 L38 13 L26 13 Z" fill={`url(#gold-grad-${uid})`} stroke="#5a4200" strokeWidth="0.5" />
+      <circle cx="32" cy="2.5" r="1.6" fill="#ff3355" stroke="#5a4200" strokeWidth="0.4" />
+      {/* Ornate scrolled back frame */}
+      <path d="M12 18 Q10 12 16 11 Q18 8 22 10 Q26 8 32 10 Q38 8 42 10 Q46 8 48 11 Q54 12 52 18 V44 H12 Z" fill={`url(#gold-grad-${uid})`} stroke="#5a4200" strokeWidth="0.6" />
+      {/* Tufted velvet back */}
+      <path d="M19 17 Q19 15 21 15 H43 Q45 15 45 17 V40 H19 Z" fill={`url(#velvet-grad-${uid})`} />
+      <g stroke={stitchColor} strokeWidth="0.5" opacity="0.75" fill="none">
+        <path d="M22 20 L32 26 L42 20 M22 32 L32 26 L42 32 M22 20 L22 32 M42 20 L42 32 M27 20 L27 32 M37 20 L37 32" />
       </g>
+      <circle cx="27" cy="26" r="0.6" fill="#FFD700" />
+      <circle cx="37" cy="26" r="0.6" fill="#FFD700" />
       <circle cx="32" cy="26" r="0.9" fill="#FFD700" />
-      <path d="M8 36 Q8 30 12 30 V52 H8 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
-      <path d="M56 36 Q56 30 52 30 V52 H56 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
-      <circle cx="10" cy="30" r="2.6" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
-      <circle cx="54" cy="30" r="2.6" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.5" />
-      <rect x="12" y="42" width="40" height="12" rx="3" fill="url(#velvet-grad)" stroke="#5a4200" strokeWidth="0.6" />
+      {/* Lion-head arms */}
+      <g fill={`url(#gold-grad-${uid})`} stroke="#5a4200" strokeWidth="0.5">
+        <path d="M6 34 Q6 28 12 28 V52 H6 Z" />
+        <path d="M58 34 Q58 28 52 28 V52 H58 Z" />
+        <circle cx="9" cy="32" r="3.2" />
+        <circle cx="55" cy="32" r="3.2" />
+      </g>
+      <g fill="#3a2400">
+        <circle cx="8" cy="31.5" r="0.5" />
+        <circle cx="10" cy="31.5" r="0.5" />
+        <circle cx="54" cy="31.5" r="0.5" />
+        <circle cx="56" cy="31.5" r="0.5" />
+      </g>
+      {/* Seat cushion */}
+      <rect x="12" y="42" width="40" height="12" rx="3" fill={`url(#velvet-grad-${uid})`} stroke="#5a4200" strokeWidth="0.6" />
       <rect x="14" y="43.5" width="36" height="3" rx="1.5" fill="#ffffff" opacity="0.22" />
-      <path d="M10 52 H54 L50 62 H14 Z" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.6" />
-      <rect x="14" y="60" width="4" height="8" rx="1" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.4" />
-      <rect x="46" y="60" width="4" height="8" rx="1" fill="url(#gold-grad)" stroke="#5a4200" strokeWidth="0.4" />
+      {/* Ornate base skirt */}
+      <path d="M10 52 H54 L50 62 H14 Z" fill={`url(#gold-grad-${uid})`} stroke="#5a4200" strokeWidth="0.6" />
+      <path d="M28 55 Q32 58 36 55 Q34 60 32 60 Q30 60 28 55 Z" fill="#5a4200" opacity="0.6" />
+      {/* Lion paw legs */}
+      <path d="M13 60 H19 Q20 66 17 68 H15 Q12 66 13 60 Z" fill={`url(#gold-grad-${uid})`} stroke="#5a4200" strokeWidth="0.4" />
+      <path d="M45 60 H51 Q52 66 49 68 H47 Q44 66 45 60 Z" fill={`url(#gold-grad-${uid})`} stroke="#5a4200" strokeWidth="0.4" />
     </svg>
   );
 }
