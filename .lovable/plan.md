@@ -1,57 +1,122 @@
-## Scope (in this order)
+## Goal
 
-### 1. Room lifecycle — auto-close stale rooms
-- Migration `0151_room_heartbeat.sql`: add `heartbeat_at timestamptz` on `live_rooms`, index it, RPC `room_heartbeat(room_id)` (host-only update), RPC `close_stale_rooms()` that ends rooms with `heartbeat_at < now() - interval '90 seconds'`, and a `pg_cron` job running it every minute.
-- Client: `useRoomHeartbeat(roomId)` ping every 25s while tab is visible; resumes automatically after network drop (survives short offline windows). Host page (`/voice/$roomId`, `/video/$roomId`, `/pk/$roomId`) mounts the hook. `beforeunload` is intentionally NOT used to close rooms — only the missed-heartbeat timeout closes them, so a crashed tab or airplane mode still lets the host reconnect within 90 s.
+Room ko back-button / app-close / disconnect pe **immediately end nahi karna**. Host ke liye **20-minute server-enforced grace period**, home pe **priority recovery card**, aur reclaim vs end ka clear choice.
 
-### 2. Offline presence — hide stale challenges/invites
-- Migration `0152_presence.sql`: `user_presence(user_id pk, last_seen_at)` + RPC `touch_presence()`, GRANTs + RLS (public SELECT of `user_seen_recently(uuid)` helper only).
-- Client: heartbeat every 30 s from `useAuth`. Random-opponent picker, PK invite, seat invite, and DM "online" dot filter on `last_seen_at > now()-2min`.
+---
 
-### 3. Customer support live chat
-- Migration `0153_support_chat.sql`:
-  - `support_conversations(id, user_id, assigned_agent uuid, status, last_message_at)`
-  - `support_messages(id, conversation_id, sender_id, body, attachments jsonb, created_at)`
-  - Role `support_agent` added to `app_role` enum + `has_role` covers it.
-  - RLS: user sees only their own conversation; support agents see all; agents can reply.
-  - Realtime enabled on both tables.
-- UI:
-  - User: `/support` — single conversation with agent, WhatsApp-style bubbles, uses existing `chat` primitives.
-  - Agent: `/admin/support-chat` — inbox list + thread pane; replaces the old ticket screen (old `/admin/support` becomes a redirect for now, tickets remain viewable read-only).
-  - Admin > Users: "Grant support role" toggle.
+## 1. Database (migration `db/migrations/0156_room_grace_period.sql`)
 
-### 4. Easypaisa merchant account for payments
-- Extend `payments` KV block already used on `/admin/payment-accounts` with:
-  - `easypaisaMerchantId`, `easypaisaStoreId`, `easypaisaAccountTitle`, `easypaisaIban`.
-- Recharge screen: show new Easypaisa Merchant card with copy-to-clipboard, QR from `qrcode` (already in deps) if merchant ID present.
-- No live gateway integration (Easypaisa's merchant API needs a signed contract + IPN webhook). I'll wire the display + manual OTP approval flow that already exists. If you want live auto-settlement later, that's a follow-up.
+**Schema changes:**
+- `ALTER TYPE public.room_status ADD VALUE 'host_disconnected'` (non-transactional — separate migration file).
+- Add columns on `live_rooms`:
+  - `host_last_seen_at timestamptz` (host-specific heartbeat, distinct from generic `heartbeat_at`)
+  - `host_disconnect_at timestamptz` (when host disconnected)
+  - `grace_period_until timestamptz` (server-computed expiry, `host_disconnect_at + interval '20 minutes'`)
+- Indexes: `(host_id, status)` partial for recoverable rooms, `(status, grace_period_until)` for cron reaper.
 
-### 5. Share system fixes
-- Header 3-dots "Share app" panel: implement `navigator.share` with fallback to copy-link + WhatsApp/Telegram/FB deep links.
-- Profile share (`/u/$userId` + `/me`): "Share profile" button uses same helper. Public route `/u/$userId` already works via SSR; add proper `og:image` (avatar) + `og:title` in route `head()` so link previews render on WhatsApp/FB.
-- PWA install: manifest already exists; ensure `share_target` is registered so external "Share to Jalwa" works.
+**RPCs (SECURITY DEFINER, all host-authorized via `auth.uid()`):**
+- `host_room_heartbeat(_room_id uuid)` — writes `host_last_seen_at = now()`, and if `status='host_disconnected'` and grace still valid, auto-promotes back to `live` (clears disconnect fields). Only callable by host.
+- `mark_host_disconnected(_room_id uuid)` — sets `status='host_disconnected'`, `host_disconnect_at=now()`, `grace_period_until=now()+20min`. Idempotent.
+- `reclaim_room(_room_id uuid)` — verifies `auth.uid()=host_id` AND `now() < grace_period_until` AND `status='host_disconnected'`; sets `status='live'`, clears disconnect fields, updates `host_last_seen_at`. Returns updated row.
+- `end_room(_room_id uuid)` — verifies caller is host or admin; sets `status='ended', ended_at=now()`; calls `finalize_room_gifts` inline. Replaces raw client `UPDATE`.
+- `get_my_recoverable_room()` — returns the caller's room where `host_id=auth.uid()` AND `status IN ('live','host_disconnected')` AND (`status='live'` OR `now() < grace_period_until`). Used by home priority card.
 
-### 6. Admin panel polish
-- Convert Urdu strings in admin screens (integrations, moderation, notifications hint) to English.
-- Fix laggy list screens: add `.limit()` + pagination on Users, Rooms, Recharge, VIP audit tables (some currently pull unbounded).
-- Loading skeletons instead of spinner blocks on every admin tab.
-- Fix known broken buttons: audit `admin.gifts`, `admin.frames`, `admin.themes` mutations and repair the ones missing `queryClient.invalidateQueries`.
+**Cron update:**
+- Replace `close_stale_rooms()` logic:
+  - Phase 1: rooms with `status='live'` AND `host_last_seen_at < now() - 90s` → set `status='host_disconnected'`, start grace period.
+  - Phase 2: rooms with `status='host_disconnected'` AND `grace_period_until < now()` → set `status='ended'`, `ended_at=now()`, call `finalize_room_gifts`.
+- Keep `pg_cron` schedule at every minute.
 
-### 7. Theme / light-mode legibility (final pass)
-- Rewrite the "adaptive neon" CSS layer in `src/styles.css`:
-  - When `html.light` (no shop theme) → force `--foreground`, `--card-foreground`, `--muted-foreground` to dark tokens on every page, remove blanket `text-white → black` remaps that missed streaming/gradient text.
-  - When `html.light` + `body[data-active-theme]` (shop theme applied) → force light foreground everywhere, including inputs, dialogs, sheets, sonner toasts.
-  - Add tokens for chat bubble text so DMs and room messages stay readable in both modes.
-- Audit `me`, `messages`, `settings`, `rank`, `rooms`, `wallet`, `admin` pages against both light/dark and light+theme.
+**GRANTs:** `EXECUTE ... TO authenticated` for host-facing RPCs; existing `TO service_role` for admin.
 
-### 8. Suggestions (report only, no code)
-Short list of proposed adds/removes/perf wins at the end of the change so you can pick what to do next.
+---
 
-## Notes / trade-offs
+## 2. Room page (`src/routes/room.$roomId.tsx`)
 
-- I'll ship migrations under `db/migrations/` — you apply them as usual.
-- Easypaisa is display + manual OTP only. Confirm before I add a real gateway later.
-- Translating every Urdu string across the entire app is large; I'll cover admin + user-visible screens in this pass. If any leaks remain, tell me the page.
-- Removing the old ticket UI is soft (kept read-only). Say the word if you want it deleted.
+**Heartbeat:** Update `useRoomHeartbeat` to call `host_room_heartbeat` (not the generic `room_heartbeat`) — this covers auto-reclaim if host had briefly slipped into `host_disconnected`.
 
-Proceed?
+**Do NOT hard-end on unload:**
+- Audit `onPageHide` / `beforeunload` handler (~line 1047). Remove any `status='ended'` write on unload. Instead, if host, call `mark_host_disconnected` via `navigator.sendBeacon` to a lightweight endpoint (or rely purely on server cron detecting stale heartbeat — simpler and reliable).
+- Preferred: **rely on server cron** (heartbeat stops → 90s later cron flips to `host_disconnected`). No unload writes needed. Simpler and matches spec ("don't rely on browser events").
+
+**End Room path:** `doLeaveRoom` host branch → call `end_room` RPC instead of raw table update.
+
+**Handle `host_disconnected` for viewers:**
+- Existing kick-on-`ended` effect stays. Add a NEW effect: when `room.data.status === 'host_disconnected'`, show a non-blocking banner "Host reconnecting… time remaining Xm Ys" using `grace_period_until`. Do NOT auto-kick viewers.
+- Remove/reduce the client-side AFK-exit path (lines 371–434) — server is now source of truth. Keep only the visual "host away" cup badge derived from `status`.
+
+**Back button:** Already has confirmation for host (lines 1403–1446). No change needed to that flow, but ensure "Leave Room" now transitions to `host_disconnected` via the same code path (i.e., leaving doesn't call `end_room` — it just navigates away; server cron picks it up).
+- Actually per spec: pressing Back → "Leave Room?" dialog. Leaving = go home, grace period starts naturally. "End Room" is a separate explicit action inside the room (existing settings sheet or new button in the exit dialog offering both "Leave (keeps room 20min)" and "End Room" options).
+- Update exit `AlertDialog` (line 2970) to offer three actions: **Stay**, **Leave Room** (navigate home, grace begins), **End Room** (calls `end_room`).
+
+---
+
+## 3. Room listings (widen filter)
+
+- `db/migrations/0156_…` also update `list_live_rooms_ranked` to include `status IN ('live','host_disconnected')` (keeps room discoverable during grace period per spec).
+- `src/routes/index.tsx:188-200` room grid query: same widening.
+- Row rendering: badge/overlay "Host away" when `status='host_disconnected'`.
+
+---
+
+## 4. Home priority recovery card (`src/routes/index.tsx`)
+
+- Add `useQuery(["my-active-room", uid], () => rpc("get_my_recoverable_room"))`, `enabled: !!uid`.
+- Add `["my-active-room"]` to `useRealtimeInvalidate("home-live", [...])` list.
+- Render as sticky top card **above** all other home content when data exists:
+  - Title: "Your room is waiting"
+  - Live countdown for `grace_period_until - now()` if `status='host_disconnected'`, else "Currently live".
+  - Two buttons: **Re-enter Room** (navigates to `/room/$id`; room page's `host_room_heartbeat` on mount will auto-reclaim), **End Room** (confirmation → `end_room` RPC → invalidate query).
+- Local dismiss flag (`sessionStorage`) so card doesn't repeat after user made a valid choice (per spec: "must not appear repeatedly after user has already made a valid decision").
+
+---
+
+## 5. Multi-tab / multi-device safety
+
+- Host heartbeat writes `host_last_seen_at` from any active host tab. As long as ONE tab is heartbeating, `host_last_seen_at` stays fresh and cron never flips to `host_disconnected`. Naturally satisfied.
+- No explicit session table needed.
+
+---
+
+## 6. Security
+
+- All state transitions go through `SECURITY DEFINER` RPCs with `auth.uid() = host_id` checks. Client cannot:
+  - Extend grace period (`grace_period_until` is set server-side from `now() + 20min`, cron enforces).
+  - Change ownership (RPCs verify caller).
+  - Fake heartbeat for another host (RPC checks `host_id = auth.uid()`).
+- RLS on `live_rooms` update policy already restricts to host/admin — keeps as belt-and-suspenders.
+
+---
+
+## 7. Files to touch
+
+**New:**
+- `db/migrations/0156_room_grace_period_enum.sql` (ALTER TYPE only, non-transactional)
+- `db/migrations/0157_room_grace_period.sql` (columns + RPCs + cron + widen list_live_rooms_ranked)
+- `src/components/room/RoomRecoveryCard.tsx` (home priority card)
+
+**Modified:**
+- `src/hooks/useRoomHeartbeat.ts` — swap RPC to `host_room_heartbeat`
+- `src/routes/room.$roomId.tsx` — remove unload-based ending, use `end_room` RPC, add `host_disconnected` viewer banner, update exit dialog to 3 options, drop client AFK auto-kick
+- `src/routes/index.tsx` — add recovery query + card, widen listing filter to include `host_disconnected`
+
+---
+
+## 8. Test coverage (per spec)
+
+Manual verification checklist (I'll run through preview after implementation):
+1. Back → confirmation shows, room persists.
+2. Close tab → room stays live 90s → flips to `host_disconnected` → recovery card on home.
+3. Return within 20 min → card → Re-enter → status auto-flips to `live` via heartbeat.
+4. Return within 20 min → End Room → confirmation → `status='ended'`.
+5. No return → cron ends room at grace expiry.
+6. Refresh mid-room → room persists (heartbeat resumes on mount, auto-reclaims if flipped).
+7. Two tabs, close one → other keeps heartbeat, no state change.
+
+---
+
+## Non-goals (out of scope)
+
+- No new TanStack server-function layer — everything routes through Supabase RPCs (matches existing project convention).
+- No changes to `finalize_room_gifts` payout logic — called from `end_room` RPC and cron expiry path, same as today's flow moment.
+- No changes to viewer exit / `room_members` cleanup.

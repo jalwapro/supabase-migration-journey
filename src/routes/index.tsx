@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShareSheet } from "@/components/ShareSheet";
+import { RoomRecoveryCard } from "@/components/room/RoomRecoveryCard";
 import {
   Radio,
   Users,
@@ -358,6 +359,8 @@ function Home() {
         </header>
 
         <div className="mx-auto max-w-md">
+          {/* Priority: recover active/disconnected room */}
+          <RoomRecoveryCard />
           {/* Search results (users) */}
           {query.length >= 2 && (
             <section className="px-4 pt-3">

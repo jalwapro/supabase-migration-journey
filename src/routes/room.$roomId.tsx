@@ -105,7 +105,7 @@ type Room = {
   title: string;
   cover_url: string | null;
   room_type: "voice" | "video";
-  status: "live" | "ended";
+  status: "live" | "ended" | "host_disconnected";
   viewer_count: number;
   seat_count: number;
   host_id: string;
@@ -1446,25 +1446,21 @@ function RoomPage() {
   }, [isHost]);
 
 
-  async function doLeaveRoom() {
+  async function doLeaveRoom(mode: "grace" | "end" = "grace") {
     if (user && isHost) {
       try {
-        // Convert accumulated gift points into diamonds for each receiver
-        // before the room is marked as ended.
-        const { error: finErr } = await supabase.rpc("finalize_room_gifts", {
-          _room_id: roomId,
-        });
-        if (finErr) throw finErr;
-        const { error: updErr } = await supabase
-          .from("live_rooms")
-          .update({ status: "ended", ended_at: new Date().toISOString() })
-          .eq("id", roomId);
-        if (updErr) throw updErr;
+        if (mode === "end") {
+          const { error } = await supabase.rpc("end_room", { _room_id: roomId });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.rpc("leave_room_as_host", {
+            _room_id: roomId,
+            _end_now: false,
+          });
+          if (error) throw error;
+        }
       } catch (e) {
-        // Do NOT navigate away on a partial failure — the room would be
-        // stuck as "live" with unpaid diamonds. Surface the error so host
-        // can retry.
-        toast.error(`Couldn't end room: ${(e as Error).message}`);
+        toast.error(`Couldn't leave room: ${(e as Error).message}`);
         return;
       }
     } else if (user) {
@@ -1714,6 +1710,13 @@ function RoomPage() {
       style={roomStyle}
     >
       <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+      {!isHost && room.data?.status === "host_disconnected" && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+8px)]">
+          <div className="pointer-events-auto rounded-full border border-amber-400/60 bg-amber-500/20 px-4 py-1.5 text-[11px] font-bold text-amber-100 shadow-lg backdrop-blur">
+            ⏳ Host reconnecting… room paused (20 min grace)
+          </div>
+        </div>
+      )}
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
         const bg = hostBg || DEFAULT_BG_URL;
@@ -2971,27 +2974,41 @@ function RoomPage() {
         <AlertDialogContent className="border-violet-400/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] text-white">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-white">
-              {isHost ? "Close the room?" : "Leave the room?"}
+              {isHost ? "Leave the room?" : "Leave the room?"}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-white/70">
               {isHost
-                ? "Yeh room band ho jayega aur sab viewers exit ho jayenge. Kya aap sure hain?"
+                ? "Ap 20 minute tak wapas a saktay hain — room chalu rahega. Ya abhi permanently band karein?"
                 : "Kya aap is room say bahar jana chahtay hain?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-col">
             <AlertDialogCancel className="border-white/20 bg-transparent text-white hover:bg-white/10">
-              Nahi
+              Nahi, room me raho
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void doLeaveRoom();
-              }}
-              className="bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90"
-            >
-              {isHost ? "Haan, band karo" : "Haan, exit"}
-            </AlertDialogAction>
+            {isHost ? (
+              <>
+                <AlertDialogAction
+                  onClick={(e) => { e.preventDefault(); void doLeaveRoom("grace"); }}
+                  className="bg-gradient-to-r from-amber-500 to-orange-600 text-white hover:opacity-90"
+                >
+                  Leave (20 min grace)
+                </AlertDialogAction>
+                <AlertDialogAction
+                  onClick={(e) => { e.preventDefault(); void doLeaveRoom("end"); }}
+                  className="bg-gradient-to-r from-rose-500 to-red-600 text-white hover:opacity-90"
+                >
+                  End room now
+                </AlertDialogAction>
+              </>
+            ) : (
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); void doLeaveRoom("grace"); }}
+                className="bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90"
+              >
+                Haan, exit
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
