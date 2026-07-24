@@ -20,7 +20,7 @@ type Row = {
   expires_at: string | null;
   approved_at: string | null;
   created_at: string;
-  profiles?: { username: string | null; avatar_url: string | null }[] | { username: string | null; avatar_url: string | null } | null;
+  profile?: { username: string | null; avatar: string | null } | null;
 };
 
 function CustomThemesAdmin() {
@@ -34,13 +34,21 @@ function CustomThemesAdmin() {
     queryFn: async () => {
       let q = supabase
         .from("custom_themes")
-        .select("id,user_id,image_url,coins_paid,status,admin_notes,expires_at,approved_at,created_at,profiles(username,avatar_url)")
+        .select("id,user_id,image_url,coins_paid,status,admin_notes,expires_at,approved_at,created_at")
         .order("created_at", { ascending: false })
         .limit(100);
       if (filter !== "all") q = q.eq("status", filter);
       const { data, error } = await q;
       if (error) throw error;
-      return (data ?? []) as Row[];
+      const rows = (data ?? []) as Row[];
+      const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+      if (ids.length === 0) return rows;
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id,username,avatar")
+        .in("id", ids);
+      const map = new Map((profs ?? []).map((p) => [p.id, { username: p.username, avatar: p.avatar }] as const));
+      return rows.map((r) => ({ ...r, profile: map.get(r.user_id) ?? null }));
     },
   });
 
