@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ShareSheet } from "@/components/ShareSheet";
+import { RoomRecoveryCard } from "@/components/room/RoomRecoveryCard";
 import {
   Radio,
   Users,
