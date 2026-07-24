@@ -82,11 +82,20 @@ function ReportsAdmin() {
     enabled: roomIds.length > 0,
   });
 
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-reports")
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_reports" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin_reports"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("user_reports").update({ status }).eq("id", id);
+      const { error } = await supabase.rpc("set_report_status", { _id: id, _status: status });
       if (error) throw error;
-      await supabase.from("admin_logs").insert({ action: `report_${status}`, target: id });
     },
     onSuccess: () => {
       toast.success("Updated");
