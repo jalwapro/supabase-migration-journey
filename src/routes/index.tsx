@@ -802,6 +802,61 @@ function RoomCard({ room }: { room: Room }) {
   );
 }
 
+function RoomListItem({ room }: { room: Room }) {
+  const TypeIcon = room.room_type === "video" ? Video : Mic;
+  return (
+    <Link
+      to="/room/$roomId"
+      params={{ roomId: room.id }}
+      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-card/70 p-2.5 shadow-[0_6px_20px_-15px_rgba(0,0,0,0.6)] transition active:scale-[0.99]"
+    >
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
+        {room.cover_url ? (
+          <img src={room.cover_url} alt="" className="h-full w-full object-cover" />
+        ) : room.host?.avatar ? (
+          <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
+        )}
+        <div className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-[color:var(--destructive)]/95 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+          <span className="relative flex h-1 w-1">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+            <span className="relative inline-flex h-1 w-1 rounded-full bg-white" />
+          </span>
+          Live
+        </div>
+        {room.is_locked && (
+          <div className="absolute right-1 bottom-1 grid h-4 w-4 place-items-center rounded-full bg-black/70">
+            <Lock className="h-2.5 w-2.5 text-white" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <TypeIcon className="h-3 w-3 shrink-0" />
+          <span className="truncate">{room.host?.username ?? "host"}</span>
+          {room.pk_battle && (
+            <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
+              <Flame className="h-2 w-2" /> PK
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1 shrink-0 text-[11px]">
+        <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 font-bold text-white">
+          <Users className="h-2.5 w-2.5" /> {room.viewer_count}
+        </span>
+        {(room.coin_score ?? 0) > 0 && (
+          <span className="flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
+            <Trophy className="h-2.5 w-2.5" /> {formatCompact(room.coin_score ?? 0)}
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 function EmptyRooms({ tab }: { tab: TabKey }) {
   const label =
     tab === "pk" ? "PK battles" : tab === "video" ? "video rooms" : "voice rooms";
