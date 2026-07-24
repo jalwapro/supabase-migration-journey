@@ -146,7 +146,7 @@ function PkMatchPage() {
   const matchQ = useQuery({
     enabled: !!activeMatchId,
     queryKey: ["pk-match", activeMatchId],
-    refetchInterval: 3000,
+    staleTime: 15_000,
     queryFn: async () => {
       const { data, error } = await supabase.from("pk_matches").select("*").eq("id", activeMatchId).maybeSingle();
       if (error) throw error;
@@ -268,7 +268,7 @@ function PkMatchPage() {
   const incomingQ = useQuery({
     enabled: !!user && isHost,
     queryKey: ["pk-incoming", user?.id, roomId],
-    refetchInterval: 3000,
+    staleTime: 15_000,
     queryFn: async () => {
       const nowIso = new Date().toISOString();
       const { data } = await supabase
