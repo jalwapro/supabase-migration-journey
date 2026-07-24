@@ -54,6 +54,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
 import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
+import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-test'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
@@ -320,6 +321,11 @@ const ApiPublicPushWebhookRoute = ApiPublicPushWebhookRouteImport.update({
 const ApiPublicFirebaseConfigRoute = ApiPublicFirebaseConfigRouteImport.update({
   id: '/api/public/firebase-config',
   path: '/api/public/firebase-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminPushTestRoute = ApiAdminPushTestRouteImport.update({
+  id: '/api/admin/push-test',
+  path: '/api/admin/push-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
@@ -630,6 +636,7 @@ export interface FileRoutesByFullPath {
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -714,6 +721,7 @@ export interface FileRoutesByTo {
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -802,6 +810,7 @@ export interface FileRoutesById {
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -890,6 +899,7 @@ export interface FileRouteTypes {
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
+    | '/api/admin/push-test'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -974,6 +984,7 @@ export interface FileRouteTypes {
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
+    | '/api/admin/push-test'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1061,6 +1072,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
+    | '/api/admin/push-test'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1087,6 +1099,7 @@ export interface RootRouteChildren {
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
+  ApiAdminPushTestRoute: typeof ApiAdminPushTestRoute
   ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
   ApiPublicPushWebhookRoute: typeof ApiPublicPushWebhookRoute
   ApiPublicSmtpVerifyRoute: typeof ApiPublicSmtpVerifyRoute
@@ -1407,6 +1420,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/firebase-config'
       fullPath: '/api/public/firebase-config'
       preLoaderRoute: typeof ApiPublicFirebaseConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/push-test': {
+      id: '/api/admin/push-test'
+      path: '/api/admin/push-test'
+      fullPath: '/api/admin/push-test'
+      preLoaderRoute: typeof ApiAdminPushTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/u/$userId': {
@@ -1870,6 +1890,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
+  ApiAdminPushTestRoute: ApiAdminPushTestRoute,
   ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
   ApiPublicPushWebhookRoute: ApiPublicPushWebhookRoute,
   ApiPublicSmtpVerifyRoute: ApiPublicSmtpVerifyRoute,
