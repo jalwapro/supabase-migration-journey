@@ -96,7 +96,12 @@ function CoinPackagesAdmin() {
                 {p.coins.toLocaleString()}
                 {p.bonus_coins > 0 && <span className="text-[color:var(--gold)]"> +{p.bonus_coins}</span>} · Rs {Number(p.price_pkr).toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground">{p.label || "—"} {p.badge && `· ${p.badge}`}</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                  {p.tier}
+                </span>{" "}
+                {p.label || "—"} {p.badge && `· ${p.badge}`}
+              </p>
             </div>
             <button
               onClick={() => toggle.mutate(p)}
