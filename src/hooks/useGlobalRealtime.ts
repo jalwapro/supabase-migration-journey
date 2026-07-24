@@ -208,6 +208,7 @@ export function useGlobalRealtime() {
         (payload: { new: NotificationRow }) => {
           qc.invalidateQueries({ queryKey: ["notif-unread", uid] });
           qc.invalidateQueries({ queryKey: ["notif-feed", uid] });
+          qc.invalidateQueries({ queryKey: ["msg-notif-count", uid] });
           const row = payload.new;
           if (row?.title) {
             playNotifySound();
