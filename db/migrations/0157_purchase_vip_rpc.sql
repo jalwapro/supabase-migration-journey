@@ -53,6 +53,7 @@ BEGIN
 END;
 $$;
 
+DROP FUNCTION IF EXISTS public.purchase_vip(uuid);
 CREATE OR REPLACE FUNCTION public.purchase_vip(_tier_id uuid)
 RETURNS jsonb
 LANGUAGE plpgsql
