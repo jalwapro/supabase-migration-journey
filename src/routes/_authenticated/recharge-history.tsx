@@ -21,6 +21,15 @@ type Order = {
   created_at: string;
 };
 
+type Request = {
+  id: string;
+  amount_pkr: number;
+  coins_expected: number;
+  status: "pending" | "approved" | "rejected";
+  admin_note: string | null;
+  created_at: string;
+};
+
 const COIN_URL_ABS = `https://cloud-to-soul.lovable.app${jalwaCoin.url}`;
 const CoinIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   <img
@@ -34,10 +43,22 @@ const CoinIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
   />
 );
 
-function statusMeta(s: string) {
-  if (s === "completed") return { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/15", label: "Completed" };
-  if (s === "pending_otp" || s === "pending") return { icon: Clock, color: "text-amber-400", bg: "bg-amber-500/15", label: "Pending" };
-  return { icon: XCircle, color: "text-red-400", bg: "bg-red-500/15", label: s.replace(/_/g, " ") };
+/**
+ * Status shown to the user is derived from BOTH the recharge_orders row
+ * (OTP progress) AND the linked recharge_requests row (admin approval).
+ * "completed" on the order only means OTP verified — coins are credited
+ * only when the admin approves the request.
+ */
+function statusMeta(effective: string) {
+  if (effective === "approved")
+    return { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/15", label: "Coins credited" };
+  if (effective === "rejected")
+    return { icon: XCircle, color: "text-red-400", bg: "bg-red-500/15", label: "Rejected" };
+  if (effective === "awaiting_admin")
+    return { icon: Clock, color: "text-sky-400", bg: "bg-sky-500/15", label: "Awaiting approval" };
+  if (effective === "pending_otp" || effective === "pending")
+    return { icon: Clock, color: "text-amber-400", bg: "bg-amber-500/15", label: "Pending OTP" };
+  return { icon: XCircle, color: "text-red-400", bg: "bg-red-500/15", label: effective.replace(/_/g, " ") };
 }
 
 function RechargeHistoryPage() {
