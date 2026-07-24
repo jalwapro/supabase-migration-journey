@@ -333,7 +333,7 @@ function DmThread() {
     }
     try {
       setAttachBusy(true);
-      const res = await uploadToUserFolder("chat-media", file, user.id);
+      const res = await uploadPrivateToUserFolder("chat-media", file, user.id);
       const kind: DM["kind"] = file.type.startsWith("image/")
         ? "image"
         : file.type.startsWith("video/")
@@ -427,7 +427,7 @@ function DmThread() {
         const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: outType });
         try {
           setAttachBusy(true);
-          const res = await uploadToUserFolder("voice-notes", file, user.id);
+          const res = await uploadPrivateToUserFolder("voice-notes", file, user.id);
           await insertMsg({
             kind: "voice",
             media_url: res.url,
