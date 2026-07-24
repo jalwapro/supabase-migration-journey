@@ -94,11 +94,8 @@ function SupportChatAdmin() {
 
   useEffect(() => {
     if (!active) return;
-    // clear unread on open
-    void supabase
-      .from("support_conversations")
-      .update({ unread_for_agent: 0, assigned_agent: user?.id ?? null })
-      .eq("id", active);
+    // Claim conversation on open (also clears unread + logs to admin_logs).
+    void supabase.rpc("claim_support_conversation", { _id: active });
   }, [active, user?.id]);
 
   useEffect(() => {
