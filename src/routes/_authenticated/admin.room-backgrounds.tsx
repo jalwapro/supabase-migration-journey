@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Plus, Trash2, Image as ImageIcon, Loader2, Pencil, X, Save } from "lucide-react";
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
 
@@ -20,6 +20,9 @@ type Bg = {
   sort_order: number;
 };
 
+type Draft = { name: string; image_url: string; price: number; sort_order: number };
+const empty: Draft = { name: "", image_url: "", price: 0, sort_order: 99 };
+
 function RoomBgAdmin() {
   const qc = useQueryClient();
   const list = useQuery({
@@ -31,7 +34,9 @@ function RoomBgAdmin() {
     },
   });
 
-  const [draft, setDraft] = useState({ name: "", image_url: "", price: 0, sort_order: 99 });
+  const [draft, setDraft] = useState<Draft>(empty);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<Draft>(empty);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -41,7 +46,27 @@ function RoomBgAdmin() {
     },
     onSuccess: () => {
       toast.success("Background added");
-      setDraft({ name: "", image_url: "", price: 0, sort_order: 99 });
+      setDraft(empty);
+      qc.invalidateQueries({ queryKey: ["admin_room_bg"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const update = useMutation({
+    mutationFn: async () => {
+      if (!editingId) throw new Error("No background selected");
+      if (!editDraft.name.trim() || !editDraft.image_url.trim()) throw new Error("Name + image required");
+      const { error } = await supabase.from("room_backgrounds").update({
+        name: editDraft.name,
+        image_url: editDraft.image_url,
+        price: editDraft.price,
+        sort_order: editDraft.sort_order,
+      }).eq("id", editingId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Saved");
+      setEditingId(null);
       qc.invalidateQueries({ queryKey: ["admin_room_bg"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -63,6 +88,22 @@ function RoomBgAdmin() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_room_bg"] }),
   });
 
+  const startEdit = (b: Bg) => {
+    setEditingId(b.id);
+    setEditDraft({ name: b.name, image_url: b.image_url, price: b.price, sort_order: b.sort_order });
+  };
+
+  const draftFields = (d: Draft, set: (d: Draft) => void, uploaderLabel: string) => (
+    <div className="grid grid-cols-2 gap-2">
+      <input placeholder="Name" value={d.name} onChange={(e) => set({ ...d, name: e.target.value })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
+      <input placeholder="Price (coins)" type="number" value={d.price} onChange={(e) => set({ ...d, price: Number(e.target.value) })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
+      <div className="col-span-2">
+        <FileUploader bucket="room-bg" accept="image/*,video/mp4" label={uploaderLabel} value={d.image_url} onChange={(url) => set({ ...d, image_url: url ?? "" })} />
+      </div>
+      <input placeholder="Sort order" type="number" value={d.sort_order} onChange={(e) => set({ ...d, sort_order: Number(e.target.value) })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
+    </div>
+  );
+
   return (
     <>
       <AdminPageHeader title="Room Backgrounds" subtitle="Cover artwork users can apply to rooms" />
@@ -77,7 +118,7 @@ function RoomBgAdmin() {
               </div>
               <div className="p-2">
                 <p className="truncate text-sm font-bold">{b.name}</p>
-                <p className="text-[11px] text-[color:var(--gold)]">💰 {b.price.toLocaleString()}</p>
+                <p className="text-[11px] text-[color:var(--gold)]">💰 {b.price.toLocaleString()} · #{b.sort_order}</p>
                 <div className="mt-1 flex gap-1.5">
                   <button
                     onClick={() => toggle.mutate(b)}
@@ -85,10 +126,25 @@ function RoomBgAdmin() {
                   >
                     {b.is_active ? "ON" : "OFF"}
                   </button>
+                  <button onClick={() => startEdit(b)} className="rounded-full bg-primary/10 p-1.5 text-primary" title="Edit">
+                    <Pencil className="h-3 w-3" />
+                  </button>
                   <button onClick={() => confirm("Delete?") && remove.mutate(b.id)} className="rounded-full bg-red-500/10 p-1.5 text-red-400">
                     <Trash2 className="h-3 w-3" />
                   </button>
                 </div>
+                {editingId === b.id && (
+                  <div className="mt-2 rounded-xl border border-primary/30 bg-card/40 p-2">
+                    <div className="mb-1 flex items-center justify-between">
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-primary">Edit</p>
+                      <button onClick={() => setEditingId(null)} className="rounded-full p-0.5 text-muted-foreground hover:bg-white/5"><X className="h-3 w-3" /></button>
+                    </div>
+                    {draftFields(editDraft, setEditDraft, "Replace image")}
+                    <button onClick={() => update.mutate()} disabled={update.isPending} className="mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-primary py-1.5 text-[10px] font-bold text-primary-foreground disabled:opacity-60">
+                      <Save className="h-3 w-3" /> Save
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -97,20 +153,7 @@ function RoomBgAdmin() {
 
       <div className="glass mt-4 max-w-2xl rounded-2xl p-4">
         <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add new background</p>
-        <div className="grid grid-cols-2 gap-2">
-          <input placeholder="Name" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
-          <input placeholder="Price (coins)" type="number" value={draft.price} onChange={(e) => setDraft({ ...draft, price: Number(e.target.value) })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
-          <div className="col-span-2">
-            <FileUploader
-              bucket="room-bg"
-              accept="image/*,video/mp4"
-              label="Upload background image / video"
-              value={draft.image_url}
-              onChange={(url) => setDraft({ ...draft, image_url: url ?? "" })}
-            />
-          </div>
-          <input placeholder="Sort order" type="number" value={draft.sort_order} onChange={(e) => setDraft({ ...draft, sort_order: Number(e.target.value) })} className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs" />
-        </div>
+        {draftFields(draft, setDraft, "Upload background image / video")}
         <button onClick={() => create.mutate()} disabled={create.isPending} className="glow-4d mt-2 flex w-full items-center justify-center gap-1 rounded-full bg-primary py-2 text-xs font-bold text-primary-foreground disabled:opacity-60">
           <Plus className="h-3 w-3" /> Add background
         </button>
