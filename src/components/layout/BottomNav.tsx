@@ -24,7 +24,8 @@ const TABS: Tab[] = [
 function useUnreadDm() {
   const { user } = useAuth();
   const uid = user?.id ?? null;
-  const qc = useQueryClient();
+
+
 
   const query = useQuery({
     queryKey: ["dm", "unread-badge", uid],
