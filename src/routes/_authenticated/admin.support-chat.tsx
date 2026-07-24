@@ -127,16 +127,14 @@ function SupportChatAdmin() {
   const close = useMutation({
     mutationFn: async () => {
       if (!active) return;
-      const { error } = await supabase
-        .from("support_conversations")
-        .update({ status: "closed" })
-        .eq("id", active);
+      const { error } = await supabase.rpc("close_support_conversation", { _id: active });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Ticket closed");
       qc.invalidateQueries({ queryKey: ["admin-support-inbox"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const conv = inbox.data?.find((c) => c.id === active) ?? null;
