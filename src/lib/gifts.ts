@@ -52,8 +52,11 @@ function toGift(entry: CatalogEntry): Gift & { rarity?: string; source: "catalog
   };
 }
 
-export const CATALOG_GIFTS: (Gift & { rarity?: string; source: "catalog" })[] = (
-  (catalog.gifts as CatalogEntry[]) ?? []
-)
-  .filter((g) => g.is_active !== false)
-  .map(toGift);
+// Sample catalog entries use non-UUID slug ids (e.g. "jalwa-ferrari") which
+// send_gift's `_gift_id uuid` parameter rejects at runtime. Until every
+// catalog entry is backed by a real DB row (or send_gift gains a slug path),
+// suppress the merge so the shop only shows sendable gifts.
+// Kept the import + toGift mapper for when the DB backfill lands.
+void toGift;
+void (catalog.gifts as CatalogEntry[] | undefined);
+export const CATALOG_GIFTS: (Gift & { rarity?: string; source: "catalog" })[] = [];
