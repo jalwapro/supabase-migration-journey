@@ -29,6 +29,16 @@ function CustomThemesAdmin() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-custom-themes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "custom_themes" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin_custom_themes"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
   const list = useQuery({
     queryKey: ["admin_custom_themes", filter],
     queryFn: async () => {
