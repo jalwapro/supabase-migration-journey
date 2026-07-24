@@ -192,10 +192,10 @@ function Dashboard() {
   }, [range]);
 
   const users = useCount("profiles");
-  const rooms = useCount("rooms");
-  const liveRooms = useCount("rooms", { col: "is_live", val: "true" });
-  const voiceRooms = useCount("rooms", { col: "room_type", val: "voice" });
-  const videoRooms = useCount("rooms", { col: "room_type", val: "video" });
+  const rooms = useCount("live_rooms");
+  const liveRooms = useCount("live_rooms", { col: "status", val: "live" });
+  const voiceRooms = useCount("live_rooms", { col: "room_type", val: "voice" });
+  const videoRooms = useCount("live_rooms", { col: "room_type", val: "video" });
   const pendingR = useCount("recharge_requests", { col: "status", val: "pending" });
   const pendingW = useCount("withdrawal_requests", { col: "status", val: "pending" });
   const reports = useCount("user_reports", { col: "status", val: "pending" });
