@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { GC, STALE, smartRetry } from "./lib/queryPresets";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -8,11 +9,14 @@ export const getRouter = () => {
       queries: {
         // Prevent refetch storms on every route change / tab focus.
         // Realtime subscriptions already invalidate what needs invalidating.
-        staleTime: 30_000,
-        gcTime: 5 * 60_000,
+        staleTime: STALE.REALTIME,
+        gcTime: GC.DEFAULT,
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
-        retry: 1,
+        retry: smartRetry,
+      },
+      mutations: {
+        retry: smartRetry,
       },
     },
   });
@@ -26,3 +30,4 @@ export const getRouter = () => {
 
   return router;
 };
+
