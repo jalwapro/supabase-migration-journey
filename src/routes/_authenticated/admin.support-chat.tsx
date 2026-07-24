@@ -94,11 +94,8 @@ function SupportChatAdmin() {
 
   useEffect(() => {
     if (!active) return;
-    // clear unread on open
-    void supabase
-      .from("support_conversations")
-      .update({ unread_for_agent: 0, assigned_agent: user?.id ?? null })
-      .eq("id", active);
+    // Claim conversation on open (also clears unread + logs to admin_logs).
+    void supabase.rpc("claim_support_conversation", { _id: active });
   }, [active, user?.id]);
 
   useEffect(() => {
@@ -127,16 +124,14 @@ function SupportChatAdmin() {
   const close = useMutation({
     mutationFn: async () => {
       if (!active) return;
-      const { error } = await supabase
-        .from("support_conversations")
-        .update({ status: "closed" })
-        .eq("id", active);
+      const { error } = await supabase.rpc("close_support_conversation", { _id: active });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Ticket closed");
       qc.invalidateQueries({ queryKey: ["admin-support-inbox"] });
     },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const conv = inbox.data?.find((c) => c.id === active) ?? null;

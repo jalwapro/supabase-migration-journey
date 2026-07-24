@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { CheckCircle2, XCircle, Loader2, ExternalLink } from "lucide-react";
@@ -28,6 +28,16 @@ function CustomThemesAdmin() {
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin-custom-themes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "custom_themes" }, () => {
+        qc.invalidateQueries({ queryKey: ["admin_custom_themes"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 
   const list = useQuery({
     queryKey: ["admin_custom_themes", filter],
