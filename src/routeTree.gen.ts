@@ -54,6 +54,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
 import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
+import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-test'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
@@ -76,6 +77,7 @@ import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin.rankings'
+import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
@@ -322,6 +324,11 @@ const ApiPublicFirebaseConfigRoute = ApiPublicFirebaseConfigRouteImport.update({
   path: '/api/public/firebase-config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminPushTestRoute = ApiAdminPushTestRouteImport.update({
+  id: '/api/admin/push-test',
+  path: '/api/admin/push-test',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedUUserIdRoute = AuthenticatedUUserIdRouteImport.update({
   id: '/u/$userId',
   path: '/u/$userId',
@@ -448,6 +455,11 @@ const AuthenticatedAdminRankingsRoute =
     path: '/rankings',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPushRoute = AuthenticatedAdminPushRouteImport.update({
+  id: '/push',
+  path: '/push',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminProfileAdminRoute =
   AuthenticatedAdminProfileAdminRouteImport.update({
     id: '/profile-admin',
@@ -608,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -630,6 +643,7 @@ export interface FileRoutesByFullPath {
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -692,6 +706,7 @@ export interface FileRoutesByTo {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -714,6 +729,7 @@ export interface FileRoutesByTo {
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -780,6 +796,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/_authenticated/admin/push': typeof AuthenticatedAdminPushRoute
   '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -802,6 +819,7 @@ export interface FileRoutesById {
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
+  '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -868,6 +886,7 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/pk'
     | '/admin/profile-admin'
+    | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
     | '/admin/reports'
@@ -890,6 +909,7 @@ export interface FileRouteTypes {
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
+    | '/api/admin/push-test'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -952,6 +972,7 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/pk'
     | '/admin/profile-admin'
+    | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
     | '/admin/reports'
@@ -974,6 +995,7 @@ export interface FileRouteTypes {
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
+    | '/api/admin/push-test'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1039,6 +1061,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/pk'
     | '/_authenticated/admin/profile-admin'
+    | '/_authenticated/admin/push'
     | '/_authenticated/admin/rankings'
     | '/_authenticated/admin/recharge'
     | '/_authenticated/admin/reports'
@@ -1061,6 +1084,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
+    | '/api/admin/push-test'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1087,6 +1111,7 @@ export interface RootRouteChildren {
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
+  ApiAdminPushTestRoute: typeof ApiAdminPushTestRoute
   ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
   ApiPublicPushWebhookRoute: typeof ApiPublicPushWebhookRoute
   ApiPublicSmtpVerifyRoute: typeof ApiPublicSmtpVerifyRoute
@@ -1409,6 +1434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFirebaseConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/push-test': {
+      id: '/api/admin/push-test'
+      path: '/api/admin/push-test'
+      fullPath: '/api/admin/push-test'
+      preLoaderRoute: typeof ApiAdminPushTestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/u/$userId': {
       id: '/_authenticated/u/$userId'
       path: '/u/$userId'
@@ -1563,6 +1595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRankingsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/push': {
+      id: '/_authenticated/admin/push'
+      path: '/push'
+      fullPath: '/admin/push'
+      preLoaderRoute: typeof AuthenticatedAdminPushRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/profile-admin': {
       id: '/_authenticated/admin/profile-admin'
       path: '/profile-admin'
@@ -1711,6 +1750,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
   AuthenticatedAdminProfileAdminRoute: typeof AuthenticatedAdminProfileAdminRoute
+  AuthenticatedAdminPushRoute: typeof AuthenticatedAdminPushRoute
   AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
@@ -1751,6 +1791,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminPaymentAccountsRoute,
   AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
+  AuthenticatedAdminPushRoute: AuthenticatedAdminPushRoute,
   AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
@@ -1870,6 +1911,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
+  ApiAdminPushTestRoute: ApiAdminPushTestRoute,
   ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
   ApiPublicPushWebhookRoute: ApiPublicPushWebhookRoute,
   ApiPublicSmtpVerifyRoute: ApiPublicSmtpVerifyRoute,

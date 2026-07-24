@@ -43,6 +43,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/support-chat", label: "Support Chat", icon: LifeBuoy },
       { to: "/admin/support", label: "Support Tickets", icon: LifeBuoy },
       { to: "/admin/notifications", label: "Notifications", icon: Bell },
+      { to: "/admin/push", label: "Push Diagnostics", icon: Bell },
     ],
   },
   {
