@@ -9,8 +9,6 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: Page });
 
-const RATE = 0.5; // 1 point = 0.5 PKR (adjust as needed)
-
 function Page() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
@@ -18,6 +16,23 @@ function Page() {
   const [method, setMethod] = useState<"jazzcash" | "easypaisa" | "bank" | "manual">("jazzcash");
   const [accNum, setAccNum] = useState("");
   const [accName, setAccName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Server-driven rate + limits. Never hard-code payout math client-side.
+  const { data: settings } = useQuery({
+    queryKey: ["withdrawal_settings"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_withdrawal_settings");
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        rate: Number(row?.diamond_price_pkr ?? 0.5),
+        max: Number(row?.max_withdrawal_diamonds ?? 10_000_000),
+        min: Number(row?.min_withdrawal_diamonds ?? 100),
+      };
+    },
+  });
 
   const { data: history } = useQuery({
     queryKey: ["withdrawals", user?.id],
@@ -34,7 +49,12 @@ function Page() {
   });
 
   const balance = profile?.diamonds ?? 0;
-  const amount = Math.max(0, diamonds * RATE);
+  const rate = settings?.rate ?? 0.5;
+  const minD = settings?.min ?? 100;
+  const maxD = settings?.max ?? 10_000_000;
+  const amount = Math.max(0, diamonds * rate);
+  const hasPending = (history ?? []).some((h) => h.status === "pending");
+
 
   async function submit() {
     if (!user) return;
