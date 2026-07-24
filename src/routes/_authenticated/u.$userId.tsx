@@ -301,16 +301,17 @@ function UserProfilePage() {
   const report = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sign in");
-      const reason = window.prompt("Report reason?");
-      if (!reason) return;
-      const { error } = await supabase.from("reports").insert({
-        reporter_id: me.id,
-        reported_user_id: userId,
-        reason,
+      const reason = window.prompt("Report reason? (e.g. harassment, spam, nudity)");
+      if (!reason || reason.trim().length < 3) return;
+      const { error } = await supabase.rpc("submit_user_report", {
+        _reported_user: userId,
+        _room_id: null,
+        _reason: reason.trim(),
+        _details: null,
       });
       if (error) throw error;
     },
-    onSuccess: () => toast.success("Report submitted"),
+    onSuccess: (d) => { if (d !== undefined) toast.success("Report submitted"); },
     onError: (e: Error) => toast.error(e.message),
   });
 
