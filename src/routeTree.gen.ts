@@ -77,6 +77,7 @@ import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authenticated/admin.reports'
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin.rankings'
+import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
@@ -454,6 +455,11 @@ const AuthenticatedAdminRankingsRoute =
     path: '/rankings',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPushRoute = AuthenticatedAdminPushRouteImport.update({
+  id: '/push',
+  path: '/push',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminProfileAdminRoute =
   AuthenticatedAdminProfileAdminRouteImport.update({
     id: '/profile-admin',
@@ -614,6 +620,7 @@ export interface FileRoutesByFullPath {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -699,6 +706,7 @@ export interface FileRoutesByTo {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -788,6 +796,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/_authenticated/admin/push': typeof AuthenticatedAdminPushRoute
   '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
   '/_authenticated/admin/reports': typeof AuthenticatedAdminReportsRoute
@@ -877,6 +886,7 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/pk'
     | '/admin/profile-admin'
+    | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
     | '/admin/reports'
@@ -962,6 +972,7 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/pk'
     | '/admin/profile-admin'
+    | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
     | '/admin/reports'
@@ -1050,6 +1061,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/pk'
     | '/_authenticated/admin/profile-admin'
+    | '/_authenticated/admin/push'
     | '/_authenticated/admin/rankings'
     | '/_authenticated/admin/recharge'
     | '/_authenticated/admin/reports'
@@ -1583,6 +1595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRankingsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/push': {
+      id: '/_authenticated/admin/push'
+      path: '/push'
+      fullPath: '/admin/push'
+      preLoaderRoute: typeof AuthenticatedAdminPushRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/profile-admin': {
       id: '/_authenticated/admin/profile-admin'
       path: '/profile-admin'
@@ -1731,6 +1750,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
   AuthenticatedAdminProfileAdminRoute: typeof AuthenticatedAdminProfileAdminRoute
+  AuthenticatedAdminPushRoute: typeof AuthenticatedAdminPushRoute
   AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
@@ -1771,6 +1791,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminPaymentAccountsRoute,
   AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
+  AuthenticatedAdminPushRoute: AuthenticatedAdminPushRoute,
   AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
   AuthenticatedAdminReportsRoute: AuthenticatedAdminReportsRoute,
