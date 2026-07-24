@@ -42,12 +42,22 @@ function SupportChatAdmin() {
       const { data, error } = await supabase
         .from("support_conversations")
         .select(
-          "id,user_id,status,last_message_at,last_message_preview,unread_for_agent,user:profiles!support_conversations_user_id_fkey(username,avatar,user_code)"
+          "id,user_id,status,last_message_at,last_message_preview,unread_for_agent"
         )
         .order("last_message_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return (data ?? []) as unknown as Conv[];
+      const rows = (data ?? []) as Omit<Conv, "user">[];
+      const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+      if (ids.length === 0) return rows.map((r) => ({ ...r, user: null })) as Conv[];
+      const { data: profs } = await supabase
+        .from("profiles")
+        .select("id,username,avatar,user_code")
+        .in("id", ids);
+      const map = new Map(
+        (profs ?? []).map((p) => [p.id, { username: p.username, avatar: p.avatar, user_code: p.user_code }] as const),
+      );
+      return rows.map((r) => ({ ...r, user: map.get(r.user_id) ?? null })) as Conv[];
     },
   });
 
