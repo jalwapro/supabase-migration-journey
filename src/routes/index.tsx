@@ -578,8 +578,8 @@ function Home() {
             </div>
           </section>
 
-          {/* Rooms grid */}
-          <section className="mt-4 px-4">
+          {/* Rooms — Top Hosts + All Live */}
+          <section className="mt-4 space-y-5 px-4">
             {rooms.isLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -587,15 +587,44 @@ function Home() {
                 ))}
               </div>
             ) : filteredRooms.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {filteredRooms.map((r) => (
-                  <RoomCard key={r.id} room={r} />
-                ))}
-              </div>
+              <>
+                {topHosts.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-[color:var(--gold)]" />
+                      <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
+                        Top Hosts
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {topHosts.map((r) => (
+                        <RoomCard key={r.id} room={r} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {restRooms.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-[color:var(--primary)]" />
+                      <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
+                        All Live Rooms
+                      </h2>
+                    </div>
+                    <div className="space-y-2">
+                      {restRooms.map((r) => (
+                        <RoomListItem key={r.id} room={r} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyRooms tab={tab} />
             )}
           </section>
+
         </div>
       </div>
       <BottomNav />
