@@ -96,6 +96,7 @@ export function useGlobalRealtime() {
           "me-counts",
           "public-profile-stats",
           "following-list",
+          "chat-followers",
         ],
       },
       {
@@ -107,6 +108,7 @@ export function useGlobalRealtime() {
           "me-counts",
           "public-profile-stats",
           "followers-list",
+          "chat-followers",
         ],
       },
       {
@@ -116,11 +118,21 @@ export function useGlobalRealtime() {
       },
     ]);
 
+
     const ch3 = subscribe(qc, `dm-received:${uid}`, [
       {
         table: "direct_messages",
         filter: `recipient_id=eq.${uid}`,
-        keys: ["dm", "dm_index", "dm-thread", "dm-threads", "messages", "conversations"],
+        keys: [
+          "dm",
+          "dm_index",
+          "dm-thread",
+          "dm-threads",
+          "dm-unread",
+          "messages",
+          "conversations",
+          "msg-notif-count",
+        ],
       },
     ]);
 
@@ -144,6 +156,7 @@ export function useGlobalRealtime() {
         keys: ["wallet", "wallet_tx", "me-counts", "gifts-sent"],
       },
     ]);
+
 
     const ch4 = subscribe(qc, `assets:${uid}`, [
       {
@@ -195,6 +208,7 @@ export function useGlobalRealtime() {
         (payload: { new: NotificationRow }) => {
           qc.invalidateQueries({ queryKey: ["notif-unread", uid] });
           qc.invalidateQueries({ queryKey: ["notif-feed", uid] });
+          qc.invalidateQueries({ queryKey: ["msg-notif-count", uid] });
           const row = payload.new;
           if (row?.title) {
             playNotifySound();

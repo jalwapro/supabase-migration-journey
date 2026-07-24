@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Trophy, Plus, MessageCircle, User } from "lucide-react";
-import { useEffect, type ComponentType } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ComponentType } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -23,7 +24,8 @@ const TABS: Tab[] = [
 function useUnreadDm() {
   const { user } = useAuth();
   const uid = user?.id ?? null;
-  const qc = useQueryClient();
+
+
 
   const query = useQuery({
     queryKey: ["dm", "unread-badge", uid],
@@ -48,24 +50,10 @@ function useUnreadDm() {
     staleTime: 5_000,
   });
 
-  // Realtime: badge should light up the instant a new DM arrives, without
-  // waiting for a route change or the 30s poll.
-  useEffect(() => {
-    if (!uid) return;
-    const ch = supabase
-      .channel(`dm-badge:${uid}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` },
-        () => {
-          void qc.invalidateQueries({ queryKey: ["dm", "unread-badge", uid] });
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
-  }, [uid, qc]);
+  // Realtime for the unread badge is delivered by the app-wide
+  // `useGlobalRealtime()` bridge (dm-received channel invalidates
+  // `["dm-unread", ...]`). No per-nav channel needed (C6 dedupe).
+
 
   return query;
 }
