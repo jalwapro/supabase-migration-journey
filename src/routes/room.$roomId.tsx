@@ -105,7 +105,7 @@ type Room = {
   title: string;
   cover_url: string | null;
   room_type: "voice" | "video";
-  status: "live" | "ended";
+  status: "live" | "ended" | "host_disconnected";
   viewer_count: number;
   seat_count: number;
   host_id: string;
