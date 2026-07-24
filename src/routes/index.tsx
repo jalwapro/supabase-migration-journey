@@ -60,6 +60,7 @@ type Room = {
   pk_battle: boolean | null;
   host_id: string;
   host: { username: string | null; avatar: string | null } | null;
+  coin_score?: number;
 };
 type LiveUser = {
   id: string;
