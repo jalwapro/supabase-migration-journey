@@ -2,10 +2,13 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Pings live_rooms.heartbeat_at every 25 s while the tab is visible.
- * A server-side cron (close_stale_rooms) ends rooms whose heartbeat
- * hasn't landed in 90 s — so short network drops are tolerated but a
- * crashed / closed tab won't leave the room "live" forever.
+ * Pings live_rooms.heartbeat_at every 25s while the tab is visible.
+ *
+ * Server-side (see 0166_room_grace_period.sql):
+ *   - live rooms with no ping >90s → status='host_disconnected', grace 20min.
+ *   - host_room_heartbeat resurrects a host_disconnected room to 'live' when
+ *     the host returns within the grace window.
+ *   - After grace_period_until expires the cron finalizes gifts and ends the room.
  */
 export function useRoomHeartbeat(roomId: string | null | undefined, isHost: boolean) {
   useEffect(() => {
@@ -15,7 +18,7 @@ export function useRoomHeartbeat(roomId: string | null | undefined, isHost: bool
       if (cancelled) return;
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       try {
-        await supabase.rpc("room_heartbeat", { _room_id: roomId });
+        await supabase.rpc("host_room_heartbeat", { _room_id: roomId });
       } catch { /* transient — next tick retries */ }
     };
     ping();
@@ -23,11 +26,13 @@ export function useRoomHeartbeat(roomId: string | null | undefined, isHost: bool
     const onVis = () => { if (document.visibilityState === "visible") ping(); };
     document.addEventListener("visibilitychange", onVis);
     window.addEventListener("online", ping);
+    window.addEventListener("focus", ping);
     return () => {
       cancelled = true;
       window.clearInterval(iv);
       document.removeEventListener("visibilitychange", onVis);
       window.removeEventListener("online", ping);
+      window.removeEventListener("focus", ping);
     };
   }, [roomId, isHost]);
 }
