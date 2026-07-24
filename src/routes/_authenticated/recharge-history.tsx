@@ -65,6 +65,7 @@ function RechargeHistoryPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // Orders capture the OTP journey — they may still be "pending_otp".
   const orders = useQuery({
     queryKey: ["recharge_orders", user?.id],
     enabled: !!user,
@@ -79,6 +80,29 @@ function RechargeHistoryPage() {
       return (data ?? []) as Order[];
     },
   });
+
+  // Requests are the source of truth for admin approval + coin credit.
+  const requests = useQuery({
+    queryKey: ["recharge_requests_self", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("recharge_requests")
+        .select("id, amount_pkr, coins_expected, status, admin_note, created_at")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []) as Request[];
+    },
+  });
+
+  const loading = orders.isLoading || requests.isLoading;
+  const pendingOtpOrders = (orders.data ?? []).filter(
+    (o) => o.status === "pending_otp" || o.status === "pending",
+  );
+  const reqList = requests.data ?? [];
+  const empty = !loading && pendingOtpOrders.length === 0 && reqList.length === 0;
 
   return (
     <>
@@ -96,13 +120,13 @@ function RechargeHistoryPage() {
         }
       >
         <div className="space-y-3 px-4 pt-4 pb-8">
-          {orders.isLoading && (
+          {loading && (
             <div className="py-10 text-center">
               <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           )}
 
-          {!orders.isLoading && (orders.data?.length ?? 0) === 0 && (
+          {empty && (
             <div className="rounded-2xl border border-border bg-card/60 p-8 text-center">
               <Receipt className="mx-auto h-8 w-8 text-muted-foreground" />
               <p className="mt-3 text-sm font-bold">No recharges yet</p>
@@ -112,8 +136,9 @@ function RechargeHistoryPage() {
             </div>
           )}
 
-          {orders.data?.map((o) => {
-            const s = statusMeta(o.status);
+          {/* OTP still pending — not yet in the admin queue. */}
+          {pendingOtpOrders.map((o) => {
+            const s = statusMeta("pending_otp");
             const Icon = s.icon;
             return (
               <div key={o.id} className="rounded-2xl border border-border bg-card/60 p-4">
@@ -145,9 +170,53 @@ function RechargeHistoryPage() {
               </div>
             );
           })}
+
+          {/* Admin approval outcomes. */}
+          {reqList.map((r) => {
+            const effective =
+              r.status === "approved"
+                ? "approved"
+                : r.status === "rejected"
+                  ? "rejected"
+                  : "awaiting_admin";
+            const s = statusMeta(effective);
+            const Icon = s.icon;
+            return (
+              <div key={r.id} className="rounded-2xl border border-border bg-card/60 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <CoinIcon className="h-4 w-4" />
+                      <span className="text-lg font-black">
+                        {Number(r.coins_expected).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="mt-0.5 text-sm font-bold text-[color:var(--gold)]">
+                      Rs {Number(r.amount_pkr).toLocaleString()}
+                    </p>
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      {new Date(r.created_at).toLocaleString()}
+                    </p>
+                    {r.admin_note && (
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        Admin: {r.admin_note}
+                      </p>
+                    )}
+                  </div>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${s.bg} ${s.color}`}
+                  >
+                    <Icon className="h-3 w-3" />
+                    {s.label}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </AppShell>
       <BottomNav />
     </>
   );
+}
 }
