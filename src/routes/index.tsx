@@ -192,12 +192,34 @@ function Home() {
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
-        .limit(40);
+        .limit(80);
       if (tab === "pk") sel = sel.eq("pk_battle", true);
       else sel = sel.eq("room_type", tab);
       const { data, error } = await sel;
       if (error) throw error;
-      return (data ?? []) as unknown as Room[];
+      const list = (data ?? []) as unknown as Room[];
+      if (list.length === 0) return list;
+      // Merge real popularity (coin_score) so top hosts are ranked by revenue,
+      // not just live viewer count. Falls back to viewer_count when a room has
+      // no gifts yet.
+      const ids = list.map((r) => r.id);
+      const { data: pop } = await supabase
+        .from("room_popularity")
+        .select("room_id,coin_score")
+        .in("room_id", ids);
+      const scoreByRoom = new Map<string, number>(
+        (pop ?? []).map((p: { room_id: string; coin_score: number | string }) => [
+          p.room_id,
+          Number(p.coin_score ?? 0),
+        ]),
+      );
+      return list
+        .map((r) => ({ ...r, coin_score: scoreByRoom.get(r.id) ?? 0 }))
+        .sort(
+          (a, b) =>
+            (b.coin_score ?? 0) - (a.coin_score ?? 0) ||
+            b.viewer_count - a.viewer_count,
+        );
     },
     // Realtime invalidates instantly on live_rooms changes.
     refetchInterval: 60_000,
@@ -214,6 +236,10 @@ function Home() {
         (r.host?.username ?? "").toLowerCase().includes(s),
     );
   }, [rooms.data, query]);
+
+  const topHosts = useMemo(() => filteredRooms.slice(0, 2), [filteredRooms]);
+  const restRooms = useMemo(() => filteredRooms.slice(2), [filteredRooms]);
+
 
   const userSearch = useQuery({
     queryKey: ["home-user-search", query],
