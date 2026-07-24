@@ -60,6 +60,7 @@ type Room = {
   pk_battle: boolean | null;
   host_id: string;
   host: { username: string | null; avatar: string | null } | null;
+  coin_score?: number;
 };
 type LiveUser = {
   id: string;
@@ -192,12 +193,34 @@ function Home() {
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
-        .limit(40);
+        .limit(80);
       if (tab === "pk") sel = sel.eq("pk_battle", true);
       else sel = sel.eq("room_type", tab);
       const { data, error } = await sel;
       if (error) throw error;
-      return (data ?? []) as unknown as Room[];
+      const list = (data ?? []) as unknown as Room[];
+      if (list.length === 0) return list;
+      // Merge real popularity (coin_score) so top hosts are ranked by revenue,
+      // not just live viewer count. Falls back to viewer_count when a room has
+      // no gifts yet.
+      const ids = list.map((r) => r.id);
+      const { data: pop } = await supabase
+        .from("room_popularity")
+        .select("room_id,coin_score")
+        .in("room_id", ids);
+      const scoreByRoom = new Map<string, number>(
+        (pop ?? []).map((p: { room_id: string; coin_score: number | string }) => [
+          p.room_id,
+          Number(p.coin_score ?? 0),
+        ]),
+      );
+      return list
+        .map((r) => ({ ...r, coin_score: scoreByRoom.get(r.id) ?? 0 }))
+        .sort(
+          (a, b) =>
+            (b.coin_score ?? 0) - (a.coin_score ?? 0) ||
+            b.viewer_count - a.viewer_count,
+        );
     },
     // Realtime invalidates instantly on live_rooms changes.
     refetchInterval: 60_000,
@@ -214,6 +237,10 @@ function Home() {
         (r.host?.username ?? "").toLowerCase().includes(s),
     );
   }, [rooms.data, query]);
+
+  const topHosts = useMemo(() => filteredRooms.slice(0, 2), [filteredRooms]);
+  const restRooms = useMemo(() => filteredRooms.slice(2), [filteredRooms]);
+
 
   const userSearch = useQuery({
     queryKey: ["home-user-search", query],
@@ -551,8 +578,8 @@ function Home() {
             </div>
           </section>
 
-          {/* Rooms grid */}
-          <section className="mt-4 px-4">
+          {/* Rooms — Top Hosts + All Live */}
+          <section className="mt-4 space-y-5 px-4">
             {rooms.isLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -560,15 +587,44 @@ function Home() {
                 ))}
               </div>
             ) : filteredRooms.length > 0 ? (
-              <div className="grid grid-cols-2 gap-3">
-                {filteredRooms.map((r) => (
-                  <RoomCard key={r.id} room={r} />
-                ))}
-              </div>
+              <>
+                {topHosts.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-[color:var(--gold)]" />
+                      <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
+                        Top Hosts
+                      </h2>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      {topHosts.map((r) => (
+                        <RoomCard key={r.id} room={r} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {restRooms.length > 0 && (
+                  <div>
+                    <div className="mb-2 flex items-center gap-2">
+                      <Radio className="h-4 w-4 text-[color:var(--primary)]" />
+                      <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
+                        All Live Rooms
+                      </h2>
+                    </div>
+                    <div className="space-y-2">
+                      {restRooms.map((r) => (
+                        <RoomListItem key={r.id} room={r} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <EmptyRooms tab={tab} />
             )}
           </section>
+
         </div>
       </div>
       <BottomNav />
@@ -741,6 +797,61 @@ function RoomCard({ room }: { room: Room }) {
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
           {room.title}
         </h3>
+      </div>
+    </Link>
+  );
+}
+
+function RoomListItem({ room }: { room: Room }) {
+  const TypeIcon = room.room_type === "video" ? Video : Mic;
+  return (
+    <Link
+      to="/room/$roomId"
+      params={{ roomId: room.id }}
+      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-card/70 p-2.5 shadow-[0_6px_20px_-15px_rgba(0,0,0,0.6)] transition active:scale-[0.99]"
+    >
+      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
+        {room.cover_url ? (
+          <img src={room.cover_url} alt="" className="h-full w-full object-cover" />
+        ) : room.host?.avatar ? (
+          <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
+        )}
+        <div className="absolute left-1 top-1 flex items-center gap-0.5 rounded-full bg-[color:var(--destructive)]/95 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider text-white">
+          <span className="relative flex h-1 w-1">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-75" />
+            <span className="relative inline-flex h-1 w-1 rounded-full bg-white" />
+          </span>
+          Live
+        </div>
+        {room.is_locked && (
+          <div className="absolute right-1 bottom-1 grid h-4 w-4 place-items-center rounded-full bg-black/70">
+            <Lock className="h-2.5 w-2.5 text-white" />
+          </div>
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
+        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <TypeIcon className="h-3 w-3 shrink-0" />
+          <span className="truncate">{room.host?.username ?? "host"}</span>
+          {room.pk_battle && (
+            <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
+              <Flame className="h-2 w-2" /> PK
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-col items-end gap-1 shrink-0 text-[11px]">
+        <span className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 font-bold text-white">
+          <Users className="h-2.5 w-2.5" /> {room.viewer_count}
+        </span>
+        {(room.coin_score ?? 0) > 0 && (
+          <span className="flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
+            <Trophy className="h-2.5 w-2.5" /> {formatCompact(room.coin_score ?? 0)}
+          </span>
+        )}
       </div>
     </Link>
   );
