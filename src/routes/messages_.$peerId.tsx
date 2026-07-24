@@ -22,7 +22,8 @@ import {
   Forward,
 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadToUserFolder } from "@/lib/uploads";
+import { uploadPrivateToUserFolder } from "@/lib/uploads";
+import { useSignedMediaUrl } from "@/lib/signedMedia";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 import { VoiceRecordingTray } from "@/components/chat/VoiceRecordingTray";
