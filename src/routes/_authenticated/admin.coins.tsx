@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/admin/coins")({
   component: CoinPackagesAdmin,
 });
 
+type Tier = "starter" | "popular" | "vip" | "whale";
 type PkgRow = {
   id: string;
   coins: number;
@@ -19,7 +20,10 @@ type PkgRow = {
   badge: string | null;
   sort_order: number;
   active: boolean;
+  tier: Tier;
 };
+
+const TIERS: Tier[] = ["starter", "popular", "vip", "whale"];
 
 function CoinPackagesAdmin() {
   const qc = useQueryClient();
@@ -39,6 +43,7 @@ function CoinPackagesAdmin() {
     label: "",
     badge: "",
     sort_order: 99,
+    tier: "starter" as Tier,
   });
 
   const create = useMutation({
@@ -47,10 +52,13 @@ function CoinPackagesAdmin() {
         coins: draft.coins,
         bonus_coins: draft.bonus_coins,
         price_pkr: draft.price_pkr,
+        price: draft.price_pkr, // legacy NOT NULL column
         label: draft.label || null,
         badge: draft.badge || null,
         sort_order: draft.sort_order,
+        tier: draft.tier,
         active: true,
+        is_active: true,
       });
       if (error) throw error;
     },
