@@ -49,15 +49,11 @@ function RoomsAdmin() {
 
   const endLive = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("live_rooms")
-        .update({ status: "ended", ended_at: new Date().toISOString() })
-        .eq("id", id);
+      // Routes through admin_end_room RPC which finalizes gifts, closes
+      // any active PK match (releasing stake escrow), and writes admin_logs
+      // atomically. Direct table update would skip all of that.
+      const { error } = await supabase.rpc("admin_end_room", { _room_id: id });
       if (error) throw error;
-      const { error: logErr } = await supabase
-        .from("admin_logs")
-        .insert({ action: "force_end_room", target: id });
-      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Room ended");
@@ -68,12 +64,8 @@ function RoomsAdmin() {
 
   const del = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("live_rooms").delete().eq("id", id);
+      const { error } = await supabase.rpc("admin_delete_room", { _room_id: id });
       if (error) throw error;
-      const { error: logErr } = await supabase
-        .from("admin_logs")
-        .insert({ action: "delete_room", target: id });
-      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Room deleted");
