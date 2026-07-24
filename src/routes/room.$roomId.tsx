@@ -1710,6 +1710,13 @@ function RoomPage() {
       style={roomStyle}
     >
       <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+      {!isHost && room.data?.status === "host_disconnected" && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-40 flex justify-center px-3 pt-[calc(env(safe-area-inset-top)+8px)]">
+          <div className="pointer-events-auto rounded-full border border-amber-400/60 bg-amber-500/20 px-4 py-1.5 text-[11px] font-bold text-amber-100 shadow-lg backdrop-blur">
+            ⏳ Host reconnecting… room paused (20 min grace)
+          </div>
+        </div>
+      )}
       {/* Host theme background if set, else the default Jalwa branded bg */}
       {(() => {
         const bg = hostBg || DEFAULT_BG_URL;
