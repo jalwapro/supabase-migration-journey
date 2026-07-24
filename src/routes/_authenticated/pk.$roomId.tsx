@@ -434,20 +434,17 @@ function PkMatchPage() {
     setMode(chosenMode);
     setModeSheetOpen(false);
     setStarting(true);
-    const { data, error } = await supabase.rpc("pk_send_invite", {
+    const { error } = await supabase.rpc("pk_send_invite", {
       _to_host: opponent.host_id,
       _duration_sec: MODE_META[chosenMode].sec,
-    });
+      _stake_coins: effectiveStake,
+    } as any);
     if (error) {
       setStarting(false);
       return toast.error(error.message);
     }
-    const inviteId = (Array.isArray(data) ? data[0]?.id : (data as any)?.id) ?? null;
-    if (inviteId && effectiveStake > 0) {
-      await supabase.from("pk_invites").update({ stake_coins: effectiveStake }).eq("id", inviteId);
-    }
     setStarting(false);
-    toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[chosenMode].minutes} min`);
+    toast.success(`Challenge sent to ${opponent.host?.username ?? "opponent"} — ${MODE_META[chosenMode].minutes} min${effectiveStake > 0 ? ` · ${effectiveStake} coins staked` : ""}`);
     setOpponent(null);
   }
 
