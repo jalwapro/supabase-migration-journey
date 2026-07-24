@@ -96,6 +96,7 @@ export function useGlobalRealtime() {
           "me-counts",
           "public-profile-stats",
           "following-list",
+          "chat-followers",
         ],
       },
       {
@@ -107,6 +108,7 @@ export function useGlobalRealtime() {
           "me-counts",
           "public-profile-stats",
           "followers-list",
+          "chat-followers",
         ],
       },
       {
@@ -115,6 +117,7 @@ export function useGlobalRealtime() {
         keys: ["blocked", "friends"],
       },
     ]);
+
 
     const ch3 = subscribe(qc, `dm-received:${uid}`, [
       {
