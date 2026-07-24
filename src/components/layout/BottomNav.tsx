@@ -1,7 +1,8 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Home, Trophy, Plus, MessageCircle, User } from "lucide-react";
-import { useEffect, type ComponentType } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type ComponentType } from "react";
+import { useQuery } from "@tanstack/react-query";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
