@@ -51,7 +51,7 @@ as $$
 declare
   _req public.recharge_requests%rowtype;
 begin
-  if not public.is_admin() then
+  if not public.is_admin(auth.uid()) then
     raise exception 'Admins only';
   end if;
 
@@ -124,7 +124,7 @@ as $$
 declare
   _req public.recharge_requests%rowtype;
 begin
-  if not public.is_admin() then
+  if not public.is_admin(auth.uid()) then
     raise exception 'Admins only';
   end if;
 
@@ -216,7 +216,7 @@ drop policy if exists "admins read all recharges" on public.recharge_requests;
 create policy "admins read all recharges"
   on public.recharge_requests for select
   to authenticated
-  using (public.is_admin());
+  using (public.is_admin(auth.uid()));
 
 -- Only status changes via the SECURITY DEFINER RPCs (which bypass RLS).
 -- The narrow admin UPDATE below lets admins edit admin_note only (client
@@ -225,9 +225,9 @@ create policy "admins read all recharges"
 create policy "admins edit recharge notes"
   on public.recharge_requests for update
   to authenticated
-  using (public.is_admin())
+  using (public.is_admin(auth.uid()))
   with check (
-    public.is_admin()
+    public.is_admin(auth.uid())
     and status = (select r.status from public.recharge_requests r where r.id = recharge_requests.id)
   );
 
