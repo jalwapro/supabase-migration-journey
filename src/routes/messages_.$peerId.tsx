@@ -22,7 +22,8 @@ import {
   Forward,
 } from "lucide-react";
 import { toast } from "sonner";
-import { uploadToUserFolder } from "@/lib/uploads";
+import { uploadPrivateToUserFolder } from "@/lib/uploads";
+import { useSignedMediaUrl } from "@/lib/signedMedia";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { ChatEmojiOverlay } from "@/components/chat/ChatEmojiOverlay";
 import { VoiceRecordingTray } from "@/components/chat/VoiceRecordingTray";
@@ -332,7 +333,7 @@ function DmThread() {
     }
     try {
       setAttachBusy(true);
-      const res = await uploadToUserFolder("chat-media", file, user.id);
+      const res = await uploadPrivateToUserFolder("chat-media", file, user.id);
       const kind: DM["kind"] = file.type.startsWith("image/")
         ? "image"
         : file.type.startsWith("video/")
@@ -426,7 +427,7 @@ function DmThread() {
         const file = new File([blob], `voice-${Date.now()}.${ext}`, { type: outType });
         try {
           setAttachBusy(true);
-          const res = await uploadToUserFolder("voice-notes", file, user.id);
+          const res = await uploadPrivateToUserFolder("voice-notes", file, user.id);
           await insertMsg({
             kind: "voice",
             media_url: res.url,
@@ -965,38 +966,53 @@ function MessageBody({
   albumSrc?: string;
 }) {
   if (m.kind === "text") return <>{m.message}</>;
-  if (m.kind === "image") {
-    return (
-      <a href={m.media_url ?? "#"} target="_blank" rel="noreferrer">
-        <img src={m.media_url ?? ""} alt="" className="max-h-64 rounded-lg" />
-      </a>
-    );
-  }
-  if (m.kind === "video") {
-    return <video src={m.media_url ?? ""} controls className="max-h-64 rounded-lg" />;
-  }
-  if (m.kind === "voice") {
-    return <VoiceMessage url={m.media_url ?? ""} mine={mine} duration={m.duration_seconds} />;
-  }
-  if (m.kind === "file") {
-    return (
-      <a
-        href={m.media_url ?? "#"}
-        target="_blank"
-        rel="noreferrer"
-        className="flex items-center gap-2 underline"
-      >
-        <Paperclip className="h-3 w-3" />
-        {m.message ?? "File"}
-      </a>
-    );
-  }
+  if (m.kind === "image") return <SignedImage src={m.media_url} />;
+  if (m.kind === "video") return <SignedVideo src={m.media_url} />;
+  if (m.kind === "voice") return <SignedVoice src={m.media_url} mine={mine} duration={m.duration_seconds} />;
+  if (m.kind === "file") return <SignedFile src={m.media_url} label={m.message} />;
   if (m.kind === "album") {
     return <PrivateAlbum src={albumSrc} />;
   }
 
   return <ImageIcon className="h-4 w-4" />;
 }
+
+function SignedImage({ src }: { src: string | null }) {
+  const url = useSignedMediaUrl(src);
+  if (!url) return <div className="h-32 w-48 animate-pulse rounded-lg bg-muted" />;
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      <img src={url} alt="" className="max-h-64 rounded-lg" />
+    </a>
+  );
+}
+
+function SignedVideo({ src }: { src: string | null }) {
+  const url = useSignedMediaUrl(src);
+  if (!url) return <div className="h-40 w-56 animate-pulse rounded-lg bg-muted" />;
+  return <video src={url} controls className="max-h-64 rounded-lg" />;
+}
+
+function SignedVoice({ src, mine, duration }: { src: string | null; mine: boolean; duration: number | null }) {
+  const url = useSignedMediaUrl(src);
+  return <VoiceMessage url={url} mine={mine} duration={duration} />;
+}
+
+function SignedFile({ src, label }: { src: string | null; label: string | null }) {
+  const url = useSignedMediaUrl(src);
+  return (
+    <a
+      href={url || "#"}
+      target="_blank"
+      rel="noreferrer"
+      className="flex items-center gap-2 underline"
+    >
+      <Paperclip className="h-3 w-3" />
+      {label ?? "File"}
+    </a>
+  );
+}
+
 
 function PrivateAlbum({ src }: { src?: string }) {
   const [revealed, setRevealed] = useState(false);
