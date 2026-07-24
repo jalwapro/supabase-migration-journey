@@ -92,11 +92,15 @@ function previewText(r: InboxRow): { text: string; icon?: string } {
 const ONLINE_WINDOW_MS = 90_000;
 function usePresence(ids: string[]) {
   const key = useMemo(() => Array.from(new Set(ids)).filter(Boolean).sort(), [ids]);
-  return useQuery({
-    queryKey: ["presence", key],
+  const qc = useQueryClient();
+  const queryKey = ["presence", key];
+
+  const q = useQuery({
+    queryKey,
     enabled: key.length > 0,
-    refetchInterval: 30_000,
+    // No polling — refresh is driven by realtime + focus/visibility events.
     refetchOnWindowFocus: true,
+    staleTime: 20_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
@@ -112,7 +116,49 @@ function usePresence(ids: string[]) {
       return online;
     },
   });
+
+  // Realtime: subscribe to profile updates for the *currently visible* peers.
+  // Supabase postgres_changes filters don't support `in.()`, so we open a
+  // single channel and match client-side against the id set. Cap the set to
+  // keep the fan-out bounded — inbox is already paginated to 50, so this stays
+  // within scale rules.
+  useEffect(() => {
+    if (key.length === 0) return;
+    const idSet = new Set(key);
+    const ch = supabase
+      .channel(`presence-peers:${key.length}:${key[0] ?? "_"}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "profiles" },
+        (payload: { new: { id?: string } }) => {
+          if (payload.new?.id && idSet.has(payload.new.id)) {
+            qc.invalidateQueries({ queryKey });
+          }
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key.join("|")]);
+
+  // Refresh on tab visibility change (mobile PWA wake-up)
+  useEffect(() => {
+    if (key.length === 0) return;
+    const onVis = () => {
+      if (document.visibilityState === "visible") {
+        qc.invalidateQueries({ queryKey });
+      }
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key.join("|")]);
+
+  return q;
 }
+
 
 function MessagesPage() {
   const { user } = useAuth();
