@@ -71,6 +71,15 @@ function WalletPage() {
               </span>
             </div>
 
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-[#c7a8ff]/40 bg-black/40 px-3 py-1 text-xs">
+              <span className="font-bold text-[#c7a8ff]">
+                {(profile?.diamonds ?? 0).toLocaleString()} pts
+              </span>
+              <Link to="/withdraw" className="text-[10px] font-bold uppercase tracking-wider text-[#ffcf6a]">
+                Withdraw →
+              </Link>
+            </div>
+
             <div className="mt-5 flex items-center gap-2">
               <Link
                 to="/recharge"

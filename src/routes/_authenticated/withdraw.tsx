@@ -9,8 +9,6 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: Page });
 
-const RATE = 0.5; // 1 point = 0.5 PKR (adjust as needed)
-
 function Page() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
@@ -18,6 +16,23 @@ function Page() {
   const [method, setMethod] = useState<"jazzcash" | "easypaisa" | "bank" | "manual">("jazzcash");
   const [accNum, setAccNum] = useState("");
   const [accName, setAccName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // Server-driven rate + limits. Never hard-code payout math client-side.
+  const { data: settings } = useQuery({
+    queryKey: ["withdrawal_settings"],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_withdrawal_settings");
+      if (error) throw error;
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        rate: Number(row?.diamond_price_pkr ?? 0.5),
+        max: Number(row?.max_withdrawal_diamonds ?? 10_000_000),
+        min: Number(row?.min_withdrawal_diamonds ?? 100),
+      };
+    },
+  });
 
   const { data: history } = useQuery({
     queryKey: ["withdrawals", user?.id],
@@ -34,20 +49,29 @@ function Page() {
   });
 
   const balance = profile?.diamonds ?? 0;
-  const amount = Math.max(0, diamonds * RATE);
+  const rate = settings?.rate ?? 0.5;
+  const minD = settings?.min ?? 100;
+  const maxD = settings?.max ?? 10_000_000;
+  const amount = Math.max(0, diamonds * rate);
+  const hasPending = (history ?? []).some((h) => h.status === "pending");
+
 
   async function submit() {
-    if (!user) return;
-    if (diamonds < 100) return toast.error("Minimum 100 points");
+    if (!user || submitting) return;
+    if (diamonds < minD) return toast.error(`Minimum ${minD} points`);
+    if (diamonds > maxD) return toast.error(`Maximum ${maxD.toLocaleString()} points per request`);
     if (diamonds > balance) return toast.error("Not enough points");
+    if (hasPending) return toast.error("You already have a pending withdrawal");
     if (!accNum.trim() || !accName.trim()) return toast.error("Fill account details");
 
+    setSubmitting(true);
     const { error } = await supabase.rpc("request_withdrawal", {
       _diamonds: diamonds,
       _method: method,
       _account_number: accNum.trim(),
       _account_name: accName.trim(),
     });
+    setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Withdrawal requested");
     setAccNum("");
@@ -70,12 +94,16 @@ function Page() {
 
               <input
                 type="number"
-                min={100}
+                min={minD}
+                max={maxD}
                 value={diamonds}
                 onChange={(e) => setDiamonds(Number(e.target.value))}
                 className="w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm outline-none"
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">≈ Rs. {amount.toLocaleString()}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                ≈ Rs. {amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                {" "}· rate 1 pt = Rs. {rate}
+              </p>
             </Field>
             <Field label="Method">
               <select
@@ -105,9 +133,10 @@ function Page() {
             </Field>
             <button
               onClick={submit}
-              className="w-full rounded-xl bg-[color:var(--gold)] py-3 text-sm font-black text-black"
+              disabled={submitting || hasPending}
+              className="w-full rounded-xl bg-[color:var(--gold)] py-3 text-sm font-black text-black disabled:opacity-50"
             >
-              Request Withdrawal
+              {submitting ? "Submitting…" : hasPending ? "Pending request in review" : "Request Withdrawal"}
             </button>
           </div>
 

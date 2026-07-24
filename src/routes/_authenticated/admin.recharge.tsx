@@ -85,6 +85,20 @@ function RechargeAdmin() {
     },
   });
 
+  // Realtime: refresh the queue whenever anything changes so admins never
+  // miss a pending request.
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin_recharges_rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "recharge_requests" },
+        () => qc.invalidateQueries({ queryKey: ["admin_recharges"] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+
   const act = useMutation({
     mutationFn: async ({ id, approve, note }: { id: string; approve: boolean; note?: string }) => {
       const fn = approve ? "approve_recharge" : "reject_recharge";

@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_authenticated/admin/coins")({
   component: CoinPackagesAdmin,
 });
 
+type Tier = "starter" | "popular" | "vip" | "whale";
 type PkgRow = {
   id: string;
   coins: number;
@@ -19,7 +20,10 @@ type PkgRow = {
   badge: string | null;
   sort_order: number;
   active: boolean;
+  tier: Tier;
 };
+
+const TIERS: Tier[] = ["starter", "popular", "vip", "whale"];
 
 function CoinPackagesAdmin() {
   const qc = useQueryClient();
@@ -39,6 +43,7 @@ function CoinPackagesAdmin() {
     label: "",
     badge: "",
     sort_order: 99,
+    tier: "starter" as Tier,
   });
 
   const create = useMutation({
@@ -47,10 +52,13 @@ function CoinPackagesAdmin() {
         coins: draft.coins,
         bonus_coins: draft.bonus_coins,
         price_pkr: draft.price_pkr,
+        price: draft.price_pkr, // legacy NOT NULL column
         label: draft.label || null,
         badge: draft.badge || null,
         sort_order: draft.sort_order,
+        tier: draft.tier,
         active: true,
+        is_active: true,
       });
       if (error) throw error;
     },
@@ -88,7 +96,12 @@ function CoinPackagesAdmin() {
                 {p.coins.toLocaleString()}
                 {p.bonus_coins > 0 && <span className="text-[color:var(--gold)]"> +{p.bonus_coins}</span>} · Rs {Number(p.price_pkr).toLocaleString()}
               </p>
-              <p className="text-xs text-muted-foreground">{p.label || "—"} {p.badge && `· ${p.badge}`}</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="rounded-full bg-primary/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary">
+                  {p.tier}
+                </span>{" "}
+                {p.label || "—"} {p.badge && `· ${p.badge}`}
+              </p>
             </div>
             <button
               onClick={() => toggle.mutate(p)}
@@ -125,6 +138,15 @@ function CoinPackagesAdmin() {
               className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
             />
           ))}
+          <select
+            value={draft.tier}
+            onChange={(e) => setDraft((d) => ({ ...d, tier: e.target.value as Tier }))}
+            className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none capitalize"
+          >
+            {TIERS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
         </div>
         <button
           onClick={() => create.mutate()}

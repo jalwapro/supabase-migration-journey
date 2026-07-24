@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Check, X, Loader2 } from "lucide-react";
@@ -40,6 +40,19 @@ function WithdrawalsAdmin() {
       return (data ?? []) as Row[];
     },
   });
+
+  // Realtime: keep the queue live for every admin.
+  useEffect(() => {
+    const ch = supabase
+      .channel("admin_withdrawals_rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "withdrawal_requests" },
+        () => qc.invalidateQueries({ queryKey: ["admin_withdrawals"] }),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
 
   const act = useMutation({
     mutationFn: async ({ id, status, note }: { id: string; status: "approved" | "rejected"; note?: string }) => {
