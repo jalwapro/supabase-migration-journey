@@ -57,17 +57,21 @@ function Page() {
 
 
   async function submit() {
-    if (!user) return;
-    if (diamonds < 100) return toast.error("Minimum 100 points");
+    if (!user || submitting) return;
+    if (diamonds < minD) return toast.error(`Minimum ${minD} points`);
+    if (diamonds > maxD) return toast.error(`Maximum ${maxD.toLocaleString()} points per request`);
     if (diamonds > balance) return toast.error("Not enough points");
+    if (hasPending) return toast.error("You already have a pending withdrawal");
     if (!accNum.trim() || !accName.trim()) return toast.error("Fill account details");
 
+    setSubmitting(true);
     const { error } = await supabase.rpc("request_withdrawal", {
       _diamonds: diamonds,
       _method: method,
       _account_number: accNum.trim(),
       _account_name: accName.trim(),
     });
+    setSubmitting(false);
     if (error) return toast.error(error.message);
     toast.success("Withdrawal requested");
     setAccNum("");
