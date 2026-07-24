@@ -24,15 +24,11 @@ function Page() {
 
   async function subscribe(tier: any) {
     if (!user || !profile) return;
-    if (profile.coins < tier.price) return toast.error("Not enough coins");
-    const expiry = new Date();
-    expiry.setDate(expiry.getDate() + (tier.duration_days ?? 30));
-    const { error } = await supabase
-      .from("profiles")
-      .update({ is_vip: true, vip_expiry: expiry.toISOString(), coins: profile.coins - tier.price })
-      .eq("id", user.id);
+    if ((profile.coins ?? 0) < tier.price) return toast.error("Not enough coins");
+    const { data, error } = await supabase.rpc("purchase_vip", { _tier_id: tier.id });
     if (error) return toast.error(error.message);
-    toast.success(`Welcome to ${tier.name} VIP`);
+    const result = data as { tier?: string; coins_after?: number } | null;
+    toast.success(`Welcome to ${result?.tier ?? tier.name} VIP`);
     qc.invalidateQueries();
   }
 
