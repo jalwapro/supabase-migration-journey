@@ -40,19 +40,20 @@ function Page() {
     if (!user) return;
     if (diamonds < 100) return toast.error("Minimum 100 points");
     if (diamonds > balance) return toast.error("Not enough points");
+    if (!accNum.trim() || !accName.trim()) return toast.error("Fill account details");
 
-    if (!accNum || !accName) return toast.error("Fill account details");
-    const { error } = await supabase.from("withdrawal_requests").insert({
-      user_id: user.id,
-      diamonds,
-      amount_pkr: amount,
-      method,
-      account_number: accNum,
-      account_name: accName,
+    const { error } = await supabase.rpc("request_withdrawal", {
+      _diamonds: diamonds,
+      _method: method,
+      _account_number: accNum.trim(),
+      _account_name: accName.trim(),
     });
     if (error) return toast.error(error.message);
     toast.success("Withdrawal requested");
+    setAccNum("");
+    setAccName("");
     qc.invalidateQueries({ queryKey: ["withdrawals"] });
+    qc.invalidateQueries({ queryKey: ["profile"] });
   }
 
   return (
