@@ -26,6 +26,8 @@ const FIELDS = [
   { name: "bankAccount", label: "Bank account #" },
   { name: "bankTitle", label: "Bank account title" },
   { name: "crypto", label: "Crypto address (USDT/TRC20)" },
+  { name: "paypal", label: "PayPal email / handle" },
+  { name: "paypalNote", label: "PayPal instructions (optional)" },
 ];
 
 function PaymentAccounts() {
