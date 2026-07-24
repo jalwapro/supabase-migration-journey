@@ -206,37 +206,29 @@ function MessagesPage() {
     staleTime: 15_000,
   });
 
-  // Realtime: keep everything live
+  // Realtime: DM index, follows, and notifications are already covered by the
+  // app-wide `useGlobalRealtime()` bridge — no per-route channel needed
+  // (avoids per-tab channel leak, C6). We only add a scoped subscription for
+  // the "live rooms of followed users" strip: filter by hosts in
+  // `chat-followers` to avoid an unfiltered global fanout.
   useEffect(() => {
     if (!uid) return;
-    const chSent = supabase.channel(`msg-sent-${uid}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `sender_id=eq.${uid}` },
-        () => qc.invalidateQueries({ queryKey: ["dm_index", uid] }))
-      .subscribe();
-    const chRecv = supabase.channel(`msg-recv-${uid}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` },
-        () => qc.invalidateQueries({ queryKey: ["dm_index", uid] }))
-      .subscribe();
-    const chFollow = supabase.channel(`msg-follows-${uid}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "follows", filter: `following_id=eq.${uid}` },
-        () => qc.invalidateQueries({ queryKey: ["chat-followers", uid] }))
-      .subscribe();
-    const chNotif = supabase.channel(`msg-notif-${uid}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-        () => qc.invalidateQueries({ queryKey: ["msg-notif-count", uid] }))
-      .subscribe();
-    const chRooms = supabase.channel(`msg-rooms`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "live_rooms" },
-        () => qc.invalidateQueries({ queryKey: ["messages-live-rooms"] }))
+    const hostIds = (followersQ.data ?? []).map((f) => f.id).filter(Boolean);
+    if (hostIds.length === 0) return;
+    const filter = `host_id=in.(${hostIds.join(",")})`;
+    const chRooms = supabase
+      .channel(`msg-rooms:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_rooms", filter },
+        () => qc.invalidateQueries({ queryKey: ["messages-live-rooms"] }),
+      )
       .subscribe();
     return () => {
-      void supabase.removeChannel(chSent);
-      void supabase.removeChannel(chRecv);
-      void supabase.removeChannel(chFollow);
-      void supabase.removeChannel(chNotif);
       void supabase.removeChannel(chRooms);
     };
-  }, [uid, qc]);
+  }, [uid, qc, followersQ.data]);
+
 
   const inboxList = useMemo(() => {
     const list = (inboxQ.data ?? []).slice().sort((a, b) =>
