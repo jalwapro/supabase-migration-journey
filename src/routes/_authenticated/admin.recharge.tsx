@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Loader2, Check, X, Image as ImageIcon } from "lucide-react";
@@ -9,6 +9,47 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/admin/recharge")({
   component: RechargeAdmin,
 });
+
+/** Extract "user_id/xxx.png" from a public URL like
+ *  https://.../object/public/recharge-proofs/<path>, or from a bare path. */
+function extractProofPath(url: string): string | null {
+  const marker = "/recharge-proofs/";
+  const i = url.indexOf(marker);
+  if (i >= 0) return url.slice(i + marker.length).split("?")[0];
+  // Already a bare path.
+  if (!url.startsWith("http")) return url.replace(/^\/+/, "");
+  return null;
+}
+
+function ProofThumb({ url }: { url: string }) {
+  const [signed, setSigned] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const path = extractProofPath(url);
+    if (!path) { setSigned(url); return; }
+    (async () => {
+      const { data, error } = await supabase.storage
+        .from("recharge-proofs")
+        .createSignedUrl(path, 60 * 10); // 10 min
+      if (!alive) return;
+      setSigned(error ? null : data?.signedUrl ?? null);
+    })();
+    return () => { alive = false; };
+  }, [url]);
+  if (!signed) {
+    return (
+      <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-card/60">
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+  return (
+    <a href={signed} target="_blank" rel="noreferrer" className="shrink-0">
+      <img src={signed} alt="proof" className="h-20 w-20 rounded-lg object-cover" />
+    </a>
+  );
+}
+
 
 type RechargeRow = {
   id: string;
