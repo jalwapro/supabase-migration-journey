@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Swords, Trophy, Coins, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, PiggyBank, UserPlus, Bell, ImagePlus, Dices } from "lucide-react";
+import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Swords, Trophy, Coins, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, PiggyBank, UserPlus, Bell, ImagePlus, Dices, Database } from "lucide-react";
 import type { ReactNode } from "react";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
@@ -57,6 +57,8 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { to: "/admin/splash", label: "Splash & Animation", icon: Sparkles },
       { to: "/admin/integrations", label: "Integrations", icon: Plug },
+      { to: "/admin/connection", label: "Connection Status", icon: Database },
+      
       
       { to: "/admin/settings", label: "Settings", icon: Settings },
       { to: "/admin/roles", label: "Admin Roles", icon: ShieldCheck },
