@@ -138,6 +138,15 @@ function CoinPackagesAdmin() {
               className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
             />
           ))}
+          <select
+            value={draft.tier}
+            onChange={(e) => setDraft((d) => ({ ...d, tier: e.target.value as Tier }))}
+            className="rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none capitalize"
+          >
+            {TIERS.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
         </div>
         <button
           onClick={() => create.mutate()}
