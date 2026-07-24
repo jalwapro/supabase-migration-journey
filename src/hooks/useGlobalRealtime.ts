@@ -120,7 +120,16 @@ export function useGlobalRealtime() {
       {
         table: "direct_messages",
         filter: `recipient_id=eq.${uid}`,
-        keys: ["dm", "dm_index", "dm-thread", "dm-threads", "messages", "conversations"],
+        keys: [
+          "dm",
+          "dm_index",
+          "dm-thread",
+          "dm-threads",
+          "dm-unread",
+          "messages",
+          "conversations",
+          "msg-notif-count",
+        ],
       },
     ]);
 
@@ -144,6 +153,7 @@ export function useGlobalRealtime() {
         keys: ["wallet", "wallet_tx", "me-counts", "gifts-sent"],
       },
     ]);
+
 
     const ch4 = subscribe(qc, `assets:${uid}`, [
       {
