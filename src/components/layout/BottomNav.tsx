@@ -48,24 +48,10 @@ function useUnreadDm() {
     staleTime: 5_000,
   });
 
-  // Realtime: badge should light up the instant a new DM arrives, without
-  // waiting for a route change or the 30s poll.
-  useEffect(() => {
-    if (!uid) return;
-    const ch = supabase
-      .channel(`dm-badge:${uid}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "direct_messages", filter: `recipient_id=eq.${uid}` },
-        () => {
-          void qc.invalidateQueries({ queryKey: ["dm", "unread-badge", uid] });
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(ch);
-    };
-  }, [uid, qc]);
+  // Realtime for the unread badge is delivered by the app-wide
+  // `useGlobalRealtime()` bridge (dm-received channel invalidates
+  // `["dm-unread", ...]`). No per-nav channel needed (C6 dedupe).
+
 
   return query;
 }
