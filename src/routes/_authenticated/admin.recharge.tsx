@@ -94,9 +94,7 @@ function RechargeAdmin() {
                 {r.admin_note && <p className="mt-1 text-[10px] text-[color:var(--gold)]">Admin: {r.admin_note}</p>}
               </div>
               {r.proof_url ? (
-                <a href={r.proof_url} target="_blank" rel="noreferrer" className="shrink-0">
-                  <img src={r.proof_url} alt="proof" className="h-20 w-20 rounded-lg object-cover" />
-                </a>
+                <ProofThumb url={r.proof_url} />
               ) : (
                 <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-card/60">
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
