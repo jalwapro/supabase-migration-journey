@@ -94,12 +94,16 @@ function Page() {
 
               <input
                 type="number"
-                min={100}
+                min={minD}
+                max={maxD}
                 value={diamonds}
                 onChange={(e) => setDiamonds(Number(e.target.value))}
                 className="w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm outline-none"
               />
-              <p className="mt-1 text-[11px] text-muted-foreground">≈ Rs. {amount.toLocaleString()}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                ≈ Rs. {amount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                {" "}· rate 1 pt = Rs. {rate}
+              </p>
             </Field>
             <Field label="Method">
               <select
