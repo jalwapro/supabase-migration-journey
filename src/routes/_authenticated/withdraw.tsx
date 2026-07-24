@@ -133,9 +133,10 @@ function Page() {
             </Field>
             <button
               onClick={submit}
-              className="w-full rounded-xl bg-[color:var(--gold)] py-3 text-sm font-black text-black"
+              disabled={submitting || hasPending}
+              className="w-full rounded-xl bg-[color:var(--gold)] py-3 text-sm font-black text-black disabled:opacity-50"
             >
-              Request Withdrawal
+              {submitting ? "Submitting…" : hasPending ? "Pending request in review" : "Request Withdrawal"}
             </button>
           </div>
 
