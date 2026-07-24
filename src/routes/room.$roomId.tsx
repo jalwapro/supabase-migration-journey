@@ -1870,7 +1870,21 @@ function RoomPage() {
           </div>
           {/* Action icons */}
           <div className="flex items-start gap-2">
-            <HeaderIcon onClick={() => toast.info("Reported")} label="Report">
+            <HeaderIcon
+              onClick={async () => {
+                const reason = window.prompt("Report this room? (e.g. harassment, spam, nudity)");
+                if (!reason || reason.trim().length < 3) return;
+                const { error } = await supabase.rpc("submit_user_report", {
+                  _reported_user: room.data?.host_id ?? null,
+                  _room_id: roomId,
+                  _reason: reason.trim(),
+                  _details: null,
+                });
+                if (error) toast.error(error.message);
+                else toast.success("Report submitted");
+              }}
+              label="Report"
+            >
               <Flag className="h-4 w-4" />
             </HeaderIcon>
             <HeaderIcon onClick={share} label="Share">
