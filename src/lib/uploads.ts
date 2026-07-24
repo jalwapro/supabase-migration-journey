@@ -42,3 +42,29 @@ export async function uploadToUserFolder(
   const folder = subfolder ? `${userId}/${subfolder}` : userId;
   return uploadToBucket(bucket, file, folder);
 }
+
+/**
+ * Upload into a PRIVATE bucket under the user's folder. Returns a
+ * `storage://<bucket>/<path>` marker instead of a public URL, since public
+ * URLs won't resolve for private buckets. Consumers use `useSignedMediaUrl`
+ * (see `@/lib/signedMedia`) to render the media.
+ */
+export async function uploadPrivateToUserFolder(
+  bucket: string,
+  file: File,
+  userId: string,
+  subfolder = "",
+): Promise<UploadResult> {
+  const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const id = crypto.randomUUID();
+  const folder = subfolder ? `${userId}/${subfolder}` : userId;
+  const path = `${folder}/${id}.${ext}`;
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    contentType: file.type || undefined,
+    upsert: false,
+    cacheControl: "3600",
+  });
+  if (error) throw error;
+  return { url: `storage://${bucket}/${path}`, path, mime: file.type, size: file.size };
+}
+
