@@ -624,13 +624,13 @@ function Home() {
 
           {/* Rooms — Top Hosts + All Live */}
           <section className="mt-4 space-y-5 px-4">
-            {rooms.isLoading ? (
+            {isRoomsLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="aspect-square rounded-3xl bg-white/5" />
                 ))}
               </div>
-            ) : filteredRooms.length > 0 ? (
+            ) : filteredRoomsCount > 0 ? (
               <>
                 {topHosts.length > 0 && (
                   <div>
@@ -657,16 +657,17 @@ function Home() {
                       </h2>
                     </div>
                     <div className="space-y-2">
-                      {restRooms.slice(0, roomsShown).map((r) => (
+                      {restRooms.map((r) => (
                         <RoomListItem key={r.id} room={r} />
                       ))}
                     </div>
-                    {restRooms.length > roomsShown && (
+                    {restRoomsInfinite.hasNextPage && (
                       <button
-                        onClick={() => setRoomsShown((n) => n + 20)}
-                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10"
+                        onClick={() => restRoomsInfinite.fetchNextPage()}
+                        disabled={restRoomsInfinite.isFetchingNextPage}
+                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10 disabled:opacity-50"
                       >
-                        Load more ({restRooms.length - roomsShown} left)
+                        {restRoomsInfinite.isFetchingNextPage ? "Loading…" : "Load more"}
                       </button>
                     )}
 
