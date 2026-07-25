@@ -171,13 +171,21 @@ export function GiftSheet({
   const send = useMutation({
     mutationFn: async ({ gift, targets, quantity }: { gift: Gift; targets: string[]; quantity: number }) => {
       if (targets.length === 0) throw new Error("Pick a receiver");
-      for (const rid of targets) {
+      if (targets.length === 1) {
         const { error } = await supabase.rpc("send_gift", {
           _room_id: roomId,
-          _receiver_id: rid,
+          _receiver_id: targets[0],
           _gift_id: gift.id,
           _quantity: quantity,
         });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("send_gift_multi", {
+          _room_id: roomId,
+          _receiver_ids: targets,
+          _gift_id: gift.id,
+          _quantity: quantity,
+        } as any);
         if (error) throw error;
       }
       return {
@@ -186,6 +194,7 @@ export function GiftSheet({
         coins: price(gift) * quantity,
       };
     },
+
     onSuccess: async () => {
       await refresh();
       qc.invalidateQueries({ queryKey: ["wallet_tx"] });
