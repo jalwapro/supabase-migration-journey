@@ -796,9 +796,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={isRoyalRose || Boolean(fallbackImage)}
+            name={current.giftName}
           />
         ) : (
-          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} />
+          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} name={current.giftName} />
         )}
         {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
           <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
