@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CATALOG_GIFTS } from "@/lib/gifts";
-import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
+import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { getGiftAudioPrefs } from "@/lib/giftAudio";
 import { X, Loader2, Coins, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ export type Gift = {
   id: string;
   name: string;
   icon: string | null;
+  icon_path?: string | null;
   emoji?: string | null;
   image_url: string | null;
   price_coins: number | null;
@@ -54,11 +55,12 @@ function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
   if (isRoyalRoseGift(gift.name)) {
     return <img src={ROYAL_ROSE_THUMB_URL} alt="" className="h-full w-full object-contain" />;
   }
-  if (gift.image_url) {
-    return <img src={gift.image_url} alt="" className="h-full w-full object-contain" />;
+  const thumb = resolveGiftImageUrl(gift.image_url ?? gift.icon_path ?? (isAssetUrlLike(gift.icon) ? gift.icon : null));
+  if (thumb) {
+    return <img src={thumb} alt="" className="h-full w-full object-contain" />;
   }
   if (gift.clip_path && gift.clip_type === "svg") {
-    return <img src={gift.clip_path} alt="" className="h-full w-full object-contain" />;
+    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className="h-full w-full object-contain" />;
   }
   return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
 }
@@ -89,7 +91,7 @@ export function GiftSheet({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active")
+        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active")
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
@@ -134,6 +136,11 @@ export function GiftSheet({
   const giftVideoUrl = (g: Gift | null) => {
     if (!g?.clip_path || !["mp4", "webm", "svga"].includes(g.clip_type ?? "")) return null;
     return resolvePlayableGiftUrl(g.clip_path);
+  };
+
+  const giftThumbUrl = (g: Gift | null) => {
+    if (!g) return null;
+    return resolveGiftImageUrl(g.image_url ?? g.icon_path ?? (isAssetUrlLike(g.icon) ? g.icon : null));
   };
 
 
@@ -208,6 +215,8 @@ export function GiftSheet({
     }
     const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
     const royalRose = isRoyalRoseGift(selectedGift.name);
+    const clipUrl = royalRose ? ROYAL_ROSE_MP4_URL : giftVideoUrl(selectedGift);
+    const thumbUrl = royalRose ? ROYAL_ROSE_THUMB_URL : giftThumbUrl(selectedGift);
 
     // Play gift sound INSIDE this click handler so the browser autoplay policy
     // allows it. Unlocks the audio context for subsequent gift sounds too.
@@ -240,10 +249,10 @@ export function GiftSheet({
           receiverName: firstReceiver?.username ?? "Host",
           receiverAvatar: firstReceiver?.avatar ?? null,
           giftName: selectedGift.name,
-          giftEmoji: royalRose ? "" : selectedGift.emoji ?? selectedGift.icon ?? "🎁",
-          giftImageUrl: royalRose ? ROYAL_ROSE_THUMB_URL : selectedGift.image_url ?? null,
-          giftClipUrl: royalRose ? ROYAL_ROSE_MP4_URL : (giftVideoUrl(selectedGift) ?? selectedGift.image_url ?? null),
-          giftClipType: royalRose ? "mp4" : (giftVideoUrl(selectedGift) ? selectedGift.clip_type : (selectedGift.image_url ? "image" : null)),
+          giftEmoji: clipUrl ? "" : selectedGift.emoji ?? (isAssetUrlLike(selectedGift.icon) ? "" : selectedGift.icon) ?? "🎁",
+          giftImageUrl: thumbUrl,
+          giftClipUrl: clipUrl ?? thumbUrl,
+          giftClipType: clipUrl ? selectedGift.clip_type : (thumbUrl ? "image" : null),
           coins: price(selectedGift) * qty,
           diamonds: selectedGift.diamonds_value * qty,
           quantity: qty,

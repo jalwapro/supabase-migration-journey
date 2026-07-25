@@ -37,6 +37,19 @@ export function absolutizeLovableAsset(url: string | null | undefined) {
   return url;
 }
 
+export function isAssetUrlLike(value: string | null | undefined) {
+  if (!value) return false;
+  return /^(https?:|data:|blob:|\/|__l5e\/assets-v1\/)/i.test(value.trim());
+}
+
+export function resolveGiftImageUrl(url: string | null | undefined) {
+  if (!url) return null;
+  const value = url.trim();
+  if (!value) return null;
+  if (value.startsWith("__l5e/assets-v1/")) return `${LOVABLE_ORIGIN}/${value}`;
+  return absolutizeLovableAsset(value);
+}
+
 export function resolvePlayableGiftUrl(url: string | null | undefined) {
   if (!url) return null;
   const cleanUrl = url.split("?")[0]?.split("#")[0] ?? url;

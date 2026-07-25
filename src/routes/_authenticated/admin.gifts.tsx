@@ -32,7 +32,7 @@ type GiftRow = {
 };
 
 const CATEGORIES = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
-const CLIP_TYPES = ["none", "svg", "mp4"] as const;
+const CLIP_TYPES = ["none", "svg", "mp4", "webm"] as const;
 
 type Draft = {
   id?: string;
@@ -102,7 +102,7 @@ function GiftMediaPreview({
     return <img src={src} alt={name} className="h-full w-full object-contain" />;
   }
 
-  if (src && clipType === "mp4") {
+  if (src && (clipType === "mp4" || clipType === "webm")) {
     return (
       <video
         src={src}
@@ -111,7 +111,7 @@ function GiftMediaPreview({
         loop
         muted
         playsInline
-        preload="metadata"
+        preload="auto"
         onError={() => setVideoFailed(true)}
         className="h-full w-full object-contain"
       />
@@ -146,8 +146,8 @@ function GiftsAdmin() {
   });
 
   const upload = async (file: File) => {
-    if (!file.type.startsWith("video/") && !file.name.toLowerCase().endsWith(".mp4")) {
-      toast.error("Please pick an MP4 video");
+    if (!file.type.startsWith("video/") && !/\.(mp4|webm)$/i.test(file.name)) {
+      toast.error("Please pick an MP4 or WebM video");
       return;
     }
     if (file.size > 15 * 1024 * 1024) {
@@ -163,7 +163,7 @@ function GiftsAdmin() {
         .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
       if (error) throw error;
       const { data } = supabase.storage.from("shop-assets").getPublicUrl(path);
-      setDraft((d) => ({ ...d, clip_path: data.publicUrl, clip_type: "mp4" }));
+      setDraft((d) => ({ ...d, clip_path: data.publicUrl, clip_type: ext === "webm" ? "webm" : "mp4" }));
       toast.success("Video uploaded");
     } catch (e) {
       toast.error((e as Error).message);
@@ -249,7 +249,9 @@ function GiftsAdmin() {
       clip_type: (royalRose || g.clip_path
         ? g.clip_type === "svg"
           ? "svg"
-          : "mp4"
+          : g.clip_type === "webm"
+            ? "webm"
+            : "mp4"
         : "none") as Draft["clip_type"],
       is_milestone: Boolean(g.is_milestone),
     });
@@ -260,7 +262,7 @@ function GiftsAdmin() {
     <>
       <AdminPageHeader
         title="Gifts Management"
-        subtitle="Add SVG or MP4 animated gifts. MP4s upload to shop-assets/gift-clips."
+        subtitle="Add SVG, MP4, or WebM animated gifts. Videos upload to shop-assets/gift-clips."
       />
 
       <div className="grid gap-4 md:grid-cols-[1fr_360px]">
@@ -422,17 +424,17 @@ function GiftsAdmin() {
             {draft.clip_type !== "none" && (
               <>
                 <input
-                  placeholder={draft.clip_type === "mp4" ? "Video URL (.mp4)" : "SVG path or URL"}
+                  placeholder={draft.clip_type === "svg" ? "SVG path or URL" : "Video URL (.mp4/.webm)"}
                   value={draft.clip_path}
                   onChange={(e) => setDraft((d) => ({ ...d, clip_path: e.target.value }))}
                   className="w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
                 />
-                {draft.clip_type === "mp4" && (
+                {(draft.clip_type === "mp4" || draft.clip_type === "webm") && (
                   <div className="mt-2">
                     <input
                       ref={fileRef}
                       type="file"
-                      accept="video/mp4,video/*"
+                      accept="video/mp4,video/webm,video/*"
                       onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
                       className="hidden"
                     />
@@ -446,7 +448,7 @@ function GiftsAdmin() {
                       ) : (
                         <Upload className="h-3.5 w-3.5" />
                       )}
-                      {uploading ? "Uploading…" : "Upload MP4 (max 15 MB)"}
+                      {uploading ? "Uploading…" : "Upload MP4/WebM (max 15 MB)"}
                     </button>
                   </div>
                 )}
