@@ -203,21 +203,35 @@ function DmThread() {
       .channel(`dm-thread-${user.id}-${peerId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "direct_messages" },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "direct_messages",
+          filter: `recipient_id=eq.${user.id}`,
+        },
         (payload) => {
           const m = payload.new as DM;
-          const pair =
-            (m.sender_id === user.id && m.recipient_id === peerId) ||
-            (m.sender_id === peerId && m.recipient_id === user.id);
-          if (!pair) return;
+          if (m.sender_id !== peerId) return;
           setMessages((prev) => (prev.some((item) => item.id === m.id) ? prev : [...prev, m]));
-          if (m.recipient_id === user.id) {
-            const now = new Date().toISOString();
-            void supabase
-              .from("direct_messages")
-              .update({ read_at: now, delivered_at: now })
-              .eq("id", m.id);
-          }
+          const now = new Date().toISOString();
+          void supabase
+            .from("direct_messages")
+            .update({ read_at: now, delivered_at: now })
+            .eq("id", m.id);
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "direct_messages",
+          filter: `sender_id=eq.${user.id}`,
+        },
+        (payload) => {
+          const m = payload.new as DM;
+          if (m.recipient_id !== peerId) return;
+          setMessages((prev) => (prev.some((item) => item.id === m.id) ? prev : [...prev, m]));
         },
       )
       .on(

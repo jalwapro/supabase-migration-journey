@@ -198,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const tick = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       supabase
         .from("profiles")
         .update({ last_seen: new Date().toISOString() })

@@ -269,10 +269,12 @@ function UserProfilePage() {
           .eq("following_id", userId);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("follows").insert({
-          follower_id: me.id,
-          following_id: userId,
-        });
+        const { error } = await supabase
+          .from("follows")
+          .upsert(
+            { follower_id: me.id, following_id: userId },
+            { onConflict: "follower_id,following_id", ignoreDuplicates: true },
+          );
         if (error) throw error;
       }
     },

@@ -59,7 +59,12 @@ function Page() {
 
   async function followBack(id: string) {
     if (!user) return;
-    const { error } = await supabase.from("follows").insert({ follower_id: user.id, following_id: id });
+    const { error } = await supabase
+      .from("follows")
+      .upsert(
+        { follower_id: user.id, following_id: id },
+        { onConflict: "follower_id,following_id", ignoreDuplicates: true },
+      );
     if (error) return toast.error(error.message);
     toast.success("Following");
     qc.invalidateQueries({ queryKey: ["friends"] });
