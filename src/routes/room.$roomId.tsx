@@ -972,12 +972,16 @@ function RoomPage() {
             .eq("id", row.from_user)
             .maybeSingle();
           const p = data as { username: string | null; avatar: string | null } | null;
-          setPendingSeatRequest({
-            id: row.id,
-            from_name: p?.username ?? null,
-            from_avatar: p?.avatar ?? null,
-            seat_index: row.seat_index,
+          setPendingSeatRequests((prev) => {
+            if (prev.some((r) => r.id === row.id)) return prev;
+            return [...prev, {
+              id: row.id,
+              from_name: p?.username ?? null,
+              from_avatar: p?.avatar ?? null,
+              seat_index: row.seat_index,
+            }];
           });
+
         },
       )
       .subscribe();
