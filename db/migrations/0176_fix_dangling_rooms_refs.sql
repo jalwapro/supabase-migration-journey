@@ -222,7 +222,7 @@ BEGIN
   UPDATE public.profiles SET diamonds = diamonds + _host_share, updated_at = now() WHERE id = _host;
   UPDATE public.app_settings SET platform_diamonds = platform_diamonds + _admin_share WHERE id = 'global';
 
-  UPDATE public.live_rooms SET total_points = total_points + _gift.price WHERE id = _room_id;
+  -- total_points column no longer exists on live_rooms; totals computed from gift_events
 
   INSERT INTO public.wallet_transactions (user_id, kind, coins, note)
     VALUES (_uid, 'gift', -_gift.price, 'Sent ' || _gift.name);
