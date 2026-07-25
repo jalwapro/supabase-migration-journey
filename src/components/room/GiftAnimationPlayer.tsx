@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
@@ -580,9 +581,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="pointer-events-none fixed inset-0 z-[90] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[2147483000] overflow-hidden"
       aria-live="polite"
     >
       {/* Subtle vignette only — keep the room visible behind the gift */}
@@ -709,6 +712,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           </p>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
