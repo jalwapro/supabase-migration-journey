@@ -39,5 +39,5 @@
     <animateTransform attributeName="transform" type="scale" values="1;1.08;1" dur="1.86s" additive="sum" repeatCount="indefinite"/>
   </g>
 
-  <title>Jalwa Racer</title>
+  <title>Jalwa Vehicles Racer</title>
 </svg>
