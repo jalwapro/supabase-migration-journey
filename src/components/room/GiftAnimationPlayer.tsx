@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
-import { preloadGiftVideo, resolvePlayableGiftUrl } from "@/lib/giftMedia";
+import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
 import { useGiftAudioPrefs } from "@/lib/giftAudio";
 import SvgaPlayer from "./SvgaPlayer";
@@ -76,6 +76,12 @@ function resolveGiftClipUrl(url: string | null) {
   const optimizedUrl = resolvePlayableGiftUrl(resolveLuxuryGiftMp4Url(url) ?? url) ?? url;
   if (optimizedUrl.startsWith("/__l5e/")) return optimizedUrl;
   return optimizedUrl;
+}
+
+function getSafeGiftEmoji(emoji: string | null | undefined, icon: string | null | undefined) {
+  if (emoji) return emoji;
+  if (icon && !isAssetUrlLike(icon)) return icon;
+  return "🎁";
 }
 
 function getEffectiveGiftClip(p: Play) {
@@ -191,7 +197,7 @@ function AnimatedGiftVideo({
       video.muted = true;
       video.play().catch(() => {});
     });
-  }, [ensureAudioBoost]);
+  }, [ensureAudioBoost, withSound]);
 
   const markReady = useCallback(() => {
     setReady(true);
@@ -209,9 +215,8 @@ function AnimatedGiftVideo({
 
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[70] grid place-items-center bg-transparent">
-      {/* No placeholder while video buffers — avoids the static PNG/emoji
-          flash before the clip actually plays. Video fades in on `onPlaying`. */}
+    <div className="pointer-events-none absolute inset-0 z-[80] grid place-items-center bg-transparent">
+      {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
       <video
         key={src}
         ref={videoRef}
@@ -221,6 +226,7 @@ function AnimatedGiftVideo({
         preload="auto"
         autoPlay
         muted={!withSound}
+        onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
@@ -240,22 +246,14 @@ function AnimatedGiftVideo({
 
 
         onEnded={onDone}
-        className="gift-anim-video absolute inset-0 h-full w-full object-contain"
-        style={{ opacity: 1, willChange: "opacity, transform", mixBlendMode: screenBlend ? "screen" : undefined }}
+        className="gift-anim-video absolute inset-0 h-full w-full scale-110 object-contain"
+        style={{
+          opacity: 1,
+          willChange: "opacity, transform",
+          mixBlendMode: screenBlend ? "screen" : undefined,
+          filter: "brightness(1.14) saturate(1.18) drop-shadow(0 18px 46px rgba(255, 210, 90, 0.42))",
+        }}
       />
-      {/* Instant placeholder behind the video so the gift appears IMMEDIATELY
-          (TikTok-style). Video decodes on top and covers it once frames flow. */}
-      {!ready && (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <GiftFallbackVisual
-            emoji={fallbackEmoji}
-            image={fallbackImage}
-            onReady={() => {}}
-            suppressEmoji={suppressEmojiFallback}
-          />
-        </div>
-      )}
-
     </div>
 
   );
@@ -447,10 +445,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverName: r.receiver_username ?? "Host",
             receiverAvatar: r.receiver_avatar ?? null,
             giftName: r.gift_name ?? "Gift",
-            giftEmoji: r.gift_emoji ?? r.gift_icon ?? "🎁",
-            giftImageUrl: r.gift_image_url ?? null,
-            giftClipUrl: r.gift_clip_path ?? r.gift_image_url ?? null,
-            giftClipType: r.gift_clip_path ? r.gift_clip_type : (r.gift_image_url ? "image" : null),
+          giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
+          giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
+          giftClipUrl: r.gift_clip_path ?? r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null),
+          giftClipType: r.gift_clip_path ? r.gift_clip_type : (r.gift_image_url || isAssetUrlLike(r.gift_icon) ? "image" : null),
             coins: r.coins_spent ?? 0,
             diamonds: r.diamonds_earned ?? 0,
             quantity: r.quantity ?? 1,
@@ -483,7 +481,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isBlackBg = isBlackBgGift(current?.giftName);
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
-    : current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null);
+    : resolveGiftImageUrl(current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null));
   const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
 
   const clearCurrent = useCallback(() => {
@@ -579,7 +577,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (
     <div
-      className="pointer-events-none fixed inset-0 z-[60] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[90] overflow-hidden"
       aria-live="polite"
     >
       {/* Subtle vignette only — keep the room visible behind the gift */}
@@ -625,7 +623,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             withSound={(isPremiumLong || isBlackBg) && !audioPrefs.muted && audioPrefs.volume > 0}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            suppressEmojiFallback={isRoyalRose || isBlackBg}
+            suppressEmojiFallback={true}
             screenBlend={isBlackBg}
           />
 
@@ -644,7 +642,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onReady={markCurrentReady}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            suppressEmojiFallback={isRoyalRose}
+            suppressEmojiFallback={isRoyalRose || Boolean(fallbackImage)}
           />
         ) : (
           <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} />

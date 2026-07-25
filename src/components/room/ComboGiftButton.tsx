@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { isAssetUrlLike, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { toast } from "sonner";
 import type { Gift, GiftReceiver } from "@/components/GiftSheet";
 
@@ -82,6 +83,10 @@ export function ComboGiftButton({
   const { gift, targets, receivers } = state;
 
   const price = (gift.price_coins ?? gift.price ?? 0) as number;
+  const clipUrl = gift.clip_path && ["mp4", "webm", "svga"].includes(gift.clip_type ?? "")
+    ? resolvePlayableGiftUrl(gift.clip_path)
+    : null;
+  const thumbUrl = resolveGiftImageUrl(gift.image_url ?? gift.icon_path ?? (isAssetUrlLike(gift.icon) ? gift.icon : null));
 
   const tap = async () => {
     if (busyRef.current) return;
@@ -120,10 +125,10 @@ export function ComboGiftButton({
           receiverName: firstReceiver?.username ?? "Host",
           receiverAvatar: firstReceiver?.avatar ?? null,
           giftName: gift.name,
-          giftEmoji: gift.emoji ?? gift.icon ?? "🎁",
-          giftImageUrl: gift.image_url ?? null,
-          giftClipUrl: gift.image_url ?? gift.clip_path ?? null,
-          giftClipType: gift.image_url ? "image" : gift.clip_path ? gift.clip_type : null,
+          giftEmoji: clipUrl ? "" : gift.emoji ?? (isAssetUrlLike(gift.icon) ? "" : gift.icon) ?? "🎁",
+          giftImageUrl: thumbUrl,
+          giftClipUrl: clipUrl ?? thumbUrl,
+          giftClipType: clipUrl ? gift.clip_type : (thumbUrl ? "image" : null),
           coins: price,
           diamonds: gift.diamonds_value,
           quantity: 1,
@@ -199,8 +204,8 @@ export function ComboGiftButton({
           </svg>
           {/* Gift image */}
           <div className="grid h-12 w-12 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)]/30 via-[color:var(--primary)]/30 to-[color:var(--secondary)]/30 backdrop-blur-md">
-            {gift.image_url ? (
-              <img src={gift.image_url} alt="" className="h-9 w-9 object-contain" />
+            {thumbUrl ? (
+              <img src={thumbUrl} alt="" className="h-9 w-9 object-contain" />
             ) : (
               <span className="text-2xl leading-none">{gift.icon ?? gift.emoji ?? "🎁"}</span>
             )}
