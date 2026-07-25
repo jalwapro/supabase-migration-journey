@@ -3,7 +3,6 @@ import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
-import { CinematicGiftFX, coinsToTier, comboTier } from "./CinematicGiftFX";
 import { useGiftAudioPrefs } from "@/lib/giftAudio";
 import SvgaPlayer from "./SvgaPlayer";
 
@@ -46,6 +45,8 @@ function resolveSoundUrl(url: string | null | undefined) {
 
 const PLAY_MS = 3200;
 const VIDEO_PLAY_MS = 3800;
+const MAX_GIFT_Z_INDEX = 2147483647;
+const GIFT_PORTAL_ID = "jalwa-gift-animation-layer";
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
 const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
@@ -77,6 +78,25 @@ function resolveGiftClipUrl(url: string | null) {
   const optimizedUrl = resolvePlayableGiftUrl(resolveLuxuryGiftMp4Url(url) ?? url) ?? url;
   if (optimizedUrl.startsWith("/__l5e/")) return optimizedUrl;
   return optimizedUrl;
+}
+
+function ensureGiftPortalRoot() {
+  if (typeof document === "undefined") return null;
+  let root = document.getElementById(GIFT_PORTAL_ID);
+  if (!root) {
+    root = document.createElement("div");
+    root.id = GIFT_PORTAL_ID;
+    document.body.appendChild(root);
+  }
+  root.className = "jalwa-gift-animation-layer";
+  root.setAttribute("data-gift-portal", "true");
+  root.style.position = "fixed";
+  root.style.inset = "0";
+  root.style.zIndex = String(MAX_GIFT_Z_INDEX);
+  root.style.pointerEvents = "none";
+  root.style.isolation = "isolate";
+  root.style.contain = "layout paint style";
+  return root;
 }
 
 function getSafeGiftEmoji(emoji: string | null | undefined, icon: string | null | undefined) {
@@ -216,7 +236,7 @@ function AnimatedGiftVideo({
 
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[80] grid place-items-center bg-transparent">
+    <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
       {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
       <video
         key={src}
@@ -252,7 +272,7 @@ function AnimatedGiftVideo({
           opacity: 1,
           willChange: "opacity, transform",
           mixBlendMode: screenBlend ? "screen" : undefined,
-          filter: "brightness(1.14) saturate(1.18) drop-shadow(0 18px 46px rgba(255, 210, 90, 0.42))",
+          filter: "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
         }}
       />
     </div>
@@ -302,7 +322,7 @@ function GiftFallbackVisual({
             setImageFailed(true);
             markReady();
           }}
-          className="gift-anim-emoji relative h-[46vh] max-h-[460px] w-auto max-w-[86vw] object-contain drop-shadow-[0_10px_40px_rgba(255,180,60,0.75)]"
+          className="gift-anim-emoji relative h-[72dvh] max-h-[760px] w-auto max-w-[118vw] object-contain drop-shadow-[0_16px_54px_rgba(255,180,60,0.9)]"
         />
       </div>
     );
@@ -352,6 +372,7 @@ function AnimatedGiftImage({
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
@@ -361,6 +382,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
+
+  useEffect(() => {
+    const root = ensureGiftPortalRoot();
+    setPortalRoot(root);
+    return () => {
+      if (root && root.childElementCount === 0) root.remove();
+    };
+  }, []);
 
   const enqueueOne = useCallback((p: Play) => {
     // If nothing is playing, show it immediately (synchronously via ref
@@ -581,15 +610,23 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  if (typeof document === "undefined") return null;
+  if (typeof document === "undefined" || !portalRoot) return null;
 
   return createPortal(
     <div
-      className="pointer-events-none fixed inset-0 z-[2147483000] overflow-hidden"
+      data-gift-overlay-root="true"
+      className="jalwa-gift-overlay pointer-events-none fixed inset-0 overflow-hidden"
       aria-live="polite"
+      style={{
+        zIndex: MAX_GIFT_Z_INDEX,
+        isolation: "isolate",
+        transform: "translateZ(0)",
+        contain: "layout paint style",
+      }}
     >
-      {/* Subtle vignette only — keep the room visible behind the gift */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 rounded-t-3xl" />
+      {/* Strong stage above the room: keeps transparent gift videos visually in front. */}
+      <div className="absolute inset-0 z-0 bg-black/45" />
+      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/10 to-black/65" />
 
       {/* Cinematic pre-play overlay removed per user request */}
 
@@ -597,7 +634,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
 
       {/* sender chip */}
-      <div className="absolute left-4 top-2 flex items-center gap-2 gift-anim-sender">
+      <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
         {current.senderAvatar ? (
           <img
             src={current.senderAvatar}
@@ -618,7 +655,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       </div>
 
       {/* center/front-screen gift animation */}
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-2">
+      <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
         {hasVideo ? (
 
 
@@ -636,11 +673,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           />
 
         ) : hasSvga ? (
-          <div className="relative w-full h-full flex items-center justify-center" onLoad={markCurrentReady}>
+          <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
             <SvgaPlayer
               src={giftClipUrl ?? ""}
-              className="w-full h-full"
-              style={{ width: "100%", height: "100%", minHeight: "60vh" }}
+              className="h-full w-full"
+              style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
             />
           </div>
 
@@ -656,7 +693,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} />
         )}
         {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
-          <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+          <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
             <div className="relative -translate-y-[6%]">
               <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-lg opacity-70" />
               {current.receiverAvatar ? (
@@ -673,7 +710,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             </div>
           </div>
         )}
-        <div className="mt-2 flex items-center gap-2 gift-anim-caption">
+        <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
           <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
             {current.giftName}
           </span>
@@ -684,7 +721,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           )}
         </div>
         {current.coins > 0 && (
-          <p className="mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
+          <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
             🪙 {current.coins.toLocaleString()}
           </p>
         )}
@@ -692,7 +729,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* receiver DP */}
       {(current.receiverAvatar || current.receiverName) && (
-        <div className="absolute inset-x-0 bottom-2 z-10 flex flex-col items-center gift-anim-caption">
+        <div className="absolute inset-x-0 bottom-2 z-[220] flex flex-col items-center gift-anim-caption">
           <div className="relative">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
             {current.receiverAvatar ? (
@@ -713,6 +750,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         </div>
       )}
     </div>,
-    document.body,
+    portalRoot,
   );
 }
