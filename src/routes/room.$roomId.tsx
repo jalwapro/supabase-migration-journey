@@ -242,12 +242,13 @@ function RoomPage() {
     from_avatar: string | null;
     seat_index: number | null;
   } | null>(null);
-  const [pendingSeatRequest, setPendingSeatRequest] = useState<{
+  const [pendingSeatRequests, setPendingSeatRequests] = useState<Array<{
     id: string;
     from_name: string | null;
     from_avatar: string | null;
     seat_index: number | null;
-  } | null>(null);
+  }>>([]);
+
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
@@ -916,7 +917,7 @@ function RoomPage() {
   useEffect(() => {
     if (!user || !(isHost || isModerator)) return;
     let cancelled = false;
-    // Load any existing pending request first.
+    // Load any existing pending requests first (up to 10 in queue).
     void (async () => {
       const { data } = await supabase
         .from("seat_requests")
@@ -924,22 +925,28 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("status", "pending")
         .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      const { data: p } = await supabase
+        .limit(10);
+      if (cancelled || !data || data.length === 0) return;
+      const ids = (data as Array<{ from_user: string }>).map((d) => d.from_user);
+      const { data: profs } = await supabase
         .from("profiles")
-        .select("username,avatar")
-        .eq("id", (data as { from_user: string }).from_user)
-        .maybeSingle();
-      const prof = p as { username: string | null; avatar: string | null } | null;
-      setPendingSeatRequest({
-        id: (data as { id: string }).id,
-        from_name: prof?.username ?? null,
-        from_avatar: prof?.avatar ?? null,
-        seat_index: (data as { seat_index: number | null }).seat_index,
+        .select("id,username,avatar")
+        .in("id", ids);
+      const profMap = new Map(
+        ((profs as Array<{ id: string; username: string | null; avatar: string | null }>) ?? []).map((p) => [p.id, p]),
+      );
+      const rows = (data as Array<{ id: string; from_user: string; seat_index: number | null }>).map((d) => ({
+        id: d.id,
+        from_name: profMap.get(d.from_user)?.username ?? null,
+        from_avatar: profMap.get(d.from_user)?.avatar ?? null,
+        seat_index: d.seat_index,
+      }));
+      setPendingSeatRequests((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...rows.filter((r) => !seen.has(r.id))];
       });
     })();
+
 
     const ch = supabase
       .channel(`seat-requests-${roomId}-${user.id}`)
@@ -965,12 +972,16 @@ function RoomPage() {
             .eq("id", row.from_user)
             .maybeSingle();
           const p = data as { username: string | null; avatar: string | null } | null;
-          setPendingSeatRequest({
-            id: row.id,
-            from_name: p?.username ?? null,
-            from_avatar: p?.avatar ?? null,
-            seat_index: row.seat_index,
+          setPendingSeatRequests((prev) => {
+            if (prev.some((r) => r.id === row.id)) return prev;
+            return [...prev, {
+              id: row.id,
+              from_name: p?.username ?? null,
+              from_avatar: p?.avatar ?? null,
+              seat_index: row.seat_index,
+            }];
           });
+
         },
       )
       .subscribe();
@@ -3214,28 +3225,32 @@ function RoomPage() {
 
         />
       )}
-      {pendingSeatRequest && (
+      {pendingSeatRequests.length > 0 && (
         <SeatRequestPopup
-          request={pendingSeatRequest}
+          request={pendingSeatRequests[0]}
+          queueCount={pendingSeatRequests.length}
           onReject={async () => {
+            const current = pendingSeatRequests[0];
             const { error } = await supabase.rpc("respond_seat_request", {
-              _request_id: pendingSeatRequest.id,
+              _request_id: current.id,
               _accept: false,
             });
             if (error) toast.error(error.message);
-            setPendingSeatRequest(null);
+            setPendingSeatRequests((prev) => prev.filter((r) => r.id !== current.id));
           }}
           onAccept={async () => {
+            const current = pendingSeatRequests[0];
             const { error } = await supabase.rpc("respond_seat_request", {
-              _request_id: pendingSeatRequest.id,
+              _request_id: current.id,
               _accept: true,
             });
             if (error) toast.error(error.message);
             else toast.success("Seat de di 🎤");
-            setPendingSeatRequest(null);
+            setPendingSeatRequests((prev) => prev.filter((r) => r.id !== current.id));
           }}
         />
       )}
+
       <EmojiReactionSheet
         open={emojiSheetOpen}
         onClose={() => setEmojiSheetOpen(false)}
@@ -4987,10 +5002,12 @@ function SeatInvitePopup({
 /* ─── Seat request popup for host/moderator ────────────────── */
 function SeatRequestPopup({
   request,
+  queueCount = 1,
   onAccept,
   onReject,
 }: {
   request: { id: string; from_name: string | null; from_avatar: string | null; seat_index: number | null };
+  queueCount?: number;
   onAccept: () => void;
   onReject: () => void;
 }) {
@@ -4999,6 +5016,13 @@ function SeatRequestPopup({
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+        {queueCount > 1 && (
+          <div className="mb-2 flex justify-center">
+            <span className="rounded-full bg-[color:var(--primary)]/30 border border-[color:var(--primary)]/60 px-3 py-0.5 text-[10px] font-bold text-white">
+              +{queueCount - 1} more waiting
+            </span>
+          </div>
+        )}
         <div className="flex flex-col items-center gap-3 text-center">
           {request.from_avatar ? (
             <img src={request.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
@@ -5014,6 +5038,7 @@ function SeatRequestPopup({
             {request.seat_index != null ? `Seat ${request.seat_index + 1}` : "First available seat"}
           </p>
         </div>
+
         <div className="mt-5 flex gap-2">
           <button
             onClick={onReject}
