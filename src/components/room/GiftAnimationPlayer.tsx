@@ -66,7 +66,7 @@ function isRoyalCrownGift(name: string | null | undefined) {
 // already carries baked-in audio, so we should unmute the video element.
 function isBlackBgGift(name: string | null | undefined) {
   const n = (name ?? "").toLowerCase();
-  return n.includes("hand heart");
+  return n.includes("hand heart") || n.includes("money gun");
 }
 
 
