@@ -1619,3 +1619,78 @@ body.theme-background-active header.sticky {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ============ Gift image micro-animations (constant visual motion) ============ */
+@keyframes gift-anim-heartbeat {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 16px 54px rgba(255,80,120,0.75)); }
+  25% { transform: scale(1.14); filter: drop-shadow(0 22px 70px rgba(255,80,120,1)); }
+  50% { transform: scale(0.96); }
+  75% { transform: scale(1.08); }
+}
+.gift-anim-heartbeat { animation: gift-anim-heartbeat 1s ease-in-out infinite; transform-origin: center; }
+
+@keyframes gift-anim-bouncy {
+  0%, 100% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-24px) scale(1.05) rotate(-6deg); }
+  50% { transform: translateY(0) scale(0.96); }
+  75% { transform: translateY(-12px) scale(1.02) rotate(6deg); }
+}
+.gift-anim-bouncy { animation: gift-anim-bouncy 1.4s cubic-bezier(.5,.05,.3,1) infinite; transform-origin: center bottom; }
+
+@keyframes gift-anim-flicker {
+  0%, 100% { transform: scale(1) rotate(-2deg); filter: hue-rotate(0deg) brightness(1.1) drop-shadow(0 0 32px rgba(255,140,20,1)); }
+  50% { transform: scale(1.12) rotate(2deg); filter: hue-rotate(20deg) brightness(1.35) drop-shadow(0 0 60px rgba(255,80,20,1)); }
+}
+.gift-anim-flicker { animation: gift-anim-flicker 0.55s ease-in-out infinite; transform-origin: center bottom; }
+
+@keyframes gift-anim-spin-glow {
+  0% { transform: rotate(0deg) scale(1); filter: drop-shadow(0 0 30px rgba(255,220,80,0.9)); }
+  50% { transform: rotate(180deg) scale(1.1); filter: drop-shadow(0 0 60px rgba(255,255,180,1)); }
+  100% { transform: rotate(360deg) scale(1); filter: drop-shadow(0 0 30px rgba(255,220,80,0.9)); }
+}
+.gift-anim-spin-glow { animation: gift-anim-spin-glow 2.6s linear infinite; transform-origin: center; }
+
+@keyframes gift-anim-shimmer {
+  0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 24px rgba(180,220,255,0.85)) brightness(1); }
+  50% { transform: scale(1.08) rotate(4deg); filter: drop-shadow(0 0 56px rgba(255,255,255,1)) brightness(1.35); }
+}
+.gift-anim-shimmer { animation: gift-anim-shimmer 1.8s ease-in-out infinite; transform-origin: center; }
+
+@keyframes gift-anim-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-32px) rotate(3deg); }
+}
+.gift-anim-float { animation: gift-anim-float 2.4s ease-in-out infinite; transform-origin: center; }
+
+@keyframes gift-anim-wobble {
+  0%, 100% { transform: rotate(-6deg) scale(1); }
+  50% { transform: rotate(6deg) scale(1.05); }
+}
+.gift-anim-wobble { animation: gift-anim-wobble 1.2s ease-in-out infinite; transform-origin: center bottom; }
+
+@keyframes gift-anim-tilt {
+  0%, 100% { transform: rotate(-8deg) translateY(0); }
+  50% { transform: rotate(8deg) translateY(-14px); }
+}
+.gift-anim-tilt { animation: gift-anim-tilt 1.6s ease-in-out infinite; transform-origin: center bottom; }
+
+@keyframes gift-anim-launch {
+  0% { transform: translateY(40vh) scale(0.6) rotate(-8deg); opacity: 0.4; }
+  40% { transform: translateY(-4vh) scale(1.1) rotate(4deg); opacity: 1; }
+  70% { transform: translateY(-8vh) scale(1.05) rotate(-3deg); }
+  100% { transform: translateY(-24vh) scale(0.9) rotate(2deg); opacity: 0.85; }
+}
+.gift-anim-launch { animation: gift-anim-launch 2.4s cubic-bezier(.4,.05,.2,1) infinite; transform-origin: center; }
+
+@keyframes gift-anim-pop {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.12) rotate(3deg); }
+}
+.gift-anim-pop { animation: gift-anim-pop 1.4s ease-in-out infinite; transform-origin: center; }
+
+@keyframes gift-anim-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.4) translateY(0); }
+  30% { opacity: 1; transform: scale(1.4) translateY(-10px); }
+  70% { opacity: 0.6; transform: scale(1) translateY(-24px); }
+}
+.gift-anim-sparkle { animation: gift-anim-sparkle 2.4s ease-in-out infinite; }
