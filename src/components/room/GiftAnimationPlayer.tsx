@@ -478,11 +478,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
-  // MP4 gifts cannot carry an alpha channel — the source is rendered on a
-  // black background. Screen-blend knocks out that black so only the effect
-  // shows over the room. WebM (VP9 alpha) + SVGA carry native transparency
-  // and must render as-is (screen-blend would wash them out).
-  const isBlackBg = isBlackBgGift(current?.giftName) || giftClip.type === "mp4";
+  // Screen-blend knocks out black — great for MP4s that were rendered on a
+  // literal black stage (only a hand-curated set), but catastrophic for a
+  // normal MP4 with dark content because it wipes those dark pixels too and
+  // makes the animation look transparent / washed-out. Opt-in only.
+  const isBlackBg = isBlackBgGift(current?.giftName);
+
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
     : resolveGiftImageUrl(current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null));
