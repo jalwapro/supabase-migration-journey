@@ -118,7 +118,7 @@ function Home() {
 
   // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
   useRealtimeInvalidate("home-live", [
-    { table: "live_rooms", invalidate: [["home-rooms"], ["home-live-users"]] },
+    { table: "live_rooms", invalidate: [["home-top-hosts"], ["home-rooms-page"], ["home-live-users"]] },
     { table: "follows", invalidate: [["home-mutual-friends-online"]] },
     { table: "banners", invalidate: [["banners"]] },
   ]);
