@@ -135,7 +135,9 @@ for (let ci = 0; ci < CAT_ORDER.length; ci++){
     seed++;
     const { n, g } = items[i];
     const palette = palettes[seed % palettes.length];
-    const displayName = `Jalwa ${n}`;
+    // Ensure globally-unique display name (some words repeat across categories).
+    const catLabel = cat.charAt(0).toUpperCase() + cat.slice(1);
+    const displayName = `Jalwa ${catLabel} ${n}`;
     const fileName = `${slug(n)}.svg`;
     const filePath = join(dir, fileName);
     const clipPath = `/animations/gifts/pack300/${cat}/${fileName}`;
