@@ -414,17 +414,12 @@ function RoomPage() {
   useEffect(() => {
     if (afkExitLeft === null) return;
     if (afkExitLeft <= 0) {
-      void (async () => {
-        if (user) {
-          await supabase
-            .from("room_members")
-            .delete()
-            .eq("room_id", roomId)
-            .eq("user_id", user.id);
-        }
-        toast("Host inactive — room say exit ho gaye");
-        navigate({ to: "/" });
-      })();
+      // Route through the same leave path viewers use manually so the
+      // Zego session / media tracks are torn down cleanly. Without this
+      // the tab kept holding the mic/video handles after the AFK kick
+      // and the "room" appeared to run in the background.
+      toast("Host inactive — room say exit ho gaye");
+      void doLeaveRoom("grace");
       return;
     }
     const t = setTimeout(
@@ -432,7 +427,11 @@ function RoomPage() {
       1000,
     );
     return () => clearTimeout(t);
-  }, [afkExitLeft, user, roomId, navigate]);
+    // doLeaveRoom is defined below in the same component closure and is stable
+    // across renders (uses refs/state via closure); re-arm only on tick.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [afkExitLeft]);
+
 
   const loadRoomState = useCallback(async () => {
     const loadMembers = async () => {
