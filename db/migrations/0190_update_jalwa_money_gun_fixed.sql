@@ -9,6 +9,5 @@ SET name = 'Jalwa Money Gun',
     icon = '/__l5e/assets-v1/4596d226-d68a-407d-9d8f-e457ddcfe008/jalwa-money-gun-fixed-thumb.png',
     animation = 'fullscreen',
     is_active = true,
-    active = true,
-    updated_at = now()
+    active = true
 WHERE lower(name) LIKE '%money gun%';
