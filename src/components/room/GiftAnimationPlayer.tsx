@@ -235,7 +235,7 @@ function AnimatedGiftVideo({
   }, [onReady, startPlayback]);
 
   if (failed) {
-    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} />;
+    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
   }
 
 
@@ -286,16 +286,37 @@ function AnimatedGiftVideo({
 }
 
 
+const GIFT_ANIM_MAP: Array<{ match: RegExp; cls: string }> = [
+  { match: /heart|kiss|rose|love/i, cls: "gift-anim-heartbeat" },
+  { match: /like|thumb/i, cls: "gift-anim-bouncy" },
+  { match: /fire|flame/i, cls: "gift-anim-flicker" },
+  { match: /star|sparkle/i, cls: "gift-anim-spin-glow" },
+  { match: /ring|diamond|crystal|crown/i, cls: "gift-anim-shimmer" },
+  { match: /balloon|butterfly|feather/i, cls: "gift-anim-float" },
+  { match: /cake|candy|chocolate|ice\s?cream|coffee/i, cls: "gift-anim-wobble" },
+  { match: /teddy|bear/i, cls: "gift-anim-tilt" },
+  { match: /rocket|spaceship/i, cls: "gift-anim-launch" },
+];
+
+function pickGiftAnimClass(name: string | null | undefined): string {
+  const n = (name ?? "").trim();
+  if (!n) return "gift-anim-pop";
+  for (const row of GIFT_ANIM_MAP) if (row.match.test(n)) return row.cls;
+  return "gift-anim-pop";
+}
+
 function GiftFallbackVisual({
   emoji,
   image,
   onReady,
   suppressEmoji = false,
+  name = "",
 }: {
   emoji: string;
   image: string | null;
   onReady: () => void;
   suppressEmoji?: boolean;
+  name?: string;
 }) {
   const readyOnceRef = useRef(false);
   const [imageFailed, setImageFailed] = useState(false);
@@ -313,9 +334,25 @@ function GiftFallbackVisual({
     if (!image) markReady();
   }, [image, markReady]);
 
+  const animClass = pickGiftAnimClass(name || emoji);
+
   if (image && !imageFailed) {
     return (
       <div className="relative grid min-h-[42vh] place-items-center">
+        {/* Sparkle particles behind the gift for constant motion */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <span
+              key={i}
+              className="gift-anim-sparkle absolute block h-2 w-2 rounded-full bg-white/90 shadow-[0_0_12px_rgba(255,220,120,0.9)]"
+              style={{
+                left: `${(i * 83) % 100}%`,
+                top: `${(i * 47) % 100}%`,
+                animationDelay: `${(i * 180) % 2400}ms`,
+              }}
+            />
+          ))}
+        </div>
         <img
           src={image}
           alt=""
@@ -327,7 +364,7 @@ function GiftFallbackVisual({
             setImageFailed(true);
             markReady();
           }}
-          className="gift-anim-emoji relative h-[72dvh] max-h-[760px] w-auto max-w-[118vw] object-contain drop-shadow-[0_16px_54px_rgba(255,180,60,0.9)]"
+          className={`gift-anim-emoji ${animClass} relative h-[72dvh] max-h-[760px] w-auto max-w-[118vw] object-contain drop-shadow-[0_16px_54px_rgba(255,180,60,0.9)]`}
         />
       </div>
     );
@@ -339,7 +376,7 @@ function GiftFallbackVisual({
 
   return (
     <span
-      className="gift-anim-emoji block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]"
+      className={`gift-anim-emoji ${animClass} block leading-none drop-shadow-[0_8px_32px_rgba(255,180,60,0.7)]`}
       style={{ fontSize: "10rem" }}
     >
       {emoji || "🎁"}
@@ -353,16 +390,15 @@ function AnimatedGiftImage({
   fallbackEmoji,
   fallbackImage,
   suppressEmojiFallback = false,
+  name = "",
 }: {
   src: string;
   onReady: () => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
   suppressEmojiFallback?: boolean;
+  name?: string;
 }) {
-  // Route straight through the fallback visual so we get one clean
-  // image render with the emoji only shown while the image is loading
-  // (or if it fails). Prefer the explicit image_url when available.
   const primary = src || fallbackImage;
   return (
     <GiftFallbackVisual
@@ -370,6 +406,7 @@ function AnimatedGiftImage({
       image={primary}
       onReady={onReady}
       suppressEmoji={suppressEmojiFallback}
+      name={name}
     />
   );
 }
@@ -759,9 +796,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={isRoyalRose || Boolean(fallbackImage)}
+            name={current.giftName}
           />
         ) : (
-          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} />
+          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} name={current.giftName} />
         )}
         {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
           <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
