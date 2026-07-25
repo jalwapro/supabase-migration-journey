@@ -315,6 +315,7 @@ function PkMatchPage() {
     let ch: ReturnType<typeof supabase.channel> | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let attempt = 0;
     const connect = () => {
       if (cancelled) return;
       ch = supabase
@@ -327,9 +328,14 @@ function PkMatchPage() {
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             if (ch) { void supabase.removeChannel(ch); ch = null; }
-            if (!cancelled) retryTimer = setTimeout(connect, 2000);
+            if (!cancelled) {
+              // Exponential backoff w/ jitter, capped at 30s
+              const delay = Math.min(30_000, 1000 * Math.pow(2, attempt)) + Math.random() * 500;
+              attempt = Math.min(attempt + 1, 5);
+              retryTimer = setTimeout(connect, delay);
+            }
           } else if (status === "SUBSCRIBED") {
-            // Refetch on (re)connect to catch anything missed while offline.
+            attempt = 0;
             incomingQ.refetch();
           }
         });
@@ -350,6 +356,8 @@ function PkMatchPage() {
     let ch: ReturnType<typeof supabase.channel> | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let attempt = 0;
+
     const connect = () => {
       if (cancelled) return;
       ch = supabase
