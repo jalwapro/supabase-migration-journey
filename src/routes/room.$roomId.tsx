@@ -874,6 +874,34 @@ function RoomPage() {
   // Seat invites → popup for recipient
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
+    // Initial load: catch invites that arrived while offline / before subscribe.
+    void (async () => {
+      const { data } = await supabase
+        .from("seat_invites")
+        .select("id,room_id,from_user,seat_index,status")
+        .eq("room_id", roomId)
+        .eq("to_user", user.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const row = data as { id: string; from_user: string; seat_index: number | null };
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("username,avatar")
+        .eq("id", row.from_user)
+        .maybeSingle();
+      const prof = p as { username: string | null; avatar: string | null } | null;
+      setPendingInvite({
+        id: row.id,
+        from_name: prof?.username ?? null,
+        from_avatar: prof?.avatar ?? null,
+        seat_index: row.seat_index,
+      });
+    })();
+
     const ch = supabase
       .channel(`seat-invites-${user.id}-${roomId}`)
       .on(
@@ -909,9 +937,12 @@ function RoomPage() {
       )
       .subscribe();
     return () => {
+      cancelled = true;
       void supabase.removeChannel(ch);
     };
   }, [user, roomId]);
+
+
 
   // Seat requests → popup for host/moderator to accept/reject.
   useEffect(() => {
