@@ -5002,10 +5002,12 @@ function SeatInvitePopup({
 /* ─── Seat request popup for host/moderator ────────────────── */
 function SeatRequestPopup({
   request,
+  queueCount = 1,
   onAccept,
   onReject,
 }: {
   request: { id: string; from_name: string | null; from_avatar: string | null; seat_index: number | null };
+  queueCount?: number;
   onAccept: () => void;
   onReject: () => void;
 }) {
@@ -5014,6 +5016,13 @@ function SeatRequestPopup({
   return (
     <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
       <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+        {queueCount > 1 && (
+          <div className="mb-2 flex justify-center">
+            <span className="rounded-full bg-[color:var(--primary)]/30 border border-[color:var(--primary)]/60 px-3 py-0.5 text-[10px] font-bold text-white">
+              +{queueCount - 1} more waiting
+            </span>
+          </div>
+        )}
         <div className="flex flex-col items-center gap-3 text-center">
           {request.from_avatar ? (
             <img src={request.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
@@ -5029,6 +5038,7 @@ function SeatRequestPopup({
             {request.seat_index != null ? `Seat ${request.seat_index + 1}` : "First available seat"}
           </p>
         </div>
+
         <div className="mt-5 flex gap-2">
           <button
             onClick={onReject}
