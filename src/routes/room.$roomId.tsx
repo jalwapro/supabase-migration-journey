@@ -3225,28 +3225,32 @@ function RoomPage() {
 
         />
       )}
-      {pendingSeatRequest && (
+      {pendingSeatRequests.length > 0 && (
         <SeatRequestPopup
-          request={pendingSeatRequest}
+          request={pendingSeatRequests[0]}
+          queueCount={pendingSeatRequests.length}
           onReject={async () => {
+            const current = pendingSeatRequests[0];
             const { error } = await supabase.rpc("respond_seat_request", {
-              _request_id: pendingSeatRequest.id,
+              _request_id: current.id,
               _accept: false,
             });
             if (error) toast.error(error.message);
-            setPendingSeatRequest(null);
+            setPendingSeatRequests((prev) => prev.filter((r) => r.id !== current.id));
           }}
           onAccept={async () => {
+            const current = pendingSeatRequests[0];
             const { error } = await supabase.rpc("respond_seat_request", {
-              _request_id: pendingSeatRequest.id,
+              _request_id: current.id,
               _accept: true,
             });
             if (error) toast.error(error.message);
             else toast.success("Seat de di 🎤");
-            setPendingSeatRequest(null);
+            setPendingSeatRequests((prev) => prev.filter((r) => r.id !== current.id));
           }}
         />
       )}
+
       <EmojiReactionSheet
         open={emojiSheetOpen}
         onClose={() => setEmojiSheetOpen(false)}
