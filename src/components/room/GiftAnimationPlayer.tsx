@@ -390,16 +390,15 @@ function AnimatedGiftImage({
   fallbackEmoji,
   fallbackImage,
   suppressEmojiFallback = false,
+  name = "",
 }: {
   src: string;
   onReady: () => void;
   fallbackEmoji: string;
   fallbackImage: string | null;
   suppressEmojiFallback?: boolean;
+  name?: string;
 }) {
-  // Route straight through the fallback visual so we get one clean
-  // image render with the emoji only shown while the image is loading
-  // (or if it fails). Prefer the explicit image_url when available.
   const primary = src || fallbackImage;
   return (
     <GiftFallbackVisual
@@ -407,6 +406,7 @@ function AnimatedGiftImage({
       image={primary}
       onReady={onReady}
       suppressEmoji={suppressEmojiFallback}
+      name={name}
     />
   );
 }
