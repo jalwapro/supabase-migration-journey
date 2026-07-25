@@ -251,16 +251,17 @@ function Home() {
 
 
   const userSearch = useQuery({
-    queryKey: ["home-user-search", query],
-    enabled: query.length >= 2,
+    queryKey: ["home-user-search", debouncedQuery],
+    enabled: debouncedQuery.length >= 2,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id,username,full_name,avatar,user_code")
         .or(
-          `username.ilike.%${query}%,full_name.ilike.%${query}%,user_code.ilike.%${query}%`,
+          `username.ilike.%${debouncedQuery}%,full_name.ilike.%${debouncedQuery}%,user_code.ilike.%${debouncedQuery}%`,
         )
         .limit(12);
+
       if (error) throw error;
       return (data ?? []) as SearchUser[];
     },
