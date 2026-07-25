@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -101,12 +101,10 @@ function Home() {
   const bannerRef = useRef<HTMLDivElement>(null);
   const query = q.trim();
   const [debouncedQuery, setDebouncedQuery] = useState(query);
-  const [roomsShown, setRoomsShown] = useState(20);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(t);
   }, [query]);
-  useEffect(() => { setRoomsShown(20); }, [tab, debouncedQuery]);
 
 
   // Show splash once per browser session on domain open
@@ -120,7 +118,7 @@ function Home() {
 
   // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
   useRealtimeInvalidate("home-live", [
-    { table: "live_rooms", invalidate: [["home-rooms"], ["home-live-users"]] },
+    { table: "live_rooms", invalidate: [["home-top-hosts"], ["home-rooms-page"], ["home-live-users"]] },
     { table: "follows", invalidate: [["home-mutual-friends-online"]] },
     { table: "banners", invalidate: [["banners"]] },
   ]);
@@ -191,8 +189,10 @@ function Home() {
     staleTime: 30_000,
   });
 
-  const rooms = useQuery({
-    queryKey: ["home-rooms", tab],
+  // Top hosts: small server-side query (top 10 by viewer_count) re-ranked by
+  // popularity/coin_score, take top 2. Cheap and independent of pagination.
+  const topHostsQ = useQuery({
+    queryKey: ["home-top-hosts", tab],
     queryFn: async () => {
       let sel = supabase
         .from("live_rooms")
@@ -201,16 +201,13 @@ function Home() {
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
-        .limit(80);
+        .limit(10);
       if (tab === "pk") sel = sel.eq("pk_battle", true);
       else sel = sel.eq("room_type", tab);
       const { data, error } = await sel;
       if (error) throw error;
       const list = (data ?? []) as unknown as Room[];
       if (list.length === 0) return list;
-      // Merge real popularity (coin_score) so top hosts are ranked by revenue,
-      // not just live viewer count. Falls back to viewer_count when a room has
-      // no gifts yet.
       const ids = list.map((r) => r.id);
       const { data: pop } = await supabase
         .from("room_popularity")
@@ -228,26 +225,64 @@ function Home() {
           (a, b) =>
             (b.coin_score ?? 0) - (a.coin_score ?? 0) ||
             b.viewer_count - a.viewer_count,
-        );
+        )
+        .slice(0, 2);
     },
-    // Realtime invalidates instantly on live_rooms changes.
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
 
-  const filteredRooms = useMemo(() => {
-    if (!rooms.data) return [];
-    if (!query) return rooms.data;
-    const s = query.toLowerCase();
-    return rooms.data.filter(
+  const topHosts = useMemo(() => {
+    const list = topHostsQ.data ?? [];
+    if (!debouncedQuery) return list;
+    const s = debouncedQuery.toLowerCase();
+    return list.filter(
       (r) =>
         r.title.toLowerCase().includes(s) ||
         (r.host?.username ?? "").toLowerCase().includes(s),
     );
-  }, [rooms.data, query]);
+  }, [topHostsQ.data, debouncedQuery]);
 
-  const topHosts = useMemo(() => filteredRooms.slice(0, 2), [filteredRooms]);
-  const restRooms = useMemo(() => filteredRooms.slice(2), [filteredRooms]);
+  const topIds = useMemo(() => new Set((topHostsQ.data ?? []).map((r) => r.id)), [topHostsQ.data]);
+
+  // All Live Rooms: server-side pagination via .range(). Scales to millions.
+  const PAGE_SIZE = 20;
+  const restRoomsInfinite = useInfiniteQuery({
+    queryKey: ["home-rooms-page", tab, debouncedQuery],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }) => {
+      const from = pageParam as number;
+      const to = from + PAGE_SIZE - 1;
+      let sel = supabase
+        .from("live_rooms")
+        .select(
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey(username,avatar)",
+        )
+        .eq("status", "live")
+        .order("viewer_count", { ascending: false })
+        .range(from, to);
+      if (tab === "pk") sel = sel.eq("pk_battle", true);
+      else sel = sel.eq("room_type", tab);
+      if (debouncedQuery) sel = sel.ilike("title", `%${debouncedQuery}%`);
+      const { data, error } = await sel;
+      if (error) throw error;
+      return (data ?? []) as unknown as Room[];
+    },
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE,
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  const restRooms = useMemo(() => {
+    const flat = (restRoomsInfinite.data?.pages ?? []).flat();
+    return flat.filter((r) => !topIds.has(r.id));
+  }, [restRoomsInfinite.data, topIds]);
+
+  const filteredRoomsCount = topHosts.length + restRooms.length;
+  const isRoomsLoading = topHostsQ.isLoading || restRoomsInfinite.isLoading;
+
+
 
 
   const userSearch = useQuery({
@@ -589,13 +624,13 @@ function Home() {
 
           {/* Rooms — Top Hosts + All Live */}
           <section className="mt-4 space-y-5 px-4">
-            {rooms.isLoading ? (
+            {isRoomsLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="aspect-square rounded-3xl bg-white/5" />
                 ))}
               </div>
-            ) : filteredRooms.length > 0 ? (
+            ) : filteredRoomsCount > 0 ? (
               <>
                 {topHosts.length > 0 && (
                   <div>
@@ -622,16 +657,17 @@ function Home() {
                       </h2>
                     </div>
                     <div className="space-y-2">
-                      {restRooms.slice(0, roomsShown).map((r) => (
+                      {restRooms.map((r) => (
                         <RoomListItem key={r.id} room={r} />
                       ))}
                     </div>
-                    {restRooms.length > roomsShown && (
+                    {restRoomsInfinite.hasNextPage && (
                       <button
-                        onClick={() => setRoomsShown((n) => n + 20)}
-                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10"
+                        onClick={() => restRoomsInfinite.fetchNextPage()}
+                        disabled={restRoomsInfinite.isFetchingNextPage}
+                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10 disabled:opacity-50"
                       >
-                        Load more ({restRooms.length - roomsShown} left)
+                        {restRoomsInfinite.isFetchingNextPage ? "Loading…" : "Load more"}
                       </button>
                     )}
 

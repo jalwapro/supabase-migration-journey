@@ -301,37 +301,77 @@ function PkMatchPage() {
   }, [user?.id, isHost]);
 
   // Realtime: any change to pk_invites addressed to me → refetch incoming.
+  // Auto-resubscribe on CHANNEL_ERROR / TIMED_OUT / CLOSED (transient network drop).
   useEffect(() => {
     if (!user?.id) return;
-    const ch = supabase
-      .channel(`pk-invites:${user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pk_invites", filter: `to_host=eq.${user.id}` },
-        () => { incomingQ.refetch(); },
-      )
-      .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+    const connect = () => {
+      if (cancelled) return;
+      ch = supabase
+        .channel(`pk-invites:${user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "pk_invites", filter: `to_host=eq.${user.id}` },
+          () => { incomingQ.refetch(); },
+        )
+        .subscribe((status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            if (ch) { void supabase.removeChannel(ch); ch = null; }
+            if (!cancelled) retryTimer = setTimeout(connect, 2000);
+          } else if (status === "SUBSCRIBED") {
+            // Refetch on (re)connect to catch anything missed while offline.
+            incomingQ.refetch();
+          }
+        });
+    };
+    connect();
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (ch) void supabase.removeChannel(ch);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Realtime: pk_matches changes for this room → refetch match + room.
+  // Realtime: pk_matches / live_rooms changes for THIS room → refetch.
+  // Server-side room_id filter avoids receiving unrelated match events.
   useEffect(() => {
     if (!roomId) return;
-    const ch = supabase
-      .channel(`pk-matches:${roomId}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pk_matches" },
-        () => { matchQ.refetch(); roomQ.refetch(); },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` },
-        () => { roomQ.refetch(); },
-      )
-      .subscribe();
-    return () => { void supabase.removeChannel(ch); };
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+    const connect = () => {
+      if (cancelled) return;
+      ch = supabase
+        .channel(`pk-matches:${roomId}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "pk_matches", filter: `room_id=eq.${roomId}` },
+          () => { matchQ.refetch(); roomQ.refetch(); },
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` },
+          () => { roomQ.refetch(); },
+        )
+        .subscribe((status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            if (ch) { void supabase.removeChannel(ch); ch = null; }
+            if (!cancelled) retryTimer = setTimeout(connect, 2000);
+          } else if (status === "SUBSCRIBED") {
+            matchQ.refetch();
+            roomQ.refetch();
+          }
+        });
+    };
+    connect();
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+      if (ch) void supabase.removeChannel(ch);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId]);
 
