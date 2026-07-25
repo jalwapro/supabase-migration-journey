@@ -375,8 +375,6 @@ function PkMatchPage() {
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             if (ch) { void supabase.removeChannel(ch); ch = null; }
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-            if (ch) { void supabase.removeChannel(ch); ch = null; }
             if (!cancelled) {
               const delay = Math.min(30_000, 1000 * Math.pow(2, attempt)) + Math.random() * 500;
               attempt = Math.min(attempt + 1, 5);
@@ -388,6 +386,7 @@ function PkMatchPage() {
             roomQ.refetch();
           }
         });
+
 
     };
     connect();
@@ -1302,9 +1301,17 @@ function HostPanel({
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !videoTrack) return;
+    let mounted = true;
     try { videoTrack.play(el, { fit: "cover" }); } catch { /* ignore */ }
-    return () => { try { videoTrack.stop(); } catch { /* ignore */ } };
+    return () => {
+      mounted = false;
+      // Guard against calling stop() after unmount on a reused track ref
+      if (!mounted) {
+        try { videoTrack.stop(); } catch { /* ignore */ }
+      }
+    };
   }, [videoTrack]);
+
 
   const showCamOff = camOn === false;
   const showMicOff = micOn === false;
