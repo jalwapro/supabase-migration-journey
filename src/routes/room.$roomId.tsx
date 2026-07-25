@@ -1161,8 +1161,11 @@ function RoomPage() {
     if (!user || !room.data) return;
     const { error } = await supabase
       .from("follows")
-      .insert({ follower_id: user.id, following_id: room.data.host_id });
-    if (error && error.code !== "23505") {
+      .upsert(
+        { follower_id: user.id, following_id: room.data.host_id },
+        { onConflict: "follower_id,following_id", ignoreDuplicates: true },
+      );
+    if (error) {
       toast.error(error.message);
       return;
     }
