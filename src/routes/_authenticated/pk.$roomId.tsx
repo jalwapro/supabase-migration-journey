@@ -416,17 +416,20 @@ function PkMatchPage() {
     }, 700);
   }
 
-  function openStartFlow() {
+  function openStartFlow(preselect?: LiveHost | null) {
     if (!isHost) return toast.error("Only the host can start a PK");
-    if (!opponent) {
+    const target = preselect ?? opponent;
+    if (!target) {
       setPickerOpen(true);
       return;
     }
+    if (preselect && preselect !== opponent) setOpponent(preselect);
     if ((profile?.coins ?? 0) < effectiveStake) {
       return toast.error("Not enough coins for this stake");
     }
     setModeSheetOpen(true);
   }
+
 
   async function startBattle(chosenMode: PkMode) {
     if (!isHost) return toast.error("Only the host can start a PK");
