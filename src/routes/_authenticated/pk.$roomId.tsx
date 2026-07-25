@@ -241,25 +241,33 @@ function PkMatchPage() {
     },
   });
 
+  const followPendingRef = useRef(false);
   async function toggleFollow() {
     if (!user || !room) return;
-    if (followQ.data) {
-      const { error } = await supabase
-        .from("follows")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", room.host_id);
-      if (error) return toast.error(error.message);
-      toast.success("Unfollowed");
-    } else {
-      const { error } = await supabase
-        .from("follows")
-        .insert({ follower_id: user.id, following_id: room.host_id });
-      if (error && error.code !== "23505") return toast.error(error.message);
-      toast.success("Following host");
+    if (followPendingRef.current) return; // guard rapid double-taps
+    followPendingRef.current = true;
+    try {
+      if (followQ.data) {
+        const { error } = await supabase
+          .from("follows")
+          .delete()
+          .eq("follower_id", user.id)
+          .eq("following_id", room.host_id);
+        if (error) return toast.error(error.message);
+        toast.success("Unfollowed");
+      } else {
+        const { error } = await supabase
+          .from("follows")
+          .insert({ follower_id: user.id, following_id: room.host_id });
+        if (error && error.code !== "23505") return toast.error(error.message);
+        toast.success("Following host");
+      }
+      await followQ.refetch();
+    } finally {
+      followPendingRef.current = false;
     }
-    followQ.refetch();
   }
+
 
   // Incoming pending invites addressed to me.
   // Only surface invites that were CREATED after this room mount — reopening
@@ -307,6 +315,7 @@ function PkMatchPage() {
     let ch: ReturnType<typeof supabase.channel> | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let attempt = 0;
     const connect = () => {
       if (cancelled) return;
       ch = supabase
@@ -319,9 +328,14 @@ function PkMatchPage() {
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             if (ch) { void supabase.removeChannel(ch); ch = null; }
-            if (!cancelled) retryTimer = setTimeout(connect, 2000);
+            if (!cancelled) {
+              // Exponential backoff w/ jitter, capped at 30s
+              const delay = Math.min(30_000, 1000 * Math.pow(2, attempt)) + Math.random() * 500;
+              attempt = Math.min(attempt + 1, 5);
+              retryTimer = setTimeout(connect, delay);
+            }
           } else if (status === "SUBSCRIBED") {
-            // Refetch on (re)connect to catch anything missed while offline.
+            attempt = 0;
             incomingQ.refetch();
           }
         });
@@ -342,6 +356,8 @@ function PkMatchPage() {
     let ch: ReturnType<typeof supabase.channel> | null = null;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let cancelled = false;
+    let attempt = 0;
+
     const connect = () => {
       if (cancelled) return;
       ch = supabase
@@ -359,12 +375,19 @@ function PkMatchPage() {
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             if (ch) { void supabase.removeChannel(ch); ch = null; }
-            if (!cancelled) retryTimer = setTimeout(connect, 2000);
+            if (!cancelled) {
+              const delay = Math.min(30_000, 1000 * Math.pow(2, attempt)) + Math.random() * 500;
+              attempt = Math.min(attempt + 1, 5);
+              retryTimer = setTimeout(connect, delay);
+            }
           } else if (status === "SUBSCRIBED") {
+            attempt = 0;
             matchQ.refetch();
             roomQ.refetch();
           }
         });
+
+
     };
     connect();
     return () => {
@@ -1278,9 +1301,16 @@ function HostPanel({
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !videoTrack) return;
+    let stopped = false;
     try { videoTrack.play(el, { fit: "cover" }); } catch { /* ignore */ }
-    return () => { try { videoTrack.stop(); } catch { /* ignore */ } };
+    return () => {
+      if (stopped) return;
+      stopped = true;
+      try { videoTrack.stop(); } catch { /* ignore */ }
+    };
   }, [videoTrack]);
+
+
 
   const showCamOff = camOn === false;
   const showMicOff = micOn === false;
