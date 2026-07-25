@@ -289,11 +289,15 @@ function Home() {
     queryKey: ["home-user-search", debouncedQuery],
     enabled: debouncedQuery.length >= 2,
     queryFn: async () => {
+      // Escape PostgREST reserved chars so `,`, `(`, `)`, `%`, `*`, `.` in
+      // the search box don't break the .or() filter (silent 400).
+      const safe = debouncedQuery.replace(/[,()%*.\\"']/g, " ").trim();
+      if (safe.length < 2) return [] as SearchUser[];
       const { data, error } = await supabase
         .from("profiles")
         .select("id,username,full_name,avatar,user_code")
         .or(
-          `username.ilike.%${debouncedQuery}%,full_name.ilike.%${debouncedQuery}%,user_code.ilike.%${debouncedQuery}%`,
+          `username.ilike.%${safe}%,full_name.ilike.%${safe}%,user_code.ilike.%${safe}%`,
         )
         .limit(12);
 
@@ -301,6 +305,7 @@ function Home() {
       return (data ?? []) as SearchUser[];
     },
   });
+
 
   // Auto-advance banners every 3s (fixed slider, transform-based)
   useEffect(() => {

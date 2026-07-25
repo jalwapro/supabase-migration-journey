@@ -413,12 +413,20 @@ function PkMatchPage() {
   useEffect(() => {
     if (match?.status === "active" && endsInSec === 0 && endTriggeredRef.current !== match.id) {
       endTriggeredRef.current = match.id;
-      void supabase.rpc("pk_end_match", { _match_id: match.id }).then(() => {
-        matchQ.refetch();
-        roomQ.refetch();
-      });
+      void supabase
+        .rpc("pk_end_match", { _match_id: match.id })
+        .then(({ error }) => {
+          if (error) {
+            // Allow retry from this tab on network/transient failure
+            endTriggeredRef.current = null;
+            return;
+          }
+          matchQ.refetch();
+          roomQ.refetch();
+        });
     }
   }, [match?.id, match?.status, endsInSec]);
+
 
   const effectiveStake = customOpen && customStake ? Math.max(0, parseInt(customStake, 10) || 0) : stake;
 
