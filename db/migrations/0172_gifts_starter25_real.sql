@@ -1,4 +1,4 @@
--- 0172 Real illustrated starter pack — 25 TikTok-style premium PNG gifts.
+-- 0172 Real illustrated starter pack — 25 premium PNG gifts (Jalwa branded).
 -- Sort orders 1..25 so these appear first in every category tab.
 BEGIN;
 
@@ -11,7 +11,7 @@ WITH data(name, emoji, icon, price, price_coins, diamonds_value, category, anima
   ('Angel Wings', '👼', '👼',    1999,   1999,    999,  'love',    'pop',  5, '/animations/gifts/starter25/angel-wings.png',  'png', true, true),
   ('Star',        '⭐', '⭐',       1,      1,      1,  'popular', 'pop',  6, '/animations/gifts/starter25/star.png',         'png', true, true),
   ('Panda',       '🐼', '🐼',      50,     50,     25,  'popular', 'pop',  7, '/animations/gifts/starter25/panda.png',        'png', true, true),
-  ('TikTok',      '🎵', '🎵',     100,    100,     50,  'popular', 'pop',  8, '/animations/gifts/starter25/tiktok.png',       'png', true, true),
+  ('Jalwa Star',  '✨', '✨',     100,    100,     50,  'popular', 'pop',  8, '/animations/gifts/starter25/jalwa-star.png',   'png', true, true),
   ('Fireworks',   '🎆', '🎆',     199,    199,     99,  'popular', 'pop',  9, '/animations/gifts/starter25/fireworks.png',    'png', true, true),
   ('Ice Cream',   '🍦', '🍦',       5,      5,      2,  'popular', 'pop', 10, '/animations/gifts/starter25/ice-cream.png',    'png', true, true),
   ('Pizza',       '🍕', '🍕',      10,     10,      5,  'popular', 'pop', 11, '/animations/gifts/starter25/pizza.png',        'png', true, true),
