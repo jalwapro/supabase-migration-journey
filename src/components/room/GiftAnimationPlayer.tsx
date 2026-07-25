@@ -581,9 +581,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="pointer-events-none fixed inset-0 z-[90] overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-[2147483000] overflow-hidden"
       aria-live="polite"
     >
       {/* Subtle vignette only — keep the room visible behind the gift */}
