@@ -884,6 +884,38 @@ body.theme-background-active header.sticky {
   background: transparent;
 }
 
+.jalwa-gift-animation-layer,
+.jalwa-gift-animation-layer * {
+  pointer-events: none !important;
+}
+
+.jalwa-gift-animation-layer {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483647 !important;
+  isolation: isolate !important;
+  overflow: hidden !important;
+}
+
+.jalwa-gift-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483647 !important;
+  width: 100dvw !important;
+  height: 100dvh !important;
+}
+
+.jalwa-gift-overlay .gift-anim-video {
+  position: fixed !important;
+  inset: -5dvh -8dvw !important;
+  width: 116dvw !important;
+  height: 110dvh !important;
+  max-width: none !important;
+  max-height: none !important;
+  object-fit: contain !important;
+  z-index: 2147483647 !important;
+}
+
 
 @keyframes gift-anim-glow-in {
   0%   { opacity: 0; transform: scale(0.4); }
