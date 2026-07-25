@@ -917,7 +917,7 @@ function RoomPage() {
   useEffect(() => {
     if (!user || !(isHost || isModerator)) return;
     let cancelled = false;
-    // Load any existing pending request first.
+    // Load any existing pending requests first (up to 10 in queue).
     void (async () => {
       const { data } = await supabase
         .from("seat_requests")
@@ -925,22 +925,28 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("status", "pending")
         .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      if (cancelled || !data) return;
-      const { data: p } = await supabase
+        .limit(10);
+      if (cancelled || !data || data.length === 0) return;
+      const ids = (data as Array<{ from_user: string }>).map((d) => d.from_user);
+      const { data: profs } = await supabase
         .from("profiles")
-        .select("username,avatar")
-        .eq("id", (data as { from_user: string }).from_user)
-        .maybeSingle();
-      const prof = p as { username: string | null; avatar: string | null } | null;
-      setPendingSeatRequest({
-        id: (data as { id: string }).id,
-        from_name: prof?.username ?? null,
-        from_avatar: prof?.avatar ?? null,
-        seat_index: (data as { seat_index: number | null }).seat_index,
+        .select("id,username,avatar")
+        .in("id", ids);
+      const profMap = new Map(
+        ((profs as Array<{ id: string; username: string | null; avatar: string | null }>) ?? []).map((p) => [p.id, p]),
+      );
+      const rows = (data as Array<{ id: string; from_user: string; seat_index: number | null }>).map((d) => ({
+        id: d.id,
+        from_name: profMap.get(d.from_user)?.username ?? null,
+        from_avatar: profMap.get(d.from_user)?.avatar ?? null,
+        seat_index: d.seat_index,
+      }));
+      setPendingSeatRequests((prev) => {
+        const seen = new Set(prev.map((r) => r.id));
+        return [...prev, ...rows.filter((r) => !seen.has(r.id))];
       });
     })();
+
 
     const ch = supabase
       .channel(`seat-requests-${roomId}-${user.id}`)
