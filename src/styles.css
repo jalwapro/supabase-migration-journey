@@ -916,6 +916,158 @@ body.theme-background-active header.sticky {
   z-index: 2147483647 !important;
 }
 
+@keyframes jalwa-spaceship-stage-in {
+  0% { opacity: 0; transform: scale(0.98); }
+  8% { opacity: 1; transform: scale(1); }
+  86% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.03); }
+}
+
+@keyframes jalwa-spaceship-warp {
+  0% { opacity: 0; transform: scale(0.8) rotate(0deg); }
+  12% { opacity: 1; }
+  100% { opacity: 0.85; transform: scale(1.2) rotate(22deg); }
+}
+
+@keyframes jalwa-spaceship-fly {
+  0% { opacity: 0; transform: translate3d(0, 42dvh, 0) scale(0.28) rotate(-6deg); }
+  13% { opacity: 1; transform: translate3d(0, 4dvh, 0) scale(0.82) rotate(2deg); }
+  26% { transform: translate3d(0, 0, 0) scale(1) rotate(-1deg); }
+  58% { transform: translate3d(0, -4dvh, 0) scale(1.08) rotate(1deg); }
+  82% { opacity: 1; transform: translate3d(0, -10dvh, 0) scale(1.18) rotate(-1deg); }
+  100% { opacity: 0; transform: translate3d(0, -64dvh, 0) scale(1.75) rotate(3deg); }
+}
+
+@keyframes jalwa-spaceship-hover {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2.2%); }
+}
+
+@keyframes jalwa-spaceship-flame {
+  0%, 100% { opacity: 0.72; transform: scaleY(0.82); }
+  45% { opacity: 1; transform: scaleY(1.22); }
+}
+
+@keyframes jalwa-spaceship-ring {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25) rotate(0deg); }
+  18% { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4) rotate(210deg); }
+}
+
+@keyframes jalwa-spaceship-star {
+  0% { opacity: 0; transform: translate3d(var(--sx), -16dvh, 0) scaleY(0.2); }
+  18% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(var(--ex), 112dvh, 0) scaleY(2.7); }
+}
+
+@keyframes jalwa-spaceship-spark {
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateX(0) scale(0.2); }
+  16% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateX(var(--dist)) scale(1.15); }
+}
+
+.jalwa-spaceship-fx {
+  animation: jalwa-spaceship-stage-in 10.8s ease-out forwards;
+}
+
+.jalwa-spaceship-warp {
+  position: absolute;
+  inset: -18dvh -24dvw;
+  background:
+    radial-gradient(circle at 50% 45%, color-mix(in oklab, var(--gold) 34%, transparent), transparent 22%),
+    conic-gradient(from 0deg at 50% 50%, transparent 0deg, color-mix(in oklab, var(--primary) 42%, transparent) 38deg, transparent 72deg, color-mix(in oklab, var(--secondary) 44%, transparent) 142deg, transparent 198deg, color-mix(in oklab, var(--gold) 36%, transparent) 265deg, transparent 360deg);
+  filter: blur(18px) saturate(1.4);
+  mix-blend-mode: screen;
+  animation: jalwa-spaceship-warp 10.8s ease-out forwards;
+}
+
+.jalwa-spaceship-ship {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(104dvw, 620px);
+  height: auto;
+  overflow: visible;
+  transform: translate(-50%, -50%);
+  animation: jalwa-spaceship-fly 10.8s cubic-bezier(.18,.86,.18,1) forwards;
+  filter: drop-shadow(0 28px 58px color-mix(in oklab, var(--gold) 52%, transparent));
+}
+
+.jalwa-spaceship-ship-inner {
+  transform-origin: 50% 50%;
+  animation: jalwa-spaceship-hover 1.7s ease-in-out infinite;
+}
+
+.jalwa-spaceship-flame-main,
+.jalwa-spaceship-flame-core,
+.jalwa-spaceship-engine {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+  animation: jalwa-spaceship-flame 180ms ease-in-out infinite;
+}
+
+.jalwa-spaceship-flame-core { animation-duration: 130ms; }
+
+.jalwa-spaceship-ring {
+  position: absolute;
+  left: 50%;
+  top: 56%;
+  width: min(76dvw, 440px);
+  aspect-ratio: 1;
+  border-radius: 999px;
+  border: 3px solid color-mix(in oklab, var(--gold) 86%, white 14%);
+  box-shadow:
+    0 0 34px color-mix(in oklab, var(--gold) 70%, transparent),
+    inset 0 0 24px color-mix(in oklab, var(--primary) 42%, transparent);
+  animation: jalwa-spaceship-ring 2.8s ease-out infinite;
+}
+
+.jalwa-spaceship-ring-b {
+  animation-delay: 1.25s;
+  border-color: color-mix(in oklab, var(--secondary) 72%, white 18%);
+}
+
+.jalwa-spaceship-star {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 3px;
+  height: 16dvh;
+  border-radius: 999px;
+  background: linear-gradient(to bottom, transparent, white, color-mix(in oklab, var(--gold) 70%, white 30%), transparent);
+  opacity: 0;
+  animation: jalwa-spaceship-star 1.5s linear infinite;
+  filter: drop-shadow(0 0 8px color-mix(in oklab, var(--gold) 70%, transparent));
+}
+
+.jalwa-spaceship-star-1 { --sx: -44dvw; --ex: -18dvw; animation-delay: 0s; }
+.jalwa-spaceship-star-2 { --sx: -29dvw; --ex: -5dvw; animation-delay: .18s; }
+.jalwa-spaceship-star-3 { --sx: -14dvw; --ex: 8dvw; animation-delay: .34s; }
+.jalwa-spaceship-star-4 { --sx: 3dvw; --ex: 24dvw; animation-delay: .52s; }
+.jalwa-spaceship-star-5 { --sx: 18dvw; --ex: 39dvw; animation-delay: .7s; }
+.jalwa-spaceship-star-6 { --sx: 34dvw; --ex: 52dvw; animation-delay: .88s; }
+.jalwa-spaceship-star-7 { --sx: 48dvw; --ex: 14dvw; animation-delay: 1.06s; }
+
+.jalwa-spaceship-spark {
+  position: absolute;
+  left: 50%;
+  top: 52%;
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--gold) 82%, white 18%);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--gold) 80%, transparent);
+  opacity: 0;
+  animation: jalwa-spaceship-spark 2.6s ease-out infinite;
+}
+
+.jalwa-spaceship-spark-1 { --angle: 0deg; --dist: 38dvw; animation-delay: .2s; }
+.jalwa-spaceship-spark-2 { --angle: 55deg; --dist: 34dvw; animation-delay: .48s; }
+.jalwa-spaceship-spark-3 { --angle: 112deg; --dist: 42dvw; animation-delay: .72s; }
+.jalwa-spaceship-spark-4 { --angle: 190deg; --dist: 36dvw; animation-delay: .96s; }
+.jalwa-spaceship-spark-5 { --angle: 248deg; --dist: 41dvw; animation-delay: 1.2s; }
+.jalwa-spaceship-spark-6 { --angle: 306deg; --dist: 35dvw; animation-delay: 1.44s; }
+
 
 @keyframes gift-anim-glow-in {
   0%   { opacity: 0; transform: scale(0.4); }
