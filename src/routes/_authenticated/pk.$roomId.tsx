@@ -375,12 +375,20 @@ function PkMatchPage() {
         .subscribe((status) => {
           if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             if (ch) { void supabase.removeChannel(ch); ch = null; }
-            if (!cancelled) retryTimer = setTimeout(connect, 2000);
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            if (ch) { void supabase.removeChannel(ch); ch = null; }
+            if (!cancelled) {
+              const delay = Math.min(30_000, 1000 * Math.pow(2, attempt)) + Math.random() * 500;
+              attempt = Math.min(attempt + 1, 5);
+              retryTimer = setTimeout(connect, delay);
+            }
           } else if (status === "SUBSCRIBED") {
+            attempt = 0;
             matchQ.refetch();
             roomQ.refetch();
           }
         });
+
     };
     connect();
     return () => {
