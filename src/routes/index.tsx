@@ -101,12 +101,10 @@ function Home() {
   const bannerRef = useRef<HTMLDivElement>(null);
   const query = q.trim();
   const [debouncedQuery, setDebouncedQuery] = useState(query);
-  const [roomsShown, setRoomsShown] = useState(20);
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(query), 300);
     return () => clearTimeout(t);
   }, [query]);
-  useEffect(() => { setRoomsShown(20); }, [tab, debouncedQuery]);
 
 
   // Show splash once per browser session on domain open
