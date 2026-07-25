@@ -65,9 +65,9 @@ function isRoyalCrownGift(name: string | null | undefined) {
 // disappears against the room and only the effect shows. Also implies the MP4
 // already carries baked-in audio, so we should unmute the video element.
 function isBlackBgGift(name: string | null | undefined) {
-  const n = (name ?? "").toLowerCase();
-  // NOTE: money gun ab true-alpha WebM hai — screen-blend ki zarurat nahi.
-  return n.includes("hand heart");
+  const _n = (name ?? "").toLowerCase();
+  // NOTE: money gun + hand heart ab true-alpha WebM hain — screen-blend ki zarurat nahi.
+  return false;
 }
 
 
