@@ -241,25 +241,33 @@ function PkMatchPage() {
     },
   });
 
+  const followPendingRef = useRef(false);
   async function toggleFollow() {
     if (!user || !room) return;
-    if (followQ.data) {
-      const { error } = await supabase
-        .from("follows")
-        .delete()
-        .eq("follower_id", user.id)
-        .eq("following_id", room.host_id);
-      if (error) return toast.error(error.message);
-      toast.success("Unfollowed");
-    } else {
-      const { error } = await supabase
-        .from("follows")
-        .insert({ follower_id: user.id, following_id: room.host_id });
-      if (error && error.code !== "23505") return toast.error(error.message);
-      toast.success("Following host");
+    if (followPendingRef.current) return; // guard rapid double-taps
+    followPendingRef.current = true;
+    try {
+      if (followQ.data) {
+        const { error } = await supabase
+          .from("follows")
+          .delete()
+          .eq("follower_id", user.id)
+          .eq("following_id", room.host_id);
+        if (error) return toast.error(error.message);
+        toast.success("Unfollowed");
+      } else {
+        const { error } = await supabase
+          .from("follows")
+          .insert({ follower_id: user.id, following_id: room.host_id });
+        if (error && error.code !== "23505") return toast.error(error.message);
+        toast.success("Following host");
+      }
+      await followQ.refetch();
+    } finally {
+      followPendingRef.current = false;
     }
-    followQ.refetch();
   }
+
 
   // Incoming pending invites addressed to me.
   // Only surface invites that were CREATED after this room mount — reopening
