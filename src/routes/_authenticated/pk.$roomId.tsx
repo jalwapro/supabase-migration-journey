@@ -1301,16 +1301,15 @@ function HostPanel({
   useEffect(() => {
     const el = videoRef.current;
     if (!el || !videoTrack) return;
-    let mounted = true;
+    let stopped = false;
     try { videoTrack.play(el, { fit: "cover" }); } catch { /* ignore */ }
     return () => {
-      mounted = false;
-      // Guard against calling stop() after unmount on a reused track ref
-      if (!mounted) {
-        try { videoTrack.stop(); } catch { /* ignore */ }
-      }
+      if (stopped) return;
+      stopped = true;
+      try { videoTrack.stop(); } catch { /* ignore */ }
     };
   }, [videoTrack]);
+
 
 
   const showCamOff = camOn === false;
