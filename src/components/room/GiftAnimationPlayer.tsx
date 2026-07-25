@@ -712,6 +712,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           </p>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
