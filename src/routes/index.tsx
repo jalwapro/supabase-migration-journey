@@ -622,10 +622,19 @@ function Home() {
                       </h2>
                     </div>
                     <div className="space-y-2">
-                      {restRooms.map((r) => (
+                      {restRooms.slice(0, roomsShown).map((r) => (
                         <RoomListItem key={r.id} room={r} />
                       ))}
                     </div>
+                    {restRooms.length > roomsShown && (
+                      <button
+                        onClick={() => setRoomsShown((n) => n + 20)}
+                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10"
+                      >
+                        Load more ({restRooms.length - roomsShown} left)
+                      </button>
+                    )}
+
                   </div>
                 )}
               </>
