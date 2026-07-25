@@ -412,7 +412,7 @@ CREATE OR REPLACE FUNCTION public.verify_room_pin(_room_id uuid, _pin text)
 AS $function$
   SELECT EXISTS (
     SELECT 1 FROM public.live_rooms
-    WHERE id = _room_id AND (is_locked = false OR pin = _pin)
+    WHERE id = _room_id AND (is_locked = false OR password = _pin)
   );
 $function$
 ;
