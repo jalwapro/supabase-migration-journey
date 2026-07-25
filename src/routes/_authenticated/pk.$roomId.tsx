@@ -416,17 +416,20 @@ function PkMatchPage() {
     }, 700);
   }
 
-  function openStartFlow() {
+  function openStartFlow(preselect?: LiveHost | null) {
     if (!isHost) return toast.error("Only the host can start a PK");
-    if (!opponent) {
+    const target = preselect ?? opponent;
+    if (!target) {
       setPickerOpen(true);
       return;
     }
+    if (preselect && preselect !== opponent) setOpponent(preselect);
     if ((profile?.coins ?? 0) < effectiveStake) {
       return toast.error("Not enough coins for this stake");
     }
     setModeSheetOpen(true);
   }
+
 
   async function startBattle(chosenMode: PkMode) {
     if (!isHost) return toast.error("Only the host can start a PK");
@@ -674,7 +677,7 @@ function PkMatchPage() {
           )}
           {isHost && match?.status !== "active" && (
             <button
-              onClick={openStartFlow}
+              onClick={() => openStartFlow()}
               disabled={starting}
               className="pointer-events-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-3xl shadow-[0_8px_30px_-4px_rgba(244,63,94,0.8)] ring-2 ring-white/30 transition active:scale-90 disabled:opacity-60 animate-pulse"
               title="Send challenge"
@@ -727,7 +730,7 @@ function PkMatchPage() {
           let touchStartY = 0;
           return (
             <div
-              onClick={() => { if (rnd && isHost) { setOpponent(rnd); openStartFlow(); } }}
+              onClick={() => { if (rnd && isHost) openStartFlow(rnd); }}
               onWheel={(e) => { if (e.deltaY > 10) nextOpponent(); }}
               onTouchStart={(e) => { touchStartY = e.touches[0]?.clientY ?? 0; }}
               onTouchEnd={(e) => {
@@ -913,7 +916,7 @@ function PkMatchPage() {
           </button>
         ) : isHost ? (
           <button
-            onClick={openStartFlow}
+            onClick={() => openStartFlow()}
             disabled={starting}
             className="flex items-center gap-1.5 rounded-full border border-amber-300/50 bg-gradient-to-r from-amber-400 via-rose-500 to-fuchsia-600 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_0_18px_-2px_rgba(244,63,94,0.6)] active:scale-95 disabled:opacity-60"
           >

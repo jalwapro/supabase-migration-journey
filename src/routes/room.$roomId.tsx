@@ -3266,7 +3266,10 @@ function RoomPage() {
               _request_id: current.id,
               _accept: false,
             });
-            if (error) toast.error(error.message);
+            if (error) {
+              toast.error(error.message);
+              return; // keep in queue so host can retry
+            }
             setPendingSeatRequests((prev) => prev.filter((r) => r.id !== current.id));
           }}
           onAccept={async () => {
@@ -3275,10 +3278,14 @@ function RoomPage() {
               _request_id: current.id,
               _accept: true,
             });
-            if (error) toast.error(error.message);
-            else toast.success("Seat de di 🎤");
+            if (error) {
+              toast.error(error.message);
+              return; // keep in queue so host can retry / decline
+            }
+            toast.success("Seat de di 🎤");
             setPendingSeatRequests((prev) => prev.filter((r) => r.id !== current.id));
           }}
+
         />
       )}
 

@@ -100,6 +100,14 @@ function Home() {
   const [shareOpen, setShareOpen] = useState(false);
   const bannerRef = useRef<HTMLDivElement>(null);
   const query = q.trim();
+  const [debouncedQuery, setDebouncedQuery] = useState(query);
+  const [roomsShown, setRoomsShown] = useState(20);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(query), 300);
+    return () => clearTimeout(t);
+  }, [query]);
+  useEffect(() => { setRoomsShown(20); }, [tab, debouncedQuery]);
+
 
   // Show splash once per browser session on domain open
   useEffect(() => {
@@ -243,16 +251,17 @@ function Home() {
 
 
   const userSearch = useQuery({
-    queryKey: ["home-user-search", query],
-    enabled: query.length >= 2,
+    queryKey: ["home-user-search", debouncedQuery],
+    enabled: debouncedQuery.length >= 2,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
         .select("id,username,full_name,avatar,user_code")
         .or(
-          `username.ilike.%${query}%,full_name.ilike.%${query}%,user_code.ilike.%${query}%`,
+          `username.ilike.%${debouncedQuery}%,full_name.ilike.%${debouncedQuery}%,user_code.ilike.%${debouncedQuery}%`,
         )
         .limit(12);
+
       if (error) throw error;
       return (data ?? []) as SearchUser[];
     },
@@ -613,10 +622,19 @@ function Home() {
                       </h2>
                     </div>
                     <div className="space-y-2">
-                      {restRooms.map((r) => (
+                      {restRooms.slice(0, roomsShown).map((r) => (
                         <RoomListItem key={r.id} room={r} />
                       ))}
                     </div>
+                    {restRooms.length > roomsShown && (
+                      <button
+                        onClick={() => setRoomsShown((n) => n + 20)}
+                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10"
+                      >
+                        Load more ({restRooms.length - roomsShown} left)
+                      </button>
+                    )}
+
                   </div>
                 )}
               </>
