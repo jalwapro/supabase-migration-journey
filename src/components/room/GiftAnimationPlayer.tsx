@@ -507,7 +507,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const hasSvga = !!giftClipUrl && (giftClip.type === "svga" || giftClipUrl.toLowerCase().endsWith(".svga"));
   const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
-  const isPremiumLong = /royal\s*lion|lion\s*king/i.test(current?.giftName ?? "");
+  const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
   // Screen-blend knocks out black — great for MP4s that were rendered on a
   // literal black stage (only a hand-curated set), but catastrophic for a
   // normal MP4 with dark content because it wipes those dark pixels too and
