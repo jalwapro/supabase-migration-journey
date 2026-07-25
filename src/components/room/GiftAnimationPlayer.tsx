@@ -63,6 +63,11 @@ function isRoyalCrownGift(name: string | null | undefined) {
   return n.includes("royal") && n.includes("crown");
 }
 
+function isJalwaSpaceshipGift(name: string | null | undefined) {
+  const n = (name ?? "").toLowerCase();
+  return n.includes("spaceship") || (n.includes("galaxy") && n.includes("party"));
+}
+
 // Gifts rendered on a pure-black background — we screen-blend them so the black
 // disappears against the room and only the effect shows. Also implies the MP4
 // already carries baked-in audio, so we should unmute the video element.
@@ -369,6 +374,69 @@ function AnimatedGiftImage({
   );
 }
 
+function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
+  const readyOnceRef = useRef(false);
+
+  useEffect(() => {
+    if (readyOnceRef.current) return;
+    readyOnceRef.current = true;
+    onReady();
+  }, [onReady]);
+
+  return (
+    <div className="jalwa-spaceship-fx pointer-events-none absolute inset-0 z-[180] overflow-hidden" aria-hidden="true">
+      <div className="jalwa-spaceship-warp" />
+      {Array.from({ length: 28 }).map((_, index) => (
+        <i key={`star-${index}`} className={`jalwa-spaceship-star jalwa-spaceship-star-${(index % 7) + 1}`} />
+      ))}
+      <div className="jalwa-spaceship-ring jalwa-spaceship-ring-a" />
+      <div className="jalwa-spaceship-ring jalwa-spaceship-ring-b" />
+      <svg className="jalwa-spaceship-ship" viewBox="0 0 520 420" role="img" aria-label="Jalwa spaceship gift">
+        <defs>
+          <linearGradient id="spaceshipGold" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#fff8d6" />
+            <stop offset="0.28" stopColor="#f4c24f" />
+            <stop offset="0.55" stopColor="#9b5b10" />
+            <stop offset="1" stopColor="#ffe792" />
+          </linearGradient>
+          <linearGradient id="spaceshipSteel" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0" stopColor="#ffffff" />
+            <stop offset="0.38" stopColor="#b8c0ca" />
+            <stop offset="0.72" stopColor="#414b58" />
+            <stop offset="1" stopColor="#f6f8ff" />
+          </linearGradient>
+          <radialGradient id="spaceshipGlass" cx="50%" cy="38%" r="70%">
+            <stop offset="0" stopColor="#e8fbff" />
+            <stop offset="0.45" stopColor="#3ab7ff" />
+            <stop offset="1" stopColor="#071235" />
+          </radialGradient>
+          <filter id="spaceshipGlow" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow dx="0" dy="18" stdDeviation="18" floodColor="#ffc247" floodOpacity="0.75" />
+            <feDropShadow dx="0" dy="0" stdDeviation="10" floodColor="#ff2fb3" floodOpacity="0.45" />
+          </filter>
+        </defs>
+        <g className="jalwa-spaceship-ship-inner" filter="url(#spaceshipGlow)">
+          <path d="M260 48 C210 58 188 86 178 128 C208 114 238 108 260 108 C282 108 312 114 342 128 C332 86 310 58 260 48Z" fill="url(#spaceshipGlass)" stroke="#f8e7aa" strokeWidth="7" />
+          <path d="M52 205 C120 136 197 112 260 120 C323 112 400 136 468 205 C393 206 331 219 287 250 C276 258 244 258 233 250 C189 219 127 206 52 205Z" fill="url(#spaceshipSteel)" stroke="#f7d87a" strokeWidth="7" />
+          <path d="M82 205 C132 166 190 148 260 150 C330 148 388 166 438 205 C368 205 315 217 283 240 C270 249 250 249 237 240 C205 217 152 205 82 205Z" fill="url(#spaceshipGold)" opacity="0.92" />
+          <path d="M176 196 C205 164 236 150 260 150 C284 150 315 164 344 196 C327 228 301 255 260 263 C219 255 193 228 176 196Z" fill="url(#spaceshipSteel)" stroke="#f9d36c" strokeWidth="5" />
+          <path d="M212 282 C225 246 295 246 308 282 C296 310 224 310 212 282Z" fill="#25110a" stroke="#ffc85a" strokeWidth="6" />
+          <path className="jalwa-spaceship-flame-main" d="M230 302 C244 346 252 375 260 402 C268 375 276 346 290 302 C274 318 246 318 230 302Z" fill="#ffd36b" />
+          <path className="jalwa-spaceship-flame-core" d="M245 300 C252 331 256 352 260 371 C264 352 268 331 275 300 C266 309 254 309 245 300Z" fill="#ffffff" />
+          <ellipse cx="129" cy="210" rx="29" ry="18" fill="#111827" stroke="#f4c24f" strokeWidth="5" />
+          <ellipse cx="391" cy="210" rx="29" ry="18" fill="#111827" stroke="#f4c24f" strokeWidth="5" />
+          <circle className="jalwa-spaceship-engine" cx="119" cy="224" r="14" fill="#fff2b4" />
+          <circle className="jalwa-spaceship-engine" cx="401" cy="224" r="14" fill="#fff2b4" />
+          <path d="M222 132 C236 122 284 122 298 132" fill="none" stroke="#ffffff" strokeWidth="5" opacity="0.82" strokeLinecap="round" />
+        </g>
+      </svg>
+      {Array.from({ length: 18 }).map((_, index) => (
+        <b key={`spark-${index}`} className={`jalwa-spaceship-spark jalwa-spaceship-spark-${(index % 6) + 1}`} />
+      ))}
+    </div>
+  );
+}
+
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
@@ -507,6 +575,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const hasSvga = !!giftClipUrl && (giftClip.type === "svga" || giftClipUrl.toLowerCase().endsWith(".svga"));
   const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
+  const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
   // Screen-blend knocks out black — great for MP4s that were rendered on a
   // literal black stage (only a hand-curated set), but catastrophic for a
@@ -625,8 +694,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       }}
     >
       {/* Strong stage above the room: keeps transparent gift videos visually in front. */}
-      <div className="absolute inset-0 z-0 bg-black/45" />
-      <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/10 to-black/65" />
+      <div className={isSpaceship ? "absolute inset-0 z-0 bg-transparent" : "absolute inset-0 z-0 bg-black/45"} />
+      <div className={isSpaceship ? "hidden" : "absolute inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/10 to-black/65"} />
 
       {/* Cinematic pre-play overlay removed per user request */}
 
@@ -656,7 +725,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* center/front-screen gift animation */}
       <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
-        {hasVideo ? (
+        {isSpaceship ? (
+          <SpaceshipGiftVisual onReady={markCurrentReady} />
+        ) : hasVideo ? (
 
 
           <AnimatedGiftVideo
