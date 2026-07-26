@@ -618,6 +618,7 @@ export function useZegoRoom({
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
+      uidMusicStreamRef.current.clear();
       videoContainersRef.current.clear();
       remoteMediaStreamsRef.current.clear();
       remotePlayPromisesRef.current.clear();
@@ -971,6 +972,7 @@ export function useZegoRoom({
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
+      uidMusicStreamRef.current.clear();
       videoContainersRef.current.clear();
       remoteMediaStreamsRef.current.clear();
       remotePlayPromisesRef.current.clear();
