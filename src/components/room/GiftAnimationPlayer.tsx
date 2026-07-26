@@ -1123,6 +1123,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             fallbackImage={fallbackImage}
             suppressEmojiFallback={true}
             screenBlend={isBlackBg}
+            lumaKey={(current.coins ?? 0) >= 2000}
           />
 
         ) : hasSvga ? (
