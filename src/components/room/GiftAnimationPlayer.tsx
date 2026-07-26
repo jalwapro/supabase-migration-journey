@@ -992,20 +992,18 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // Play a real soundUrl when available; otherwise synthesize a gift-specific
-  // cue. This also gives users a visible "sound played" indicator.
+  // Premium/VIP sounds hata diye — sirf real soundUrl bajta hai (jaise Money Gun).
+  // Chhote gifts already coin-drop bajate hain per-landing.
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
-    // Small gifts play only per-landing coin-drop cues (fired by spawnFlyer).
     if (isSmallGift) return;
-    // Middle-tier gifts (81–499 coins): jab tak real soundUrl na ho, silent —
-    // koi fake synth nahi. Premium/Luxury/VIP: soundUrl warna Jalwa signature.
+    if (!current.soundUrl) return; // no synthetic Jalwa signature anymore
     const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
       volume: Math.min(1, audioPrefs.volume * (isPremiumLong ? 1 : 0.9)),
-      premium: isPremiumTier,
+      premium: false,
     });
     if (!played) return;
     setSoundPulseKey(current.key);
@@ -1013,7 +1011,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isPremiumTier, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
