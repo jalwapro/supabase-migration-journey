@@ -923,9 +923,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     let ms: number;
     if (isSmallGift) {
       const q = Math.max(1, Math.min(99, current.quantity || 1));
-      const stagger = q > 1 ? Math.max(18, 42 - q) : 0;
-      // Flyer duration ≤ ~490ms + tiny buffer + total stagger.
-      ms = 520 + stagger * q + 120;
+      const perStagger = q > 1 ? Math.max(60, 120 - q * 4) : 0;
+      const receivers = Math.max(1, (current.receiverIds?.length ?? 1));
+      // flyer duration 620ms + last spawn delay + safety.
+      ms = 620 + perStagger * q + receivers * 25 + 250;
     } else if (hasVideo) {
       ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
