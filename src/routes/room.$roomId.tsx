@@ -4190,6 +4190,7 @@ function Seat({
   return (
     <div
       data-seat-index={index}
+      data-user-dp={member?.user_id ?? ""}
       className={`relative flex flex-col items-center gap-1 transition-shadow duration-300 ${
         glowing ? "drop-shadow-[0_0_18px_rgba(255,209,102,0.75)] animate-pulse" : ""
       }`}
