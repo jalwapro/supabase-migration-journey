@@ -794,7 +794,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     !isSpaceship &&
     !isRoyalRose &&
     !isRoyalCrownGift(current.giftName) &&
-    (current.coins ?? 0) < 100;
+    (current.coins ?? 0) < 300;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
