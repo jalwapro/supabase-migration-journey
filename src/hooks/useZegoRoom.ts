@@ -354,10 +354,13 @@ export function useZegoRoom({
   const [micError, setMicError] = useState<string | null>(null);
   const micErrorRef = useRef<string | null>(null);
 
-  const musicPlayerRef = useRef<ZegoMediaPlayerLike | null>(null);
+  const musicAudioElRef = useRef<HTMLAudioElement | null>(null);
+  const musicStreamRef = useRef<MediaStream | null>(null);
+  const musicStreamIdRef = useRef<string | null>(null);
   const musicUrlRef = useRef<string | null>(null);
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicTitle, setMusicTitle] = useState<string | null>(null);
+
 
   // Serialize room leaves so a new join always waits for the previous
   // logoutRoom to complete — same "no self-echo on seat change" invariant
