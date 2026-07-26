@@ -530,19 +530,29 @@ function SmallGiftFlyer({
       : [fallbackReceiverId ?? null]
     ).filter((v): v is string => !!v);
     const effectiveTargets = targets.length > 0 ? targets : [""];
-    const total = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
-    // Combo → tight fast line/trail toward receiver.
-    const stagger = total > 1 ? Math.max(18, 42 - total) : 0;
+    const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
+    // Per-receiver: spawn `qty` flyers with tight stagger. Single unit → 1 icon.
+    const perStagger = qty > 1 ? Math.max(60, 120 - qty * 4) : 0;
+    let soundFired = false;
 
     const cleanupTimers: number[] = [];
-    for (let i = 0; i < total; i++) {
-      const targetId = effectiveTargets[i % effectiveTargets.length];
-      const delay = i * stagger;
-      const t = window.setTimeout(() => {
-        spawnFlyer(host, { emoji, image, targetId, volume, index: i, total });
-      }, delay);
-      cleanupTimers.push(t);
-    }
+    effectiveTargets.forEach((targetId, tIdx) => {
+      for (let i = 0; i < qty; i++) {
+        const delay = i * perStagger + tIdx * 25;
+        const isFirstOfEvent = !soundFired && i === 0 && tIdx === 0;
+        if (isFirstOfEvent) soundFired = true;
+        const t = window.setTimeout(() => {
+          spawnFlyer(host, {
+            emoji,
+            image,
+            targetId,
+            volume,
+            fireOnce: isFirstOfEvent,
+          });
+        }, delay);
+        cleanupTimers.push(t);
+      }
+    });
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
     };
@@ -553,7 +563,7 @@ function SmallGiftFlyer({
 
 function spawnFlyer(
   host: HTMLElement,
-  opts: { emoji: string; image: string | null; targetId: string; volume: number; index?: number; total?: number },
+  opts: { emoji: string; image: string | null; targetId: string; volume: number; fireOnce?: boolean },
 ) {
   if (typeof document === "undefined") return;
   const rect = findReceiverDpRect(opts.targetId);
@@ -564,84 +574,71 @@ function spawnFlyer(
   const endX = rect ? rect.left + rect.width / 2 : vw / 2;
   const endY = rect ? rect.top + rect.height / 2 : vh - 80;
 
-  // Reference-style smooth stream: each "tap" spawns a small burst of icons
-  // that follow smooth curved arcs along a shared lane to the receiver's DP.
-  const SWARM = 4;
-  const total = Math.max(1, opts.total ?? 1);
-  const index = opts.index ?? 0;
   const dx = endX - startX;
   const dy = endY - startY;
   const len = Math.max(1, Math.hypot(dx, dy));
   const perpX = -dy / len;
   const perpY = dx / len;
-  // Consistent lane per target so the stream feels like one river, not chaos.
-  const laneBase = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(60, 12 + total * 3) : 0;
-  // Deterministic arc side per target so the swarm arcs cleanly.
   const arcSide = (Math.abs(hashStr(opts.targetId || "")) % 2 === 0) ? 1 : -1;
+  const size = 132;
+  const half = size / 2;
 
-  for (let s = 0; s < SWARM; s++) {
-    const size = 104 + Math.round(Math.random() * 14);
-    const half = size / 2;
-    const el = document.createElement("div");
-    el.style.cssText =
-      `position:fixed;left:0;top:0;width:${size}px;height:${size}px;` +
-      `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
-      `border-radius:9999px;` +
-      `background:radial-gradient(circle at 50% 45%, rgba(255,245,210,.98) 0%, rgba(255,205,120,.92) 45%, rgba(255,120,190,.78) 78%, rgba(120,40,160,.35) 100%);` +
-      `box-shadow:0 8px 24px rgba(0,0,0,.55), 0 0 22px rgba(255,210,120,.9), inset 0 0 10px rgba(255,255,255,.55);` +
-      `border:2px solid rgba(255,235,170,.95);` +
-      `display:grid;place-items:center;overflow:hidden;`;
-    const inner = document.createElement("div");
-    inner.style.cssText = `width:78%;height:78%;display:grid;place-items:center;`;
-    const emojiSpan = document.createElement("span");
-    emojiSpan.textContent = opts.emoji || "🎁";
-    emojiSpan.style.cssText = `font-size:${Math.round(size * 0.62)}px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));`;
-    if (opts.image) {
-      const img = document.createElement("img");
-      img.src = opts.image;
-      img.alt = "";
-      img.style.cssText = "width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.55));";
-      img.onerror = () => {
-        img.remove();
-        inner.appendChild(emojiSpan);
-      };
-      inner.appendChild(img);
-    } else {
+  const el = document.createElement("div");
+  el.style.cssText =
+    `position:fixed;left:0;top:0;width:${size}px;height:${size}px;` +
+    `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
+    `display:grid;place-items:center;overflow:visible;`;
+  const aura = document.createElement("div");
+  aura.style.cssText =
+    `position:absolute;inset:0;border-radius:9999px;` +
+    `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.85) 0%, rgba(255,180,90,.55) 45%, rgba(255,120,200,.25) 75%, transparent 100%);` +
+    `filter:blur(2px);`;
+  el.appendChild(aura);
+  const inner = document.createElement("div");
+  inner.style.cssText = `position:relative;width:88%;height:88%;display:grid;place-items:center;`;
+  const emojiSpan = document.createElement("span");
+  emojiSpan.textContent = opts.emoji || "🎁";
+  emojiSpan.style.cssText = `font-size:${Math.round(size * 0.72)}px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));`;
+  if (opts.image) {
+    const img = document.createElement("img");
+    img.src = opts.image;
+    img.alt = "";
+    img.style.cssText = "width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.65)) drop-shadow(0 0 8px rgba(255,220,140,.6));";
+    img.onerror = () => {
+      img.remove();
       inner.appendChild(emojiSpan);
-    }
-    el.appendChild(inner);
-    host.appendChild(el);
-
-    // Smooth spread within the shared lane — small offsets, no wild jitter.
-    const spread = (s - (SWARM - 1) / 2) * 10;
-    const arc = arcSide * (55 + s * 12);
-    const laneOffset = laneBase + spread;
-    const midX = (startX + endX) / 2 + perpX * (laneOffset + arc);
-    const midY = (startY + endY) / 2 + perpY * (laneOffset + arc);
-    const jEndX = endX + (s - (SWARM - 1) / 2) * 4;
-    const jEndY = endY + (s - (SWARM - 1) / 2) * 4;
-    const rot = arcSide * (10 + s * 4);
-    const startDelay = s * 22;
-    const duration = 520 + s * 30; // smooth, slightly staggered
-
-    const anim = el.animate(
-      [
-        { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.5) rotate(0deg)`, opacity: 0, offset: 0 },
-        { transform: `translate(${startX - half}px, ${startY - half}px) scale(1) rotate(${rot * 0.3}deg)`, opacity: 1, offset: 0.12 },
-        { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.9) rotate(${rot}deg)`, opacity: 1, offset: 0.6 },
-        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.32) rotate(${rot * 1.3}deg)`, opacity: 0.95, offset: 0.94 },
-        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.08) rotate(${rot * 1.4}deg)`, opacity: 0, offset: 1 },
-      ],
-      { duration, delay: startDelay, easing: "cubic-bezier(.25,.55,.35,1)", fill: "forwards" },
-    );
-    anim.onfinish = () => {
-      if (s === 0) {
-        try { playGiftWhooshCue(Math.min(0.6, opts.volume)); } catch { /* noop */ }
-        spawnLandingBurst(host, endX, endY);
-      }
-      el.remove();
     };
+    inner.appendChild(img);
+  } else {
+    inner.appendChild(emojiSpan);
   }
+  el.appendChild(inner);
+  host.appendChild(el);
+
+  const arc = arcSide * 70;
+  const midX = (startX + endX) / 2 + perpX * arc;
+  const midY = (startY + endY) / 2 + perpY * arc;
+  const rot = arcSide * 12;
+  const duration = 620;
+
+  if (opts.fireOnce) {
+    try { playGiftWhooshCue(Math.min(0.5, opts.volume)); } catch { /* noop */ }
+  }
+
+  const anim = el.animate(
+    [
+      { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.55) rotate(0deg)`, opacity: 0, offset: 0 },
+      { transform: `translate(${startX - half}px, ${startY - half}px) scale(1.05) rotate(${rot * 0.25}deg)`, opacity: 1, offset: 0.15 },
+      { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.95) rotate(${rot}deg)`, opacity: 1, offset: 0.6 },
+      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.35) rotate(${rot * 1.3}deg)`, opacity: 0.95, offset: 0.95 },
+      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.08) rotate(${rot * 1.4}deg)`, opacity: 0, offset: 1 },
+    ],
+    { duration, easing: "cubic-bezier(.25,.55,.35,1)", fill: "forwards" },
+  );
+  anim.onfinish = () => {
+    spawnLandingBurst(host, endX, endY);
+    el.remove();
+  };
 }
 
 function hashStr(s: string) {
@@ -926,9 +923,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     let ms: number;
     if (isSmallGift) {
       const q = Math.max(1, Math.min(99, current.quantity || 1));
-      const stagger = q > 1 ? Math.max(18, 42 - q) : 0;
-      // Flyer duration ≤ ~490ms + tiny buffer + total stagger.
-      ms = 520 + stagger * q + 120;
+      const perStagger = q > 1 ? Math.max(60, 120 - q * 4) : 0;
+      const receivers = Math.max(1, (current.receiverIds?.length ?? 1));
+      // flyer duration 620ms + last spawn delay + safety.
+      ms = 620 + perStagger * q + receivers * 25 + 250;
     } else if (hasVideo) {
       ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
@@ -1066,7 +1064,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             </div>
           </div>
         )}
-        {!isSmallGift && (
+        {!isSmallGift ? (
           <>
             <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
               <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
@@ -1084,6 +1082,17 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               </p>
             )}
           </>
+        ) : (
+          <div className="pointer-events-none absolute left-1/2 top-[62%] z-[230] -translate-x-1/2 flex items-center gap-2">
+            <span className="rounded-full bg-black/75 px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white shadow-lg ring-1 ring-white/10">
+              {current.giftName}
+            </span>
+            {current.quantity > 1 && (
+              <span className="rounded-full bg-gradient-to-r from-[#ffd76a] to-[#ff8f2b] px-3 py-1 text-[13px] font-black text-black shadow-lg">
+                ×{current.quantity}
+              </span>
+            )}
+          </div>
         )}
         {soundPulseKey === current.key && (
           <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
