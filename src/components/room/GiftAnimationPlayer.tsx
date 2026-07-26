@@ -71,13 +71,14 @@ function isJalwaSpaceshipGift(name: string | null | undefined) {
 // Gifts rendered on a pure-black background — we screen-blend them so the black
 // disappears against the room and only the effect shows. Also implies the MP4
 // already carries baked-in audio, so we should unmute the video element.
+const POPULAR_MP4_GIFT_NAMES = new Set([
+  "heart","like","balloon","cake","fire","star","butterfly","sunflower","bunny","music note",
+]);
 function isBlackBgGift(name: string | null | undefined) {
   const n = (name ?? "").toLowerCase();
-  // Money gun + hand heart are true-alpha WebM — skip blend.
   if (n.includes("money gun") || n.includes("hand heart")) return false;
-  // All Jalwa premium/VIP/luxury cinematic gifts are rendered on a dark
-  // background — screen-blend so only the effect shows over the room.
   if (n.startsWith("jalwa ")) return true;
+  if (POPULAR_MP4_GIFT_NAMES.has(n)) return true;
   return false;
 }
 
