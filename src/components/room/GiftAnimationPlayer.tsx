@@ -1023,10 +1023,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     let ms: number;
     if (isSmallGift) {
       const q = Math.max(1, Math.min(99, current.quantity || 1));
-      const perStagger = q > 1 ? Math.max(60, 120 - q * 4) : 0;
+      const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
       const receivers = Math.max(1, (current.receiverIds?.length ?? 1));
-      // flyer duration 620ms + last spawn delay + safety.
-      ms = 620 + perStagger * q + receivers * 25 + 250;
+      // hero(360) + flyer trail + flyer duration(620) + safety.
+      ms = 360 + perStagger * q + receivers * 22 + 900;
+
     } else if (hasVideo) {
       ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
