@@ -1726,3 +1726,14 @@ body.theme-background-active header.sticky {
   font-size: 72px;
   line-height: 1;
 }
+
+@keyframes jalwaComboPop {
+  0%   { transform: scale(0.4) rotate(-6deg); opacity: 0; }
+  55%  { transform: scale(1.18) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+@keyframes jalwaComboCoin {
+  0%   { transform: translateY(6px) scale(0.6); opacity: 0; }
+  25%  { transform: translateY(-4px) scale(1.15); opacity: 1; }
+  100% { transform: translateY(-42px) scale(0.9); opacity: 0; }
+}

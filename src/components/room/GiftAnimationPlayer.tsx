@@ -559,48 +559,14 @@ function spawnFlyer(
   const rect = findReceiverDpRect(opts.targetId);
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const size = 128;
-  const half = size / 2;
   const startX = vw / 2;
   const startY = vh / 2;
   const endX = rect ? rect.left + rect.width / 2 : vw / 2;
   const endY = rect ? rect.top + rect.height / 2 : vh - 80;
 
-  const el = document.createElement("div");
-  el.className = "jalwa-small-gift-flyer-node";
-  el.style.position = "fixed";
-  el.style.left = "0";
-  el.style.top = "0";
-  el.style.width = `${size}px`;
-  el.style.height = `${size}px`;
-  el.style.transform = `translate(${startX - half}px, ${startY - half}px) scale(1)`;
-  el.style.willChange = "transform, opacity";
-  el.style.pointerEvents = "none";
-  el.style.filter = "drop-shadow(0 10px 22px rgba(255, 200, 90, 0.75))";
-  el.style.zIndex = "2147483646";
-  if (opts.image) {
-    const img = document.createElement("img");
-    img.src = opts.image;
-    img.alt = "";
-    img.style.width = "100%";
-    img.style.height = "100%";
-    img.style.objectFit = "contain";
-    el.appendChild(img);
-  } else {
-    const span = document.createElement("span");
-    span.textContent = opts.emoji || "🎁";
-    span.style.display = "grid";
-    span.style.placeItems = "center";
-    span.style.width = "100%";
-    span.style.height = "100%";
-    span.style.fontSize = "96px";
-    span.style.lineHeight = "1";
-    el.appendChild(span);
-  }
-  host.appendChild(el);
-
-  // Combo forms a tight straight line/trail toward the receiver — subtle
-  // perpendicular offset per flyer so they read as a stream, not a jitter.
+  // Reference-style swarm: each "tap" spawns a small burst of icons that
+  // follow slightly different curved arcs to the receiver's DP.
+  const SWARM = 4;
   const total = Math.max(1, opts.total ?? 1);
   const index = opts.index ?? 0;
   const dx = endX - startX;
@@ -608,23 +574,100 @@ function spawnFlyer(
   const len = Math.max(1, Math.hypot(dx, dy));
   const perpX = -dy / len;
   const perpY = dx / len;
-  const laneOffset = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(60, 8 + total * 3) : 0;
-  const midX = (startX + endX) / 2 + perpX * laneOffset;
-  const midY = (startY + endY) / 2 + perpY * laneOffset;
+  const laneBase = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(80, 14 + total * 4) : 0;
 
-  const anim = el.animate(
+  for (let s = 0; s < SWARM; s++) {
+    const size = 84 + Math.round(Math.random() * 28);
+    const half = size / 2;
+    const el = document.createElement("div");
+    el.style.cssText =
+      `position:fixed;left:0;top:0;width:${size}px;height:${size}px;` +
+      `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
+      `filter:drop-shadow(0 10px 22px rgba(255,200,90,.75));`;
+    if (opts.image) {
+      const img = document.createElement("img");
+      img.src = opts.image;
+      img.alt = "";
+      img.style.cssText = "width:100%;height:100%;object-fit:contain;";
+      el.appendChild(img);
+    } else {
+      const span = document.createElement("span");
+      span.textContent = opts.emoji || "🎁";
+      span.style.cssText = `display:grid;place-items:center;width:100%;height:100%;font-size:${Math.round(size * 0.78)}px;line-height:1;`;
+      el.appendChild(span);
+    }
+    host.appendChild(el);
+
+    const jitter = (Math.random() - 0.5) * 90;
+    const arc = (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 90);
+    const laneOffset = laneBase + jitter;
+    const midX = (startX + endX) / 2 + perpX * (laneOffset + arc);
+    const midY = (startY + endY) / 2 + perpY * (laneOffset + arc);
+    const jEndX = endX + (Math.random() - 0.5) * 20;
+    const jEndY = endY + (Math.random() - 0.5) * 20;
+    const rot = (Math.random() - 0.5) * 90;
+    const startDelay = s * 55;
+    const duration = 720 + Math.random() * 180;
+
+    const anim = el.animate(
+      [
+        { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.6) rotate(0deg)`, opacity: 0, offset: 0 },
+        { transform: `translate(${startX - half}px, ${startY - half}px) scale(1) rotate(${rot * 0.3}deg)`, opacity: 1, offset: 0.08 },
+        { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.85) rotate(${rot}deg)`, opacity: 1, offset: 0.55 },
+        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.28) rotate(${rot * 1.4}deg)`, opacity: 0.9, offset: 0.92 },
+        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.08) rotate(${rot * 1.5}deg)`, opacity: 0, offset: 1 },
+      ],
+      { duration, delay: startDelay, easing: "cubic-bezier(.42,.02,.32,1)", fill: "forwards" },
+    );
+    anim.onfinish = () => {
+      if (s === 0) {
+        try { playGiftSynthCue("coins jingle", Math.min(0.9, opts.volume)); } catch { /* noop */ }
+        spawnLandingBurst(host, endX, endY);
+      }
+      el.remove();
+    };
+  }
+}
+
+function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
+  const ring = document.createElement("div");
+  const size = 140;
+  ring.style.cssText =
+    `position:fixed;left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;` +
+    `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
+    `background:radial-gradient(circle, rgba(255,220,120,.55) 0%, rgba(255,120,200,.35) 40%, transparent 70%);` +
+    `box-shadow:0 0 40px rgba(255,210,120,.7), inset 0 0 30px rgba(255,180,220,.55);`;
+  host.appendChild(ring);
+  ring.animate(
     [
-      { transform: `translate(${startX - half}px, ${startY - half}px) scale(1)`, opacity: 1, offset: 0 },
-      { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.8)`, opacity: 1, offset: 0.5 },
-      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.32)`, opacity: 0.9, offset: 0.9 },
-      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.1)`, opacity: 0, offset: 1 },
+      { transform: "scale(0.3)", opacity: 0.9 },
+      { transform: "scale(1.4)", opacity: 0.5, offset: 0.6 },
+      { transform: "scale(1.9)", opacity: 0 },
     ],
-    { duration: 650, easing: "cubic-bezier(.35,.1,.25,1)", fill: "forwards" },
-  );
-  anim.onfinish = () => {
-    try { playGiftSynthCue("coins jingle", Math.min(0.9, opts.volume)); } catch { /* noop */ }
-    el.remove();
-  };
+    { duration: 620, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+  ).onfinish = () => ring.remove();
+
+  const N = 8;
+  for (let i = 0; i < N; i++) {
+    const dot = document.createElement("i");
+    const s = 6 + Math.random() * 6;
+    dot.style.cssText =
+      `position:fixed;left:${x - s / 2}px;top:${y - s / 2}px;width:${s}px;height:${s}px;` +
+      `border-radius:9999px;background:radial-gradient(circle,#fff,rgba(255,220,120,.9) 60%,transparent);` +
+      `box-shadow:0 0 12px rgba(255,220,120,.9);pointer-events:none;z-index:2147483646;`;
+    host.appendChild(dot);
+    const ang = (i / N) * Math.PI * 2 + Math.random() * 0.4;
+    const dist = 60 + Math.random() * 40;
+    const dxp = Math.cos(ang) * dist;
+    const dyp = Math.sin(ang) * dist;
+    dot.animate(
+      [
+        { transform: "translate(0,0) scale(1)", opacity: 1 },
+        { transform: `translate(${dxp}px,${dyp}px) scale(0.2)`, opacity: 0 },
+      ],
+      { duration: 520 + Math.random() * 200, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+    ).onfinish = () => dot.remove();
+  }
 }
 
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {

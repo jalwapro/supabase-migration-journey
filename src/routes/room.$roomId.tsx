@@ -62,6 +62,7 @@ import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/components/GiftSheet";
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
+import GiftComboHud from "@/components/room/GiftComboHud";
 import { GiftAudioControl } from "@/components/room/GiftAudioControl";
 import { TapHearts } from "@/components/room/TapHearts";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
@@ -2784,6 +2785,7 @@ function RoomPage() {
         onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <GiftComboHud />
       <TapHearts />
       <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
         <GiftAudioControl />
