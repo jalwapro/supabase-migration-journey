@@ -377,7 +377,15 @@ export function GiftSheet({
                       setSelectedGift(g);
                       const prefs = getGiftAudioPrefs();
                       if (!prefs.muted && prefs.volume > 0) {
-                        playGiftAudioCue({ soundUrl: g.sound_url, giftName: g.name, volume: Math.min(1, prefs.volume * 0.7) });
+                        const vol = Math.min(1, prefs.volume * 0.7);
+                        const tier = tierOf(price(g));
+                        if (g.sound_url) {
+                          playGiftAudioCue({ soundUrl: g.sound_url, volume: vol });
+                        } else if (tier !== "small") {
+                          // Premium/VIP preview: Jalwa signature chime (unique brand cue).
+                          playJalwaSignature(vol);
+                        }
+                        // Small tier: silent on tap — coin-drop sirf send ke waqt.
                       }
                     }
                   }}
