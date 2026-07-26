@@ -924,6 +924,136 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
   ).onfinish = () => bloom.remove();
 }
 
+/**
+ * Gift TRAIN — plays every 10-combo. A locomotive with N wagons rolls
+ * across the screen left→right, each wagon carrying the gift icon.
+ * Wagons grow with combo (1 wagon per 10 units, capped).
+ */
+function spawnGiftTrain(
+  host: HTMLElement,
+  opts: { emoji: string; image: string | null; wagons: number; volume: number },
+): () => void {
+  if (typeof document === "undefined") return () => {};
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const laneY = vh * 0.55;
+  const wagonSize = Math.max(56, Math.min(78, Math.round(vw / 8)));
+  const wagons = Math.max(1, Math.min(20, opts.wagons));
+  const gap = 8;
+  // Locomotive + wagons; total width used for start/end offscreen calc.
+  const trainWidth = (wagons + 1) * (wagonSize + gap);
+  const duration = 2400 + wagons * 80;
+
+  const rail = document.createElement("div");
+  rail.style.cssText =
+    `position:fixed;left:0;top:${laneY - wagonSize / 2}px;width:${trainWidth}px;height:${wagonSize}px;` +
+    `pointer-events:none;z-index:2147483646;display:flex;align-items:center;gap:${gap}px;` +
+    `will-change:transform;filter:drop-shadow(0 12px 22px rgba(0,0,0,.55)) drop-shadow(0 0 18px rgba(255,200,110,.75));`;
+
+  const makeCar = (isLoco: boolean) => {
+    const car = document.createElement("div");
+    car.style.cssText =
+      `width:${wagonSize}px;height:${wagonSize}px;display:grid;place-items:center;position:relative;` +
+      `border-radius:18px;` +
+      `background:radial-gradient(circle at 30% 30%, rgba(255,235,170,.35), rgba(255,120,200,.18) 55%, transparent 78%);`;
+    // Bobbing
+    car.animate(
+      [{ transform: "translateY(0)" }, { transform: "translateY(-4px)" }, { transform: "translateY(0)" }],
+      { duration: 380, iterations: Infinity, easing: "ease-in-out" },
+    );
+    if (isLoco) {
+      const loco = document.createElement("span");
+      loco.textContent = "🚂";
+      loco.style.cssText = `font-size:${Math.round(wagonSize * 0.86)}px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));`;
+      car.appendChild(loco);
+    } else if (opts.image) {
+      const img = document.createElement("img");
+      img.src = opts.image;
+      img.alt = "";
+      img.style.cssText =
+        `width:${Math.round(wagonSize * 0.86)}px;height:${Math.round(wagonSize * 0.86)}px;object-fit:contain;` +
+        `filter:drop-shadow(0 4px 10px rgba(0,0,0,.55)) drop-shadow(0 0 10px rgba(255,220,140,.9));`;
+      img.onerror = () => {
+        img.remove();
+        const es = document.createElement("span");
+        es.textContent = opts.emoji || "🎁";
+        es.style.cssText = `font-size:${Math.round(wagonSize * 0.72)}px;line-height:1;`;
+        car.appendChild(es);
+      };
+      car.appendChild(img);
+    } else {
+      const es = document.createElement("span");
+      es.textContent = opts.emoji || "🎁";
+      es.style.cssText = `font-size:${Math.round(wagonSize * 0.72)}px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));`;
+      car.appendChild(es);
+    }
+    return car;
+  };
+
+  rail.appendChild(makeCar(true));
+  for (let i = 0; i < wagons; i++) rail.appendChild(makeCar(false));
+  host.appendChild(rail);
+
+  // Steam puffs above locomotive
+  const puffs: HTMLDivElement[] = [];
+  const puffTimer = window.setInterval(() => {
+    const puff = document.createElement("div");
+    puff.style.cssText =
+      `position:fixed;left:0;top:${laneY - wagonSize}px;width:22px;height:22px;border-radius:9999px;` +
+      `background:radial-gradient(circle,rgba(255,255,255,.85),rgba(255,255,255,0));pointer-events:none;` +
+      `z-index:2147483645;will-change:transform,opacity;`;
+    host.appendChild(puff);
+    puffs.push(puff);
+    puff.animate(
+      [
+        { transform: `translate(${lastLocoX()}px, 0) scale(0.6)`, opacity: 0.9 },
+        { transform: `translate(${lastLocoX() - 20}px, -50px) scale(1.4)`, opacity: 0 },
+      ],
+      { duration: 900, easing: "ease-out", fill: "forwards" },
+    ).onfinish = () => puff.remove();
+  }, 140);
+
+  let currentTx = -trainWidth;
+  const lastLocoX = () => currentTx + wagonSize / 2;
+
+  const anim = rail.animate(
+    [
+      { transform: `translateX(-${trainWidth}px)` },
+      { transform: `translateX(${vw}px)` },
+    ],
+    { duration, easing: "cubic-bezier(.4,.15,.55,.9)", fill: "forwards" },
+  );
+  // Track x for steam puff positioning
+  const rafTick = () => {
+    const t = anim.currentTime;
+    if (typeof t === "number") {
+      const pct = Math.max(0, Math.min(1, t / duration));
+      currentTx = -trainWidth + (vw + trainWidth) * pct;
+    }
+    if (anim.playState === "running") requestAnimationFrame(rafTick);
+  };
+  requestAnimationFrame(rafTick);
+
+  // Whistle-ish whoosh at start
+  try { playGiftWhooshCue(Math.min(0.55, opts.volume)); } catch { /* noop */ }
+
+  const doneTimer = window.setTimeout(() => {
+    window.clearInterval(puffTimer);
+    rail.remove();
+    puffs.forEach((p) => p.remove());
+  }, duration + 100);
+
+  return () => {
+    window.clearInterval(puffTimer);
+    window.clearTimeout(doneTimer);
+    try { anim.cancel(); } catch { /* noop */ }
+    try { rail.remove(); } catch { /* noop */ }
+    puffs.forEach((p) => { try { p.remove(); } catch { /* noop */ } });
+  };
+}
+
+
+
 function isSmallGiftPlay(p: Play) {
   if (isJalwaSpaceshipGift(p.giftName)) return false;
   if (isRoyalRoseGift(p.giftName)) return false;
