@@ -966,6 +966,20 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, []);
 
+  // Combo tracker (cumulative per sender+gift) — drives train mode.
+  const comboRef = useRef<Map<string, { count: number; lastAt: number }>>(new Map());
+
+  const computeCombo = useCallback((p: Play): { total: number; wagons: number } => {
+    const sig = `${p.senderName}|${p.giftName}`;
+    const now = Date.now();
+    const prev = comboRef.current.get(sig);
+    const qty = Math.max(1, Math.floor(p.quantity || 1));
+    const total = prev && now - prev.lastAt < COMBO_IDLE_MS ? prev.count + qty : qty;
+    comboRef.current.set(sig, { count: total, lastAt: now });
+    const wagons = Math.min(MAX_TRAIN_WAGONS, Math.floor(total / TRAIN_UNIT));
+    return { total, wagons };
+  }, []);
+
   const pushSmallPlay = useCallback((p: Play) => {
     setSmallPlays((prev) => {
       const next = prev.length >= 8 ? prev.slice(-7) : prev;
@@ -979,7 +993,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   const enqueueOne = useCallback((p: Play) => {
     if (isSmallGiftPlay(p)) {
-      pushSmallPlay(p);
+      const { total, wagons } = computeCombo(p);
+      pushSmallPlay({ ...p, comboTotal: total, trainWagons: wagons });
       return;
     }
     if (currentRef.current) {
@@ -990,7 +1005,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       currentRef.current = p;
       setCurrent(p);
     }
-  }, [pushSmallPlay]);
+  }, [pushSmallPlay, computeCombo]);
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
