@@ -5,7 +5,7 @@ import {
   setGiftAudioMuted,
   setGiftAudioVolume,
   unlockGiftAudio,
-  playGiftAudioCue,
+  playJalwaSignature,
 } from "@/lib/giftAudio";
 
 export function GiftAudioControl({ className = "" }: { className?: string }) {
@@ -33,7 +33,7 @@ export function GiftAudioControl({ className = "" }: { className?: string }) {
           if (effectiveMuted) {
             setGiftAudioMuted(false);
             if (prefs.volume === 0) setGiftAudioVolume(0.8);
-            playGiftAudioCue({ giftName: "Jalwa sound", volume: 0.8 });
+            playJalwaSignature(0.8);
           }
           setOpen((v) => !v);
         }}
@@ -81,7 +81,7 @@ export function GiftAudioControl({ className = "" }: { className?: string }) {
             onClick={() => {
               unlockGiftAudio();
               if (prefs.muted) setGiftAudioMuted(false);
-              playGiftAudioCue({ giftName: "Jalwa gift", volume: Math.max(0.5, prefs.volume) });
+              playJalwaSignature(Math.max(0.5, prefs.volume));
             }}
             className="rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white active:bg-white/15"
           >
