@@ -579,10 +579,16 @@ function SmallGiftFlyer({
     // The gift then streams to every receiver DP (existing flyer logic).
     // ------------------------------------------------------------------
     const displayCount = Math.max(quantity, comboTotal || 0);
-    const isJackpot = displayCount >= 10;
+    // Only fire JACKPOT on the tap that CROSSES the 10 threshold — not on
+    // every subsequent tap. Prevents stacked banners/coin rain at 10+ combo.
+    const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
+    const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
-    const HERO_INTRO_MS = 240;
-    const HERO_HOLD_MS = isCombo ? 260 : 520;
+    // Continuation tap in an active combo: skip the hero slot panel so we
+    // don't spawn overlapping panels on every tap. Only flyers + counter.
+    const isComboContinuation = (comboTotal || 0) > quantity;
+    const HERO_INTRO_MS = isComboContinuation ? 0 : 240;
+    const HERO_HOLD_MS = isComboContinuation ? 0 : (isCombo ? 260 : 520);
 
     // Slot panel (fixed position, centered)
     const panel = document.createElement("div");
