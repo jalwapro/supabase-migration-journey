@@ -76,9 +76,8 @@ function isRoyalRoseGift(name: string | null | undefined) {
 }
 
 function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
-  // Show static thumbnail everywhere in the gift box, with luma-key styling so
-  // baked black MP4/SVG poster backgrounds (bunny/star/etc.) disappear.
-  const imgClass = "jalwa-keyed-gift-media h-full w-full object-contain";
+  // Plain thumbnail — no luma-key/blend so bright SVGs stay fully visible on the dark tile.
+  const imgClass = "h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]";
   if (isRoyalRoseGift(gift.name)) {
     return <img src={ROYAL_ROSE_THUMB_URL} alt="" className={imgClass} />;
   }
