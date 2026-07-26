@@ -907,13 +907,17 @@ body.theme-background-active header.sticky {
 
 .jalwa-gift-overlay .gift-anim-video {
   position: fixed !important;
-  inset: -5dvh -8dvw !important;
-  width: 116dvw !important;
-  height: 110dvh !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: min(92dvw, 430px) !important;
+  height: min(92dvh, 760px) !important;
+  transform: translate(-50%, -50%) !important;
   max-width: none !important;
   max-height: none !important;
   object-fit: contain !important;
   z-index: 2147483647 !important;
+  background: transparent !important;
+  mix-blend-mode: screen !important;
 }
 
 @keyframes jalwa-spaceship-stage-in {

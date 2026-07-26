@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CATALOG_GIFTS } from "@/lib/gifts";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
-import { getGiftAudioPrefs } from "@/lib/giftAudio";
-import { X, Loader2, Coins, Send } from "lucide-react";
+import { getGiftAudioPrefs, playGiftAudioCue, unlockGiftAudio } from "@/lib/giftAudio";
+import { Loader2, Coins, Send, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
 export type Gift = {
@@ -373,10 +373,15 @@ export function GiftSheet({
                 <button
                   key={g.id}
                   onClick={() => {
+                    unlockGiftAudio();
                     if (selected) {
                       handleSend();
                     } else {
                       setSelectedGift(g);
+                      const prefs = getGiftAudioPrefs();
+                      if (!prefs.muted && prefs.volume > 0) {
+                        playGiftAudioCue({ soundUrl: g.sound_url, giftName: g.name, volume: Math.min(1, prefs.volume * 0.7) });
+                      }
                     }
                   }}
                   onPointerDown={() => preloadGiftVideo(giftVideoUrl(g))}
@@ -387,6 +392,9 @@ export function GiftSheet({
                   <div className="grid h-11 w-11 place-items-center">
                     <GiftPreview gift={g} />
                   </div>
+                  <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-black/70 text-white ring-1 ring-white/15">
+                    <Volume2 className="h-2.5 w-2.5" />
+                  </span>
                   <span className="w-full truncate text-center text-[11px] font-medium text-white/90">
                     {g.name}
                   </span>

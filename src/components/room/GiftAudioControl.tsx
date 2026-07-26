@@ -4,6 +4,8 @@ import {
   useGiftAudioPrefs,
   setGiftAudioMuted,
   setGiftAudioVolume,
+  unlockGiftAudio,
+  playGiftAudioCue,
 } from "@/lib/giftAudio";
 
 export function GiftAudioControl({ className = "" }: { className?: string }) {
@@ -27,12 +29,13 @@ export function GiftAudioControl({ className = "" }: { className?: string }) {
     <div ref={wrapRef} className={`relative ${className}`}>
       <button
         onClick={() => {
+          unlockGiftAudio();
           if (effectiveMuted) {
             setGiftAudioMuted(false);
             if (prefs.volume === 0) setGiftAudioVolume(0.8);
-          } else {
-            setGiftAudioMuted(true);
+            playGiftAudioCue({ giftName: "Jalwa sound", volume: 0.8 });
           }
+          setOpen((v) => !v);
         }}
         onContextMenu={(e) => {
           e.preventDefault();
@@ -74,6 +77,16 @@ export function GiftAudioControl({ className = "" }: { className?: string }) {
           <p className="text-[10px] text-white/50">
             {prefs.muted ? "Muted" : `${Math.round(prefs.volume * 100)}%`}
           </p>
+          <button
+            onClick={() => {
+              unlockGiftAudio();
+              if (prefs.muted) setGiftAudioMuted(false);
+              playGiftAudioCue({ giftName: "Jalwa gift", volume: Math.max(0.5, prefs.volume) });
+            }}
+            className="rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white active:bg-white/15"
+          >
+            Test sound
+          </button>
         </div>
       )}
     </div>
