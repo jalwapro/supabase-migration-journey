@@ -72,8 +72,12 @@ function isJalwaSpaceshipGift(name: string | null | undefined) {
 // disappears against the room and only the effect shows. Also implies the MP4
 // already carries baked-in audio, so we should unmute the video element.
 function isBlackBgGift(name: string | null | undefined) {
-  const _n = (name ?? "").toLowerCase();
-  // NOTE: money gun + hand heart ab true-alpha WebM hain — screen-blend ki zarurat nahi.
+  const n = (name ?? "").toLowerCase();
+  // Money gun + hand heart are true-alpha WebM — skip blend.
+  if (n.includes("money gun") || n.includes("hand heart")) return false;
+  // All Jalwa premium/VIP/luxury cinematic gifts are rendered on a dark
+  // background — screen-blend so only the effect shows over the room.
+  if (n.startsWith("jalwa ")) return true;
   return false;
 }
 
