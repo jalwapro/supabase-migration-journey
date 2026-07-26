@@ -766,7 +766,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* center/front-screen gift animation */}
       <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
-        {isSpaceship ? (
+        {isSmallGift ? (
+          <SmallGiftFlyer
+            emoji={current.giftEmoji}
+            image={fallbackImage}
+            onReady={markCurrentReady}
+          />
+        ) : isSpaceship ? (
           <SpaceshipGiftVisual onReady={markCurrentReady} />
         ) : hasVideo ? (
 
