@@ -4419,8 +4419,13 @@ function SeatsSheet({
   const clamp = (x: number) => Math.max(4, Math.min(20, x));
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay="true"
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
       >
