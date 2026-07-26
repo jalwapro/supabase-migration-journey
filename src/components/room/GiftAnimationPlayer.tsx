@@ -688,11 +688,8 @@ function SmallGiftFlyer({
       ],
       { duration: HERO_INTRO_MS + 80, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
     );
-    } // end if (!isComboContinuation) — hero slot panel
 
-    // Roll counter from 0 → displayCount (only if the panel exists)
-    let rafId = 0;
-    if (!isComboContinuation) {
+    // Roll counter from 0 → displayCount
     const rollStart = performance.now();
     const rollDuration = Math.min(600, 220 + displayCount * 12);
     const step = (now: number) => {
@@ -705,7 +702,8 @@ function SmallGiftFlyer({
       else num.style.transform = "scale(1)";
     };
     rafId = requestAnimationFrame(step);
-    }
+    } // end if (!isComboContinuation) — hero slot panel + counter
+    let rafId = 0;
 
     // Jackpot flash + banner + coin rain
     let jackpotEls: HTMLElement[] = [];
