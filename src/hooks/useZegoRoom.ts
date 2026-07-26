@@ -383,26 +383,27 @@ export function useZegoRoom({
   // Browser autoplay policy blocks remote audio until the first user gesture.
   // Resume every attached remote <audio> on the first tap/click/keydown so
   // viewers actually hear each other without needing an explicit "unmute" prompt.
+  // Keep the listener alive for the lifetime of the hook so audio elements
+  // added AFTER the first tap (host publishes late, new joiners) also unlock.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let done = false;
     const resume = () => {
-      if (done) return;
-      done = true;
       for (const [, el] of audioElsRef.current) {
-        try { el.muted = speakerMutedRef.current; el.play().catch(() => {}); } catch { /* ignore */ }
+        try {
+          el.muted = speakerMutedRef.current;
+          if (el.paused) el.play().catch(() => {});
+        } catch { /* ignore */ }
       }
-      window.removeEventListener("pointerdown", resume);
-      window.removeEventListener("touchstart", resume);
-      window.removeEventListener("keydown", resume);
     };
-    window.addEventListener("pointerdown", resume, { once: false, passive: true });
-    window.addEventListener("touchstart", resume, { once: false, passive: true });
+    window.addEventListener("pointerdown", resume, { passive: true });
+    window.addEventListener("touchstart", resume, { passive: true });
     window.addEventListener("keydown", resume);
+    window.addEventListener("click", resume, { passive: true });
     return () => {
       window.removeEventListener("pointerdown", resume);
       window.removeEventListener("touchstart", resume);
       window.removeEventListener("keydown", resume);
+      window.removeEventListener("click", resume);
     };
   }, []);
 
@@ -722,7 +723,12 @@ export function useZegoRoom({
                     }
                     try { el.srcObject = media; } catch (err) { console.warn("[zego-debug] audio srcObject set failed", err); return; }
                     el.muted = speakerMutedRef.current;
-                    el.play().catch(() => { /* gesture may be needed */ });
+                    el.volume = 1;
+                    const tryPlay = () => el!.play().catch((err) => {
+                      // Autoplay blocked — will retry on next user gesture via the global listener.
+                      console.warn("[zego-debug] remote audio play blocked", s.streamID, err?.name || err);
+                    });
+                    tryPlay();
                   })
                   .catch((err) => { console.warn("[zego-debug] getRemoteMediaStream rejected", s.streamID, err); });
               } catch (err) { console.warn("[zego-debug] play setup threw", err); }
