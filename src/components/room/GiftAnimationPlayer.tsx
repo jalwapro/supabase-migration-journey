@@ -534,6 +534,7 @@ function SmallGiftFlyer({
   image,
   quantity,
   trainWagons = 0,
+  comboTotal = 0,
   receiverIds,
   fallbackReceiverId,
   volume,
@@ -543,6 +544,7 @@ function SmallGiftFlyer({
   image: string | null;
   quantity: number;
   trainWagons?: number;
+  comboTotal?: number;
   receiverIds: (string | null | undefined)[];
   fallbackReceiverId?: string | null;
   volume: number;
