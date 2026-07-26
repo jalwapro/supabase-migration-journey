@@ -579,13 +579,21 @@ function SmallGiftFlyer({
     // The gift then streams to every receiver DP (existing flyer logic).
     // ------------------------------------------------------------------
     const displayCount = Math.max(quantity, comboTotal || 0);
-    const isJackpot = displayCount >= 10;
+    // Only fire JACKPOT on the tap that CROSSES the 10 threshold — not on
+    // every subsequent tap. Prevents stacked banners/coin rain at 10+ combo.
+    const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
+    const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
-    const HERO_INTRO_MS = 240;
-    const HERO_HOLD_MS = isCombo ? 260 : 520;
+    // Continuation tap in an active combo: skip the hero slot panel so we
+    // don't spawn overlapping panels on every tap. Only flyers + counter.
+    const isComboContinuation = (comboTotal || 0) > quantity;
+    const HERO_INTRO_MS = isComboContinuation ? 0 : 240;
+    const HERO_HOLD_MS = isComboContinuation ? 0 : (isCombo ? 260 : 520);
 
-    // Slot panel (fixed position, centered)
+    // Slot panel (fixed position, centered) — skipped on combo continuation.
     const panel = document.createElement("div");
+    let rafId = 0;
+    if (!isComboContinuation) {
     panel.style.cssText =
       `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
       `pointer-events:none;z-index:2147483646;opacity:0;` +
@@ -685,7 +693,6 @@ function SmallGiftFlyer({
     // Roll counter from 0 → displayCount
     const rollStart = performance.now();
     const rollDuration = Math.min(600, 220 + displayCount * 12);
-    let rafId = 0;
     const step = (now: number) => {
       const t = Math.min(1, (now - rollStart) / rollDuration);
       const eased = 1 - Math.pow(1 - t, 3);
@@ -696,6 +703,7 @@ function SmallGiftFlyer({
       else num.style.transform = "scale(1)";
     };
     rafId = requestAnimationFrame(step);
+    } // end if (!isComboContinuation) — hero slot panel + counter
 
     // Jackpot flash + banner + coin rain
     let jackpotEls: HTMLElement[] = [];
@@ -766,9 +774,9 @@ function SmallGiftFlyer({
       }
     });
 
-    // Fade slot panel after the last flyer has launched
+    // Fade slot panel after the last flyer has launched (only if we made one)
     const panelFadeAt = lastLaunchDelay + 240;
-    const panelFadeTimer = window.setTimeout(() => {
+    const panelFadeTimer = isComboContinuation ? 0 : window.setTimeout(() => {
       const fade = panel.animate(
         [
           { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
@@ -778,7 +786,7 @@ function SmallGiftFlyer({
       );
       fade.onfinish = () => panel.remove();
     }, panelFadeAt);
-    cleanupTimers.push(panelFadeTimer);
+    if (panelFadeTimer) cleanupTimers.push(panelFadeTimer);
 
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
