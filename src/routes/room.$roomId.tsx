@@ -3125,6 +3125,12 @@ function RoomPage() {
 
 
 
+      <MiniProfileSheet
+        target={miniProfileUser}
+        currentUserId={user?.id ?? null}
+        onClose={() => setMiniProfileUser(null)}
+      />
+
       <SeatActionSheet
         member={manageMember}
         canModerate={isHost}
