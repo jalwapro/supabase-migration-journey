@@ -1564,9 +1564,15 @@ function RoomPage() {
         void doLeaveRoom();
       }
     };
+    const onNativeBack = (event: Event) => {
+      if (!closeTopOverlay()) return;
+      event.preventDefault();
+    };
     window.addEventListener("popstate", onPop);
+    window.addEventListener("jalwa:native-back", onNativeBack);
     return () => {
       window.removeEventListener("popstate", onPop);
+      window.removeEventListener("jalwa:native-back", onNativeBack);
     };
     // doLeaveRoom is stable via closure; re-arm on host flip only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
