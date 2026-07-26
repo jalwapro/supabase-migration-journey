@@ -56,16 +56,19 @@ function isRoyalRoseGift(name: string | null | undefined) {
 
 function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
   // Show static PNG thumbnail everywhere in the gift box.
-  // Animation only plays after Send (via jalwa:gift-sent event in room).
+  // `mix-blend-mode: screen` drops the dark shadow/black backdrop baked into
+  // many SVG gifts (bunny/star/etc.) so only the bright gift is visible on
+  // the sheet's dark tile — no more black halo behind the icon.
+  const imgStyle = { mixBlendMode: "screen" as const, background: "transparent" };
   if (isRoyalRoseGift(gift.name)) {
-    return <img src={ROYAL_ROSE_THUMB_URL} alt="" className="h-full w-full object-contain" />;
+    return <img src={ROYAL_ROSE_THUMB_URL} alt="" className="h-full w-full object-contain" style={imgStyle} />;
   }
   const thumb = resolveGiftImageUrl(gift.image_url ?? gift.icon_path ?? (isAssetUrlLike(gift.icon) ? gift.icon : null));
   if (thumb) {
-    return <img src={thumb} alt="" className="h-full w-full object-contain" />;
+    return <img src={thumb} alt="" className="h-full w-full object-contain" style={imgStyle} />;
   }
   if (gift.clip_path && gift.clip_type === "svg") {
-    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className="h-full w-full object-contain" />;
+    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className="h-full w-full object-contain" style={imgStyle} />;
   }
   return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
 }
