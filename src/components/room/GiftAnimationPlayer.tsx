@@ -1266,6 +1266,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             emoji={sp.giftEmoji}
             image={spImage}
             quantity={sp.quantity}
+            trainWagons={sp.trainWagons ?? 0}
             receiverIds={sp.receiverIds ?? (sp.receiverId ? [sp.receiverId] : [])}
             fallbackReceiverId={sp.receiverId ?? null}
             volume={audioPrefs.muted ? 0 : audioPrefs.volume}
