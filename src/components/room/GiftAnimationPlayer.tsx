@@ -629,6 +629,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // Screen-blend knocks out black — apply to every video/svga gift so all
   // gifts render on a transparent stage over the room.
   const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
+  // Small/cheap gifts: render as a tiny 1x1-style flyer that travels down
+  // into the receiver's DP and disappears there (TikTok-style small gifts).
+  const isSmallGift =
+    !!current &&
+    !hasVideo &&
+    !hasSvga &&
+    !isSpaceship &&
+    !isRoyalRose &&
+    !isRoyalCrownGift(current.giftName) &&
+    (current.coins ?? 0) < 100;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
