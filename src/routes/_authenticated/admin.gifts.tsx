@@ -265,6 +265,7 @@ function GiftsAdmin() {
             : "mp4"
         : "none") as Draft["clip_type"],
       is_milestone: Boolean(g.is_milestone),
+      chromakey: ((["auto", "none", "screen", "luma"] as const).includes(g.chromakey as Chromakey) ? g.chromakey : "auto") as Chromakey,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
