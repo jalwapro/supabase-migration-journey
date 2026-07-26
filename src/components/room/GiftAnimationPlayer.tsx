@@ -240,8 +240,36 @@ function AnimatedGiftVideo({
 
 
 
+  const filterParts: string[] = [];
+  if (lumaKey) filterParts.push("url(#jalwa-luma-key)");
+  filterParts.push(
+    screenBlend || lumaKey
+      ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
+      : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
+  );
+
   return (
     <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
+      {lumaKey && (
+        <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+          <defs>
+            <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
+              {/* Compute luminance into the alpha channel */}
+              <feColorMatrix
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0.2126 0.7152 0.0722 0 0"
+              />
+              {/* Boost alpha contrast so dark background pixels fall to 0 */}
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="3.8" intercept="-0.35" />
+              </feComponentTransfer>
+            </filter>
+          </defs>
+        </svg>
+      )}
       {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
       <video
         key={src}
@@ -258,9 +286,6 @@ function AnimatedGiftVideo({
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
         }}
         onCanPlayThrough={() => {
-          // Wait until enough is buffered to play through — avoids ruk-ruk stalls
-          // on larger MP4s. autoPlay already kicks playback; we only re-arm the
-          // audio graph here so premium/black-bg gifts get their sound.
           startPlayback();
         }}
         onPlaying={markReady}
@@ -268,23 +293,17 @@ function AnimatedGiftVideo({
           setFailed(true);
           onReady();
         }}
-
-
-
         onEnded={onDone}
         className="gift-anim-video gift-transparent-video absolute inset-0 h-full w-full scale-110 object-contain"
         style={{
           opacity: 1,
           background: "transparent",
           willChange: "opacity, transform",
-          mixBlendMode: screenBlend ? "screen" : undefined,
-          filter: screenBlend
-            ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
-            : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
+          mixBlendMode: !lumaKey && screenBlend ? "screen" : undefined,
+          filter: filterParts.join(" "),
         }}
       />
     </div>
-
   );
 }
 
