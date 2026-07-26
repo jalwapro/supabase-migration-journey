@@ -723,7 +723,12 @@ export function useZegoRoom({
                     }
                     try { el.srcObject = media; } catch (err) { console.warn("[zego-debug] audio srcObject set failed", err); return; }
                     el.muted = speakerMutedRef.current;
-                    el.play().catch(() => { /* gesture may be needed */ });
+                    el.volume = 1;
+                    const tryPlay = () => el!.play().catch((err) => {
+                      // Autoplay blocked — will retry on next user gesture via the global listener.
+                      console.warn("[zego-debug] remote audio play blocked", s.streamID, err?.name || err);
+                    });
+                    tryPlay();
                   })
                   .catch((err) => { console.warn("[zego-debug] getRemoteMediaStream rejected", s.streamID, err); });
               } catch (err) { console.warn("[zego-debug] play setup threw", err); }
