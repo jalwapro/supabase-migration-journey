@@ -829,8 +829,21 @@ export function useZegoRoom({
               remotePlayPromisesRef.current.delete(videoSid);
               streamToUidRef.current.delete(videoSid);
             }
+            const musicSid = uidMusicStreamRef.current.get(remoteUid);
+            if (musicSid) {
+              try { engine.stopPlayingStream(musicSid); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(musicSid);
+              remotePlayPromisesRef.current.delete(musicSid);
+              streamToUidRef.current.delete(musicSid);
+              const el = audioElsRef.current.get(musicSid);
+              if (el) {
+                try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+                audioElsRef.current.delete(musicSid);
+              }
+            }
             uidStreamRef.current.delete(remoteUid);
             uidVideoStreamRef.current.delete(remoteUid);
+            uidMusicStreamRef.current.delete(remoteUid);
             videoContainersRef.current.delete(remoteUid);
             setRemotes((prev) => {
               const next = new Map(prev);
