@@ -241,7 +241,7 @@ function AnimatedGiftVideo({
 
 
   const filterParts: string[] = [];
-  if (lumaKey) filterParts.push("url(#jalwa-luma-key)");
+  if (lumaKey || screenBlend) filterParts.push("url(#jalwa-luma-key)");
   filterParts.push(
     screenBlend || lumaKey
       ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
@@ -250,7 +250,7 @@ function AnimatedGiftVideo({
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
-      {lumaKey && (
+      {(lumaKey || screenBlend) && (
         <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
           <defs>
             <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
@@ -264,7 +264,7 @@ function AnimatedGiftVideo({
               />
               {/* Boost alpha contrast so dark background pixels fall to 0 */}
               <feComponentTransfer>
-                <feFuncA type="linear" slope="3.8" intercept="-0.35" />
+                <feFuncA type="linear" slope="5.2" intercept="-0.48" />
               </feComponentTransfer>
             </filter>
           </defs>
@@ -1124,7 +1124,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             fallbackImage={fallbackImage}
             suppressEmojiFallback={true}
             screenBlend={isBlackBg}
-            lumaKey={(current.coins ?? 0) >= 2000}
+            lumaKey={isBlackBg || (current.coins ?? 0) >= 2000}
           />
 
         ) : hasSvga ? (
