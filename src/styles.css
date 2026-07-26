@@ -1698,3 +1698,31 @@ body.theme-background-active header.sticky {
   70% { opacity: 0.6; transform: scale(1) translateY(-24px); }
 }
 .gift-anim-sparkle { animation: gift-anim-sparkle 2.4s ease-in-out infinite; }
+
+/* --- Small (cheap) gifts: 1x1-sized flyer that travels to receiver DP --- */
+@keyframes jalwa-small-gift-fly {
+  0%   { transform: translate(-50%, -50%) scale(1);    opacity: 0; }
+  10%  { transform: translate(-50%, -50%) scale(1.1);  opacity: 1; }
+  70%  { transform: translate(-50%, 30vh) scale(0.55); opacity: 1; }
+  100% { transform: translate(-50%, 42vh) scale(0.12); opacity: 0; }
+}
+.jalwa-small-gift-flyer {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 96px;
+  height: 96px;
+  will-change: transform, opacity;
+  animation: jalwa-small-gift-fly 1500ms cubic-bezier(.4,.1,.3,1) forwards;
+  filter: drop-shadow(0 8px 18px rgba(255, 200, 90, 0.7));
+}
+.jalwa-small-gift-flyer img,
+.jalwa-small-gift-flyer .jalwa-small-gift-emoji {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: grid;
+  place-items: center;
+  font-size: 72px;
+  line-height: 1;
+}
