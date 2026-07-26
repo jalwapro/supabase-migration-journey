@@ -530,14 +530,16 @@ function SmallGiftFlyer({
       : [fallbackReceiverId ?? null]
     ).filter((v): v is string => !!v);
     const effectiveTargets = targets.length > 0 ? targets : [""];
-    const total = Math.max(1, Math.min(24, Math.floor(quantity || 1)));
+    const total = Math.max(1, Math.min(60, Math.floor(quantity || 1)));
+    // Combo → forms a fast line/trail toward the receiver.
+    const stagger = total > 1 ? Math.max(35, 90 - total * 2) : 0;
 
     const cleanupTimers: number[] = [];
     for (let i = 0; i < total; i++) {
       const targetId = effectiveTargets[i % effectiveTargets.length];
-      const delay = i * 110;
+      const delay = i * stagger;
       const t = window.setTimeout(() => {
-        spawnFlyer(host, { emoji, image, targetId, volume });
+        spawnFlyer(host, { emoji, image, targetId, volume, index: i, total });
       }, delay);
       cleanupTimers.push(t);
     }
