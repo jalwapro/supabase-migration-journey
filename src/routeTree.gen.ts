@@ -42,6 +42,7 @@ import { Route as AuthenticatedPartnerRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyRoomsRouteImport } from './routes/_authenticated/my-rooms'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
+import { Route as AuthenticatedGiftsRouteImport } from './routes/_authenticated/gifts'
 import { Route as AuthenticatedGamesRouteImport } from './routes/_authenticated/games'
 import { Route as AuthenticatedGalleryRouteImport } from './routes/_authenticated/gallery'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
@@ -261,6 +262,11 @@ const AuthenticatedMyRoomsRoute = AuthenticatedMyRoomsRouteImport.update({
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
   id: '/me',
   path: '/me',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedGiftsRoute = AuthenticatedGiftsRouteImport.update({
+  id: '/gifts',
+  path: '/gifts',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedGamesRoute = AuthenticatedGamesRouteImport.update({
@@ -583,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/friends': typeof AuthenticatedFriendsRoute
   '/gallery': typeof AuthenticatedGalleryRoute
   '/games': typeof AuthenticatedGamesRouteWithChildren
+  '/gifts': typeof AuthenticatedGiftsRoute
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -669,6 +676,7 @@ export interface FileRoutesByTo {
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
   '/gallery': typeof AuthenticatedGalleryRoute
+  '/gifts': typeof AuthenticatedGiftsRoute
   '/me': typeof AuthenticatedMeRoute
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -759,6 +767,7 @@ export interface FileRoutesById {
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
   '/_authenticated/gallery': typeof AuthenticatedGalleryRoute
   '/_authenticated/games': typeof AuthenticatedGamesRouteWithChildren
+  '/_authenticated/gifts': typeof AuthenticatedGiftsRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -849,6 +858,7 @@ export interface FileRouteTypes {
     | '/friends'
     | '/gallery'
     | '/games'
+    | '/gifts'
     | '/me'
     | '/my-rooms'
     | '/notifications'
@@ -935,6 +945,7 @@ export interface FileRouteTypes {
     | '/custom-theme'
     | '/friends'
     | '/gallery'
+    | '/gifts'
     | '/me'
     | '/my-rooms'
     | '/notifications'
@@ -1024,6 +1035,7 @@ export interface FileRouteTypes {
     | '/_authenticated/friends'
     | '/_authenticated/gallery'
     | '/_authenticated/games'
+    | '/_authenticated/gifts'
     | '/_authenticated/me'
     | '/_authenticated/my-rooms'
     | '/_authenticated/notifications'
@@ -1348,6 +1360,13 @@ declare module '@tanstack/react-router' {
       path: '/me'
       fullPath: '/me'
       preLoaderRoute: typeof AuthenticatedMeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/gifts': {
+      id: '/_authenticated/gifts'
+      path: '/gifts'
+      fullPath: '/gifts'
+      preLoaderRoute: typeof AuthenticatedGiftsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/games': {
@@ -1840,6 +1859,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
   AuthenticatedGalleryRoute: typeof AuthenticatedGalleryRoute
   AuthenticatedGamesRoute: typeof AuthenticatedGamesRouteWithChildren
+  AuthenticatedGiftsRoute: typeof AuthenticatedGiftsRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedMyRoomsRoute: typeof AuthenticatedMyRoomsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -1868,6 +1888,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
   AuthenticatedGalleryRoute: AuthenticatedGalleryRoute,
   AuthenticatedGamesRoute: AuthenticatedGamesRouteWithChildren,
+  AuthenticatedGiftsRoute: AuthenticatedGiftsRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedMyRoomsRoute: AuthenticatedMyRoomsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -1919,3 +1940,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
