@@ -920,6 +920,12 @@ body.theme-background-active header.sticky {
   mix-blend-mode: screen !important;
 }
 
+.jalwa-keyed-gift-media {
+  background: transparent !important;
+  mix-blend-mode: screen;
+  filter: url(#jalwa-gift-luma-key) brightness(1.32) saturate(1.26) contrast(1.18) drop-shadow(0 0 12px color-mix(in oklab, var(--gold) 55%, transparent));
+}
+
 @keyframes jalwa-spaceship-stage-in {
   0% { opacity: 0; transform: scale(0.98); }
   8% { opacity: 1; transform: scale(1); }
