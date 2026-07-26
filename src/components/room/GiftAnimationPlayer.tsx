@@ -473,6 +473,32 @@ function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
   );
 }
 
+function SmallGiftFlyer({
+  emoji,
+  image,
+  onReady,
+}: {
+  emoji: string;
+  image: string | null;
+  onReady: () => void;
+}) {
+  const readyOnce = useRef(false);
+  useEffect(() => {
+    if (readyOnce.current) return;
+    readyOnce.current = true;
+    onReady();
+  }, [onReady]);
+  return (
+    <div className="jalwa-small-gift-flyer" aria-hidden="true">
+      {image ? (
+        <img src={image} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+      ) : (
+        <span className="jalwa-small-gift-emoji">{emoji || "🎁"}</span>
+      )}
+    </div>
+  );
+}
+
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
