@@ -720,7 +720,7 @@ function spawnFlyer(
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   const startX = vw / 2;
-  const startY = vh / 2;
+  const startY = vh * 0.52;
   const endX = rect ? rect.left + rect.width / 2 : vw / 2;
   const endY = rect ? rect.top + rect.height / 2 : vh - 80;
 
@@ -730,115 +730,123 @@ function spawnFlyer(
   const perpX = -dy / len;
   const perpY = dx / len;
   const arcSide = (Math.abs(hashStr(opts.targetId || "")) % 2 === 0) ? 1 : -1;
-  const size = 132;
-  const half = size / 2;
+  const arc = arcSide * Math.min(90, len * 0.22);
+  const midX = (startX + endX) / 2 + perpX * arc;
+  const midY = (startY + endY) / 2 + perpY * arc;
+  const duration = 620;
 
+  // -------- Fluid glowing tail (SVG path with stroke-dash reveal) --------
+  const tailSvgNS = "http://www.w3.org/2000/svg";
+  const tail = document.createElementNS(tailSvgNS, "svg");
+  tail.setAttribute("width", String(vw));
+  tail.setAttribute("height", String(vh));
+  tail.setAttribute("viewBox", `0 0 ${vw} ${vh}`);
+  tail.style.cssText =
+    `position:fixed;left:0;top:0;width:${vw}px;height:${vh}px;` +
+    `pointer-events:none;z-index:2147483645;overflow:visible;`;
+  const gradId = `jgTail-${Math.random().toString(36).slice(2, 8)}`;
+  const defs = document.createElementNS(tailSvgNS, "defs");
+  const grad = document.createElementNS(tailSvgNS, "linearGradient");
+  grad.setAttribute("id", gradId);
+  grad.setAttribute("x1", String(startX));
+  grad.setAttribute("y1", String(startY));
+  grad.setAttribute("x2", String(endX));
+  grad.setAttribute("y2", String(endY));
+  grad.setAttribute("gradientUnits", "userSpaceOnUse");
+  grad.innerHTML =
+    `<stop offset="0%" stop-color="#FFE58A" stop-opacity="0"/>` +
+    `<stop offset="40%" stop-color="#FFC24D" stop-opacity="0.85"/>` +
+    `<stop offset="100%" stop-color="#FF4FA8" stop-opacity="1"/>`;
+  defs.appendChild(grad);
+  tail.appendChild(defs);
+
+  const path = document.createElementNS(tailSvgNS, "path");
+  const d = `M ${startX} ${startY} Q ${midX} ${midY} ${endX} ${endY}`;
+  path.setAttribute("d", d);
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", `url(#${gradId})`);
+  path.setAttribute("stroke-width", "6");
+  path.setAttribute("stroke-linecap", "round");
+  path.style.filter = "drop-shadow(0 0 8px rgba(255,190,110,.9))";
+  tail.appendChild(path);
+  host.appendChild(tail);
+
+  // approximate path length for dash reveal (chord + small arc bulge)
+  const chord = Math.hypot(endX - startX, endY - startY);
+  const pathLen = chord + Math.abs(arc) * 1.2;
+  path.setAttribute("stroke-dasharray", `${pathLen} ${pathLen}`);
+  path.setAttribute("stroke-dashoffset", String(pathLen));
+
+  // Tail draws in, then fades out from the tail-end
+  path.animate(
+    [
+      { strokeDashoffset: pathLen, opacity: 0.0 },
+      { strokeDashoffset: pathLen * 0.35, opacity: 0.95, offset: 0.35 },
+      { strokeDashoffset: -pathLen * 0.9, opacity: 0.9, offset: 0.9 },
+      { strokeDashoffset: -pathLen, opacity: 0 },
+    ],
+    { duration: duration + 120, easing: "cubic-bezier(.4,.2,.2,1)", fill: "forwards" },
+  ).onfinish = () => tail.remove();
+
+  // -------- Comet head: the gift itself, no card/frame ------------------
+  const size = 96;
+  const half = size / 2;
   const el = document.createElement("div");
   el.style.cssText =
     `position:fixed;left:0;top:0;width:${size}px;height:${size}px;` +
     `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
     `display:grid;place-items:center;overflow:visible;`;
 
-  // Soft aura
-  const aura = document.createElement("div");
-  aura.style.cssText =
-    `position:absolute;inset:-6%;border-radius:9999px;` +
-    `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.9) 0%, rgba(255,180,90,.55) 45%, rgba(255,120,200,.28) 75%, transparent 100%);` +
-    `filter:blur(3px);`;
-  el.appendChild(aura);
+  // Warm glow behind
+  const halo = document.createElement("div");
+  halo.style.cssText =
+    `position:absolute;inset:-30%;border-radius:9999px;` +
+    `background:radial-gradient(circle at 50% 50%, rgba(255,235,170,.95) 0%, rgba(255,170,90,.55) 40%, rgba(255,100,180,.28) 70%, transparent 100%);` +
+    `filter:blur(4px);`;
+  el.appendChild(halo);
 
-  // Mini rotating sparkle ring (SVG sticker frame)
-  const miniRing = document.createElement("div");
-  miniRing.style.cssText = `position:absolute;inset:2%;animation:jalwaGiftSpin 2.4s linear infinite;`;
-  miniRing.innerHTML =
-    `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">` +
-    `<circle cx="50" cy="50" r="47" fill="none" stroke="#FFE58A" stroke-width="2" stroke-dasharray="2 4" stroke-linecap="round" opacity="0.9"/>` +
-    Array.from({length:6}).map((_,i)=>{
-      const a=(i/6)*Math.PI*2; const cx=50+Math.cos(a)*47; const cy=50+Math.sin(a)*47;
-      return `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="1.8" fill="#FFF3B0"/>`;
-    }).join("") +
-    `</svg>`;
-  el.appendChild(miniRing);
-
-  // Glass sticker card
-  const card = document.createElement("div");
-  card.style.cssText =
-    `position:absolute;inset:12%;border-radius:22px;` +
-    `background:linear-gradient(160deg, rgba(255,255,255,.22), rgba(255,255,255,.05));` +
-    `border:1.5px solid rgba(255,255,255,.45);` +
-    `box-shadow:0 8px 22px rgba(0,0,0,.55), inset 0 0 16px rgba(255,220,140,.4);`;
-  el.appendChild(card);
-
-  const inner = document.createElement("div");
-  inner.style.cssText = `position:relative;width:70%;height:70%;display:grid;place-items:center;`;
-  const emojiSpan = document.createElement("span");
-  emojiSpan.textContent = opts.emoji || "🎁";
-  emojiSpan.style.cssText = `font-size:${Math.round(size * 0.55)}px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));`;
   if (opts.image) {
     const img = document.createElement("img");
     img.src = opts.image;
     img.alt = "";
-    img.style.cssText = "width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.65)) drop-shadow(0 0 10px rgba(255,220,140,.75));";
+    img.style.cssText =
+      "position:relative;width:100%;height:100%;object-fit:contain;" +
+      "filter:drop-shadow(0 6px 14px rgba(0,0,0,.7)) drop-shadow(0 0 14px rgba(255,220,140,.95));";
     img.onerror = () => {
       img.remove();
-      inner.appendChild(emojiSpan);
+      const es = document.createElement("span");
+      es.textContent = opts.emoji || "🎁";
+      es.style.cssText = `position:relative;font-size:${Math.round(size * 0.72)}px;line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,.65));`;
+      el.appendChild(es);
     };
-    inner.appendChild(img);
+    el.appendChild(img);
   } else {
-    inner.appendChild(emojiSpan);
+    const es = document.createElement("span");
+    es.textContent = opts.emoji || "🎁";
+    es.style.cssText = `position:relative;font-size:${Math.round(size * 0.72)}px;line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,.65));`;
+    el.appendChild(es);
   }
-  el.appendChild(inner);
   host.appendChild(el);
-
-  const arc = arcSide * 70;
-  const midX = (startX + endX) / 2 + perpX * arc;
-  const midY = (startY + endY) / 2 + perpY * arc;
-  const rot = arcSide * 12;
-  const duration = 480;
 
   if (opts.fireOnce) {
     try { playGiftWhooshCue(Math.min(0.5, opts.volume)); } catch { /* noop */ }
   }
 
+  // Rotation follows the tangent direction — cinematic
+  const rot = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
+
   const anim = el.animate(
     [
-      { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.55) rotate(0deg)`, opacity: 0, offset: 0 },
-      { transform: `translate(${startX - half}px, ${startY - half}px) scale(1.05) rotate(${rot * 0.25}deg)`, opacity: 1, offset: 0.15 },
-      { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.95) rotate(${rot}deg)`, opacity: 1, offset: 0.6 },
-      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.35) rotate(${rot * 1.3}deg)`, opacity: 0.95, offset: 0.95 },
-      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.08) rotate(${rot * 1.4}deg)`, opacity: 0, offset: 1 },
+      { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.4) rotate(${rot * 0.2}deg)`, opacity: 0, offset: 0 },
+      { transform: `translate(${startX - half}px, ${startY - half}px) scale(1.15) rotate(${rot * 0.4}deg)`, opacity: 1, offset: 0.12 },
+      { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.95) rotate(${rot * 0.8}deg)`, opacity: 1, offset: 0.55 },
+      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.5) rotate(${rot}deg)`, opacity: 1, offset: 0.94 },
+      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.1) rotate(${rot}deg)`, opacity: 0, offset: 1 },
     ],
-    { duration, easing: "cubic-bezier(.25,.55,.35,1)", fill: "forwards" },
+    { duration, easing: "cubic-bezier(.3,.6,.3,1)", fill: "forwards" },
   );
-  // Sparkle trail during flight
-  const trailTimers: number[] = [];
-  const trailCount = 6;
-  for (let i = 1; i <= trailCount; i++) {
-    const t = window.setTimeout(() => {
-      const tt = i / (trailCount + 1);
-      // quadratic bezier: (1-t)^2 * P0 + 2(1-t)t*P1 + t^2*P2
-      const bx = (1 - tt) * (1 - tt) * startX + 2 * (1 - tt) * tt * midX + tt * tt * endX;
-      const by = (1 - tt) * (1 - tt) * startY + 2 * (1 - tt) * tt * midY + tt * tt * endY;
-      const s = 6 + Math.random() * 5;
-      const dot = document.createElement("i");
-      dot.style.cssText =
-        `position:fixed;left:${bx - s / 2}px;top:${by - s / 2}px;width:${s}px;height:${s}px;` +
-        `border-radius:9999px;background:radial-gradient(circle,#fff, rgba(255,220,120,.9) 55%, transparent);` +
-        `box-shadow:0 0 10px rgba(255,220,120,.9);pointer-events:none;z-index:2147483645;`;
-      host.appendChild(dot);
-      dot.animate(
-        [
-          { transform: "scale(1)", opacity: 0.95 },
-          { transform: "scale(0.2)", opacity: 0 },
-        ],
-        { duration: 520, easing: "ease-out", fill: "forwards" },
-      ).onfinish = () => dot.remove();
-    }, (duration * i) / (trailCount + 1));
-    trailTimers.push(t);
-  }
 
   anim.onfinish = () => {
-    trailTimers.forEach((t) => clearTimeout(t));
     spawnLandingBurst(host, endX, endY);
     el.remove();
   };
@@ -851,44 +859,43 @@ function hashStr(s: string) {
 }
 
 function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
-  const ring = document.createElement("div");
-  const size = 140;
-  ring.style.cssText =
-    `position:fixed;left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;` +
-    `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
-    `background:radial-gradient(circle, rgba(255,220,120,.55) 0%, rgba(255,120,200,.35) 40%, transparent 70%);` +
-    `box-shadow:0 0 40px rgba(255,210,120,.7), inset 0 0 30px rgba(255,180,220,.55);`;
-  host.appendChild(ring);
-  ring.animate(
-    [
-      { transform: "scale(0.3)", opacity: 0.9 },
-      { transform: "scale(1.4)", opacity: 0.5, offset: 0.6 },
-      { transform: "scale(1.9)", opacity: 0 },
-    ],
-    { duration: 620, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
-  ).onfinish = () => ring.remove();
+  // Two concentric rings — clean, no confetti dots (looked cluttered)
+  const mk = (size: number, delay: number, dur: number, color: string) => {
+    const ring = document.createElement("div");
+    ring.style.cssText =
+      `position:fixed;left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;` +
+      `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
+      `border:2px solid ${color};box-shadow:0 0 24px ${color};opacity:0;`;
+    host.appendChild(ring);
+    window.setTimeout(() => {
+      ring.animate(
+        [
+          { transform: "scale(0.35)", opacity: 0.95 },
+          { transform: "scale(1.6)", opacity: 0 },
+        ],
+        { duration: dur, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+      ).onfinish = () => ring.remove();
+    }, delay);
+  };
+  mk(120, 0, 520, "rgba(255,220,140,.9)");
+  mk(90, 90, 480, "rgba(255,120,200,.85)");
 
-  const N = 8;
-  for (let i = 0; i < N; i++) {
-    const dot = document.createElement("i");
-    const s = 6 + Math.random() * 6;
-    dot.style.cssText =
-      `position:fixed;left:${x - s / 2}px;top:${y - s / 2}px;width:${s}px;height:${s}px;` +
-      `border-radius:9999px;background:radial-gradient(circle,#fff,rgba(255,220,120,.9) 60%,transparent);` +
-      `box-shadow:0 0 12px rgba(255,220,120,.9);pointer-events:none;z-index:2147483646;`;
-    host.appendChild(dot);
-    const ang = (i / N) * Math.PI * 2 + Math.random() * 0.4;
-    const dist = 60 + Math.random() * 40;
-    const dxp = Math.cos(ang) * dist;
-    const dyp = Math.sin(ang) * dist;
-    dot.animate(
-      [
-        { transform: "translate(0,0) scale(1)", opacity: 1 },
-        { transform: `translate(${dxp}px,${dyp}px) scale(0.2)`, opacity: 0 },
-      ],
-      { duration: 520 + Math.random() * 200, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
-    ).onfinish = () => dot.remove();
-  }
+  // Soft golden bloom
+  const bloom = document.createElement("div");
+  const bs = 130;
+  bloom.style.cssText =
+    `position:fixed;left:${x - bs / 2}px;top:${y - bs / 2}px;width:${bs}px;height:${bs}px;` +
+    `border-radius:9999px;pointer-events:none;z-index:2147483644;` +
+    `background:radial-gradient(circle, rgba(255,220,140,.7) 0%, rgba(255,120,200,.35) 45%, transparent 72%);` +
+    `filter:blur(6px);opacity:0;`;
+  host.appendChild(bloom);
+  bloom.animate(
+    [
+      { transform: "scale(0.5)", opacity: 0.9 },
+      { transform: "scale(1.4)", opacity: 0 },
+    ],
+    { duration: 540, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+  ).onfinish = () => bloom.remove();
 }
 
 function isSmallGiftPlay(p: Play) {
