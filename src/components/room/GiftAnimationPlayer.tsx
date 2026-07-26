@@ -619,11 +619,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
-  // Screen-blend knocks out black — great for MP4s that were rendered on a
-  // literal black stage (only a hand-curated set), but catastrophic for a
-  // normal MP4 with dark content because it wipes those dark pixels too and
-  // makes the animation look transparent / washed-out. Opt-in only.
-  const isBlackBg = isBlackBgGift(current?.giftName);
+  // Screen-blend knocks out black — apply to every video/svga gift so all
+  // gifts render on a transparent stage over the room.
+  const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
