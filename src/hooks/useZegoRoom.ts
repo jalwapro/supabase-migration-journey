@@ -552,7 +552,7 @@ export function useZegoRoom({
           v.style.objectFit = "cover";
           container.appendChild(v);
         }
-        void getRemoteMediaStream(engine, streamID).then((ms) => {
+        void getRemoteMediaStream(engine, streamID, "video").then((ms) => {
           if (!v || videoContainersRef.current.get(remoteUid) !== container) return;
           const media = asBrowserMediaStream(ms);
           if (!media) return;
