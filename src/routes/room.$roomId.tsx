@@ -5485,6 +5485,22 @@ function MiniProfileSheet({
     },
   });
 
+  const followsMe = useQuery({
+    queryKey: ["mini-profile-follows-me", currentUserId, target?.id],
+    enabled: !!currentUserId && !!target?.id && currentUserId !== target?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", target!.id)
+        .eq("following_id", currentUserId!)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+
+
   const [busy, setBusy] = React.useState(false);
   const isSelf = !!currentUserId && currentUserId === target?.id;
   const following = !!followState.data;
