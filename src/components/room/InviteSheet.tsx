@@ -110,10 +110,12 @@ export function InviteSheet({
 
   return (
     <div
+      data-jalwa-overlay="true"
       className="fixed inset-0 z-[80] grid place-items-end bg-black/70"
       onClick={onClose}
     >
       <div
+        data-jalwa-overlay-content="true"
         className="max-h-[85vh] w-full max-w-md overflow-hidden rounded-t-3xl border-t border-border bg-background"
         onClick={(e) => e.stopPropagation()}
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
