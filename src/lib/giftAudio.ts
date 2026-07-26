@@ -89,6 +89,24 @@ function pickCue(name: string | null | undefined) {
   return { notes: [880, 1175, 1568, 2093], type: "sine" as OscillatorType, gain: 0.2, step: 0.07 };
 }
 
+function speakGiftVoice(giftName: string | null | undefined, volume = 1) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return false;
+  try {
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const name = (giftName ?? "gift").replace(/jalwa/gi, "").trim();
+    const phrase = name ? `Jalwa ${name}` : "Jalwa gift";
+    const utterance = new SpeechSynthesisUtterance(phrase.slice(0, 42));
+    utterance.volume = Math.max(0.18, Math.min(0.75, volume * 0.65));
+    utterance.rate = 1.02;
+    utterance.pitch = 1.08;
+    synth.speak(utterance);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function playGiftSynthCue(giftName: string | null | undefined, volume = 1) {
   const ctx = getAudioContext();
   if (!ctx) return false;
@@ -132,17 +150,19 @@ export function playGiftAudioCue({
   const safeVolume = Math.max(0, Math.min(1, volume));
   if (safeVolume <= 0) return false;
   unlockGiftAudio();
+  const voicePlayed = speakGiftVoice(giftName, safeVolume);
   const src = resolveGiftSoundUrl(soundUrl);
-  if (!src) return playGiftSynthCue(giftName, safeVolume);
+  if (!src) return playGiftSynthCue(giftName, safeVolume) || voicePlayed;
   try {
     const audio = new Audio(src);
+    audio.crossOrigin = "anonymous";
     audio.volume = safeVolume;
     void audio.play().catch(() => {
       playGiftSynthCue(giftName, safeVolume);
     });
     return true;
   } catch {
-    return playGiftSynthCue(giftName, safeVolume);
+    return playGiftSynthCue(giftName, safeVolume) || voicePlayed;
   }
 }
 
