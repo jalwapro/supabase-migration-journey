@@ -273,7 +273,7 @@ export function GiftSheet({
     onSent?.({ gift: selectedGift, targets });
   };
 
-  const activeCategory = categories.includes(activeCat) ? activeCat : categories[0];
+  // (tier tabs use TIER_ORDER directly — no legacy category resolution needed)
 
   return (
     <div
@@ -335,19 +335,19 @@ export function GiftSheet({
           </div>
         )}
 
-        {/* Category tabs — TikTok underline style */}
+        {/* Tier tabs — Small / Premium / VIP (Jalwa signature 3-tier system) */}
         <div className="mt-2 flex gap-4 overflow-x-auto border-b border-white/5 px-4">
-          {categories.map((c) => {
-            const active = activeCategory === c;
+          {TIER_ORDER.map((t) => {
+            const active = activeTier === t;
             return (
               <button
-                key={c}
-                onClick={() => setActiveCat(c)}
+                key={t}
+                onClick={() => setActiveTier(t)}
                 className={`relative shrink-0 whitespace-nowrap py-2.5 text-[13px] font-semibold transition ${
                   active ? "text-white" : "text-white/50"
                 }`}
               >
-                {CATEGORY_LABEL[c] ?? c}
+                {TIER_LABEL[t]}
                 {active && (
                   <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-[#fe2c55]" />
                 )}
