@@ -1084,12 +1084,42 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     preloadGiftVideo(nextPrefetchUrl);
   }, [nextPrefetchUrl]);
 
-  if (!current) return null;
+  if (typeof document === "undefined" || !portalRoot) return null;
+
+  // Parallel small-gift layer: renders independently of the big-gift slot so
+  // many small gifts stream to receiver DPs concurrently (no serial blocking).
+  const smallLayer = smallPlays.length > 0 ? (
+    <div
+      className="pointer-events-none fixed inset-0 overflow-hidden"
+      aria-hidden="true"
+      style={{ zIndex: MAX_GIFT_Z_INDEX, contain: "layout paint style" }}
+    >
+      {smallPlays.map((sp) => {
+        const spImage = resolveGiftImageUrl(
+          sp.giftImageUrl ?? (sp.giftClipType === "image" ? sp.giftClipUrl : null),
+        );
+        return (
+          <SmallGiftFlyer
+            key={sp.key}
+            emoji={sp.giftEmoji}
+            image={spImage}
+            quantity={sp.quantity}
+            receiverIds={sp.receiverIds ?? (sp.receiverId ? [sp.receiverId] : [])}
+            fallbackReceiverId={sp.receiverId ?? null}
+            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
+            onReady={() => { /* parallel — no ready gating */ }}
+          />
+        );
+      })}
+    </div>
+  ) : null;
+
+  if (!current) {
+    return smallLayer ? createPortal(smallLayer, portalRoot) : null;
+  }
 
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
-
-  if (typeof document === "undefined" || !portalRoot) return null;
 
   return createPortal(
     <div
