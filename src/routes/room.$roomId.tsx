@@ -4524,13 +4524,16 @@ function VideoSettingsSheet({
   return (
     <>
       <div
+        data-jalwa-overlay="true"
         className="fixed inset-0 z-40 bg-black/80"
         onClick={onClose}
       />
       <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-white/10 bg-[#1a0b2e] p-5 text-white shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)", backgroundImage: "linear-gradient(to bottom, #1a0b2e, #2d0b4d, #0a0114)" }}
       >
+
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/25" />
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-extrabold">
