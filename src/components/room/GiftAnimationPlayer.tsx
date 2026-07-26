@@ -1090,6 +1090,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
+      coalesceRef.current.forEach((e) => clearTimeout(e.timer));
+      coalesceRef.current.clear();
     };
   }, [roomId, enqueue]);
 
