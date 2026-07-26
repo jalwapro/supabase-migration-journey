@@ -2636,14 +2636,7 @@ function RoomPage() {
                 <span className="text-[10px] font-semibold">Mic</span>
               </button>
             ) : null}
-            <button
-              onClick={() => agora.toggleSpeaker()}
-              aria-label="Sound"
-              className="flex flex-1 flex-col items-center gap-0.5 py-1 text-white/80 active:scale-95"
-            >
-              {agora.speakerMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-              <span className="text-[10px] font-semibold">Sound</span>
-            </button>
+            {/* Sound toggle moved into the More sheet (Audio section) */}
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Gift"
