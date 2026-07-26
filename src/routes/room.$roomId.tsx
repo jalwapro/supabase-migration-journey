@@ -5576,7 +5576,7 @@ function MiniProfileSheet({
             }`}
           >
             <UserPlus className="h-4 w-4" />
-            {following ? "Following" : "Follow"}
+            {following ? "Following" : followsMe.data ? "Follow back" : "Follow"}
           </button>
           <button
             disabled={isSelf}
@@ -5587,6 +5587,14 @@ function MiniProfileSheet({
             Message
           </button>
         </div>
+        {onManage && !isSelf && (
+          <button
+            onClick={onManage}
+            className="mt-3 w-full rounded-2xl border border-amber-300/40 bg-amber-500/15 py-3 text-sm font-extrabold text-amber-200"
+          >
+            Manage seat
+          </button>
+        )}
       </div>
     </>
   );
