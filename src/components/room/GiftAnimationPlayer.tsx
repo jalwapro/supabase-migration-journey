@@ -563,51 +563,80 @@ function SmallGiftFlyer({
     const isCombo = qty > 1 || effectiveTargets.length > 1;
     const HERO_INTRO_MS = 240;
     const hero = document.createElement("div");
-    const heroSize = 200;
+    const heroSize = 220;
     hero.style.cssText =
       `position:fixed;left:50%;top:50%;width:${heroSize}px;height:${heroSize}px;` +
       `margin-left:-${heroSize / 2}px;margin-top:-${heroSize / 2}px;` +
       `pointer-events:none;z-index:2147483646;display:grid;place-items:center;`;
+
+    // Rotating dashed sparkle ring (SVG) — playful sticker vibe
+    const ring = document.createElement("div");
+    ring.style.cssText = `position:absolute;inset:-8%;animation:jalwaGiftSpin 3.6s linear infinite;`;
+    ring.innerHTML =
+      `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">` +
+      `<defs><linearGradient id="jgRing" x1="0" y1="0" x2="1" y2="1">` +
+      `<stop offset="0%" stop-color="#FFE58A"/><stop offset="50%" stop-color="#FF5FB0"/><stop offset="100%" stop-color="#8A5CFF"/>` +
+      `</linearGradient></defs>` +
+      `<circle cx="50" cy="50" r="46" fill="none" stroke="url(#jgRing)" stroke-width="2.4" stroke-dasharray="3 5" stroke-linecap="round"/>` +
+      Array.from({length:8}).map((_,i)=>{
+        const a=(i/8)*Math.PI*2; const cx=50+Math.cos(a)*46; const cy=50+Math.sin(a)*46;
+        return `<g transform="translate(${cx.toFixed(2)} ${cy.toFixed(2)})"><path d="M0 -3.5 L1 -1 L3.5 0 L1 1 L0 3.5 L-1 1 L-3.5 0 L-1 -1 Z" fill="#FFF3B0"/></g>`;
+      }).join("") +
+      `</svg>`;
+    hero.appendChild(ring);
+
     const heroAura = document.createElement("div");
     heroAura.style.cssText =
-      `position:absolute;inset:-14%;border-radius:9999px;` +
-      `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.9) 0%, rgba(255,170,80,.55) 40%, rgba(255,120,200,.25) 70%, transparent 100%);` +
-      `filter:blur(4px);animation:jalwaHeroPulse 1.1s ease-in-out infinite;`;
+      `position:absolute;inset:6%;border-radius:9999px;` +
+      `background:radial-gradient(circle at 50% 45%, rgba(255,240,190,.95) 0%, rgba(255,150,80,.55) 40%, rgba(255,90,180,.28) 70%, transparent 100%);` +
+      `filter:blur(6px);animation:jalwaHeroPulse 1.1s ease-in-out infinite;`;
     hero.appendChild(heroAura);
+
+    // Sticker card behind icon
+    const card = document.createElement("div");
+    card.style.cssText =
+      `position:absolute;inset:14%;border-radius:28px;` +
+      `background:linear-gradient(160deg, rgba(255,255,255,.18), rgba(255,255,255,.04));` +
+      `backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);` +
+      `border:1.5px solid rgba(255,255,255,.4);` +
+      `box-shadow:0 12px 40px rgba(0,0,0,.55), inset 0 0 24px rgba(255,220,140,.35);`;
+    hero.appendChild(card);
+
     const heroInner = document.createElement("div");
-    heroInner.style.cssText = `position:relative;width:90%;height:90%;display:grid;place-items:center;`;
+    heroInner.style.cssText = `position:relative;width:70%;height:70%;display:grid;place-items:center;`;
     if (image) {
       const img = document.createElement("img");
       img.src = image;
       img.alt = "";
       img.style.cssText =
         "width:100%;height:100%;object-fit:contain;" +
-        "filter:drop-shadow(0 8px 22px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,220,140,.75));";
+        "filter:drop-shadow(0 8px 22px rgba(0,0,0,.7)) drop-shadow(0 0 18px rgba(255,220,140,.85));" +
+        "animation:jalwaHeroFloat 1.6s ease-in-out infinite;";
       img.onerror = () => {
         img.remove();
         const es = document.createElement("span");
         es.textContent = emoji || "🎁";
-        es.style.cssText = `font-size:${Math.round(heroSize * 0.7)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));`;
+        es.style.cssText = `font-size:${Math.round(heroSize * 0.55)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));animation:jalwaHeroFloat 1.6s ease-in-out infinite;`;
         heroInner.appendChild(es);
       };
       heroInner.appendChild(img);
     } else {
       const es = document.createElement("span");
       es.textContent = emoji || "🎁";
-      es.style.cssText = `font-size:${Math.round(heroSize * 0.7)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));`;
+      es.style.cssText = `font-size:${Math.round(heroSize * 0.55)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));animation:jalwaHeroFloat 1.6s ease-in-out infinite;`;
       heroInner.appendChild(es);
     }
     hero.appendChild(heroInner);
     host.appendChild(hero);
 
-    // Intro pop-in
     hero.animate(
       [
-        { transform: "scale(0.4)", opacity: 0 },
-        { transform: "scale(1.12)", opacity: 1, offset: 0.7 },
-        { transform: "scale(1.0)", opacity: 1 },
+        { transform: "scale(0.3) rotate(-10deg)", opacity: 0 },
+        { transform: "scale(1.18) rotate(4deg)", opacity: 1, offset: 0.6 },
+        { transform: "scale(0.96) rotate(-2deg)", opacity: 1, offset: 0.85 },
+        { transform: "scale(1.0) rotate(0deg)", opacity: 1 },
       ],
-      { duration: HERO_INTRO_MS, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+      { duration: HERO_INTRO_MS + 80, easing: "cubic-bezier(.2,.7,.3,1.2)", fill: "forwards" },
     );
 
     // Fast, tighter stagger on combos so it feels like a smooth stream.
