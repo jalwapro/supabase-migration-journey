@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs><radialGradient id="a" cx="50%" cy="50%" r="60%"><stop offset="0%" stop-color="#ffd166" stop-opacity=".85"/><stop offset="40%" stop-color="#ff2ea8" stop-opacity=".45"/><stop offset="100%" stop-color="#ff2ea8" stop-opacity="0"/></radialGradient></defs>
+<circle cx="200" cy="200" r="200" fill="url(#a)"><animate attributeName="opacity" values=".6;1;.6" dur="1.8s" repeatCount="indefinite"/></circle>
+<g transform="translate(200 200)"><g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="10s" repeatCount="indefinite"/>
+<ellipse rx="170" ry="45" fill="none" stroke="#ffd166" stroke-width="2" opacity=".7"/>
+<ellipse rx="140" ry="34" fill="none" stroke="#ff2ea8" stroke-width="2" opacity=".7" transform="rotate(45)"/>
+<ellipse rx="110" ry="26" fill="none" stroke="#fff9c9" stroke-width="2" opacity=".7" transform="rotate(90)"/></g>
+<text x="0" y="20" font-size="120" text-anchor="middle">🪐<animateTransform attributeName="transform" type="rotate" values="0;-360" dur="12s" repeatCount="indefinite"/></text>
+<text x="0" y="20" font-size="70" text-anchor="middle">👑<animateTransform attributeName="transform" type="translate" values="0 0;0 -8;0 0" dur="1.4s" repeatCount="indefinite"/></text></g>
+<g fill="#fff"><circle cx="60" cy="80" r="2"><animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></circle>
+<circle cx="340" cy="90" r="2"><animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"/></circle>
+<circle cx="80" cy="320" r="2"><animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite"/></circle>
+<circle cx="330" cy="310" r="2"><animate attributeName="opacity" values="1;0;1" dur="1.3s" repeatCount="indefinite"/></circle></g></svg>

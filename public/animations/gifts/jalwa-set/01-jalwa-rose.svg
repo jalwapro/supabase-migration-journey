@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs><radialGradient id="a" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="#ffd166" stop-opacity=".55"/><stop offset="60%" stop-color="#ff2ea8" stop-opacity=".2"/><stop offset="100%" stop-color="#ff2ea8" stop-opacity="0"/></radialGradient></defs>
+<circle cx="200" cy="200" r="200" fill="url(#a)"><animate attributeName="opacity" values=".5;1;.5" dur="1.4s" repeatCount="indefinite"/></circle>
+<g transform="translate(200 200)"><g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="4s" repeatCount="indefinite"/>
+<text x="0" y="-130" font-size="32" text-anchor="middle">🌹</text><text x="120" y="-60" font-size="30" text-anchor="middle">🌹</text><text x="120" y="70" font-size="32" text-anchor="middle">🌹</text><text x="0" y="140" font-size="30" text-anchor="middle">🌹</text><text x="-120" y="70" font-size="32" text-anchor="middle">🌹</text><text x="-120" y="-60" font-size="30" text-anchor="middle">🌹</text></g>
+<text x="0" y="35" font-size="140" text-anchor="middle">🌹<animate attributeName="font-size" values="130;160;130" dur="1s" repeatCount="indefinite"/></text></g></svg>

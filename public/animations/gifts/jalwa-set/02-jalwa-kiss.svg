@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs><radialGradient id="a" cx="50%" cy="55%" r="55%"><stop offset="0%" stop-color="#ff4d8f" stop-opacity=".6"/><stop offset="100%" stop-color="#ff2ea8" stop-opacity="0"/></radialGradient></defs>
+<circle cx="200" cy="200" r="200" fill="url(#a)"/>
+<g font-size="28" text-anchor="middle">
+<text x="80" y="240">💋<animate attributeName="y" values="240;60" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2s" repeatCount="indefinite"/></text>
+<text x="150" y="260">💋<animate attributeName="y" values="260;40" dur="2.3s" begin=".3s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2.3s" begin=".3s" repeatCount="indefinite"/></text>
+<text x="220" y="250">💋<animate attributeName="y" values="250;50" dur="1.8s" begin=".6s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.8s" begin=".6s" repeatCount="indefinite"/></text>
+<text x="290" y="260">💋<animate attributeName="y" values="260;30" dur="2.4s" begin=".2s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2.4s" begin=".2s" repeatCount="indefinite"/></text>
+<text x="330" y="240">💋<animate attributeName="y" values="240;60" dur="2.1s" begin=".9s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="2.1s" begin=".9s" repeatCount="indefinite"/></text></g>
+<text x="200" y="250" font-size="160" text-anchor="middle">💋<animateTransform attributeName="transform" type="scale" values="1;1.15;1" dur="1s" repeatCount="indefinite" additive="sum"/></text></svg>
