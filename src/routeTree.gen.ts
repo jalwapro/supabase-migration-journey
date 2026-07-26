@@ -88,6 +88,7 @@ import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
+import { Route as AuthenticatedAdminGiftBatchesRouteImport } from './routes/_authenticated/admin.gift-batches'
 import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
 import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
 import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
@@ -516,6 +517,12 @@ const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
   path: '/gifts',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminGiftBatchesRoute =
+  AuthenticatedAdminGiftBatchesRouteImport.update({
+    id: '/gift-batches',
+    path: '/gift-batches',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFreeAccountsRoute =
   AuthenticatedAdminFreeAccountsRouteImport.update({
     id: '/free-accounts',
@@ -618,6 +625,7 @@ export interface FileRoutesByFullPath {
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
+  '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
@@ -705,6 +713,7 @@ export interface FileRoutesByTo {
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
+  '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
@@ -796,6 +805,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
+  '/_authenticated/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
@@ -887,6 +897,7 @@ export interface FileRouteTypes {
     | '/admin/custom-themes'
     | '/admin/finance-reports'
     | '/admin/free-accounts'
+    | '/admin/gift-batches'
     | '/admin/gifts'
     | '/admin/integrations'
     | '/admin/live'
@@ -974,6 +985,7 @@ export interface FileRouteTypes {
     | '/admin/custom-themes'
     | '/admin/finance-reports'
     | '/admin/free-accounts'
+    | '/admin/gift-batches'
     | '/admin/gifts'
     | '/admin/integrations'
     | '/admin/live'
@@ -1064,6 +1076,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/custom-themes'
     | '/_authenticated/admin/finance-reports'
     | '/_authenticated/admin/free-accounts'
+    | '/_authenticated/admin/gift-batches'
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/live'
@@ -1684,6 +1697,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/gift-batches': {
+      id: '/_authenticated/admin/gift-batches'
+      path: '/gift-batches'
+      fullPath: '/admin/gift-batches'
+      preLoaderRoute: typeof AuthenticatedAdminGiftBatchesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/free-accounts': {
       id: '/_authenticated/admin/free-accounts'
       path: '/free-accounts'
@@ -1760,6 +1780,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
   AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
   AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
+  AuthenticatedAdminGiftBatchesRoute: typeof AuthenticatedAdminGiftBatchesRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
@@ -1800,6 +1821,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
   AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
   AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
+  AuthenticatedAdminGiftBatchesRoute: AuthenticatedAdminGiftBatchesRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,
