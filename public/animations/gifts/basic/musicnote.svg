@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#8b5cf6" stop-opacity="0.28"/>
+<stop offset="100%" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
+</circle>
+<g font-size="22" text-anchor="middle" font-family="Arial">
+<text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
+<text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
+<text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
+<text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+</g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><linearGradient id="mn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c4b5fd"/><stop offset="1" stop-color="#5b21b6"/></linearGradient></defs><rect x="215" y="120" width="10" height="150" fill="url(#mn)"/><rect x="260" y="120" width="10" height="150" fill="url(#mn)"/><path d="M215 120 L 270 110 L 270 140 L 215 150 Z" fill="url(#mn)"/><ellipse cx="205" cy="270" rx="28" ry="20" fill="url(#mn)" stroke="#3730a3" stroke-width="2"/><ellipse cx="260" cy="280" rx="28" ry="20" fill="url(#mn)" stroke="#3730a3" stroke-width="2"/>
+</g>
+</svg>

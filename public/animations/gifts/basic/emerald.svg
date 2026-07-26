@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+<radialGradient id="glow" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#10b981" stop-opacity="0.95"/>
+<stop offset="55%" stop-color="#10b981" stop-opacity="0.28"/>
+<stop offset="100%" stop-color="#000" stop-opacity="0"/>
+</radialGradient>
+<radialGradient id="glow2" cx="50%" cy="50%" r="50%">
+<stop offset="0%" stop-color="#fff" stop-opacity="0.35"/>
+<stop offset="100%" stop-color="#fff" stop-opacity="0"/>
+</radialGradient>
+<filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+<feGaussianBlur in="SourceAlpha" stdDeviation="6"/>
+<feOffset dx="0" dy="6" result="off"/>
+<feComponentTransfer><feFuncA type="linear" slope="0.55"/></feComponentTransfer>
+<feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+</filter>
+</defs>
+<circle cx="200" cy="200" r="180" fill="url(#glow)">
+<animate attributeName="opacity" values="0.55;1;0.55" dur="1.8s" repeatCount="indefinite"/>
+</circle>
+<circle cx="200" cy="200" r="120" fill="url(#glow2)">
+<animate attributeName="r" values="100;140;100" dur="2.4s" repeatCount="indefinite"/>
+<animate attributeName="opacity" values="0.6;0.1;0.6" dur="2.4s" repeatCount="indefinite"/>
+</circle>
+<g font-size="22" text-anchor="middle" font-family="Arial">
+<text x="80" y="110" fill="#ffd700">✦<animate attributeName="opacity" values="0.2;1;0.2" dur="1.5s" repeatCount="indefinite"/></text>
+<text x="320" y="120" fill="#ff4d6d">✧<animate attributeName="opacity" values="1;0.2;1" dur="1.7s" repeatCount="indefinite"/></text>
+<text x="90" y="310" fill="#ffd700">✧<animate attributeName="opacity" values="0.4;1;0.4" dur="1.3s" repeatCount="indefinite"/></text>
+<text x="310" y="320" fill="#ff4d6d">✦<animate attributeName="opacity" values="1;0.4;1" dur="1.6s" repeatCount="indefinite"/></text>
+</g>
+<g filter="url(#shadow)">
+<animateTransform attributeName="transform" type="translate" values="0,4;0,-10;0,4" dur="1.8s" repeatCount="indefinite"/>
+<defs><linearGradient id="em" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a7f3d0"/><stop offset="1" stop-color="#065f46"/></linearGradient></defs><polygon points="200,110 285,170 260,290 140,290 115,170" fill="url(#em)" stroke="#022c22" stroke-width="3"/><polygon points="200,110 285,170 200,190" fill="#6ee7b7" opacity="0.6"/><polygon points="200,110 115,170 200,190" fill="#34d399" opacity="0.5"/><polygon points="200,190 260,290 140,290" fill="#059669"/><line x1="200" y1="110" x2="200" y2="290" stroke="#022c22" stroke-width="1.5" opacity="0.4"/>
+</g>
+</svg>
