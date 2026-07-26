@@ -270,6 +270,81 @@ function RoomPage() {
   const [milestoneGifts, setMilestoneGifts] = useState<Array<{ id: string; name: string; emoji: string | null; icon: string | null; clip_path: string | null; clip_type: string | null }>>([]);
   const [pickedMilestoneGift, setPickedMilestoneGift] = useState<string | null>(null);
   const [awarding, setAwarding] = useState(false);
+  const roomBackGuardRef = useRef<{ closeTopOverlay: () => boolean }>({
+    closeTopOverlay: () => false,
+  });
+
+  roomBackGuardRef.current.closeTopOverlay = () => {
+    if (exitConfirmOpen) {
+      setExitConfirmOpen(false);
+      return true;
+    }
+    if (pendingInvite) {
+      setPendingInvite(null);
+      return true;
+    }
+    if (pendingSeatRequests.length > 0) {
+      setPendingSeatRequests((prev) => prev.slice(1));
+      return true;
+    }
+    if (filterSheetOpen) {
+      setFilterSheetOpen(false);
+      return true;
+    }
+    if (inviteOpen) {
+      setInviteOpen(false);
+      return true;
+    }
+    if (musicOpen) {
+      setMusicOpen(false);
+      return true;
+    }
+    if (ludoOpen) {
+      setLudoOpen(false);
+      return true;
+    }
+    if (emojiSheetOpen) {
+      setEmojiSheetOpen(false);
+      return true;
+    }
+    if (viewersSheetOpen) {
+      setViewersSheetOpen(false);
+      return true;
+    }
+    if (giftOpen) {
+      setGiftOpen(false);
+      return true;
+    }
+    if (milestoneOpen) {
+      setMilestoneOpen(false);
+      return true;
+    }
+    if (gifterListReceiver) {
+      setGifterListReceiver(null);
+      return true;
+    }
+    if (videoSettingsOpen) {
+      setVideoSettingsOpen(false);
+      return true;
+    }
+    if (seatsSheetOpen) {
+      setSeatsSheetOpen(false);
+      return true;
+    }
+    if (manageMember) {
+      setManageMember(null);
+      return true;
+    }
+    if (manageEmptySeat != null) {
+      setManageEmptySeat(null);
+      return true;
+    }
+    if (miniProfileUser) {
+      setMiniProfileUser(null);
+      return true;
+    }
+    return false;
+  };
   const milestoneAutoOpenedRef = useRef(false);
 
   const room = useQuery({
@@ -1458,6 +1533,8 @@ function RoomPage() {
     } catch { /* no-op */ }
 
     const closeTopOverlay = (): boolean => {
+      if (roomBackGuardRef.current.closeTopOverlay()) return true;
+
       // Radix dialogs / sheets / popovers / dropdowns close on Escape.
       const radix = document.querySelector(
         '[data-state="open"][role="dialog"], [data-state="open"][role="menu"], [data-radix-popper-content-wrapper]',
@@ -2810,10 +2887,12 @@ function RoomPage() {
       {/* Gift audio control removed — controls available via More → Audio */}
       {milestoneOpen && (
         <div
+          data-jalwa-overlay="true"
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
           onClick={() => setMilestoneOpen(false)}
         >
           <div
+            data-jalwa-overlay-content="true"
             className="w-full max-w-md rounded-t-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#1a0b2e] p-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -4773,8 +4852,9 @@ function SeatActionSheet({
   const avatar = member.user?.avatar ?? null;
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
       >
@@ -4869,8 +4949,9 @@ function EmptySeatSheet({
   if (seatIndex == null) return null;
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
       >
@@ -4943,8 +5024,9 @@ function ViewersSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 flex max-h-[75vh] w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
       >
@@ -5040,8 +5122,8 @@ function SeatInvitePopup({
   const name = invite.from_name ?? "Host";
   const initial = name.slice(0, 1).toUpperCase();
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+    <div data-jalwa-overlay="true" className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+      <div data-jalwa-overlay-content="true" className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
         <div className="flex flex-col items-center gap-3 text-center">
           {invite.from_avatar ? (
             <img src={invite.from_avatar} alt="" className="h-16 w-16 rounded-full border-2 border-[color:var(--gold)] object-cover" />
@@ -5105,8 +5187,8 @@ function SeatRequestPopup({
   const name = request.from_name ?? "Viewer";
   const initial = name.slice(0, 1).toUpperCase();
   return (
-    <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
+    <div data-jalwa-overlay="true" className="fixed inset-0 z-[70] grid place-items-center bg-black/70 backdrop-blur-sm p-4">
+      <div data-jalwa-overlay-content="true" className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#2d0b4d] to-[#0a0114] p-5 text-white shadow-2xl">
         {queueCount > 1 && (
           <div className="mb-2 flex justify-center">
             <span className="rounded-full bg-[color:var(--primary)]/30 border border-[color:var(--primary)]/60 px-3 py-0.5 text-[10px] font-bold text-white">
@@ -5189,8 +5271,9 @@ function EmojiReactionSheet({
   if (!open) return null;
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-violet-300/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] p-4 text-white shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)" }}
       >
@@ -5417,8 +5500,9 @@ function GifterListSheet({
   const totalPts = rows.reduce((s, r) => s + r.total_coins, 0);
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl max-h-[75vh] overflow-y-auto"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
       >
