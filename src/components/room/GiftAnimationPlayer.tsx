@@ -704,7 +704,6 @@ function SmallGiftFlyer({
     };
     rafId = requestAnimationFrame(step);
     } // end if (!isComboContinuation) — hero slot panel + counter
-    let rafId = 0;
 
     // Jackpot flash + banner + coin rain
     let jackpotEls: HTMLElement[] = [];
