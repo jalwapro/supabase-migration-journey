@@ -4235,16 +4235,20 @@ function Seat({
           style={{ borderColor: ringHue, color: ringHue }}
         />
 
-        {/* Speaking glow */}
+        {/* Speaking glow + pulse bubble */}
         {speaking && !hostAwayFromSeat && (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-[-10%] z-0 rounded-full animate-pulse"
-            style={{
-              background: `radial-gradient(circle, ${ringHue}66 0%, transparent 70%)`,
-              filter: "blur(6px)",
-            }}
-          />
+          <>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-14%] z-0 rounded-full animate-ping"
+              style={{ background: `radial-gradient(circle, ${ringHue}55 0%, transparent 70%)` }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-6%] z-0 rounded-full border-2 animate-pulse"
+              style={{ borderColor: `${ringHue}cc`, boxShadow: `0 0 22px ${ringHue}aa` }}
+            />
+          </>
         )}
 
         {/* Halftone dot texture for empty state */}
