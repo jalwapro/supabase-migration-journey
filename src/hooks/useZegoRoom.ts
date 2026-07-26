@@ -101,16 +101,18 @@ export type UseZegoRoomArgs = {
 // to reproduce Agora's createBufferSourceAudioTrack behavior.
 // -------------------------------------------------------------------------
 type ZegoMediaPlayerLike = {
-  loadResource: (url: string) => Promise<unknown>;
-  start: () => void;
+  loadResource: (url: string | Blob) => Promise<unknown>;
+  start: () => Promise<unknown> | unknown;
   pause: () => void;
   resume: () => void;
   stop: () => void;
   setVolume: (v: number) => void;
-  enableAux?: (enable: boolean) => void;
+  enableAux?: (enable: boolean) => Promise<unknown> | unknown;
+  enableRepeat?: (enable: boolean) => void;
   destroy?: () => void;
   on?: (event: string, cb: (...args: unknown[]) => void) => void;
 };
+
 
 async function fetchToken(
   channel: string,
@@ -1245,12 +1247,23 @@ export function useZegoRoom({
     }
     const url = URL.createObjectURL(file);
     musicUrlRef.current = url;
-    await mp.loadResource(url);
-    try { mp.enableAux?.(true); } catch { /* ignore */ }
-    mp.start();
+    try {
+      await mp.loadResource(url);
+    } catch (e) {
+      console.error("[zego] loadResource failed", e);
+      throw new Error("Could not load this audio file — try MP3/M4A");
+    }
+    try { await mp.enableAux?.(true); } catch (e) { console.warn("[zego] enableAux failed", e); }
+    try {
+      await mp.start();
+    } catch (e) {
+      console.error("[zego] mp.start failed", e);
+      throw new Error("Playback blocked — tap Play again");
+    }
     setMusicTitle(title);
     setMusicPlaying(true);
   }, [ensureMusicPlayer, publish, status]);
+
 
   const pauseMusic = useCallback(() => {
     const mp = musicPlayerRef.current;
