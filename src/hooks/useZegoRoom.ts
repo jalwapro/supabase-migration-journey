@@ -372,6 +372,7 @@ export function useZegoRoom({
   const streamToUidRef = useRef<Map<string, number>>(new Map());
   const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
   const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
+  const uidMusicStreamRef = useRef<Map<number, string>>(new Map()); // background music streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
   const remoteMediaStreamsRef = useRef<Map<string, MediaStream>>(new Map());
   const remotePlayPromisesRef = useRef<Map<string, Promise<MediaStream | null>>>(new Map());
@@ -423,14 +424,21 @@ export function useZegoRoom({
     return next;
   }, []);
 
-  const getRemoteMediaStream = useCallback((engine: ZegoEngine, streamID: string) => {
+  const getRemoteMediaStream = useCallback((
+    engine: ZegoEngine,
+    streamID: string,
+    mediaKind: "audio" | "video" = /_cam_main$/.test(streamID) ? "video" : "audio",
+  ) => {
     const cached = remoteMediaStreamsRef.current.get(streamID);
     if (cached) return Promise.resolve(cached);
     const pending = remotePlayPromisesRef.current.get(streamID);
     if (pending) return pending;
 
     const next = Promise.resolve(
-      engine.startPlayingStream(streamID) as unknown as MediaStream | Promise<MediaStream>,
+      engine.startPlayingStream(streamID, {
+        audio: mediaKind === "audio",
+        video: mediaKind === "video",
+      }) as unknown as MediaStream | Promise<MediaStream>,
     )
       .then((ms) => {
         const media = asBrowserMediaStream(ms);
@@ -544,7 +552,7 @@ export function useZegoRoom({
           v.style.objectFit = "cover";
           container.appendChild(v);
         }
-        void getRemoteMediaStream(engine, streamID).then((ms) => {
+        void getRemoteMediaStream(engine, streamID, "video").then((ms) => {
           if (!v || videoContainersRef.current.get(remoteUid) !== container) return;
           const media = asBrowserMediaStream(ms);
           if (!media) return;
@@ -610,6 +618,7 @@ export function useZegoRoom({
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
+      uidMusicStreamRef.current.clear();
       videoContainersRef.current.clear();
       remoteMediaStreamsRef.current.clear();
       remotePlayPromisesRef.current.clear();
@@ -680,22 +689,21 @@ export function useZegoRoom({
               const remoteUid = Number(remoteUidRaw);
               if (!Number.isFinite(remoteUid) || remoteUid === uid) continue;
               const isVideo = /_cam_main$/.test(s.streamID);
-              console.log(`[zego-debug] ADD stream=${s.streamID} remoteUid=${remoteUid} isVideo=${isVideo}`);
+              const isMusic = /_music_main$/.test(s.streamID);
               streamToUidRef.current.set(s.streamID, remoteUid);
               if (isVideo) uidVideoStreamRef.current.set(remoteUid, s.streamID);
+              else if (isMusic) uidMusicStreamRef.current.set(remoteUid, s.streamID);
               else uidStreamRef.current.set(remoteUid, s.streamID);
               // Start playing (audio) immediately — video will be attached
               // to a container by the UI via videoTrack.play(...).
               try {
-                void getRemoteMediaStream(engine, s.streamID)
+                void getRemoteMediaStream(engine, s.streamID, isVideo ? "video" : "audio")
                   .then((ms) => {
                     const media = asBrowserMediaStream(ms);
-                    console.log(`[zego-debug] getRemoteMediaStream resolved stream=${s.streamID} media=${!!media} tracks=${media?.getTracks().length ?? 0}`);
                     if (!media) return;
                     if (isVideo) {
                       const container = videoContainersRef.current.get(remoteUid);
                       const v = container?.querySelector("video") as HTMLVideoElement | null;
-                      console.log(`[zego-debug] video container for uid=${remoteUid} present=${!!container} videoEl=${!!v}`);
                       if (v) {
                         try { v.srcObject = media; } catch (err) { console.warn("[zego-debug] srcObject set failed", err); return; }
                         v.play().catch(() => { /* gesture may be needed */ });
@@ -721,6 +729,8 @@ export function useZegoRoom({
               if (speakerMutedRef.current) {
                 try { engine.mutePlayStreamAudio(s.streamID, true); } catch { /* ignore */ }
               }
+
+              if (isMusic) continue;
 
               setRemotes((prev) => {
                 const next = new Map(prev);
@@ -757,6 +767,7 @@ export function useZegoRoom({
               }
               const remoteUid = streamToUidRef.current.get(s.streamID);
               const wasVideo = /_cam_main$/.test(s.streamID);
+              const wasMusic = /_music_main$/.test(s.streamID);
               streamToUidRef.current.delete(s.streamID);
               if (remoteUid != null) {
                 if (wasVideo) {
@@ -765,9 +776,12 @@ export function useZegoRoom({
                   if (v) v.srcObject = null;
                   uidVideoStreamRef.current.delete(remoteUid);
                   videoContainersRef.current.delete(remoteUid);
+                } else if (wasMusic) {
+                  uidMusicStreamRef.current.delete(remoteUid);
                 } else {
                   uidStreamRef.current.delete(remoteUid);
                 }
+                if (wasMusic) continue;
                 const stillAudio = uidStreamRef.current.get(remoteUid);
                 const stillVideo = uidVideoStreamRef.current.get(remoteUid);
                 setRemotes((prev) => {
@@ -815,8 +829,21 @@ export function useZegoRoom({
               remotePlayPromisesRef.current.delete(videoSid);
               streamToUidRef.current.delete(videoSid);
             }
+            const musicSid = uidMusicStreamRef.current.get(remoteUid);
+            if (musicSid) {
+              try { engine.stopPlayingStream(musicSid); } catch { /* ignore */ }
+              remoteMediaStreamsRef.current.delete(musicSid);
+              remotePlayPromisesRef.current.delete(musicSid);
+              streamToUidRef.current.delete(musicSid);
+              const el = audioElsRef.current.get(musicSid);
+              if (el) {
+                try { el.srcObject = null; el.remove(); } catch { /* ignore */ }
+                audioElsRef.current.delete(musicSid);
+              }
+            }
             uidStreamRef.current.delete(remoteUid);
             uidVideoStreamRef.current.delete(remoteUid);
+            uidMusicStreamRef.current.delete(remoteUid);
             videoContainersRef.current.delete(remoteUid);
             setRemotes((prev) => {
               const next = new Map(prev);
@@ -888,6 +915,7 @@ export function useZegoRoom({
             for (const [sid, lvl] of Object.entries(levels ?? {})) {
               const u = streamToUidRef.current.get(sid);
               if (u == null) continue;
+              if (/_music_main$/.test(sid)) continue;
               if (lvl >= SPEAK_THRESHOLD) next.add(u);
               else next.delete(u);
             }
@@ -963,6 +991,7 @@ export function useZegoRoom({
       streamToUidRef.current.clear();
       uidStreamRef.current.clear();
       uidVideoStreamRef.current.clear();
+      uidMusicStreamRef.current.clear();
       videoContainersRef.current.clear();
       remoteMediaStreamsRef.current.clear();
       remotePlayPromisesRef.current.clear();
@@ -1313,10 +1342,11 @@ export function useZegoRoom({
       if (typeof captureFn === "function") {
         const musicStream = captureFn.call(audioEl) as MediaStream;
         const musicStreamId = streamIdFor(room, `${localUid}_music`);
-        musicStreamRef.current = musicStream;
+        const zegoMusicStream = await engine.createZegoStream(zegoCustomAudio(musicStream));
+        musicStreamRef.current = zegoMusicStream;
         musicStreamIdRef.current = musicStreamId;
         try {
-          engine.startPublishingStream(musicStreamId, musicStream);
+          engine.startPublishingStream(musicStreamId, zegoMusicStream);
         } catch (e) {
           console.warn("[music] publish stream failed — only host will hear", e);
         }
