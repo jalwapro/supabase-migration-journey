@@ -2028,6 +2028,30 @@ function RoomPage() {
         </div>
       )}
 
+      {/* ─── Now playing (music) floating chip ─────────────────────── */}
+      {agora.musicPlaying && (
+        <div className="relative z-10 mx-auto flex w-full max-w-md justify-center px-3">
+          <button
+            type="button"
+            onClick={() => isHost && setMusicOpen(true)}
+            className="pointer-events-auto flex items-center gap-2 rounded-full border border-violet-300/40 bg-black/70 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-md shadow-[0_0_18px_-4px_rgba(167,139,250,0.6)]"
+            aria-label="Now playing"
+          >
+            <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[11px]">
+              🎵
+            </span>
+            <span className="max-w-[220px] truncate">
+              {agora.musicTitle ?? "Now playing"}
+            </span>
+            <span aria-hidden className="ml-1 flex items-end gap-[2px]">
+              <span className="block h-2.5 w-[3px] animate-pulse rounded-sm bg-fuchsia-300" style={{ animationDelay: "0ms" }} />
+              <span className="block h-3.5 w-[3px] animate-pulse rounded-sm bg-violet-300" style={{ animationDelay: "150ms" }} />
+              <span className="block h-2 w-[3px] animate-pulse rounded-sm bg-indigo-300" style={{ animationDelay: "300ms" }} />
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo && r.seat_count === 2 ? (
         (() => {
