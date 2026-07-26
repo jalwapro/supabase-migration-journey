@@ -913,6 +913,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           <SmallGiftFlyer
             emoji={current.giftEmoji}
             image={fallbackImage}
+            quantity={current.quantity}
+            receiverIds={current.receiverIds ?? (current.receiverId ? [current.receiverId] : [])}
+            fallbackReceiverId={current.receiverId ?? null}
+            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
             onReady={markCurrentReady}
           />
         ) : isSpaceship ? (
