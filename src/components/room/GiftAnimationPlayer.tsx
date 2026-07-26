@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
-import { useGiftAudioPrefs } from "@/lib/giftAudio";
+import { playGiftAudioCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
 import SvgaPlayer from "./SvgaPlayer";
 
 
@@ -196,8 +196,8 @@ function AnimatedGiftVideo({
     setFailed(false);
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !withSound;
-    video.volume = withSound ? 1 : 0;
+    video.muted = true;
+    video.volume = 0;
     // Do NOT call video.load() — the JSX `src` prop + `key` remount already
     // triggers a single fetch. A manual load() here causes a second request
     // and a visible stutter on first play.
@@ -219,8 +219,8 @@ function AnimatedGiftVideo({
   const startPlayback = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = !withSound;
-    video.volume = withSound ? 1 : 0;
+    video.muted = true;
+    video.volume = 0;
     if (withSound) ensureAudioBoost();
     video.play().catch(() => {
       // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
@@ -256,7 +256,7 @@ function AnimatedGiftVideo({
         disablePictureInPicture
         preload="auto"
         autoPlay
-        muted={!withSound}
+        muted
         onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
@@ -277,12 +277,15 @@ function AnimatedGiftVideo({
 
 
         onEnded={onDone}
-        className="gift-anim-video absolute inset-0 h-full w-full scale-110 object-contain"
+        className="gift-anim-video gift-transparent-video absolute inset-0 h-full w-full scale-110 object-contain"
         style={{
           opacity: 1,
+          background: "transparent",
           willChange: "opacity, transform",
           mixBlendMode: screenBlend ? "screen" : undefined,
-          filter: "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
+          filter: screenBlend
+            ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
+            : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
         }}
       />
     </div>
@@ -487,6 +490,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
   const [readyKey, setReadyKey] = useState<string | null>(null);
+  const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
 
   useEffect(() => {
@@ -498,6 +502,18 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     setPortalRoot(root);
     return () => {
       if (root && root.childElementCount === 0) root.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    const unlock = () => unlockGiftAudio();
+    window.addEventListener("pointerdown", unlock, { passive: true });
+    window.addEventListener("touchstart", unlock, { passive: true });
+    window.addEventListener("keydown", unlock);
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("touchstart", unlock);
+      window.removeEventListener("keydown", unlock);
     };
   }, []);
 
@@ -657,70 +673,22 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // Play gift sound when a new gift starts. Premium gifts (Royal Lion) have
-  // silent video, so soundUrl (ElevenLabs roar) provides the audio at max volume.
-  useEffect(() => {
-    if (!current?.soundUrl) return;
-    if (audioPrefs.muted || audioPrefs.volume <= 0) return;
-    const src = resolveSoundUrl(current.soundUrl);
-    if (!src) return;
-    const audio = new Audio(src);
-    audio.volume = audioPrefs.volume;
-    // Boost via Web Audio for premium (500%)
-    let ctx: AudioContext | null = null;
-    try {
-      const AC: typeof AudioContext | undefined =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (AC && isPremiumLong) {
-        ctx = new AC();
-        const source = ctx.createMediaElementSource(audio);
-        const gain = ctx.createGain();
-        gain.gain.value = 20 * audioPrefs.volume;
-        source.connect(gain).connect(ctx.destination);
-      }
-    } catch {}
-    audio.play().catch(() => {
-      audio.muted = true;
-      audio.play().catch(() => {});
-    });
-    return () => {
-      audio.pause();
-      audio.src = "";
-      try { ctx?.close(); } catch {}
-    };
-  }, [current?.key, current?.soundUrl, isPremiumLong, audioPrefs.muted, audioPrefs.volume]);
-
-  // Fallback sparkle chime for gifts without a bundled soundUrl.
+  // Play a real soundUrl when available; otherwise synthesize a gift-specific
+  // cue. This also gives users a visible "sound played" indicator.
   useEffect(() => {
     if (!current) return;
-    if (current.soundUrl) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
-    try {
-      const AC: typeof AudioContext | undefined =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AC) return;
-      const ctx = new AC();
-      const now = ctx.currentTime;
-      const notes = [880, 1175, 1568, 2093]; // A5 D6 G6 C7 — bright sparkle
-      notes.forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = freq;
-        const start = now + i * 0.07;
-        gain.gain.setValueAtTime(0, start);
-        gain.gain.linearRampToValueAtTime(0.28 * audioPrefs.volume, start + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
-        osc.connect(gain).connect(ctx.destination);
-        osc.start(start);
-        osc.stop(start + 0.4);
-      });
-      const timer = setTimeout(() => { try { ctx.close(); } catch {} }, 1200);
-      return () => { clearTimeout(timer); try { ctx.close(); } catch {} };
-    } catch {
-      /* noop */
-    }
-  }, [current?.key, current?.soundUrl, audioPrefs.muted, audioPrefs.volume]);
+    playGiftAudioCue({
+      soundUrl: current.soundUrl,
+      giftName: current.giftName,
+      volume: Math.min(1, audioPrefs.volume * (isPremiumLong ? 1 : 0.9)),
+    });
+    setSoundPulseKey(current.key);
+    const pulseTimer = setTimeout(() => setSoundPulseKey((key) => (key === current.key ? null : key)), 1400);
+    return () => {
+      clearTimeout(pulseTimer);
+    };
+  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, audioPrefs.muted, audioPrefs.volume]);
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
@@ -764,9 +732,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         contain: "layout paint style",
       }}
     >
-      {/* Strong stage above the room: keeps transparent gift videos visually in front. */}
-      <div className={isSpaceship ? "absolute inset-0 z-0 bg-transparent" : "absolute inset-0 z-0 bg-black/45"} />
-      <div className={isSpaceship ? "hidden" : "absolute inset-0 z-[1] bg-gradient-to-b from-black/55 via-black/10 to-black/65"} />
+      {/* Fully transparent stage: no black room-cover behind gifts. */}
+      <div className="absolute inset-0 z-0 bg-transparent" />
 
       {/* Cinematic pre-play overlay removed per user request */}
 
@@ -867,6 +834,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
             🪙 {current.coins.toLocaleString()}
           </p>
+        )}
+        {soundPulseKey === current.key && (
+          <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
+            <span className="text-[13px]">🔊</span>
+            <span>Sound</span>
+          </div>
         )}
       </div>
 
