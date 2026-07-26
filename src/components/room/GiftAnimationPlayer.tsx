@@ -553,103 +553,120 @@ function SmallGiftFlyer({
     ).filter((v): v is string => !!v);
     const effectiveTargets = targets.length > 0 ? targets : [""];
     const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
-    // Per-receiver: spawn `qty` flyers with tight stagger. Single unit → 1 icon.
-    const perStagger = qty > 1 ? Math.max(60, 120 - qty * 4) : 0;
     let soundFired = false;
 
-    // Hero preview: show the gift BIG at center so viewers clearly see
-    // which gift is playing. On combo (qty>1 or multi-target) the hero
-    // PERSISTS with a soft pulse while a fast trail streams to each DP.
+    // ------------------------------------------------------------------
+    // Redesigned "Comet" style — clean, cinematic, TikTok/Bigo grade.
+    // Hero: gift rises from lower-center with a soft golden shockwave,
+    // holds briefly, then the same gift launches as a glowing comet with
+    // a fluid tail toward every receiver's DP. On combo, multiple comets
+    // stream out in a rhythmic swarm.
+    // ------------------------------------------------------------------
     const isCombo = qty > 1 || effectiveTargets.length > 1;
-    const HERO_INTRO_MS = 240;
+    const HERO_INTRO_MS = 260;
+    const HERO_HOLD_MS = isCombo ? 220 : 520;
+    const heroSize = 200;
+
+    // Shockwave ring — one clean expanding gold ring
+    const shock = document.createElement("div");
+    const shockSize = 280;
+    shock.style.cssText =
+      `position:fixed;left:50%;top:52%;width:${shockSize}px;height:${shockSize}px;` +
+      `margin-left:-${shockSize / 2}px;margin-top:-${shockSize / 2}px;` +
+      `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
+      `border:2px solid rgba(255,220,140,.85);` +
+      `box-shadow:0 0 40px rgba(255,200,110,.55), inset 0 0 30px rgba(255,180,220,.35);` +
+      `opacity:0;`;
+    host.appendChild(shock);
+    shock.animate(
+      [
+        { transform: "scale(0.25)", opacity: 0 },
+        { transform: "scale(1.0)", opacity: 0.9, offset: 0.35 },
+        { transform: "scale(1.6)", opacity: 0 },
+      ],
+      { duration: 620, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+    ).onfinish = () => shock.remove();
+
+    // Soft radial glow behind the hero
+    const glow = document.createElement("div");
+    const glowSize = 340;
+    glow.style.cssText =
+      `position:fixed;left:50%;top:52%;width:${glowSize}px;height:${glowSize}px;` +
+      `margin-left:-${glowSize / 2}px;margin-top:-${glowSize / 2}px;` +
+      `border-radius:9999px;pointer-events:none;z-index:2147483644;` +
+      `background:radial-gradient(circle at 50% 50%, rgba(255,220,140,.55) 0%, rgba(255,120,200,.28) 45%, transparent 72%);` +
+      `filter:blur(10px);opacity:0;`;
+    host.appendChild(glow);
+
+    // Hero gift — clean, no card/frame. Just the icon with a warm glow.
     const hero = document.createElement("div");
-    const heroSize = 220;
     hero.style.cssText =
-      `position:fixed;left:50%;top:50%;width:${heroSize}px;height:${heroSize}px;` +
+      `position:fixed;left:50%;top:52%;width:${heroSize}px;height:${heroSize}px;` +
       `margin-left:-${heroSize / 2}px;margin-top:-${heroSize / 2}px;` +
-      `pointer-events:none;z-index:2147483646;display:grid;place-items:center;`;
-
-    // Rotating dashed sparkle ring (SVG) — playful sticker vibe
-    const ring = document.createElement("div");
-    ring.style.cssText = `position:absolute;inset:-8%;animation:jalwaGiftSpin 3.6s linear infinite;`;
-    ring.innerHTML =
-      `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">` +
-      `<defs><linearGradient id="jgRing" x1="0" y1="0" x2="1" y2="1">` +
-      `<stop offset="0%" stop-color="#FFE58A"/><stop offset="50%" stop-color="#FF5FB0"/><stop offset="100%" stop-color="#8A5CFF"/>` +
-      `</linearGradient></defs>` +
-      `<circle cx="50" cy="50" r="46" fill="none" stroke="url(#jgRing)" stroke-width="2.4" stroke-dasharray="3 5" stroke-linecap="round"/>` +
-      Array.from({length:8}).map((_,i)=>{
-        const a=(i/8)*Math.PI*2; const cx=50+Math.cos(a)*46; const cy=50+Math.sin(a)*46;
-        return `<g transform="translate(${cx.toFixed(2)} ${cy.toFixed(2)})"><path d="M0 -3.5 L1 -1 L3.5 0 L1 1 L0 3.5 L-1 1 L-3.5 0 L-1 -1 Z" fill="#FFF3B0"/></g>`;
-      }).join("") +
-      `</svg>`;
-    hero.appendChild(ring);
-
-    const heroAura = document.createElement("div");
-    heroAura.style.cssText =
-      `position:absolute;inset:6%;border-radius:9999px;` +
-      `background:radial-gradient(circle at 50% 45%, rgba(255,240,190,.95) 0%, rgba(255,150,80,.55) 40%, rgba(255,90,180,.28) 70%, transparent 100%);` +
-      `filter:blur(6px);animation:jalwaHeroPulse 1.1s ease-in-out infinite;`;
-    hero.appendChild(heroAura);
-
-    // Sticker card behind icon
-    const card = document.createElement("div");
-    card.style.cssText =
-      `position:absolute;inset:14%;border-radius:28px;` +
-      `background:linear-gradient(160deg, rgba(255,255,255,.18), rgba(255,255,255,.04));` +
-      `backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);` +
-      `border:1.5px solid rgba(255,255,255,.4);` +
-      `box-shadow:0 12px 40px rgba(0,0,0,.55), inset 0 0 24px rgba(255,220,140,.35);`;
-    hero.appendChild(card);
-
-    const heroInner = document.createElement("div");
-    heroInner.style.cssText = `position:relative;width:70%;height:70%;display:grid;place-items:center;`;
+      `pointer-events:none;z-index:2147483646;display:grid;place-items:center;` +
+      `will-change:transform,opacity;`;
     if (image) {
       const img = document.createElement("img");
       img.src = image;
       img.alt = "";
       img.style.cssText =
         "width:100%;height:100%;object-fit:contain;" +
-        "filter:drop-shadow(0 8px 22px rgba(0,0,0,.7)) drop-shadow(0 0 18px rgba(255,220,140,.85));" +
-        "animation:jalwaHeroFloat 1.6s ease-in-out infinite;";
+        "filter:drop-shadow(0 10px 26px rgba(0,0,0,.7)) drop-shadow(0 0 22px rgba(255,220,140,.95));";
       img.onerror = () => {
         img.remove();
         const es = document.createElement("span");
         es.textContent = emoji || "🎁";
-        es.style.cssText = `font-size:${Math.round(heroSize * 0.55)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));animation:jalwaHeroFloat 1.6s ease-in-out infinite;`;
-        heroInner.appendChild(es);
+        es.style.cssText = `font-size:${Math.round(heroSize * 0.72)}px;line-height:1;filter:drop-shadow(0 10px 22px rgba(0,0,0,.7));`;
+        hero.appendChild(es);
       };
-      heroInner.appendChild(img);
+      hero.appendChild(img);
     } else {
       const es = document.createElement("span");
       es.textContent = emoji || "🎁";
-      es.style.cssText = `font-size:${Math.round(heroSize * 0.55)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));animation:jalwaHeroFloat 1.6s ease-in-out infinite;`;
-      heroInner.appendChild(es);
+      es.style.cssText = `font-size:${Math.round(heroSize * 0.72)}px;line-height:1;filter:drop-shadow(0 10px 22px rgba(0,0,0,.7));`;
+      hero.appendChild(es);
     }
-    hero.appendChild(heroInner);
     host.appendChild(hero);
+
+    glow.animate(
+      [
+        { opacity: 0 },
+        { opacity: 1, offset: 0.4 },
+        { opacity: 0.85 },
+      ],
+      { duration: HERO_INTRO_MS + 120, fill: "forwards" },
+    );
 
     hero.animate(
       [
-        { transform: "scale(0.3) rotate(-10deg)", opacity: 0 },
-        { transform: "scale(1.18) rotate(4deg)", opacity: 1, offset: 0.6 },
-        { transform: "scale(0.96) rotate(-2deg)", opacity: 1, offset: 0.85 },
-        { transform: "scale(1.0) rotate(0deg)", opacity: 1 },
+        { transform: "translateY(60px) scale(0.55)", opacity: 0 },
+        { transform: "translateY(-8px) scale(1.12)", opacity: 1, offset: 0.55 },
+        { transform: "translateY(0px) scale(1.0)", opacity: 1 },
       ],
-      { duration: HERO_INTRO_MS + 80, easing: "cubic-bezier(.2,.7,.3,1.2)", fill: "forwards" },
+      { duration: HERO_INTRO_MS + 60, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
     );
 
-    // Fast, tighter stagger on combos so it feels like a smooth stream.
-    const trailStagger = isCombo ? Math.max(18, 55 - qty * 3) : 0;
-    // Snappier single-shot: flyer nikalne me kam wait.
-    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 80 : 140;
+    // Idle float while it holds
+    const floatTimer = window.setTimeout(() => {
+      hero.animate(
+        [
+          { transform: "translateY(0) scale(1.0)" },
+          { transform: "translateY(-6px) scale(1.03)" },
+          { transform: "translateY(0) scale(1.0)" },
+        ],
+        { duration: 900, iterations: Infinity, easing: "ease-in-out" },
+      );
+    }, HERO_INTRO_MS + 60);
 
+    // Rhythmic combo stream — tighter for high qty so it feels alive
+    const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
+    const flyerStartDelay = HERO_INTRO_MS + HERO_HOLD_MS;
 
-    const cleanupTimers: number[] = [];
+    const cleanupTimers: number[] = [floatTimer];
     let lastLaunchDelay = 0;
     effectiveTargets.forEach((targetId, tIdx) => {
       for (let i = 0; i < qty; i++) {
-        const delay = flyerStartDelay + i * trailStagger + tIdx * 22;
+        const delay = flyerStartDelay + i * trailStagger + tIdx * 28;
         lastLaunchDelay = Math.max(lastLaunchDelay, delay);
         const isFirstOfEvent = !soundFired && i === 0 && tIdx === 0;
         if (isFirstOfEvent) soundFired = true;
@@ -666,26 +683,30 @@ function SmallGiftFlyer({
       }
     });
 
-    // Fade the hero out after the last flyer has launched (combo) or after
-    // the single hold expires.
-    const heroFadeAt = isCombo ? lastLaunchDelay + 320 : 780;
+    // Fade hero + glow after the last comet has launched
+    const heroFadeAt = lastLaunchDelay + 240;
     const heroFadeTimer = window.setTimeout(() => {
       const fade = hero.animate(
         [
-          { transform: "scale(1)", opacity: 1 },
-          { transform: "scale(0.75)", opacity: 0 },
+          { transform: "translateY(0) scale(1)", opacity: 1 },
+          { transform: "translateY(-30px) scale(0.6)", opacity: 0 },
         ],
-        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
+        { duration: 280, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
       );
       fade.onfinish = () => hero.remove();
+      glow.animate(
+        [{ opacity: 0.85 }, { opacity: 0 }],
+        { duration: 280, fill: "forwards" },
+      ).onfinish = () => glow.remove();
     }, heroFadeAt);
     cleanupTimers.push(heroFadeTimer);
 
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
-      try { hero.remove(); } catch { /* noop */ }
+      try { hero.remove(); glow.remove(); shock.remove(); } catch { /* noop */ }
     };
   }, [emoji, image, quantity, receiverIds, fallbackReceiverId, volume]);
+
 
   return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
 }
