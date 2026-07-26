@@ -590,8 +590,9 @@ function SmallGiftFlyer({
     const HERO_INTRO_MS = isComboContinuation ? 0 : 240;
     const HERO_HOLD_MS = isComboContinuation ? 0 : (isCombo ? 260 : 520);
 
-    // Slot panel (fixed position, centered)
+    // Slot panel (fixed position, centered) — skipped on combo continuation.
     const panel = document.createElement("div");
+    if (!isComboContinuation) {
     panel.style.cssText =
       `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
       `pointer-events:none;z-index:2147483646;opacity:0;` +
