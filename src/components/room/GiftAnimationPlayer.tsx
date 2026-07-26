@@ -954,7 +954,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       : chromakeyMode === "none"
         ? false
         : autoBlackBg;
-  // Small/cheap gifts (Tier 1, ≤80 coins): always render as tiny fast flyer
+  // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
   // never a heavyweight cinematic clip.
@@ -963,7 +963,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     !isSpaceship &&
     !isRoyalRose &&
     !isRoyalCrownGift(current.giftName) &&
-    (current.coins ?? 0) <= 80;
+    (current.coins ?? 0) <= 300;
 
   // Premium/Luxury/VIP: real sample sounds. Jalwa signature chime as fallback.
   const isPremiumTier = !!current && !isSmallGift && (current.coins ?? 0) >= 500;
