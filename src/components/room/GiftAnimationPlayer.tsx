@@ -126,7 +126,10 @@ function getEffectiveGiftClip(p: Play) {
 
 
 function giftSignature(p: Play) {
-  return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
+  // NOTE: receiverName is intentionally excluded so a single local dispatch
+  // (multi-receiver "send to all") suppresses every per-row realtime insert
+  // that follows — otherwise viewers would see the gift play N separate times.
+  return `${p.senderName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
 function AnimatedGiftVideo({
@@ -922,6 +925,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
+  // Multi-receiver coalescing buffer: realtime `gift_sends` INSERTs arrive
+  // one-per-row when a user sends to "All". We buffer inserts sharing
+  // sender+gift+quantity for a short window and dispatch ONE aggregated Play
+  // with every receiverId — so all seats' DPs are hit simultaneously.
+  const coalesceRef = useRef<Map<string, { play: Play; timer: number; ids: string[] }>>(new Map());
   const [readyKey, setReadyKey] = useState<string | null>(null);
   const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
@@ -1038,7 +1046,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             gift_sound_url: string | null;
             gift_chromakey: string | null;
           };
-          enqueue({
+          const play: Play = {
             key: `sd-${r.id}`,
             senderName: r.sender_username ?? "Guest",
             senderAvatar: r.sender_avatar ?? null,
@@ -1047,22 +1055,43 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverName: r.receiver_username ?? "Host",
             receiverAvatar: r.receiver_avatar ?? null,
             giftName: r.gift_name ?? "Gift",
-          giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
-          giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
-          giftClipUrl: r.gift_clip_path ?? r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null),
-          giftClipType: r.gift_clip_path ? r.gift_clip_type : (r.gift_image_url || isAssetUrlLike(r.gift_icon) ? "image" : null),
+            giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
+            giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
+            giftClipUrl: r.gift_clip_path ?? r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null),
+            giftClipType: r.gift_clip_path ? r.gift_clip_type : (r.gift_image_url || isAssetUrlLike(r.gift_icon) ? "image" : null),
             coins: r.coins_spent ?? 0,
             diamonds: r.diamonds_earned ?? 0,
             quantity: r.quantity ?? 1,
             animation: r.gift_animation ?? "pop",
             soundUrl: r.gift_sound_url ?? null,
             chromakey: r.gift_chromakey ?? "auto",
-          });
+          };
+          // Coalesce multi-receiver sends into ONE simultaneous play.
+          // Bucket by sender+gift+quantity+coins (per-row coins are per-receiver
+          // and identical across a "send to all" batch).
+          const bucketKey = `${r.sender_id}|${r.gift_id}|${r.quantity}|${r.coins_spent}`;
+          const existing = coalesceRef.current.get(bucketKey);
+          if (existing) {
+            if (r.receiver_id && !existing.ids.includes(r.receiver_id)) {
+              existing.ids.push(r.receiver_id);
+              existing.play.receiverIds = [...existing.ids];
+            }
+            return;
+          }
+          const ids = r.receiver_id ? [r.receiver_id] : [];
+          const entry = { play, ids, timer: 0 };
+          entry.timer = window.setTimeout(() => {
+            coalesceRef.current.delete(bucketKey);
+            enqueue(entry.play);
+          }, 220);
+          coalesceRef.current.set(bucketKey, entry);
         },
       )
       .subscribe();
     return () => {
       void supabase.removeChannel(ch);
+      coalesceRef.current.forEach((e) => clearTimeout(e.timer));
+      coalesceRef.current.clear();
     };
   }, [roomId, enqueue]);
 
