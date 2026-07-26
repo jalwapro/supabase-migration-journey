@@ -29,18 +29,18 @@ export type Gift = {
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
 
 // Jalwa tier system — teen categorries:
-//   small   : ≤ 80 coins  (chhote gifts — flyer + coin-drop)
-//   premium : 81 – 1999   (real sample sound / Jalwa signature)
-//   vip     : ≥ 2000      (cinematic + real sample sound)
+//   basic   : ≤ 300 coins  (chhote gifts — flyer + coin-drop)
+//   premium : 301 – 1999   (real sample sound / Jalwa signature)
+//   vip     : ≥ 2000       (cinematic + real sample sound)
 type Tier = "small" | "premium" | "vip";
 const TIER_ORDER: Tier[] = ["small", "premium", "vip"];
 const TIER_LABEL: Record<Tier, string> = {
-  small: "✨ Small",
+  small: "✨ Basic",
   premium: "💎 Premium",
   vip: "👑 VIP",
 };
 function tierOf(price: number): Tier {
-  if (price <= 80) return "small";
+  if (price <= 300) return "small";
   if (price < 2000) return "premium";
   return "vip";
 }
