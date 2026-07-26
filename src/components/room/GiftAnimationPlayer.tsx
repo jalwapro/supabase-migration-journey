@@ -530,14 +530,16 @@ function SmallGiftFlyer({
       : [fallbackReceiverId ?? null]
     ).filter((v): v is string => !!v);
     const effectiveTargets = targets.length > 0 ? targets : [""];
-    const total = Math.max(1, Math.min(24, Math.floor(quantity || 1)));
+    const total = Math.max(1, Math.min(60, Math.floor(quantity || 1)));
+    // Combo → forms a fast line/trail toward the receiver.
+    const stagger = total > 1 ? Math.max(35, 90 - total * 2) : 0;
 
     const cleanupTimers: number[] = [];
     for (let i = 0; i < total; i++) {
       const targetId = effectiveTargets[i % effectiveTargets.length];
-      const delay = i * 110;
+      const delay = i * stagger;
       const t = window.setTimeout(() => {
-        spawnFlyer(host, { emoji, image, targetId, volume });
+        spawnFlyer(host, { emoji, image, targetId, volume, index: i, total });
       }, delay);
       cleanupTimers.push(t);
     }
@@ -551,12 +553,14 @@ function SmallGiftFlyer({
 
 function spawnFlyer(
   host: HTMLElement,
-  opts: { emoji: string; image: string | null; targetId: string; volume: number },
+  opts: { emoji: string; image: string | null; targetId: string; volume: number; index?: number; total?: number },
 ) {
   if (typeof document === "undefined") return;
   const rect = findReceiverDpRect(opts.targetId);
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  const size = 128;
+  const half = size / 2;
   const startX = vw / 2;
   const startY = vh / 2;
   const endX = rect ? rect.left + rect.width / 2 : vw / 2;
@@ -567,12 +571,12 @@ function spawnFlyer(
   el.style.position = "fixed";
   el.style.left = "0";
   el.style.top = "0";
-  el.style.width = "88px";
-  el.style.height = "88px";
-  el.style.transform = `translate(${startX - 44}px, ${startY - 44}px) scale(1)`;
+  el.style.width = `${size}px`;
+  el.style.height = `${size}px`;
+  el.style.transform = `translate(${startX - half}px, ${startY - half}px) scale(1)`;
   el.style.willChange = "transform, opacity";
   el.style.pointerEvents = "none";
-  el.style.filter = "drop-shadow(0 8px 18px rgba(255, 200, 90, 0.7))";
+  el.style.filter = "drop-shadow(0 10px 22px rgba(255, 200, 90, 0.75))";
   el.style.zIndex = "2147483646";
   if (opts.image) {
     const img = document.createElement("img");
@@ -589,24 +593,33 @@ function spawnFlyer(
     span.style.placeItems = "center";
     span.style.width = "100%";
     span.style.height = "100%";
-    span.style.fontSize = "64px";
+    span.style.fontSize = "96px";
     span.style.lineHeight = "1";
     el.appendChild(span);
   }
   host.appendChild(el);
 
-  // Slight lateral arc for a natural toss feel.
-  const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 60;
-  const midY = Math.min(startY, endY) - 60 - Math.random() * 40;
+  // Combo forms a tight straight line/trail toward the receiver — subtle
+  // perpendicular offset per flyer so they read as a stream, not a jitter.
+  const total = Math.max(1, opts.total ?? 1);
+  const index = opts.index ?? 0;
+  const dx = endX - startX;
+  const dy = endY - startY;
+  const len = Math.max(1, Math.hypot(dx, dy));
+  const perpX = -dy / len;
+  const perpY = dx / len;
+  const laneOffset = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(60, 8 + total * 3) : 0;
+  const midX = (startX + endX) / 2 + perpX * laneOffset;
+  const midY = (startY + endY) / 2 + perpY * laneOffset;
 
   const anim = el.animate(
     [
-      { transform: `translate(${startX - 44}px, ${startY - 44}px) scale(1)`, opacity: 1, offset: 0 },
-      { transform: `translate(${midX - 44}px, ${midY - 44}px) scale(0.85)`, opacity: 1, offset: 0.45 },
-      { transform: `translate(${endX - 44}px, ${endY - 44}px) scale(0.28)`, opacity: 0.85, offset: 0.92 },
-      { transform: `translate(${endX - 44}px, ${endY - 44}px) scale(0.08)`, opacity: 0, offset: 1 },
+      { transform: `translate(${startX - half}px, ${startY - half}px) scale(1)`, opacity: 1, offset: 0 },
+      { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.8)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.32)`, opacity: 0.9, offset: 0.9 },
+      { transform: `translate(${endX - half}px, ${endY - half}px) scale(0.1)`, opacity: 0, offset: 1 },
     ],
-    { duration: 1100, easing: "cubic-bezier(.4,.1,.3,1)", fill: "forwards" },
+    { duration: 650, easing: "cubic-bezier(.35,.1,.25,1)", fill: "forwards" },
   );
   anim.onfinish = () => {
     try { playGiftSynthCue("coins jingle", Math.min(0.9, opts.volume)); } catch { /* noop */ }
@@ -781,7 +794,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     !isSpaceship &&
     !isRoyalRose &&
     !isRoyalCrownGift(current.giftName) &&
-    (current.coins ?? 0) < 100;
+    (current.coins ?? 0) < 300;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
@@ -822,6 +835,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
+    // Small gifts play only per-landing coin-drop cues (fired by spawnFlyer).
+    if (isSmallGift) return;
     playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
@@ -832,18 +847,23 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
   // duration (from loadedmetadata) so 8–10s premium gifts play through fully.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
-    const ms = isSmallGift
-      ? 1500
-      : hasVideo
-        ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
-        : PLAY_MS;
+    let ms: number;
+    if (isSmallGift) {
+      const q = Math.max(1, Math.min(60, current.quantity || 1));
+      const stagger = q > 1 ? Math.max(35, 90 - q * 2) : 0;
+      ms = 650 + stagger * q + 150;
+    } else if (hasVideo) {
+      ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
+    } else {
+      ms = PLAY_MS;
+    }
     const t = setTimeout(clearCurrent, ms + 200);
     return () => clearTimeout(t);
   }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
