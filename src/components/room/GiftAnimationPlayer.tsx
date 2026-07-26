@@ -717,22 +717,47 @@ function spawnFlyer(
     `position:fixed;left:0;top:0;width:${size}px;height:${size}px;` +
     `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
     `display:grid;place-items:center;overflow:visible;`;
+
+  // Soft aura
   const aura = document.createElement("div");
   aura.style.cssText =
-    `position:absolute;inset:0;border-radius:9999px;` +
-    `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.85) 0%, rgba(255,180,90,.55) 45%, rgba(255,120,200,.25) 75%, transparent 100%);` +
-    `filter:blur(2px);`;
+    `position:absolute;inset:-6%;border-radius:9999px;` +
+    `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.9) 0%, rgba(255,180,90,.55) 45%, rgba(255,120,200,.28) 75%, transparent 100%);` +
+    `filter:blur(3px);`;
   el.appendChild(aura);
+
+  // Mini rotating sparkle ring (SVG sticker frame)
+  const miniRing = document.createElement("div");
+  miniRing.style.cssText = `position:absolute;inset:2%;animation:jalwaGiftSpin 2.4s linear infinite;`;
+  miniRing.innerHTML =
+    `<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">` +
+    `<circle cx="50" cy="50" r="47" fill="none" stroke="#FFE58A" stroke-width="2" stroke-dasharray="2 4" stroke-linecap="round" opacity="0.9"/>` +
+    Array.from({length:6}).map((_,i)=>{
+      const a=(i/6)*Math.PI*2; const cx=50+Math.cos(a)*47; const cy=50+Math.sin(a)*47;
+      return `<circle cx="${cx.toFixed(2)}" cy="${cy.toFixed(2)}" r="1.8" fill="#FFF3B0"/>`;
+    }).join("") +
+    `</svg>`;
+  el.appendChild(miniRing);
+
+  // Glass sticker card
+  const card = document.createElement("div");
+  card.style.cssText =
+    `position:absolute;inset:12%;border-radius:22px;` +
+    `background:linear-gradient(160deg, rgba(255,255,255,.22), rgba(255,255,255,.05));` +
+    `border:1.5px solid rgba(255,255,255,.45);` +
+    `box-shadow:0 8px 22px rgba(0,0,0,.55), inset 0 0 16px rgba(255,220,140,.4);`;
+  el.appendChild(card);
+
   const inner = document.createElement("div");
-  inner.style.cssText = `position:relative;width:88%;height:88%;display:grid;place-items:center;`;
+  inner.style.cssText = `position:relative;width:70%;height:70%;display:grid;place-items:center;`;
   const emojiSpan = document.createElement("span");
   emojiSpan.textContent = opts.emoji || "🎁";
-  emojiSpan.style.cssText = `font-size:${Math.round(size * 0.72)}px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));`;
+  emojiSpan.style.cssText = `font-size:${Math.round(size * 0.55)}px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55));`;
   if (opts.image) {
     const img = document.createElement("img");
     img.src = opts.image;
     img.alt = "";
-    img.style.cssText = "width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.65)) drop-shadow(0 0 8px rgba(255,220,140,.6));";
+    img.style.cssText = "width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 12px rgba(0,0,0,.65)) drop-shadow(0 0 10px rgba(255,220,140,.75));";
     img.onerror = () => {
       img.remove();
       inner.appendChild(emojiSpan);
