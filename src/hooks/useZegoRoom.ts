@@ -1218,85 +1218,122 @@ export function useZegoRoom({
   );
 
   // -----------------------------------------------------------------------
-  // Host music playback via ZEGO MediaPlayer + enableAux(true) so remote
-  // users hear the track mixed into the host's published audio.
+  // Host music playback — HTMLAudioElement plays locally (host hears it
+  // through system output regardless of mic mute), and audioEl.captureStream()
+  // is published as a SEPARATE Zego stream so viewers hear it independent
+  // of mic mute state.
   // -----------------------------------------------------------------------
-  const ensureMusicPlayer = useCallback(async (): Promise<ZegoMediaPlayerLike> => {
-    const engine = engineRef.current as unknown as {
-      createMediaPlayer: () => Promise<ZegoMediaPlayerLike> | ZegoMediaPlayerLike;
-    } | null;
-    if (!engine) throw new Error("Not connected to room yet");
-    if (musicPlayerRef.current) return musicPlayerRef.current;
-    const mp = await engine.createMediaPlayer();
-    try {
-      mp.on?.("playerStateUpdate", (arg: unknown) => {
-        const st = (arg as { state?: string })?.state ?? String(arg);
-        if (st === "PLAYING" || st === "playing") setMusicPlaying(true);
-        else if (st === "NO_PLAY" || st === "PAUSING" || st === "pausing" || st === "STOPPED")
-          setMusicPlaying(false);
-      });
-    } catch { /* older SDK — ignore */ }
-    musicPlayerRef.current = mp;
-    return mp;
-  }, []);
-
   const playMusicFile = useCallback(async (file: Blob, title: string) => {
     const engine = engineRef.current;
-    if (!engine) throw new Error("Not connected to room yet");
+    const room = currentRoomRef.current;
+    const localUid = currentUserRef.current;
+    if (!engine || !room || !localUid) throw new Error("Not connected to room yet");
     if (status !== "connected") throw new Error("Still connecting to room, please wait");
     if (!publish) throw new Error("Only host can play music");
-    if (!localStreamRef.current || !localAudioPublishedRef.current) {
-      throw new Error("Enable your mic before playing music");
-    }
 
-    const mp = await ensureMusicPlayer();
-    // Stop previous
-    try { mp.stop(); } catch { /* ignore */ }
+    // Tear down previous
+    const prevEl = musicAudioElRef.current;
+    if (prevEl) {
+      try { prevEl.pause(); prevEl.src = ""; prevEl.remove(); } catch { /* ignore */ }
+      musicAudioElRef.current = null;
+    }
+    const prevStream = musicStreamRef.current;
+    const prevId = musicStreamIdRef.current;
+    if (prevStream && prevId) {
+      try { engine.stopPublishingStream(prevId); } catch { /* ignore */ }
+      try { prevStream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    }
+    musicStreamRef.current = null;
+    musicStreamIdRef.current = null;
     if (musicUrlRef.current) {
       try { URL.revokeObjectURL(musicUrlRef.current); } catch { /* ignore */ }
       musicUrlRef.current = null;
     }
+
+    // Create local audio element (host hears the music)
     const url = URL.createObjectURL(file);
     musicUrlRef.current = url;
+    const audioEl = document.createElement("audio");
+    audioEl.src = url;
+    audioEl.crossOrigin = "anonymous";
+    audioEl.loop = false;
+    audioEl.autoplay = false;
+    audioEl.style.display = "none";
+    document.body.appendChild(audioEl);
+    musicAudioElRef.current = audioEl;
+
+    audioEl.onended = () => setMusicPlaying(false);
+    audioEl.onpause = () => setMusicPlaying(false);
+    audioEl.onplay = () => setMusicPlaying(true);
+
     try {
-      await mp.loadResource(url);
+      await audioEl.play();
     } catch (e) {
-      console.error("[zego] loadResource failed", e);
-      throw new Error("Could not load this audio file — try MP3/M4A");
-    }
-    try { await mp.enableAux?.(true); } catch (e) { console.warn("[zego] enableAux failed", e); }
-    try {
-      await mp.start();
-    } catch (e) {
-      console.error("[zego] mp.start failed", e);
+      console.error("[music] local play failed", e);
       throw new Error("Playback blocked — tap Play again");
     }
+
+    // Capture MediaStream and publish as a separate stream so viewers hear
+    // the music even when the host mic is muted.
+    try {
+      const captureFn = (audioEl as HTMLAudioElement & {
+        captureStream?: () => MediaStream;
+        mozCaptureStream?: () => MediaStream;
+      }).captureStream ?? (audioEl as HTMLAudioElement & {
+        mozCaptureStream?: () => MediaStream;
+      }).mozCaptureStream;
+      if (typeof captureFn === "function") {
+        const musicStream = captureFn.call(audioEl) as MediaStream;
+        const musicStreamId = streamIdFor(room, `${localUid}_music`);
+        musicStreamRef.current = musicStream;
+        musicStreamIdRef.current = musicStreamId;
+        try {
+          engine.startPublishingStream(musicStreamId, musicStream);
+        } catch (e) {
+          console.warn("[music] publish stream failed — only host will hear", e);
+        }
+      } else {
+        console.warn("[music] captureStream unsupported — only host will hear");
+      }
+    } catch (e) {
+      console.warn("[music] capture/publish failed", e);
+    }
+
     setMusicTitle(title);
     setMusicPlaying(true);
-  }, [ensureMusicPlayer, publish, status]);
+  }, [publish, status]);
 
 
   const pauseMusic = useCallback(() => {
-    const mp = musicPlayerRef.current;
-    if (!mp) return;
-    try { mp.pause(); } catch { /* ignore */ }
+    const el = musicAudioElRef.current;
+    if (!el) return;
+    try { el.pause(); } catch { /* ignore */ }
     setMusicPlaying(false);
   }, []);
 
   const resumeMusic = useCallback(() => {
-    const mp = musicPlayerRef.current;
-    if (!mp) return;
-    try { mp.resume(); } catch { /* ignore */ }
-    setMusicPlaying(true);
+    const el = musicAudioElRef.current;
+    if (!el) return;
+    el.play().then(() => setMusicPlaying(true)).catch(() => { /* gesture required */ });
   }, []);
 
   const stopMusic = useCallback(async () => {
-    const mp = musicPlayerRef.current;
-    if (!mp) return;
-    try { mp.enableAux?.(false); } catch { /* ignore */ }
-    try { mp.stop(); } catch { /* ignore */ }
-    try { mp.destroy?.(); } catch { /* ignore */ }
-    musicPlayerRef.current = null;
+    const el = musicAudioElRef.current;
+    if (el) {
+      try { el.pause(); el.src = ""; el.remove(); } catch { /* ignore */ }
+      musicAudioElRef.current = null;
+    }
+    const engine = engineRef.current;
+    const stream = musicStreamRef.current;
+    const mid = musicStreamIdRef.current;
+    if (engine && mid) {
+      try { engine.stopPublishingStream(mid); } catch { /* ignore */ }
+    }
+    if (stream) {
+      try { stream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    }
+    musicStreamRef.current = null;
+    musicStreamIdRef.current = null;
     if (musicUrlRef.current) {
       try { URL.revokeObjectURL(musicUrlRef.current); } catch { /* ignore */ }
       musicUrlRef.current = null;
@@ -1306,8 +1343,11 @@ export function useZegoRoom({
   }, []);
 
   const setMusicVolume = useCallback((v: number) => {
-    try { musicPlayerRef.current?.setVolume(Math.max(0, Math.min(100, v))); } catch { /* ignore */ }
+    const el = musicAudioElRef.current;
+    if (!el) return;
+    try { el.volume = Math.max(0, Math.min(1, v / 100)); } catch { /* ignore */ }
   }, []);
+
 
 
   return {
