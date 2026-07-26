@@ -610,9 +610,10 @@ function SmallGiftFlyer({
     );
 
     // Fast, tighter stagger on combos so it feels like a smooth stream.
-    const trailStagger = isCombo ? Math.max(28, 90 - qty * 3) : 0;
-    // For single-shot (no combo) keep the original hero-hold feel.
-    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 40 : 480;
+    const trailStagger = isCombo ? Math.max(24, 70 - qty * 3) : 0;
+    // Snappier single-shot: flyer nikalne me kam wait.
+    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 60 : 240;
+
 
     const cleanupTimers: number[] = [];
     let lastLaunchDelay = 0;
@@ -637,7 +638,7 @@ function SmallGiftFlyer({
 
     // Fade the hero out after the last flyer has launched (combo) or after
     // the single hold expires.
-    const heroFadeAt = isCombo ? lastLaunchDelay + 380 : 520;
+    const heroFadeAt = isCombo ? lastLaunchDelay + 320 : 780;
     const heroFadeTimer = window.setTimeout(() => {
       const fade = hero.animate(
         [
@@ -992,20 +993,18 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // Play a real soundUrl when available; otherwise synthesize a gift-specific
-  // cue. This also gives users a visible "sound played" indicator.
+  // Premium/VIP sounds hata diye — sirf real soundUrl bajta hai (jaise Money Gun).
+  // Chhote gifts already coin-drop bajate hain per-landing.
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
-    // Small gifts play only per-landing coin-drop cues (fired by spawnFlyer).
     if (isSmallGift) return;
-    // Middle-tier gifts (81–499 coins): jab tak real soundUrl na ho, silent —
-    // koi fake synth nahi. Premium/Luxury/VIP: soundUrl warna Jalwa signature.
+    if (!current.soundUrl) return; // no synthetic Jalwa signature anymore
     const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
       volume: Math.min(1, audioPrefs.volume * (isPremiumLong ? 1 : 0.9)),
-      premium: isPremiumTier,
+      premium: false,
     });
     if (!played) return;
     setSoundPulseKey(current.key);
@@ -1013,7 +1012,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isPremiumTier, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
@@ -1023,10 +1023,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     let ms: number;
     if (isSmallGift) {
       const q = Math.max(1, Math.min(99, current.quantity || 1));
-      const perStagger = q > 1 ? Math.max(60, 120 - q * 4) : 0;
+      const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
       const receivers = Math.max(1, (current.receiverIds?.length ?? 1));
-      // flyer duration 620ms + last spawn delay + safety.
-      ms = 620 + perStagger * q + receivers * 25 + 250;
+      // hero(360) + flyer trail + flyer duration(620) + safety.
+      ms = 360 + perStagger * q + receivers * 22 + 900;
+
     } else if (hasVideo) {
       ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
