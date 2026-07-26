@@ -34,15 +34,6 @@ type Play = {
   local?: boolean;
 };
 
-function resolveSoundUrl(url: string | null | undefined) {
-  if (!url) return null;
-  // Lovable-hosted assets are only served under the *.lovable.app origin.
-  // On the sandboxed preview origin (lovableproject.com) a relative /__l5e/…
-  // path returns HTML/404 and audio fails silently, so prefix the CDN origin.
-  if (url.startsWith("/__l5e/")) return `${LOVABLE_ASSET_ORIGIN}${url}`;
-  return url;
-}
-
 const PLAY_MS = 3200;
 const VIDEO_PLAY_MS = 3800;
 const MAX_GIFT_Z_INDEX = 2147483647;
