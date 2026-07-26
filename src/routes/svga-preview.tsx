@@ -8,12 +8,14 @@ export const Route = createFileRoute('/svga-preview')({
 });
 
 const gifts = [
-  { name: 'Royal Crown',   file: '/animations/gifts/svga/kingset.svga',        price: 999,  emoji: '👑' },
-  { name: 'Porsche',       file: '/animations/gifts/svga/posche.svga',         price: 1999, emoji: '🏎️' },
-  { name: 'Heartbeat',     file: '/animations/gifts/svga/heartbeat.svga',      price: 199,  emoji: '💗' },
-  { name: 'Pin Jump',      file: '/animations/gifts/svga/PinJump.svga',        price: 99,   emoji: '📍' },
-  { name: 'Empty State',   file: '/animations/gifts/svga/EmptyState.svga',     price: 49,   emoji: '📭' },
-  { name: 'Hamburger',     file: '/animations/gifts/svga/HamburgerArrow.svga', price: 29,   emoji: '🍔' },
+  { name: 'Royal Crown', file: '/animations/gifts/svga/kingset.svga',   price: 999,  emoji: '👑' },
+  { name: 'Ferrari',     file: '/animations/gifts/svga/ferrari.svga',   price: 1999, emoji: '🏎️' },
+  { name: 'Heartbeat',   file: '/animations/gifts/svga/heartbeat.svga', price: 199,  emoji: '💗' },
+  { name: 'Rose',        file: '/animations/gifts/svga/rose.svga',      price: 149,  emoji: '🌹' },
+  { name: 'Gift Box',    file: '/animations/gifts/svga/giftbox.svga',   price: 99,   emoji: '🎁' },
+  { name: 'Angel',       file: '/animations/gifts/svga/angel.svga',     price: 299,  emoji: '👼' },
+  { name: 'Halloween',   file: '/animations/gifts/svga/halloween.svga', price: 199,  emoji: '🎃' },
+  { name: 'Rocket',      file: '/animations/gifts/svga/Rocket.svga',    price: 399,  emoji: '🚀' },
 ];
 
 function SvgaPreview() {
