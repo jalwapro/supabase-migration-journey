@@ -475,30 +475,143 @@ function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
   );
 }
 
+/**
+ * Locate the receiver's on-screen DP element (a seat tile carrying
+ * `data-user-dp={userId}`). Falls back to bottom-center if not found.
+ */
+function findReceiverDpRect(receiverId: string | null | undefined): DOMRect | null {
+  if (typeof document === "undefined") return null;
+  if (receiverId) {
+    const el = document.querySelector(`[data-user-dp="${CSS.escape(receiverId)}"]`);
+    if (el) return (el as HTMLElement).getBoundingClientRect();
+  }
+  // Fallback: host seat (index 0) is the primary receiver in most rooms.
+  const host = document.querySelector('[data-seat-index="0"]');
+  if (host) return (host as HTMLElement).getBoundingClientRect();
+  return null;
+}
+
+/**
+ * TikTok-style small-gift flyer: shows the gift at center, then a copy flies
+ * to each receiver's DP for every unit of quantity (with slight stagger),
+ * and disappears there while a coin-drop cue plays per landing.
+ */
 function SmallGiftFlyer({
   emoji,
   image,
+  quantity,
+  receiverIds,
+  fallbackReceiverId,
+  volume,
   onReady,
 }: {
   emoji: string;
   image: string | null;
+  quantity: number;
+  receiverIds: (string | null | undefined)[];
+  fallbackReceiverId?: string | null;
+  volume: number;
   onReady: () => void;
 }) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
   const readyOnce = useRef(false);
+
   useEffect(() => {
     if (readyOnce.current) return;
     readyOnce.current = true;
     onReady();
   }, [onReady]);
-  return (
-    <div className="jalwa-small-gift-flyer" aria-hidden="true">
-      {image ? (
-        <img src={image} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-      ) : (
-        <span className="jalwa-small-gift-emoji">{emoji || "🎁"}</span>
-      )}
-    </div>
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const targets: string[] = (receiverIds && receiverIds.length > 0
+      ? receiverIds
+      : [fallbackReceiverId ?? null]
+    ).filter((v): v is string => !!v);
+    const effectiveTargets = targets.length > 0 ? targets : [""];
+    const total = Math.max(1, Math.min(24, Math.floor(quantity || 1)));
+
+    const cleanupTimers: number[] = [];
+    for (let i = 0; i < total; i++) {
+      const targetId = effectiveTargets[i % effectiveTargets.length];
+      const delay = i * 110;
+      const t = window.setTimeout(() => {
+        spawnFlyer(host, { emoji, image, targetId, volume });
+      }, delay);
+      cleanupTimers.push(t);
+    }
+    return () => {
+      cleanupTimers.forEach((t) => clearTimeout(t));
+    };
+  }, [emoji, image, quantity, receiverIds, fallbackReceiverId, volume]);
+
+  return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
+}
+
+function spawnFlyer(
+  host: HTMLElement,
+  opts: { emoji: string; image: string | null; targetId: string; volume: number },
+) {
+  if (typeof document === "undefined") return;
+  const rect = findReceiverDpRect(opts.targetId);
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const startX = vw / 2;
+  const startY = vh / 2;
+  const endX = rect ? rect.left + rect.width / 2 : vw / 2;
+  const endY = rect ? rect.top + rect.height / 2 : vh - 80;
+
+  const el = document.createElement("div");
+  el.className = "jalwa-small-gift-flyer-node";
+  el.style.position = "fixed";
+  el.style.left = "0";
+  el.style.top = "0";
+  el.style.width = "88px";
+  el.style.height = "88px";
+  el.style.transform = `translate(${startX - 44}px, ${startY - 44}px) scale(1)`;
+  el.style.willChange = "transform, opacity";
+  el.style.pointerEvents = "none";
+  el.style.filter = "drop-shadow(0 8px 18px rgba(255, 200, 90, 0.7))";
+  el.style.zIndex = "2147483646";
+  if (opts.image) {
+    const img = document.createElement("img");
+    img.src = opts.image;
+    img.alt = "";
+    img.style.width = "100%";
+    img.style.height = "100%";
+    img.style.objectFit = "contain";
+    el.appendChild(img);
+  } else {
+    const span = document.createElement("span");
+    span.textContent = opts.emoji || "🎁";
+    span.style.display = "grid";
+    span.style.placeItems = "center";
+    span.style.width = "100%";
+    span.style.height = "100%";
+    span.style.fontSize = "64px";
+    span.style.lineHeight = "1";
+    el.appendChild(span);
+  }
+  host.appendChild(el);
+
+  // Slight lateral arc for a natural toss feel.
+  const midX = (startX + endX) / 2 + (Math.random() - 0.5) * 60;
+  const midY = Math.min(startY, endY) - 60 - Math.random() * 40;
+
+  const anim = el.animate(
+    [
+      { transform: `translate(${startX - 44}px, ${startY - 44}px) scale(1)`, opacity: 1, offset: 0 },
+      { transform: `translate(${midX - 44}px, ${midY - 44}px) scale(0.85)`, opacity: 1, offset: 0.45 },
+      { transform: `translate(${endX - 44}px, ${endY - 44}px) scale(0.28)`, opacity: 0.85, offset: 0.92 },
+      { transform: `translate(${endX - 44}px, ${endY - 44}px) scale(0.08)`, opacity: 0, offset: 1 },
+    ],
+    { duration: 1100, easing: "cubic-bezier(.4,.1,.3,1)", fill: "forwards" },
   );
+  anim.onfinish = () => {
+    try { playGiftSynthCue("coins jingle", Math.min(0.9, opts.volume)); } catch { /* noop */ }
+    el.remove();
+  };
 }
 
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
