@@ -379,6 +379,34 @@ export function useZegoRoom({
   const audioElsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const [speakingUids, setSpeakingUids] = useState<Set<number>>(new Set());
 
+  // Browser autoplay policy blocks remote audio until the first user gesture.
+  // Resume every attached remote <audio> on the first tap/click/keydown so
+  // viewers actually hear each other without needing an explicit "unmute" prompt.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    let done = false;
+    const resume = () => {
+      if (done) return;
+      done = true;
+      for (const [, el] of audioElsRef.current) {
+        try { el.muted = speakerMutedRef.current; el.play().catch(() => {}); } catch { /* ignore */ }
+      }
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("touchstart", resume);
+      window.removeEventListener("keydown", resume);
+    };
+    window.addEventListener("pointerdown", resume, { once: false, passive: true });
+    window.addEventListener("touchstart", resume, { once: false, passive: true });
+    window.addEventListener("keydown", resume);
+    return () => {
+      window.removeEventListener("pointerdown", resume);
+      window.removeEventListener("touchstart", resume);
+      window.removeEventListener("keydown", resume);
+    };
+  }, []);
+
+
+
 
   // -----------------------------------------------------------------------
   // Utilities
