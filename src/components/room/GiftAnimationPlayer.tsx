@@ -126,7 +126,10 @@ function getEffectiveGiftClip(p: Play) {
 
 
 function giftSignature(p: Play) {
-  return `${p.senderName}|${p.receiverName}|${p.giftName}|${p.quantity}|${p.coins}`;
+  // NOTE: receiverName is intentionally excluded so a single local dispatch
+  // (multi-receiver "send to all") suppresses every per-row realtime insert
+  // that follows — otherwise viewers would see the gift play N separate times.
+  return `${p.senderName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
 function AnimatedGiftVideo({
