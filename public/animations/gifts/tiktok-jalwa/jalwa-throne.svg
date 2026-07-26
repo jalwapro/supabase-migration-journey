@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+  <radialGradient id="jt-bg" cx="50%" cy="55%" r="60%">
+    <stop offset="0%" stop-color="#ffd166" stop-opacity=".9"/>
+    <stop offset="50%" stop-color="#ff2ea8" stop-opacity=".35"/>
+    <stop offset="100%" stop-color="#3b0a5a" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="jt-ray" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#ffd166" stop-opacity=".9"/>
+    <stop offset="100%" stop-color="#ffd166" stop-opacity="0"/>
+  </linearGradient>
+  <filter id="jt-glow"><feGaussianBlur stdDeviation="3"/></filter>
+</defs>
+<circle cx="200" cy="210" r="200" fill="url(#jt-bg)"><animate attributeName="opacity" values=".65;1;.65" dur="1.6s" repeatCount="indefinite"/></circle>
+<g transform="translate(200 210)" filter="url(#jt-glow)">
+  <g opacity=".8">
+    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="14s" repeatCount="indefinite"/>
+    <g fill="url(#jt-ray)">
+      <polygon points="-10,-200 10,-200 0,-40"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(30)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(60)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(90)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(120)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(150)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(180)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(210)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(240)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(270)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(300)"/>
+      <polygon points="-10,-200 10,-200 0,-40" transform="rotate(330)"/>
+    </g>
+  </g>
+</g>
+<g transform="translate(200 210)">
+  <g stroke="#ffd166" fill="none" stroke-width="4" opacity=".85">
+    <circle r="70"><animate attributeName="r" values="70;190" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" repeatCount="indefinite"/></circle>
+    <circle r="70" stroke="#ff2ea8"><animate attributeName="r" values="70;190" dur="1.6s" begin=".5s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0" dur="1.6s" begin=".5s" repeatCount="indefinite"/></circle>
+  </g>
+  <text x="0" y="-40" font-size="90" text-anchor="middle">👑
+    <animate attributeName="font-size" values="80;110;80" dur="1.4s" repeatCount="indefinite"/>
+  </text>
+  <text x="0" y="80" font-size="150" text-anchor="middle">🪑
+    <animateTransform attributeName="transform" type="scale" values=".95;1.05;.95" dur="1.6s" repeatCount="indefinite" additive="sum"/>
+  </text>
+</g>
+<g fill="#ffd166" font-size="22" text-anchor="middle">
+  <text x="70" y="90">✨<animate attributeName="opacity" values="0;1;0" dur="1.1s" repeatCount="indefinite"/></text>
+  <text x="330" y="100">✨<animate attributeName="opacity" values="1;0;1" dur="1.3s" repeatCount="indefinite"/></text>
+  <text x="60" y="320">✨<animate attributeName="opacity" values="0;1;0" dur=".9s" repeatCount="indefinite"/></text>
+  <text x="340" y="310">✨<animate attributeName="opacity" values="1;0;1" dur="1.5s" repeatCount="indefinite"/></text>
+</g>
+</svg>

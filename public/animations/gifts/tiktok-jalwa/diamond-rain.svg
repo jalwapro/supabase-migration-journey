@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+  <radialGradient id="dr-bg" cx="50%" cy="50%" r="55%">
+    <stop offset="0%" stop-color="#7be3ff" stop-opacity=".55"/>
+    <stop offset="60%" stop-color="#3b6dff" stop-opacity=".2"/>
+    <stop offset="100%" stop-color="#3b6dff" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="dr-d" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#ffffff"/><stop offset="60%" stop-color="#a8e8ff"/><stop offset="100%" stop-color="#4ea8ff"/>
+  </linearGradient>
+  <symbol id="diamond" viewBox="-20 -20 40 40">
+    <polygon points="0,-18 16,-4 10,16 -10,16 -16,-4" fill="url(#dr-d)" stroke="#ffffff" stroke-width="1.5"/>
+    <polygon points="0,-18 -16,-4 -6,-4" fill="#ffffff" opacity=".7"/>
+  </symbol>
+</defs>
+<circle cx="200" cy="200" r="200" fill="url(#dr-bg)"><animate attributeName="opacity" values=".5;1;.5" dur="1.6s" repeatCount="indefinite"/></circle>
+<g>
+  <use href="#diamond" x="60"  y="-20"><animate attributeName="y" values="-20;420" dur="1.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" values="0 60 200;360 60 200" dur="1.8s" repeatCount="indefinite"/></use>
+  <use href="#diamond" x="120" y="-60"><animate attributeName="y" values="-60;420" dur="2.2s" repeatCount="indefinite"/></use>
+  <use href="#diamond" x="180" y="-100"><animate attributeName="y" values="-100;420" dur="1.5s" repeatCount="indefinite"/></use>
+  <use href="#diamond" x="240" y="-40"><animate attributeName="y" values="-40;420" dur="2s" repeatCount="indefinite"/></use>
+  <use href="#diamond" x="300" y="-80"><animate attributeName="y" values="-80;420" dur="1.7s" repeatCount="indefinite"/></use>
+  <use href="#diamond" x="340" y="-120"><animate attributeName="y" values="-120;420" dur="2.4s" repeatCount="indefinite"/></use>
+  <use href="#diamond" x="20"  y="-140"><animate attributeName="y" values="-140;420" dur="1.9s" repeatCount="indefinite"/></use>
+</g>
+<g transform="translate(200 220)">
+  <use href="#diamond" transform="scale(4)"><animateTransform attributeName="transform" type="scale" values="3.6;4.4;3.6" dur="1.2s" repeatCount="indefinite"/></use>
+</g>
+</svg>
