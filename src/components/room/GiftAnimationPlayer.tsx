@@ -1064,7 +1064,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             </div>
           </div>
         )}
-        {!isSmallGift && (
+        {!isSmallGift ? (
           <>
             <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
               <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
@@ -1082,6 +1082,17 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               </p>
             )}
           </>
+        ) : (
+          <div className="pointer-events-none absolute left-1/2 top-[62%] z-[230] -translate-x-1/2 flex items-center gap-2">
+            <span className="rounded-full bg-black/75 px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white shadow-lg ring-1 ring-white/10">
+              {current.giftName}
+            </span>
+            {current.quantity > 1 && (
+              <span className="rounded-full bg-gradient-to-r from-[#ffd76a] to-[#ff8f2b] px-3 py-1 text-[13px] font-black text-black shadow-lg">
+                ×{current.quantity}
+              </span>
+            )}
+          </div>
         )}
         {soundPulseKey === current.key && (
           <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
