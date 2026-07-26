@@ -689,22 +689,21 @@ export function useZegoRoom({
               const remoteUid = Number(remoteUidRaw);
               if (!Number.isFinite(remoteUid) || remoteUid === uid) continue;
               const isVideo = /_cam_main$/.test(s.streamID);
-              console.log(`[zego-debug] ADD stream=${s.streamID} remoteUid=${remoteUid} isVideo=${isVideo}`);
+              const isMusic = /_music_main$/.test(s.streamID);
               streamToUidRef.current.set(s.streamID, remoteUid);
               if (isVideo) uidVideoStreamRef.current.set(remoteUid, s.streamID);
+              else if (isMusic) uidMusicStreamRef.current.set(remoteUid, s.streamID);
               else uidStreamRef.current.set(remoteUid, s.streamID);
               // Start playing (audio) immediately — video will be attached
               // to a container by the UI via videoTrack.play(...).
               try {
-                void getRemoteMediaStream(engine, s.streamID)
+                void getRemoteMediaStream(engine, s.streamID, isVideo ? "video" : "audio")
                   .then((ms) => {
                     const media = asBrowserMediaStream(ms);
-                    console.log(`[zego-debug] getRemoteMediaStream resolved stream=${s.streamID} media=${!!media} tracks=${media?.getTracks().length ?? 0}`);
                     if (!media) return;
                     if (isVideo) {
                       const container = videoContainersRef.current.get(remoteUid);
                       const v = container?.querySelector("video") as HTMLVideoElement | null;
-                      console.log(`[zego-debug] video container for uid=${remoteUid} present=${!!container} videoEl=${!!v}`);
                       if (v) {
                         try { v.srcObject = media; } catch (err) { console.warn("[zego-debug] srcObject set failed", err); return; }
                         v.play().catch(() => { /* gesture may be needed */ });
@@ -730,6 +729,8 @@ export function useZegoRoom({
               if (speakerMutedRef.current) {
                 try { engine.mutePlayStreamAudio(s.streamID, true); } catch { /* ignore */ }
               }
+
+              if (isMusic) continue;
 
               setRemotes((prev) => {
                 const next = new Map(prev);
