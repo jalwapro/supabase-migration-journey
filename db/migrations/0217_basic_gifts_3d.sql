@@ -5,6 +5,11 @@ BEGIN;
 
 -- Remove old basic gifts (keep Money Gun at price 0)
 DELETE FROM public.gifts WHERE price BETWEEN 1 AND 300;
+DELETE FROM public.gifts WHERE name IN (
+  'Lollipop','Rose','Sweet Love','Donut','Ice Cream','Mini Cake','Cat Claw Cup',
+  'Pink Headphones','Balloon','Happy Puppy','Little Bear','Corgi','Confession Letter',
+  'Chocolate Box','Typewriter','Aladdin Lamp','Royal Crown','Love Ring','Crystal Ball','Money Tree'
+);
 
 INSERT INTO public.gifts (name, emoji, price, diamonds_value, category, animation, sort_order, is_active, icon_path, chromakey)
 VALUES
