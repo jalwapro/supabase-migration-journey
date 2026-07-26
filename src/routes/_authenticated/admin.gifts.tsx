@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Loader2, Upload, Save, X } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Save, X, Play } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
@@ -29,10 +29,18 @@ type GiftRow = {
   clip_type: string | null;
   image_url?: string | null;
   is_milestone?: boolean | null;
+  chromakey?: string | null;
 };
 
 const CATEGORIES = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
 const CLIP_TYPES = ["none", "svg", "mp4", "webm"] as const;
+const CHROMAKEY_OPTIONS = [
+  { value: "auto", label: "Auto", hint: "Detect from name (default)" },
+  { value: "none", label: "None", hint: "No key — render as-is" },
+  { value: "screen", label: "Screen blend", hint: "Knock out pure-black bg" },
+  { value: "luma", label: "Luma key", hint: "Aggressive black removal" },
+] as const;
+type Chromakey = (typeof CHROMAKEY_OPTIONS)[number]["value"];
 
 type Draft = {
   id?: string;
@@ -45,6 +53,7 @@ type Draft = {
   clip_path: string;
   clip_type: (typeof CLIP_TYPES)[number];
   is_milestone: boolean;
+  chromakey: Chromakey;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -57,6 +66,7 @@ const EMPTY_DRAFT: Draft = {
   clip_path: "",
   clip_type: "none",
   is_milestone: false,
+  chromakey: "auto",
 };
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
@@ -130,6 +140,7 @@ function GiftsAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey } | null>(null);
   const isEditing = Boolean(draft.id);
 
   const list = useQuery({
@@ -137,7 +148,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -192,6 +203,7 @@ function GiftsAdmin() {
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
+        chromakey: draft.chromakey,
       };
       // Multiple milestone gifts allowed (host picks one on 100%).
       if (draft.id) {
@@ -254,6 +266,7 @@ function GiftsAdmin() {
             : "mp4"
         : "none") as Draft["clip_type"],
       is_milestone: Boolean(g.is_milestone),
+      chromakey: (["auto", "none", "screen", "luma"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -317,6 +330,22 @@ function GiftsAdmin() {
                     className="flex-1 rounded-lg bg-primary/10 py-1 text-[10px] font-bold text-primary"
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={() =>
+                      setPreview({
+                        name: g.name,
+                        clipPath: g.clip_path ?? null,
+                        clipType: g.clip_type ?? null,
+                        imageUrl: g.image_url ?? null,
+                        emoji: g.emoji ?? g.icon ?? null,
+                        chromakey: (["auto", "none", "screen", "luma"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
+                      })
+                    }
+                    className="rounded-lg bg-[color:var(--gold)]/15 px-2 text-[color:var(--gold)]"
+                    title="Full preview"
+                  >
+                    <Play className="h-3 w-3" />
                   </button>
                   <button
                     onClick={() => confirm(`Delete ${g.name}?`) && remove.mutate(g.id)}
@@ -464,7 +493,46 @@ function GiftsAdmin() {
                 )}
               </>
             )}
+
+            {/* Chromakey */}
+            <div className="mt-3">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Chromakey / transparency
+              </p>
+              <div className="grid grid-cols-4 gap-1">
+                {CHROMAKEY_OPTIONS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setDraft((d) => ({ ...d, chromakey: c.value }))}
+                    title={c.hint}
+                    className={`rounded-lg px-1 py-1.5 text-[10px] font-bold uppercase ${draft.chromakey === c.value ? "bg-[color:var(--gold)] text-black" : "bg-card text-muted-foreground"}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {CHROMAKEY_OPTIONS.find((c) => c.value === draft.chromakey)?.hint}
+              </p>
+            </div>
           </div>
+
+          <button
+            onClick={() =>
+              setPreview({
+                name: draft.name || "Preview",
+                clipPath: draft.clip_type === "none" ? null : resolveGiftMediaUrl(draft.clip_path) || draft.clip_path || null,
+                clipType: draft.clip_type === "none" ? null : draft.clip_type,
+                imageUrl: null,
+                emoji: draft.emoji,
+                chromakey: draft.chromakey,
+              })
+            }
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/10 py-2 text-xs font-bold text-[color:var(--gold)]"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Full-screen preview
+          </button>
 
           <button
             onClick={() => save.mutate()}
@@ -482,6 +550,63 @@ function GiftsAdmin() {
           </button>
         </div>
       </div>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-[2147483000] grid place-items-center bg-black/85 backdrop-blur"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex h-[min(90dvh,720px)] w-[min(94vw,480px)] flex-col items-center justify-center rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#1a0b2e] to-black p-4"
+          >
+            <button
+              onClick={() => setPreview(null)}
+              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="mb-3 text-center">
+              <p className="text-sm font-bold text-white">{preview.name}</p>
+              <p className="text-[10px] uppercase tracking-widest text-[color:var(--gold)]">
+                chromakey: {preview.chromakey}
+              </p>
+            </div>
+            <div className="grid flex-1 w-full place-items-center overflow-hidden rounded-2xl">
+              {(() => {
+                const style: React.CSSProperties = {
+                  maxHeight: "100%",
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  background: "transparent",
+                  ...(preview.chromakey === "screen" ? { mixBlendMode: "screen" as const } : {}),
+                  ...(preview.chromakey === "luma" ? { filter: "url(#jalwa-luma-key)" } : {}),
+                };
+                const src = preview.clipPath || preview.imageUrl;
+                if (!src) {
+                  return <div className="text-6xl">{preview.emoji ?? "🎁"}</div>;
+                }
+                if (preview.clipType === "mp4" || preview.clipType === "webm" || /\.(mp4|webm)(\?|$)/i.test(src)) {
+                  return (
+                    <video
+                      src={src}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      style={style}
+                    />
+                  );
+                }
+                return <img src={src} alt={preview.name} style={style} />;
+              })()}
+            </div>
+            <p className="mt-3 text-center text-[10px] text-muted-foreground">
+              Tap outside to close. Room viewers will see this exact rendering.
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 }

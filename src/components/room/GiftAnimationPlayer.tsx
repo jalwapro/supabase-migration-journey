@@ -33,6 +33,7 @@ type Play = {
   quantity: number;
   animation: string;
   soundUrl?: string | null;
+  chromakey?: string | null;
   local?: boolean;
 };
 
@@ -898,6 +899,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             gift_clip_type: string | null;
             gift_image_url: string | null;
             gift_sound_url: string | null;
+            gift_chromakey: string | null;
           };
           enqueue({
             key: `sd-${r.id}`,
@@ -917,6 +919,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             quantity: r.quantity ?? 1,
             animation: r.gift_animation ?? "pop",
             soundUrl: r.gift_sound_url ?? null,
+            chromakey: r.gift_chromakey ?? "auto",
           });
         },
       )
@@ -942,9 +945,15 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
-  // Screen-blend knocks out black — apply to every video/svga gift so all
-  // gifts render on a transparent stage over the room.
-  const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
+  // Admin-controlled chromakey (auto|none|screen|luma) overrides the heuristic.
+  const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma";
+  const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
+  const isBlackBg =
+    chromakeyMode === "screen" || chromakeyMode === "luma"
+      ? true
+      : chromakeyMode === "none"
+        ? false
+        : autoBlackBg;
   // Small/cheap gifts (Tier 1, ≤80 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
@@ -1124,7 +1133,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             fallbackImage={fallbackImage}
             suppressEmojiFallback={true}
             screenBlend={isBlackBg}
-            lumaKey={isBlackBg || (current.coins ?? 0) >= 2000}
+            lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
           />
 
         ) : hasSvga ? (
