@@ -237,6 +237,24 @@ function RoomPage() {
   });
   const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
   const [viewersSheetOpen, setViewersSheetOpen] = useState(false);
+  const emojiSheetOpenRef = useRef(false);
+  const viewersSheetOpenRef = useRef(false);
+  const openEmojiSheet = useCallback(() => {
+    emojiSheetOpenRef.current = true;
+    setEmojiSheetOpen(true);
+  }, []);
+  const closeEmojiSheet = useCallback(() => {
+    emojiSheetOpenRef.current = false;
+    setEmojiSheetOpen(false);
+  }, []);
+  const openViewersSheet = useCallback(() => {
+    viewersSheetOpenRef.current = true;
+    setViewersSheetOpen(true);
+  }, []);
+  const closeViewersSheet = useCallback(() => {
+    viewersSheetOpenRef.current = false;
+    setViewersSheetOpen(false);
+  }, []);
   const [pendingInvite, setPendingInvite] = useState<{
     id: string;
     from_name: string | null;
@@ -304,12 +322,12 @@ function RoomPage() {
       setLudoOpen(false);
       return true;
     }
-    if (emojiSheetOpen) {
-      setEmojiSheetOpen(false);
+    if (emojiSheetOpen || emojiSheetOpenRef.current) {
+      closeEmojiSheet();
       return true;
     }
-    if (viewersSheetOpen) {
-      setViewersSheetOpen(false);
+    if (viewersSheetOpen || viewersSheetOpenRef.current) {
+      closeViewersSheet();
       return true;
     }
     if (giftOpen) {
@@ -1932,7 +1950,7 @@ function RoomPage() {
               ) : null}
               <button
                 type="button"
-                onClick={() => setViewersSheetOpen(true)}
+                onClick={openViewersSheet}
                 aria-label="View viewers"
                 className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md active:scale-95"
               >
@@ -2087,7 +2105,7 @@ function RoomPage() {
             </button>
           )}
           <button
-            onClick={() => setViewersSheetOpen(true)}
+            onClick={openViewersSheet}
             className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur"
             aria-label="View viewers"
           >
@@ -2830,7 +2848,7 @@ function RoomPage() {
                     toast.error("Take a seat to react");
                     return;
                   }
-                  setEmojiSheetOpen(true);
+                  openEmojiSheet();
                 }}
                 className={`grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white ${
                   iAmOnSeat ? "" : "opacity-50"
@@ -3112,7 +3130,7 @@ function RoomPage() {
         }}
         onOpenGuests={() => {
           setVideoSettingsOpen(false);
-          setViewersSheetOpen(true);
+          openViewersSheet();
         }}
         onOpenRank={() => {
           setVideoSettingsOpen(false);
@@ -3347,12 +3365,12 @@ function RoomPage() {
         }}
         onInvite={() => {
           setManageEmptySeat(null);
-          setViewersSheetOpen(true);
+          openViewersSheet();
         }}
       />
       <ViewersSheet
         open={viewersSheetOpen}
-        onClose={() => setViewersSheetOpen(false)}
+        onClose={closeViewersSheet}
         roomId={roomId}
         members={members}
         canInvite={isHost || isModerator}
@@ -3416,7 +3434,7 @@ function RoomPage() {
 
       <EmojiReactionSheet
         open={emojiSheetOpen}
-        onClose={() => setEmojiSheetOpen(false)}
+        onClose={closeEmojiSheet}
         seatCount={Math.max(4, r.seat_count)}
         seatsByIndex={seatsByIndex}
         defaultSeat={
