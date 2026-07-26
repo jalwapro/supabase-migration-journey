@@ -561,7 +561,7 @@ function SmallGiftFlyer({
     // which gift is playing. On combo (qty>1 or multi-target) the hero
     // PERSISTS with a soft pulse while a fast trail streams to each DP.
     const isCombo = qty > 1 || effectiveTargets.length > 1;
-    const HERO_INTRO_MS = 360;
+    const HERO_INTRO_MS = 240;
     const hero = document.createElement("div");
     const heroSize = 200;
     hero.style.cssText =
@@ -611,9 +611,9 @@ function SmallGiftFlyer({
     );
 
     // Fast, tighter stagger on combos so it feels like a smooth stream.
-    const trailStagger = isCombo ? Math.max(24, 70 - qty * 3) : 0;
+    const trailStagger = isCombo ? Math.max(18, 55 - qty * 3) : 0;
     // Snappier single-shot: flyer nikalne me kam wait.
-    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 60 : 240;
+    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 80 : 140;
 
 
     const cleanupTimers: number[] = [];
@@ -719,7 +719,7 @@ function spawnFlyer(
   const midX = (startX + endX) / 2 + perpX * arc;
   const midY = (startY + endY) / 2 + perpY * arc;
   const rot = arcSide * 12;
-  const duration = 620;
+  const duration = 480;
 
   if (opts.fireOnce) {
     try { playGiftWhooshCue(Math.min(0.5, opts.volume)); } catch { /* noop */ }
@@ -788,9 +788,26 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
   }
 }
 
+function isSmallGiftPlay(p: Play) {
+  if (isJalwaSpaceshipGift(p.giftName)) return false;
+  if (isRoyalRoseGift(p.giftName)) return false;
+  if (isRoyalCrownGift(p.giftName)) return false;
+  return (p.coins ?? 0) <= 300;
+}
+
+function smallPlayDurationMs(p: Play) {
+  const q = Math.max(1, Math.min(99, p.quantity || 1));
+  const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
+  const receivers = Math.max(1, (p.receiverIds?.length ?? 1));
+  return 300 + perStagger * q + receivers * 22 + 900;
+}
+
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
+  // Small gifts play IN PARALLEL — they never block the big-gift slot and
+  // never block each other (TikTok-style: many taps = many concurrent flyers).
+  const [smallPlays, setSmallPlays] = useState<Play[]>([]);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
@@ -823,12 +840,22 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, []);
 
+  const pushSmallPlay = useCallback((p: Play) => {
+    setSmallPlays((prev) => {
+      const next = prev.length >= 8 ? prev.slice(-7) : prev;
+      return [...next, p];
+    });
+    const ttl = smallPlayDurationMs(p) + 200;
+    window.setTimeout(() => {
+      setSmallPlays((prev) => prev.filter((x) => x.key !== p.key));
+    }, ttl);
+  }, []);
+
   const enqueueOne = useCallback((p: Play) => {
-    // If nothing is playing, show it immediately (synchronously via ref
-    // so a rapid-fire second call in the same tick still queues correctly).
-    // Otherwise append to the pending queue.
-    // NOTE: Do NOT wipe queue/current on local sends — that would drop
-    // other users' incoming gifts while the local user is combo-tapping.
+    if (isSmallGiftPlay(p)) {
+      pushSmallPlay(p);
+      return;
+    }
     if (currentRef.current) {
       preloadGiftVideo(getEffectiveGiftClip(p).url);
       setQueue((q) => [...q.slice(-3), p]);
@@ -837,7 +864,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       currentRef.current = p;
       setCurrent(p);
     }
-  }, []);
+  }, [pushSmallPlay]);
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
@@ -1057,14 +1084,46 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     preloadGiftVideo(nextPrefetchUrl);
   }, [nextPrefetchUrl]);
 
-  if (!current) return null;
+  if (typeof document === "undefined" || !portalRoot) return null;
+
+  // Parallel small-gift layer: renders independently of the big-gift slot so
+  // many small gifts stream to receiver DPs concurrently (no serial blocking).
+  const smallLayer = smallPlays.length > 0 ? (
+    <div
+      className="pointer-events-none fixed inset-0 overflow-hidden"
+      aria-hidden="true"
+      style={{ zIndex: MAX_GIFT_Z_INDEX, contain: "layout paint style" }}
+    >
+      {smallPlays.map((sp) => {
+        const spImage = resolveGiftImageUrl(
+          sp.giftImageUrl ?? (sp.giftClipType === "image" ? sp.giftClipUrl : null),
+        );
+        return (
+          <SmallGiftFlyer
+            key={sp.key}
+            emoji={sp.giftEmoji}
+            image={spImage}
+            quantity={sp.quantity}
+            receiverIds={sp.receiverIds ?? (sp.receiverId ? [sp.receiverId] : [])}
+            fallbackReceiverId={sp.receiverId ?? null}
+            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
+            onReady={() => { /* parallel — no ready gating */ }}
+          />
+        );
+      })}
+    </div>
+  ) : null;
+
+  if (!current) {
+    return smallLayer ? createPortal(smallLayer, portalRoot) : null;
+  }
 
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  if (typeof document === "undefined" || !portalRoot) return null;
-
   return createPortal(
+    <>
+    {smallLayer}
     <div
       data-gift-overlay-root="true"
       className="jalwa-gift-overlay pointer-events-none fixed inset-0 overflow-hidden"
@@ -1235,7 +1294,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           </p>
         </div>
       )}
-    </div>,
+    </div>
+    </>,
     portalRoot,
   );
 }
