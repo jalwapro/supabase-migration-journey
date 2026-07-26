@@ -1026,12 +1026,6 @@ export function useZegoRoom({
   // Publish mic — same contract as Agora hook.
   // -----------------------------------------------------------------------
   const requestMicNow = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
-    const pendingRaw = !localStreamRef.current
-      ? requestBrowserMedia(
-          { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false },
-          "microphone",
-        )
-      : null;
     let engine = engineRef.current;
     for (let i = 0; i < 20 && !engineRef.current; i++) {
       await new Promise((r) => setTimeout(r, 100));
@@ -1040,9 +1034,6 @@ export function useZegoRoom({
     const room = currentRoomRef.current;
     const localUid = currentUserRef.current;
     if (!engine || !room || !localUid) {
-      if (pendingRaw) {
-        try { (await pendingRaw).getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
-      }
       const message = "Room connection not ready yet. Please try again in a moment.";
       setMicIssue(message, false);
       return { ok: false, error: message };
@@ -1052,31 +1043,45 @@ export function useZegoRoom({
       await new Promise((r) => setTimeout(r, 100));
     }
     if (statusRef.current !== "connected") {
-      if (pendingRaw) {
-        try { (await pendingRaw).getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
-      }
       const message = "Room connection not ready yet. Please try again in a moment.";
       setMicIssue(message, false);
       return { ok: false, error: message };
     }
 
-
     if (!localStreamRef.current) {
-      let raw: MediaStream | null = null;
+      // Canonical ZEGO capture path — SDK handles getUserMedia + track wiring
+      // itself, avoiding the custom-source pitfalls (1103061 / NO_PUBLISH) that
+      // some browsers hit when wrapping a getUserMedia MediaStream ourselves.
       try {
-        raw = await pendingRaw;
-        if (!raw) throw new Error("Microphone unavailable");
-        localRawMicRef.current = raw;
-        localStreamRef.current = await engine.createZegoStream(zegoCustomAudio(raw));
+        localStreamRef.current = await engine.createZegoStream({
+          camera: { audio: true, video: false },
+        } as ZegoCreateStreamOptions);
+        // Best-effort: grab the underlying raw mic so mute/stop cleanup works.
+        try {
+          const raw = asBrowserMediaStream(localStreamRef.current);
+          if (raw) localRawMicRef.current = raw;
+        } catch { /* ignore */ }
       } catch (e) {
-        console.warn("[zego] createZegoStream failed", e);
-        if (raw) {
-          try { raw.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
-          if (localRawMicRef.current === raw) localRawMicRef.current = null;
+        console.warn("[zego] createZegoStream(camera-audio) failed, retrying with custom source", e);
+        // Fallback to custom-source path for older SDKs / edge browsers.
+        let raw: MediaStream | null = null;
+        try {
+          raw = await requestBrowserMedia(
+            { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }, video: false },
+            "microphone",
+          );
+          localRawMicRef.current = raw;
+          localStreamRef.current = await engine.createZegoStream(zegoCustomAudio(raw));
+        } catch (err) {
+          console.error("[zego] mic capture failed", err);
+          if (raw) {
+            try { raw.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+            if (localRawMicRef.current === raw) localRawMicRef.current = null;
+          }
+          const issue = describeMediaError(err, "microphone");
+          setMicIssue(issue.message, issue.blocked);
+          return { ok: false, error: issue.message };
         }
-        const issue = describeMediaError(e, "microphone");
-        setMicIssue(issue.message, issue.blocked);
-        return { ok: false, error: issue.message };
       }
     }
 
@@ -1106,6 +1111,7 @@ export function useZegoRoom({
     setMicIssue(null, false);
     return { ok: true };
   }, [setMicIssue]);
+
 
   const requestMic = useCallback(
     () => runPublishTask(() => requestMicNow()),
