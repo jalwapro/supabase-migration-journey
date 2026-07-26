@@ -35,7 +35,15 @@ type Play = {
   soundUrl?: string | null;
   chromakey?: string | null;
   local?: boolean;
+  /** Cumulative combo count (running total per sender+gift) — for train mode. */
+  comboTotal?: number;
+  /** Train wagons to render for this play (0 = normal flyer swarm). */
+  trainWagons?: number;
 };
+
+const COMBO_IDLE_MS = 1800;
+const TRAIN_UNIT = 10;
+const MAX_TRAIN_WAGONS = 20;
 
 const PLAY_MS = 3200;
 const VIDEO_PLAY_MS = 3800;
