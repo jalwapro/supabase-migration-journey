@@ -534,6 +534,7 @@ function SmallGiftFlyer({
   image,
   quantity,
   trainWagons = 0,
+  comboTotal = 0,
   receiverIds,
   fallbackReceiverId,
   volume,
@@ -543,6 +544,7 @@ function SmallGiftFlyer({
   image: string | null;
   quantity: number;
   trainWagons?: number;
+  comboTotal?: number;
   receiverIds: (string | null | undefined)[];
   fallbackReceiverId?: string | null;
   volume: number;
@@ -568,127 +570,182 @@ function SmallGiftFlyer({
     const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
     let soundFired = false;
 
-    // Train mode: at every 10-combo the gift arrives as a rolling train
-    // (locomotive + N wagons). More combo → longer train.
-    if (trainWagons >= 1) {
-      const cleanup = spawnGiftTrain(host, {
-        emoji,
-        image,
-        wagons: trainWagons,
-        volume,
-      });
-      return cleanup;
-    }
-
-
     // ------------------------------------------------------------------
-    // Redesigned "Comet" style — clean, cinematic, TikTok/Bigo grade.
-    // Hero: gift rises from lower-center with a soft golden shockwave,
-    // holds briefly, then the same gift launches as a glowing comet with
-    // a fluid tail toward every receiver's DP. On combo, multiple comets
-    // stream out in a rhythmic swarm.
+    // 🎰 Slot-Machine Combo hero
+    // A dark neon slot-panel appears center-screen containing:
+    //  • the gift icon in a spinning reel
+    //  • a rolling ×N counter (uses comboTotal when combo is active)
+    //  • JACKPOT flash + coin rain when comboTotal >= 10
+    // The gift then streams to every receiver DP (existing flyer logic).
     // ------------------------------------------------------------------
-    const isCombo = qty > 1 || effectiveTargets.length > 1;
-    const HERO_INTRO_MS = 260;
-    const HERO_HOLD_MS = isCombo ? 220 : 520;
-    const heroSize = 200;
+    const displayCount = Math.max(quantity, comboTotal || 0);
+    const isJackpot = displayCount >= 10;
+    const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
+    const HERO_INTRO_MS = 240;
+    const HERO_HOLD_MS = isCombo ? 260 : 520;
 
-    // Shockwave ring — one clean expanding gold ring
-    const shock = document.createElement("div");
-    const shockSize = 280;
-    shock.style.cssText =
-      `position:fixed;left:50%;top:52%;width:${shockSize}px;height:${shockSize}px;` +
-      `margin-left:-${shockSize / 2}px;margin-top:-${shockSize / 2}px;` +
-      `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
-      `border:2px solid rgba(255,220,140,.85);` +
-      `box-shadow:0 0 40px rgba(255,200,110,.55), inset 0 0 30px rgba(255,180,220,.35);` +
-      `opacity:0;`;
-    host.appendChild(shock);
-    shock.animate(
-      [
-        { transform: "scale(0.25)", opacity: 0 },
-        { transform: "scale(1.0)", opacity: 0.9, offset: 0.35 },
-        { transform: "scale(1.6)", opacity: 0 },
-      ],
-      { duration: 620, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
-    ).onfinish = () => shock.remove();
+    // Slot panel (fixed position, centered)
+    const panel = document.createElement("div");
+    panel.style.cssText =
+      `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
+      `pointer-events:none;z-index:2147483646;opacity:0;` +
+      `display:flex;align-items:center;gap:14px;padding:14px 22px 14px 16px;` +
+      `border-radius:22px;` +
+      `background:linear-gradient(145deg,rgba(20,6,40,.92) 0%,rgba(50,10,70,.92) 60%,rgba(90,20,60,.92) 100%);` +
+      `border:2px solid rgba(255,215,120,.9);` +
+      `box-shadow:0 0 0 2px rgba(255,105,180,.35),0 20px 60px rgba(0,0,0,.55),0 0 60px rgba(255,180,80,.45);` +
+      `backdrop-filter:blur(6px);will-change:transform,opacity;`;
 
-    // Soft radial glow behind the hero
-    const glow = document.createElement("div");
-    const glowSize = 340;
-    glow.style.cssText =
-      `position:fixed;left:50%;top:52%;width:${glowSize}px;height:${glowSize}px;` +
-      `margin-left:-${glowSize / 2}px;margin-top:-${glowSize / 2}px;` +
-      `border-radius:9999px;pointer-events:none;z-index:2147483644;` +
-      `background:radial-gradient(circle at 50% 50%, rgba(255,220,140,.55) 0%, rgba(255,120,200,.28) 45%, transparent 72%);` +
-      `filter:blur(10px);opacity:0;`;
-    host.appendChild(glow);
-
-    // Hero gift — clean, no card/frame. Just the icon with a warm glow.
-    const hero = document.createElement("div");
-    hero.style.cssText =
-      `position:fixed;left:50%;top:52%;width:${heroSize}px;height:${heroSize}px;` +
-      `margin-left:-${heroSize / 2}px;margin-top:-${heroSize / 2}px;` +
-      `pointer-events:none;z-index:2147483646;display:grid;place-items:center;` +
-      `will-change:transform,opacity;`;
+    // Reel window (holds the gift icon spinning in)
+    const reel = document.createElement("div");
+    reel.style.cssText =
+      `position:relative;width:96px;height:96px;border-radius:16px;overflow:hidden;` +
+      `background:radial-gradient(circle at 50% 40%,rgba(255,220,140,.28) 0%,rgba(0,0,0,.55) 70%);` +
+      `border:1.5px solid rgba(255,215,120,.7);` +
+      `box-shadow:inset 0 0 24px rgba(255,180,80,.35),inset 0 -8px 18px rgba(0,0,0,.5);` +
+      `display:grid;place-items:center;`;
+    const reelInner = document.createElement("div");
+    reelInner.style.cssText = `width:100%;height:100%;display:grid;place-items:center;will-change:transform;`;
     if (image) {
       const img = document.createElement("img");
       img.src = image;
       img.alt = "";
       img.style.cssText =
-        "width:100%;height:100%;object-fit:contain;" +
-        "filter:drop-shadow(0 10px 26px rgba(0,0,0,.7)) drop-shadow(0 0 22px rgba(255,220,140,.95));";
+        "width:86%;height:86%;object-fit:contain;" +
+        "filter:drop-shadow(0 6px 14px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(255,220,140,.9));";
       img.onerror = () => {
         img.remove();
         const es = document.createElement("span");
         es.textContent = emoji || "🎁";
-        es.style.cssText = `font-size:${Math.round(heroSize * 0.72)}px;line-height:1;filter:drop-shadow(0 10px 22px rgba(0,0,0,.7));`;
-        hero.appendChild(es);
+        es.style.cssText = `font-size:64px;line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,.6));`;
+        reelInner.appendChild(es);
       };
-      hero.appendChild(img);
+      reelInner.appendChild(img);
     } else {
       const es = document.createElement("span");
       es.textContent = emoji || "🎁";
-      es.style.cssText = `font-size:${Math.round(heroSize * 0.72)}px;line-height:1;filter:drop-shadow(0 10px 22px rgba(0,0,0,.7));`;
-      hero.appendChild(es);
+      es.style.cssText = `font-size:64px;line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,.6));`;
+      reelInner.appendChild(es);
     }
-    host.appendChild(hero);
-
-    glow.animate(
+    reel.appendChild(reelInner);
+    reelInner.animate(
       [
-        { opacity: 0 },
-        { opacity: 1, offset: 0.4 },
-        { opacity: 0.85 },
+        { transform: "translateY(-140%) rotate(-25deg)", opacity: 0 },
+        { transform: "translateY(18%) rotate(6deg)", opacity: 1, offset: 0.6 },
+        { transform: "translateY(-6%) rotate(-2deg)", opacity: 1, offset: 0.8 },
+        { transform: "translateY(0) rotate(0)", opacity: 1 },
       ],
-      { duration: HERO_INTRO_MS + 120, fill: "forwards" },
+      { duration: 520, easing: "cubic-bezier(.2,.8,.3,1.2)", fill: "forwards" },
     );
 
-    hero.animate(
-      [
-        { transform: "translateY(60px) scale(0.55)", opacity: 0 },
-        { transform: "translateY(-8px) scale(1.12)", opacity: 1, offset: 0.55 },
-        { transform: "translateY(0px) scale(1.0)", opacity: 1 },
-      ],
-      { duration: HERO_INTRO_MS + 60, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
+    // Scanline sweep across reel
+    const scan = document.createElement("div");
+    scan.style.cssText =
+      `position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(255,230,160,.55) 50%,transparent 60%);` +
+      `mix-blend-mode:screen;pointer-events:none;`;
+    reel.appendChild(scan);
+    scan.animate(
+      [{ transform: "translateY(-100%)" }, { transform: "translateY(100%)" }],
+      { duration: 900, iterations: Infinity, easing: "linear" },
     );
 
-    // Idle float while it holds
-    const floatTimer = window.setTimeout(() => {
-      hero.animate(
+    // ×N rolling counter
+    const counterWrap = document.createElement("div");
+    counterWrap.style.cssText =
+      `display:flex;align-items:baseline;gap:2px;font-family:'Orbitron','Impact',system-ui,sans-serif;` +
+      `font-weight:900;letter-spacing:1px;`;
+    const times = document.createElement("span");
+    times.textContent = "×";
+    times.style.cssText =
+      `font-size:32px;color:#ffd166;text-shadow:0 0 12px rgba(255,180,80,.9),0 2px 4px rgba(0,0,0,.6);`;
+    const num = document.createElement("span");
+    num.textContent = "0";
+    num.style.cssText =
+      `font-size:56px;line-height:1;` +
+      `background:linear-gradient(180deg,#fff6c9 0%,#ffd166 45%,#ff8ec4 100%);` +
+      `-webkit-background-clip:text;background-clip:text;color:transparent;` +
+      `text-shadow:0 4px 14px rgba(255,120,180,.55);will-change:transform;`;
+    counterWrap.appendChild(times);
+    counterWrap.appendChild(num);
+
+    panel.appendChild(reel);
+    panel.appendChild(counterWrap);
+    host.appendChild(panel);
+
+    // Panel entry
+    panel.animate(
+      [
+        { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
+        { transform: "translate(-50%,-50%) scale(1.08) rotate(1deg)", opacity: 1, offset: 0.65 },
+        { transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 },
+      ],
+      { duration: HERO_INTRO_MS + 80, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
+    );
+
+    // Roll counter from 0 → displayCount
+    const rollStart = performance.now();
+    const rollDuration = Math.min(600, 220 + displayCount * 12);
+    let rafId = 0;
+    const step = (now: number) => {
+      const t = Math.min(1, (now - rollStart) / rollDuration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = Math.max(1, Math.round(eased * displayCount));
+      num.textContent = String(v);
+      num.style.transform = `scale(${1 + (1 - t) * 0.15})`;
+      if (t < 1) rafId = requestAnimationFrame(step);
+      else num.style.transform = "scale(1)";
+    };
+    rafId = requestAnimationFrame(step);
+
+    // Jackpot flash + banner + coin rain
+    let jackpotEls: HTMLElement[] = [];
+    if (isJackpot) {
+      const flash = document.createElement("div");
+      flash.style.cssText =
+        `position:fixed;inset:0;pointer-events:none;z-index:2147483644;` +
+        `background:radial-gradient(circle at 50% 50%,rgba(255,220,140,.55) 0%,rgba(255,120,200,.25) 40%,transparent 70%);` +
+        `opacity:0;mix-blend-mode:screen;`;
+      host.appendChild(flash);
+      flash.animate(
+        [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }],
+        { duration: 700, easing: "ease-out", fill: "forwards" },
+      ).onfinish = () => flash.remove();
+      jackpotEls.push(flash);
+
+      const banner = document.createElement("div");
+      banner.textContent = "JACKPOT!";
+      banner.style.cssText =
+        `position:fixed;left:50%;top:calc(50% - 92px);transform:translate(-50%,-50%);` +
+        `pointer-events:none;z-index:2147483647;` +
+        `font-family:'Orbitron','Impact',sans-serif;font-weight:900;font-size:38px;letter-spacing:3px;` +
+        `background:linear-gradient(180deg,#fff6c9 0%,#ffd166 40%,#ff6ec7 100%);` +
+        `-webkit-background-clip:text;background-clip:text;color:transparent;` +
+        `text-shadow:0 6px 22px rgba(255,120,180,.7),0 0 28px rgba(255,220,140,.9);` +
+        `opacity:0;will-change:transform,opacity;`;
+      host.appendChild(banner);
+      banner.animate(
         [
-          { transform: "translateY(0) scale(1.0)" },
-          { transform: "translateY(-6px) scale(1.03)" },
-          { transform: "translateY(0) scale(1.0)" },
+          { transform: "translate(-50%,-50%) scale(.4) rotate(-8deg)", opacity: 0 },
+          { transform: "translate(-50%,-50%) scale(1.2) rotate(3deg)", opacity: 1, offset: 0.4 },
+          { transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1, offset: 0.7 },
+          { transform: "translate(-50%,-50%) scale(1.1) rotate(0)", opacity: 0 },
         ],
-        { duration: 900, iterations: Infinity, easing: "ease-in-out" },
-      );
-    }, HERO_INTRO_MS + 60);
+        { duration: 1100, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
+      ).onfinish = () => banner.remove();
+      jackpotEls.push(banner);
+
+      // Coin rain toward each receiver
+      effectiveTargets.forEach((tid, idx) => {
+        window.setTimeout(() => spawnCoinRain(host, tid, 14), 180 + idx * 60);
+      });
+    }
+
 
     // Rhythmic combo stream — tighter for high qty so it feels alive
     const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
     const flyerStartDelay = HERO_INTRO_MS + HERO_HOLD_MS;
 
-    const cleanupTimers: number[] = [floatTimer];
+    const cleanupTimers: number[] = [];
     let lastLaunchDelay = 0;
     effectiveTargets.forEach((targetId, tIdx) => {
       for (let i = 0; i < qty; i++) {
@@ -709,32 +766,63 @@ function SmallGiftFlyer({
       }
     });
 
-    // Fade hero + glow after the last comet has launched
-    const heroFadeAt = lastLaunchDelay + 240;
-    const heroFadeTimer = window.setTimeout(() => {
-      const fade = hero.animate(
+    // Fade slot panel after the last flyer has launched
+    const panelFadeAt = lastLaunchDelay + 240;
+    const panelFadeTimer = window.setTimeout(() => {
+      const fade = panel.animate(
         [
-          { transform: "translateY(0) scale(1)", opacity: 1 },
-          { transform: "translateY(-30px) scale(0.6)", opacity: 0 },
+          { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+          { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
         ],
-        { duration: 280, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
+        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
       );
-      fade.onfinish = () => hero.remove();
-      glow.animate(
-        [{ opacity: 0.85 }, { opacity: 0 }],
-        { duration: 280, fill: "forwards" },
-      ).onfinish = () => glow.remove();
-    }, heroFadeAt);
-    cleanupTimers.push(heroFadeTimer);
+      fade.onfinish = () => panel.remove();
+    }, panelFadeAt);
+    cleanupTimers.push(panelFadeTimer);
 
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
-      try { hero.remove(); glow.remove(); shock.remove(); } catch { /* noop */ }
+      if (rafId) cancelAnimationFrame(rafId);
+      try { panel.remove(); jackpotEls.forEach((el) => el.remove()); } catch { /* noop */ }
     };
-  }, [emoji, image, quantity, trainWagons, receiverIds, fallbackReceiverId, volume]);
+  }, [emoji, image, quantity, trainWagons, comboTotal, receiverIds, fallbackReceiverId, volume]);
 
 
   return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
+}
+
+function spawnCoinRain(host: HTMLElement, targetId: string, count: number) {
+  if (typeof document === "undefined") return;
+  const rect = findReceiverDpRect(targetId);
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const endX = rect ? rect.left + rect.width / 2 : vw / 2;
+  const endY = rect ? rect.top + rect.height / 2 : vh - 80;
+  for (let i = 0; i < count; i++) {
+    const coin = document.createElement("div");
+    const size = 18 + Math.random() * 10;
+    const startX = vw / 2 + (Math.random() - 0.5) * 160;
+    const startY = vh / 2 - 40 + (Math.random() - 0.5) * 40;
+    coin.style.cssText =
+      `position:fixed;left:${startX}px;top:${startY}px;width:${size}px;height:${size}px;` +
+      `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
+      `background:radial-gradient(circle at 35% 30%,#fff6c9 0%,#ffd166 45%,#c8891a 100%);` +
+      `box-shadow:0 0 12px rgba(255,200,80,.9),inset 0 -2px 4px rgba(120,60,0,.5);` +
+      `will-change:transform,opacity;`;
+    host.appendChild(coin);
+    const delay = i * 32 + Math.random() * 60;
+    const dur = 620 + Math.random() * 240;
+    const spinDir = Math.random() > 0.5 ? 1 : -1;
+    coin.animate(
+      [
+        { transform: `translate(0,0) rotate(0)`, opacity: 0 },
+        { transform: `translate(0,-30px) rotate(${spinDir * 180}deg)`, opacity: 1, offset: 0.15 },
+        { transform: `translate(${endX - startX}px,${endY - startY}px) rotate(${spinDir * 720}deg)`, opacity: 0.9, offset: 0.95 },
+        { transform: `translate(${endX - startX}px,${endY - startY}px) scale(.3)`, opacity: 0 },
+      ],
+      { duration: dur, delay, easing: "cubic-bezier(.4,.1,.7,1)", fill: "forwards" },
+    ).onfinish = () => coin.remove();
+  }
 }
 
 function spawnFlyer(
@@ -1412,6 +1500,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             image={spImage}
             quantity={sp.quantity}
             trainWagons={sp.trainWagons ?? 0}
+            comboTotal={sp.comboTotal ?? 0}
             receiverIds={sp.receiverIds ?? (sp.receiverId ? [sp.receiverId] : [])}
             fallbackReceiverId={sp.receiverId ?? null}
             volume={audioPrefs.muted ? 0 : audioPrefs.volume}
@@ -1479,6 +1568,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             emoji={current.giftEmoji}
             image={fallbackImage}
             quantity={current.quantity}
+            comboTotal={current.comboTotal ?? 0}
             receiverIds={current.receiverIds ?? (current.receiverId ? [current.receiverId] : [])}
             fallbackReceiverId={current.receiverId ?? null}
             volume={audioPrefs.muted ? 0 : audioPrefs.volume}
