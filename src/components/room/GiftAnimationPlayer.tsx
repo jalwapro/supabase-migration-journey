@@ -745,7 +745,7 @@ function SmallGiftFlyer({
     const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
     const flyerStartDelay = HERO_INTRO_MS + HERO_HOLD_MS;
 
-    const cleanupTimers: number[] = [floatTimer];
+    const cleanupTimers: number[] = [];
     let lastLaunchDelay = 0;
     effectiveTargets.forEach((targetId, tIdx) => {
       for (let i = 0; i < qty; i++) {
@@ -766,29 +766,26 @@ function SmallGiftFlyer({
       }
     });
 
-    // Fade hero + glow after the last comet has launched
-    const heroFadeAt = lastLaunchDelay + 240;
-    const heroFadeTimer = window.setTimeout(() => {
-      const fade = hero.animate(
+    // Fade slot panel after the last flyer has launched
+    const panelFadeAt = lastLaunchDelay + 240;
+    const panelFadeTimer = window.setTimeout(() => {
+      const fade = panel.animate(
         [
-          { transform: "translateY(0) scale(1)", opacity: 1 },
-          { transform: "translateY(-30px) scale(0.6)", opacity: 0 },
+          { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+          { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
         ],
-        { duration: 280, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
+        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
       );
-      fade.onfinish = () => hero.remove();
-      glow.animate(
-        [{ opacity: 0.85 }, { opacity: 0 }],
-        { duration: 280, fill: "forwards" },
-      ).onfinish = () => glow.remove();
-    }, heroFadeAt);
-    cleanupTimers.push(heroFadeTimer);
+      fade.onfinish = () => panel.remove();
+    }, panelFadeAt);
+    cleanupTimers.push(panelFadeTimer);
 
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
-      try { hero.remove(); glow.remove(); shock.remove(); } catch { /* noop */ }
+      if (rafId) cancelAnimationFrame(rafId);
+      try { panel.remove(); jackpotEls.forEach((el) => el.remove()); } catch { /* noop */ }
     };
-  }, [emoji, image, quantity, trainWagons, receiverIds, fallbackReceiverId, volume]);
+  }, [emoji, image, quantity, trainWagons, comboTotal, receiverIds, fallbackReceiverId, volume]);
 
 
   return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
