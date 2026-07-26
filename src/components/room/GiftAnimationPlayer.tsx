@@ -611,9 +611,9 @@ function SmallGiftFlyer({
     );
 
     // Fast, tighter stagger on combos so it feels like a smooth stream.
-    const trailStagger = isCombo ? Math.max(24, 70 - qty * 3) : 0;
+    const trailStagger = isCombo ? Math.max(18, 55 - qty * 3) : 0;
     // Snappier single-shot: flyer nikalne me kam wait.
-    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 60 : 240;
+    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 80 : 140;
 
 
     const cleanupTimers: number[] = [];
