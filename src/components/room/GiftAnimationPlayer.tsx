@@ -533,6 +533,7 @@ function SmallGiftFlyer({
   emoji,
   image,
   quantity,
+  trainWagons = 0,
   receiverIds,
   fallbackReceiverId,
   volume,
@@ -541,6 +542,7 @@ function SmallGiftFlyer({
   emoji: string;
   image: string | null;
   quantity: number;
+  trainWagons?: number;
   receiverIds: (string | null | undefined)[];
   fallbackReceiverId?: string | null;
   volume: number;
