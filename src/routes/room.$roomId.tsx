@@ -3116,6 +3116,15 @@ function RoomPage() {
         target={miniProfileUser}
         currentUserId={user?.id ?? null}
         onClose={() => setMiniProfileUser(null)}
+        onManage={
+          isHost || isModerator
+            ? () => {
+                const seated = members.find((m) => m.user_id === miniProfileUser?.id);
+                setMiniProfileUser(null);
+                if (seated) setManageMember(seated);
+              }
+            : undefined
+        }
       />
 
       <SeatActionSheet
