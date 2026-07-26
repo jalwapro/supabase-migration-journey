@@ -101,16 +101,18 @@ export type UseZegoRoomArgs = {
 // to reproduce Agora's createBufferSourceAudioTrack behavior.
 // -------------------------------------------------------------------------
 type ZegoMediaPlayerLike = {
-  loadResource: (url: string) => Promise<unknown>;
-  start: () => void;
+  loadResource: (url: string | Blob) => Promise<unknown>;
+  start: () => Promise<unknown> | unknown;
   pause: () => void;
   resume: () => void;
   stop: () => void;
   setVolume: (v: number) => void;
-  enableAux?: (enable: boolean) => void;
+  enableAux?: (enable: boolean) => Promise<unknown> | unknown;
+  enableRepeat?: (enable: boolean) => void;
   destroy?: () => void;
   on?: (event: string, cb: (...args: unknown[]) => void) => void;
 };
+
 
 async function fetchToken(
   channel: string,
