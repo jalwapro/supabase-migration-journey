@@ -4098,7 +4098,6 @@ function Seat({
     const numberLabel = String(index + 1).padStart(2, "0");
     return (
       <button
-      <button
         data-seat-index={index}
         data-user-dp={member?.user_id ?? ""}
         onClick={() => (member ? undefined : onClaim())}
