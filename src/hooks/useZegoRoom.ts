@@ -915,6 +915,7 @@ export function useZegoRoom({
             for (const [sid, lvl] of Object.entries(levels ?? {})) {
               const u = streamToUidRef.current.get(sid);
               if (u == null) continue;
+              if (/_music_main$/.test(sid)) continue;
               if (lvl >= SPEAK_THRESHOLD) next.add(u);
               else next.delete(u);
             }
