@@ -424,14 +424,21 @@ export function useZegoRoom({
     return next;
   }, []);
 
-  const getRemoteMediaStream = useCallback((engine: ZegoEngine, streamID: string) => {
+  const getRemoteMediaStream = useCallback((
+    engine: ZegoEngine,
+    streamID: string,
+    mediaKind: "audio" | "video" = /_cam_main$/.test(streamID) ? "video" : "audio",
+  ) => {
     const cached = remoteMediaStreamsRef.current.get(streamID);
     if (cached) return Promise.resolve(cached);
     const pending = remotePlayPromisesRef.current.get(streamID);
     if (pending) return pending;
 
     const next = Promise.resolve(
-      engine.startPlayingStream(streamID) as unknown as MediaStream | Promise<MediaStream>,
+      engine.startPlayingStream(streamID, {
+        audio: mediaKind === "audio",
+        video: mediaKind === "video",
+      }) as unknown as MediaStream | Promise<MediaStream>,
     )
       .then((ms) => {
         const media = asBrowserMediaStream(ms);
