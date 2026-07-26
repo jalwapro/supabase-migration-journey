@@ -493,7 +493,46 @@ function GiftsAdmin() {
                 )}
               </>
             )}
+
+            {/* Chromakey */}
+            <div className="mt-3">
+              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Chromakey / transparency
+              </p>
+              <div className="grid grid-cols-4 gap-1">
+                {CHROMAKEY_OPTIONS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => setDraft((d) => ({ ...d, chromakey: c.value }))}
+                    title={c.hint}
+                    className={`rounded-lg px-1 py-1.5 text-[10px] font-bold uppercase ${draft.chromakey === c.value ? "bg-[color:var(--gold)] text-black" : "bg-card text-muted-foreground"}`}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1 text-[10px] text-muted-foreground">
+                {CHROMAKEY_OPTIONS.find((c) => c.value === draft.chromakey)?.hint}
+              </p>
+            </div>
           </div>
+
+          <button
+            onClick={() =>
+              setPreview({
+                name: draft.name || "Preview",
+                clipPath: draft.clip_type === "none" ? null : resolveGiftMediaUrl(draft.clip_path) || draft.clip_path || null,
+                clipType: draft.clip_type === "none" ? null : draft.clip_type,
+                imageUrl: null,
+                emoji: draft.emoji,
+                chromakey: draft.chromakey,
+              })
+            }
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/10 py-2 text-xs font-bold text-[color:var(--gold)]"
+          >
+            <Play className="h-3.5 w-3.5" />
+            Full-screen preview
+          </button>
 
           <button
             onClick={() => save.mutate()}
