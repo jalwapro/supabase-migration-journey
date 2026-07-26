@@ -63,7 +63,14 @@ VALUES
   ('Royal Cup',       '🏅', '🏅',  280,  280,  168, 'vip',     'pop', '/animations/gifts/basic/trophy.svg',      'svg', '/animations/gifts/basic/trophy.svg',      47, true, true, 'none'),
   ('Golden Ring',     '💍', '💍',  285,  285,  171, 'love',    'pop', '/animations/gifts/basic/ring.svg',        'svg', '/animations/gifts/basic/ring.svg',        48, true, true, 'none'),
   ('Dream Cloud',     '💭', '💭',  290,  290,  174, 'love',    'pop', '/animations/gifts/basic/cloudheart.svg',  'svg', '/animations/gifts/basic/cloudheart.svg',  49, true, true, 'none'),
-  ('Sweet Dream',     '💗', '💗',  300,  300,  180, 'love',    'pop', '/animations/gifts/basic/crystalheart.svg','svg', '/animations/gifts/basic/crystalheart.svg',50, true, true, 'none');
+  ('Sweet Dream',     '💗', '💗',  300,  300,  180, 'love',    'pop', '/animations/gifts/basic/crystalheart.svg','svg', '/animations/gifts/basic/crystalheart.svg',50, true, true, 'none')
+ON CONFLICT (name) DO UPDATE SET
+  emoji=EXCLUDED.emoji, icon=EXCLUDED.icon, price=EXCLUDED.price,
+  price_coins=EXCLUDED.price_coins, diamonds_value=EXCLUDED.diamonds_value,
+  category=EXCLUDED.category, animation=EXCLUDED.animation,
+  clip_path=EXCLUDED.clip_path, clip_type=EXCLUDED.clip_type,
+  image_url=EXCLUDED.image_url, sort_order=EXCLUDED.sort_order,
+  is_active=true, active=true, chromakey=EXCLUDED.chromakey;
 
 COMMIT;
 
