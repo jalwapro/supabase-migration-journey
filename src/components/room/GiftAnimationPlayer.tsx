@@ -535,9 +535,11 @@ function SmallGiftFlyer({
     const perStagger = qty > 1 ? Math.max(60, 120 - qty * 4) : 0;
     let soundFired = false;
 
-    // Hero preview: show the gift BIG at center first so viewers clearly see
-    // which gift is playing, then launch the flyer swarm toward receivers.
-    const HERO_HOLD_MS = 520;
+    // Hero preview: show the gift BIG at center so viewers clearly see
+    // which gift is playing. On combo (qty>1 or multi-target) the hero
+    // PERSISTS with a soft pulse while a fast trail streams to each DP.
+    const isCombo = qty > 1 || effectiveTargets.length > 1;
+    const HERO_INTRO_MS = 360;
     const hero = document.createElement("div");
     const heroSize = 200;
     hero.style.cssText =
@@ -548,7 +550,7 @@ function SmallGiftFlyer({
     heroAura.style.cssText =
       `position:absolute;inset:-14%;border-radius:9999px;` +
       `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.9) 0%, rgba(255,170,80,.55) 40%, rgba(255,120,200,.25) 70%, transparent 100%);` +
-      `filter:blur(4px);`;
+      `filter:blur(4px);animation:jalwaHeroPulse 1.1s ease-in-out infinite;`;
     hero.appendChild(heroAura);
     const heroInner = document.createElement("div");
     heroInner.style.cssText = `position:relative;width:90%;height:90%;display:grid;place-items:center;`;
@@ -575,21 +577,28 @@ function SmallGiftFlyer({
     }
     hero.appendChild(heroInner);
     host.appendChild(hero);
-    const heroAnim = hero.animate(
+
+    // Intro pop-in
+    hero.animate(
       [
         { transform: "scale(0.4)", opacity: 0 },
-        { transform: "scale(1.08)", opacity: 1, offset: 0.35 },
-        { transform: "scale(1.0)", opacity: 1, offset: 0.7 },
-        { transform: "scale(0.85)", opacity: 0, offset: 1 },
+        { transform: "scale(1.12)", opacity: 1, offset: 0.7 },
+        { transform: "scale(1.0)", opacity: 1 },
       ],
-      { duration: HERO_HOLD_MS, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+      { duration: HERO_INTRO_MS, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
     );
-    heroAnim.onfinish = () => hero.remove();
+
+    // Fast, tighter stagger on combos so it feels like a smooth stream.
+    const trailStagger = isCombo ? Math.max(28, 90 - qty * 3) : 0;
+    // For single-shot (no combo) keep the original hero-hold feel.
+    const flyerStartDelay = isCombo ? HERO_INTRO_MS - 40 : 480;
 
     const cleanupTimers: number[] = [];
+    let lastLaunchDelay = 0;
     effectiveTargets.forEach((targetId, tIdx) => {
       for (let i = 0; i < qty; i++) {
-        const delay = HERO_HOLD_MS - 60 + i * perStagger + tIdx * 25;
+        const delay = flyerStartDelay + i * trailStagger + tIdx * 22;
+        lastLaunchDelay = Math.max(lastLaunchDelay, delay);
         const isFirstOfEvent = !soundFired && i === 0 && tIdx === 0;
         if (isFirstOfEvent) soundFired = true;
         const t = window.setTimeout(() => {
@@ -604,6 +613,22 @@ function SmallGiftFlyer({
         cleanupTimers.push(t);
       }
     });
+
+    // Fade the hero out after the last flyer has launched (combo) or after
+    // the single hold expires.
+    const heroFadeAt = isCombo ? lastLaunchDelay + 380 : 520;
+    const heroFadeTimer = window.setTimeout(() => {
+      const fade = hero.animate(
+        [
+          { transform: "scale(1)", opacity: 1 },
+          { transform: "scale(0.75)", opacity: 0 },
+        ],
+        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
+      );
+      fade.onfinish = () => hero.remove();
+    }, heroFadeAt);
+    cleanupTimers.push(heroFadeTimer);
+
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
       try { hero.remove(); } catch { /* noop */ }
