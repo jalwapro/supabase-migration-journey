@@ -2270,17 +2270,7 @@ function RoomPage() {
                     <span>🎁</span>
                     <span>{formatGiftPoints(camTile.giftPoints ?? 0)}</span>
                   </div>
-                  <button
-                    onClick={() => agora.toggleSpeaker()}
-                    aria-label="Toggle sound"
-                    className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur"
-                  >
-                    {agora.speakerMuted ? (
-                      <VolumeX className="h-3.5 w-3.5 text-white/80" />
-                    ) : (
-                      <Volume2 className="h-3.5 w-3.5 text-white/80" />
-                    )}
-                  </button>
+                  {/* Sound toggle removed — use More → Audio → Speaker */}
                 </div>
               </div>
 
