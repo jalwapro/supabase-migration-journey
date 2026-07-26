@@ -719,7 +719,7 @@ function spawnFlyer(
   const midX = (startX + endX) / 2 + perpX * arc;
   const midY = (startY + endY) / 2 + perpY * arc;
   const rot = arcSide * 12;
-  const duration = 620;
+  const duration = 480;
 
   if (opts.fireOnce) {
     try { playGiftWhooshCue(Math.min(0.5, opts.volume)); } catch { /* noop */ }
