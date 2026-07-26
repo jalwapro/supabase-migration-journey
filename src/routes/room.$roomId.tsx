@@ -4098,6 +4098,9 @@ function Seat({
     const numberLabel = String(index + 1).padStart(2, "0");
     return (
       <button
+      <button
+        data-seat-index={index}
+        data-user-dp={member?.user_id ?? ""}
         onClick={() => (member ? undefined : onClaim())}
         className="relative aspect-[1.02/1] overflow-hidden rounded-xl border border-violet-300/55 bg-[radial-gradient(circle_at_50%_35%,rgba(139,92,246,0.22),rgba(5,7,24,0.78)_60%),linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.015))] shadow-[inset_0_0_22px_rgba(255,255,255,0.035)]"
         aria-label={member ? `Seat ${numberLabel}` : `Take seat ${numberLabel}`}
