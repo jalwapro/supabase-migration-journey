@@ -5460,10 +5460,12 @@ function MiniProfileSheet({
   target,
   currentUserId,
   onClose,
+  onManage,
 }: {
   target: { id: string; username: string | null; avatar: string | null } | null;
   currentUserId: string | null;
   onClose: () => void;
+  onManage?: () => void;
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
