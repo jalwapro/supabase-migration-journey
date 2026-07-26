@@ -731,7 +731,7 @@ function SmallGiftFlyer({
       cleanupTimers.forEach((t) => clearTimeout(t));
       try { hero.remove(); glow.remove(); shock.remove(); } catch { /* noop */ }
     };
-  }, [emoji, image, quantity, receiverIds, fallbackReceiverId, volume]);
+  }, [emoji, image, quantity, trainWagons, receiverIds, fallbackReceiverId, volume]);
 
 
   return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
