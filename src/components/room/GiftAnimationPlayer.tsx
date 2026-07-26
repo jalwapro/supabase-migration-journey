@@ -473,6 +473,32 @@ function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
   );
 }
 
+function SmallGiftFlyer({
+  emoji,
+  image,
+  onReady,
+}: {
+  emoji: string;
+  image: string | null;
+  onReady: () => void;
+}) {
+  const readyOnce = useRef(false);
+  useEffect(() => {
+    if (readyOnce.current) return;
+    readyOnce.current = true;
+    onReady();
+  }, [onReady]);
+  return (
+    <div className="jalwa-small-gift-flyer" aria-hidden="true">
+      {image ? (
+        <img src={image} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+      ) : (
+        <span className="jalwa-small-gift-emoji">{emoji || "🎁"}</span>
+      )}
+    </div>
+  );
+}
+
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
@@ -629,6 +655,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // Screen-blend knocks out black — apply to every video/svga gift so all
   // gifts render on a transparent stage over the room.
   const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
+  // Small/cheap gifts: render as a tiny 1x1-style flyer that travels down
+  // into the receiver's DP and disappears there (TikTok-style small gifts).
+  const isSmallGift =
+    !!current &&
+    !hasVideo &&
+    !hasSvga &&
+    !isSpaceship &&
+    !isRoyalRose &&
+    !isRoyalCrownGift(current.giftName) &&
+    (current.coins ?? 0) < 100;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
@@ -686,12 +722,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // duration (from loadedmetadata) so 8–10s premium gifts play through fully.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
-    const ms = hasVideo
-      ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
-      : PLAY_MS;
-    const t = setTimeout(clearCurrent, ms + 300);
+    const ms = isSmallGift
+      ? 1500
+      : hasVideo
+        ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
+        : PLAY_MS;
+    const t = setTimeout(clearCurrent, ms + 200);
     return () => clearTimeout(t);
-  }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, clearCurrent]);
+  }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
 
 
   // Prefetch next queued gift's clip so it's warm in cache when it plays.
@@ -754,7 +792,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
       {/* center/front-screen gift animation */}
       <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
-        {isSpaceship ? (
+        {isSmallGift ? (
+          <SmallGiftFlyer
+            emoji={current.giftEmoji}
+            image={fallbackImage}
+            onReady={markCurrentReady}
+          />
+        ) : isSpaceship ? (
           <SpaceshipGiftVisual onReady={markCurrentReady} />
         ) : hasVideo ? (
 
@@ -811,20 +855,24 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             </div>
           </div>
         )}
-        <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
-          <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
-            {current.giftName}
-          </span>
-          {current.quantity > 1 && (
-            <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
-              ×{current.quantity}
-            </span>
-          )}
-        </div>
-        {current.coins > 0 && (
-          <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
-            🪙 {current.coins.toLocaleString()}
-          </p>
+        {!isSmallGift && (
+          <>
+            <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
+              <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
+                {current.giftName}
+              </span>
+              {current.quantity > 1 && (
+                <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
+                  ×{current.quantity}
+                </span>
+              )}
+            </div>
+            {current.coins > 0 && (
+              <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
+                🪙 {current.coins.toLocaleString()}
+              </p>
+            )}
+          </>
         )}
         {soundPulseKey === current.key && (
           <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
