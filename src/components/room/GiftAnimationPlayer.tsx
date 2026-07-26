@@ -774,7 +774,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={(isPremiumLong || isBlackBg) && !audioPrefs.muted && audioPrefs.volume > 0}
+            withSound={false}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={true}
