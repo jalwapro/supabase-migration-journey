@@ -767,6 +767,7 @@ export function useZegoRoom({
               }
               const remoteUid = streamToUidRef.current.get(s.streamID);
               const wasVideo = /_cam_main$/.test(s.streamID);
+              const wasMusic = /_music_main$/.test(s.streamID);
               streamToUidRef.current.delete(s.streamID);
               if (remoteUid != null) {
                 if (wasVideo) {
@@ -775,9 +776,12 @@ export function useZegoRoom({
                   if (v) v.srcObject = null;
                   uidVideoStreamRef.current.delete(remoteUid);
                   videoContainersRef.current.delete(remoteUid);
+                } else if (wasMusic) {
+                  uidMusicStreamRef.current.delete(remoteUid);
                 } else {
                   uidStreamRef.current.delete(remoteUid);
                 }
+                if (wasMusic) continue;
                 const stillAudio = uidStreamRef.current.get(remoteUid);
                 const stillVideo = uidVideoStreamRef.current.get(remoteUid);
                 setRemotes((prev) => {
