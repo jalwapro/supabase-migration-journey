@@ -1122,6 +1122,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
   return createPortal(
+    <>
+    {smallLayer}
     <div
       data-gift-overlay-root="true"
       className="jalwa-gift-overlay pointer-events-none fixed inset-0 overflow-hidden"
