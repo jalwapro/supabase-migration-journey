@@ -577,25 +577,36 @@ function spawnFlyer(
   const laneBase = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(80, 14 + total * 4) : 0;
 
   for (let s = 0; s < SWARM; s++) {
-    const size = 84 + Math.round(Math.random() * 28);
+    const size = 108 + Math.round(Math.random() * 28);
     const half = size / 2;
     const el = document.createElement("div");
     el.style.cssText =
       `position:fixed;left:0;top:0;width:${size}px;height:${size}px;` +
       `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
-      `filter:drop-shadow(0 10px 22px rgba(255,200,90,.75));`;
+      `border-radius:9999px;` +
+      `background:radial-gradient(circle at 50% 45%, rgba(255,245,210,.98) 0%, rgba(255,205,120,.92) 45%, rgba(255,120,190,.78) 78%, rgba(120,40,160,.35) 100%);` +
+      `box-shadow:0 8px 24px rgba(0,0,0,.55), 0 0 22px rgba(255,210,120,.9), inset 0 0 10px rgba(255,255,255,.55);` +
+      `border:2px solid rgba(255,235,170,.95);` +
+      `display:grid;place-items:center;overflow:hidden;`;
+    const inner = document.createElement("div");
+    inner.style.cssText = `width:78%;height:78%;display:grid;place-items:center;`;
+    const emojiSpan = document.createElement("span");
+    emojiSpan.textContent = opts.emoji || "🎁";
+    emojiSpan.style.cssText = `font-size:${Math.round(size * 0.62)}px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));`;
     if (opts.image) {
       const img = document.createElement("img");
       img.src = opts.image;
       img.alt = "";
-      img.style.cssText = "width:100%;height:100%;object-fit:contain;";
-      el.appendChild(img);
+      img.style.cssText = "width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 2px 6px rgba(0,0,0,.55));";
+      img.onerror = () => {
+        img.remove();
+        inner.appendChild(emojiSpan);
+      };
+      inner.appendChild(img);
     } else {
-      const span = document.createElement("span");
-      span.textContent = opts.emoji || "🎁";
-      span.style.cssText = `display:grid;place-items:center;width:100%;height:100%;font-size:${Math.round(size * 0.78)}px;line-height:1;`;
-      el.appendChild(span);
+      inner.appendChild(emojiSpan);
     }
+    el.appendChild(inner);
     host.appendChild(el);
 
     const jitter = (Math.random() - 0.5) * 90;
