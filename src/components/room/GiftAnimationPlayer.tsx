@@ -696,12 +696,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // duration (from loadedmetadata) so 8–10s premium gifts play through fully.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
-    const ms = hasVideo
-      ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
-      : PLAY_MS;
-    const t = setTimeout(clearCurrent, ms + 300);
+    const ms = isSmallGift
+      ? 1500
+      : hasVideo
+        ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
+        : PLAY_MS;
+    const t = setTimeout(clearCurrent, ms + 200);
     return () => clearTimeout(t);
-  }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, clearCurrent]);
+  }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
 
 
   // Prefetch next queued gift's clip so it's warm in cache when it plays.
