@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs><radialGradient id="a" cx="50%" cy="55%" r="55%"><stop offset="0%" stop-color="#ffd166" stop-opacity=".8"/><stop offset="60%" stop-color="#ff2ea8" stop-opacity=".3"/><stop offset="100%" stop-color="#ff2ea8" stop-opacity="0"/></radialGradient></defs>
+<circle cx="200" cy="200" r="200" fill="url(#a)"><animate attributeName="opacity" values=".6;1;.6" dur="1.6s" repeatCount="indefinite"/></circle>
+<g transform="translate(200 200)"><g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="8s" repeatCount="indefinite"/>
+<g fill="#fff9c9" opacity=".8"><polygon points="-6,-190 6,-190 0,-40"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(45)"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(90)"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(135)"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(180)"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(225)"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(270)"/><polygon points="-6,-190 6,-190 0,-40" transform="rotate(315)"/></g></g>
+<text x="0" y="30" font-size="170" text-anchor="middle">👑<animateTransform attributeName="transform" type="scale" values=".95;1.1;.95" dur="1.4s" repeatCount="indefinite" additive="sum"/></text></g></svg>

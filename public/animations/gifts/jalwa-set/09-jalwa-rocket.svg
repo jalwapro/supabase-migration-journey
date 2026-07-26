@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs><linearGradient id="tr" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#ff2ea8"/><stop offset="100%" stop-color="#ffd166" stop-opacity="0"/></linearGradient>
+<radialGradient id="a" cx="50%" cy="50%" r="55%"><stop offset="0%" stop-color="#ffd166" stop-opacity=".55"/><stop offset="100%" stop-color="#ff2ea8" stop-opacity="0"/></radialGradient></defs>
+<circle cx="200" cy="200" r="200" fill="url(#a)"/>
+<path d="M180 400 L220 400 L210 60 L200 20 L190 60 Z" fill="url(#tr)" opacity=".8"/>
+<text x="200" y="140" font-size="140" text-anchor="middle">🚀<animate attributeName="y" values="380;140" dur="2s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="rotate" values="-8 200 250;8 200 250;-8 200 250" dur=".4s" repeatCount="indefinite" additive="sum"/></text>
+<g font-size="18" fill="#ffd166"><text x="90" y="100">✨<animate attributeName="opacity" values="0;1;0" dur="1s" repeatCount="indefinite"/></text><text x="310" y="90">✨<animate attributeName="opacity" values="1;0;1" dur="1.2s" repeatCount="indefinite"/></text></g></svg>
