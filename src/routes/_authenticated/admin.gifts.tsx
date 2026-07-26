@@ -140,6 +140,7 @@ function GiftsAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey } | null>(null);
   const isEditing = Boolean(draft.id);
 
   const list = useQuery({
@@ -329,6 +330,22 @@ function GiftsAdmin() {
                     className="flex-1 rounded-lg bg-primary/10 py-1 text-[10px] font-bold text-primary"
                   >
                     Edit
+                  </button>
+                  <button
+                    onClick={() =>
+                      setPreview({
+                        name: g.name,
+                        clipPath: g.clip_path ?? null,
+                        clipType: g.clip_type ?? null,
+                        imageUrl: g.image_url ?? null,
+                        emoji: g.emoji ?? g.icon ?? null,
+                        chromakey: (["auto", "none", "screen", "luma"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
+                      })
+                    }
+                    className="rounded-lg bg-[color:var(--gold)]/15 px-2 text-[color:var(--gold)]"
+                    title="Full preview"
+                  >
+                    <Play className="h-3 w-3" />
                   </button>
                   <button
                     onClick={() => confirm(`Delete ${g.name}?`) && remove.mutate(g.id)}
