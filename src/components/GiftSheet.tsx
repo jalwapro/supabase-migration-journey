@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CATALOG_GIFTS } from "@/lib/gifts";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
-import { getGiftAudioPrefs, playGiftAudioCue, unlockGiftAudio } from "@/lib/giftAudio";
+import { getGiftAudioPrefs, playGiftAudioCue, playJalwaSignature, unlockGiftAudio } from "@/lib/giftAudio";
 import { Loader2, Coins, Send, Volume2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,17 +28,22 @@ export type Gift = {
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
 
-const CATEGORY_ORDER = ["love", "party", "fun", "luxury", "vip", "magic", "legendary", "mythic"] as const;
-const CATEGORY_LABEL: Record<string, string> = {
-  love: "💖 Love",
-  party: "🎉 Party",
-  fun: "🍦 Fun",
-  luxury: "💎 Luxury",
+// Jalwa tier system — teen categorries:
+//   small   : ≤ 80 coins  (chhote gifts — flyer + coin-drop)
+//   premium : 81 – 1999   (real sample sound / Jalwa signature)
+//   vip     : ≥ 2000      (cinematic + real sample sound)
+type Tier = "small" | "premium" | "vip";
+const TIER_ORDER: Tier[] = ["small", "premium", "vip"];
+const TIER_LABEL: Record<Tier, string> = {
+  small: "✨ Small",
+  premium: "💎 Premium",
   vip: "👑 VIP",
-  magic: "✨ Magic",
-  legendary: "🐉 Legendary",
-  mythic: "🏰 Mythic",
 };
+function tierOf(price: number): Tier {
+  if (price <= 80) return "small";
+  if (price < 2000) return "premium";
+  return "vip";
+}
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
@@ -84,7 +89,7 @@ export function GiftSheet({
   const [receiverId, setReceiverId] = useState<string | null>(receivers[0]?.id ?? null);
   const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
-  const [activeCat, setActiveCat] = useState<string>("popular");
+  const [activeTier, setActiveTier] = useState<Tier>("small");
 
   const gifts = useQuery({
     queryKey: ["gifts"],
@@ -115,23 +120,15 @@ export function GiftSheet({
     enabled: open,
   });
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    (gifts.data ?? []).forEach((g) => g.category && set.add(g.category));
-    const found = Array.from(set);
-    const ordered = CATEGORY_ORDER.filter((c) => set.has(c));
-    const extras = found.filter((c) => !ordered.includes(c as never));
-    return [...ordered, ...extras];
-  }, [gifts.data]);
+  const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
-  // Auto-pick a valid tab once gifts load
+  // Group gifts by Jalwa price-tier (small / premium / vip).
   const visibleGifts = useMemo(() => {
     const all = gifts.data ?? [];
-    const cat = categories.includes(activeCat) ? activeCat : categories[0];
-    return all.filter((g) => g.category === cat);
-  }, [gifts.data, categories, activeCat]);
-
-  const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
+    return all
+      .filter((g) => tierOf(price(g)) === activeTier)
+      .sort((a, b) => price(a) - price(b));
+  }, [gifts.data, activeTier]);
 
   const giftVideoUrl = (g: Gift | null) => {
     if (!g?.clip_path || !["mp4", "webm", "svga"].includes(g.clip_type ?? "")) return null;
@@ -276,7 +273,7 @@ export function GiftSheet({
     onSent?.({ gift: selectedGift, targets });
   };
 
-  const activeCategory = categories.includes(activeCat) ? activeCat : categories[0];
+  // (tier tabs use TIER_ORDER directly — no legacy category resolution needed)
 
   return (
     <div
@@ -338,19 +335,19 @@ export function GiftSheet({
           </div>
         )}
 
-        {/* Category tabs — TikTok underline style */}
+        {/* Tier tabs — Small / Premium / VIP (Jalwa signature 3-tier system) */}
         <div className="mt-2 flex gap-4 overflow-x-auto border-b border-white/5 px-4">
-          {categories.map((c) => {
-            const active = activeCategory === c;
+          {TIER_ORDER.map((t) => {
+            const active = activeTier === t;
             return (
               <button
-                key={c}
-                onClick={() => setActiveCat(c)}
+                key={t}
+                onClick={() => setActiveTier(t)}
                 className={`relative shrink-0 whitespace-nowrap py-2.5 text-[13px] font-semibold transition ${
                   active ? "text-white" : "text-white/50"
                 }`}
               >
-                {CATEGORY_LABEL[c] ?? c}
+                {TIER_LABEL[t]}
                 {active && (
                   <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-[#fe2c55]" />
                 )}
@@ -380,7 +377,15 @@ export function GiftSheet({
                       setSelectedGift(g);
                       const prefs = getGiftAudioPrefs();
                       if (!prefs.muted && prefs.volume > 0) {
-                        playGiftAudioCue({ soundUrl: g.sound_url, giftName: g.name, volume: Math.min(1, prefs.volume * 0.7) });
+                        const vol = Math.min(1, prefs.volume * 0.7);
+                        const tier = tierOf(price(g));
+                        if (g.sound_url) {
+                          playGiftAudioCue({ soundUrl: g.sound_url, volume: vol });
+                        } else if (tier !== "small") {
+                          // Premium/VIP preview: Jalwa signature chime (unique brand cue).
+                          playJalwaSignature(vol);
+                        }
+                        // Small tier: silent on tap — coin-drop sirf send ke waqt.
                       }
                     }
                   }}

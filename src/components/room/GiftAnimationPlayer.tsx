@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
-import { playGiftAudioCue, playGiftSynthCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
+import { playCoinsCue, playGiftAudioCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
 import SvgaPlayer from "./SvgaPlayer";
 
 
@@ -530,9 +530,9 @@ function SmallGiftFlyer({
       : [fallbackReceiverId ?? null]
     ).filter((v): v is string => !!v);
     const effectiveTargets = targets.length > 0 ? targets : [""];
-    const total = Math.max(1, Math.min(60, Math.floor(quantity || 1)));
-    // Combo → forms a fast line/trail toward the receiver.
-    const stagger = total > 1 ? Math.max(35, 90 - total * 2) : 0;
+    const total = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
+    // Combo → tight fast line/trail toward receiver.
+    const stagger = total > 1 ? Math.max(18, 42 - total) : 0;
 
     const cleanupTimers: number[] = [];
     for (let i = 0; i < total; i++) {
@@ -566,7 +566,7 @@ function spawnFlyer(
 
   // Reference-style swarm: each "tap" spawns a small burst of icons that
   // follow slightly different curved arcs to the receiver's DP.
-  const SWARM = 4;
+  const SWARM = 3;
   const total = Math.max(1, opts.total ?? 1);
   const index = opts.index ?? 0;
   const dx = endX - startX;
@@ -577,7 +577,7 @@ function spawnFlyer(
   const laneBase = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(80, 14 + total * 4) : 0;
 
   for (let s = 0; s < SWARM; s++) {
-    const size = 108 + Math.round(Math.random() * 28);
+    const size = 96 + Math.round(Math.random() * 22);
     const half = size / 2;
     const el = document.createElement("div");
     el.style.cssText =
@@ -609,21 +609,21 @@ function spawnFlyer(
     el.appendChild(inner);
     host.appendChild(el);
 
-    const jitter = (Math.random() - 0.5) * 90;
-    const arc = (Math.random() < 0.5 ? -1 : 1) * (60 + Math.random() * 90);
+    const jitter = (Math.random() - 0.5) * 70;
+    const arc = (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 70);
     const laneOffset = laneBase + jitter;
     const midX = (startX + endX) / 2 + perpX * (laneOffset + arc);
     const midY = (startY + endY) / 2 + perpY * (laneOffset + arc);
-    const jEndX = endX + (Math.random() - 0.5) * 20;
-    const jEndY = endY + (Math.random() - 0.5) * 20;
-    const rot = (Math.random() - 0.5) * 90;
-    const startDelay = s * 55;
-    const duration = 720 + Math.random() * 180;
+    const jEndX = endX + (Math.random() - 0.5) * 18;
+    const jEndY = endY + (Math.random() - 0.5) * 18;
+    const rot = (Math.random() - 0.5) * 80;
+    const startDelay = s * 28;
+    const duration = 380 + Math.random() * 110; // faster: ~380-490ms
 
     const anim = el.animate(
       [
         { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.6) rotate(0deg)`, opacity: 0, offset: 0 },
-        { transform: `translate(${startX - half}px, ${startY - half}px) scale(1) rotate(${rot * 0.3}deg)`, opacity: 1, offset: 0.08 },
+        { transform: `translate(${startX - half}px, ${startY - half}px) scale(1) rotate(${rot * 0.3}deg)`, opacity: 1, offset: 0.1 },
         { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.85) rotate(${rot}deg)`, opacity: 1, offset: 0.55 },
         { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.28) rotate(${rot * 1.4}deg)`, opacity: 0.9, offset: 0.92 },
         { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.08) rotate(${rot * 1.5}deg)`, opacity: 0, offset: 1 },
@@ -632,7 +632,7 @@ function spawnFlyer(
     );
     anim.onfinish = () => {
       if (s === 0) {
-        try { playGiftSynthCue("coins jingle", Math.min(0.9, opts.volume)); } catch { /* noop */ }
+        try { playCoinsCue(Math.min(0.8, opts.volume)); } catch { /* noop */ }
         spawnLandingBurst(host, endX, endY);
       }
       el.remove();
@@ -839,8 +839,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // Screen-blend knocks out black — apply to every video/svga gift so all
   // gifts render on a transparent stage over the room.
   const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
-  // Small/cheap gifts: render as a tiny 1x1-style flyer that travels down
-  // into the receiver's DP and disappears there (TikTok-style small gifts).
+  // Small/cheap gifts (Tier 1): tiny fast flyer to receiver DP + coin-drop.
   const isSmallGift =
     !!current &&
     !hasVideo &&
@@ -848,7 +847,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     !isSpaceship &&
     !isRoyalRose &&
     !isRoyalCrownGift(current.giftName) &&
-    (current.coins ?? 0) < 300;
+    (current.coins ?? 0) <= 80;
+  // Premium/Luxury/VIP: real sample sounds. Jalwa signature chime as fallback.
+  const isPremiumTier = !!current && !isSmallGift && (current.coins ?? 0) >= 500;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
@@ -891,17 +892,21 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
     // Small gifts play only per-landing coin-drop cues (fired by spawnFlyer).
     if (isSmallGift) return;
-    playGiftAudioCue({
+    // Middle-tier gifts (81–499 coins): jab tak real soundUrl na ho, silent —
+    // koi fake synth nahi. Premium/Luxury/VIP: soundUrl warna Jalwa signature.
+    const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
       volume: Math.min(1, audioPrefs.volume * (isPremiumLong ? 1 : 0.9)),
+      premium: isPremiumTier,
     });
+    if (!played) return;
     setSoundPulseKey(current.key);
     const pulseTimer = setTimeout(() => setSoundPulseKey((key) => (key === current.key ? null : key)), 1400);
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isPremiumTier, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
@@ -910,9 +915,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (!current || readyKey !== current.key) return;
     let ms: number;
     if (isSmallGift) {
-      const q = Math.max(1, Math.min(60, current.quantity || 1));
-      const stagger = q > 1 ? Math.max(35, 90 - q * 2) : 0;
-      ms = 650 + stagger * q + 150;
+      const q = Math.max(1, Math.min(99, current.quantity || 1));
+      const stagger = q > 1 ? Math.max(18, 42 - q) : 0;
+      // Flyer duration ≤ ~490ms + tiny buffer + total stagger.
+      ms = 520 + stagger * q + 120;
     } else if (hasVideo) {
       ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
