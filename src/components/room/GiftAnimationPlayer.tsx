@@ -788,9 +788,26 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
   }
 }
 
+function isSmallGiftPlay(p: Play) {
+  if (isJalwaSpaceshipGift(p.giftName)) return false;
+  if (isRoyalRoseGift(p.giftName)) return false;
+  if (isRoyalCrownGift(p.giftName)) return false;
+  return (p.coins ?? 0) <= 300;
+}
+
+function smallPlayDurationMs(p: Play) {
+  const q = Math.max(1, Math.min(99, p.quantity || 1));
+  const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
+  const receivers = Math.max(1, (p.receiverIds?.length ?? 1));
+  return 300 + perStagger * q + receivers * 22 + 900;
+}
+
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
+  // Small gifts play IN PARALLEL — they never block the big-gift slot and
+  // never block each other (TikTok-style: many taps = many concurrent flyers).
+  const [smallPlays, setSmallPlays] = useState<Play[]>([]);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
@@ -823,12 +840,22 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, []);
 
+  const pushSmallPlay = useCallback((p: Play) => {
+    setSmallPlays((prev) => {
+      const next = prev.length >= 8 ? prev.slice(-7) : prev;
+      return [...next, p];
+    });
+    const ttl = smallPlayDurationMs(p) + 200;
+    window.setTimeout(() => {
+      setSmallPlays((prev) => prev.filter((x) => x.key !== p.key));
+    }, ttl);
+  }, []);
+
   const enqueueOne = useCallback((p: Play) => {
-    // If nothing is playing, show it immediately (synchronously via ref
-    // so a rapid-fire second call in the same tick still queues correctly).
-    // Otherwise append to the pending queue.
-    // NOTE: Do NOT wipe queue/current on local sends — that would drop
-    // other users' incoming gifts while the local user is combo-tapping.
+    if (isSmallGiftPlay(p)) {
+      pushSmallPlay(p);
+      return;
+    }
     if (currentRef.current) {
       preloadGiftVideo(getEffectiveGiftClip(p).url);
       setQueue((q) => [...q.slice(-3), p]);
@@ -837,7 +864,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       currentRef.current = p;
       setCurrent(p);
     }
-  }, []);
+  }, [pushSmallPlay]);
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
