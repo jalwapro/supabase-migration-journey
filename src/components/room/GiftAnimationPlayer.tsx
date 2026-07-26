@@ -561,7 +561,7 @@ function SmallGiftFlyer({
     // which gift is playing. On combo (qty>1 or multi-target) the hero
     // PERSISTS with a soft pulse while a fast trail streams to each DP.
     const isCombo = qty > 1 || effectiveTargets.length > 1;
-    const HERO_INTRO_MS = 360;
+    const HERO_INTRO_MS = 240;
     const hero = document.createElement("div");
     const heroSize = 200;
     hero.style.cssText =
