@@ -638,7 +638,7 @@ function SmallGiftFlyer({
 
     // Fade the hero out after the last flyer has launched (combo) or after
     // the single hold expires.
-    const heroFadeAt = isCombo ? lastLaunchDelay + 380 : 520;
+    const heroFadeAt = isCombo ? lastLaunchDelay + 320 : 780;
     const heroFadeTimer = window.setTimeout(() => {
       const fade = hero.animate(
         [
