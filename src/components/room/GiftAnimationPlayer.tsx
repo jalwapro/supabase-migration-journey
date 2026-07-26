@@ -535,10 +535,61 @@ function SmallGiftFlyer({
     const perStagger = qty > 1 ? Math.max(60, 120 - qty * 4) : 0;
     let soundFired = false;
 
+    // Hero preview: show the gift BIG at center first so viewers clearly see
+    // which gift is playing, then launch the flyer swarm toward receivers.
+    const HERO_HOLD_MS = 520;
+    const hero = document.createElement("div");
+    const heroSize = 200;
+    hero.style.cssText =
+      `position:fixed;left:50%;top:50%;width:${heroSize}px;height:${heroSize}px;` +
+      `margin-left:-${heroSize / 2}px;margin-top:-${heroSize / 2}px;` +
+      `pointer-events:none;z-index:2147483646;display:grid;place-items:center;`;
+    const heroAura = document.createElement("div");
+    heroAura.style.cssText =
+      `position:absolute;inset:-14%;border-radius:9999px;` +
+      `background:radial-gradient(circle at 50% 50%, rgba(255,240,190,.9) 0%, rgba(255,170,80,.55) 40%, rgba(255,120,200,.25) 70%, transparent 100%);` +
+      `filter:blur(4px);`;
+    hero.appendChild(heroAura);
+    const heroInner = document.createElement("div");
+    heroInner.style.cssText = `position:relative;width:90%;height:90%;display:grid;place-items:center;`;
+    if (image) {
+      const img = document.createElement("img");
+      img.src = image;
+      img.alt = "";
+      img.style.cssText =
+        "width:100%;height:100%;object-fit:contain;" +
+        "filter:drop-shadow(0 8px 22px rgba(0,0,0,.7)) drop-shadow(0 0 16px rgba(255,220,140,.75));";
+      img.onerror = () => {
+        img.remove();
+        const es = document.createElement("span");
+        es.textContent = emoji || "🎁";
+        es.style.cssText = `font-size:${Math.round(heroSize * 0.7)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));`;
+        heroInner.appendChild(es);
+      };
+      heroInner.appendChild(img);
+    } else {
+      const es = document.createElement("span");
+      es.textContent = emoji || "🎁";
+      es.style.cssText = `font-size:${Math.round(heroSize * 0.7)}px;line-height:1;filter:drop-shadow(0 8px 20px rgba(0,0,0,.7));`;
+      heroInner.appendChild(es);
+    }
+    hero.appendChild(heroInner);
+    host.appendChild(hero);
+    const heroAnim = hero.animate(
+      [
+        { transform: "scale(0.4)", opacity: 0 },
+        { transform: "scale(1.08)", opacity: 1, offset: 0.35 },
+        { transform: "scale(1.0)", opacity: 1, offset: 0.7 },
+        { transform: "scale(0.85)", opacity: 0, offset: 1 },
+      ],
+      { duration: HERO_HOLD_MS, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
+    );
+    heroAnim.onfinish = () => hero.remove();
+
     const cleanupTimers: number[] = [];
     effectiveTargets.forEach((targetId, tIdx) => {
       for (let i = 0; i < qty; i++) {
-        const delay = i * perStagger + tIdx * 25;
+        const delay = HERO_HOLD_MS - 60 + i * perStagger + tIdx * 25;
         const isFirstOfEvent = !soundFired && i === 0 && tIdx === 0;
         if (isFirstOfEvent) soundFired = true;
         const t = window.setTimeout(() => {
@@ -555,6 +606,7 @@ function SmallGiftFlyer({
     });
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
+      try { hero.remove(); } catch { /* noop */ }
     };
   }, [emoji, image, quantity, receiverIds, fallbackReceiverId, volume]);
 
