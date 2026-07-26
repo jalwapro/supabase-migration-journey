@@ -251,6 +251,11 @@ function RoomPage() {
   }>>([]);
 
   const [manageEmptySeat, setManageEmptySeat] = useState<number | null>(null);
+  const [miniProfileUser, setMiniProfileUser] = useState<{
+    id: string;
+    username: string | null;
+    avatar: string | null;
+  } | null>(null);
   const [lockedSeats, setLockedSeats] = useState<number[]>([]);
   const [flyingEmojis, setFlyingEmojis] = useState<
     { id: string; emoji: string; fromSeat: number; toSeat: number; clip?: string | null }[]
