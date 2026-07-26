@@ -37,6 +37,7 @@ export const ADMIN_NAV: NavGroup[] = [
     label: "Content",
     items: [
       { to: "/admin/gifts", label: "Gifts Management", icon: GiftIcon },
+      { to: "/admin/gift-batches", label: "Gift Batches", icon: GiftIcon },
       { to: "/admin/ads", label: "Ads Management", icon: Megaphone },
       { to: "/admin/banners", label: "Home Banners", icon: GalleryHorizontal },
       { to: "/admin/cms", label: "CMS / Content", icon: FileText },
