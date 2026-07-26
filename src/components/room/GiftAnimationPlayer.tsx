@@ -846,15 +846,17 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // Screen-blend knocks out black — apply to every video/svga gift so all
   // gifts render on a transparent stage over the room.
   const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
-  // Small/cheap gifts (Tier 1): tiny fast flyer to receiver DP + coin-drop.
+  // Small/cheap gifts (Tier 1, ≤80 coins): always render as tiny fast flyer
+  // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
+  // clip attached to these gifts — small tier must feel uniform and snappy,
+  // never a heavyweight cinematic clip.
   const isSmallGift =
     !!current &&
-    !hasVideo &&
-    !hasSvga &&
     !isSpaceship &&
     !isRoyalRose &&
     !isRoyalCrownGift(current.giftName) &&
     (current.coins ?? 0) <= 80;
+
   // Premium/Luxury/VIP: real sample sounds. Jalwa signature chime as fallback.
   const isPremiumTier = !!current && !isSmallGift && (current.coins ?? 0) >= 500;
 
