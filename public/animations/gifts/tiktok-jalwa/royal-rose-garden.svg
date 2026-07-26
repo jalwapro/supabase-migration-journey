@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+<defs>
+  <radialGradient id="rg-bg" cx="50%" cy="55%" r="55%">
+    <stop offset="0%" stop-color="#ff2ea8" stop-opacity=".55"/>
+    <stop offset="60%" stop-color="#ffd166" stop-opacity=".2"/>
+    <stop offset="100%" stop-color="#ff2ea8" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<circle cx="200" cy="200" r="200" fill="url(#rg-bg)"><animate attributeName="opacity" values=".5;1;.5" dur="1.6s" repeatCount="indefinite"/></circle>
+<g transform="translate(200 210)">
+  <g><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/>
+    <text x="0" y="-150" font-size="42" text-anchor="middle">🌹</text>
+    <text x="130" y="-75" font-size="42" text-anchor="middle">🌹</text>
+    <text x="130" y="85" font-size="42" text-anchor="middle">🌹</text>
+    <text x="0" y="160" font-size="42" text-anchor="middle">🌹</text>
+    <text x="-130" y="85" font-size="42" text-anchor="middle">🌹</text>
+    <text x="-130" y="-75" font-size="42" text-anchor="middle">🌹</text>
+  </g>
+  <g><animateTransform attributeName="transform" type="rotate" from="360" to="0" dur="8s" repeatCount="indefinite"/>
+    <text x="0" y="-95" font-size="30" text-anchor="middle">🌸</text>
+    <text x="82" y="-48" font-size="30" text-anchor="middle">🌸</text>
+    <text x="82" y="55" font-size="30" text-anchor="middle">🌸</text>
+    <text x="0" y="100" font-size="30" text-anchor="middle">🌸</text>
+    <text x="-82" y="55" font-size="30" text-anchor="middle">🌸</text>
+    <text x="-82" y="-48" font-size="30" text-anchor="middle">🌸</text>
+  </g>
+  <text x="0" y="30" font-size="150" text-anchor="middle">🌹
+    <animate attributeName="font-size" values="140;170;140" dur="1s" repeatCount="indefinite"/>
+  </text>
+</g>
+<g fill="#ff2ea8" font-size="20" text-anchor="middle">
+  <text x="60" y="80">💖<animate attributeName="opacity" values="0;1;0" dur="1.2s" repeatCount="indefinite"/></text>
+  <text x="340" y="90">💖<animate attributeName="opacity" values="1;0;1" dur="1.4s" repeatCount="indefinite"/></text>
+</g>
+</svg>
