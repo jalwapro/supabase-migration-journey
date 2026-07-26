@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Loader2, Upload, Save, X } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Save, X, Play } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
@@ -29,10 +29,18 @@ type GiftRow = {
   clip_type: string | null;
   image_url?: string | null;
   is_milestone?: boolean | null;
+  chromakey?: string | null;
 };
 
 const CATEGORIES = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
 const CLIP_TYPES = ["none", "svg", "mp4", "webm"] as const;
+const CHROMAKEY_OPTIONS = [
+  { value: "auto", label: "Auto", hint: "Detect from name (default)" },
+  { value: "none", label: "None", hint: "No key — render as-is" },
+  { value: "screen", label: "Screen blend", hint: "Knock out pure-black bg" },
+  { value: "luma", label: "Luma key", hint: "Aggressive black removal" },
+] as const;
+type Chromakey = (typeof CHROMAKEY_OPTIONS)[number]["value"];
 
 type Draft = {
   id?: string;
@@ -45,6 +53,7 @@ type Draft = {
   clip_path: string;
   clip_type: (typeof CLIP_TYPES)[number];
   is_milestone: boolean;
+  chromakey: Chromakey;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -57,6 +66,7 @@ const EMPTY_DRAFT: Draft = {
   clip_path: "",
   clip_type: "none",
   is_milestone: false,
+  chromakey: "auto",
 };
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
