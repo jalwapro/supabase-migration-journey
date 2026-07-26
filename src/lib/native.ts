@@ -7,6 +7,31 @@ import { Capacitor } from "@capacitor/core";
 export const isNative = () => Capacitor.isNativePlatform();
 export const nativePlatform = () => Capacitor.getPlatform(); // "web" | "ios" | "android"
 
+function closeActiveOverlay() {
+  const appBackEvent = new Event("jalwa:native-back", { cancelable: true });
+  const shouldContinue = window.dispatchEvent(appBackEvent);
+  if (!shouldContinue || appBackEvent.defaultPrevented) return true;
+
+  const overlay = document.querySelector<HTMLElement>('[data-jalwa-overlay="true"]');
+  const radix = document.querySelector(
+    '[data-state="open"][role="dialog"], [data-state="open"][role="menu"], [data-radix-popper-content-wrapper]',
+  );
+  if (!overlay && !radix) return false;
+
+  try {
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+  } catch {
+    /* noop */
+  }
+  try {
+    overlay?.click();
+  } catch {
+    /* noop */
+  }
+  return true;
+}
+
 export async function initNativeShell() {
   if (!isNative()) return;
   try {
@@ -22,6 +47,7 @@ export async function initNativeShell() {
 
     // Android hardware back button: navigate back or minimise app at root.
     App.addListener("backButton", ({ canGoBack }) => {
+      if (closeActiveOverlay()) return;
       if (canGoBack) window.history.back();
       else App.exitApp().catch(() => {});
     });

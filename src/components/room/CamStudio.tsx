@@ -36,8 +36,9 @@ export function CamStudio({ open, onClose }: Props) {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+    <div data-jalwa-overlay="true" className="fixed inset-0 z-[80] flex items-end justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div
+        data-jalwa-overlay-content="true"
         className="w-full max-w-[480px] rounded-t-3xl bg-gradient-to-b from-[#1a0b2e] to-[#0d0620] border-t border-white/10 pb-6 pt-4 px-4 max-h-[80vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
