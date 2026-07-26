@@ -147,7 +147,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -202,6 +202,7 @@ function GiftsAdmin() {
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
+        chromakey: draft.chromakey,
       };
       // Multiple milestone gifts allowed (host picks one on 100%).
       if (draft.id) {
