@@ -2807,9 +2807,7 @@ function RoomPage() {
       <GiftAnimationPlayer roomId={roomId} />
       <GiftComboHud />
       <TapHearts />
-      <div className="pointer-events-auto fixed right-3 z-40" style={{ top: "calc(env(safe-area-inset-top) + 56px)" }}>
-        <GiftAudioControl />
-      </div>
+      {/* Gift audio control removed — controls available via More → Audio */}
       {milestoneOpen && (
         <div
           className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm"
