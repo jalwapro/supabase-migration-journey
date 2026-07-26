@@ -1606,7 +1606,12 @@ function RoomPage() {
       setManageMember(seated);
       return;
     }
-    // Regular viewers tapping others: no-op (points only from gifts)
+    // Regular viewer tapping someone else → open mini profile popup
+    setMiniProfileUser({
+      id: seated.user_id,
+      username: seated.user?.username ?? null,
+      avatar: seated.user?.avatar ?? null,
+    });
   }
 
   async function toggleMuteWithSync() {
