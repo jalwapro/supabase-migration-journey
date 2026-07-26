@@ -49,26 +49,45 @@ const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
 const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
+function GiftTransparencyDefs() {
+  return (
+    <svg aria-hidden="true" width="0" height="0" className="absolute h-0 w-0 overflow-hidden">
+      <defs>
+        <filter id="jalwa-gift-luma-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values="1 0 0 0 0
+                    0 1 0 0 0
+                    0 0 1 0 0
+                    0.2126 0.7152 0.0722 0 0"
+          />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="4.8" intercept="-0.42" />
+          </feComponentTransfer>
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
   return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
 }
 
 function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
-  // Show static PNG thumbnail everywhere in the gift box.
-  // `mix-blend-mode: screen` drops the dark shadow/black backdrop baked into
-  // many SVG gifts (bunny/star/etc.) so only the bright gift is visible on
-  // the sheet's dark tile — no more black halo behind the icon.
-  const imgStyle = { mixBlendMode: "screen" as const, background: "transparent" };
+  // Show static thumbnail everywhere in the gift box, with luma-key styling so
+  // baked black MP4/SVG poster backgrounds (bunny/star/etc.) disappear.
+  const imgClass = "jalwa-keyed-gift-media h-full w-full object-contain";
   if (isRoyalRoseGift(gift.name)) {
-    return <img src={ROYAL_ROSE_THUMB_URL} alt="" className="h-full w-full object-contain" style={imgStyle} />;
+    return <img src={ROYAL_ROSE_THUMB_URL} alt="" className={imgClass} />;
   }
   const thumb = resolveGiftImageUrl(gift.image_url ?? gift.icon_path ?? (isAssetUrlLike(gift.icon) ? gift.icon : null));
   if (thumb) {
-    return <img src={thumb} alt="" className="h-full w-full object-contain" style={imgStyle} />;
+    return <img src={thumb} alt="" className={imgClass} />;
   }
   if (gift.clip_path && gift.clip_type === "svg") {
-    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className="h-full w-full object-contain" style={imgStyle} />;
+    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className={imgClass} />;
   }
   return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
 }
@@ -285,6 +304,7 @@ export function GiftSheet({
       data-jalwa-overlay="true"
       style={{ contain: "strict", isolation: "isolate" }}
     >
+      <GiftTransparencyDefs />
       <div
         onClick={(e) => e.stopPropagation()}
         className="mx-auto flex h-[62dvh] max-h-[640px] w-full max-w-md flex-col rounded-t-2xl bg-[#161616] text-white shadow-[0_-8px_40px_rgba(0,0,0,0.6)]"
