@@ -774,9 +774,9 @@ function SmallGiftFlyer({
       }
     });
 
-    // Fade slot panel after the last flyer has launched
+    // Fade slot panel after the last flyer has launched (only if we made one)
     const panelFadeAt = lastLaunchDelay + 240;
-    const panelFadeTimer = window.setTimeout(() => {
+    const panelFadeTimer = isComboContinuation ? 0 : window.setTimeout(() => {
       const fade = panel.animate(
         [
           { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
@@ -786,7 +786,7 @@ function SmallGiftFlyer({
       );
       fade.onfinish = () => panel.remove();
     }, panelFadeAt);
-    cleanupTimers.push(panelFadeTimer);
+    if (panelFadeTimer) cleanupTimers.push(panelFadeTimer);
 
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
