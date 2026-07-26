@@ -1596,17 +1596,14 @@ function RoomPage() {
     }
     const seated = members.find((m) => m.seat_index === i);
     if (!seated) return;
-    // Host / moderator taps someone else's seat → manage sheet
-    if ((isHost || isModerator) && seated.user_id !== user.id) {
-      setManageMember(seated);
-      return;
-    }
-    // Self tap → open manage self (leave seat option)
+    // Self tap → seat management (leave seat option)
     if (seated.user_id === user.id) {
       setManageMember(seated);
       return;
     }
-    // Regular viewer tapping someone else → open mini profile popup
+    // Anyone else (viewer OR host/moderator) → open mini profile popup.
+    // For host/mod, the popup exposes a "Manage seat" button that opens
+    // the full SeatActionSheet (kick / mute / lock etc.).
     setMiniProfileUser({
       id: seated.user_id,
       username: seated.user?.username ?? null,
