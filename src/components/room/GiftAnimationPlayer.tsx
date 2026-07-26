@@ -592,6 +592,7 @@ function SmallGiftFlyer({
 
     // Slot panel (fixed position, centered) — skipped on combo continuation.
     const panel = document.createElement("div");
+    let rafId = 0;
     if (!isComboContinuation) {
     panel.style.cssText =
       `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
