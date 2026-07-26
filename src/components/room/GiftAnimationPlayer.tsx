@@ -791,6 +791,40 @@ function SmallGiftFlyer({
   return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
 }
 
+function spawnCoinRain(host: HTMLElement, targetId: string, count: number) {
+  if (typeof document === "undefined") return;
+  const rect = findReceiverDpRect(targetId);
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const endX = rect ? rect.left + rect.width / 2 : vw / 2;
+  const endY = rect ? rect.top + rect.height / 2 : vh - 80;
+  for (let i = 0; i < count; i++) {
+    const coin = document.createElement("div");
+    const size = 18 + Math.random() * 10;
+    const startX = vw / 2 + (Math.random() - 0.5) * 160;
+    const startY = vh / 2 - 40 + (Math.random() - 0.5) * 40;
+    coin.style.cssText =
+      `position:fixed;left:${startX}px;top:${startY}px;width:${size}px;height:${size}px;` +
+      `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
+      `background:radial-gradient(circle at 35% 30%,#fff6c9 0%,#ffd166 45%,#c8891a 100%);` +
+      `box-shadow:0 0 12px rgba(255,200,80,.9),inset 0 -2px 4px rgba(120,60,0,.5);` +
+      `will-change:transform,opacity;`;
+    host.appendChild(coin);
+    const delay = i * 32 + Math.random() * 60;
+    const dur = 620 + Math.random() * 240;
+    const spinDir = Math.random() > 0.5 ? 1 : -1;
+    coin.animate(
+      [
+        { transform: `translate(0,0) rotate(0)`, opacity: 0 },
+        { transform: `translate(0,-30px) rotate(${spinDir * 180}deg)`, opacity: 1, offset: 0.15 },
+        { transform: `translate(${endX - startX}px,${endY - startY}px) rotate(${spinDir * 720}deg)`, opacity: 0.9, offset: 0.95 },
+        { transform: `translate(${endX - startX}px,${endY - startY}px) scale(.3)`, opacity: 0 },
+      ],
+      { duration: dur, delay, easing: "cubic-bezier(.4,.1,.7,1)", fill: "forwards" },
+    ).onfinish = () => coin.remove();
+  }
+}
+
 function spawnFlyer(
   host: HTMLElement,
   opts: { emoji: string; image: string | null; targetId: string; volume: number; fireOnce?: boolean },
