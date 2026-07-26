@@ -854,11 +854,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   // duration (from loadedmetadata) so 8–10s premium gifts play through fully.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
-    const ms = isSmallGift
-      ? 1500
-      : hasVideo
-        ? (videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS))
-        : PLAY_MS;
+    let ms: number;
+    if (isSmallGift) {
+      const q = Math.max(1, Math.min(60, current.quantity || 1));
+      const stagger = q > 1 ? Math.max(35, 90 - q * 2) : 0;
+      ms = 650 + stagger * q + 150;
+    } else if (hasVideo) {
+      ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
+    } else {
+      ms = PLAY_MS;
+    }
     const t = setTimeout(clearCurrent, ms + 200);
     return () => clearTimeout(t);
   }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
