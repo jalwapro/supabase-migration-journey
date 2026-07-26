@@ -835,6 +835,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
+    // Small gifts play only per-landing coin-drop cues (fired by spawnFlyer).
+    if (isSmallGift) return;
     playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
@@ -845,7 +847,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
 
   // Auto-clear current after play duration. For videos, use the actual clip
