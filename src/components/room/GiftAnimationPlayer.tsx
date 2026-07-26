@@ -925,6 +925,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
+  // Multi-receiver coalescing buffer: realtime `gift_sends` INSERTs arrive
+  // one-per-row when a user sends to "All". We buffer inserts sharing
+  // sender+gift+quantity for a short window and dispatch ONE aggregated Play
+  // with every receiverId — so all seats' DPs are hit simultaneously.
+  const coalesceRef = useRef<Map<string, { play: Play; timer: number; ids: string[] }>>(new Map());
   const [readyKey, setReadyKey] = useState<string | null>(null);
   const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
