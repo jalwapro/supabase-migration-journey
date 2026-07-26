@@ -617,6 +617,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             key: `sd-${r.id}`,
             senderName: r.sender_username ?? "Guest",
             senderAvatar: r.sender_avatar ?? null,
+            receiverId: r.receiver_id ?? null,
+            receiverIds: r.receiver_id ? [r.receiver_id] : null,
             receiverName: r.receiver_username ?? "Host",
             receiverAvatar: r.receiver_avatar ?? null,
             giftName: r.gift_name ?? "Gift",
