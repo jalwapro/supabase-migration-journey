@@ -1342,10 +1342,11 @@ export function useZegoRoom({
       if (typeof captureFn === "function") {
         const musicStream = captureFn.call(audioEl) as MediaStream;
         const musicStreamId = streamIdFor(room, `${localUid}_music`);
-        musicStreamRef.current = musicStream;
+        const zegoMusicStream = await engine.createZegoStream(zegoCustomAudio(musicStream));
+        musicStreamRef.current = zegoMusicStream;
         musicStreamIdRef.current = musicStreamId;
         try {
-          engine.startPublishingStream(musicStreamId, musicStream);
+          engine.startPublishingStream(musicStreamId, zegoMusicStream);
         } catch (e) {
           console.warn("[music] publish stream failed — only host will hear", e);
         }
