@@ -237,6 +237,24 @@ function RoomPage() {
   });
   const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
   const [viewersSheetOpen, setViewersSheetOpen] = useState(false);
+  const emojiSheetOpenRef = useRef(false);
+  const viewersSheetOpenRef = useRef(false);
+  const openEmojiSheet = useCallback(() => {
+    emojiSheetOpenRef.current = true;
+    setEmojiSheetOpen(true);
+  }, []);
+  const closeEmojiSheet = useCallback(() => {
+    emojiSheetOpenRef.current = false;
+    setEmojiSheetOpen(false);
+  }, []);
+  const openViewersSheet = useCallback(() => {
+    viewersSheetOpenRef.current = true;
+    setViewersSheetOpen(true);
+  }, []);
+  const closeViewersSheet = useCallback(() => {
+    viewersSheetOpenRef.current = false;
+    setViewersSheetOpen(false);
+  }, []);
   const [pendingInvite, setPendingInvite] = useState<{
     id: string;
     from_name: string | null;
@@ -304,12 +322,12 @@ function RoomPage() {
       setLudoOpen(false);
       return true;
     }
-    if (emojiSheetOpen) {
-      setEmojiSheetOpen(false);
+    if (emojiSheetOpen || emojiSheetOpenRef.current) {
+      closeEmojiSheet();
       return true;
     }
-    if (viewersSheetOpen) {
-      setViewersSheetOpen(false);
+    if (viewersSheetOpen || viewersSheetOpenRef.current) {
+      closeViewersSheet();
       return true;
     }
     if (giftOpen) {
