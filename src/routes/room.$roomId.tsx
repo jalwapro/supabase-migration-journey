@@ -3462,6 +3462,7 @@ function VideoTile({
   return (
     <button
       data-seat-index={index}
+      data-user-dp={member?.user_id ?? ""}
       onClick={(e) => {
         if (member) {
           try {
