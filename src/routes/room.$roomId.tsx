@@ -273,6 +273,7 @@ function RoomPage() {
   const roomBackGuardRef = useRef<{ closeTopOverlay: () => boolean }>({
     closeTopOverlay: () => false,
   });
+  const suppressNextRoomPopUntilRef = useRef(0);
 
   roomBackGuardRef.current.closeTopOverlay = () => {
     if (exitConfirmOpen) {
@@ -1556,6 +1557,7 @@ function RoomPage() {
       try {
         window.history.pushState({ [SENTINEL]: true }, "");
       } catch { /* no-op */ }
+      if (Date.now() < suppressNextRoomPopUntilRef.current) return;
       if (closeTopOverlay()) return;
       if (isHost) {
         setExitConfirmOpen(true);
@@ -1566,6 +1568,7 @@ function RoomPage() {
     };
     const onNativeBack = (event: Event) => {
       if (!closeTopOverlay()) return;
+      suppressNextRoomPopUntilRef.current = Date.now() + 900;
       event.preventDefault();
     };
     window.addEventListener("popstate", onPop);
