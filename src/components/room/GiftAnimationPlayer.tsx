@@ -19,6 +19,8 @@ type Play = {
   key: string;
   senderName: string;
   senderAvatar: string | null;
+  receiverId?: string | null;
+  receiverIds?: (string | null)[] | null;
   receiverName: string;
   receiverAvatar: string | null;
   giftName: string;
