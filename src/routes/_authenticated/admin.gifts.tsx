@@ -550,6 +550,63 @@ function GiftsAdmin() {
           </button>
         </div>
       </div>
+
+      {preview && (
+        <div
+          className="fixed inset-0 z-[2147483000] grid place-items-center bg-black/85 backdrop-blur"
+          onClick={() => setPreview(null)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex h-[min(90dvh,720px)] w-[min(94vw,480px)] flex-col items-center justify-center rounded-3xl border border-[color:var(--gold)]/40 bg-gradient-to-b from-[#1a0b2e] to-black p-4"
+          >
+            <button
+              onClick={() => setPreview(null)}
+              className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="mb-3 text-center">
+              <p className="text-sm font-bold text-white">{preview.name}</p>
+              <p className="text-[10px] uppercase tracking-widest text-[color:var(--gold)]">
+                chromakey: {preview.chromakey}
+              </p>
+            </div>
+            <div className="grid flex-1 w-full place-items-center overflow-hidden rounded-2xl">
+              {(() => {
+                const style: React.CSSProperties = {
+                  maxHeight: "100%",
+                  maxWidth: "100%",
+                  objectFit: "contain",
+                  background: "transparent",
+                  ...(preview.chromakey === "screen" ? { mixBlendMode: "screen" as const } : {}),
+                  ...(preview.chromakey === "luma" ? { filter: "url(#jalwa-luma-key)" } : {}),
+                };
+                const src = preview.clipPath || preview.imageUrl;
+                if (!src) {
+                  return <div className="text-6xl">{preview.emoji ?? "🎁"}</div>;
+                }
+                if (preview.clipType === "mp4" || preview.clipType === "webm" || /\.(mp4|webm)(\?|$)/i.test(src)) {
+                  return (
+                    <video
+                      src={src}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      style={style}
+                    />
+                  );
+                }
+                return <img src={src} alt={preview.name} style={style} />;
+              })()}
+            </div>
+            <p className="mt-3 text-center text-[10px] text-muted-foreground">
+              Tap outside to close. Room viewers will see this exact rendering.
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
