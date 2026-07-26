@@ -564,9 +564,9 @@ function spawnFlyer(
   const endX = rect ? rect.left + rect.width / 2 : vw / 2;
   const endY = rect ? rect.top + rect.height / 2 : vh - 80;
 
-  // Reference-style swarm: each "tap" spawns a small burst of icons that
-  // follow slightly different curved arcs to the receiver's DP.
-  const SWARM = 3;
+  // Reference-style smooth stream: each "tap" spawns a small burst of icons
+  // that follow smooth curved arcs along a shared lane to the receiver's DP.
+  const SWARM = 4;
   const total = Math.max(1, opts.total ?? 1);
   const index = opts.index ?? 0;
   const dx = endX - startX;
@@ -574,10 +574,13 @@ function spawnFlyer(
   const len = Math.max(1, Math.hypot(dx, dy));
   const perpX = -dy / len;
   const perpY = dx / len;
-  const laneBase = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(80, 14 + total * 4) : 0;
+  // Consistent lane per target so the stream feels like one river, not chaos.
+  const laneBase = total > 1 ? ((index - (total - 1) / 2) / Math.max(1, total - 1)) * Math.min(60, 12 + total * 3) : 0;
+  // Deterministic arc side per target so the swarm arcs cleanly.
+  const arcSide = (Math.abs(hashStr(opts.targetId || "")) % 2 === 0) ? 1 : -1;
 
   for (let s = 0; s < SWARM; s++) {
-    const size = 96 + Math.round(Math.random() * 22);
+    const size = 104 + Math.round(Math.random() * 14);
     const half = size / 2;
     const el = document.createElement("div");
     el.style.cssText =
@@ -609,35 +612,42 @@ function spawnFlyer(
     el.appendChild(inner);
     host.appendChild(el);
 
-    const jitter = (Math.random() - 0.5) * 70;
-    const arc = (Math.random() < 0.5 ? -1 : 1) * (40 + Math.random() * 70);
-    const laneOffset = laneBase + jitter;
+    // Smooth spread within the shared lane — small offsets, no wild jitter.
+    const spread = (s - (SWARM - 1) / 2) * 10;
+    const arc = arcSide * (55 + s * 12);
+    const laneOffset = laneBase + spread;
     const midX = (startX + endX) / 2 + perpX * (laneOffset + arc);
     const midY = (startY + endY) / 2 + perpY * (laneOffset + arc);
-    const jEndX = endX + (Math.random() - 0.5) * 18;
-    const jEndY = endY + (Math.random() - 0.5) * 18;
-    const rot = (Math.random() - 0.5) * 80;
-    const startDelay = s * 28;
-    const duration = 380 + Math.random() * 110; // faster: ~380-490ms
+    const jEndX = endX + (s - (SWARM - 1) / 2) * 4;
+    const jEndY = endY + (s - (SWARM - 1) / 2) * 4;
+    const rot = arcSide * (10 + s * 4);
+    const startDelay = s * 22;
+    const duration = 520 + s * 30; // smooth, slightly staggered
 
     const anim = el.animate(
       [
-        { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.6) rotate(0deg)`, opacity: 0, offset: 0 },
-        { transform: `translate(${startX - half}px, ${startY - half}px) scale(1) rotate(${rot * 0.3}deg)`, opacity: 1, offset: 0.1 },
-        { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.85) rotate(${rot}deg)`, opacity: 1, offset: 0.55 },
-        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.28) rotate(${rot * 1.4}deg)`, opacity: 0.9, offset: 0.92 },
-        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.08) rotate(${rot * 1.5}deg)`, opacity: 0, offset: 1 },
+        { transform: `translate(${startX - half}px, ${startY - half}px) scale(0.5) rotate(0deg)`, opacity: 0, offset: 0 },
+        { transform: `translate(${startX - half}px, ${startY - half}px) scale(1) rotate(${rot * 0.3}deg)`, opacity: 1, offset: 0.12 },
+        { transform: `translate(${midX - half}px, ${midY - half}px) scale(0.9) rotate(${rot}deg)`, opacity: 1, offset: 0.6 },
+        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.32) rotate(${rot * 1.3}deg)`, opacity: 0.95, offset: 0.94 },
+        { transform: `translate(${jEndX - half}px, ${jEndY - half}px) scale(0.08) rotate(${rot * 1.4}deg)`, opacity: 0, offset: 1 },
       ],
-      { duration, delay: startDelay, easing: "cubic-bezier(.42,.02,.32,1)", fill: "forwards" },
+      { duration, delay: startDelay, easing: "cubic-bezier(.25,.55,.35,1)", fill: "forwards" },
     );
     anim.onfinish = () => {
       if (s === 0) {
-        try { playCoinsCue(Math.min(0.8, opts.volume)); } catch { /* noop */ }
+        try { playGiftWhooshCue(Math.min(0.6, opts.volume)); } catch { /* noop */ }
         spawnLandingBurst(host, endX, endY);
       }
       el.remove();
     };
   }
+}
+
+function hashStr(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
 }
 
 function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
