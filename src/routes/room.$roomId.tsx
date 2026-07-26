@@ -2304,8 +2304,14 @@ function RoomPage() {
                         className="flex flex-col items-center gap-1.5"
                       >
                         <div className="relative">
-                          <div className={`grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-black ring-2 ${
-                            speaking ? "ring-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.6)]" : "ring-violet-400/70"
+                          {speaking && (
+                            <>
+                              <span className="pointer-events-none absolute -inset-1.5 rounded-full bg-emerald-400/25 animate-ping" />
+                              <span className="pointer-events-none absolute -inset-0.5 rounded-full ring-2 ring-emerald-300/80" />
+                            </>
+                          )}
+                          <div className={`relative grid h-14 w-14 place-items-center overflow-hidden rounded-full bg-black ring-2 ${
+                            speaking ? "ring-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.85)]" : "ring-violet-400/70"
                           }`}>
                             {m?.user?.avatar ? (
                               <img src={m.user.avatar} alt="" className="h-full w-full object-cover" />
