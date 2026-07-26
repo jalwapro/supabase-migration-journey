@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <radialGradient id="dr-bg" cx="50%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#7ee8ff" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#7ee8ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <circle cx="200" cy="200" r="200" fill="url(#dr-bg)"/>
+  <g font-size="34" text-anchor="middle">
+    <text x="60"  y="-20">💎<animate attributeName="y" values="-20;420" dur="1.6s" repeatCount="indefinite"/></text>
+    <text x="120" y="-40">💎<animate attributeName="y" values="-40;420" dur="2.0s" begin="0.3s" repeatCount="indefinite"/></text>
+    <text x="180" y="-30">💎<animate attributeName="y" values="-30;420" dur="1.8s" begin="0.6s" repeatCount="indefinite"/></text>
+    <text x="240" y="-50">💎<animate attributeName="y" values="-50;420" dur="2.2s" begin="0.2s" repeatCount="indefinite"/></text>
+    <text x="300" y="-20">💎<animate attributeName="y" values="-20;420" dur="1.7s" begin="0.9s" repeatCount="indefinite"/></text>
+    <text x="340" y="-40">💎<animate attributeName="y" values="-40;420" dur="2.1s" begin="0.4s" repeatCount="indefinite"/></text>
+    <text x="30"  y="-40">💎<animate attributeName="y" values="-40;420" dur="1.9s" begin="0.7s" repeatCount="indefinite"/></text>
+    <text x="90"  y="-30">💎<animate attributeName="y" values="-30;420" dur="1.5s" begin="1.0s" repeatCount="indefinite"/></text>
+    <text x="200" y="-30">💎<animate attributeName="y" values="-30;420" dur="2.4s" begin="0.5s" repeatCount="indefinite"/></text>
+    <text x="270" y="-40">💎<animate attributeName="y" values="-40;420" dur="1.6s" begin="1.2s" repeatCount="indefinite"/></text>
+  </g>
+  <text x="200" y="230" font-size="140" text-anchor="middle">💎
+    <animateTransform attributeName="transform" type="scale" values="1;1.15;1" dur="1s" repeatCount="indefinite" additive="sum"/>
+    <animate attributeName="font-size" values="130;160;130" dur="1s" repeatCount="indefinite"/>
+  </text>
+</svg>
