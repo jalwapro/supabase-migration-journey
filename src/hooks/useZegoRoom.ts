@@ -372,6 +372,7 @@ export function useZegoRoom({
   const streamToUidRef = useRef<Map<string, number>>(new Map());
   const uidStreamRef = useRef<Map<number, string>>(new Map()); // audio (main) streamID per uid
   const uidVideoStreamRef = useRef<Map<number, string>>(new Map()); // video (_cam_main) streamID per uid
+  const uidMusicStreamRef = useRef<Map<number, string>>(new Map()); // background music streamID per uid
   const videoContainersRef = useRef<Map<number, HTMLElement>>(new Map());
   const remoteMediaStreamsRef = useRef<Map<string, MediaStream>>(new Map());
   const remotePlayPromisesRef = useRef<Map<string, Promise<MediaStream | null>>>(new Map());
