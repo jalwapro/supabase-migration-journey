@@ -619,11 +619,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
-  // Screen-blend knocks out black — great for MP4s that were rendered on a
-  // literal black stage (only a hand-curated set), but catastrophic for a
-  // normal MP4 with dark content because it wipes those dark pixels too and
-  // makes the animation look transparent / washed-out. Opt-in only.
-  const isBlackBg = isBlackBgGift(current?.giftName);
+  // Screen-blend knocks out black — apply to every video/svga gift so all
+  // gifts render on a transparent stage over the room.
+  const isBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
 
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
@@ -692,6 +690,37 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, [current?.key, current?.soundUrl, isPremiumLong, audioPrefs.muted, audioPrefs.volume]);
 
+  // Fallback sparkle chime for gifts without a bundled soundUrl.
+  useEffect(() => {
+    if (!current) return;
+    if (current.soundUrl) return;
+    if (audioPrefs.muted || audioPrefs.volume <= 0) return;
+    try {
+      const AC: typeof AudioContext | undefined =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!AC) return;
+      const ctx = new AC();
+      const now = ctx.currentTime;
+      const notes = [880, 1175, 1568, 2093]; // A5 D6 G6 C7 — bright sparkle
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const start = now + i * 0.07;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.28 * audioPrefs.volume, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.35);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(start);
+        osc.stop(start + 0.4);
+      });
+      const timer = setTimeout(() => { try { ctx.close(); } catch {} }, 1200);
+      return () => { clearTimeout(timer); try { ctx.close(); } catch {} };
+    } catch {
+      /* noop */
+    }
+  }, [current?.key, current?.soundUrl, audioPrefs.muted, audioPrefs.volume]);
 
 
   // Auto-clear current after play duration. For videos, use the actual clip

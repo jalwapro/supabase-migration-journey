@@ -384,7 +384,7 @@ export function GiftSheet({
                     selected ? "bg-white/10" : "bg-transparent active:bg-white/5"
                   }`}
                 >
-                  <div className="grid h-14 w-14 place-items-center">
+                  <div className="grid h-11 w-11 place-items-center">
                     <GiftPreview gift={g} />
                   </div>
                   <span className="w-full truncate text-center text-[11px] font-medium text-white/90">
