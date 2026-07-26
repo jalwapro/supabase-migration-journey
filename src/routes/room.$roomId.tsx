@@ -1596,17 +1596,14 @@ function RoomPage() {
     }
     const seated = members.find((m) => m.seat_index === i);
     if (!seated) return;
-    // Host / moderator taps someone else's seat → manage sheet
-    if ((isHost || isModerator) && seated.user_id !== user.id) {
-      setManageMember(seated);
-      return;
-    }
-    // Self tap → open manage self (leave seat option)
+    // Self tap → seat management (leave seat option)
     if (seated.user_id === user.id) {
       setManageMember(seated);
       return;
     }
-    // Regular viewer tapping someone else → open mini profile popup
+    // Anyone else (viewer OR host/moderator) → open mini profile popup.
+    // For host/mod, the popup exposes a "Manage seat" button that opens
+    // the full SeatActionSheet (kick / mute / lock etc.).
     setMiniProfileUser({
       id: seated.user_id,
       username: seated.user?.username ?? null,
@@ -2031,6 +2028,30 @@ function RoomPage() {
         </div>
       )}
 
+      {/* ─── Now playing (music) floating chip ─────────────────────── */}
+      {agora.musicPlaying && (
+        <div className="relative z-10 mx-auto flex w-full max-w-md justify-center px-3">
+          <button
+            type="button"
+            onClick={() => isHost && setMusicOpen(true)}
+            className="pointer-events-auto flex items-center gap-2 rounded-full border border-violet-300/40 bg-black/70 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur-md shadow-[0_0_18px_-4px_rgba(167,139,250,0.6)]"
+            aria-label="Now playing"
+          >
+            <span aria-hidden className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[11px]">
+              🎵
+            </span>
+            <span className="max-w-[220px] truncate">
+              {agora.musicTitle ?? "Now playing"}
+            </span>
+            <span aria-hidden className="ml-1 flex items-end gap-[2px]">
+              <span className="block h-2.5 w-[3px] animate-pulse rounded-sm bg-fuchsia-300" style={{ animationDelay: "0ms" }} />
+              <span className="block h-3.5 w-[3px] animate-pulse rounded-sm bg-violet-300" style={{ animationDelay: "150ms" }} />
+              <span className="block h-2 w-[3px] animate-pulse rounded-sm bg-indigo-300" style={{ animationDelay: "300ms" }} />
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* ─── Main stage: voice grid OR video seat grid ───────────── */}
       {isVideo && r.seat_count === 2 ? (
         (() => {
@@ -2270,17 +2291,7 @@ function RoomPage() {
                     <span>🎁</span>
                     <span>{formatGiftPoints(camTile.giftPoints ?? 0)}</span>
                   </div>
-                  <button
-                    onClick={() => agora.toggleSpeaker()}
-                    aria-label="Toggle sound"
-                    className="absolute bottom-2 right-2 grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-black/60 backdrop-blur"
-                  >
-                    {agora.speakerMuted ? (
-                      <VolumeX className="h-3.5 w-3.5 text-white/80" />
-                    ) : (
-                      <Volume2 className="h-3.5 w-3.5 text-white/80" />
-                    )}
-                  </button>
+                  {/* Sound toggle removed — use More → Audio → Speaker */}
                 </div>
               </div>
 
@@ -3129,6 +3140,15 @@ function RoomPage() {
         target={miniProfileUser}
         currentUserId={user?.id ?? null}
         onClose={() => setMiniProfileUser(null)}
+        onManage={
+          isHost || isModerator
+            ? () => {
+                const seated = members.find((m) => m.user_id === miniProfileUser?.id);
+                setMiniProfileUser(null);
+                if (seated) setManageMember(seated);
+              }
+            : undefined
+        }
       />
 
       <SeatActionSheet
@@ -4239,16 +4259,20 @@ function Seat({
           style={{ borderColor: ringHue, color: ringHue }}
         />
 
-        {/* Speaking glow */}
+        {/* Speaking glow + pulse bubble */}
         {speaking && !hostAwayFromSeat && (
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-[-10%] z-0 rounded-full animate-pulse"
-            style={{
-              background: `radial-gradient(circle, ${ringHue}66 0%, transparent 70%)`,
-              filter: "blur(6px)",
-            }}
-          />
+          <>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-14%] z-0 rounded-full animate-ping"
+              style={{ background: `radial-gradient(circle, ${ringHue}55 0%, transparent 70%)` }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-6%] z-0 rounded-full border-2 animate-pulse"
+              style={{ borderColor: `${ringHue}cc`, boxShadow: `0 0 22px ${ringHue}aa` }}
+            />
+          </>
         )}
 
         {/* Halftone dot texture for empty state */}
@@ -4419,8 +4443,13 @@ function SeatsSheet({
   const clamp = (x: number) => Math.max(4, Math.min(20, x));
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm" onClick={onClose} />
       <div
+        data-jalwa-overlay="true"
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div
+        data-jalwa-overlay-content="true"
         className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
       >
@@ -5459,10 +5488,12 @@ function MiniProfileSheet({
   target,
   currentUserId,
   onClose,
+  onManage,
 }: {
   target: { id: string; username: string | null; avatar: string | null } | null;
   currentUserId: string | null;
   onClose: () => void;
+  onManage?: () => void;
 }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -5481,6 +5512,22 @@ function MiniProfileSheet({
       return !!data;
     },
   });
+
+  const followsMe = useQuery({
+    queryKey: ["mini-profile-follows-me", currentUserId, target?.id],
+    enabled: !!currentUserId && !!target?.id && currentUserId !== target?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", target!.id)
+        .eq("following_id", currentUserId!)
+        .maybeSingle();
+      return !!data;
+    },
+  });
+
+
 
   const [busy, setBusy] = React.useState(false);
   const isSelf = !!currentUserId && currentUserId === target?.id;
@@ -5557,7 +5604,7 @@ function MiniProfileSheet({
             }`}
           >
             <UserPlus className="h-4 w-4" />
-            {following ? "Following" : "Follow"}
+            {following ? "Following" : followsMe.data ? "Follow back" : "Follow"}
           </button>
           <button
             disabled={isSelf}
@@ -5568,6 +5615,14 @@ function MiniProfileSheet({
             Message
           </button>
         </div>
+        {onManage && !isSelf && (
+          <button
+            onClick={onManage}
+            className="mt-3 w-full rounded-2xl border border-amber-300/40 bg-amber-500/15 py-3 text-sm font-extrabold text-amber-200"
+          >
+            Manage seat
+          </button>
+        )}
       </div>
     </>
   );

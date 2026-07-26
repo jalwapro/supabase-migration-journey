@@ -58,8 +58,13 @@ export function ChatEmojiSheet({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/60" onClick={onClose}>
+    <div
+      data-jalwa-overlay="true"
+      className="fixed inset-0 z-50 flex items-end bg-black/60"
+      onClick={onClose}
+    >
       <div
+        data-jalwa-overlay-content="true"
         className="max-h-[70vh] w-full overflow-hidden rounded-t-3xl border-t border-border bg-background"
         onClick={(e) => e.stopPropagation()}
       >
