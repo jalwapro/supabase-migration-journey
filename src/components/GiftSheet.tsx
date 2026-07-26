@@ -299,7 +299,7 @@ export function GiftSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/70"
+      className="fixed inset-0 z-50 flex flex-col justify-end bg-black/50"
       onClick={onClose}
       data-jalwa-overlay="true"
       style={{ contain: "strict", isolation: "isolate" }}
@@ -307,86 +307,93 @@ export function GiftSheet({
       <GiftTransparencyDefs />
       <div
         onClick={(e) => e.stopPropagation()}
-        className="mx-auto flex h-[62dvh] max-h-[640px] w-full max-w-md flex-col rounded-t-2xl bg-[#161616] text-white shadow-[0_-8px_40px_rgba(0,0,0,0.6)]"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)", contain: "layout paint" }}
+        className="relative mx-auto flex h-[46dvh] max-h-[420px] min-h-[340px] w-full max-w-md flex-col overflow-hidden rounded-t-[2rem] border-t-4 border-[#7c3aed] bg-[#0f041e] text-white shadow-[0_-12px_50px_rgba(124,58,237,0.35)]"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.25rem)", contain: "layout paint", fontFamily: "'Outfit', system-ui, sans-serif" }}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-2">
-          <span className="h-1 w-10 rounded-full bg-white/20" />
-        </div>
+        {/* Arcade dotted grid overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.05]"
+          style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "18px 18px" }}
+        />
 
-        {/* Receiver row — tiny avatars, TikTok style */}
-        {receivers.length > 0 && (
-          <div className="flex items-center gap-2 px-4 pt-3">
-            <span className="text-[11px] text-white/60">To:</span>
-            <div className="flex flex-1 gap-1.5 overflow-x-auto">
-              {receivers.length > 1 && (
+        {/* Top handle */}
+        <div className="mx-auto mt-2 mb-1 h-1 w-12 rounded-full bg-white/25" />
+
+        {/* Header: recipient chip + tier tabs */}
+        <div className="flex items-center justify-between gap-2 px-3 py-1.5">
+          <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-white/10 bg-[#1a0b2e] py-0.5 pl-0.5 pr-2">
+            {receivers.length > 1 && (
+              <button
+                onClick={() => setSendToAll((v) => !v)}
+                className={`grid h-6 shrink-0 place-items-center rounded-full px-2 text-[9px] font-black uppercase tracking-wider transition ${
+                  sendToAll ? "bg-gradient-to-r from-[#ff2d87] to-[#7c3aed] text-white" : "bg-white/5 text-white/70"
+                }`}
+              >
+                All
+              </button>
+            )}
+            {!sendToAll && receivers.slice(0, 4).map((r) => {
+              const active = receiverId === r.id;
+              return (
                 <button
-                  onClick={() => setSendToAll((v) => !v)}
-                  className={`grid h-7 shrink-0 place-items-center rounded-full px-2 text-[10px] font-bold transition ${
-                    sendToAll ? "bg-[#fe2c55] text-white" : "bg-white/10 text-white/80"
+                  key={r.id}
+                  onClick={() => { setSendToAll(false); setReceiverId(r.id); }}
+                  aria-label={r.username ?? "user"}
+                  className={`grid h-6 w-6 shrink-0 place-items-center overflow-hidden rounded-full p-[1.5px] transition ${
+                    active ? "bg-gradient-to-tr from-[#ff2d87] to-[#7c3aed]" : "bg-white/10"
                   }`}
                 >
-                  All
-                </button>
-              )}
-              {receivers.map((r) => {
-                const active = !sendToAll && receiverId === r.id;
-                return (
-                  <button
-                    key={r.id}
-                    onClick={() => {
-                      setSendToAll(false);
-                      setReceiverId(r.id);
-                    }}
-                    aria-label={r.username ?? "user"}
-                    className={`grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full transition ${
-                      active ? "ring-2 ring-[#fe2c55]" : "ring-1 ring-white/15"
-                    }`}
-                  >
+                  <span className="grid h-full w-full place-items-center overflow-hidden rounded-full bg-[#1a0b2e]">
                     {r.avatar ? (
                       <img src={r.avatar} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="text-[10px] font-bold">
+                      <span className="text-[9px] font-bold">
                         {(r.username ?? "?").slice(0, 1).toUpperCase()}
                       </span>
                     )}
-                  </button>
-                );
-              })}
-            </div>
+                  </span>
+                </button>
+              );
+            })}
+            <span className="ml-1 truncate text-[10px] font-bold uppercase tracking-wider text-white/80">
+              {sendToAll
+                ? `All (${receivers.length})`
+                : `→ ${(receivers.find((r) => r.id === receiverId)?.username ?? "Host").slice(0, 10)}`}
+            </span>
           </div>
-        )}
 
-        {/* Tier tabs — Small / Premium / VIP (Jalwa signature 3-tier system) */}
-        <div className="mt-2 flex gap-4 overflow-x-auto border-b border-white/5 px-4">
-          {TIER_ORDER.map((t) => {
-            const active = activeTier === t;
-            return (
-              <button
-                key={t}
-                onClick={() => setActiveTier(t)}
-                className={`relative shrink-0 whitespace-nowrap py-2.5 text-[13px] font-semibold transition ${
-                  active ? "text-white" : "text-white/50"
-                }`}
-              >
-                {TIER_LABEL[t]}
-                {active && (
-                  <span className="absolute inset-x-2 -bottom-px h-[3px] rounded-full bg-[#fe2c55]" />
-                )}
-              </button>
-            );
-          })}
+          <div className="flex shrink-0 rounded-xl border border-white/5 bg-[#1a0b2e] p-0.5">
+            {TIER_ORDER.map((t) => {
+              const active = activeTier === t;
+              const label = t === "small" ? "BASIC" : t === "premium" ? "PREMIUM" : "VIP";
+              return (
+                <button
+                  key={t}
+                  onClick={() => setActiveTier(t)}
+                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9px] font-black transition ${
+                    active
+                      ? "bg-[#7c3aed] text-white shadow-lg shadow-purple-900/50"
+                      : "text-white/40"
+                  }`}
+                >
+                  {label}
+                  {t === "vip" && !active && (
+                    <span className="h-1 w-1 animate-pulse rounded-full bg-[#f5c542]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Gifts grid — 4 cols, dense */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+        {/* Gifts grid — arcade tiles */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-1.5 [scrollbar-width:thin]">
           {gifts.isLoading && (
-            <div className="py-10 text-center">
+            <div className="py-6 text-center">
               <Loader2 className="mx-auto h-5 w-5 animate-spin text-white/40" />
             </div>
           )}
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-4 gap-2">
             {visibleGifts.map((g) => {
               const selected = selectedGift?.id === g.id;
               return (
@@ -405,70 +412,73 @@ export function GiftSheet({
                         if (g.sound_url) {
                           playGiftAudioCue({ soundUrl: g.sound_url, volume: vol });
                         } else if (tier !== "small") {
-                          // Premium/VIP preview: Jalwa signature chime (unique brand cue).
                           playJalwaSignature(vol);
                         }
-                        // Small tier: silent on tap — coin-drop sirf send ke waqt.
                       }
                     }
                   }}
                   onPointerDown={() => preloadGiftVideo(giftVideoUrl(g))}
-                  className={`group relative flex flex-col items-center justify-end gap-0.5 rounded-xl px-1.5 pb-1.5 pt-2 transition ${
-                    selected ? "bg-white/10" : "bg-transparent active:bg-white/5"
+                  className={`group relative flex aspect-square flex-col items-center justify-center rounded-2xl border-2 p-1.5 transition active:scale-95 ${
+                    selected
+                      ? "border-[#ff2d87] bg-[#7c3aed]/10 shadow-[0_0_15px_rgba(255,45,135,0.25)]"
+                      : "border-white/5 bg-[#1a0b2e]"
                   }`}
                 >
-                  <div className="grid h-11 w-11 place-items-center">
+                  <div className="grid h-10 w-10 place-items-center">
                     <GiftPreview gift={g} />
                   </div>
-                  <span className="absolute right-1 top-1 grid h-4 w-4 place-items-center rounded-full bg-black/70 text-white ring-1 ring-white/15">
-                    <Volume2 className="h-2.5 w-2.5" />
-                  </span>
-                  <span className="w-full truncate text-center text-[11px] font-medium text-white/90">
+                  <span className="mt-0.5 w-full truncate px-0.5 text-center text-[9px] font-medium text-white/60">
                     {g.name}
                   </span>
-                  <span className="flex items-center gap-0.5 text-[10px] font-semibold text-[#ffd447]">
-                    <Coins className="h-2.5 w-2.5" />
-                    {price(g).toLocaleString()}
-                  </span>
+                  <div className="mt-0.5 flex items-center gap-0.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#f5c542]" />
+                    <span className="text-[10px] font-black text-[#f5c542]">
+                      {price(g) >= 1000 ? `${(price(g) / 1000).toFixed(price(g) % 1000 === 0 ? 0 : 1)}k` : price(g)}
+                    </span>
+                  </div>
                   {selected && (
-                    <span className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-[#fe2c55]/60" />
+                    <span className="absolute -right-1 -top-1 rounded-full bg-[#ff2d87] px-1.5 text-[8px] font-black uppercase text-white">
+                      Pick
+                    </span>
                   )}
                 </button>
               );
             })}
             {!gifts.isLoading && visibleGifts.length === 0 && (
-              <p className="col-span-4 py-8 text-center text-xs text-white/50">
+              <p className="col-span-4 py-6 text-center text-xs text-white/50">
                 No gifts in this category yet.
               </p>
             )}
           </div>
         </div>
 
-        {/* Bottom action bar — coin balance + qty + Send */}
-        <div className="flex shrink-0 items-center gap-2 border-t border-white/5 bg-[#161616] px-3 py-2.5">
-          <Link
-            to="/recharge"
-            onClick={onClose}
-            className="flex items-center gap-1.5 rounded-full bg-white/[0.06] py-1.5 pl-2 pr-2.5 text-[12px] font-bold text-white active:bg-white/10"
-          >
-            <Coins className="h-3.5 w-3.5 text-[#ffd447]" />
-            <span>{(profile?.coins ?? 0).toLocaleString()}</span>
-            <span className="grid h-4 w-4 place-items-center rounded-full bg-[#fe2c55] text-[10px] font-black leading-none text-white">
+        {/* Bottom control bar — wallet + qty + arcade Send lever */}
+        <div className="flex shrink-0 items-center gap-2 border-t border-white/5 bg-[#0a0215] px-3 py-2">
+          <Link to="/recharge" onClick={onClose} className="flex items-center gap-1.5">
+            <div className="flex flex-col leading-none">
+              <div className="flex items-center gap-1">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#f5c542] shadow-[0_0_6px_#f5c542]" />
+                <span className="text-sm font-black text-white">
+                  {(profile?.coins ?? 0).toLocaleString()}
+                </span>
+              </div>
+              <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[2px] text-white/30">Coins</span>
+            </div>
+            <span className="grid h-7 w-7 place-items-center rounded-lg border-b-4 border-purple-900 bg-[#7c3aed] text-base font-black text-white active:translate-y-[2px] active:border-b-0">
               +
             </span>
           </Link>
 
-          {/* Qty selector */}
-          <div className="flex items-center rounded-full bg-white/[0.06] p-0.5">
+          <div className="flex items-center rounded-lg border border-white/5 bg-[#1a0b2e] p-0.5">
             {[1, 10, 99].map((n) => (
               <button
                 key={n}
                 onClick={() => setQty(n)}
-                className={`min-w-[30px] rounded-full px-2 py-1 text-[11px] font-bold transition ${
-                  qty === n ? "bg-white text-black" : "text-white/70"
+                className={`min-w-[26px] rounded-md px-1.5 py-1 text-[10px] font-black transition ${
+                  qty === n ? "bg-white text-[#0f041e]" : "text-white/60"
                 }`}
               >
-                {n}
+                x{n}
               </button>
             ))}
           </div>
@@ -476,19 +486,23 @@ export function GiftSheet({
           <button
             onClick={handleSend}
             disabled={!selectedGift || (!sendToAll && !receiverId) || !canAfford || send.isPending}
-            className="ml-auto flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#fe2c55] to-[#ff5177] px-4 py-2 text-[13px] font-black text-white shadow-[0_4px_14px_-4px_rgba(254,44,85,0.7)] disabled:opacity-40 disabled:shadow-none"
+            className="group relative ml-auto flex h-10 flex-1 items-center justify-center overflow-hidden rounded-xl border-b-4 border-pink-900 bg-gradient-to-r from-[#ff2d87] to-[#7c3aed] px-4 text-white transition-all active:translate-y-[3px] active:border-b-0 disabled:cursor-not-allowed disabled:border-b-0 disabled:from-white/10 disabled:to-white/10 disabled:text-white/30"
+            style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
           >
             {send.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <Send className="h-3.5 w-3.5" />
+              <span className="relative z-10 flex items-center gap-1.5 text-[12px] font-black uppercase italic tracking-widest">
+                <Send className="h-3.5 w-3.5" />
+                Send
+              </span>
             )}
-            Send
+            <div className="absolute inset-0 translate-y-full bg-white/10 transition-transform duration-300 group-hover:translate-y-0" />
           </button>
         </div>
 
         {selectedGift && !canAfford && (
-          <p className="px-4 pb-1 text-center text-[11px] text-[#fe2c55]">
+          <p className="px-4 pb-1 pt-0.5 text-center text-[10px] font-bold text-[#ff2d87]">
             Not enough coins.{" "}
             <Link to="/recharge" onClick={onClose} className="underline">
               Recharge
