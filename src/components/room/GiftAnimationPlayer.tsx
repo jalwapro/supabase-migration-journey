@@ -1004,7 +1004,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       </div>
 
       {/* receiver DP */}
-      {(current.receiverAvatar || current.receiverName) && (
+      {!isSmallGift && (current.receiverAvatar || current.receiverName) && (
         <div className="absolute inset-x-0 bottom-2 z-[220] flex flex-col items-center gift-anim-caption">
           <div className="relative">
             <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
