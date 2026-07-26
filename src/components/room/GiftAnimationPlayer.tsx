@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
-import { playGiftAudioCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
+import { playGiftAudioCue, playGiftSynthCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
 import SvgaPlayer from "./SvgaPlayer";
 
 
