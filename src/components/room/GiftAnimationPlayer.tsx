@@ -568,6 +568,19 @@ function SmallGiftFlyer({
     const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
     let soundFired = false;
 
+    // Train mode: at every 10-combo the gift arrives as a rolling train
+    // (locomotive + N wagons). More combo → longer train.
+    if (trainWagons >= 1) {
+      const cleanup = spawnGiftTrain(host, {
+        emoji,
+        image,
+        wagons: trainWagons,
+        volume,
+      });
+      return cleanup;
+    }
+
+
     // ------------------------------------------------------------------
     // Redesigned "Comet" style — clean, cinematic, TikTok/Bigo grade.
     // Hero: gift rises from lower-center with a soft golden shockwave,
