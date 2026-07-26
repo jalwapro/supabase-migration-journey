@@ -437,17 +437,25 @@ export function useZegoRoom({
     localRawCameraRef.current = null;
     try { localPipelineReleaseRef.current?.(); } catch { /* ignore */ }
     localPipelineReleaseRef.current = null;
-    const mp = musicPlayerRef.current;
-    if (mp) {
-      try { mp.stop(); } catch { /* ignore */ }
-      try { mp.destroy?.(); } catch { /* ignore */ }
-      musicPlayerRef.current = null;
+    const el = musicAudioElRef.current;
+    if (el) {
+      try { el.pause(); el.src = ""; el.remove(); } catch { /* ignore */ }
+      musicAudioElRef.current = null;
     }
+    const mstream = musicStreamRef.current;
+    const mid = musicStreamIdRef.current;
+    if (mstream && mid) {
+      try { engineRef.current?.stopPublishingStream(mid); } catch { /* ignore */ }
+      try { mstream.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    }
+    musicStreamRef.current = null;
+    musicStreamIdRef.current = null;
     if (musicUrlRef.current) {
       try { URL.revokeObjectURL(musicUrlRef.current); } catch { /* ignore */ }
       musicUrlRef.current = null;
     }
     setMusicPlaying(false);
+
     setMusicTitle(null);
   }, []);
 
