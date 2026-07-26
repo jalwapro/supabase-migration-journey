@@ -789,7 +789,35 @@ function spawnFlyer(
     ],
     { duration, easing: "cubic-bezier(.25,.55,.35,1)", fill: "forwards" },
   );
+  // Sparkle trail during flight
+  const trailTimers: number[] = [];
+  const trailCount = 6;
+  for (let i = 1; i <= trailCount; i++) {
+    const t = window.setTimeout(() => {
+      const tt = i / (trailCount + 1);
+      // quadratic bezier: (1-t)^2 * P0 + 2(1-t)t*P1 + t^2*P2
+      const bx = (1 - tt) * (1 - tt) * startX + 2 * (1 - tt) * tt * midX + tt * tt * endX;
+      const by = (1 - tt) * (1 - tt) * startY + 2 * (1 - tt) * tt * midY + tt * tt * endY;
+      const s = 6 + Math.random() * 5;
+      const dot = document.createElement("i");
+      dot.style.cssText =
+        `position:fixed;left:${bx - s / 2}px;top:${by - s / 2}px;width:${s}px;height:${s}px;` +
+        `border-radius:9999px;background:radial-gradient(circle,#fff, rgba(255,220,120,.9) 55%, transparent);` +
+        `box-shadow:0 0 10px rgba(255,220,120,.9);pointer-events:none;z-index:2147483645;`;
+      host.appendChild(dot);
+      dot.animate(
+        [
+          { transform: "scale(1)", opacity: 0.95 },
+          { transform: "scale(0.2)", opacity: 0 },
+        ],
+        { duration: 520, easing: "ease-out", fill: "forwards" },
+      ).onfinish = () => dot.remove();
+    }, (duration * i) / (trailCount + 1));
+    trailTimers.push(t);
+  }
+
   anim.onfinish = () => {
+    trailTimers.forEach((t) => clearTimeout(t));
     spawnLandingBurst(host, endX, endY);
     el.remove();
   };
