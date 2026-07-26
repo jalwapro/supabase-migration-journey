@@ -1568,6 +1568,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             emoji={current.giftEmoji}
             image={fallbackImage}
             quantity={current.quantity}
+            comboTotal={current.comboTotal ?? 0}
             receiverIds={current.receiverIds ?? (current.receiverId ? [current.receiverId] : [])}
             fallbackReceiverId={current.receiverId ?? null}
             volume={audioPrefs.muted ? 0 : audioPrefs.volume}
