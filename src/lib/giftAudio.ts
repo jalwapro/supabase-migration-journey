@@ -120,6 +120,62 @@ export function playCoinsCue(volume = 0.6) {
   }
 }
 
+/** Soft magical gift whoosh + twinkle — TikTok-style landing cue.
+ *  Sirf ek short "pfft-twinkle" jo har flyer landing pe smooth lagay,
+ *  coin-drop jaisi nahi. */
+export function playGiftWhooshCue(volume = 0.55) {
+  const ctx = getAudioContext();
+  if (!ctx) return false;
+  try {
+    if (ctx.state === "suspended") void ctx.resume();
+    const master = ctx.createGain();
+    master.gain.value = Math.max(0, Math.min(1, volume));
+    master.connect(ctx.destination);
+    const t0 = ctx.currentTime + 0.005;
+
+    // 1) Soft airy whoosh (filtered noise sweep, very short).
+    const bufSize = Math.floor(ctx.sampleRate * 0.18);
+    const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize);
+    const noise = ctx.createBufferSource();
+    noise.buffer = buf;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(1600, t0);
+    bp.frequency.exponentialRampToValueAtTime(4200, t0 + 0.16);
+    bp.Q.value = 1.2;
+    const ng = ctx.createGain();
+    ng.gain.setValueAtTime(0.0001, t0);
+    ng.gain.exponentialRampToValueAtTime(0.28, t0 + 0.02);
+    ng.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.18);
+    noise.connect(bp).connect(ng).connect(master);
+    noise.start(t0);
+    noise.stop(t0 + 0.2);
+
+    // 2) Twinkle bell on top (two high sine notes, ascending).
+    const notes = [1760, 2637]; // A6, E7
+    notes.forEach((f, i) => {
+      const t = t0 + 0.03 + i * 0.05;
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = f;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.22, t + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+      osc.connect(g).connect(master);
+      osc.start(t);
+      osc.stop(t + 0.24);
+    });
+
+    setTimeout(() => { try { master.disconnect(); } catch { /* noop */ } }, 500);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Jalwa signature chime — 3 golden ascending notes + shimmer.
  *  Sirf tab bajta hai jab gift ke pass real soundUrl na ho. */
 export function playJalwaSignature(volume = 0.6) {
