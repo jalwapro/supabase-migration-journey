@@ -22,16 +22,14 @@ type EmojiRow = {
   clip_path: string;
   sort_order: number;
   is_active: boolean;
-  tier: "normal" | "vip" | "svip" | "host_only";
+  tier: "normal" | "vip";
   min_vip_level: number;
   is_animated: boolean;
 };
 
 const TIERS = [
   { key: "normal", label: "Normal", tone: "bg-slate-500/20 text-slate-200 border-slate-500/40" },
-  { key: "vip", label: "VIP", tone: "bg-amber-500/20 text-amber-200 border-amber-500/40" },
-  { key: "svip", label: "SVIP", tone: "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-500/40" },
-  { key: "host_only", label: "Host Only", tone: "bg-rose-500/20 text-rose-200 border-rose-500/40" },
+  { key: "vip", label: "👑 VIP Only", tone: "bg-amber-500/20 text-amber-200 border-amber-500/40" },
 ] as const;
 
 type TierKey = (typeof TIERS)[number]["key"];
@@ -60,7 +58,7 @@ function makeEmpty(tier: TierKey): Draft {
     clip_path: "",
     sort_order: 99,
     tier,
-    min_vip_level: tier === "vip" ? 1 : tier === "svip" ? 30 : 0,
+    min_vip_level: tier === "vip" ? 1 : 0,
     is_animated: true,
   };
 }
@@ -86,10 +84,11 @@ function EmojisAdmin() {
   });
 
   const byTier = useMemo(() => {
-    const grouped: Record<TierKey, EmojiRow[]> = { normal: [], vip: [], svip: [], host_only: [] };
+    const grouped: Record<TierKey, EmojiRow[]> = { normal: [], vip: [] };
     for (const e of emojis) {
-      const t = (e.tier ?? "normal") as TierKey;
-      if (grouped[t]) grouped[t].push(e);
+      const raw = (e.tier ?? "normal") as string;
+      const t: TierKey = raw === "normal" ? "normal" : "vip";
+      grouped[t].push(e);
     }
     return grouped;
   }, [emojis]);
