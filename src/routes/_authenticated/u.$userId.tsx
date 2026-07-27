@@ -436,11 +436,13 @@ function UserProfilePage() {
 
         {/* Hero card */}
         <div className="relative z-10 mx-4 mt-3">
-          <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-2xl shadow-[0_20px_60px_-20px_rgba(168,85,247,0.55)]">
-            {/* Gold corner brackets */}
-            <CornerBrackets />
-            {/* Shimmer border */}
-            <div className="pointer-events-none absolute inset-0 rounded-[28px] [background:linear-gradient(120deg,transparent_30%,rgba(255,215,120,0.18)_50%,transparent_70%)] opacity-60 animate-[shimmer_6s_linear_infinite] [background-size:200%_100%]" />
+          <div className="relative rounded-[28px] border border-white/10 bg-white/[0.04] p-5 pt-10 backdrop-blur-2xl shadow-[0_20px_60px_-20px_rgba(168,85,247,0.55)]">
+            <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[28px]">
+              {/* Gold corner brackets */}
+              <CornerBrackets />
+              {/* Shimmer border */}
+              <div className="absolute inset-0 rounded-[28px] [background:linear-gradient(120deg,transparent_30%,rgba(255,215,120,0.18)_50%,transparent_70%)] opacity-60 animate-[shimmer_6s_linear_infinite] [background-size:200%_100%]" />
+            </div>
 
             <div className="relative flex flex-col items-center">
               {/* Avatar with rotating aura */}
