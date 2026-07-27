@@ -1418,7 +1418,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       : chromakeyMode === "none"
         ? false
         : autoBlackBg;
-  const showGreenStage = (chromakeyMode === "none" || chromakeyMode === "green") && hasVideo && !isRoyalRose && !isSpaceship && (current?.coins ?? 0) > 300;
+  const showGreenStage = (chromakeyMode === "none" || chromakeyMode === "green") && hasVideo && !isRoyalRose && !isSpaceship;
   // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
