@@ -81,6 +81,8 @@ async function uploadToShop(file: File, folder: string) {
 function ThemesAdmin() {
   const qc = useQueryClient();
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
   const [editing, setEditing] = useState<Theme | null>(null);
 
 
