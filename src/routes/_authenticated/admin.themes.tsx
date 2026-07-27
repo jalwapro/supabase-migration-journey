@@ -188,6 +188,58 @@ function ThemesAdmin() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_themes"] }),
   });
 
+  const updatePrice = useMutation({
+    mutationFn: async ({ id, price }: { id: string; price: number }) => {
+      const { error } = await supabase.from("themes").update({ price_diamonds: price }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Price updated");
+      qc.invalidateQueries({ queryKey: ["admin_themes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkToggle = useMutation({
+    mutationFn: async ({ ids, active }: { ids: string[]; active: boolean }) => {
+      const { error } = await supabase.from("themes").update({ is_active: active }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(`${v.ids.length} items ${v.active ? "shown" : "hidden"}`);
+      qc.invalidateQueries({ queryKey: ["admin_themes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkPricePct = useMutation({
+    mutationFn: async ({ ids, pct }: { ids: string[]; pct: number }) => {
+      const rows = (list.data ?? []).filter((t) => ids.includes(t.id));
+      for (const t of rows) {
+        const newPrice = Math.max(0, Math.round(t.price_diamonds * (1 + pct / 100)));
+        const { error } = await supabase.from("themes").update({ price_diamonds: newPrice }).eq("id", t.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_d, v) => {
+      toast.success(`Adjusted ${v.ids.length} prices by ${v.pct > 0 ? "+" : ""}${v.pct}%`);
+      qc.invalidateQueries({ queryKey: ["admin_themes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (list.data ?? []).filter((t) => {
+      if (filterCat !== "all" && t.category_id !== filterCat) return false;
+      if (!q) return true;
+      return t.name.toLowerCase().includes(q) || String(t.price_diamonds).includes(q);
+    });
+  }, [list.data, filterCat, search]);
+
+  const filteredIds = filteredItems.map((t) => t.id);
+
+
   return (
     <>
       <AdminPageHeader title="Shop Items" subtitle="Cars, frames, rings, entrances — animated items users buy with diamonds" />
