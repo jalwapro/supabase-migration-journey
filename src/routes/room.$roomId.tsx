@@ -5263,7 +5263,14 @@ function SeatRequestPopup({
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
 /* ─── Emoji reaction sheet: pick seat + emoji (animated 50-set) ─── */
-type ReactionEmoji = { slug: string; emoji: string; name: string; clip_path: string };
+type ReactionEmoji = {
+  slug: string;
+  emoji: string;
+  name: string;
+  clip_path: string;
+  tier?: string | null;
+  min_vip_level?: number | null;
+};
 
 function EmojiReactionSheet({
   open,

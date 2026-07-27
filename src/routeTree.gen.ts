@@ -69,6 +69,7 @@ import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
 import { Route as AuthenticatedAdminSupportChatRouteImport } from './routes/_authenticated/admin.support-chat'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
+import { Route as AuthenticatedAdminSpotlightsRouteImport } from './routes/_authenticated/admin.spotlights'
 import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenticated/admin.splash'
 import { Route as AuthenticatedAdminSpinPrizesRouteImport } from './routes/_authenticated/admin.spin-prizes'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -91,6 +92,7 @@ import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAdminGiftBatchesRouteImport } from './routes/_authenticated/admin.gift-batches'
 import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
 import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
+import { Route as AuthenticatedAdminEmojisRouteImport } from './routes/_authenticated/admin.emojis'
 import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
 import { Route as AuthenticatedAdminConnectionRouteImport } from './routes/_authenticated/admin.connection'
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
@@ -410,6 +412,12 @@ const AuthenticatedAdminSupportRoute =
     path: '/support',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSpotlightsRoute =
+  AuthenticatedAdminSpotlightsRouteImport.update({
+    id: '/spotlights',
+    path: '/spotlights',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminSplashRoute =
   AuthenticatedAdminSplashRouteImport.update({
     id: '/splash',
@@ -535,6 +543,12 @@ const AuthenticatedAdminFinanceReportsRoute =
     path: '/finance-reports',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEmojisRoute =
+  AuthenticatedAdminEmojisRouteImport.update({
+    id: '/emojis',
+    path: '/emojis',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCustomThemesRoute =
   AuthenticatedAdminCustomThemesRouteImport.update({
     id: '/custom-themes',
@@ -623,6 +637,7 @@ export interface FileRoutesByFullPath {
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
+  '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
@@ -645,6 +660,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
+  '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
@@ -711,6 +727,7 @@ export interface FileRoutesByTo {
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
+  '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
@@ -733,6 +750,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
+  '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
@@ -803,6 +821,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/_authenticated/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/_authenticated/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
+  '/_authenticated/admin/emojis': typeof AuthenticatedAdminEmojisRoute
   '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
   '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/_authenticated/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
@@ -825,6 +844,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/_authenticated/admin/splash': typeof AuthenticatedAdminSplashRoute
+  '/_authenticated/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
@@ -895,6 +915,7 @@ export interface FileRouteTypes {
     | '/admin/coins'
     | '/admin/connection'
     | '/admin/custom-themes'
+    | '/admin/emojis'
     | '/admin/finance-reports'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
@@ -917,6 +938,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/spin-prizes'
     | '/admin/splash'
+    | '/admin/spotlights'
     | '/admin/support'
     | '/admin/support-chat'
     | '/admin/theme-categories'
@@ -983,6 +1005,7 @@ export interface FileRouteTypes {
     | '/admin/coins'
     | '/admin/connection'
     | '/admin/custom-themes'
+    | '/admin/emojis'
     | '/admin/finance-reports'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
@@ -1005,6 +1028,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/spin-prizes'
     | '/admin/splash'
+    | '/admin/spotlights'
     | '/admin/support'
     | '/admin/support-chat'
     | '/admin/theme-categories'
@@ -1074,6 +1098,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/coins'
     | '/_authenticated/admin/connection'
     | '/_authenticated/admin/custom-themes'
+    | '/_authenticated/admin/emojis'
     | '/_authenticated/admin/finance-reports'
     | '/_authenticated/admin/free-accounts'
     | '/_authenticated/admin/gift-batches'
@@ -1096,6 +1121,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/spin-prizes'
     | '/_authenticated/admin/splash'
+    | '/_authenticated/admin/spotlights'
     | '/_authenticated/admin/support'
     | '/_authenticated/admin/support-chat'
     | '/_authenticated/admin/theme-categories'
@@ -1564,6 +1590,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminSupportRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/spotlights': {
+      id: '/_authenticated/admin/spotlights'
+      path: '/spotlights'
+      fullPath: '/admin/spotlights'
+      preLoaderRoute: typeof AuthenticatedAdminSpotlightsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/splash': {
       id: '/_authenticated/admin/splash'
       path: '/splash'
@@ -1718,6 +1751,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFinanceReportsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/emojis': {
+      id: '/_authenticated/admin/emojis'
+      path: '/emojis'
+      fullPath: '/admin/emojis'
+      preLoaderRoute: typeof AuthenticatedAdminEmojisRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/custom-themes': {
       id: '/_authenticated/admin/custom-themes'
       path: '/custom-themes'
@@ -1778,6 +1818,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
   AuthenticatedAdminConnectionRoute: typeof AuthenticatedAdminConnectionRoute
   AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
+  AuthenticatedAdminEmojisRoute: typeof AuthenticatedAdminEmojisRoute
   AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
   AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
   AuthenticatedAdminGiftBatchesRoute: typeof AuthenticatedAdminGiftBatchesRoute
@@ -1800,6 +1841,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminSpinPrizesRoute: typeof AuthenticatedAdminSpinPrizesRoute
   AuthenticatedAdminSplashRoute: typeof AuthenticatedAdminSplashRoute
+  AuthenticatedAdminSpotlightsRoute: typeof AuthenticatedAdminSpotlightsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedAdminSupportChatRoute: typeof AuthenticatedAdminSupportChatRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
@@ -1819,6 +1861,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
   AuthenticatedAdminConnectionRoute: AuthenticatedAdminConnectionRoute,
   AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
+  AuthenticatedAdminEmojisRoute: AuthenticatedAdminEmojisRoute,
   AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
   AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
   AuthenticatedAdminGiftBatchesRoute: AuthenticatedAdminGiftBatchesRoute,
@@ -1843,6 +1886,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminSpinPrizesRoute: AuthenticatedAdminSpinPrizesRoute,
   AuthenticatedAdminSplashRoute: AuthenticatedAdminSplashRoute,
+  AuthenticatedAdminSpotlightsRoute: AuthenticatedAdminSpotlightsRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedAdminSupportChatRoute: AuthenticatedAdminSupportChatRoute,
   AuthenticatedAdminThemeCategoriesRoute:
