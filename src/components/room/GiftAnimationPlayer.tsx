@@ -269,8 +269,7 @@ function AnimatedGiftVideo({
 
 
   const filterParts: string[] = [];
-  if (greenKey) filterParts.push("url(#jalwa-green-key)");
-  else if (lumaKey || screenBlend) filterParts.push("url(#jalwa-luma-key)");
+  if (lumaKey || screenBlend) filterParts.push("url(#jalwa-luma-key)");
   filterParts.push(
     screenBlend || lumaKey || greenKey
       ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
@@ -278,7 +277,10 @@ function AnimatedGiftVideo({
   );
 
   return (
-    <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
+    <div
+      className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent"
+      style={{ filter: greenKey ? "url(#jalwa-green-key)" : undefined }}
+    >
       {greenStage && <div className="absolute inset-[7dvh_0] bg-[color:var(--gift-chromakey-green)]" />}
       {(lumaKey || screenBlend || greenKey) && (
         <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
@@ -1416,7 +1418,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       : chromakeyMode === "none"
         ? false
         : autoBlackBg;
-  const showGreenStage = chromakeyMode === "none" && hasVideo && !isRoyalRose && !isSpaceship && (current?.coins ?? 0) > 300;
+  const showGreenStage = (chromakeyMode === "none" || chromakeyMode === "green") && hasVideo && !isRoyalRose && !isSpaceship && (current?.coins ?? 0) > 300;
   // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
