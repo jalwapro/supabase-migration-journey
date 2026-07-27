@@ -34,16 +34,22 @@ function LiveAdmin() {
       const { data, error } = await supabase
         .from("live_rooms")
         .select(
-          "id,title,room_type,cover_url,viewer_count,seat_count,host_id,created_at,host:profiles!live_rooms_host_id_fkey(username,avatar),pop:room_popularity(coin_score)",
+          "id,title,room_type,cover_url,viewer_count,seat_count,host_id,created_at,host:profiles!live_rooms_host_id_fkey(username,avatar)",
         )
         .eq("status", "live")
         .limit(100);
       if (error) throw error;
-      const rows = (data ?? []).map((r: any) => ({
-        ...r,
-        coin_score: Number(r.pop?.coin_score ?? 0),
-      })) as Live[];
-      // Rank: coin score first (top host), then live viewers, then recent
+      const rows = (data ?? []) as unknown as Live[];
+      const ids = rows.map((r) => r.id);
+      let scoreMap = new Map<string, number>();
+      if (ids.length) {
+        const { data: pop } = await supabase
+          .from("room_popularity")
+          .select("room_id,coin_score")
+          .in("room_id", ids);
+        (pop ?? []).forEach((p: any) => scoreMap.set(p.room_id, Number(p.coin_score ?? 0)));
+      }
+      rows.forEach((r) => (r.coin_score = scoreMap.get(r.id) ?? 0));
       rows.sort((a, b) =>
         (b.coin_score - a.coin_score) ||
         ((b.viewer_count ?? 0) - (a.viewer_count ?? 0)) ||
