@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Upload, Loader2, Gem, Pencil, X, Save } from "lucide-react";
+import { Plus, Trash2, Upload, Loader2, Gem, Pencil, X, Save, Search, Eye, EyeOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 
