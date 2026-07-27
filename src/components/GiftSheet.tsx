@@ -229,7 +229,7 @@ export function GiftSheet({
     price(selectedGift) * qty * (sendToAll ? Math.max(1, receivers.length) : 1);
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
-  const handleSend = () => {
+  const performSend = () => {
     if (!selectedGift || send.isPending) return;
     const targets = sendToAll
       ? receivers.map((r) => r.id)
