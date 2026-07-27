@@ -191,28 +191,27 @@ END $$;
 \echo === TEST 6: Support claim + close flow ===
 DO $$
 DECLARE
-  admin_id uuid := current_setting('test.admin_id')::uuid;
-  user_id  uuid := '11111111-1111-1111-1111-111111111111';
-  conv_id  uuid;
+  v_admin uuid := current_setting('test.admin_id')::uuid;
+  v_user  uuid := '11111111-1111-1111-1111-111111111111';
+  v_conv  uuid;
 BEGIN
-  -- User opens conversation
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', user_id::text, 'role','authenticated')::text, true);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_user::text, 'role','authenticated')::text, true);
   INSERT INTO public.support_conversations (user_id, status, last_message_preview)
-  VALUES (user_id, 'open', 'hi need help')
-  ON CONFLICT (user_id) DO UPDATE SET status = 'open', assigned_agent = NULL, last_message_preview = EXCLUDED.last_message_preview
-  RETURNING id INTO conv_id;
+  VALUES (v_user, 'open', 'hi need help')
+  ON CONFLICT (user_id) DO UPDATE
+    SET status = 'open', assigned_agent = NULL,
+        last_message_preview = EXCLUDED.last_message_preview
+  RETURNING id INTO v_conv;
 
-  -- Agent (admin has is_support_agent=true) claims
-  PERFORM set_config('request.jwt.claims', json_build_object('sub', admin_id::text, 'role','authenticated')::text, true);
-  PERFORM public.claim_support_conversation(conv_id);
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', v_admin::text, 'role','authenticated')::text, true);
+  PERFORM public.claim_support_conversation(v_conv);
 
-  IF (SELECT assigned_agent FROM public.support_conversations WHERE id = conv_id) <> admin_id THEN
+  IF (SELECT assigned_agent FROM public.support_conversations WHERE id = v_conv) <> v_admin THEN
     RAISE EXCEPTION 'FAIL: claim did not set assigned_agent';
   END IF;
 
-  -- Agent closes
-  PERFORM public.close_support_conversation(conv_id);
-  IF (SELECT status FROM public.support_conversations WHERE id = conv_id) <> 'closed' THEN
+  PERFORM public.close_support_conversation(v_conv);
+  IF (SELECT status FROM public.support_conversations WHERE id = v_conv) <> 'closed' THEN
     RAISE EXCEPTION 'FAIL: close did not mark conversation closed';
   END IF;
   RAISE NOTICE 'PASS: support claim + close flow';
