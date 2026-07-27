@@ -21,6 +21,10 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }) {
         0,
       );
     },
+    staleTime: 120_000,
+    gcTime: 10 * 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }
 
