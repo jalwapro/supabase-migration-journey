@@ -1,11 +1,12 @@
--- VIP membership plans (1/3/6/9/12 months) + vip_only flag on shop items.
+-- VIP membership plans (1/3/6/9/12 months) + VIP-only enforcement on shop items.
+-- VIP-only items use the existing `themes.is_premium` flag.
 
--- 1. Seed 5 VIP tiers (idempotent by name)
+-- 1. Seed 5 VIP tiers
 INSERT INTO public.vip_tiers (name, price, duration_days, level_boost, badge_emoji, perks, sort, is_active)
 VALUES
-  ('VIP 1 Month',   50000,  30, 1, '👑',
+  ('VIP 1 Month',   50000,  30,  1, '👑',
     'All VIP emojis · Exclusive VIP frames, themes, entrance, entry effect · VIP badge · Priority spotlight', 1, true),
-  ('VIP 3 Months',  135000, 90, 2, '👑',
+  ('VIP 3 Months',  135000, 90,  2, '👑',
     'Everything in 1 Month · 10% bonus coins on top-ups · Exclusive VIP-only shop items', 2, true),
   ('VIP 6 Months',  240000, 180, 3, '💎',
     'Everything in 3 Months · Free monthly VIP frame · Custom entrance banner', 3, true),
@@ -15,21 +16,11 @@ VALUES
     'Everything · Lifetime badge upgrade · Free premium theme every month · Top-tier spotlight', 5, true)
 ON CONFLICT DO NOTHING;
 
--- Some deployments may already have unique(name); ensure duplicates don't crash if run twice.
--- (No unique constraint by default, so guard manually.)
-DELETE FROM public.vip_tiers a
-  USING public.vip_tiers b
- WHERE a.ctid < b.ctid
-   AND a.name = b.name;
+-- Dedupe by name in case of re-runs before a unique index exists.
+DELETE FROM public.vip_tiers a USING public.vip_tiers b
+ WHERE a.ctid < b.ctid AND a.name = b.name;
 
--- 2. Add vip_only flag to shop items
-ALTER TABLE public.themes    ADD COLUMN IF NOT EXISTS vip_only boolean NOT NULL DEFAULT false;
-ALTER TABLE public.dp_frames ADD COLUMN IF NOT EXISTS vip_only boolean NOT NULL DEFAULT false;
-
-CREATE INDEX IF NOT EXISTS idx_themes_vip_only    ON public.themes(vip_only)    WHERE vip_only;
-CREATE INDEX IF NOT EXISTS idx_dp_frames_vip_only ON public.dp_frames(vip_only) WHERE vip_only;
-
--- 3. Enforce VIP-only in purchase_shop_item (both signatures)
+-- 2. Gate shop purchases on VIP membership when the item is flagged VIP-only (is_premium).
 CREATE OR REPLACE FUNCTION public.purchase_shop_item(_theme_id uuid, _currency text DEFAULT 'auto')
 RETURNS public.user_themes
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
@@ -46,7 +37,7 @@ begin
   select * into _t from public.themes where id = _theme_id and is_active;
   if not found then raise exception 'Item not found'; end if;
 
-  if _t.vip_only then
+  if _t.is_premium then
     select (is_vip and (vip_expiry is null or vip_expiry > now()))
       into _is_vip from public.profiles where id = _uid;
     if not coalesce(_is_vip, false) then
