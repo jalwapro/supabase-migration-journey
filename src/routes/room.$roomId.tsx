@@ -5374,27 +5374,69 @@ function EmojiReactionSheet({
             <span className="text-[11px] text-white/50">No one on stage yet.</span>
           )}
         </div>
-        <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
-          Tap an animated emoji
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
+            Tap an animated emoji
+          </div>
+          <div className="flex gap-1">
+            {(["all", "normal", "vip"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTierFilter(t)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
+                  tierFilter === t
+                    ? "bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black"
+                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                }`}
+              >
+                {t === "vip" ? "👑 VIP" : t}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="mt-2 grid max-h-[42vh] grid-cols-6 gap-1.5 overflow-y-auto pr-1 scrollbar-hide">
-          {emojis.map((e) => (
-            <button
-              key={e.slug}
-              onClick={() => {
-                onClose();
-                setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
-              }}
-              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 p-1 transition active:scale-90 hover:bg-white/15"
-              title={e.name}
-            >
-              <img src={e.clip_path} alt={e.name} loading="lazy" className="h-full w-full object-contain" />
-            </button>
-          ))}
+          {visible.map((e) => {
+            const unlocked = isUnlocked(e);
+            return (
+              <button
+                key={e.slug}
+                onClick={() => {
+                  if (!unlocked) {
+                    const tier = e.tier ?? "normal";
+                    toast.info(
+                      tier === "host_only"
+                        ? "Host-only emoji"
+                        : `VIP ${e.min_vip_level ?? 1}+ required — upgrade to unlock`
+                    );
+                    return;
+                  }
+                  onClose();
+                  setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
+                }}
+                className={`relative grid aspect-square place-items-center rounded-xl border border-white/10 p-1 transition active:scale-90 ${
+                  unlocked ? "bg-white/5 hover:bg-white/15" : "bg-black/30 opacity-70"
+                }`}
+                title={e.name}
+              >
+                <img
+                  src={e.clip_path}
+                  alt={e.name}
+                  loading="lazy"
+                  className={`h-full w-full object-contain ${unlocked ? "" : "grayscale"}`}
+                />
+                {!unlocked && (
+                  <span className="absolute right-0.5 top-0.5 rounded-full bg-amber-500/90 px-1 text-[8px] font-black text-black">
+                    👑
+                  </span>
+                )}
+              </button>
+            );
+          })}
           {emojis.length === 0 && (
             <span className="col-span-6 py-6 text-center text-[11px] text-white/50">Loading…</span>
           )}
         </div>
+
       </div>
     </>
   );
