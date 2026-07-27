@@ -70,6 +70,7 @@ import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
+import { ProfileSpotlight } from "@/components/room/ProfileSpotlight";
 
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
