@@ -343,7 +343,7 @@ function AnimatedGiftVideo({
           transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
           background: "transparent",
           willChange: "opacity, transform",
-          mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
+          mixBlendMode: greenStage || (!lumaKey && !greenKey && screenBlend) ? "screen" : undefined,
           filter: filterParts.join(" "),
         }}
       />
@@ -1407,7 +1407,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
-  // Admin-controlled chromakey (auto|none|screen|luma) overrides the heuristic.
+  // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
   const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
   const isBlackBg =
