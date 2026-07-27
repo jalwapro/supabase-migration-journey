@@ -95,7 +95,11 @@ function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
   if (gift.clip_path && gift.clip_type === "svg") {
     return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className={imgClass} loading="lazy" />;
   }
-  return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
+  // Never render raw URLs / asset paths as text — that's what caused the
+  // "code showing" look on VIP tiles when a gift only had a video icon.
+  const rawIcon = gift.icon ?? gift.emoji ?? "";
+  const looksLikeCode = !rawIcon || isAssetUrlLike(rawIcon) || rawIcon.length > 4 || /[<>{}\/\\]/.test(rawIcon);
+  return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{looksLikeCode ? "🎁" : rawIcon}</span>;
 }
 
 export function GiftSheet({
