@@ -96,7 +96,7 @@ begin
     returning * into r;
   if not found then raise exception 'report not found'; end if;
 
-  insert into public.admin_logs(actor, action, target)
+  insert into public.admin_logs(admin_id, action, target)
     values (me, 'report_' || _status, _id::text);
 
   if _status in ('resolved','dismissed') and r.reporter_id is not null then
@@ -139,7 +139,7 @@ begin
    where id = _id;
   if not found then raise exception 'conversation not found'; end if;
 
-  insert into public.admin_logs(actor, action, target)
+  insert into public.admin_logs(admin_id, action, target)
     values (me, 'support_claim', _id::text);
 end $$;
 
@@ -164,7 +164,7 @@ begin
    returning user_id into cust;
   if cust is null then raise exception 'conversation not found'; end if;
 
-  insert into public.admin_logs(actor, action, target)
+  insert into public.admin_logs(admin_id, action, target)
     values (me, 'support_close', _id::text);
 
   begin

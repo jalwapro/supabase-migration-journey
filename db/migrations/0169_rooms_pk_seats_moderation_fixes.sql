@@ -509,7 +509,7 @@ begin
    where id = _room_id
      and status <> 'ended';
 
-  insert into public.admin_logs(actor, action, target)
+  insert into public.admin_logs(admin_id, action, target)
     values (me, 'force_end_room', _room_id::text);
 end $$;
 
@@ -547,7 +547,7 @@ begin
 
   delete from public.live_rooms where id = _room_id;
 
-  insert into public.admin_logs(actor, action, target)
+  insert into public.admin_logs(admin_id, action, target)
     values (me, 'delete_room', _room_id::text);
 end $$;
 
