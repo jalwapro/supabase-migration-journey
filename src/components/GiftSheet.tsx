@@ -294,6 +294,20 @@ export function GiftSheet({
     onSent?.({ gift: selectedGift, targets });
   };
 
+  const handleSend = () => {
+    if (!selectedGift || send.isPending) return;
+    if (!canAfford) {
+      toast.error("Not enough coins");
+      return;
+    }
+    // VIP-tier gifts require an explicit confirm to avoid accidental big spends.
+    if (tierOf(price(selectedGift)) === "vip") {
+      setConfirmOpen(true);
+      return;
+    }
+    performSend();
+  };
+
   // (tier tabs use TIER_ORDER directly — no legacy category resolution needed)
 
   return (
