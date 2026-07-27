@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Loader2, Upload, Save, X, Play } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
