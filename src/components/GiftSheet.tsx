@@ -111,6 +111,7 @@ export function GiftSheet({
   const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
   const [activeTier, setActiveTier] = useState<Tier>("small");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const gifts = useQuery({
     queryKey: ["gifts"],
