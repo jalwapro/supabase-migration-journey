@@ -317,16 +317,108 @@ function GiftsAdmin() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const catCounts = useMemo(() => {
+    const map: Record<string, { total: number; active: number }> = {};
+    for (const c of CATEGORIES) map[c] = { total: 0, active: 0 };
+    for (const g of list.data ?? []) {
+      if (!map[g.category]) map[g.category] = { total: 0, active: 0 };
+      map[g.category].total++;
+      if (g.is_active) map[g.category].active++;
+    }
+    return map;
+  }, [list.data]);
+
+  const filteredGifts = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (list.data ?? []).filter((g) => {
+      if (g.category !== activeCat) return false;
+      if (!q) return true;
+      return g.name.toLowerCase().includes(q) || String(g.price).includes(q);
+    });
+  }, [list.data, activeCat, search]);
+
+  const activeIds = filteredGifts.map((g) => g.id);
+
   return (
     <>
       <AdminPageHeader
         title="Gifts Management"
-        subtitle="Add SVG, MP4, or WebM animated gifts. Videos upload to shop-assets/gift-clips."
+        subtitle="Category-wise windows. Search, inline price edit, bulk hide/show and % price adjust."
       />
+
+      {/* Category tabs */}
+      <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        {CATEGORIES.map((c) => {
+          const stat = catCounts[c] ?? { total: 0, active: 0 };
+          const active = activeCat === c;
+          return (
+            <button
+              key={c}
+              onClick={() => setActiveCat(c)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition ${active ? "bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground shadow-lg" : "bg-card/60 text-muted-foreground hover:text-foreground"}`}
+            >
+              {c}
+              <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${active ? "bg-black/25 text-white" : "bg-black/30 text-[color:var(--gold)]"}`}>
+                {stat.active}/{stat.total}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       <div className="grid gap-4 md:grid-cols-[1fr_360px]">
         {/* Gift list */}
         <div>
+          {/* Search + bulk bar */}
+          <div className="mb-2 flex flex-wrap items-center gap-1.5">
+            <div className="flex flex-1 items-center gap-1.5 rounded-full border border-border bg-input/60 px-3 py-1.5">
+              <Search className="h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={`Search in ${activeCat}…`}
+                className="w-full bg-transparent text-xs outline-none"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="text-muted-foreground">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="mb-2 flex flex-wrap items-center gap-1">
+            <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Bulk ({activeIds.length}):
+            </span>
+            <button
+              disabled={!activeIds.length || bulkToggle.isPending}
+              onClick={() => bulkToggle.mutate({ ids: activeIds, active: true })}
+              className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-400 disabled:opacity-40"
+            >
+              <Eye className="h-3 w-3" /> Show all
+            </button>
+            <button
+              disabled={!activeIds.length || bulkToggle.isPending}
+              onClick={() => bulkToggle.mutate({ ids: activeIds, active: false })}
+              className="flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-[10px] font-bold text-red-400 disabled:opacity-40"
+            >
+              <EyeOff className="h-3 w-3" /> Hide all
+            </button>
+            <button
+              disabled={!activeIds.length || bulkPricePct.isPending}
+              onClick={() => {
+                const v = prompt(`Adjust ALL ${activeIds.length} prices in "${activeCat}" by % (e.g. 10 = +10%, -20 = -20%)`);
+                const pct = Number(v);
+                if (!Number.isFinite(pct) || pct === 0) return;
+                bulkPricePct.mutate({ ids: activeIds, pct });
+              }}
+              className="flex items-center gap-1 rounded-full bg-[color:var(--gold)]/15 px-2.5 py-1 text-[10px] font-bold text-[color:var(--gold)] disabled:opacity-40"
+            >
+              <DollarSign className="h-3 w-3" /> Price ±%
+            </button>
+            {bulkPricePct.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+          </div>
+
           {list.isLoading && (
             <div className="flex items-center justify-center py-10">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -338,10 +430,10 @@ function GiftsAdmin() {
             </div>
           )}
           <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
-            {list.data?.map((g) => (
+            {filteredGifts.map((g) => (
               <div
                 key={g.id}
-                className={`glass flex flex-col gap-1.5 rounded-xl p-2 text-xs ${draft.id === g.id ? "ring-2 ring-[color:var(--primary)]" : ""}`}
+                className={`glass flex flex-col gap-1.5 rounded-xl p-2 text-xs ${draft.id === g.id ? "ring-2 ring-[color:var(--primary)]" : ""} ${!g.is_active ? "opacity-60" : ""}`}
               >
                 <div className="grid h-20 w-full place-items-center overflow-hidden rounded-lg bg-black/40">
                   <GiftMediaPreview
@@ -358,10 +450,39 @@ function GiftsAdmin() {
                       {g.is_milestone && <span title="Milestone gift">⭐ </span>}
                       {g.name}
                     </p>
-                    <p className="truncate text-[10px] text-[color:var(--gold)]">
-                      {g.price?.toLocaleString()} · {g.category}
-                      {g.clip_type ? ` · ${g.clip_type}` : ""}
-                    </p>
+                    {editingPrice?.id === g.id ? (
+                      <div className="mt-0.5 flex items-center gap-1">
+                        <input
+                          type="number"
+                          autoFocus
+                          value={editingPrice.value}
+                          onChange={(e) => setEditingPrice({ id: g.id, value: e.target.value })}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              const n = Number(editingPrice.value);
+                              if (Number.isFinite(n) && n > 0) updatePrice.mutate({ id: g.id, price: n });
+                              setEditingPrice(null);
+                            } else if (e.key === "Escape") {
+                              setEditingPrice(null);
+                            }
+                          }}
+                          onBlur={() => {
+                            const n = Number(editingPrice.value);
+                            if (Number.isFinite(n) && n > 0 && n !== g.price) updatePrice.mutate({ id: g.id, price: n });
+                            setEditingPrice(null);
+                          }}
+                          className="w-full rounded border border-[color:var(--gold)]/60 bg-black/40 px-1 py-0.5 text-[10px] text-[color:var(--gold)] outline-none"
+                        />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setEditingPrice({ id: g.id, value: String(g.price) })}
+                        className="block w-full truncate text-left text-[10px] text-[color:var(--gold)] hover:underline"
+                        title="Tap to edit price"
+                      >
+                        💰 {g.price?.toLocaleString()}{g.clip_type ? ` · ${g.clip_type}` : ""}
+                      </button>
+                    )}
                   </div>
                   <button
                     onClick={() => toggle.mutate(g)}
@@ -402,11 +523,15 @@ function GiftsAdmin() {
                 </div>
               </div>
             ))}
-            {list.data && list.data.length === 0 && (
-              <p className="col-span-full text-center text-xs text-muted-foreground">No gifts yet.</p>
+            {!list.isLoading && filteredGifts.length === 0 && (
+              <p className="col-span-full py-8 text-center text-xs text-muted-foreground">
+                No gifts in "{activeCat}"{search ? ` matching "${search}"` : ""}.
+              </p>
             )}
           </div>
         </div>
+
+
 
         {/* Form */}
         <div className="glass h-fit rounded-2xl p-4">
