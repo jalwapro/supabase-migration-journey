@@ -1,51 +1,29 @@
-import { AbsoluteFill } from "remotion";
-import { TransitionSeries, springTiming } from "@remotion/transitions";
-import { fade } from "@remotion/transitions/fade";
-import { slide } from "@remotion/transitions/slide";
+import { AbsoluteFill, Series } from "remotion";
 import { PersistentBackground } from "./components/PersistentBackground";
-import { SceneLogo } from "./scenes/SceneLogo";
-import { SceneFeatures } from "./scenes/SceneFeatures";
-import { SceneGifts } from "./scenes/SceneGifts";
-import { SceneComingSoon } from "./scenes/SceneComingSoon";
-import { SceneCta } from "./scenes/SceneCta";
+import { SceneSplash } from "./scenes/SceneSplash";
+import { SceneHome } from "./scenes/SceneHome";
+import { SceneVoiceRoom } from "./scenes/SceneVoiceRoom";
+import { SceneVideoRoom } from "./scenes/SceneVideoRoom";
+import { ScenePkBattle } from "./scenes/ScenePkBattle";
+import { SceneGifting } from "./scenes/SceneGifting";
+import { SceneProfile } from "./scenes/SceneProfile";
+import { SceneRanking } from "./scenes/SceneRanking";
 
+// 40s @ 30fps = 1200 frames, 8 scenes x 150
 export const MainVideo = () => {
   return (
     <AbsoluteFill style={{ backgroundColor: "#050010", overflow: "hidden" }}>
       <PersistentBackground />
-      <TransitionSeries>
-        <TransitionSeries.Sequence durationInFrames={100}>
-          <SceneLogo />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition
-          presentation={fade()}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: 15 })}
-        />
-        <TransitionSeries.Sequence durationInFrames={95}>
-          <SceneFeatures />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition
-          presentation={slide({ direction: "from-right" })}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: 18 })}
-        />
-        <TransitionSeries.Sequence durationInFrames={95}>
-          <SceneGifts />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition
-          presentation={fade()}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: 15 })}
-        />
-        <TransitionSeries.Sequence durationInFrames={110}>
-          <SceneComingSoon />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition
-          presentation={fade()}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: 15 })}
-        />
-        <TransitionSeries.Sequence durationInFrames={90}>
-          <SceneCta />
-        </TransitionSeries.Sequence>
-      </TransitionSeries>
+      <Series>
+        <Series.Sequence durationInFrames={150}><SceneSplash /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><SceneHome /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><SceneVoiceRoom /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><SceneVideoRoom /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><ScenePkBattle /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><SceneGifting /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><SceneProfile /></Series.Sequence>
+        <Series.Sequence durationInFrames={150}><SceneRanking /></Series.Sequence>
+      </Series>
     </AbsoluteFill>
   );
 };
