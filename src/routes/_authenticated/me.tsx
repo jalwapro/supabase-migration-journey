@@ -210,98 +210,131 @@ function MePage() {
             <p className="mt-2 text-[10px] uppercase tracking-[0.5em] text-white/70" style={HEADING}>Live your moment</p>
           </div>
 
-          {/* ============ PROFILE CARD (Neon Royal design) ============ */}
+          {/* ============ PROFILE CARD — Magazine Cover ============ */}
           <div className="relative z-10 mt-6 px-3">
             <div
               data-keep-dark
-              className="me-profile-card relative rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4 pt-10"
-              style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
+              className="me-profile-card relative overflow-hidden rounded-[28px] border border-[#fbbf24]/35 bg-gradient-to-br from-[#1a0b2e] via-[#150625] to-[#0a0316]"
+              style={{ boxShadow: "0 0 0 1px rgba(251,191,36,0.18), 0 30px 80px -20px rgba(122,0,255,0.55), inset 0 0 60px rgba(122,0,255,0.15)" }}
             >
-              <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[28px]">
+              {/* Cover art wash */}
+              <div aria-hidden className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-0 bg-[radial-gradient(120%_70%_at_50%_0%,rgba(255,45,149,0.35)_0%,transparent_55%),radial-gradient(80%_60%_at_100%_100%,rgba(122,0,255,0.35)_0%,transparent_60%)]" />
+                <div className="absolute inset-0 opacity-[0.08] mix-blend-screen [background-image:repeating-linear-gradient(0deg,rgba(255,255,255,0.5)_0_1px,transparent_1px_3px)]" />
                 <CornerBrackets />
-                <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
-                <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#ff2d95]/20 blur-3xl" />
               </div>
 
-              {/* Avatar block — clean DP, equipped frame renders outside via LevelAvatar */}
-              <div className="relative z-10 flex flex-col items-center">
-                <div className="relative">
-                  <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} showBadge={false} />
-                  <span className="absolute bottom-1 right-1 z-30 h-4 w-4 rounded-full border-2 border-black bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
-                  <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute -right-1 top-0 z-30 grid h-8 w-8 place-items-center rounded-full border-2 border-black bg-[#ec4899] text-white shadow-[0_4px_12px_rgba(236,72,153,0.7)] disabled:opacity-60">
-                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
-                  </button>
-                  <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
+              {/* Masthead */}
+              <div className="relative z-10 flex items-center justify-between px-5 pt-4">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[#ff2d95] shadow-[0_0_10px_#ff2d95]" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.45em] text-white/75" style={HEADING}>Jalwa · Issue N°{String(vipLevel).padStart(2, "0")}</span>
                 </div>
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-[#fbbf24]" style={HEADING}>Cover Story</span>
               </div>
+              <div className="relative z-10 mx-5 mt-2 h-px bg-gradient-to-r from-transparent via-[#fbbf24]/70 to-transparent" />
 
-              {/* Name + info */}
-              <div className="relative z-10 mt-8 flex flex-col items-center gap-1.5 text-center">
-                <div className="flex items-center justify-center gap-1.5">
-                  <p className="max-w-[240px] truncate text-[22px] font-black leading-tight text-white" style={HEADING}>{userName}</p>
-                  <BadgeCheck className="h-5 w-5 shrink-0 fill-[#6366f1] text-white" />
+              {/* Cover subject — huge display name behind, avatar on top */}
+              <div className="relative z-10 px-5 pt-6 pb-5">
+                <div className="relative flex justify-center">
+                  {/* Ghost display name behind avatar */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-x-0 top-6 select-none text-center text-[64px] uppercase leading-[0.85] tracking-tight text-white/[0.06]"
+                    style={HEADING}
+                  >
+                    {(userName || "you").slice(0, 8)}
+                  </div>
+
+                  <div className="relative">
+                    <LevelAvatar src={profile?.avatar} name={profile?.username} level={vipLevel} size="xl" frame={profile?.frame} ring={profile?.ring} showBadge={false} />
+                    <span className="absolute bottom-1 right-1 z-30 h-4 w-4 rounded-full border-2 border-[#0a0316] bg-[#22c55e] shadow-[0_0_10px_#22c55e]" />
+                    <button onClick={() => fileRef.current?.click()} disabled={uploading} aria-label="Change photo" className="absolute -right-1 top-0 z-30 grid h-8 w-8 place-items-center rounded-full border-2 border-[#0a0316] bg-gradient-to-b from-[#ff2d95] to-[#c11e6b] text-white shadow-[0_4px_14px_rgba(255,45,149,0.6)] disabled:opacity-60">
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                    </button>
+                    <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => { const f = e.target.files?.[0]; if (f) void onPickAvatar(f); }} />
+                  </div>
                 </div>
-                <p className="text-[13px] leading-tight text-white/60">@{userName.toLowerCase()}</p>
 
-                <div className="mt-1.5 flex w-full flex-col items-center gap-1.5 text-[12px] text-white/75">
+                {/* Display name + verified */}
+                <div className="mt-5 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <h2 className="max-w-[260px] truncate text-[30px] uppercase leading-[0.9] text-white" style={HEADING}>{userName}</h2>
+                    <BadgeCheck className="h-6 w-6 shrink-0 fill-[#fbbf24] text-[#0a0316]" />
+                  </div>
+                  <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#fbbf24]/90" style={HEADING}>
+                    @{userName.toLowerCase()} · {tier.label}
+                  </p>
+                </div>
+
+                {/* Issue-lines row */}
+                <div className="mx-auto mt-4 flex max-w-[320px] flex-col divide-y divide-white/10 rounded-2xl border border-white/10 bg-black/35 backdrop-blur-sm">
                   {profile?.user_code && (
-                    <button onClick={handleCopyId} className="inline-flex items-center gap-1.5 hover:text-white">
-                      <span className="text-white/50">ID:</span>
-                      <span className="font-bold text-white">{profile.user_code}</span>
-                      <Copy className="h-3 w-3 text-white/50" />
+                    <button onClick={handleCopyId} className="flex items-center justify-between px-3.5 py-2 text-left text-[12px] text-white/80 hover:text-white">
+                      <span className="font-black uppercase tracking-[0.3em] text-white/50" style={HEADING}>ID</span>
+                      <span className="inline-flex items-center gap-1.5 font-bold text-white">{profile.user_code}<Copy className="h-3 w-3 text-white/50" /></span>
                     </button>
                   )}
                   {user?.email && (
-                    <span className="inline-flex max-w-[280px] items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5 shrink-0 text-white/50" />
-                      <span className="truncate">{user.email}</span>
-                    </span>
+                    <div className="flex items-center justify-between px-3.5 py-2 text-[12px]">
+                      <span className="font-black uppercase tracking-[0.3em] text-white/50" style={HEADING}>Mail</span>
+                      <span className="ml-3 inline-flex max-w-[200px] items-center gap-1.5 truncate text-white/85"><Mail className="h-3 w-3 shrink-0 text-white/50" />{user.email}</span>
+                    </div>
                   )}
                   {profile?.country && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="text-sm">🌍</span>
-                      <span className="text-white">{profile.country}</span>
-                    </span>
+                    <div className="flex items-center justify-between px-3.5 py-2 text-[12px]">
+                      <span className="font-black uppercase tracking-[0.3em] text-white/50" style={HEADING}>Region</span>
+                      <span className="inline-flex items-center gap-1.5 text-white">🌍 {profile.country}</span>
+                    </div>
                   )}
                 </div>
 
-                <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
-                  <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
-                    <Crown className="h-3.5 w-3.5" /> {tier.label}
+                {/* Cover-tag chips */}
+                <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                  <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-full border border-[#fbbf24]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1 text-[11px] font-black uppercase tracking-widest text-[#fbbf24] shadow-[0_0_18px_rgba(251,191,36,0.45)]" style={HEADING}>
+                    <Crown className="h-3 w-3" /> {tier.label}
                   </Link>
                   {adminVipTier && (
-                    <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#a855f7]/70 bg-gradient-to-b from-[#3a0f5c] to-[#180329] px-3 py-1.5 text-[12px] font-black text-white shadow-[0_0_18px_rgba(168,85,247,0.5)]" style={HEADING}>
+                    <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-full border border-[#7a00ff]/70 bg-gradient-to-b from-[#3a0f5c] to-[#180329] px-3 py-1 text-[11px] font-black uppercase tracking-widest text-white shadow-[0_0_16px_rgba(122,0,255,0.55)]" style={HEADING}>
                       <span className="text-sm leading-none">{adminVipTier.badge_emoji ?? "👑"}</span> {adminVipTier.name}
                     </Link>
                   )}
-                  <span className="text-[22px] leading-none" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🏅</span>
+                  <Chip color="#ff2d95" icon="⚜️" label="Host" />
+                  <Chip color="#7a00ff" icon="🥊" label="PK King" />
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
-                  <Chip color="#8b5cf6" icon="⚜️" label="Host" />
-                  <Chip color="#ec4899" icon="🥊" label="PK King" />
-                  <Chip color="#38bdf8" icon="✓" label="Official Host" outline />
-                </div>
-
-                <div className="mt-3 grid w-full grid-cols-2 gap-2.5">
-                  <Link to="/settings" className="flex items-center justify-center gap-2 rounded-2xl border border-[#8b5cf6]/50 bg-[#1a0733]/70 px-3 py-2.5 text-[13px] font-bold text-white shadow-[0_0_14px_rgba(139,92,246,0.35)] transition active:scale-95" style={HEADING}>
-                    <Pencil className="h-4 w-4 text-[#a855f7]" /> Edit Profile
+                {/* Dual CTA */}
+                <div className="mt-4 grid grid-cols-2 gap-2.5">
+                  <Link to="/settings" className="flex items-center justify-center gap-2 rounded-2xl border border-[#7a00ff]/60 bg-[#1a0733]/80 px-3 py-2.5 text-[12px] font-black uppercase tracking-widest text-white shadow-[0_0_16px_rgba(122,0,255,0.4)] transition active:scale-95" style={HEADING}>
+                    <Pencil className="h-4 w-4 text-[#c084fc]" /> Edit
                   </Link>
-                  <button onClick={handleShare} className="flex items-center justify-center gap-2 rounded-2xl border border-[#c88a2b]/60 bg-gradient-to-b from-[#3d1f08] to-[#1a0a02] px-3 py-2.5 text-[13px] font-bold text-[#fbbf24] shadow-[0_0_14px_rgba(200,138,43,0.35)] transition active:scale-95" style={HEADING}>
-                    <ChevronRight className="h-4 w-4 rotate-[-45deg]" /> Share Profile
+                  <button onClick={handleShare} className="flex items-center justify-center gap-2 rounded-2xl border border-[#fbbf24]/70 bg-gradient-to-b from-[#3d1f08] to-[#1a0a02] px-3 py-2.5 text-[12px] font-black uppercase tracking-widest text-[#fbbf24] shadow-[0_0_16px_rgba(251,191,36,0.4)] transition active:scale-95" style={HEADING}>
+                    <ChevronRight className="h-4 w-4 rotate-[-45deg]" /> Share
                   </button>
                 </div>
 
-                <div className="mt-4 grid w-full grid-cols-3 gap-2">
-                  <StatBox to="/friends" search={{ tab: "followers" }} icon={<Users className="h-4 w-4" />} color="#a855f7" value={counts?.followers ?? 0} label="Followers" />
+                {/* Stat strip */}
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <StatBox to="/friends" search={{ tab: "followers" }} icon={<Users className="h-4 w-4" />} color="#c084fc" value={counts?.followers ?? 0} label="Followers" />
                   <StatBox to="/friends" search={{ tab: "following" }} icon={<UserPlus className="h-4 w-4" />} color="#38bdf8" value={counts?.following ?? 0} label="Following" />
-                  <StatBox to="/visitors" icon={<Users className="h-4 w-4" />} color="#ec4899" value={counts?.visitors ?? 0} label="Visitors" />
+                  <StatBox to="/visitors" icon={<Users className="h-4 w-4" />} color="#ff2d95" value={counts?.visitors ?? 0} label="Visitors" />
                   <StatBox icon={<Star className="h-4 w-4" />} color="#22c55e" value={profile?.xp ?? 0} label="Points" />
                   <StatBox to="/wallet" icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
                   <StatBox to="/wallet" icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
                   <StatBox to="/rank" icon={<Trophy className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
-                  <StatBox to="/vip" icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Host Lv" />
+                  <StatBox to="/vip" icon={<Crown className="h-4 w-4" />} color="#c084fc" value={vipLevel} label="Host Lv" />
                   <StatBox to="/my-rooms" icon={<Home className="h-4 w-4" />} color="#38bdf8" value={counts?.liveRooms ?? 0} label="Live Rooms" />
+                </div>
+
+                {/* Barcode-style milestone footer */}
+                <div className="mt-4 flex items-center justify-between rounded-xl border border-white/10 bg-black/40 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/50" style={HEADING}>Next</span>
+                    <span className="text-[11px] font-bold text-white">Lv {nextMilestone} · {reward ? `+${formatCoins(reward.coins ?? 0)} 🎁` : "Legend"}</span>
+                  </div>
+                  <div aria-hidden className="flex h-5 items-end gap-[2px]">
+                    {[3,5,2,4,3,6,2,5,3,4,2,5,3].map((h,i)=>(<span key={i} className="w-[2px] bg-[#fbbf24]/80" style={{height:h*3}} />))}
+                  </div>
                 </div>
               </div>
             </div>
