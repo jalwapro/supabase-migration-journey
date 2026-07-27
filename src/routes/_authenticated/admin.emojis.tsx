@@ -58,8 +58,7 @@ function makeEmpty(tier: TierKey): Draft {
     clip_path: "",
     sort_order: 99,
     tier,
-    min_vip_level: tier === "vip" ? 1 : tier === "svip" ? 30 : 0,
-    is_animated: true,
+    min_vip_level: tier === "vip" ? 1 : 0,
   };
 }
 
