@@ -84,10 +84,11 @@ function EmojisAdmin() {
   });
 
   const byTier = useMemo(() => {
-    const grouped: Record<TierKey, EmojiRow[]> = { normal: [], vip: [], svip: [], host_only: [] };
+    const grouped: Record<TierKey, EmojiRow[]> = { normal: [], vip: [] };
     for (const e of emojis) {
-      const t = (e.tier ?? "normal") as TierKey;
-      if (grouped[t]) grouped[t].push(e);
+      const raw = (e.tier ?? "normal") as string;
+      const t: TierKey = raw === "normal" ? "normal" : "vip";
+      grouped[t].push(e);
     }
     return grouped;
   }, [emojis]);
