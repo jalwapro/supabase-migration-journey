@@ -219,7 +219,7 @@ function GiftsAdmin() {
     },
     onSuccess: () => {
       toast.success(isEditing ? "Gift updated" : "Gift added");
-      setDraft(EMPTY_DRAFT);
+      setDraft({ ...EMPTY_DRAFT, category: activeCat });
       qc.invalidateQueries({ queryKey: ["admin_gifts"] });
       qc.invalidateQueries({ queryKey: ["gifts"] });
     },
