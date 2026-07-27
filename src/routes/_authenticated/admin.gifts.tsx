@@ -141,6 +141,9 @@ function GiftsAdmin() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey } | null>(null);
+  const [activeCat, setActiveCat] = useState<string>("popular");
+  const [search, setSearch] = useState("");
+  const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
   const isEditing = Boolean(draft.id);
 
   const list = useQuery({
