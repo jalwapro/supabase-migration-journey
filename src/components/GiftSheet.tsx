@@ -24,6 +24,7 @@ export type Gift = {
   clip_path?: string | null;
   clip_type?: string | null;
   sound_url?: string | null;
+  chromakey?: string | null;
 };
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
@@ -129,7 +130,7 @@ export function GiftSheet({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active")
+        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,chromakey,sort_order,is_active,active")
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
@@ -297,6 +298,7 @@ export function GiftSheet({
           quantity: qty,
           animation: selectedGift.animation ?? "pop",
           soundUrl: selectedGift.sound_url ?? null,
+          chromakey: selectedGift.chromakey ?? "auto",
           local: true,
         },
       }),

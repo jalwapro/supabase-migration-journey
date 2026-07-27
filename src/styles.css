@@ -75,6 +75,7 @@
   --border: oklch(0.15 0.02 300 / 12%);
   --input: oklch(0.15 0.02 300 / 6%);
   --ring: oklch(0.64 0.27 348);
+  --gift-chromakey-green: oklch(0.87 0.29 142);
 }
 
 .dark {
@@ -98,6 +99,7 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 8%);
   --ring: oklch(0.64 0.27 348);
+  --gift-chromakey-green: oklch(0.87 0.29 142);
 }
 
 

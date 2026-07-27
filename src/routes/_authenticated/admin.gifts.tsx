@@ -39,6 +39,7 @@ const CHROMAKEY_OPTIONS = [
   { value: "none", label: "None", hint: "No key — render as-is" },
   { value: "screen", label: "Screen blend", hint: "Knock out pure-black bg" },
   { value: "luma", label: "Luma key", hint: "Aggressive black removal" },
+  { value: "green", label: "Green key", hint: "Remove green-screen background" },
 ] as const;
 type Chromakey = (typeof CHROMAKEY_OPTIONS)[number]["value"];
 
@@ -312,7 +313,7 @@ function GiftsAdmin() {
             : "mp4"
         : "none") as Draft["clip_type"],
       is_milestone: Boolean(g.is_milestone),
-      chromakey: (["auto", "none", "screen", "luma"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
+      chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -506,7 +507,7 @@ function GiftsAdmin() {
                         clipType: g.clip_type ?? null,
                         imageUrl: g.image_url ?? null,
                         emoji: g.emoji ?? g.icon ?? null,
-                        chromakey: (["auto", "none", "screen", "luma"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
+                        chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
                       })
                     }
                     className="rounded-lg bg-[color:var(--gold)]/15 px-2 text-[color:var(--gold)]"
@@ -670,7 +671,7 @@ function GiftsAdmin() {
               <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 Chromakey / transparency
               </p>
-              <div className="grid grid-cols-4 gap-1">
+              <div className="grid grid-cols-5 gap-1">
                 {CHROMAKEY_OPTIONS.map((c) => (
                   <button
                     key={c.value}

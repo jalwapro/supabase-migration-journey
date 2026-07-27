@@ -125,9 +125,21 @@ function getEffectiveGiftClip(p: Play) {
     };
   }
 
+  const url = resolveGiftClipUrl(p.giftClipUrl);
+  const lower = (url ?? "").split("?")[0]?.split("#")[0]?.toLowerCase() ?? "";
+  const inferredType = lower.endsWith(".webm")
+    ? "webm"
+    : lower.endsWith(".mp4")
+      ? "mp4"
+      : lower.endsWith(".svga")
+        ? "svga"
+        : lower.endsWith(".svg")
+          ? "svg"
+          : p.giftClipType;
+
   return {
-    url: resolveGiftClipUrl(p.giftClipUrl),
-    type: p.giftClipType,
+    url,
+    type: inferredType,
   };
 }
 
@@ -152,6 +164,8 @@ function AnimatedGiftVideo({
   suppressEmojiFallback = false,
   screenBlend = false,
   lumaKey = false,
+  greenKey = false,
+  greenStage = false,
 }: {
   src: string;
   type: string | null;
@@ -164,6 +178,8 @@ function AnimatedGiftVideo({
   suppressEmojiFallback?: boolean;
   screenBlend?: boolean;
   lumaKey?: boolean;
+  greenKey?: boolean;
+  greenStage?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -253,16 +269,18 @@ function AnimatedGiftVideo({
 
 
   const filterParts: string[] = [];
-  if (lumaKey || screenBlend) filterParts.push("url(#jalwa-luma-key)");
+  if (greenKey) filterParts.push("url(#jalwa-green-key)");
+  else if (lumaKey || screenBlend) filterParts.push("url(#jalwa-luma-key)");
   filterParts.push(
-    screenBlend || lumaKey
+    screenBlend || lumaKey || greenKey
       ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
       : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
   );
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
-      {(lumaKey || screenBlend) && (
+      {greenStage && <div className="absolute inset-[7dvh_0] bg-[color:var(--gift-chromakey-green)]" />}
+      {(lumaKey || screenBlend || greenKey) && (
         <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
           <defs>
             <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
@@ -277,6 +295,18 @@ function AnimatedGiftVideo({
               {/* Boost alpha contrast so dark background pixels fall to 0 */}
               <feComponentTransfer>
                 <feFuncA type="linear" slope="5.2" intercept="-0.48" />
+              </feComponentTransfer>
+            </filter>
+            <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
+              <feColorMatrix
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        1 -1.35 1 0 0.08"
+              />
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="3.8" intercept="-0.08" />
               </feComponentTransfer>
             </filter>
           </defs>
@@ -313,7 +343,7 @@ function AnimatedGiftVideo({
           transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
           background: "transparent",
           willChange: "opacity, transform",
-          mixBlendMode: !lumaKey && screenBlend ? "screen" : undefined,
+          mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
           filter: filterParts.join(" "),
         }}
       />
@@ -1378,7 +1408,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
   // Admin-controlled chromakey (auto|none|screen|luma) overrides the heuristic.
-  const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma";
+  const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
   const isBlackBg =
     chromakeyMode === "screen" || chromakeyMode === "luma"
@@ -1386,6 +1416,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       : chromakeyMode === "none"
         ? false
         : autoBlackBg;
+  const showGreenStage = chromakeyMode === "none" && hasVideo && !isRoyalRose && !isSpaceship && (current?.coins ?? 0) > 300;
   // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
@@ -1601,6 +1632,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             suppressEmojiFallback={true}
             screenBlend={isBlackBg}
             lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
+            greenKey={chromakeyMode === "green"}
+            greenStage={showGreenStage}
           />
 
         ) : hasSvga ? (
