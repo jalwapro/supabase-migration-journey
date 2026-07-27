@@ -5319,12 +5319,22 @@ function EmojiReactionSheet({
     return userVipLevel >= (e.min_vip_level ?? 1);
   };
 
-  const visible = emojis.filter((e) => {
+  const isVip = userVipLevel > 0;
+
+  // Hide VIP emojis entirely for non-VIP users
+  const accessible = emojis.filter((e) => {
+    const tier = e.tier ?? "normal";
+    if (tier === "normal") return true;
+    return isVip;
+  });
+
+  const visible = accessible.filter((e) => {
     if (tierFilter === "all") return true;
     const tier = e.tier ?? "normal";
     if (tierFilter === "normal") return tier === "normal";
     return tier !== "normal";
   });
+
 
   if (!open) return null;
   return (
