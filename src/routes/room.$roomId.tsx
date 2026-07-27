@@ -3441,9 +3441,13 @@ function RoomPage() {
           myMember?.seat_index != null ? myMember.seat_index : 0
         }
         onSend={(emoji, seat, clip) => void sendEmoji(emoji, seat, clip)}
+        userVipLevel={profile?.vip_level ?? 0}
+        isHost={isHost}
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
+      <ProfileSpotlight roomId={r.id} />
     </div>
+
     </CamPipelineProvider>
   );
 }
