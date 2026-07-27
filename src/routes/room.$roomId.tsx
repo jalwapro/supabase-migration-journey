@@ -70,6 +70,7 @@ import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
+import { ProfileSpotlight } from "@/components/room/ProfileSpotlight";
 
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
@@ -3441,9 +3442,13 @@ function RoomPage() {
           myMember?.seat_index != null ? myMember.seat_index : 0
         }
         onSend={(emoji, seat, clip) => void sendEmoji(emoji, seat, clip)}
+        userVipLevel={profile?.vip_level ?? 0}
+        isHost={isHost}
       />
       <FlyingEmojiLayer emojis={flyingEmojis} />
+      <ProfileSpotlight roomId={r.id} />
     </div>
+
     </CamPipelineProvider>
   );
 }
@@ -5263,7 +5268,14 @@ function SeatRequestPopup({
 
 /* ─── Emoji reaction sheet: pick seat + emoji ─────────────── */
 /* ─── Emoji reaction sheet: pick seat + emoji (animated 50-set) ─── */
-type ReactionEmoji = { slug: string; emoji: string; name: string; clip_path: string };
+type ReactionEmoji = {
+  slug: string;
+  emoji: string;
+  name: string;
+  clip_path: string;
+  tier?: string | null;
+  min_vip_level?: number | null;
+};
 
 function EmojiReactionSheet({
   open,
@@ -5272,6 +5284,8 @@ function EmojiReactionSheet({
   seatsByIndex,
   defaultSeat,
   onSend,
+  userVipLevel = 0,
+  isHost = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -5279,9 +5293,12 @@ function EmojiReactionSheet({
   seatsByIndex: Map<number, Member>;
   defaultSeat: number;
   onSend: (emoji: string, seat: number, clip?: string | null) => void;
+  userVipLevel?: number;
+  isHost?: boolean;
 }) {
   const [seat, setSeat] = useState(defaultSeat);
   const [emojis, setEmojis] = useState<ReactionEmoji[]>([]);
+  const [tierFilter, setTierFilter] = useState<"all" | "normal" | "vip">("all");
   useEffect(() => {
     if (open) setSeat(defaultSeat);
   }, [open, defaultSeat]);
@@ -5289,11 +5306,26 @@ function EmojiReactionSheet({
     if (!open || emojis.length > 0) return;
     void supabase
       .from("chat_emojis")
-      .select("slug,emoji,name,clip_path")
+      .select("slug,emoji,name,clip_path,tier,min_vip_level")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .then(({ data }) => setEmojis((data ?? []) as ReactionEmoji[]));
   }, [open, emojis.length]);
+
+  const isUnlocked = (e: ReactionEmoji) => {
+    const tier = e.tier ?? "normal";
+    if (tier === "host_only") return isHost;
+    if (tier === "svip") return userVipLevel >= (e.min_vip_level ?? 30);
+    if (tier === "vip") return userVipLevel >= (e.min_vip_level ?? 1);
+    return true;
+  };
+
+  const visible = emojis.filter((e) => {
+    if (tierFilter === "all") return true;
+    const tier = e.tier ?? "normal";
+    if (tierFilter === "normal") return tier === "normal";
+    return tier !== "normal";
+  });
 
   if (!open) return null;
   return (
@@ -5347,27 +5379,69 @@ function EmojiReactionSheet({
             <span className="text-[11px] text-white/50">No one on stage yet.</span>
           )}
         </div>
-        <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-white/60">
-          Tap an animated emoji
+        <div className="mt-4 flex items-center justify-between">
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-white/60">
+            Tap an animated emoji
+          </div>
+          <div className="flex gap-1">
+            {(["all", "normal", "vip"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setTierFilter(t)}
+                className={`rounded-full px-2.5 py-1 text-[10px] font-black uppercase transition ${
+                  tierFilter === t
+                    ? "bg-gradient-to-r from-amber-400 to-fuchsia-500 text-black"
+                    : "bg-white/10 text-white/60 hover:bg-white/20"
+                }`}
+              >
+                {t === "vip" ? "👑 VIP" : t}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="mt-2 grid max-h-[42vh] grid-cols-6 gap-1.5 overflow-y-auto pr-1 scrollbar-hide">
-          {emojis.map((e) => (
-            <button
-              key={e.slug}
-              onClick={() => {
-                onClose();
-                setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
-              }}
-              className="grid aspect-square place-items-center rounded-xl border border-white/10 bg-white/5 p-1 transition active:scale-90 hover:bg-white/15"
-              title={e.name}
-            >
-              <img src={e.clip_path} alt={e.name} loading="lazy" className="h-full w-full object-contain" />
-            </button>
-          ))}
+          {visible.map((e) => {
+            const unlocked = isUnlocked(e);
+            return (
+              <button
+                key={e.slug}
+                onClick={() => {
+                  if (!unlocked) {
+                    const tier = e.tier ?? "normal";
+                    toast.info(
+                      tier === "host_only"
+                        ? "Host-only emoji"
+                        : `VIP ${e.min_vip_level ?? 1}+ required — upgrade to unlock`
+                    );
+                    return;
+                  }
+                  onClose();
+                  setTimeout(() => onSend(e.emoji, seat, e.clip_path), 0);
+                }}
+                className={`relative grid aspect-square place-items-center rounded-xl border border-white/10 p-1 transition active:scale-90 ${
+                  unlocked ? "bg-white/5 hover:bg-white/15" : "bg-black/30 opacity-70"
+                }`}
+                title={e.name}
+              >
+                <img
+                  src={e.clip_path}
+                  alt={e.name}
+                  loading="lazy"
+                  className={`h-full w-full object-contain ${unlocked ? "" : "grayscale"}`}
+                />
+                {!unlocked && (
+                  <span className="absolute right-0.5 top-0.5 rounded-full bg-amber-500/90 px-1 text-[8px] font-black text-black">
+                    👑
+                  </span>
+                )}
+              </button>
+            );
+          })}
           {emojis.length === 0 && (
             <span className="col-span-6 py-6 text-center text-[11px] text-white/50">Loading…</span>
           )}
         </div>
+
       </div>
     </>
   );

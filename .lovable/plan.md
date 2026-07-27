@@ -1,40 +1,60 @@
+## 1. Emoji Management System (admin-controlled, tiered)
 
-## Problems
+### DB migration `0229_room_emojis.sql`
+- `room_emojis` table: `id`, `code` (e.g. `:jalwa_kiss:`), `name`, `asset_url` (image/lottie/webm), `asset_type` (`static`|`animated`|`lottie`), `tier` (`normal`|`vip`|`svip`|`host_only`), `category` (reactions/love/party/luxury), `sort_order`, `active`, `created_at`
+- `GRANT SELECT` to `anon, authenticated`; admin-only writes via `has_role`
+- Seed 20 normal + 15 VIP emojis from existing assets
 
-**1. Gifts sirf static PNG dikhate hain, animation nahi chalti**
-Abhi jo starter25/luxury25 gifts insert kiye hain wo transparent PNG hain. `GiftAnimationPlayer.tsx` MP4 / SVGA / SVG / image sab support karta hai — lekin PNG ke liye sirf image render hota hai, koi motion nahi. TikTok jese real animated gifts ke liye **SVGA** ya **MP4 with alpha** files chahiye — PNG me animation possible nahi.
+### Admin panel `admin.emojis.tsx`
+- Same pattern as `admin.gifts.tsx`: tier tabs (Normal / VIP / SVIP / Host-only), search, inline edit, bulk show/hide
+- Upload button (MP4/WebM/PNG/Lottie → storage bucket `emoji-assets`)
+- Fields: code, name, category, tier, sort order, active toggle
 
-**2. Seat request pe host user ko pick nahi kar pata**
-Backend RPCs (`request_seat`, `respond_seat_request`) sahi hain aur RLS/realtime bhi enabled hain. Popup component bhi maujood hai. Bug possibly:
-- Multiple pending requests aayen to naya request purane ko overwrite karta hai (koi queue nahi)
-- Host reload kare aur > 1 pending ho to `maybeSingle()` sirf ek dikhata hai
-- Agar accept ke waqt seat meanwhile fill ho gaya to "seat already taken" throw hota hai — user ko clear feedback nahi
+### Room integration
+- Existing emoji sheet me tier tabs add — user ka tier check karke unlocked emojis dikhao, locked ones ke upar 👑 VIP badge + "Upgrade" CTA
+- Fetch: `useQuery(['room-emojis', userTier])` filtered by allowed tiers, cached 5 min
 
-## Plan
+## 2. Featured Profile Spotlight (top gifter/host promotion)
 
-### Part A — Real Animated Gifts (SVGA pipeline)
-1. **Free SVGA library use karo** — TikTok/Bigo/PocoLive style gifts ke SVGA files public repos (e.g., `svga-samples`) se pull karo. Ye already `SvgaPlayer.tsx` me supported hai.
-2. `scripts/fetch-svga-pack.mjs` banao jo:
-   - Curated 30-50 SVGA URLs download kare `public/animations/gifts/svga/` me
-   - Har gift ka `name`, `price`, `diamonds`, `svga path` metadata generate kare
-3. **Migration `0174_gifts_svga_animated.sql`** — 30 real animated SVGA gifts insert karo (Rose Rain, Sports Car, Universe, Lion, Dragon, Castle, etc.) with `clip_path` pointing to `.svga` and `clip_type='svga'`.
-4. Purane static PNG-only gifts ko `is_active=false` kar do (starter25/luxury25 dono) taake sirf animated wale sheet me aayen.
-5. `GiftSheet.tsx` verify — preview me thumbnail dikhaye, tap pe SVGA play ho.
+Idea: top contributors ko room ke beech me unke DP ke sath ek premium animated frame/gift chalao (jaise TikTok pe "Top Fan" spotlight). User ko lagta hai app pe time dena worth it hai — retention boost.
 
-### Part B — Seat Pick Fix
-1. `pendingSeatRequest` ko **array** banao instead of single object → queue system. Naya request aaye to append, popup FIFO order me show kare.
-2. Initial load me `.limit(10)` karke saari pending requests fetch karo.
-3. Popup me "Pending: 2 more" badge dikhao agar queue > 1.
-4. Accept fail ho (seat taken race) to popup se remove karke agla request auto-show karo with error toast.
-5. Host ke liye header me **red badge** with pending count taake dikhta rahe even if popup band kiya.
+### DB migration `0230_profile_spotlight.sql`
+- `spotlight_triggers` table: `id`, `user_id`, `room_id`, `trigger_type` (`top_gifter_daily`|`top_host_weekly`|`level_up`|`vip_join`), `animation_id`, `triggered_at`, `seen_count`
+- `spotlight_animations` table: `id`, `name`, `overlay_asset_url` (frame around DP), `bg_animation_url` (particles/aura), `duration_ms`, `tier_required`, `active`
+- Daily cron / trigger: jab user ne top-3 gifter status hasil ki us room me, ya top host ban gaya, auto-spotlight queue me daal do
+- RLS: viewers read own room's spotlights, admin manages animations
 
-## Files to Edit
-- `scripts/fetch-svga-pack.mjs` (new)
-- `db/migrations/0174_gifts_svga_animated.sql` (new)
-- `db/migrations/0175_deactivate_static_gifts.sql` (new)
-- `src/routes/room.$roomId.tsx` — pendingSeatRequest → queue, badge in header
-- `src/routes/room.$roomId.tsx` SeatRequestPopup — show queue count
+### Auto-detection SQL
+- Trigger on `gift_transactions` insert → recalc daily top gifter per room → if changed, insert into `spotlight_triggers`
+- Weekly job for top host by `room_stats.total_gift_coins`
 
-## Confirm Karo
-- **SVGA source**: kya main free public SVGA gifts (github.com/svga/SVGA-Samples type) use kar sakta hoon? Ye TikTok jese hi animated hain but original 3rd-party assets. Ya aap chahte ho custom MP4 with alpha channel gifts banaun (slower + costly)?
-- **Static PNG gifts hata dun** ya animated ke saath dono rakhun?
+### Room UI component `ProfileSpotlight.tsx`
+- Realtime subscription on `spotlight_triggers` filtered by current `room_id`
+- Center of screen: 3-second cinematic — user ki big DP + rotating gold aura + label ("👑 Top Gifter Today" / "🔥 Rising Host")
+- Auto-dismiss, queue system agar multiple aayein
+- Tap → user profile
+
+### Admin panel `admin.spotlights.tsx`
+- Manage spotlight animations (upload frame + bg video, set duration, tier)
+- Manual trigger: pick user + room + animation → instant spotlight (VIP farmaish ke liye)
+- Analytics: kitni baar chali, seen count
+
+## Files to create/modify
+
+**New:**
+- `db/migrations/0229_room_emojis.sql`
+- `db/migrations/0230_profile_spotlight.sql`
+- `src/routes/_authenticated/admin.emojis.tsx`
+- `src/routes/_authenticated/admin.spotlights.tsx`
+- `src/components/room/ProfileSpotlight.tsx`
+- `src/hooks/useRoomEmojis.ts`
+- `src/hooks/useProfileSpotlight.ts`
+
+**Modify:**
+- `src/routes/room.$roomId.tsx` — emoji sheet tier filter + mount `<ProfileSpotlight />`
+- `src/routes/_authenticated/admin.index.tsx` — add cards for Emojis & Spotlights
+
+## Confirm karo:
+1. Emoji tiers — sirf `normal` + `vip` chahiye, ya `svip` + `host_only` bhi include karun? (recommend: 4 tiers future-proof)
+2. Spotlight auto-triggers — daily top gifter + weekly top host default rakhun? Aur manual admin trigger bhi (VIP request pe)?
+3. Animation ke liye abhi placeholder frames use karun (existing gold ring assets se), ya naye cinematic frames generate karun (extra credits)?

@@ -38,6 +38,8 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { to: "/admin/gifts", label: "Gifts Management", icon: GiftIcon },
       { to: "/admin/gift-batches", label: "Gift Batches", icon: GiftIcon },
+      { to: "/admin/emojis", label: "Emoji Management", icon: Sparkles },
+      { to: "/admin/spotlights", label: "Profile Spotlights", icon: Crown },
       { to: "/admin/ads", label: "Ads Management", icon: Megaphone },
       { to: "/admin/banners", label: "Home Banners", icon: GalleryHorizontal },
       { to: "/admin/cms", label: "CMS / Content", icon: FileText },
