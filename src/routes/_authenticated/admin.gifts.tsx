@@ -745,29 +745,62 @@ function GiftsAdmin() {
               </p>
             </div>
             <div className="grid flex-1 w-full place-items-center overflow-hidden rounded-2xl">
+              <svg aria-hidden width="0" height="0" className="absolute">
+                <defs>
+                  <filter id="jalwa-admin-luma-key" colorInterpolationFilters="sRGB">
+                    <feColorMatrix
+                      type="matrix"
+                      values="1 0 0 0 0
+                              0 1 0 0 0
+                              0 0 1 0 0
+                              0.2126 0.7152 0.0722 0 0"
+                    />
+                    <feComponentTransfer>
+                      <feFuncA type="linear" slope="5.2" intercept="-0.48" />
+                    </feComponentTransfer>
+                  </filter>
+                  <filter id="jalwa-admin-green-key" colorInterpolationFilters="sRGB">
+                    <feColorMatrix
+                      type="matrix"
+                      values="1 0 0 0 0
+                              0 1 0 0 0
+                              0 0 1 0 0
+                              1 -1.35 1 0 0.08"
+                    />
+                    <feComponentTransfer>
+                      <feFuncA type="linear" slope="3.8" intercept="-0.08" />
+                    </feComponentTransfer>
+                  </filter>
+                </defs>
+              </svg>
               {(() => {
+                const isVideo = (preview.clipType === "mp4" || preview.clipType === "webm") || !!preview.clipPath?.match(/\.(mp4|webm)(\?|$)/i);
+                const greenStage = isVideo && (preview.chromakey === "none" || preview.chromakey === "green");
                 const style: React.CSSProperties = {
                   maxHeight: "100%",
                   maxWidth: "100%",
                   objectFit: "contain",
                   background: "transparent",
                   ...(preview.chromakey === "screen" ? { mixBlendMode: "screen" as const } : {}),
-                  ...(preview.chromakey === "luma" ? { filter: "url(#jalwa-luma-key)" } : {}),
+                  ...(preview.chromakey === "luma" ? { filter: "url(#jalwa-admin-luma-key)" } : {}),
+                  ...(preview.chromakey === "green" ? { filter: "url(#jalwa-admin-green-key)" } : {}),
                 };
                 const src = preview.clipPath || preview.imageUrl;
                 if (!src) {
                   return <div className="text-6xl">{preview.emoji ?? "🎁"}</div>;
                 }
-                if (preview.clipType === "mp4" || preview.clipType === "webm" || /\.(mp4|webm)(\?|$)/i.test(src)) {
+                if (isVideo) {
                   return (
-                    <video
-                      src={src}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      style={style}
-                    />
+                    <div className="grid h-full w-full place-items-center" style={{ background: greenStage ? "var(--gift-chromakey-green)" : "transparent" }}>
+                      <video
+                        src={src}
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        style={{ ...style, ...(greenStage ? { mixBlendMode: "screen" as const } : {}) }}
+                      />
+                    </div>
                   );
                 }
                 return <img src={src} alt={preview.name} style={style} />;
