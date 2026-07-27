@@ -5410,7 +5410,7 @@ function EmojiReactionSheet({
                     toast.info(
                       tier === "host_only"
                         ? "Host-only emoji"
-                        : `VIP ${e.min_vip_level ?? 1}+ required — upgrade to unlock`
+                        : "👑 VIP only — buy VIP pass to unlock"
                     );
                     return;
                   }
