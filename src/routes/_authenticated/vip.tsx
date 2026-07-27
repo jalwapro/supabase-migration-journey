@@ -36,24 +36,82 @@ function Page() {
     <>
       <AppShell title="VIP Membership">
         <TheatreCard>
-          {/* Crown hero */}
-          <div className="px-6 pt-8 pb-4 text-center">
-            <div className="relative mx-auto w-fit">
-              <Crown
-                className="h-14 w-14 text-[#ffd66a] drop-shadow-[0_0_18px_rgba(255,200,80,0.9)]"
-                fill="currentColor"
-                strokeWidth={0.8}
-              />
-              <div className="absolute -inset-4 rounded-full bg-[#ffd66a]/25 blur-2xl animate-pulse" />
+          {/* VIP PASS CARD */}
+          <div className="px-4 pt-5">
+            <div
+              className="relative overflow-hidden rounded-2xl border border-[#ffcf6a]/40 p-4 shadow-[0_10px_40px_-10px_rgba(255,207,106,0.5)]"
+              style={{
+                background:
+                  "linear-gradient(135deg,#2a1000 0%,#4a1e00 30%,#1a0800 65%,#3a1400 100%)",
+              }}
+            >
+              <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#ffd66a]/20 blur-3xl" />
+              <div className="pointer-events-none absolute -left-10 -bottom-10 h-28 w-28 rounded-full bg-[#c48a1a]/20 blur-3xl" />
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="h-5 w-5 text-[#ffd66a]" fill="currentColor" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#ffcf6a]">
+                    Jalwa VIP Pass
+                  </span>
+                </div>
+                <span
+                  className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase tracking-widest ${
+                    profile?.is_vip
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                      : "bg-white/10 text-white/50 border border-white/20"
+                  }`}
+                >
+                  {profile?.is_vip ? "Active" : "Inactive"}
+                </span>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <div className="relative">
+                  <div
+                    className="h-14 w-14 rounded-full border-2 border-[#ffd66a] bg-cover bg-center"
+                    style={{
+                      backgroundImage: profile?.avatar
+                        ? `url(${profile.avatar})`
+                        : "linear-gradient(135deg,#4a1e00,#1a0800)",
+                    }}
+                  />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-base font-black text-white drop-shadow">
+                    {profile?.username ?? "Guest"}
+                  </p>
+                  <p className="mt-0.5 font-mono text-[10px] text-[#ffcf6a]/70">
+                    ID · {user?.id?.slice(0, 8).toUpperCase() ?? "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 text-[10px]">
+                <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
+                  <p className="uppercase tracking-widest text-white/40">Coins</p>
+                  <p className="mt-0.5 font-black text-[#ffd66a]">
+                    {(profile?.coins ?? 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
+                  <p className="uppercase tracking-widest text-white/40">Expires</p>
+                  <p className="mt-0.5 font-black text-white">
+                    {profile?.is_vip && profile.vip_expiry
+                      ? new Date(profile.vip_expiry).toLocaleDateString()
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-1 rounded-lg border border-[#ffcf6a]/20 bg-black/30 px-3 py-2 text-[10px] text-white/80">
+                <p className="font-black uppercase tracking-widest text-[#ffcf6a]">Pass Benefits</p>
+                <p>👑 Unlock all VIP-only animated emojis</p>
+                <p>✨ Exclusive VIP badge + frame in rooms</p>
+                <p>🎁 Premium gifts & spotlight priority</p>
+                <p>🔥 Higher daily rewards & milestone bonuses</p>
+              </div>
             </div>
-            <p className="mt-3 text-xl font-black tracking-wide text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.6)]">
-              {profile?.is_vip ? "You're VIP" : "Become VIP"}
-            </p>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#ffcf6a]/70">
-              {profile?.is_vip && profile.vip_expiry
-                ? `Expires ${new Date(profile.vip_expiry).toLocaleDateString()}`
-                : "Unlock badges · frames · perks"}
-            </p>
           </div>
 
           <TheatreDivider label="Membership" />
