@@ -5279,6 +5279,8 @@ function EmojiReactionSheet({
   seatsByIndex,
   defaultSeat,
   onSend,
+  userVipLevel = 0,
+  isHost = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -5286,9 +5288,12 @@ function EmojiReactionSheet({
   seatsByIndex: Map<number, Member>;
   defaultSeat: number;
   onSend: (emoji: string, seat: number, clip?: string | null) => void;
+  userVipLevel?: number;
+  isHost?: boolean;
 }) {
   const [seat, setSeat] = useState(defaultSeat);
   const [emojis, setEmojis] = useState<ReactionEmoji[]>([]);
+  const [tierFilter, setTierFilter] = useState<"all" | "normal" | "vip">("all");
   useEffect(() => {
     if (open) setSeat(defaultSeat);
   }, [open, defaultSeat]);
@@ -5296,11 +5301,26 @@ function EmojiReactionSheet({
     if (!open || emojis.length > 0) return;
     void supabase
       .from("chat_emojis")
-      .select("slug,emoji,name,clip_path")
+      .select("slug,emoji,name,clip_path,tier,min_vip_level")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .then(({ data }) => setEmojis((data ?? []) as ReactionEmoji[]));
   }, [open, emojis.length]);
+
+  const isUnlocked = (e: ReactionEmoji) => {
+    const tier = e.tier ?? "normal";
+    if (tier === "host_only") return isHost;
+    if (tier === "svip") return userVipLevel >= (e.min_vip_level ?? 30);
+    if (tier === "vip") return userVipLevel >= (e.min_vip_level ?? 1);
+    return true;
+  };
+
+  const visible = emojis.filter((e) => {
+    if (tierFilter === "all") return true;
+    const tier = e.tier ?? "normal";
+    if (tierFilter === "normal") return tier === "normal";
+    return tier !== "normal";
+  });
 
   if (!open) return null;
   return (
