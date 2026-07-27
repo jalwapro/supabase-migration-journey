@@ -250,6 +250,49 @@ function GiftsAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updatePrice = useMutation({
+    mutationFn: async ({ id, price }: { id: string; price: number }) => {
+      const { error } = await supabase.from("gifts").update({ price, price_coins: price }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Price updated");
+      qc.invalidateQueries({ queryKey: ["admin_gifts"] });
+      qc.invalidateQueries({ queryKey: ["gifts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkToggle = useMutation({
+    mutationFn: async ({ ids, active }: { ids: string[]; active: boolean }) => {
+      const { error } = await supabase.from("gifts").update({ is_active: active, active }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(`${v.ids.length} gifts ${v.active ? "shown" : "hidden"}`);
+      qc.invalidateQueries({ queryKey: ["admin_gifts"] });
+      qc.invalidateQueries({ queryKey: ["gifts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkPricePct = useMutation({
+    mutationFn: async ({ ids, pct }: { ids: string[]; pct: number }) => {
+      const rows = (list.data ?? []).filter((g) => ids.includes(g.id));
+      const updates = rows.map((g) => ({ id: g.id, newPrice: Math.max(1, Math.round(g.price * (1 + pct / 100))) }));
+      for (const u of updates) {
+        const { error } = await supabase.from("gifts").update({ price: u.newPrice, price_coins: u.newPrice }).eq("id", u.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_d, v) => {
+      toast.success(`Adjusted ${v.ids.length} prices by ${v.pct > 0 ? "+" : ""}${v.pct}%`);
+      qc.invalidateQueries({ queryKey: ["admin_gifts"] });
+      qc.invalidateQueries({ queryKey: ["gifts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const editGift = (g: GiftRow) => {
     const royalRose = isRoyalRoseGift(g.name);
     setDraft({
