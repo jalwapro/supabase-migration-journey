@@ -308,7 +308,9 @@ function AnimatedGiftVideo({
         onEnded={onDone}
         className="gift-anim-video gift-transparent-video absolute inset-0 h-full w-full scale-110 object-contain"
         style={{
-          opacity: 1,
+          opacity: ready ? 1 : 0,
+          transform: ready ? "scale(1.1)" : "scale(1.02)",
+          transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
           background: "transparent",
           willChange: "opacity, transform",
           mixBlendMode: !lumaKey && screenBlend ? "screen" : undefined,
