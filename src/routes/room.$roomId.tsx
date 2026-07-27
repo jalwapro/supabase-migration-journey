@@ -5314,10 +5314,9 @@ function EmojiReactionSheet({
 
   const isUnlocked = (e: ReactionEmoji) => {
     const tier = e.tier ?? "normal";
-    if (tier === "host_only") return isHost;
-    if (tier === "svip") return userVipLevel >= (e.min_vip_level ?? 30);
-    if (tier === "vip") return userVipLevel >= (e.min_vip_level ?? 1);
-    return true;
+    if (tier === "normal") return true;
+    // Any non-normal tier requires VIP membership
+    return userVipLevel >= (e.min_vip_level ?? 1);
   };
 
   const visible = emojis.filter((e) => {
