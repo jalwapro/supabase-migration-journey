@@ -137,6 +137,7 @@ function useRevenueSeries(range: DateRange) {
       });
       return buckets;
     },
+    ...ADMIN_QUERY_OPTS,
   });
 }
 
@@ -168,6 +169,7 @@ function useRecentActivity() {
       }));
       return rows.sort((a, b) => +new Date(b.when) - +new Date(a.when)).slice(0, 10);
     },
+    ...ADMIN_QUERY_OPTS,
   });
 }
 
