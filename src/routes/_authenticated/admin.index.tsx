@@ -33,15 +33,28 @@ export const Route = createFileRoute("/_authenticated/admin/")({
   component: Dashboard,
 });
 
+// Cache admin dashboard queries aggressively so switching between admin
+// pages (or coming back to the dashboard) doesn't re-run heavy Postgres
+// counts. Realtime writes will still show up within staleTime on next mount.
+const ADMIN_QUERY_OPTS = {
+  staleTime: 120_000,
+  gcTime: 10 * 60_000,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+} as const;
+
 function useCount(table: string, filter?: { col: string; val: string }) {
   return useQuery({
     queryKey: ["admin_count", table, filter],
     queryFn: async () => {
-      let q = supabase.from(table).select("id", { count: "exact", head: true });
+      // "planned" uses Postgres planner statistics — near-instant on huge
+      // tables. "exact" was scanning the whole table on every dashboard mount.
+      let q = supabase.from(table).select("id", { count: "planned", head: true });
       if (filter) q = q.eq(filter.col, filter.val);
       const { count } = await q;
       return count ?? 0;
     },
+    ...ADMIN_QUERY_OPTS,
   });
 }
 
@@ -49,7 +62,7 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }, r
   return useQuery({
     queryKey: ["admin_sum", table, col, filter, range?.from, range?.to],
     queryFn: async (): Promise<number> => {
-      let q = supabase.from(table).select(`${col},created_at`);
+      let q = supabase.from(table).select(col);
       if (filter) q = q.eq(filter.c, filter.v);
       if (range) {
         const b = rangeBounds(range);
@@ -59,6 +72,7 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }, r
       const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
       return rows.reduce((s, r) => s + Number(r[col] ?? 0), 0);
     },
+    ...ADMIN_QUERY_OPTS,
   });
 }
 
@@ -67,12 +81,13 @@ function useRangeCount(table: string, filter: { col: string; val: string } | und
     queryKey: ["admin_rcount", table, filter, range.from, range.to],
     queryFn: async () => {
       const b = rangeBounds(range);
-      let q = supabase.from(table).select("id", { count: "exact", head: true })
+      let q = supabase.from(table).select("id", { count: "planned", head: true })
         .gte("created_at", b.from).lte("created_at", b.to);
       if (filter) q = q.eq(filter.col, filter.val);
       const { count } = await q;
       return count ?? 0;
     },
+    ...ADMIN_QUERY_OPTS,
   });
 }
 
