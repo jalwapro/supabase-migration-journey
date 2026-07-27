@@ -28,7 +28,7 @@ await renderMedia({
   composition,
   serveUrl: bundled,
   codec: "h264",
-  outputLocation: "/mnt/documents/jalwa-coming-soon.mp4",
+  outputLocation: "/mnt/documents/jalwa-app-ad-40s.mp4",
   puppeteerInstance: browser,
   muted: true,
   concurrency: 1,
