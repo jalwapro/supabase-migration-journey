@@ -77,16 +77,39 @@ function isRoyalRoseGift(name: string | null | undefined) {
 
 function GiftPreview({ gift, large = false }: { gift: Gift; large?: boolean }) {
   // Plain thumbnail — no luma-key/blend so bright SVGs stay fully visible on the dark tile.
-  const imgClass = "h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]";
+  const imgClass = "h-full w-full object-cover drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]";
   if (isRoyalRoseGift(gift.name)) {
     return <img src={ROYAL_ROSE_THUMB_URL} alt="" className={imgClass} />;
   }
+  // Video-backed gifts (mp4/webm): show autoplaying muted looped preview so shop cards
+  // reflect the actual cinematic animation instead of a broken image tag.
+  const isVideoType = gift.clip_type === "mp4" || gift.clip_type === "webm";
+  const looksLikeVideoUrl = (u?: string | null) => !!u && /\.(mp4|webm)(\?|$)/i.test(u);
+  const videoSrc = isVideoType
+    ? resolvePlayableGiftUrl(gift.clip_path ?? gift.image_url ?? gift.icon_path)
+    : looksLikeVideoUrl(gift.image_url) || looksLikeVideoUrl(gift.icon_path) || looksLikeVideoUrl(gift.clip_path)
+      ? resolvePlayableGiftUrl(gift.clip_path ?? gift.image_url ?? gift.icon_path)
+      : null;
+  if (videoSrc) {
+    return (
+      <video
+        src={videoSrc}
+        className={imgClass}
+        autoPlay
+        loop
+        muted
+        playsInline
+        preload="metadata"
+        disableRemotePlayback
+      />
+    );
+  }
   const thumb = resolveGiftImageUrl(gift.image_url ?? gift.icon_path ?? (isAssetUrlLike(gift.icon) ? gift.icon : null));
   if (thumb) {
-    return <img src={thumb} alt="" className={imgClass} />;
+    return <img src={thumb} alt="" className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]" />;
   }
   if (gift.clip_path && gift.clip_type === "svg") {
-    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className={imgClass} />;
+    return <img src={resolveGiftImageUrl(gift.clip_path) ?? gift.clip_path} alt="" className="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]" />;
   }
   return <span className={`${large ? "text-5xl" : "text-3xl"} leading-none`}>{gift.icon ?? gift.emoji ?? "🎁"}</span>;
 }
