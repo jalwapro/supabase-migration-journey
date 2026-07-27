@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Upload, Loader2, Gem, Pencil, X, Save } from "lucide-react";
+import { Plus, Trash2, Upload, Loader2, Gem, Pencil, X, Save, Search, Eye, EyeOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 
@@ -81,6 +81,8 @@ async function uploadToShop(file: File, folder: string) {
 function ThemesAdmin() {
   const qc = useQueryClient();
   const [filterCat, setFilterCat] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
   const [editing, setEditing] = useState<Theme | null>(null);
 
 
@@ -185,6 +187,58 @@ function ThemesAdmin() {
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_themes"] }),
   });
+
+  const updatePrice = useMutation({
+    mutationFn: async ({ id, price }: { id: string; price: number }) => {
+      const { error } = await supabase.from("themes").update({ price_diamonds: price }).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Price updated");
+      qc.invalidateQueries({ queryKey: ["admin_themes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkToggle = useMutation({
+    mutationFn: async ({ ids, active }: { ids: string[]; active: boolean }) => {
+      const { error } = await supabase.from("themes").update({ is_active: active }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      toast.success(`${v.ids.length} items ${v.active ? "shown" : "hidden"}`);
+      qc.invalidateQueries({ queryKey: ["admin_themes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const bulkPricePct = useMutation({
+    mutationFn: async ({ ids, pct }: { ids: string[]; pct: number }) => {
+      const rows = (list.data ?? []).filter((t) => ids.includes(t.id));
+      for (const t of rows) {
+        const newPrice = Math.max(0, Math.round(t.price_diamonds * (1 + pct / 100)));
+        const { error } = await supabase.from("themes").update({ price_diamonds: newPrice }).eq("id", t.id);
+        if (error) throw error;
+      }
+    },
+    onSuccess: (_d, v) => {
+      toast.success(`Adjusted ${v.ids.length} prices by ${v.pct > 0 ? "+" : ""}${v.pct}%`);
+      qc.invalidateQueries({ queryKey: ["admin_themes"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return (list.data ?? []).filter((t) => {
+      if (filterCat !== "all" && t.category_id !== filterCat) return false;
+      if (!q) return true;
+      return t.name.toLowerCase().includes(q) || String(t.price_diamonds).includes(q);
+    });
+  }, [list.data, filterCat, search]);
+
+  const filteredIds = filteredItems.map((t) => t.id);
+
 
   return (
     <>
@@ -311,30 +365,97 @@ function ThemesAdmin() {
         </button>
       </div>
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
-        <button
-          onClick={() => setFilterCat("all")}
-          className={`rounded-full px-3 py-1 text-[11px] font-bold ${filterCat === "all" ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}
-        >
-          All ({list.data?.length ?? 0})
-        </button>
+      {/* Category tabs with active/total counts */}
+      <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        {(() => {
+          const allTotal = list.data?.length ?? 0;
+          const allActive = list.data?.filter((t) => t.is_active).length ?? 0;
+          const active = filterCat === "all";
+          return (
+            <button
+              onClick={() => setFilterCat("all")}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition ${active ? "bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground shadow-lg" : "bg-card/60 text-muted-foreground hover:text-foreground"}`}
+            >
+              All
+              <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${active ? "bg-black/25 text-white" : "bg-black/30 text-[color:var(--gold)]"}`}>
+                {allActive}/{allTotal}
+              </span>
+            </button>
+          );
+        })()}
         {cats.data?.map((c) => {
-          const count = list.data?.filter((t) => t.category_id === c.id).length ?? 0;
+          const rows = list.data?.filter((t) => t.category_id === c.id) ?? [];
+          const total = rows.length;
+          const activeCount = rows.filter((t) => t.is_active).length;
+          const active = filterCat === c.id;
           return (
             <button
               key={c.id}
               onClick={() => setFilterCat(c.id)}
-              className={`rounded-full px-3 py-1 text-[11px] font-bold ${filterCat === c.id ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}
+              className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider transition ${active ? "bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] text-primary-foreground shadow-lg" : "bg-card/60 text-muted-foreground hover:text-foreground"}`}
             >
-              {c.name} ({count})
+              {c.name}
+              <span className={`rounded-full px-1.5 py-0.5 text-[9px] ${active ? "bg-black/25 text-white" : "bg-black/30 text-[color:var(--gold)]"}`}>
+                {activeCount}/{total}
+              </span>
             </button>
           );
         })}
       </div>
 
+      {/* Search */}
+      <div className="mb-2 flex items-center gap-1.5 rounded-full border border-border bg-input/60 px-3 py-1.5">
+        <Search className="h-3.5 w-3.5 text-muted-foreground" />
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={filterCat === "all" ? "Search shop items…" : `Search in category…`}
+          className="w-full bg-transparent text-xs outline-none"
+        />
+        {search && (
+          <button onClick={() => setSearch("")} className="text-muted-foreground">
+            <X className="h-3 w-3" />
+          </button>
+        )}
+      </div>
+
+      {/* Bulk actions */}
+      <div className="mb-3 flex flex-wrap items-center gap-1">
+        <span className="mr-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Bulk ({filteredIds.length}):
+        </span>
+        <button
+          disabled={!filteredIds.length || bulkToggle.isPending}
+          onClick={() => bulkToggle.mutate({ ids: filteredIds, active: true })}
+          className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[10px] font-bold text-emerald-400 disabled:opacity-40"
+        >
+          <Eye className="h-3 w-3" /> Show all
+        </button>
+        <button
+          disabled={!filteredIds.length || bulkToggle.isPending}
+          onClick={() => bulkToggle.mutate({ ids: filteredIds, active: false })}
+          className="flex items-center gap-1 rounded-full bg-red-500/15 px-2.5 py-1 text-[10px] font-bold text-red-400 disabled:opacity-40"
+        >
+          <EyeOff className="h-3 w-3" /> Hide all
+        </button>
+        <button
+          disabled={!filteredIds.length || bulkPricePct.isPending}
+          onClick={() => {
+            const v = prompt(`Adjust ALL ${filteredIds.length} prices by % (e.g. 10 = +10%, -20 = -20%)`);
+            const pct = Number(v);
+            if (!Number.isFinite(pct) || pct === 0) return;
+            bulkPricePct.mutate({ ids: filteredIds, pct });
+          }}
+          className="flex items-center gap-1 rounded-full bg-[color:var(--gold)]/15 px-2.5 py-1 text-[10px] font-bold text-[color:var(--gold)] disabled:opacity-40"
+        >
+          <DollarSign className="h-3 w-3" /> Price ±%
+        </button>
+        {bulkPricePct.isPending && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+      </div>
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {list.data?.filter((t) => filterCat === "all" || t.category_id === filterCat).map((t) => (
-          <div key={t.id} className="glass overflow-hidden rounded-2xl">
+        {filteredItems.map((t) => (
+          <div key={t.id} className={`glass overflow-hidden rounded-2xl ${!t.is_active ? "opacity-60" : ""}`}>
             <div
               className="grid aspect-square place-items-center bg-black/20 p-3"
               style={{
@@ -348,10 +469,39 @@ function ThemesAdmin() {
             </div>
             <div className="p-2 text-xs">
               <p className="truncate font-bold">{t.name}</p>
-              <p className="flex items-center gap-1 text-[color:var(--gold)]">
-                <Gem className="h-3 w-3" /> {t.price_diamonds.toLocaleString()}
-                {t.duration_days ? <span className="ml-auto text-[10px] text-muted-foreground">{t.duration_days}d</span> : <span className="ml-auto text-[10px] text-muted-foreground">Perm</span>}
-              </p>
+              {editingPrice?.id === t.id ? (
+                <div className="mt-0.5 flex items-center gap-1">
+                  <Gem className="h-3 w-3 text-[color:var(--gold)]" />
+                  <input
+                    type="number"
+                    autoFocus
+                    value={editingPrice.value}
+                    onChange={(e) => setEditingPrice({ id: t.id, value: e.target.value })}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        const n = Number(editingPrice.value);
+                        if (Number.isFinite(n) && n >= 0) updatePrice.mutate({ id: t.id, price: n });
+                        setEditingPrice(null);
+                      } else if (e.key === "Escape") setEditingPrice(null);
+                    }}
+                    onBlur={() => {
+                      const n = Number(editingPrice.value);
+                      if (Number.isFinite(n) && n >= 0 && n !== t.price_diamonds) updatePrice.mutate({ id: t.id, price: n });
+                      setEditingPrice(null);
+                    }}
+                    className="w-full rounded border border-[color:var(--gold)]/60 bg-black/40 px-1 py-0.5 text-[10px] text-[color:var(--gold)] outline-none"
+                  />
+                </div>
+              ) : (
+                <button
+                  onClick={() => setEditingPrice({ id: t.id, value: String(t.price_diamonds) })}
+                  className="flex w-full items-center gap-1 text-[color:var(--gold)] hover:underline"
+                  title="Tap to edit price"
+                >
+                  <Gem className="h-3 w-3" /> {t.price_diamonds.toLocaleString()}
+                  {t.duration_days ? <span className="ml-auto text-[10px] text-muted-foreground">{t.duration_days}d</span> : <span className="ml-auto text-[10px] text-muted-foreground">Perm</span>}
+                </button>
+              )}
               <div className="mt-2 flex gap-1">
                 <button
                   onClick={() => toggle.mutate(t)}
@@ -369,7 +519,13 @@ function ThemesAdmin() {
             </div>
           </div>
         ))}
+        {!list.isLoading && filteredItems.length === 0 && (
+          <p className="col-span-full py-8 text-center text-xs text-muted-foreground">
+            No shop items{search ? ` matching "${search}"` : ""}.
+          </p>
+        )}
       </div>
+
 
       {editing && (
         <EditItemModal
