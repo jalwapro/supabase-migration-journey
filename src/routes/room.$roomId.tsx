@@ -5319,12 +5319,22 @@ function EmojiReactionSheet({
     return userVipLevel >= (e.min_vip_level ?? 1);
   };
 
-  const visible = emojis.filter((e) => {
+  const isVip = userVipLevel > 0;
+
+  // Hide VIP emojis entirely for non-VIP users
+  const accessible = emojis.filter((e) => {
+    const tier = e.tier ?? "normal";
+    if (tier === "normal") return true;
+    return isVip;
+  });
+
+  const visible = accessible.filter((e) => {
     if (tierFilter === "all") return true;
     const tier = e.tier ?? "normal";
     if (tierFilter === "normal") return tier === "normal";
     return tier !== "normal";
   });
+
 
   if (!open) return null;
   return (
@@ -5383,7 +5393,7 @@ function EmojiReactionSheet({
             Tap an animated emoji
           </div>
           <div className="flex gap-1">
-            {(["all", "normal", "vip"] as const).map((t) => (
+            {(isVip ? (["all", "normal", "vip"] as const) : (["all", "normal"] as const)).map((t) => (
               <button
                 key={t}
                 onClick={() => setTierFilter(t)}
@@ -5397,6 +5407,7 @@ function EmojiReactionSheet({
               </button>
             ))}
           </div>
+
         </div>
         <div className="mt-2 grid max-h-[42vh] grid-cols-6 gap-1.5 overflow-y-auto pr-1 scrollbar-hide">
           {visible.map((e) => {
