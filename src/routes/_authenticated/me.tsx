@@ -214,12 +214,14 @@ function MePage() {
           <div className="relative z-10 mt-6 px-3">
             <div
               data-keep-dark
-              className="me-profile-card relative overflow-hidden rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4"
+              className="me-profile-card relative rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4 pt-10"
               style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
             >
-              <CornerBrackets />
-              <div aria-hidden className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
-              <div aria-hidden className="pointer-events-none absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#ff2d95]/20 blur-3xl" />
+              <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[28px]">
+                <CornerBrackets />
+                <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
+                <div className="absolute -left-12 bottom-0 h-40 w-40 rounded-full bg-[#ff2d95]/20 blur-3xl" />
+              </div>
 
               {/* Avatar block — clean DP, equipped frame renders outside via LevelAvatar */}
               <div className="relative z-10 flex flex-col items-center">
