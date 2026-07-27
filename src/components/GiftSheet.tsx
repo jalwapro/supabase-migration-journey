@@ -111,6 +111,7 @@ export function GiftSheet({
   const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
   const [activeTier, setActiveTier] = useState<Tier>("small");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const gifts = useQuery({
     queryKey: ["gifts"],
@@ -229,7 +230,7 @@ export function GiftSheet({
     price(selectedGift) * qty * (sendToAll ? Math.max(1, receivers.length) : 1);
   const canAfford = (profile?.coins ?? 0) >= totalCost;
 
-  const handleSend = () => {
+  const performSend = () => {
     if (!selectedGift || send.isPending) return;
     const targets = sendToAll
       ? receivers.map((r) => r.id)
@@ -292,6 +293,20 @@ export function GiftSheet({
     onClose();
     send.mutate({ gift: selectedGift, targets, quantity: qty });
     onSent?.({ gift: selectedGift, targets });
+  };
+
+  const handleSend = () => {
+    if (!selectedGift || send.isPending) return;
+    if (!canAfford) {
+      toast.error("Not enough coins");
+      return;
+    }
+    // VIP-tier gifts require an explicit confirm to avoid accidental big spends.
+    if (tierOf(price(selectedGift)) === "vip") {
+      setConfirmOpen(true);
+      return;
+    }
+    performSend();
   };
 
   // (tier tabs use TIER_ORDER directly — no legacy category resolution needed)
@@ -509,6 +524,72 @@ export function GiftSheet({
           </p>
         )}
       </div>
+
+      {confirmOpen && selectedGift && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 px-6"
+          onClick={(e) => { e.stopPropagation(); setConfirmOpen(false); }}
+          data-jalwa-overlay="true"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-xs overflow-hidden rounded-2xl border border-[#7c3aed]/60 bg-gradient-to-b from-[#1a0b2e] to-[#0f041e] p-5 text-white shadow-[0_10px_40px_rgba(124,58,237,0.5)]"
+            style={{ fontFamily: "'Outfit', system-ui, sans-serif" }}
+          >
+            <div className="text-center">
+              <div className="text-[10px] font-black uppercase tracking-[3px] text-[#ffd76a]">👑 VIP Gift</div>
+              <div className="mt-1 text-lg font-black">Confirm Send</div>
+            </div>
+
+            <div className="mt-4 flex items-center gap-3 rounded-xl border border-white/10 bg-black/30 p-3">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-white/5">
+                <GiftPreview gift={selectedGift} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-bold">{selectedGift.name}</div>
+                <div className="mt-0.5 text-[10px] uppercase tracking-wider text-white/50">
+                  x{qty}{sendToAll ? ` · ${Math.max(1, receivers.length)} receivers` : ""}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-1.5 rounded-xl border border-white/5 bg-black/20 p-3 text-[12px]">
+              <div className="flex justify-between text-white/70">
+                <span>Total cost</span>
+                <span className="flex items-center gap-1 font-black text-white">
+                  <Coins className="h-3 w-3 text-[#ffd76a]" />
+                  {totalCost.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between text-white/70">
+                <span>Your balance</span>
+                <span className="font-bold text-white">{(profile?.coins ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between border-t border-white/10 pt-1.5 text-white/70">
+                <span>After send</span>
+                <span className="font-bold text-[#4ade80]">
+                  {Math.max(0, (profile?.coins ?? 0) - totalCost).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setConfirmOpen(false)}
+                className="flex-1 rounded-xl border border-white/15 bg-white/5 py-2.5 text-[12px] font-black uppercase tracking-wider text-white/80 active:translate-y-[1px]"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setConfirmOpen(false); performSend(); }}
+                className="flex-1 rounded-xl border-b-4 border-pink-900 bg-gradient-to-r from-[#ff2d87] to-[#7c3aed] py-2.5 text-[12px] font-black uppercase tracking-wider text-white active:translate-y-[2px] active:border-b-0"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
