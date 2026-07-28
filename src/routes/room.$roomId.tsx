@@ -1863,7 +1863,7 @@ function RoomPage() {
     <CamPipelineProvider>
     <PipelineBridge bridgeRef={pipelineBridgeRef} />
     <div
-      className="relative flex h-[100dvh] flex-col overflow-hidden text-white"
+      className="relative flex h-[100svh] flex-col overflow-hidden text-white"
       style={roomStyle}
     >
       <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
