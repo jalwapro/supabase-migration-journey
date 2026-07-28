@@ -775,13 +775,54 @@ function Home() {
   );
 }
 
-function RoomCard({ room }: { room: Room }) {
+function RoomFrameSquare({ tone }: { tone: "gold" | "silver" }) {
+  const c1 = tone === "gold" ? "#fff4c2" : "#ffffff";
+  const c2 = tone === "gold" ? "#fbbf24" : "#cbd5e1";
+  const c3 = tone === "gold" ? "#b45309" : "#475569";
+  const gem = tone === "gold" ? "#ef4444" : "#a78bfa";
+  return (
+    <svg viewBox="0 0 200 200" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+      <defs>
+        <linearGradient id={`rfs-${tone}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={c1} />
+          <stop offset="0.5" stopColor={c2} />
+          <stop offset="1" stopColor={c3} />
+        </linearGradient>
+      </defs>
+      {/* outer ornate border */}
+      <rect x="3" y="3" width="194" height="194" rx="22" ry="22" fill="none" stroke={`url(#rfs-${tone})`} strokeWidth="5" />
+      {/* inner thin border */}
+      <rect x="10" y="10" width="180" height="180" rx="18" ry="18" fill="none" stroke={c1} strokeWidth="1" opacity="0.85" />
+      {/* corner ornaments */}
+      {[[10,10],[190,10],[10,190],[190,190]].map(([x,y],i)=>(
+        <g key={i}>
+          <circle cx={x} cy={y} r="8" fill={`url(#rfs-${tone})`} stroke={c3} strokeWidth="1" />
+          <circle cx={x} cy={y} r="3.4" fill={gem} stroke="#fff" strokeWidth="0.7" />
+        </g>
+      ))}
+      {/* mid edge gems */}
+      {[[100,4],[196,100],[100,196],[4,100]].map(([x,y],i)=>(
+        <g key={i}>
+          <circle cx={x} cy={y} r="5" fill={`url(#rfs-${tone})`} stroke={c3} strokeWidth="0.8" />
+          <circle cx={x} cy={y} r="2" fill={gem} />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "silver" }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
+  const glow = frameTone === "gold"
+    ? "shadow-[0_10px_30px_-6px_rgba(251,191,36,0.55)]"
+    : frameTone === "silver"
+    ? "shadow-[0_10px_30px_-6px_rgba(203,213,225,0.45)]"
+    : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
     <Link
       to="/room/$roomId"
       params={{ roomId: room.id }}
-      className="group relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-card shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)] transition active:scale-[0.98]"
+      className={`group relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-card ${glow} transition active:scale-[0.98]`}
     >
       {room.cover_url ? (
         <img
@@ -799,6 +840,8 @@ function RoomCard({ room }: { room: Room }) {
         <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
+
+      {frameTone && <RoomFrameSquare tone={frameTone} />}
 
       {/* Live badge */}
       <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-[color:var(--destructive)]/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow">
@@ -851,6 +894,7 @@ function RoomCard({ room }: { room: Room }) {
     </Link>
   );
 }
+
 
 function RoomListItem({ room }: { room: Room }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
