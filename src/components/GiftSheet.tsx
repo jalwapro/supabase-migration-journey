@@ -29,21 +29,31 @@ export type Gift = {
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
 
-// Jalwa tier system — teen categorries:
-//   basic   : ≤ 300 coins  (chhote gifts — flyer + coin-drop)
-//   premium : 301 – 1999   (real sample sound / Jalwa signature)
-//   vip     : ≥ 2000       (cinematic + real sample sound)
+// Jalwa price-tier (used only for VIP confirm-modal gating).
 type Tier = "small" | "premium" | "vip";
-const TIER_ORDER: Tier[] = ["small", "premium", "vip"];
-const TIER_LABEL: Record<Tier, string> = {
-  small: "✨ Basic",
-  premium: "💎 Premium",
-  vip: "👑 VIP",
-};
 function tierOf(price: number): Tier {
   if (price <= 300) return "small";
   if (price < 2000) return "premium";
   return "vip";
+}
+
+// Category label + emoji for tabs (fallbacks for unknown categories)
+const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
+  all:      { label: "All",      emoji: "✨" },
+  popular:  { label: "Popular",  emoji: "🔥" },
+  classic:  { label: "Classic",  emoji: "🎁" },
+  romantic: { label: "Romantic", emoji: "💗" },
+  love:     { label: "Love",     emoji: "💘" },
+  party:    { label: "Party",    emoji: "🎉" },
+  luxury:   { label: "Luxury",   emoji: "💎" },
+  fantasy:  { label: "Fantasy",  emoji: "🦄" },
+  vip:      { label: "VIP",      emoji: "👑" },
+};
+function catLabel(k: string) {
+  return CATEGORY_META[k]?.label ?? (k.charAt(0).toUpperCase() + k.slice(1));
+}
+function catEmoji(k: string) {
+  return CATEGORY_META[k]?.emoji ?? "🎁";
 }
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
@@ -122,7 +132,7 @@ export function GiftSheet({
   const [receiverId, setReceiverId] = useState<string | null>(receivers[0]?.id ?? null);
   const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
-  const [activeTier, setActiveTier] = useState<Tier>("small");
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const gifts = useQuery({
@@ -156,13 +166,27 @@ export function GiftSheet({
 
   const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
-  // Group gifts by Jalwa price-tier (small / premium / vip).
+  // Derive category list dynamically from loaded gifts (skip empties).
+  const categoryList = useMemo(() => {
+    const counts = new Map<string, number>();
+    (gifts.data ?? []).forEach((g) => {
+      const c = (g.category ?? "").trim().toLowerCase() || "classic";
+      counts.set(c, (counts.get(c) ?? 0) + 1);
+    });
+    const ordered = ["popular", "classic", "romantic", "love", "party", "luxury", "fantasy", "vip"];
+    const known = ordered.filter((c) => counts.has(c));
+    const extras = [...counts.keys()].filter((c) => !ordered.includes(c)).sort();
+    return ["all", ...known, ...extras];
+  }, [gifts.data]);
+
+  // Filter gifts by selected category (or show all), sorted by price.
   const visibleGifts = useMemo(() => {
     const all = gifts.data ?? [];
-    return all
-      .filter((g) => tierOf(price(g)) === activeTier)
-      .sort((a, b) => price(a) - price(b));
-  }, [gifts.data, activeTier]);
+    const filtered = activeCategory === "all"
+      ? all
+      : all.filter((g) => ((g.category ?? "").trim().toLowerCase() || "classic") === activeCategory);
+    return filtered.slice().sort((a, b) => price(a) - price(b));
+  }, [gifts.data, activeCategory]);
 
   const giftVideoUrl = (g: Gift | null) => {
     if (!g?.clip_path || !["mp4", "webm", "svga"].includes(g.clip_type ?? "")) return null;
@@ -389,28 +413,30 @@ export function GiftSheet({
             </span>
           </div>
 
-          <div className="flex shrink-0 rounded-xl border border-white/5 bg-[#1a0b2e] p-0.5">
-            {TIER_ORDER.map((t) => {
-              const active = activeTier === t;
-              const label = t === "small" ? "BASIC" : t === "premium" ? "PREMIUM" : "VIP";
-              return (
-                <button
-                  key={t}
-                  onClick={() => setActiveTier(t)}
-                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9px] font-black transition ${
-                    active
-                      ? "bg-[#7c3aed] text-white shadow-lg shadow-purple-900/50"
-                      : "text-white/40"
-                  }`}
-                >
-                  {label}
-                  {t === "vip" && !active && (
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-[#f5c542]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        </div>
+
+        {/* Category tabs — scrollable, all real DB categories */}
+        <div className="scrollbar-hide relative flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/5 px-3 pb-1.5">
+          {categoryList.map((c) => {
+            const active = activeCategory === c;
+            return (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(c)}
+                className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition ${
+                  active
+                    ? "bg-gradient-to-r from-[#ff2d87] to-[#7c3aed] text-white shadow-[0_0_12px_rgba(124,58,237,0.6)]"
+                    : "bg-white/[0.04] text-white/50 hover:text-white/80"
+                }`}
+              >
+                <span>{catEmoji(c)}</span>
+                <span>{catLabel(c)}</span>
+                {c === "vip" && !active && (
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-[#f5c542]" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Gifts grid — arcade tiles */}

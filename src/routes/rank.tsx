@@ -292,7 +292,7 @@ function RankHeader({ onBack, onHelp, profile, userId }: {
   const unread = useUnreadCount();
   const unreadCount = userId ? (unread.data ?? 0) : 0;
   return (
-    <header className="relative z-10 px-4 pt-4" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
+    <header className="sticky top-0 z-30 border-b border-white/5 bg-background/70 backdrop-blur-2xl px-4 pt-4 pb-3" style={{ paddingTop: "calc(env(safe-area-inset-top) + 12px)" }}>
       {/* Top row: notifications + wallet */}
       <div className="flex items-center justify-end gap-2">
         {userId && (
