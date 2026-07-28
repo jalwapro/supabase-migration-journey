@@ -88,6 +88,12 @@ import {
 
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
 
+function RoomEntranceMount({ roomId, userId }: { roomId: string; userId: string | null }) {
+  const { current, done } = useRoomEntrances(roomId, userId);
+  if (!current) return null;
+  return <EntrancePlayer event={current} onDone={done} />;
+}
+
 export const Route = createFileRoute("/room/$roomId")({
   beforeLoad: async ({ params }) => {
     // Only PK-battle rooms use the /pk/$roomId layout. Voice/video rooms stay here.
