@@ -191,8 +191,8 @@ function RankPage() {
           </nav>
 
           {/* ── Top 3 podium ─────────────────────────────────────────── */}
-          <section className="relative z-10 mt-6 px-4">
-            <div className="grid grid-cols-3 items-end gap-2.5">
+          <section className="relative z-10 mt-4 px-2">
+            <div className="grid grid-cols-3 items-end gap-1">
               <Podium row={c2} place={2} unit={activeCat.unit} />
               <Podium row={c1} place={1} unit={activeCat.unit} />
               <Podium row={c3} place={3} unit={activeCat.unit} />
