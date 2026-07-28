@@ -638,6 +638,7 @@ function Home() {
                         Top Hosts
                       </h2>
                     </div>
+                    <RoomFrameFilters />
                     <div className="grid grid-cols-2 gap-3">
                       {topHosts.map((r, i) => (
                         <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "violet"} />
@@ -778,15 +779,87 @@ function Home() {
 }
 
 
+type TopFrameRow = {
+  slot: 1 | 2;
+  media_url: string;
+  media_type: "png" | "svga" | "mp4" | "webm" | "gif";
+  chromakey: "none" | "green" | "black" | "luma";
+};
+
+function useTopRankFrames() {
+  return useQuery({
+    queryKey: ["room_top_frames_active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("room_top_frames")
+        .select("slot,media_url,media_type,chromakey")
+        .in("slot", [1, 2])
+        .eq("is_active", true);
+      if (error) throw error;
+      const map: Record<1 | 2, TopFrameRow | null> = { 1: null, 2: null };
+      for (const r of (data ?? []) as TopFrameRow[]) map[r.slot] = r;
+      return map;
+    },
+    staleTime: 60_000,
+  });
+}
+
 function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
-  const src = tone === "gold" ? jalwaFrameGold.url : jalwaFrameViolet.url;
+  const { data } = useTopRankFrames();
+  const slot: 1 | 2 = tone === "gold" ? 1 : 2;
+  const row = data?.[slot];
+  const fallback = tone === "gold" ? jalwaFrameGold.url : jalwaFrameViolet.url;
+  const src = row?.media_url ?? fallback;
+  const mediaType = row?.media_type ?? "png";
+  const chromakey = row?.chromakey ?? "none";
+  const filter =
+    chromakey === "green"
+      ? "url(#room-frame-green-key)"
+      : chromakey === "luma"
+      ? "url(#room-frame-luma-key)"
+      : undefined;
+  const commonClass =
+    "pointer-events-none absolute -inset-[6%] h-[112%] w-[112%] max-w-none object-fill select-none z-20 drop-shadow-[0_0_18px_rgba(0,0,0,0.6)]";
+
+  if (mediaType === "mp4" || mediaType === "webm") {
+    return (
+      <video
+        src={src}
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden
+        style={{ filter }}
+        className={commonClass}
+      />
+    );
+  }
   return (
     <img
       src={src}
       alt=""
       aria-hidden
-      className="pointer-events-none absolute -inset-[6%] h-[112%] w-[112%] max-w-none object-fill select-none z-20 drop-shadow-[0_0_18px_rgba(0,0,0,0.6)]"
+      style={{ filter }}
+      className={commonClass}
     />
+  );
+}
+
+function RoomFrameFilters() {
+  return (
+    <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+      <defs>
+        <filter id="room-frame-green-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0 0.08" />
+          <feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer>
+        </filter>
+        <filter id="room-frame-luma-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.2126 0.7152 0.0722 0 0" />
+          <feComponentTransfer><feFuncA type="linear" slope="5.2" intercept="-0.48" /></feComponentTransfer>
+        </filter>
+      </defs>
+    </svg>
   );
 }
 
