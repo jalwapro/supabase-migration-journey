@@ -222,16 +222,6 @@ function RankPage() {
               </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between text-[11px] text-white/45">
-              <span className="inline-flex items-center gap-1.5">
-                <span className="grid h-4 w-4 place-items-center rounded-full border border-white/15">⟳</span>
-                Ranking refreshes in {String(Math.floor(refreshIn / 60)).padStart(2, "0")}:{String(refreshIn % 60).padStart(2, "0")}
-              </span>
-              <span className="inline-flex items-center gap-1 text-white/60">
-                {activeCat.label} ({activeCat.unit}) <span className="text-white/30">ⓘ</span>
-              </span>
-              <span className="text-white/45">Country</span>
-            </div>
           </section>
 
           {/* ── Leaderboard list ─────────────────────────────────────── */}
