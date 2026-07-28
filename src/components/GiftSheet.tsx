@@ -166,13 +166,27 @@ export function GiftSheet({
 
   const price = (g: Gift | null) => (g?.price_coins ?? g?.price ?? 0) as number;
 
-  // Group gifts by Jalwa price-tier (small / premium / vip).
+  // Derive category list dynamically from loaded gifts (skip empties).
+  const categoryList = useMemo(() => {
+    const counts = new Map<string, number>();
+    (gifts.data ?? []).forEach((g) => {
+      const c = (g.category ?? "").trim().toLowerCase() || "classic";
+      counts.set(c, (counts.get(c) ?? 0) + 1);
+    });
+    const ordered = ["popular", "classic", "romantic", "love", "party", "luxury", "fantasy", "vip"];
+    const known = ordered.filter((c) => counts.has(c));
+    const extras = [...counts.keys()].filter((c) => !ordered.includes(c)).sort();
+    return ["all", ...known, ...extras];
+  }, [gifts.data]);
+
+  // Filter gifts by selected category (or show all), sorted by price.
   const visibleGifts = useMemo(() => {
     const all = gifts.data ?? [];
-    return all
-      .filter((g) => tierOf(price(g)) === activeTier)
-      .sort((a, b) => price(a) - price(b));
-  }, [gifts.data, activeTier]);
+    const filtered = activeCategory === "all"
+      ? all
+      : all.filter((g) => ((g.category ?? "").trim().toLowerCase() || "classic") === activeCategory);
+    return filtered.slice().sort((a, b) => price(a) - price(b));
+  }, [gifts.data, activeCategory]);
 
   const giftVideoUrl = (g: Gift | null) => {
     if (!g?.clip_path || !["mp4", "webm", "svga"].includes(g.clip_type ?? "")) return null;
