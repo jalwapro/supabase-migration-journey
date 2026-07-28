@@ -949,12 +949,12 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
 }
 
 
-function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "silver" }) {
+function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "violet" }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
   const glow = frameTone === "gold"
     ? "shadow-[0_10px_30px_-6px_rgba(251,191,36,0.55)]"
-    : frameTone === "silver"
-    ? "shadow-[0_10px_30px_-6px_rgba(203,213,225,0.45)]"
+    : frameTone === "violet"
+    ? "shadow-[0_10px_30px_-6px_rgba(168,85,247,0.55)]"
     : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
     <Link
