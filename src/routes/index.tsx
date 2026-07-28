@@ -11,6 +11,8 @@ import { DailySpinFloatingButton } from "@/components/DailySpinFloatingButton";
 import { formatCompact } from "@/lib/utils";
 
 import jalwaLogo from "@/assets/jalwa-logo.png";
+import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
+import jalwaFrameViolet from "@/assets/jalwa-frame-violet.png.asset.json";
 import {
   Dialog,
   DialogContent,
