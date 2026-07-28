@@ -125,6 +125,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token !== hydrateTokenRef.current) return;
       setProfile(p);
       setRoles(r);
+      // Auto-detect country on first login/signup if not set.
+      if (p && !p.country) {
+        try {
+          const res = await fetch("https://ipapi.co/json/");
+          if (res.ok) {
+            const j = await res.json();
+            const cn = (j?.country_name as string | undefined)?.trim();
+            if (cn) {
+              const { error: upErr } = await supabase
+                .from("profiles").update({ country: cn }).eq("id", uid);
+              if (!upErr && token === hydrateTokenRef.current) {
+                setProfile((prev) => (prev ? { ...prev, country: cn } : prev));
+              }
+            }
+          }
+        } catch (e) {
+          console.warn("[useAuth] country detect", e);
+        }
+      }
     }, 0);
   }, []);
 
