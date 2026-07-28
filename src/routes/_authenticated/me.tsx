@@ -182,7 +182,7 @@ function MePage() {
           </div>
 
           {/* Top action row */}
-          <div data-keep-dark className="relative z-10 flex items-center justify-between px-4 pt-5">
+          <div data-keep-dark className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-black/40 px-4 py-3 backdrop-blur-2xl" style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}>
             <Link
               to="/"
               className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 text-white/90 backdrop-blur-md transition hover:bg-black/70"
