@@ -638,7 +638,7 @@ function Home() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       {topHosts.map((r, i) => (
-                        <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "silver"} />
+                        <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "violet"} />
                       ))}
                     </div>
                   </div>
@@ -775,48 +775,186 @@ function Home() {
   );
 }
 
-function RoomFrameSquare({ tone }: { tone: "gold" | "silver" }) {
-  const c1 = tone === "gold" ? "#fff4c2" : "#ffffff";
-  const c2 = tone === "gold" ? "#fbbf24" : "#cbd5e1";
-  const c3 = tone === "gold" ? "#b45309" : "#475569";
-  const gem = tone === "gold" ? "#ef4444" : "#a78bfa";
+function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
+  const isGold = tone === "gold";
+  // Gold palette (Frame 1) / Violet palette (Frame 2) — matches reference.
+  const c1 = isGold ? "#fff2b0" : "#f3e8ff";
+  const c2 = isGold ? "#facc15" : "#a855f7";
+  const c3 = isGold ? "#b45309" : "#6d28d9";
+  const gem = isGold ? "#a855f7" : "#e879f9";
+  const glow = isGold ? "#fde68a" : "#c084fc";
+  const uid = `rfs-${tone}`;
   return (
-    <svg viewBox="0 0 200 200" preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden>
+    <svg
+      viewBox="0 0 200 200"
+      preserveAspectRatio="none"
+      className="pointer-events-none absolute inset-0 h-full w-full drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+      aria-hidden
+    >
       <defs>
-        <linearGradient id={`rfs-${tone}`} x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id={uid} x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stopColor={c1} />
-          <stop offset="0.5" stopColor={c2} />
+          <stop offset="0.45" stopColor={c2} />
           <stop offset="1" stopColor={c3} />
         </linearGradient>
+        <linearGradient id={`${uid}-bar`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={c2} />
+          <stop offset="1" stopColor={c3} />
+        </linearGradient>
+        <radialGradient id={`${uid}-gem`} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor="#fff" stopOpacity="0.9" />
+          <stop offset="0.4" stopColor={gem} />
+          <stop offset="1" stopColor={c3} />
+        </radialGradient>
+        <filter id={`${uid}-glow`} x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.2" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
-      {/* outer ornate border */}
-      <rect x="3" y="3" width="194" height="194" rx="22" ry="22" fill="none" stroke={`url(#rfs-${tone})`} strokeWidth="5" />
-      {/* inner thin border */}
-      <rect x="10" y="10" width="180" height="180" rx="18" ry="18" fill="none" stroke={c1} strokeWidth="1" opacity="0.85" />
-      {/* corner ornaments */}
-      {[[10,10],[190,10],[10,190],[190,190]].map(([x,y],i)=>(
-        <g key={i}>
-          <circle cx={x} cy={y} r="8" fill={`url(#rfs-${tone})`} stroke={c3} strokeWidth="1" />
-          <circle cx={x} cy={y} r="3.4" fill={gem} stroke="#fff" strokeWidth="0.7" />
+
+      {/* Outer chamfered border with cut corners (JALWA-style) */}
+      <path
+        d="M14 4 H186 L196 14 V186 L186 196 H14 L4 186 V14 Z"
+        fill="none"
+        stroke={`url(#${uid})`}
+        strokeWidth="3"
+        filter={`url(#${uid}-glow)`}
+      />
+      {/* Inner double-line */}
+      <path
+        d="M18 10 H182 L190 18 V182 L182 190 H18 L10 182 V18 Z"
+        fill="none"
+        stroke={c1}
+        strokeWidth="0.9"
+        opacity="0.85"
+      />
+
+      {/* Corner diamond studs */}
+      {[[6,6],[194,6],[6,194],[194,194]].map(([x,y],i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(45)`}>
+          <rect x="-3.2" y="-3.2" width="6.4" height="6.4" fill={`url(#${uid}-gem)`} stroke={c3} strokeWidth="0.5" />
         </g>
       ))}
-      {/* mid edge gems */}
-      {[[100,4],[196,100],[100,196],[4,100]].map(([x,y],i)=>(
-        <g key={i}>
-          <circle cx={x} cy={y} r="5" fill={`url(#rfs-${tone})`} stroke={c3} strokeWidth="0.8" />
-          <circle cx={x} cy={y} r="2" fill={gem} />
+
+      {/* Mid-edge violet gemstones (elongated diamonds) */}
+      {[[3,100,0],[197,100,0],[100,3,90],[100,197,90]].map(([x,y,rot],i) => (
+        <g key={i} transform={`translate(${x} ${y}) rotate(${rot})`}>
+          <polygon points="0,-8 4,0 0,8 -4,0" fill={`url(#${uid}-gem)`} stroke={c1} strokeWidth="0.4" />
+          <polygon points="0,-8 4,0 0,0 -4,0" fill="#fff" opacity="0.35" />
         </g>
+      ))}
+
+      {/* ── Top JALWA banner with crown ─────────────────────────── */}
+      <g transform="translate(100 0)">
+        {/* Crown */}
+        <g transform="translate(0 8)" filter={`url(#${uid}-glow)`}>
+          <path
+            d="M-14 6 L-10 -4 L-5 3 L0 -8 L5 3 L10 -4 L14 6 Z"
+            fill={`url(#${uid})`}
+            stroke={c3}
+            strokeWidth="0.6"
+          />
+          <circle cx="-10" cy="-4" r="1.4" fill={gem} />
+          <circle cx="0" cy="-8" r="1.6" fill={gem} />
+          <circle cx="10" cy="-4" r="1.4" fill={gem} />
+          <rect x="-14" y="6" width="28" height="2" fill={c2} />
+        </g>
+        {/* Wings */}
+        <g fill={`url(#${uid})`} opacity="0.95">
+          <path d="M-22 20 Q-34 14 -44 20 Q-34 22 -22 24 Z" />
+          <path d="M22 20 Q34 14 44 20 Q34 22 22 24 Z" />
+        </g>
+        {/* Banner plate */}
+        <path
+          d="M-26 14 H26 L30 20 L26 28 H-26 L-30 20 Z"
+          fill="#0b0714"
+          stroke={`url(#${uid})`}
+          strokeWidth="1.2"
+        />
+        {/* JALWA text */}
+        <text
+          x="0"
+          y="24"
+          textAnchor="middle"
+          fontFamily="Impact, 'Arial Black', sans-serif"
+          fontSize="10"
+          fontWeight="900"
+          fill={c1}
+          stroke={c3}
+          strokeWidth="0.35"
+          letterSpacing="1.2"
+        >
+          JALWA
+        </text>
+      </g>
+
+      {/* ── Bottom shield with J ─────────────────────────────────── */}
+      <g transform="translate(100 200)">
+        {/* Wings */}
+        <g fill={`url(#${uid})`} opacity="0.95">
+          <path d="M-14 -10 Q-30 -14 -40 -8 Q-28 -6 -14 -6 Z" />
+          <path d="M14 -10 Q30 -14 40 -8 Q28 -6 14 -6 Z" />
+        </g>
+        {/* Shield */}
+        <path
+          d="M-11 -18 H11 L13 -14 Q13 -6 0 -2 Q-13 -6 -13 -14 Z"
+          fill={`url(#${uid}-gem)`}
+          stroke={`url(#${uid})`}
+          strokeWidth="1"
+          filter={`url(#${uid}-glow)`}
+        />
+        <text
+          x="0"
+          y="-8"
+          textAnchor="middle"
+          fontFamily="Georgia, serif"
+          fontSize="10"
+          fontWeight="900"
+          fill="#fff"
+          stroke={c3}
+          strokeWidth="0.3"
+        >
+          J
+        </text>
+        {/* Bottom banner */}
+        <path
+          d="M-22 -3 H22 L25 1 L22 5 H-22 L-25 1 Z"
+          fill="#0b0714"
+          stroke={`url(#${uid})`}
+          strokeWidth="0.9"
+        />
+        <text
+          x="0"
+          y="2.5"
+          textAnchor="middle"
+          fontFamily="Impact, 'Arial Black', sans-serif"
+          fontSize="5.5"
+          fontWeight="900"
+          fill={c1}
+          letterSpacing="1"
+        >
+          JALWA
+        </text>
+      </g>
+
+      {/* Subtle inner sparkle dots */}
+      {[[20,60],[180,60],[20,140],[180,140],[100,40],[100,160]].map(([x,y],i) => (
+        <circle key={i} cx={x} cy={y} r="0.9" fill={glow} opacity="0.9" />
       ))}
     </svg>
   );
 }
 
-function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "silver" }) {
+
+function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "violet" }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
   const glow = frameTone === "gold"
     ? "shadow-[0_10px_30px_-6px_rgba(251,191,36,0.55)]"
-    : frameTone === "silver"
-    ? "shadow-[0_10px_30px_-6px_rgba(203,213,225,0.45)]"
+    : frameTone === "violet"
+    ? "shadow-[0_10px_30px_-6px_rgba(168,85,247,0.55)]"
     : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
     <Link
