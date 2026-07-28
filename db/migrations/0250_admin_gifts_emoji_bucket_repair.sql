@@ -194,9 +194,7 @@ CREATE POLICY "chat_emojis admin delete" ON public.chat_emojis
 
 -- Existing public bucket used by gift uploads; emoji admin uploads now share it
 -- under the emoji-assets/ prefix to avoid missing public-assets bucket errors.
-INSERT INTO storage.buckets (id, name, public)
-VALUES ('shop-assets', 'shop-assets', true)
-ON CONFLICT (id) DO UPDATE SET public = true;
+-- The shop-assets bucket already exists; this migration only repairs policies.
 
 DROP POLICY IF EXISTS "shop assets public read" ON storage.objects;
 CREATE POLICY "shop assets public read" ON storage.objects
