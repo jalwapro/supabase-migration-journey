@@ -1,57 +1,51 @@
-# Room Entrance Animation System
+# Premium Profile Card System
 
-End-to-end VIP room entrance effects: shop → purchase → equip → auto-play when the user joins any room, with an admin panel to manage the catalog.
+End-to-end profile-card cosmetics: shop → purchase (coins/diamonds) → equip → auto-render on every profile view, with an admin catalog.
 
-## What ships
+## 1. Database — migration `0256_profile_cards.sql`
 
-### 1. Database (migration `0255_entrance_effects.sql`)
-- `entrance_effects` — catalog: `id, key, name, description, category, media_url, media_type` (mp4/webm/lottie/svga), `thumbnail_url, sound_url, duration_ms, price_coins, min_vip_level, is_active, is_limited, starts_at, ends_at, sort_order`.
-- `user_entrance_effects` — ownership + equipped: `user_id, effect_id, purchased_at, expires_at, is_equipped` (unique partial index enforces one equipped per user).
-- `entrance_purchases` — audit log for stats.
-- RPCs (SECURITY DEFINER, wallet-atomic):
-  - `purchase_entrance_effect(effect_id)` — checks VIP tier, deducts coins via existing wallet fn, inserts ownership.
-  - `equip_entrance_effect(effect_id)` — sets `is_equipped=true`, un-equips others.
-  - `unequip_entrance_effect()`.
-  - `admin_upsert_entrance_effect(...)`, `admin_delete_entrance_effect(id)`.
-- GRANTs + RLS: catalog readable by anon; ownership readable by owner only; admin RPCs gated by `has_role`.
-- Seed 20 built-in effect rows across all 20 categories with vector SVG placeholders (Golden Throne, Flying Dragon, Phoenix Rebirth, Space Portal, Neon Cyber, etc.) so the shop is populated on day one.
+- `profile_cards` — catalog: `id, key, name, description, category, rarity, bg_media_url, bg_media_type` (image/video/lottie/svga/builtin), `bg_chromakey, thumbnail_url, frame_effect, accent_color, glow_color, particle_style, price_coins, price_diamonds, min_vip_level, duration_days` (null = permanent), `is_active, is_limited, starts_at, ends_at, sort_order`.
+- `user_profile_cards` — ownership: `user_id, card_id, purchased_at, expires_at, is_equipped` (unique partial index for one equipped per user).
+- RPCs (SECURITY DEFINER, wallet-atomic): `purchase_profile_card(card_id, currency)`, `equip_profile_card(card_id)`, `unequip_profile_card()`, `admin_upsert_profile_card(...)`, `admin_delete_profile_card(id)`.
+- GRANTs + RLS: catalog readable by anon; ownership readable by anyone (so viewers can render the owner's equipped card); write RPCs gated by owner or `has_role('admin')`.
+- Seed ~45 cards across all 9 categories (Basic, VIP, Royal, Luxury, Fantasy, Galaxy, Nature, Neon, Event) using `builtin:` keys resolved to pure-SVG animated backgrounds — populated on day one, no media upload needed.
 
-### 2. Playback infra
-- **`src/lib/entrance/registry.ts`** — resolves an effect's media (mp4/webm/lottie/svga), thumbnail, and sound with fallback + preload helper.
-- **`src/components/room/EntrancePlayer.tsx`** — full-screen overlay inside a room:
-  - Renders Video (mp4/webm with chromakey filter), Lottie (via `lottie-react`), or SVGA (via existing `SvgaPlayer`).
-  - Shows user card overlay: `LevelAvatar` (with equipped frame), username, VIP tier, badge, country flag, agency tag.
-  - Plays sound via `<audio>` — does NOT interrupt Zego stream (separate `AudioContext`).
-  - 2–3s configurable duration; auto-fades out.
-  - Respects `prefers-reduced-motion` and skips on `navigator.connection.effectiveType === 'slow-2g' | '2g'`.
-- **`src/hooks/useRoomEntrances.ts`** — subscribes to `room_events` (existing) filtered to `type='user_joined'`, dedupes, resolves the joining user's equipped effect from `user_entrance_effects` + `entrance_effects`, enqueues a single-slot playback queue.
-- Wired into `src/routes/room.$roomId.tsx` — mounts `<EntrancePlayer />` above the room UI; doesn't pause Zego audio.
-- On join: existing `join_room` flow already writes to `room_events`; add a `entrance_effect_key` snapshot so viewers don't need to re-query.
+## 2. Playback / rendering
 
-### 3. Profile Shop redesign — `src/routes/_authenticated/shop.tsx`
-Replace flat grid with tabbed sections:
-- Avatar Frames · **Entrance Effects** · Chat Bubbles · Name Plates · Badges · Ride Effects.
-- Each Entrance card: video preview (autoplay muted loop on hover / tap), name, description, duration, quality badge, price (💰), VIP requirement chip, and one of: `Purchase` / `Equip` / `Equipped ✓` / `🔒 VIP Lv X`.
-- Fullscreen preview modal with sound test.
-- New route `src/routes/_authenticated/shop.entrances.tsx` for a dedicated deep-link.
+- **`src/lib/profileCards/registry.ts`** — resolves a card's background (image/video/lottie/svga/builtin), frame effect, accent + glow colors, particle style.
+- **`src/lib/profileCards/builtin.tsx`** — 45 pure-SVG animated backgrounds (gradient shine, aurora, sakura fall, nebula drift, matrix rain, phoenix flames, dragon scales, etc.).
+- **`src/components/profile/PremiumProfileCard.tsx`** — reusable card shell:
+  - Animated background layer (respects chromakey for MP4/WebM)
+  - Glassmorphism content panel with slide-in + border-glow keyframes
+  - `LevelAvatar` (uses equipped avatar frame + VIP tier)
+  - Slots: username, ID, country flag, VIP badge, level, verified check, popularity, followers/following/friends, bio, online status, join date, signature
+  - Floating particles/sparkles layer per `particle_style`
+  - Action row: Follow, Message, Voice, Video, Invite, Gift, Report, Block, Share
+  - Respects `prefers-reduced-motion`
+- Wired into `src/routes/_authenticated/u.$userId.tsx` (visitor profile) and `me.tsx` preview — the card wraps the existing hero, replacing the current static hero background.
 
-### 4. Profile — "My Entrances" tab
-- `src/routes/_authenticated/me.entrances.tsx` — owned list, equip/unequip, "expires in Xd" for limited items.
-- Add a tab entry in the existing profile tab strip.
+## 3. Shop — `src/routes/_authenticated/shop-profile-cards.tsx`
 
-### 5. Admin panel
-- New route `src/routes/_authenticated/admin.entrances.tsx` (Users & Rooms nav group):
-  - Upload MP4/WebM/Lottie(.json)/SVGA(.svga) + thumbnail + optional sound to `shop-assets/entrances/` via existing `FileUploader`.
-  - Fields: name, description, category (20 presets), price, min VIP level, duration, chromakey, active toggle, limited-time window.
-  - Grid of all effects with edit / toggle-active / delete + purchase-count stats (COUNT from `entrance_purchases`).
-- Add sidebar link in `AdminShell.tsx`.
+- Category tabs (all 9), search bar, rarity filter.
+- Grid of cards, each: live mini preview, name, rarity chip, coin + diamond price, VIP requirement, duration badge, status chip (Owned / Equipped / Locked).
+- Tap → fullscreen preview modal with the real `PremiumProfileCard` populated with the viewer's data, plus Purchase (coins/diamonds toggle) + Equip buttons.
+- Added to existing Shop nav alongside Frames/Entrances/etc.
 
-### 6. Design language
-- Reuse existing tokens (`--gold`, `--primary`, `--secondary`), glassmorphism cards (`backdrop-blur-xl`, `bg-white/[0.03]`), gold ornaments matching `JalwaFrame` visual family. Cinematic entrance frame borders animated via CSS `@keyframes` in `styles.css`.
+## 4. Admin panel — `src/routes/_authenticated/admin.profile-cards.tsx`
 
-## Out of scope (this turn)
-- Recording real motion-graphics MP4s — the seed uses vector SVG entrances that already look premium. Admin can upload real MP4s any time; playback path handles them from day one.
-- Chat Bubbles / Name Plates / Ride Effects tabs are added as empty tab shells (existing systems will slot in later).
+- CRUD grid with edit / toggle-active / delete + owned-count stats.
+- Upload background (image/mp4/webm/lottie/svga) + thumbnail via existing `FileUploader` → `shop-assets/profile-cards/`.
+- Fields: name, description, category, rarity, chromakey, price (coins + diamonds), min VIP, duration, limited-time window, accent + glow color pickers, particle style.
+- Sidebar link added to `AdminShell` under "Shop".
+
+## 5. Design language
+
+Reuses existing tokens (`--gold`, `--primary`, `--secondary`), glassmorphism (`backdrop-blur-xl`, `bg-white/[0.03]`), gold ornaments from `JalwaFrame`. All new keyframes live in `src/styles.css`.
+
+## Out of scope this turn
+
+- Recording real cinematic MP4 backgrounds — the seed uses premium animated SVG backgrounds. Admin can upload real videos any time; playback path handles them from day one.
+- Voice/Video call wiring — action buttons route to existing DM/call flows already in the app.
 
 ## Ready to build?
 Confirm and I'll ship the migration + all files above in one pass.
