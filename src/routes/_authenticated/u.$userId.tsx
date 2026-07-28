@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
+import { PremiumProfileCard } from "@/components/profile/PremiumProfileCard";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
