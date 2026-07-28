@@ -76,7 +76,7 @@ function RankPage() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
 
-  const [category, setCategory] = useState<Category>("wealth");
+  const [category, setCategory] = useState<Category>("hosts");
   const [period, setPeriod]     = useState<Period>("daily");
   const [country, setCountry]   = useState<string>("Global");
   const [helpOpen, setHelpOpen] = useState(false);
