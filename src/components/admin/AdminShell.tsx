@@ -16,6 +16,7 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/users", label: "Users", icon: Users },
       { to: "/admin/rooms", label: "Rooms", icon: DoorOpen },
       { to: "/admin/room-backgrounds", label: "Room Backgrounds", icon: ImageIcon },
+      { to: "/admin/room-frames", label: "Room Rank Frames", icon: Crown },
       { to: "/admin/live", label: "Live Management", icon: Radio },
       { to: "/admin/pk", label: "PK Management", icon: Swords },
       { to: "/admin/rankings", label: "Rankings", icon: Trophy },
