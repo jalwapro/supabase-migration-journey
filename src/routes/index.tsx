@@ -390,15 +390,6 @@ function Home() {
                   </button>
                 </>
               )}
-              {profile && (
-                <Link
-                  to="/wallet"
-                  className="glow-4d flex items-center gap-1 rounded-full border border-[color:var(--gold)]/30 bg-gradient-to-r from-[color:var(--gold)]/20 to-transparent px-2.5 py-1.5 text-[11px] font-bold"
-                >
-                  <WalletIcon className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                  <span title={profile.coins.toLocaleString()}>{formatCompact(profile.coins)}</span>
-                </Link>
-              )}
               {isAdmin && (
                 <Link
                   to="/admin"
