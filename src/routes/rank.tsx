@@ -8,7 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCoins } from "@/lib/vip-levels";
 import {
-  ArrowLeft, HelpCircle, Crown, Star, Heart, Mic, Gift, Swords, Gem, Sparkles,
+  ArrowLeft, HelpCircle, Crown, Star, Mic, Gift, Swords, Gem, Sparkles,
   Flame, Globe2, ChevronDown, Coins, Bell, Wallet as WalletIcon,
 } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
