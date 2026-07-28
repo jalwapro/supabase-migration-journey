@@ -2912,6 +2912,7 @@ function RoomPage() {
         onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <RoomEntranceMount roomId={roomId} userId={user?.id ?? null} />
       <GiftComboHud />
       <TapHearts />
       {/* Gift audio control removed — controls available via More → Audio */}
