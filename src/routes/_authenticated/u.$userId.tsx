@@ -387,19 +387,30 @@ function UserProfilePage() {
   return (
     <AppShell showHeader={false}>
       <div data-adaptive="neon" className="me-profile-screen me-profile-card relative min-h-[100dvh] bg-background pb-28 text-foreground">
-        {/* Ambient neon backdrop */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[520px] overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-90"
-            style={{
-              background: `radial-gradient(80% 55% at 20% 10%, ${tier.glow ?? "#a855f7"}55 0%, transparent 60%),
-                radial-gradient(70% 50% at 85% 5%, #ec489955 0%, transparent 55%),
-                radial-gradient(60% 60% at 50% 90%, #f59e0b33 0%, transparent 65%),
-                linear-gradient(180deg, #0d0620 0%, #07070D 75%)`,
-            }}
-          />
-          <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:22px_22px] opacity-40" />
+        {/* Ambient neon backdrop (equipped Profile Card overrides if present) */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] overflow-hidden">
+          {equippedCard.data ? (
+            <PremiumProfileCard
+              card={equippedCard.data as any}
+              rounded="rounded-none"
+              className="h-full w-full"
+            />
+          ) : (
+            <>
+              <div
+                className="absolute inset-0 opacity-90"
+                style={{
+                  background: `radial-gradient(80% 55% at 20% 10%, ${tier.glow ?? "#a855f7"}55 0%, transparent 60%),
+                    radial-gradient(70% 50% at 85% 5%, #ec489955 0%, transparent 55%),
+                    radial-gradient(60% 60% at 50% 90%, #f59e0b33 0%, transparent 65%),
+                    linear-gradient(180deg, #0d0620 0%, #07070D 75%)`,
+                }}
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:22px_22px] opacity-40" />
+            </>
+          )}
         </div>
+
 
         {/* Top bar */}
         <div
