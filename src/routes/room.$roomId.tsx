@@ -62,6 +62,8 @@ import { toast } from "sonner";
 import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/components/GiftSheet";
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
+import { EntrancePlayer } from "@/components/room/EntrancePlayer";
+import { useRoomEntrances } from "@/hooks/useRoomEntrances";
 import GiftComboHud from "@/components/room/GiftComboHud";
 import { GiftAudioControl } from "@/components/room/GiftAudioControl";
 import { TapHearts } from "@/components/room/TapHearts";
@@ -85,6 +87,12 @@ import {
 } from "@/components/ui/alert-dialog";
 
 const DEFAULT_BG_URL = "https://cloud-to-soul.lovable.app/__l5e/assets-v1/ea572b19-7bc7-48bb-83a7-8fb863e98ef8/jalwa-default-bg.png";
+
+function RoomEntranceMount({ roomId, userId }: { roomId: string; userId: string | null }) {
+  const { current, done } = useRoomEntrances(roomId, userId);
+  if (!current) return null;
+  return <EntrancePlayer event={current} onDone={done} />;
+}
 
 export const Route = createFileRoute("/room/$roomId")({
   beforeLoad: async ({ params }) => {
@@ -2910,6 +2918,7 @@ function RoomPage() {
         onExpire={() => setComboState(null)}
       />
       <GiftAnimationPlayer roomId={roomId} />
+      <RoomEntranceMount roomId={roomId} userId={user?.id ?? null} />
       <GiftComboHud />
       <TapHearts />
       {/* Gift audio control removed — controls available via More → Audio */}
