@@ -777,8 +777,6 @@ function Home() {
   );
 }
 
-import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
-import jalwaFrameViolet from "@/assets/jalwa-frame-violet.png.asset.json";
 
 function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const src = tone === "gold" ? jalwaFrameGold.url : jalwaFrameViolet.url;
