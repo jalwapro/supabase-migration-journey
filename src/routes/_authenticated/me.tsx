@@ -162,7 +162,7 @@ function MePage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-          <div data-adaptive="neon" className="me-profile-screen relative min-h-full overflow-hidden bg-background text-foreground">
+          <div data-adaptive="neon" className="me-profile-screen relative min-h-full [overflow-x:clip] bg-background text-foreground">
           {/* Cyberpunk header background */}
           <div data-keep-dark aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
             <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,#3b1360_0%,#1a0733_40%,#080812_85%)]" />
