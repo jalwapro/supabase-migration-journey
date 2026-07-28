@@ -104,6 +104,7 @@ function EmojisAdmin() {
 
   const saveMutation = useMutation({
     mutationFn: async (d: Draft) => {
+      const tier = d.tier === "vip" ? "vip" : "normal";
       const row = {
         slug: d.slug.trim(),
         emoji: d.emoji.trim() || "✨",
@@ -111,8 +112,8 @@ function EmojisAdmin() {
         category: d.category,
         clip_path: d.clip_path.trim(),
         sort_order: d.sort_order,
-        tier: d.tier,
-        min_vip_level: d.min_vip_level,
+        tier,
+        min_vip_level: tier === "vip" ? Math.max(1, d.min_vip_level) : 0,
         is_animated: d.is_animated,
         is_active: true,
       };
@@ -185,12 +186,12 @@ function EmojisAdmin() {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop() ?? "bin";
-      const path = `emoji/${crypto.randomUUID()}.${ext}`;
+      const path = `emoji-assets/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
-        .from("public-assets")
+        .from("shop-assets")
         .upload(path, file, { contentType: file.type, upsert: false });
       if (error) throw error;
-      const { data } = supabase.storage.from("public-assets").getPublicUrl(path);
+      const { data } = supabase.storage.from("shop-assets").getPublicUrl(path);
       onDone(data.publicUrl);
       toast.success("Uploaded");
     } catch (e) {
@@ -381,7 +382,10 @@ function EmojisAdmin() {
                   <span className="text-white/60">Tier</span>
                   <select
                     value={draft.tier}
-                    onChange={(e) => setDraft({ ...draft, tier: e.target.value as TierKey })}
+                    onChange={(e) => {
+                      const tier = e.target.value as TierKey;
+                      setDraft({ ...draft, tier, min_vip_level: tier === "vip" ? Math.max(1, draft.min_vip_level) : 0 });
+                    }}
                     className="mt-1 h-9 w-full rounded-md border border-white/10 bg-black/40 px-2 text-sm"
                   >
                     {TIERS.map((t) => (
