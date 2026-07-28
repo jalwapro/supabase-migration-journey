@@ -637,8 +637,8 @@ function Home() {
                       </h2>
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                      {topHosts.map((r) => (
-                        <RoomCard key={r.id} room={r} />
+                      {topHosts.map((r, i) => (
+                        <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "silver"} />
                       ))}
                     </div>
                   </div>
