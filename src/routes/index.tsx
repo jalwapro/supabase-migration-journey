@@ -638,6 +638,7 @@ function Home() {
                         Top Hosts
                       </h2>
                     </div>
+                    <RoomFrameFilters />
                     <div className="grid grid-cols-2 gap-3">
                       {topHosts.map((r, i) => (
                         <RoomCard key={r.id} room={r} frameTone={i === 0 ? "gold" : "violet"} />
