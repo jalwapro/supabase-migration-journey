@@ -413,28 +413,30 @@ export function GiftSheet({
             </span>
           </div>
 
-          <div className="flex shrink-0 rounded-xl border border-white/5 bg-[#1a0b2e] p-0.5">
-            {TIER_ORDER.map((t) => {
-              const active = activeTier === t;
-              const label = t === "small" ? "BASIC" : t === "premium" ? "PREMIUM" : "VIP";
-              return (
-                <button
-                  key={t}
-                  onClick={() => setActiveTier(t)}
-                  className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-[9px] font-black transition ${
-                    active
-                      ? "bg-[#7c3aed] text-white shadow-lg shadow-purple-900/50"
-                      : "text-white/40"
-                  }`}
-                >
-                  {label}
-                  {t === "vip" && !active && (
-                    <span className="h-1 w-1 animate-pulse rounded-full bg-[#f5c542]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        </div>
+
+        {/* Category tabs — scrollable, all real DB categories */}
+        <div className="scrollbar-hide relative flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/5 px-3 pb-1.5">
+          {categoryList.map((c) => {
+            const active = activeCategory === c;
+            return (
+              <button
+                key={c}
+                onClick={() => setActiveCategory(c)}
+                className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider transition ${
+                  active
+                    ? "bg-gradient-to-r from-[#ff2d87] to-[#7c3aed] text-white shadow-[0_0_12px_rgba(124,58,237,0.6)]"
+                    : "bg-white/[0.04] text-white/50 hover:text-white/80"
+                }`}
+              >
+                <span>{catEmoji(c)}</span>
+                <span>{catLabel(c)}</span>
+                {c === "vip" && !active && (
+                  <span className="h-1 w-1 animate-pulse rounded-full bg-[#f5c542]" />
+                )}
+              </button>
+            );
+          })}
         </div>
 
         {/* Gifts grid — arcade tiles */}
