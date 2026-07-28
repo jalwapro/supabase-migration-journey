@@ -674,7 +674,7 @@ html.dark, html:not(.dark) body.themed, html:not(.dark) body.theme-background-ac
   background-color: var(--background);
   position: relative;
   isolation: isolate;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 body.themed,
 body.themed .app-frame,
