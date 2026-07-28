@@ -343,30 +343,47 @@ function RankHeader({ onBack, onHelp, profile, userId }: {
 
 /* ─────────────────────────────  Podium  ───────────────────────────── */
 
-function PodiumCrown({ tone }: { tone: "gold" | "silver" | "bronze" }) {
-  const fill = tone === "gold" ? "#fcd34d" : tone === "silver" ? "#e5e7eb" : "#fb923c";
-  const stroke = tone === "gold" ? "#b45309" : tone === "silver" ? "#6b7280" : "#9a3412";
+function PodiumAvatarFrame({ tone }: { tone: "gold" | "silver" | "bronze" }) {
+  const c1 = tone === "gold" ? "#fff4c2" : tone === "silver" ? "#ffffff" : "#ffe0b2";
+  const c2 = tone === "gold" ? "#fbbf24" : tone === "silver" ? "#cbd5e1" : "#fb923c";
+  const c3 = tone === "gold" ? "#b45309" : tone === "silver" ? "#475569" : "#7c2d12";
   const gem = tone === "gold" ? "#ef4444" : tone === "silver" ? "#a78bfa" : "#f59e0b";
   return (
-    <svg viewBox="0 0 64 44" className="h-full w-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]" aria-hidden>
+    <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full pointer-events-none" aria-hidden>
       <defs>
-        <linearGradient id={`cg-${tone}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff8dc" />
-          <stop offset="0.5" stopColor={fill} />
-          <stop offset="1" stopColor={stroke} />
+        <linearGradient id={`pf-${tone}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={c1} />
+          <stop offset="0.5" stopColor={c2} />
+          <stop offset="1" stopColor={c3} />
         </linearGradient>
+        <radialGradient id={`pfg-${tone}`} cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stopColor={c2} stopOpacity="0.5" />
+          <stop offset="1" stopColor={c2} stopOpacity="0" />
+        </radialGradient>
       </defs>
-      <path
-        d="M6 38 L10 14 L20 26 L32 8 L44 26 L54 14 L58 38 Z"
-        fill={`url(#cg-${tone})`} stroke={stroke} strokeWidth="1.2" strokeLinejoin="round"
-      />
-      <rect x="6" y="36" width="52" height="5" rx="1.5" fill={fill} stroke={stroke} strokeWidth="1" />
-      <circle cx="32" cy="10" r="3" fill={gem} stroke="#fff" strokeWidth="0.8" />
-      <circle cx="10" cy="16" r="1.6" fill={gem} />
-      <circle cx="54" cy="16" r="1.6" fill={gem} />
+      {/* outer glow */}
+      <circle cx="100" cy="100" r="98" fill={`url(#pfg-${tone})`} />
+      {/* outer ornate ring */}
+      <circle cx="100" cy="100" r="94" fill="none" stroke={`url(#pf-${tone})`} strokeWidth="4" />
+      {/* inner thin ring */}
+      <circle cx="100" cy="100" r="82" fill="none" stroke={c1} strokeWidth="1.2" opacity="0.9" />
+      {/* 4 cardinal gem clusters */}
+      {[[100,6],[194,100],[100,194],[6,100]].map(([x,y],i)=>(
+        <g key={i}>
+          <circle cx={x} cy={y} r="7" fill={`url(#pf-${tone})`} stroke={c3} strokeWidth="1" />
+          <circle cx={x} cy={y} r="3.2" fill={gem} stroke="#fff" strokeWidth="0.6" />
+        </g>
+      ))}
+      {/* 4 diagonal small gems */}
+      {[[30,30],[170,30],[170,170],[30,170]].map(([x,y],i)=>(
+        <circle key={i} cx={x} cy={y} r="4" fill={c1} stroke={c3} strokeWidth="0.8" />
+      ))}
+      {/* decorative dashed circle */}
+      <circle cx="100" cy="100" r="88" fill="none" stroke={c1} strokeWidth="0.8" strokeDasharray="2 4" opacity="0.7" />
     </svg>
   );
 }
+
 
 function PodiumWings({ tone }: { tone: "gold" | "silver" | "bronze" }) {
   const c1 = tone === "gold" ? "#fde68a" : tone === "silver" ? "#f1f5f9" : "#fed7aa";
@@ -432,15 +449,11 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
 
   const content = (
     <div className={`relative flex flex-col items-center ${isFirst ? "pt-0" : "pt-6"}`}>
-      {/* Crown */}
-      <div className={`relative z-20 ${isFirst ? "h-11 w-16" : "h-8 w-12"} -mb-2`}>
-        <PodiumCrown tone={tone} />
-      </div>
-
-      {/* Avatar with wings behind */}
-      <div className={`relative ${isFirst ? "h-[128px] w-[128px]" : "h-[104px] w-[104px]"}`}>
+      {/* Avatar with wings + ornate frame */}
+      <div className={`relative ${isFirst ? "h-[140px] w-[140px]" : "h-[116px] w-[116px]"}`}>
         <PodiumWings tone={tone} />
-        <div className="absolute inset-0 grid place-items-center">
+        <PodiumAvatarFrame tone={tone} />
+        <div className="absolute inset-[14%] grid place-items-center">
           <LevelAvatar
             src={row?.avatar ?? undefined}
             name={row?.username ?? undefined}
@@ -456,6 +469,7 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
           </span>
         </div>
       </div>
+
 
       {/* Name pill */}
       <div className="relative z-20 mt-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-1 backdrop-blur-md">
