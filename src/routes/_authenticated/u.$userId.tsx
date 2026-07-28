@@ -242,6 +242,25 @@ function UserProfilePage() {
     },
   });
 
+  const equippedCard = useQuery({
+    queryKey: ["equipped-profile-card", userId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_profile_cards")
+        .select("card_id, expires_at, profile_cards:card_id(*)")
+        .eq("user_id", userId)
+        .eq("is_equipped", true)
+        .maybeSingle();
+      if (error) throw error;
+      const row: any = data;
+      if (!row?.profile_cards) return null;
+      if (row.expires_at && new Date(row.expires_at) < new Date()) return null;
+      return row.profile_cards;
+    },
+  });
+
+
+
   const requestAlbum = useMutation({
     mutationFn: async () => {
       if (!me) throw new Error("Sign in");
