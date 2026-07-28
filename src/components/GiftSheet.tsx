@@ -29,21 +29,31 @@ export type Gift = {
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
 
-// Jalwa tier system — teen categorries:
-//   basic   : ≤ 300 coins  (chhote gifts — flyer + coin-drop)
-//   premium : 301 – 1999   (real sample sound / Jalwa signature)
-//   vip     : ≥ 2000       (cinematic + real sample sound)
+// Jalwa price-tier (used only for VIP confirm-modal gating).
 type Tier = "small" | "premium" | "vip";
-const TIER_ORDER: Tier[] = ["small", "premium", "vip"];
-const TIER_LABEL: Record<Tier, string> = {
-  small: "✨ Basic",
-  premium: "💎 Premium",
-  vip: "👑 VIP",
-};
 function tierOf(price: number): Tier {
   if (price <= 300) return "small";
   if (price < 2000) return "premium";
   return "vip";
+}
+
+// Category label + emoji for tabs (fallbacks for unknown categories)
+const CATEGORY_META: Record<string, { label: string; emoji: string }> = {
+  all:      { label: "All",      emoji: "✨" },
+  popular:  { label: "Popular",  emoji: "🔥" },
+  classic:  { label: "Classic",  emoji: "🎁" },
+  romantic: { label: "Romantic", emoji: "💗" },
+  love:     { label: "Love",     emoji: "💘" },
+  party:    { label: "Party",    emoji: "🎉" },
+  luxury:   { label: "Luxury",   emoji: "💎" },
+  fantasy:  { label: "Fantasy",  emoji: "🦄" },
+  vip:      { label: "VIP",      emoji: "👑" },
+};
+function catLabel(k: string) {
+  return CATEGORY_META[k]?.label ?? (k.charAt(0).toUpperCase() + k.slice(1));
+}
+function catEmoji(k: string) {
+  return CATEGORY_META[k]?.emoji ?? "🎁";
 }
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
