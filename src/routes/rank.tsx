@@ -191,8 +191,8 @@ function RankPage() {
           </nav>
 
           {/* ── Top 3 podium ─────────────────────────────────────────── */}
-          <section className="relative z-10 mt-6 px-4">
-            <div className="grid grid-cols-3 items-end gap-2.5">
+          <section className="relative z-10 mt-4 px-2">
+            <div className="grid grid-cols-3 items-end gap-1">
               <Podium row={c2} place={2} unit={activeCat.unit} />
               <Podium row={c1} place={1} unit={activeCat.unit} />
               <Podium row={c3} place={3} unit={activeCat.unit} />
@@ -357,40 +357,146 @@ function RankHeader({ onBack, onHelp, profile, userId }: {
 
 /* ─────────────────────────────  Podium  ───────────────────────────── */
 
+function PodiumCrown({ tone }: { tone: "gold" | "silver" | "bronze" }) {
+  const fill = tone === "gold" ? "#fcd34d" : tone === "silver" ? "#e5e7eb" : "#fb923c";
+  const stroke = tone === "gold" ? "#b45309" : tone === "silver" ? "#6b7280" : "#9a3412";
+  const gem = tone === "gold" ? "#ef4444" : tone === "silver" ? "#a78bfa" : "#f59e0b";
+  return (
+    <svg viewBox="0 0 64 44" className="h-full w-full drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]" aria-hidden>
+      <defs>
+        <linearGradient id={`cg-${tone}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff8dc" />
+          <stop offset="0.5" stopColor={fill} />
+          <stop offset="1" stopColor={stroke} />
+        </linearGradient>
+      </defs>
+      <path
+        d="M6 38 L10 14 L20 26 L32 8 L44 26 L54 14 L58 38 Z"
+        fill={`url(#cg-${tone})`} stroke={stroke} strokeWidth="1.2" strokeLinejoin="round"
+      />
+      <rect x="6" y="36" width="52" height="5" rx="1.5" fill={fill} stroke={stroke} strokeWidth="1" />
+      <circle cx="32" cy="10" r="3" fill={gem} stroke="#fff" strokeWidth="0.8" />
+      <circle cx="10" cy="16" r="1.6" fill={gem} />
+      <circle cx="54" cy="16" r="1.6" fill={gem} />
+    </svg>
+  );
+}
+
+function PodiumWings({ tone }: { tone: "gold" | "silver" | "bronze" }) {
+  const c1 = tone === "gold" ? "#fde68a" : tone === "silver" ? "#f1f5f9" : "#fed7aa";
+  const c2 = tone === "gold" ? "#f59e0b" : tone === "silver" ? "#94a3b8" : "#c2410c";
+  return (
+    <svg viewBox="0 0 220 140" className="absolute inset-0 h-full w-full" aria-hidden>
+      <defs>
+        <linearGradient id={`wg-${tone}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor={c1} />
+          <stop offset="1" stopColor={c2} />
+        </linearGradient>
+      </defs>
+      {/* left wing */}
+      <g fill={`url(#wg-${tone})`} opacity="0.95">
+        <path d="M78 70 C 40 48, 18 62, 6 82 C 24 78, 40 82, 54 90 C 40 82, 30 88, 20 100 C 40 96, 56 100, 68 108 C 58 100, 52 104, 46 114 C 62 108, 74 108, 82 112 Z" />
+      </g>
+      {/* right wing (mirrored) */}
+      <g fill={`url(#wg-${tone})`} opacity="0.95" transform="translate(220 0) scale(-1 1)">
+        <path d="M78 70 C 40 48, 18 62, 6 82 C 24 78, 40 82, 54 90 C 40 82, 30 88, 20 100 C 40 96, 56 100, 68 108 C 58 100, 52 104, 46 114 C 62 108, 74 108, 82 112 Z" />
+      </g>
+    </svg>
+  );
+}
+
+function PodiumBase({ tone }: { tone: "gold" | "silver" | "bronze" }) {
+  const top = tone === "gold" ? "#fde68a" : tone === "silver" ? "#e5e7eb" : "#fdba74";
+  const mid = tone === "gold" ? "#f59e0b" : tone === "silver" ? "#94a3b8" : "#ea580c";
+  const bot = tone === "gold" ? "#78350f" : tone === "silver" ? "#334155" : "#7c2d12";
+  const gem = tone === "gold" ? "#fbbf24" : tone === "silver" ? "#a5b4fc" : "#fb923c";
+  return (
+    <svg viewBox="0 0 160 60" className="h-full w-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.55)]" aria-hidden>
+      <defs>
+        <radialGradient id={`bg-${tone}`} cx="0.5" cy="0.3" r="0.7">
+          <stop offset="0" stopColor={top} />
+          <stop offset="0.6" stopColor={mid} />
+          <stop offset="1" stopColor={bot} />
+        </radialGradient>
+        <linearGradient id={`gem-${tone}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="0.5" stopColor={gem} />
+          <stop offset="1" stopColor={mid} />
+        </linearGradient>
+      </defs>
+      {/* disc */}
+      <ellipse cx="80" cy="20" rx="72" ry="12" fill={`url(#bg-${tone})`} stroke={bot} strokeWidth="1.2" />
+      <path d={`M8 20 L14 44 Q80 58 146 44 L152 20 Q80 34 8 20 Z`} fill={`url(#bg-${tone})`} stroke={bot} strokeWidth="1.2" />
+      {/* diamond gem */}
+      <path d="M80 26 L92 36 L80 52 L68 36 Z" fill={`url(#gem-${tone})`} stroke={bot} strokeWidth="1" />
+      <path d="M80 26 L92 36 L80 40 L68 36 Z" fill="#fff" opacity="0.35" />
+    </svg>
+  );
+}
 
 function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
-  const theme = place === 1
-    ? { border: "border-amber-300/50", chip: "from-amber-400 to-yellow-500 text-black", size: "xl" as const, pad: "-mt-2" }
-    : place === 2
-    ? { border: "border-violet-400/40", chip: "from-violet-500 to-indigo-500 text-white", size: "lg" as const, pad: "" }
-    : { border: "border-orange-400/40", chip: "from-orange-500 to-amber-600 text-white", size: "lg" as const, pad: "" };
+  const tone: "gold" | "silver" | "bronze" =
+    place === 1 ? "gold" : place === 2 ? "silver" : "bronze";
+  const isFirst = place === 1;
+
+  const numberBadge =
+    tone === "gold" ? "from-amber-300 to-yellow-600 text-amber-950 border-amber-200"
+    : tone === "silver" ? "from-slate-200 to-slate-400 text-slate-900 border-white/60"
+    : "from-orange-300 to-orange-600 text-orange-950 border-orange-200";
 
   const content = (
-    <div className={`relative flex flex-col items-center gap-2 rounded-3xl border ${theme.border} bg-white/[0.04] p-3 backdrop-blur-md`}>
-      {/* rank chip */}
-      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-        <span className={`grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-b ${theme.chip} text-sm font-black shadow-lg`}>
-          {place}
-        </span>
+    <div className={`relative flex flex-col items-center ${isFirst ? "pt-0" : "pt-6"}`}>
+      {/* Crown */}
+      <div className={`relative z-20 ${isFirst ? "h-11 w-16" : "h-8 w-12"} -mb-2`}>
+        <PodiumCrown tone={tone} />
       </div>
 
-      <div className={`mt-4 ${theme.pad} flex items-center justify-center`}>
-        <LevelAvatar
-          src={row?.avatar ?? undefined}
-          name={row?.username ?? undefined}
-          level={row?.level ?? 0}
-          size={theme.size}
-          showBadge={false}
-        />
+      {/* Avatar with wings behind */}
+      <div className={`relative ${isFirst ? "h-[128px] w-[128px]" : "h-[104px] w-[104px]"}`}>
+        <PodiumWings tone={tone} />
+        <div className="absolute inset-0 grid place-items-center">
+          <LevelAvatar
+            src={row?.avatar ?? undefined}
+            name={row?.username ?? undefined}
+            level={row?.level ?? 0}
+            size={isFirst ? "xl" : "lg"}
+            showBadge={false}
+          />
+        </div>
+        {/* Rank number badge on ring bottom */}
+        <div className="absolute left-1/2 -bottom-1 z-20 -translate-x-1/2">
+          <span className={`grid h-7 w-7 place-items-center rounded-full border-2 bg-gradient-to-b ${numberBadge} text-[13px] font-black shadow-[0_2px_6px_rgba(0,0,0,0.6)]`}>
+            {place}
+          </span>
+        </div>
       </div>
 
-      <p className="mt-1 max-w-full truncate text-center text-[13px] font-bold">
-        {row?.username ?? "—"}
-        {row?.country && COUNTRY_FLAG[row.country] && <span className="ml-1">{COUNTRY_FLAG[row.country]}</span>}
-      </p>
-      <span className="rounded-lg bg-black/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-fuchsia-200">
-        Lv {row?.level ?? 0}
+      {/* Name pill */}
+      <div className="relative z-20 mt-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-1 backdrop-blur-md">
+        <p className="max-w-[110px] truncate text-center text-[12px] font-black text-white">
+          {row?.username ?? "—"}
+          {row?.vip_level ? <span className="ml-1 text-fuchsia-300">◆</span> : null}
+        </p>
+      </div>
+
+      {/* Level chip */}
+      <span className="mt-1 rounded-md border border-fuchsia-400/40 bg-fuchsia-500/15 px-2 py-[1px] text-[10px] font-bold text-fuchsia-200">
+        Level {row?.level ?? 0}
       </span>
+
+      {/* Score */}
+      <p className={`mt-1 text-[13px] font-black ${tone === "gold" ? "text-amber-300" : tone === "silver" ? "text-slate-100" : "text-orange-300"}`}>
+        {row ? formatCompact(row.score) : "—"} <span className="text-[10px] font-semibold text-white/50">Points</span>
+      </p>
+
+      {/* Base platform */}
+      <div className={`relative -mt-1 ${isFirst ? "h-16 w-[150px]" : "h-14 w-[130px]"}`}>
+        <PodiumBase tone={tone} />
+        {/* glow */}
+        <div className={`pointer-events-none absolute inset-x-4 -bottom-1 h-6 rounded-full blur-xl opacity-70 ${
+          tone === "gold" ? "bg-amber-400/70" : tone === "silver" ? "bg-violet-400/60" : "bg-orange-500/60"
+        }`} />
+      </div>
     </div>
   );
 
@@ -411,37 +517,48 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
       <Link
         to="/u/$userId"
         params={{ userId: row.user_id }}
-        className="grid grid-cols-[28px_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 backdrop-blur-md transition hover:border-fuchsia-400/40 hover:bg-white/[0.06]"
+        className="grid grid-cols-[26px_auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 backdrop-blur-md transition hover:border-fuchsia-400/40 hover:bg-white/[0.06]"
       >
-        <span className="text-center text-lg font-black text-white/60">{row.rnk}</span>
+        <span className={`text-center text-[15px] font-black ${row.rnk <= 10 ? "text-fuchsia-300" : "text-white/60"}`}>
+          {row.rnk}
+        </span>
 
-        <div className="flex min-w-0 items-center gap-3">
-          <LevelAvatar
-            src={row.avatar ?? undefined}
-            name={row.username ?? undefined}
-            level={row.level ?? 0}
-            size="sm"
-            showBadge={false}
-          />
-          <div className="min-w-0">
-            <p className="truncate text-[14px] font-bold leading-tight">{row.username ?? "user"}</p>
-            <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-fuchsia-400/30 bg-fuchsia-500/10 px-1.5 py-[1px] text-[10px] font-bold text-fuchsia-200">
-              Lv {row.level}
-            </span>
-          </div>
+        <LevelAvatar
+          src={row.avatar ?? undefined}
+          name={row.username ?? undefined}
+          level={row.level ?? 0}
+          size="sm"
+          showBadge={false}
+        />
+
+        <div className="min-w-0">
+          <p className="flex items-center gap-1.5 truncate text-[14px] font-bold leading-tight">
+            <span className="truncate">{row.username ?? "user"}</span>
+            {row.vip_level > 0 && (
+              <span className="rounded-md bg-gradient-to-b from-amber-300 to-amber-600 px-1.5 text-[9px] font-black text-amber-950">
+                VIP
+              </span>
+            )}
+          </p>
+          <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-fuchsia-400/30 bg-fuchsia-500/10 px-1.5 py-[1px] text-[10px] font-bold text-fuchsia-200">
+            Level {row.level}
+          </span>
         </div>
 
-        <span />
-
-        <span className="hidden text-[11px] text-white/60 xs:inline-flex items-center gap-1 sm:inline-flex">
-          {row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🌐"}
-          <span className="max-w-[70px] truncate">{row.country ?? "—"}</span>
+        <span className="inline-flex items-center gap-1.5 text-[13px] font-black text-amber-300">
+          <Flame className="h-3.5 w-3.5 text-orange-400" />
+          {formatCompact(row.score)}
           <span className="sr-only">{unit}</span>
+        </span>
+
+        <span className="inline-flex items-center gap-1 text-base">
+          {row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🌐"}
         </span>
       </Link>
     </li>
   );
 }
+
 
 
 /* ─────────────────────────────  My Rank sticky  ───────────────────────────── */
