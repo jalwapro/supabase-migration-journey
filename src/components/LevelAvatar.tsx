@@ -125,37 +125,49 @@ export function LevelAvatar({
         )}
       </div>
 
-      {/* Equipped DP frame (or auto level-based frame) overlay */}
-      {frameUrl && (
-        <div
-          className="pointer-events-none absolute inset-[-42%] z-[2] flex items-center justify-center"
-          aria-hidden
-        >
-
-
-          {frameIsVideo ? (
-            <video
-              key={frameUrl}
-              src={frameUrl}
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="auto"
-              className="h-full w-full object-contain"
-              style={{ backgroundColor: "transparent" }}
-              onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
-            />
-          ) : (
-            <img
-              src={frameUrl}
-              alt=""
-              className="h-full w-full object-contain"
-              draggable={false}
-            />
-          )}
-        </div>
-      )}
+      {/* Equipped DP frame (or auto level-based frame) overlay — normalised */}
+      {frameUrl && (() => {
+        // If the frame is the auto level frame, we have exact calibration.
+        // Custom shop frames fall back to a sane default.
+        const calib = effectiveFrame === autoFrame ? calibForLevel(level) : DEFAULT_FRAME_CALIB;
+        const overlayPx = (TARGET_FRAME_RATIO * px) / calib.fill;
+        // Shift so visible content centre lands on the avatar centre.
+        const shiftY = (0.5 - calib.cy) * overlayPx;
+        return (
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 z-[2] flex items-center justify-center"
+            style={{
+              width: overlayPx,
+              height: overlayPx,
+              transform: `translate(-50%, calc(-50% + ${shiftY}px))`,
+            }}
+            aria-hidden
+          >
+            {frameIsVideo ? (
+              <video
+                key={frameUrl}
+                src={frameUrl}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                className="h-full w-full object-contain"
+                style={{ backgroundColor: "transparent", objectPosition: "center" }}
+                onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
+              />
+            ) : (
+              <img
+                src={frameUrl}
+                alt=""
+                className="h-full w-full object-contain"
+                style={{ objectPosition: "center" }}
+                draggable={false}
+              />
+            )}
+          </div>
+        );
+      })()}
       {frameUrl && (
         <span className="pointer-events-none absolute inset-[-30%] z-[6]" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
@@ -164,6 +176,7 @@ export function LevelAvatar({
           <span className="dp-sparkle dp-sparkle-d" />
         </span>
       )}
+
 
       {/* Level chip hidden — DP frame already indicates level */}
 
