@@ -32,7 +32,8 @@ type GiftRow = {
   chromakey?: string | null;
 };
 
-const CATEGORIES = ["popular", "classic", "love", "luxury", "vip", "lucky", "premium"] as const;
+const CATEGORIES = ["popular", "classic", "love", "romantic", "party", "fantasy", "luxury", "premium", "vip", "lucky"] as const;
+const CATEGORY_TABS = ["all", ...CATEGORIES] as const;
 const CLIP_TYPES = ["none", "svg", "mp4", "webm"] as const;
 const CHROMAKEY_OPTIONS = [
   { value: "auto", label: "Auto", hint: "Detect from name (default)" },
@@ -142,7 +143,7 @@ function GiftsAdmin() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey } | null>(null);
-  const [activeCat, setActiveCat] = useState<string>("popular");
+  const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
   const isEditing = Boolean(draft.id);
@@ -220,7 +221,7 @@ function GiftsAdmin() {
     },
     onSuccess: () => {
       toast.success(isEditing ? "Gift updated" : "Gift added");
-      setDraft({ ...EMPTY_DRAFT, category: activeCat });
+      setDraft({ ...EMPTY_DRAFT, category: activeCat === "all" ? EMPTY_DRAFT.category : activeCat });
       qc.invalidateQueries({ queryKey: ["admin_gifts"] });
       qc.invalidateQueries({ queryKey: ["gifts"] });
     },
@@ -320,11 +321,16 @@ function GiftsAdmin() {
 
   const catCounts = useMemo(() => {
     const map: Record<string, { total: number; active: number }> = {};
+    map.all = { total: 0, active: 0 };
     for (const c of CATEGORIES) map[c] = { total: 0, active: 0 };
     for (const g of list.data ?? []) {
       if (!map[g.category]) map[g.category] = { total: 0, active: 0 };
+      map.all.total++;
       map[g.category].total++;
-      if (g.is_active) map[g.category].active++;
+      if (g.is_active) {
+        map.all.active++;
+        map[g.category].active++;
+      }
     }
     return map;
   }, [list.data]);
@@ -332,7 +338,7 @@ function GiftsAdmin() {
   const filteredGifts = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (list.data ?? []).filter((g) => {
-      if (g.category !== activeCat) return false;
+      if (activeCat !== "all" && g.category !== activeCat) return false;
       if (!q) return true;
       return g.name.toLowerCase().includes(q) || String(g.price).includes(q);
     });
@@ -349,7 +355,7 @@ function GiftsAdmin() {
 
       {/* Category tabs */}
       <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
-        {CATEGORIES.map((c) => {
+        {CATEGORY_TABS.map((c) => {
           const stat = catCounts[c] ?? { total: 0, active: 0 };
           const active = activeCat === c;
           return (

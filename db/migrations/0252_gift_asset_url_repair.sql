@@ -1,0 +1,69 @@
+-- 0252_gift_asset_url_repair.sql
+-- Repair gift media pointers to actual CDN asset URLs present in the project.
+-- Some generated migrations used stale asset IDs, making admin/app gift tiles
+-- and previews appear blank. This updates those rows to known-good assets.
+
+BEGIN;
+
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/b9d966a7-755d-4170-b7b6-2d95d5fe8005/romantic-02-couple-dance.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Romantic Couple';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/16788186-84a4-40ba-bfd9-0fd2209c2a93/gk2-17-phoenix.mp4', image_url='/__l5e/assets-v1/875cf0cd-ca01-4e74-9618-7cbff01d9377/jalwa-phoenix-poster.webp', icon_path='/__l5e/assets-v1/875cf0cd-ca01-4e74-9618-7cbff01d9377/jalwa-phoenix-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Phoenix Rising';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/57f029a5-eb04-4155-9475-adaa56852147/gk2-16-dragon.mp4', image_url='/__l5e/assets-v1/54c95cc3-abfb-4042-aa16-85e9dc58d6cf/jalwa-golden-dragon-poster.webp', icon_path='/__l5e/assets-v1/54c95cc3-abfb-4042-aa16-85e9dc58d6cf/jalwa-golden-dragon-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Golden Dragon';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/0040adf5-58b5-4548-9e85-2f37c4801237/gk2-07-diamond-ring.mp4', image_url='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', icon_path='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Diamond Ring';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/a790c8b2-5ecb-48b3-9519-0363b3b270d1/jalwa-diamond-fountain.mp4', image_url='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', icon_path='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Diamond Waterfall';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/3574fc55-bcdf-4e0f-a6a8-aec3f022555d/gk2-18-unicorn.mp4', image_url='/__l5e/assets-v1/2b24e893-a042-4925-ad8b-600d8858da95/jalwa-unicorn-poster.webp', icon_path='/__l5e/assets-v1/2b24e893-a042-4925-ad8b-600d8858da95/jalwa-unicorn-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Golden Peacock';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/5fe0c9ff-ea27-46e9-8b97-fae55520d8a0/gk2-03-mega-yacht.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Royal Elephant';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/607c0b54-175d-49a8-8852-db33446e1a30/026-diamond-rose.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Cherry Blossom';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/0421c4d3-efa2-444b-961f-709f9f6ba57a/jalwa-diamond-necklace.mp4', image_url='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', icon_path='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Crystal Chandelier';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/16f6010e-f1a7-421a-9e8c-9969ce6f48f3/gk2-01-sports-car.mp4', image_url='/__l5e/assets-v1/7019331e-c196-4008-9fa0-68cd134c9425/money-gun-jalwa.png', icon_path='/__l5e/assets-v1/7019331e-c196-4008-9fa0-68cd134c9425/money-gun-jalwa.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Speed Racer';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/a790c8b2-5ecb-48b3-9519-0363b3b270d1/jalwa-diamond-fountain.mp4', image_url='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', icon_path='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Sapphire Fountain';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/3574fc55-bcdf-4e0f-a6a8-aec3f022555d/gk2-18-unicorn.mp4', image_url='/__l5e/assets-v1/2b24e893-a042-4925-ad8b-600d8858da95/jalwa-unicorn-poster.webp', icon_path='/__l5e/assets-v1/2b24e893-a042-4925-ad8b-600d8858da95/jalwa-unicorn-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Silver Unicorn';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/8abd720f-e1f5-47ed-9b2e-11c67d5f6178/jalwa-lion-roar-v2.webm', image_url=NULL, icon_path=NULL, clip_type='webm', is_active=true, active=true WHERE name = 'Jalwa Royal Tiger';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/814dea4c-780b-4773-bcfc-8f0f6ceb9beb/gk2-20-wizard.mp4', image_url='/__l5e/assets-v1/ad77f04b-eb16-4c75-a83a-31dd3b403f55/magic-wizard.png', icon_path='/__l5e/assets-v1/ad77f04b-eb16-4c75-a83a-31dd3b403f55/magic-wizard.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Enchanted Garden';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/57f029a5-eb04-4155-9475-adaa56852147/gk2-16-dragon.mp4', image_url='/__l5e/assets-v1/54c95cc3-abfb-4042-aa16-85e9dc58d6cf/jalwa-golden-dragon-poster.webp', icon_path='/__l5e/assets-v1/54c95cc3-abfb-4042-aa16-85e9dc58d6cf/jalwa-golden-dragon-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Ice Dragon';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/fcd218b9-292e-426a-83a9-8216773c6ca3/gk2-15-disco-ball.mp4', image_url='/__l5e/assets-v1/31a083b1-4666-4522-9c1f-bf318b3b144f/jalwa-fireworks-poster.webp', icon_path='/__l5e/assets-v1/31a083b1-4666-4522-9c1f-bf318b3b144f/jalwa-fireworks-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Crystal Piano';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/16f6010e-f1a7-421a-9e8c-9969ce6f48f3/gk2-01-sports-car.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Lamborghini Storm';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/0421c4d3-efa2-444b-961f-709f9f6ba57a/jalwa-diamond-necklace.mp4', image_url='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', icon_path='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Emerald Necklace';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/210e2747-eecc-4ab4-a05a-4bf488ada842/gk2-04-mansion.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Celestial Palace';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/7df8cf11-a5f8-48d3-8538-917c8e02ce69/02-crystal-heart-burst.mp4', image_url='/__l5e/assets-v1/dccbc363-a6f8-4bb8-bd70-55bc66f6b2ef/54_diamond_heart.png', icon_path='/__l5e/assets-v1/dccbc363-a6f8-4bb8-bd70-55bc66f6b2ef/54_diamond_heart.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Ruby Heart';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/3526a763-6b70-4a02-af44-bef62262c8b0/08-pegasus-flight.mp4', image_url='/__l5e/assets-v1/2b24e893-a042-4925-ad8b-600d8858da95/jalwa-unicorn-poster.webp', icon_path='/__l5e/assets-v1/2b24e893-a042-4925-ad8b-600d8858da95/jalwa-unicorn-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Pegasus';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/8abd720f-e1f5-47ed-9b2e-11c67d5f6178/jalwa-lion-roar-v2.webm', image_url=NULL, icon_path=NULL, clip_type='webm', is_active=true, active=true WHERE name = 'Jalwa Lion Throne';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/36fd7450-3ea2-47dc-b020-f29e5d2325b1/09-swan-heart-lake.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Moonlight Swan';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/16788186-84a4-40ba-bfd9-0fd2209c2a93/gk2-17-phoenix.mp4', image_url='/__l5e/assets-v1/875cf0cd-ca01-4e74-9618-7cbff01d9377/jalwa-phoenix-poster.webp', icon_path='/__l5e/assets-v1/875cf0cd-ca01-4e74-9618-7cbff01d9377/jalwa-phoenix-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Phoenix Rebirth';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/7df8cf11-a5f8-48d3-8538-917c8e02ce69/02-crystal-heart-burst.mp4', image_url='/__l5e/assets-v1/b9ac4ae0-5d35-4ab9-a681-fc13f395013c/jalwa-diamond-heart-poster.webp', icon_path='/__l5e/assets-v1/b9ac4ae0-5d35-4ab9-a681-fc13f395013c/jalwa-diamond-heart-poster.webp', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Diamond Butterflies';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/16f6010e-f1a7-421a-9e8c-9969ce6f48f3/gk2-01-sports-car.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Bugatti Chiron';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/5fe0c9ff-ea27-46e9-8b97-fae55520d8a0/gk2-03-mega-yacht.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Private Island';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/625e34d0-4b24-4f08-9d82-c02916c9a383/jalwa-diamond-safe.mp4', image_url='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', icon_path='/__l5e/assets-v1/7294c072-4188-4fb7-9ea3-c7f77c89785e/17_diamond.png', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Crown Jewels';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/283b9a4d-e6c7-4bd9-974b-ba853244aea7/04-proposal-fireworks.mp4', image_url=NULL, icon_path=NULL, clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Cosmic Wedding';
+
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/f25d520a-0166-4e79-8bdd-04842a97605b/romantic-01-rose-heart.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Rose Heart';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/b9d966a7-755d-4170-b7b6-2d95d5fe8005/romantic-02-couple-dance.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Couple Dance';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/0971c015-5864-4d59-bb54-538455c50c72/romantic-03-cupid-arrow.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Cupid Arrow';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/5f9eedde-833b-4f34-b68c-13944546c463/romantic-04-999-roses.mp4', clip_type='mp4', is_active=true, active=true WHERE name = '999 Roses';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/aa2d29a0-7607-4bc0-b4db-4ecc8efba9eb/romantic-05-diamond-ring.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Diamond Ring';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/3ff6db76-aca6-4792-9138-ad6bcfc5383c/romantic-06-heart-fireworks.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Heart Fireworks';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/548729fc-3e0c-4e87-a13b-ce628b0e3085/romantic-07-teddy-balloons.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Teddy Balloons';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/362cd661-9d4d-4a81-833b-800a5bad1e7d/romantic-08-love-letter.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Love Letter';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/41af4246-a375-4db1-9c21-87e400f1945d/romantic-09-swan-lake.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Swan Lake';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/c3db26a1-2168-4abc-960e-cb21518d4952/romantic-10-champagne-hearts.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Champagne Hearts';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/a1b29c69-f9fe-4ea6-b777-3939c7019baa/01-rooftop-kiss.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Rooftop Kiss';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/7df8cf11-a5f8-48d3-8538-917c8e02ce69/02-crystal-heart-burst.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Crystal Heart Burst';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/fb2e63e9-4c97-4741-ac49-e250b506f0a8/03-ballroom-waltz.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Ballroom Waltz';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/283b9a4d-e6c7-4bd9-974b-ba853244aea7/04-proposal-fireworks.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Proposal Fireworks';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/20a9db23-6afe-482b-876d-be5c335167ae/05-golden-carriage.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Golden Carriage';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/eebb7726-9e5b-4cb1-82a6-36b490f44633/06-sunset-beach.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Sunset Beach Love';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/52b0368c-56af-406e-ba16-264038c96b28/07-999-roses-heart.mp4', clip_type='mp4', is_active=true, active=true WHERE name = '999 Roses Heart';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/3526a763-6b70-4a02-af44-bef62262c8b0/08-pegasus-flight.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Pegasus of Love';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/36fd7450-3ea2-47dc-b020-f29e5d2325b1/09-swan-heart-lake.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Swan Heart Lake';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/b3f5a491-9214-4104-a226-70d5675623b1/10-teddy-chocolate.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Teddy & Chocolate';
+UPDATE public.gifts SET clip_path='/__l5e/assets-v1/4d9aebfe-9911-4c59-813d-b9924f8eed29/gk2-02-private-jet.mp4', clip_type='mp4', is_active=true, active=true WHERE name = 'Jalwa Private Jet';
+
+INSERT INTO public._migrations (name)
+SELECT '0252_gift_asset_url_repair.sql'
+WHERE EXISTS (
+  SELECT 1 FROM information_schema.tables
+  WHERE table_schema = 'public' AND table_name = '_migrations'
+)
+ON CONFLICT DO NOTHING;
+
+NOTIFY pgrst, 'reload schema';
+COMMIT;

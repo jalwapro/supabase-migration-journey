@@ -5298,7 +5298,7 @@ function EmojiReactionSheet({
 }) {
   const [seat, setSeat] = useState(defaultSeat);
   const [emojis, setEmojis] = useState<ReactionEmoji[]>([]);
-  const [tierFilter, setTierFilter] = useState<"all" | "normal" | "vip">("all");
+  const [tierFilter, setTierFilter] = useState<"normal" | "vip">("normal");
   useEffect(() => {
     if (open) setSeat(defaultSeat);
   }, [open, defaultSeat]);
@@ -5312,6 +5312,12 @@ function EmojiReactionSheet({
       .then(({ data }) => setEmojis((data ?? []) as ReactionEmoji[]));
   }, [open, emojis.length]);
 
+  useEffect(() => {
+    if (open && !isHost && userVipLevel <= 0 && tierFilter === "vip") {
+      setTierFilter("normal");
+    }
+  }, [open, isHost, userVipLevel, tierFilter]);
+
   const isUnlocked = (e: ReactionEmoji) => {
     const tier = e.tier ?? "normal";
     if (tier === "normal") return true;
@@ -5319,7 +5325,7 @@ function EmojiReactionSheet({
     return userVipLevel >= (e.min_vip_level ?? 1);
   };
 
-  const isVip = userVipLevel > 0;
+  const isVip = isHost || userVipLevel > 0;
 
   // Hide VIP emojis entirely for non-VIP users
   const accessible = emojis.filter((e) => {
@@ -5329,7 +5335,6 @@ function EmojiReactionSheet({
   });
 
   const visible = accessible.filter((e) => {
-    if (tierFilter === "all") return true;
     const tier = e.tier ?? "normal";
     if (tierFilter === "normal") return tier === "normal";
     return tier !== "normal";
@@ -5393,7 +5398,7 @@ function EmojiReactionSheet({
             Tap an animated emoji
           </div>
           <div className="flex gap-1">
-            {(isVip ? (["all", "normal", "vip"] as const) : (["all", "normal"] as const)).map((t) => (
+            {(isVip ? (["normal", "vip"] as const) : (["normal"] as const)).map((t) => (
               <button
                 key={t}
                 onClick={() => setTierFilter(t)}
@@ -5403,7 +5408,7 @@ function EmojiReactionSheet({
                     : "bg-white/10 text-white/60 hover:bg-white/20"
                 }`}
               >
-                {t === "vip" ? "👑 VIP" : t}
+                {t === "vip" ? "👑 VIP" : "Normal"}
               </button>
             ))}
           </div>

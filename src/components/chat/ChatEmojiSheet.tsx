@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Loader2, X } from "lucide-react";
+import { toast } from "sonner";
 
 export type ChatEmoji = {
   id: string;
@@ -10,16 +12,13 @@ export type ChatEmoji = {
   category: string;
   clip_path: string;
   sort_order: number;
+  tier?: string | null;
+  min_vip_level?: number | null;
 };
 
-const CATS: { key: string; label: string }[] = [
-  { key: "all", label: "All" },
-  { key: "love", label: "Love" },
-  { key: "funny", label: "Funny" },
-  { key: "action", label: "Action" },
-  { key: "party", label: "Party" },
-  { key: "magic", label: "Magic" },
-  { key: "cute", label: "Cute" },
+const TIERS: { key: "normal" | "vip"; label: string }[] = [
+  { key: "normal", label: "Normal" },
+  { key: "vip", label: "👑 VIP" },
 ];
 
 /** Bottom sheet emoji picker used in DM + Room composers. */
@@ -32,16 +31,18 @@ export function ChatEmojiSheet({
   onClose: () => void;
   onPick: (e: ChatEmoji) => void;
 }) {
+  const { profile, isAdmin } = useAuth();
   const [list, setList] = useState<ChatEmoji[]>([]);
   const [loading, setLoading] = useState(false);
-  const [cat, setCat] = useState<string>("all");
+  const [tier, setTier] = useState<"normal" | "vip">("normal");
+  const isVip = isAdmin || (profile?.vip_level ?? 0) > 0;
 
   useEffect(() => {
     if (!open || list.length > 0) return;
     setLoading(true);
     void supabase
       .from("chat_emojis")
-      .select("id,slug,emoji,name,category,clip_path,sort_order")
+      .select("id,slug,emoji,name,category,clip_path,sort_order,tier,min_vip_level")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
       .then(({ data }) => {
@@ -51,8 +52,8 @@ export function ChatEmojiSheet({
   }, [open, list.length]);
 
   const filtered = useMemo(
-    () => (cat === "all" ? list : list.filter((e) => e.category === cat)),
-    [list, cat],
+    () => list.filter((e) => (tier === "normal" ? (e.tier ?? "normal") === "normal" : (e.tier ?? "normal") !== "normal")),
+    [list, tier],
   );
 
   if (!open) return null;
@@ -76,14 +77,22 @@ export function ChatEmojiSheet({
         </div>
 
         <div className="flex gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar">
-          {CATS.map((c) => (
+          {TIERS.map((c) => (
             <button
               key={c.key}
-              onClick={() => setCat(c.key)}
+              onClick={() => {
+                if (c.key === "vip" && !isVip) {
+                  toast.info("👑 VIP emojis VIP members ke liye hain");
+                  return;
+                }
+                setTier(c.key);
+              }}
               className={`whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-bold ${
-                cat === c.key
+                tier === c.key
                   ? "bg-[color:var(--primary)] text-primary-foreground"
-                  : "bg-card/60 text-muted-foreground"
+                  : c.key === "vip" && !isVip
+                    ? "bg-card/40 text-muted-foreground/50"
+                    : "bg-card/60 text-muted-foreground"
               }`}
             >
               {c.label}
