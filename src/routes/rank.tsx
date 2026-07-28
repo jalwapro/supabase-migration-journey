@@ -449,15 +449,11 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
 
   const content = (
     <div className={`relative flex flex-col items-center ${isFirst ? "pt-0" : "pt-6"}`}>
-      {/* Crown */}
-      <div className={`relative z-20 ${isFirst ? "h-11 w-16" : "h-8 w-12"} -mb-2`}>
-        <PodiumCrown tone={tone} />
-      </div>
-
-      {/* Avatar with wings behind */}
-      <div className={`relative ${isFirst ? "h-[128px] w-[128px]" : "h-[104px] w-[104px]"}`}>
+      {/* Avatar with wings + ornate frame */}
+      <div className={`relative ${isFirst ? "h-[140px] w-[140px]" : "h-[116px] w-[116px]"}`}>
         <PodiumWings tone={tone} />
-        <div className="absolute inset-0 grid place-items-center">
+        <PodiumAvatarFrame tone={tone} />
+        <div className="absolute inset-[14%] grid place-items-center">
           <LevelAvatar
             src={row?.avatar ?? undefined}
             name={row?.username ?? undefined}
@@ -473,6 +469,7 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
           </span>
         </div>
       </div>
+
 
       {/* Name pill */}
       <div className="relative z-20 mt-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-1 backdrop-blur-md">
