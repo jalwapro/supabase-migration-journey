@@ -18,6 +18,7 @@ import { Route as RankRouteImport } from './routes/rank'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LottiePreviewRouteImport } from './routes/lottie-preview'
 import { Route as GiftPreviewRouteImport } from './routes/gift-preview'
+import { Route as FramesShowcaseRouteImport } from './routes/frames-showcase'
 import { Route as FramesPreviewRouteImport } from './routes/frames-preview'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ArTestRouteImport } from './routes/ar-test'
@@ -145,6 +146,11 @@ const LottiePreviewRoute = LottiePreviewRouteImport.update({
 const GiftPreviewRoute = GiftPreviewRouteImport.update({
   id: '/gift-preview',
   path: '/gift-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FramesShowcaseRoute = FramesShowcaseRouteImport.update({
+  id: '/frames-showcase',
+  path: '/frames-showcase',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FramesPreviewRoute = FramesPreviewRouteImport.update({
@@ -601,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRoute
   '/frames-preview': typeof FramesPreviewRoute
+  '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
@@ -694,6 +701,7 @@ export interface FileRoutesByTo {
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRoute
   '/frames-preview': typeof FramesPreviewRoute
+  '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
@@ -787,6 +795,7 @@ export interface FileRoutesById {
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRoute
   '/frames-preview': typeof FramesPreviewRoute
+  '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
@@ -882,6 +891,7 @@ export interface FileRouteTypes {
     | '/ar-test'
     | '/auth'
     | '/frames-preview'
+    | '/frames-showcase'
     | '/gift-preview'
     | '/lottie-preview'
     | '/messages'
@@ -975,6 +985,7 @@ export interface FileRouteTypes {
     | '/ar-test'
     | '/auth'
     | '/frames-preview'
+    | '/frames-showcase'
     | '/gift-preview'
     | '/lottie-preview'
     | '/messages'
@@ -1067,6 +1078,7 @@ export interface FileRouteTypes {
     | '/ar-test'
     | '/auth'
     | '/frames-preview'
+    | '/frames-showcase'
     | '/gift-preview'
     | '/lottie-preview'
     | '/messages'
@@ -1162,6 +1174,7 @@ export interface RootRouteChildren {
   ArTestRoute: typeof ArTestRoute
   AuthRoute: typeof AuthRoute
   FramesPreviewRoute: typeof FramesPreviewRoute
+  FramesShowcaseRoute: typeof FramesShowcaseRoute
   GiftPreviewRoute: typeof GiftPreviewRoute
   LottiePreviewRoute: typeof LottiePreviewRoute
   MessagesRoute: typeof MessagesRoute
@@ -1244,6 +1257,13 @@ declare module '@tanstack/react-router' {
       path: '/gift-preview'
       fullPath: '/gift-preview'
       preLoaderRoute: typeof GiftPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/frames-showcase': {
+      id: '/frames-showcase'
+      path: '/frames-showcase'
+      fullPath: '/frames-showcase'
+      preLoaderRoute: typeof FramesShowcaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/frames-preview': {
@@ -2007,6 +2027,7 @@ const rootRouteChildren: RootRouteChildren = {
   ArTestRoute: ArTestRoute,
   AuthRoute: AuthRoute,
   FramesPreviewRoute: FramesPreviewRoute,
+  FramesShowcaseRoute: FramesShowcaseRoute,
   GiftPreviewRoute: GiftPreviewRoute,
   LottiePreviewRoute: LottiePreviewRoute,
   MessagesRoute: MessagesRoute,
