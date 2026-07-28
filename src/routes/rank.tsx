@@ -28,7 +28,7 @@ export const Route = createFileRoute("/rank")({
 /* ─────────────────────────────  Types & config  ───────────────────────────── */
 
 type Category =
-  | "wealth" | "points" | "charm" | "hosts" | "gifters"
+  | "points" | "hosts" | "gifters"
   | "pk"     | "vip"    | "royals" | "popular" | "country";
 type Period = "daily" | "weekly" | "monthly" | "all";
 type Scope  = "global" | "country";
@@ -40,9 +40,7 @@ type Row = {
 };
 
 const CATS: { k: Category; label: string; Icon: React.ComponentType<{ className?: string }>; unit: string; }[] = [
-  { k: "wealth",  label: "Wealth",  Icon: Crown,    unit: "Coins" },
   { k: "points",  label: "Points",  Icon: Star,     unit: "XP" },
-  { k: "charm",   label: "Charm",   Icon: Heart,    unit: "Fans" },
   { k: "hosts",   label: "Hosts",   Icon: Mic,      unit: "Coins" },
   { k: "gifters", label: "Gifters", Icon: Gift,     unit: "Coins" },
   { k: "pk",      label: "PK King", Icon: Swords,   unit: "Wins" },
@@ -51,6 +49,7 @@ const CATS: { k: Category; label: string; Icon: React.ComponentType<{ className?
   { k: "popular", label: "Popular", Icon: Flame,    unit: "Coins" },
   { k: "country", label: "Country", Icon: Globe2,   unit: "Coins" },
 ];
+
 
 const PERIODS: { k: Period; label: string }[] = [
   { k: "daily", label: "Daily Ranking" },
