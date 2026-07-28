@@ -3,6 +3,14 @@ import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { frameForLevel } from "@/lib/levelFrames";
+import { calibForLevel, DEFAULT_FRAME_CALIB } from "@/lib/frameCalibration";
+
+// Every equipped/auto DP frame is normalised so the visible ring is exactly
+// TARGET_FRAME_RATIO × avatar diameter, centred perfectly on the avatar disc.
+// This is what keeps frame sizes/positions identical across every screen
+// (home, rank podium, me, profile, room seats, admin, settings, …).
+const TARGET_FRAME_RATIO = 1.55;
+
 
 
 type Size = "sm" | "md" | "lg" | "xl";
