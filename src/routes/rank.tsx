@@ -309,7 +309,7 @@ function RankHeader({ onBack, onHelp, profile, userId }: {
             Rankings
           </h1>
           <p className="text-[10px] tracking-[0.2em] text-white/50 leading-none mt-0.5">
-            Top hosts • gifters • wealth
+            Top hosts • gifters • royals
           </p>
         </div>
 
