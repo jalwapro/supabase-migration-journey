@@ -362,7 +362,7 @@ function MessagesPage() {
 
         <div className="relative mx-auto max-w-[520px] px-4 pt-4">
           {/* HEADER */}
-          <header className="flex items-center justify-between">
+          <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-white/5 bg-background/70 px-4 py-3 backdrop-blur-2xl">
             <div className="flex items-center gap-2">
               <span
                 className="bg-gradient-to-r from-pink-400 via-fuchsia-500 to-purple-500 bg-clip-text text-2xl leading-none tracking-tight text-transparent"
