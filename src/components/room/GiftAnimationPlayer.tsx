@@ -215,6 +215,8 @@ function AnimatedGiftVideo({
     readyOnceRef.current = false;
     setReady(false);
     setFailed(false);
+    detectedKeyRef.current = null;
+    setDetectedKey(null);
     const video = videoRef.current;
     if (!video) return;
     video.muted = true;
