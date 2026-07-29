@@ -165,7 +165,6 @@ function AnimatedGiftVideo({
   screenBlend = false,
   lumaKey = false,
   greenKey = false,
-  greenStage = false,
 }: {
   src: string;
   type: string | null;
@@ -179,7 +178,6 @@ function AnimatedGiftVideo({
   screenBlend?: boolean;
   lumaKey?: boolean;
   greenKey?: boolean;
-  greenStage?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -1453,7 +1451,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       : chromakeyMode === "none"
         ? false
         : autoBlackBg;
-  const showGreenStage = (chromakeyMode === "none" || chromakeyMode === "green" || chromakeyMode === "luma") && hasVideo && !isRoyalRose && !isSpaceship;
   // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
@@ -1670,7 +1667,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             screenBlend={isBlackBg}
             lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
             greenKey={chromakeyMode === "green"}
-            greenStage={showGreenStage}
           />
 
         ) : hasSvga ? (
