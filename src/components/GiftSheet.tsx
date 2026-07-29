@@ -132,7 +132,7 @@ export function GiftSheet({
   const [receiverId, setReceiverId] = useState<string | null>(receivers[0]?.id ?? null);
   const [sendToAll, setSendToAll] = useState(false);
   const [qty, setQty] = useState(1);
-  const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [activeCategory, setActiveCategory] = useState<string>("");
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const gifts = useQuery({
