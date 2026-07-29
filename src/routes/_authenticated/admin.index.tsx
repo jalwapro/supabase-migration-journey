@@ -59,6 +59,23 @@ function useCount(table: string, filter?: { col: string; val: string }) {
   });
 }
 
+function useLiveTypeCount(roomType: "voice" | "video") {
+  return useQuery({
+    queryKey: ["admin_live_type_count", roomType],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("live_rooms")
+        .select("id", { count: "exact", head: true })
+        .eq("room_type", roomType)
+        .eq("status", "live");
+      return count ?? 0;
+    },
+    ...ADMIN_QUERY_OPTS,
+  });
+}
+
+
+
 function useSum(table: string, col: string, filter?: { c: string; v: string }, range?: DateRange) {
   return useQuery({
     queryKey: ["admin_sum", table, col, filter, range?.from, range?.to],
