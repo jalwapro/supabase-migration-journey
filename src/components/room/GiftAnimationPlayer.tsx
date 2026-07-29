@@ -251,28 +251,80 @@ function AnimatedGiftVideo({
     });
   }, [ensureAudioBoost, withSound]);
 
+  // Inspect the first frame's border pixels to decide the real backdrop of this
+  // clip. Admin metadata is often wrong/stale, and a mislabelled clip renders a
+  // solid green screen over the room — detection makes that impossible.
+  const detectBackdrop = useCallback(() => {
+    if (detectedKeyRef.current !== null) return;
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    try {
+      const w = 48;
+      const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const samples: Array<[number, number]> = [];
+      for (let x = 0; x < w; x += 1) {
+        samples.push([x, 0], [x, h - 1]);
+      }
+      for (let y = 0; y < h; y += 1) {
+        samples.push([0, y], [w - 1, y]);
+      }
+      let green = 0;
+      let dark = 0;
+      for (const [x, y] of samples) {
+        const i = (y * w + x) * 4;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        if (a < 24) continue; // already transparent (webm alpha)
+        if (g > 70 && g > r * 1.35 && g > b * 1.35) green += 1;
+        else if (r + g + b < 96) dark += 1;
+      }
+      const total = samples.length;
+      const mode: "green" | "luma" | "none" =
+        green / total > 0.35 ? "green" : dark / total > 0.55 ? "luma" : "none";
+      detectedKeyRef.current = mode;
+      setDetectedKey(mode);
+    } catch {
+      // Cross-origin clip: canvas is tainted, keep the metadata-driven mode.
+      detectedKeyRef.current = "unknown";
+    }
+  }, []);
+
   const markReady = useCallback(() => {
+    detectBackdrop();
     setReady(true);
     if (!readyOnceRef.current) {
       readyOnceRef.current = true;
       onReady();
     }
     startPlayback();
-  }, [onReady, startPlayback]);
+  }, [detectBackdrop, onReady, startPlayback]);
 
   if (failed) {
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
   }
 
-
+  // Detection wins over admin metadata; metadata is the fallback when the clip
+  // is cross-origin (tainted canvas) or not analysed yet.
+  const greenKeyEff = detectedKey === "green" || (!detectedKey && greenKey);
+  const lumaKeyEff = !greenKeyEff && (detectedKey === "luma" || (!detectedKey && lumaKey));
+  const screenBlendEff = !greenKeyEff && !lumaKeyEff && detectedKey !== "none" && screenBlend;
 
   const filterParts: string[] = [];
   // Green-screen clips get a real chroma key (green pixels -> alpha 0) so the
   // gift renders transparent over the room. Dark-background clips use the luma key.
-  if (greenKey) filterParts.push("url(#jalwa-green-key)");
-  else if (lumaKey || screenBlend) filterParts.push("url(#jalwa-luma-key)");
+  if (greenKeyEff) filterParts.push("url(#jalwa-green-key)");
+  else if (lumaKeyEff || screenBlendEff) filterParts.push("url(#jalwa-luma-key)");
   filterParts.push(
-    screenBlend || lumaKey || greenKey
+    screenBlendEff || lumaKeyEff || greenKeyEff
       ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
       : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
   );
