@@ -82,7 +82,7 @@ function useRangeCount(table: string, filter: { col: string; val: string } | und
     queryKey: ["admin_rcount", table, filter, range.from, range.to],
     queryFn: async () => {
       const b = rangeBounds(range);
-      let q = supabase.from(table).select("id", { count: "planned", head: true })
+      let q = supabase.from(table).select("id", { count: "exact", head: true })
         .gte("created_at", b.from).lte("created_at", b.to);
       if (filter) q = q.eq(filter.col, filter.val);
       const { count } = await q;
