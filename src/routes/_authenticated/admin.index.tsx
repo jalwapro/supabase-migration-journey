@@ -332,7 +332,7 @@ function Dashboard() {
           <RoomRow icon={Video} label="Video Rooms" value={videoRooms.data ?? 0} pct={100 - voicePct} tone="bg-secondary" />
           <div className="mt-4 grid grid-cols-2 gap-2">
             <MiniStat icon={Radio} label="Live Now" value={liveRooms.data ?? 0} tone="bg-red-500/15 text-red-400" />
-            <MiniStat icon={DoorOpen} label="Total Rooms" value={rooms.data ?? 0} tone="bg-primary/15 text-primary" />
+            <MiniStat icon={DoorOpen} label="Rooms (All Time)" value={rooms.data ?? 0} tone="bg-primary/15 text-primary" />
             <MiniStat icon={Crown} label="VIP Members" value={vip.data ?? 0} tone="bg-purple-500/15 text-purple-400" />
             <MiniStat icon={Flag} label="Open Reports" value={reports.data ?? 0} tone="bg-red-500/15 text-red-400" />
           </div>
