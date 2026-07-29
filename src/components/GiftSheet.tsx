@@ -456,71 +456,97 @@ export function GiftSheet({
           })}
         </div>
 
-        {/* Gifts grid — arcade tiles */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-1.5 [scrollbar-width:thin]">
+        {/* Gifts — swipeable pages of 8 (4 x 2), no long scrolling list */}
+        <div className="relative min-h-0 flex-1">
           {gifts.isLoading && (
             <div className="py-6 text-center">
               <Loader2 className="mx-auto h-5 w-5 animate-spin text-white/40" />
             </div>
           )}
-          <div className="grid grid-cols-4 gap-2">
-            {visibleGifts.map((g) => {
-              const selected = selectedGift?.id === g.id;
-              return (
-                <button
-                  key={g.id}
-                  onClick={() => {
-                    unlockGiftAudio();
-                    if (selected) {
-                      handleSend();
-                    } else {
-                      setSelectedGift(g);
-                      const prefs = getGiftAudioPrefs();
-                      if (!prefs.muted && prefs.volume > 0) {
-                        const vol = Math.min(1, prefs.volume * 0.7);
-                        const tier = tierOf(price(g));
-                        if (g.sound_url) {
-                          playGiftAudioCue({ soundUrl: g.sound_url, volume: vol });
-                        } else if (tier !== "small") {
-                          playJalwaSignature(vol);
-                        }
-                      }
-                    }
-                  }}
-                  onPointerDown={() => preloadGiftVideo(giftVideoUrl(g))}
-                  className={`group relative flex aspect-square flex-col items-center justify-center rounded-2xl border-2 p-1.5 transition active:scale-95 ${
-                    selected
-                      ? "border-[#ff2d87] bg-[#7c3aed]/10 shadow-[0_0_15px_rgba(255,45,135,0.25)]"
-                      : "border-white/5 bg-[#1a0b2e]"
-                  }`}
-                >
-                  <div className="grid h-10 w-10 place-items-center">
-                    <GiftPreview gift={g} />
-                  </div>
-                  <span className="mt-0.5 w-full truncate px-0.5 text-center text-[9px] font-medium text-white/60">
-                    {g.name}
-                  </span>
-                  <div className="mt-0.5 flex items-center gap-0.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#f5c542]" />
-                    <span className="text-[10px] font-black text-[#f5c542]">
-                      {price(g) >= 1000 ? `${(price(g) / 1000).toFixed(price(g) % 1000 === 0 ? 0 : 1)}k` : price(g)}
-                    </span>
-                  </div>
-                  {selected && (
-                    <span className="absolute -right-1 -top-1 rounded-full bg-[#ff2d87] px-1.5 text-[8px] font-black uppercase text-white">
-                      Pick
-                    </span>
+          {!gifts.isLoading && (
+            <div
+              className="scrollbar-hide flex h-full snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
+              onScroll={(e) => {
+                const el = e.currentTarget;
+                const idx = Math.round(el.scrollLeft / Math.max(1, el.clientWidth));
+                if (idx !== pageIndex) setPageIndex(idx);
+              }}
+            >
+              {pages.map((pageGifts, pi) => (
+                <div key={pi} className="grid h-full w-full shrink-0 snap-center grid-cols-4 grid-rows-2 gap-2 px-3 py-1.5">
+                  {pageGifts.map((g) => {
+                    const selected = selectedGift?.id === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        onClick={() => {
+                          unlockGiftAudio();
+                          if (selected) {
+                            handleSend();
+                          } else {
+                            setSelectedGift(g);
+                            const prefs = getGiftAudioPrefs();
+                            if (!prefs.muted && prefs.volume > 0) {
+                              const vol = Math.min(1, prefs.volume * 0.7);
+                              const tier = tierOf(price(g));
+                              if (g.sound_url) {
+                                playGiftAudioCue({ soundUrl: g.sound_url, volume: vol });
+                              } else if (tier !== "small") {
+                                playJalwaSignature(vol);
+                              }
+                            }
+                          }
+                        }}
+                        onPointerDown={() => preloadGiftVideo(giftVideoUrl(g))}
+                        className={`group relative flex min-h-0 flex-col items-center justify-center rounded-2xl border-2 p-1 transition active:scale-95 ${
+                          selected
+                            ? "border-[#ff2d87] bg-[#7c3aed]/10 shadow-[0_0_15px_rgba(255,45,135,0.25)]"
+                            : "border-white/5 bg-[#1a0b2e]"
+                        }`}
+                      >
+                        <div className="grid h-9 w-9 shrink-0 place-items-center">
+                          <GiftPreview gift={g} />
+                        </div>
+                        <span className="mt-0.5 w-full truncate px-0.5 text-center text-[9px] font-medium text-white/60">
+                          {g.name}
+                        </span>
+                        <div className="flex items-center gap-0.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#f5c542]" />
+                          <span className="text-[10px] font-black text-[#f5c542]">
+                            {price(g) >= 1000 ? `${(price(g) / 1000).toFixed(price(g) % 1000 === 0 ? 0 : 1)}k` : price(g)}
+                          </span>
+                        </div>
+                        {selected && (
+                          <span className="absolute -right-1 -top-1 rounded-full bg-[#ff2d87] px-1.5 text-[8px] font-black uppercase text-white">
+                            Pick
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                  {pageGifts.length === 0 && (
+                    <p className="col-span-4 row-span-2 grid place-items-center text-xs text-white/50">
+                      No gifts in this category yet.
+                    </p>
                   )}
-                </button>
-              );
-            })}
-            {!gifts.isLoading && visibleGifts.length === 0 && (
-              <p className="col-span-4 py-6 text-center text-xs text-white/50">
-                No gifts in this category yet.
-              </p>
-            )}
-          </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
+        {/* Page dots */}
+        {pages.length > 1 && (
+          <div className="flex shrink-0 items-center justify-center gap-1 pb-1">
+            {pages.map((_, i) => (
+              <span
+                key={i}
+                className={`h-1 rounded-full transition-all ${i === pageIndex ? "w-3.5 bg-[#ff2d87]" : "w-1 bg-white/25"}`}
+              />
+            ))}
+          </div>
+        )}
+
 
         {/* Bottom control bar — wallet + qty + arcade Send lever */}
         <div className="flex shrink-0 items-center gap-2 border-t border-white/5 bg-[#0a0215] px-3 py-2">
