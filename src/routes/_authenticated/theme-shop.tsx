@@ -301,7 +301,22 @@ function Page() {
               </button>
             );
           })}
+
+          {/* Dedicated shops (their own catalogs, not `themes` rows) */}
+          <Link to="/shop-entrances" className="flex shrink-0 flex-col items-center gap-2">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10 opacity-80 ring-1 ring-amber-400/30">
+              <Sparkles className="h-6 w-6 text-amber-300" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-tighter text-white/70">Entrance</span>
+          </Link>
+          <Link to="/shop-profile-cards" className="flex shrink-0 flex-col items-center gap-2">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white/10 opacity-80 ring-1 ring-fuchsia-400/30">
+              <Crown className="h-6 w-6 text-fuchsia-300" />
+            </div>
+            <span className="text-[10px] font-bold uppercase tracking-tighter text-white/70">Cards</span>
+          </Link>
         </div>
+
 
         {/* Featured hero */}
         {featured && (
