@@ -781,7 +781,7 @@ function GiftsAdmin() {
               </svg>
               {(() => {
                 const isVideo = (preview.clipType === "mp4" || preview.clipType === "webm") || !!preview.clipPath?.match(/\.(mp4|webm)(\?|$)/i);
-                const greenStage = isVideo && (preview.chromakey === "none" || preview.chromakey === "green");
+                const greenStage = false;
                 const style: React.CSSProperties = {
                   maxHeight: "100%",
                   maxWidth: "100%",
