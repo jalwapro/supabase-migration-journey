@@ -47,9 +47,10 @@ function useCount(table: string, filter?: { col: string; val: string }) {
   return useQuery({
     queryKey: ["admin_count", table, filter],
     queryFn: async () => {
-      // "planned" uses Postgres planner statistics — near-instant on huge
-      // tables. "exact" was scanning the whole table on every dashboard mount.
-      let q = supabase.from(table).select("id", { count: "planned", head: true });
+      // Exact counts: planner estimates ("planned") ignore the WHERE clause on
+      // small tables and produced nonsense numbers (e.g. 3 pending recharges
+      // when there were 0). Results are cached for 2 minutes below.
+      let q = supabase.from(table).select("id", { count: "exact", head: true });
       if (filter) q = q.eq(filter.col, filter.val);
       const { count } = await q;
       return count ?? 0;
