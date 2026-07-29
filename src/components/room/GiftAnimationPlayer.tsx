@@ -1399,6 +1399,30 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => window.removeEventListener("jalwa:gift-sent", onLocalGift);
   }, [enqueue]);
 
+type GiftSendRow = {
+  id: string;
+  sender_id: string;
+  receiver_id: string | null;
+  gift_id: string;
+  quantity: number;
+  coins_spent: number;
+  diamonds_earned: number;
+  created_at?: string | null;
+  sender_username: string | null;
+  sender_avatar: string | null;
+  receiver_username: string | null;
+  receiver_avatar: string | null;
+  gift_name: string | null;
+  gift_emoji: string | null;
+  gift_icon: string | null;
+  gift_animation: string | null;
+  gift_clip_path: string | null;
+  gift_clip_type: string | null;
+  gift_image_url: string | null;
+  gift_sound_url: string | null;
+  gift_chromakey: string | null;
+};
+
   // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
   const handleGiftRow = useCallback((r: GiftSendRow) => {
     const play: Play = {
