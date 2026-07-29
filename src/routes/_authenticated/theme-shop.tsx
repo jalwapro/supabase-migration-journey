@@ -69,12 +69,19 @@ function Page() {
     },
   });
 
-  const cats = data?.cats ?? [];
+  // Legacy categories that were replaced by dedicated shops (or have no stock)
+  // must not appear as empty tabs — Entrance/Profile Cards live in their own pages.
+  const cats = useMemo(() => {
+    const all = data?.cats ?? [];
+    const items = data?.items ?? [];
+    return all.filter((c) => items.some((i) => i.category_id === c.id));
+  }, [data?.cats, data?.items]);
   const currentCat = activeCat ?? cats[0]?.id ?? null;
   const items = useMemo(
     () => (data?.items ?? []).filter((i) => (currentCat ? i.category_id === currentCat : true)),
     [data?.items, currentCat],
   );
+
 
   const featured = useMemo(
     () => items.find((i) => i.is_premium) ?? items[0] ?? null,
