@@ -47,9 +47,10 @@ function useCount(table: string, filter?: { col: string; val: string }) {
   return useQuery({
     queryKey: ["admin_count", table, filter],
     queryFn: async () => {
-      // "planned" uses Postgres planner statistics — near-instant on huge
-      // tables. "exact" was scanning the whole table on every dashboard mount.
-      let q = supabase.from(table).select("id", { count: "planned", head: true });
+      // Exact counts: planner estimates ("planned") ignore the WHERE clause on
+      // small tables and produced nonsense numbers (e.g. 3 pending recharges
+      // when there were 0). Results are cached for 2 minutes below.
+      let q = supabase.from(table).select("id", { count: "exact", head: true });
       if (filter) q = q.eq(filter.col, filter.val);
       const { count } = await q;
       return count ?? 0;
@@ -57,6 +58,23 @@ function useCount(table: string, filter?: { col: string; val: string }) {
     ...ADMIN_QUERY_OPTS,
   });
 }
+
+function useLiveTypeCount(roomType: "voice" | "video") {
+  return useQuery({
+    queryKey: ["admin_live_type_count", roomType],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("live_rooms")
+        .select("id", { count: "exact", head: true })
+        .eq("room_type", roomType)
+        .eq("status", "live");
+      return count ?? 0;
+    },
+    ...ADMIN_QUERY_OPTS,
+  });
+}
+
+
 
 function useSum(table: string, col: string, filter?: { c: string; v: string }, range?: DateRange) {
   return useQuery({
@@ -81,7 +99,7 @@ function useRangeCount(table: string, filter: { col: string; val: string } | und
     queryKey: ["admin_rcount", table, filter, range.from, range.to],
     queryFn: async () => {
       const b = rangeBounds(range);
-      let q = supabase.from(table).select("id", { count: "planned", head: true })
+      let q = supabase.from(table).select("id", { count: "exact", head: true })
         .gte("created_at", b.from).lte("created_at", b.to);
       if (filter) q = q.eq(filter.col, filter.val);
       const { count } = await q;
@@ -211,8 +229,10 @@ function Dashboard() {
   const users = useCount("profiles");
   const rooms = useCount("live_rooms");
   const liveRooms = useCount("live_rooms", { col: "status", val: "live" });
-  const voiceRooms = useCount("live_rooms", { col: "room_type", val: "voice" });
-  const videoRooms = useCount("live_rooms", { col: "room_type", val: "video" });
+  // "Room Types" panel says "currently active" — so only count LIVE rooms,
+  // not the hundreds of ended ones.
+  const voiceRooms = useLiveTypeCount("voice");
+  const videoRooms = useLiveTypeCount("video");
   const pendingR = useCount("recharge_requests", { col: "status", val: "pending" });
   const pendingW = useCount("withdrawal_requests", { col: "status", val: "pending" });
   const reports = useCount("user_reports", { col: "status", val: "pending" });
@@ -312,7 +332,7 @@ function Dashboard() {
           <RoomRow icon={Video} label="Video Rooms" value={videoRooms.data ?? 0} pct={100 - voicePct} tone="bg-secondary" />
           <div className="mt-4 grid grid-cols-2 gap-2">
             <MiniStat icon={Radio} label="Live Now" value={liveRooms.data ?? 0} tone="bg-red-500/15 text-red-400" />
-            <MiniStat icon={DoorOpen} label="Total Rooms" value={rooms.data ?? 0} tone="bg-primary/15 text-primary" />
+            <MiniStat icon={DoorOpen} label="Rooms (All Time)" value={rooms.data ?? 0} tone="bg-primary/15 text-primary" />
             <MiniStat icon={Crown} label="VIP Members" value={vip.data ?? 0} tone="bg-purple-500/15 text-purple-400" />
             <MiniStat icon={Flag} label="Open Reports" value={reports.data ?? 0} tone="bg-red-500/15 text-red-400" />
           </div>
