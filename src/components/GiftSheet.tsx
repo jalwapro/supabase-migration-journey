@@ -176,17 +176,34 @@ export function GiftSheet({
     const ordered = ["popular", "classic", "romantic", "love", "party", "luxury", "fantasy", "vip"];
     const known = ordered.filter((c) => counts.has(c));
     const extras = [...counts.keys()].filter((c) => !ordered.includes(c)).sort();
-    return ["all", ...known, ...extras];
+    return [...known, ...extras];
   }, [gifts.data]);
 
-  // Filter gifts by selected category (or show all), sorted by price.
+  // Keep the active category valid (no "All" — one category at a time).
+  useEffect(() => {
+    if (!categoryList.length) return;
+    if (!categoryList.includes(activeCategory)) setActiveCategory(categoryList[0]);
+  }, [categoryList, activeCategory]);
+
+  // Filter gifts by selected category, sorted by price.
   const visibleGifts = useMemo(() => {
     const all = gifts.data ?? [];
-    const filtered = activeCategory === "all"
-      ? all
-      : all.filter((g) => ((g.category ?? "").trim().toLowerCase() || "classic") === activeCategory);
+    const filtered = all.filter(
+      (g) => ((g.category ?? "").trim().toLowerCase() || "classic") === activeCategory,
+    );
     return filtered.slice().sort((a, b) => price(a) - price(b));
   }, [gifts.data, activeCategory]);
+
+  // Paginate into swipeable pages of 8 (4 x 2) so the panel stays compact.
+  const PAGE_SIZE = 8;
+  const pages = useMemo(() => {
+    const out: Gift[][] = [];
+    for (let i = 0; i < visibleGifts.length; i += PAGE_SIZE) out.push(visibleGifts.slice(i, i + PAGE_SIZE));
+    return out.length ? out : [[]];
+  }, [visibleGifts]);
+  const [pageIndex, setPageIndex] = useState(0);
+  useEffect(() => setPageIndex(0), [activeCategory]);
+
 
   const giftVideoUrl = (g: Gift | null) => {
     if (!g?.clip_path || !["mp4", "webm", "svga"].includes(g.clip_type ?? "")) return null;
