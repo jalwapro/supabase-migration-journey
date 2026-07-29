@@ -111,33 +111,9 @@ function Page() {
 
   const equip = useMutation({
     mutationFn: async (item: ShopItem) => {
-      const cat = (data?.cats ?? []).find((c) => c.id === item.category_id);
-      const slug = (cat?.slug ?? "").toLowerCase().trim();
-      const name = (cat?.name ?? "").toLowerCase().trim();
-      const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
-
-      if (isTheme) {
-        const { error } = await supabase.rpc("equip_theme", { _theme_id: item.id });
-        if (error) {
-          const { error: upErr } = await supabase
-            .from("profiles")
-            .update({ theme_id: item.id })
-            .eq("id", user!.id);
-          if (upErr) throw error;
-        }
-        return;
-      }
-
-      const column = COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name];
-      if (!column) {
-        toast.info("This category doesn't have a placement yet.");
-        return;
-      }
-      const url = item.animation_url || item.preview_url || item.bg_image;
-      const { error } = await supabase
-        .from("profiles")
-        .update({ [column]: url })
-        .eq("id", user!.id);
+      // Ownership + slot + asset URL are all resolved server-side (equip_cosmetic),
+      // so an edited client can never equip an item it hasn't purchased.
+      const { error } = await supabase.rpc("equip_cosmetic", { _theme_id: item.id });
       if (error) throw error;
     },
     onSuccess: async () => {
@@ -154,16 +130,12 @@ function Page() {
       const slug = (cat?.slug ?? "").toLowerCase().trim();
       const name = (cat?.name ?? "").toLowerCase().trim();
       const isTheme = slug === "theme" || slug === "themes" || name === "theme" || name === "themes";
-      if (isTheme) {
-        const { error } = await supabase.from("profiles").update({ theme_id: null }).eq("id", user!.id);
-        if (error) throw error;
-        return;
-      }
-      const column = COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name];
-      if (!column) return;
-      const { error } = await supabase.from("profiles").update({ [column]: null }).eq("id", user!.id);
+      const slot = isTheme ? "theme" : (COLUMN_FOR_CATEGORY[slug] || COLUMN_FOR_CATEGORY[name]);
+      if (!slot) return;
+      const { error } = await supabase.rpc("unequip_cosmetic", { _slot: slot });
       if (error) throw error;
     },
+
     onSuccess: async () => {
       toast.success("Unequipped");
       await refresh();
