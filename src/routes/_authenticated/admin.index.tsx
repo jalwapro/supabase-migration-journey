@@ -212,8 +212,10 @@ function Dashboard() {
   const users = useCount("profiles");
   const rooms = useCount("live_rooms");
   const liveRooms = useCount("live_rooms", { col: "status", val: "live" });
-  const voiceRooms = useCount("live_rooms", { col: "room_type", val: "voice" });
-  const videoRooms = useCount("live_rooms", { col: "room_type", val: "video" });
+  // "Room Types" panel says "currently active" — so only count LIVE rooms,
+  // not the hundreds of ended ones.
+  const voiceRooms = useLiveTypeCount("voice");
+  const videoRooms = useLiveTypeCount("video");
   const pendingR = useCount("recharge_requests", { col: "status", val: "pending" });
   const pendingW = useCount("withdrawal_requests", { col: "status", val: "pending" });
   const reports = useCount("user_reports", { col: "status", val: "pending" });
