@@ -380,7 +380,7 @@ function AnimatedGiftVideo({
           transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
           background: "transparent",
           willChange: "opacity, transform",
-          mixBlendMode: greenStage || (!lumaKey && !greenKey && screenBlend) ? "screen" : undefined,
+          mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
           filter: filterParts.join(" "),
         }}
       />
