@@ -186,6 +186,8 @@ function AnimatedGiftVideo({
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
+  const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
 
   // Wire the video element to a Web Audio graph with a 5x GainNode so premium
   // gifts play at boosted volume (~500%) — the whole room hears the gift.
