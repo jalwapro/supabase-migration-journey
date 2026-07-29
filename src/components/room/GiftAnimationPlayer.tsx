@@ -1602,6 +1602,17 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
 
+  // HARD watchdog: on low-end devices a video can stall (decoder busy, low FPS,
+  // background tab) so `readyKey` never fires and the big-gift slot would stay
+  // occupied forever — every later gift then silently queues and never shows.
+  // This guarantees the slot frees up no matter what.
+  useEffect(() => {
+    if (!current) return;
+    const t = setTimeout(clearCurrent, 16000);
+    return () => clearTimeout(t);
+  }, [current?.key, current, clearCurrent]);
+
+
 
   // Prefetch next queued gift's clip so it's warm in cache when it plays.
   const nextPlay = queue[0] ?? null;
