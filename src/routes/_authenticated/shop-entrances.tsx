@@ -113,7 +113,7 @@ function Page() {
     onError: (e: any) => toast.error(e.message ?? "Equip failed"),
   });
 
-  const balance = (profile as any)?.coin_balance ?? 0;
+  const balance = (profile as any)?.coins ?? 0;
   const vipLevel = (profile as any)?.vip_level ?? 0;
 
   return (
