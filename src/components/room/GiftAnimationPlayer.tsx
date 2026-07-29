@@ -416,8 +416,11 @@ function AnimatedGiftVideo({
         onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
-          if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
+          // Clamp: some encodes report Infinity / bogus durations which would
+          // otherwise freeze the gift slot forever on slower devices.
+          if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
         }}
+
         onCanPlayThrough={() => {
           startPlayback();
         }}
