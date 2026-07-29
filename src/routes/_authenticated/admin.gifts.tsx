@@ -771,17 +771,40 @@ function GiftsAdmin() {
                       values="1 0 0 0 0
                               0 1 0 0 0
                               0 0 1 0 0
-                              1 -1.35 1 0 0.08"
+                              1 -1.35 1 0 0.12"
+                      result="gkRaw"
                     />
-                    <feComponentTransfer>
-                      <feFuncA type="linear" slope="3.8" intercept="-0.08" />
+                    <feComponentTransfer in="gkRaw" result="gk">
+                      <feFuncA type="linear" slope="6" intercept="-0.12" />
                     </feComponentTransfer>
+                    <feColorMatrix
+                      in="SourceGraphic"
+                      type="matrix"
+                      values="0 0 0 0 0
+                              0 0 0 0 0
+                              0 0 0 0 0
+                              0.2126 0.7152 0.0722 0 0"
+                      result="lumaRaw"
+                    />
+                    <feComponentTransfer in="lumaRaw" result="lk">
+                      <feFuncA type="linear" slope="7" intercept="-0.12" />
+                    </feComponentTransfer>
+                    <feComposite in="gk" in2="lk" operator="in" result="keyed" />
+                    <feColorMatrix
+                      in="keyed"
+                      type="matrix"
+                      values="1    0    0    0 0
+                              0.28 0.58 0.28 0 0
+                              0    0    1    0 0
+                              0    0    0    1 0"
+                    />
                   </filter>
+
                 </defs>
               </svg>
               {(() => {
                 const isVideo = (preview.clipType === "mp4" || preview.clipType === "webm") || !!preview.clipPath?.match(/\.(mp4|webm)(\?|$)/i);
-                const greenStage = isVideo && (preview.chromakey === "none" || preview.chromakey === "green");
+                const greenStage = false;
                 const style: React.CSSProperties = {
                   maxHeight: "100%",
                   maxWidth: "100%",
