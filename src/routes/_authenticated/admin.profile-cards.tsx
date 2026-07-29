@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminShell, AdminPageHeader } from "@/components/admin/AdminShell";
+import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -103,7 +103,7 @@ function Page() {
   }
 
   return (
-    <AdminShell>
+    <>
       <AdminPageHeader
         title="Profile Cards"
         subtitle="Manage the premium profile card catalog. Owners equip one card to skin their profile."
@@ -183,7 +183,7 @@ function Page() {
           onUpload={uploadTo}
         />
       )}
-    </AdminShell>
+    </>
   );
 }
 
