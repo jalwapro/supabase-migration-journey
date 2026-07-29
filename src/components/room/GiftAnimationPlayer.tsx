@@ -416,8 +416,11 @@ function AnimatedGiftVideo({
         onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
-          if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
+          // Clamp: some encodes report Infinity / bogus durations which would
+          // otherwise freeze the gift slot forever on slower devices.
+          if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
         }}
+
         onCanPlayThrough={() => {
           startPlayback();
         }}
@@ -1396,91 +1399,162 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => window.removeEventListener("jalwa:gift-sent", onLocalGift);
   }, [enqueue]);
 
-  // realtime subscriptions
+type GiftSendRow = {
+  id: string;
+  sender_id: string;
+  receiver_id: string | null;
+  gift_id: string;
+  quantity: number;
+  coins_spent: number;
+  diamonds_earned: number;
+  created_at?: string | null;
+  sender_username: string | null;
+  sender_avatar: string | null;
+  receiver_username: string | null;
+  receiver_avatar: string | null;
+  gift_name: string | null;
+  gift_emoji: string | null;
+  gift_icon: string | null;
+  gift_animation: string | null;
+  gift_clip_path: string | null;
+  gift_clip_type: string | null;
+  gift_image_url: string | null;
+  gift_sound_url: string | null;
+  gift_chromakey: string | null;
+};
+
+  // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
+  const handleGiftRow = useCallback((r: GiftSendRow) => {
+    const play: Play = {
+      key: `sd-${r.id}`,
+      senderName: r.sender_username ?? "Guest",
+      senderAvatar: r.sender_avatar ?? null,
+      receiverId: r.receiver_id ?? null,
+      receiverIds: r.receiver_id ? [r.receiver_id] : null,
+      receiverName: r.receiver_username ?? "Host",
+      receiverAvatar: r.receiver_avatar ?? null,
+      giftName: r.gift_name ?? "Gift",
+      giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
+      giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
+      giftClipUrl: r.gift_clip_path ?? r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null),
+      giftClipType: r.gift_clip_path ? r.gift_clip_type : (r.gift_image_url || isAssetUrlLike(r.gift_icon) ? "image" : null),
+      coins: r.coins_spent ?? 0,
+      diamonds: r.diamonds_earned ?? 0,
+      quantity: r.quantity ?? 1,
+      animation: r.gift_animation ?? "pop",
+      soundUrl: r.gift_sound_url ?? null,
+      chromakey: r.gift_chromakey ?? "auto",
+    };
+    if (seenRef.current.has(play.key)) return;
+    // Coalesce multi-receiver sends into ONE simultaneous play.
+    const bucketKey = `${r.sender_id}|${r.gift_id}|${r.quantity}|${r.coins_spent}`;
+    const existing = coalesceRef.current.get(bucketKey);
+    if (existing) {
+      if (r.receiver_id && !existing.ids.includes(r.receiver_id)) {
+        existing.ids.push(r.receiver_id);
+        existing.play.receiverIds = [...existing.ids];
+      }
+      return;
+    }
+    const ids = r.receiver_id ? [r.receiver_id] : [];
+    const entry = { play, ids, timer: 0 };
+    entry.timer = window.setTimeout(() => {
+      coalesceRef.current.delete(bucketKey);
+      enqueue(entry.play);
+    }, 220);
+    coalesceRef.current.set(bucketKey, entry);
+  }, [enqueue]);
+
+  // realtime subscriptions (+ resilient reconnect and polling backstop)
   useEffect(() => {
-    const ch = supabase
-      .channel(`gift-anim-${roomId}`)
-      // PERF: gift_events listener removed — gift_sends is fully denormalized
-      // (see migration 0121) and already broadcasts the same event with all
-      // fields. Listening to both caused double-flash + a per-event DB
-      // round-trip. gift_sends alone is the single source of truth.
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
-        (payload) => {
-          // SCALE FIX: sender/receiver/gift are denormalized on gift_sends
-          // by trigger (migration 0121). Zero extra queries per viewer per
-          // gift — 5k viewers × 1 gift used to be 15,000 lookups.
-          const r = payload.new as {
-            id: string;
-            sender_id: string;
-            receiver_id: string;
-            gift_id: string;
-            quantity: number;
-            coins_spent: number;
-            diamonds_earned: number;
-            sender_username: string | null;
-            sender_avatar: string | null;
-            receiver_username: string | null;
-            receiver_avatar: string | null;
-            gift_name: string | null;
-            gift_emoji: string | null;
-            gift_icon: string | null;
-            gift_animation: string | null;
-            gift_clip_path: string | null;
-            gift_clip_type: string | null;
-            gift_image_url: string | null;
-            gift_sound_url: string | null;
-            gift_chromakey: string | null;
-          };
-          const play: Play = {
-            key: `sd-${r.id}`,
-            senderName: r.sender_username ?? "Guest",
-            senderAvatar: r.sender_avatar ?? null,
-            receiverId: r.receiver_id ?? null,
-            receiverIds: r.receiver_id ? [r.receiver_id] : null,
-            receiverName: r.receiver_username ?? "Host",
-            receiverAvatar: r.receiver_avatar ?? null,
-            giftName: r.gift_name ?? "Gift",
-            giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
-            giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
-            giftClipUrl: r.gift_clip_path ?? r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null),
-            giftClipType: r.gift_clip_path ? r.gift_clip_type : (r.gift_image_url || isAssetUrlLike(r.gift_icon) ? "image" : null),
-            coins: r.coins_spent ?? 0,
-            diamonds: r.diamonds_earned ?? 0,
-            quantity: r.quantity ?? 1,
-            animation: r.gift_animation ?? "pop",
-            soundUrl: r.gift_sound_url ?? null,
-            chromakey: r.gift_chromakey ?? "auto",
-          };
-          // Coalesce multi-receiver sends into ONE simultaneous play.
-          // Bucket by sender+gift+quantity+coins (per-row coins are per-receiver
-          // and identical across a "send to all" batch).
-          const bucketKey = `${r.sender_id}|${r.gift_id}|${r.quantity}|${r.coins_spent}`;
-          const existing = coalesceRef.current.get(bucketKey);
-          if (existing) {
-            if (r.receiver_id && !existing.ids.includes(r.receiver_id)) {
-              existing.ids.push(r.receiver_id);
-              existing.play.receiverIds = [...existing.ids];
-            }
-            return;
+    let disposed = false;
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    let retry: number | undefined;
+    let attempts = 0;
+    let poll: number | undefined;
+    let lastSeenAt = new Date(Date.now() - 5000).toISOString();
+
+    // Backstop: if the websocket is unhealthy on this device (flaky mobile
+    // network, backgrounded tab, blocked ws), gifts sent from other devices
+    // would never render. Poll recent rows until realtime recovers.
+    const pollOnce = async () => {
+      const since = lastSeenAt;
+      const { data } = await supabase
+        .from("gift_sends")
+        .select(
+          "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
+            "sender_username,sender_avatar,receiver_username,receiver_avatar," +
+            "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
+            "gift_image_url,gift_sound_url,gift_chromakey",
+        )
+        .eq("room_id", roomId)
+        .gt("created_at", since)
+        .order("created_at", { ascending: true })
+        .limit(10);
+      if (disposed || !data?.length) return;
+      for (const row of data) {
+        const created = (row as { created_at?: string }).created_at;
+        if (created && created > lastSeenAt) lastSeenAt = created;
+        handleGiftRow(row as unknown as GiftSendRow);
+      }
+    };
+
+    const startPolling = () => {
+      if (poll || disposed) return;
+      poll = window.setInterval(() => { void pollOnce(); }, 5000);
+    };
+    const stopPolling = () => {
+      if (poll) { clearInterval(poll); poll = undefined; }
+    };
+
+    const connect = () => {
+      if (disposed) return;
+      ch = supabase
+        .channel(`gift-anim-${roomId}-${Math.random().toString(36).slice(2, 8)}`)
+        // PERF: gift_sends is fully denormalized (migration 0121) — no extra
+        // lookups per viewer per gift.
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
+          (payload) => {
+            const row = payload.new as GiftSendRow & { created_at?: string };
+            if (row.created_at && row.created_at > lastSeenAt) lastSeenAt = row.created_at;
+            handleGiftRow(row);
+          },
+        )
+        .subscribe((status) => {
+          if (disposed) return;
+          if (status === "SUBSCRIBED") {
+            attempts = 0;
+            stopPolling();
+            // Catch up on anything missed while the socket was down.
+            void pollOnce();
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            startPolling();
+            const delay = Math.min(15000, 1000 * 2 ** attempts++);
+            if (ch) { const dead = ch; ch = null; void supabase.removeChannel(dead); }
+            retry = window.setTimeout(connect, delay);
           }
-          const ids = r.receiver_id ? [r.receiver_id] : [];
-          const entry = { play, ids, timer: 0 };
-          entry.timer = window.setTimeout(() => {
-            coalesceRef.current.delete(bucketKey);
-            enqueue(entry.play);
-          }, 220);
-          coalesceRef.current.set(bucketKey, entry);
-        },
-      )
-      .subscribe();
+        });
+    };
+
+    connect();
+    // If the tab was backgrounded (mobile), realtime often silently drops —
+    // reconcile on resume.
+    const onVisible = () => { if (document.visibilityState === "visible") void pollOnce(); };
+    document.addEventListener("visibilitychange", onVisible);
+
     return () => {
-      void supabase.removeChannel(ch);
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisible);
+      if (retry) clearTimeout(retry);
+      stopPolling();
+      if (ch) void supabase.removeChannel(ch);
       coalesceRef.current.forEach((e) => clearTimeout(e.timer));
       coalesceRef.current.clear();
     };
-  }, [roomId, enqueue]);
+  }, [roomId, handleGiftRow]);
+
 
   // Advance queue → current when idle.
   useEffect(() => {
@@ -1598,6 +1672,17 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     const t = setTimeout(clearCurrent, ms + 200);
     return () => clearTimeout(t);
   }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
+
+  // HARD watchdog: on low-end devices a video can stall (decoder busy, low FPS,
+  // background tab) so `readyKey` never fires and the big-gift slot would stay
+  // occupied forever — every later gift then silently queues and never shows.
+  // This guarantees the slot frees up no matter what.
+  useEffect(() => {
+    if (!current) return;
+    const t = setTimeout(clearCurrent, 16000);
+    return () => clearTimeout(t);
+  }, [current?.key, current, clearCurrent]);
+
 
 
   // Prefetch next queued gift's clip so it's warm in cache when it plays.
