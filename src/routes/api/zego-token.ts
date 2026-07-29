@@ -65,6 +65,38 @@ async function verifyBearer(bearer: string): Promise<string | null> {
   return data.user.id;
 }
 
+// Must mirror uidFromUuid() in the room UI — the numeric ZEGO uid is derived
+// from the Supabase user id, so it can be re-derived and checked server-side.
+function uidFromUuid(uuid: string): number {
+  let h = 0;
+  for (let i = 0; i < uuid.length; i++) {
+    h = ((h << 5) - h + uuid.charCodeAt(i)) | 0;
+  }
+  return (Math.abs(h) % 2_000_000_000) + 1;
+}
+
+async function canPublish(userId: string, channel: string): Promise<boolean> {
+  const serviceKey =
+    process.env.SB_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SB_SECRET_KEY;
+  if (!serviceKey) return false;
+  const { createClient } = await import("@supabase/supabase-js");
+  const sb = createClient(resolveSupabaseUrl(), serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await sb.rpc("can_publish_in_channel", {
+    _user_id: userId,
+    _channel: channel,
+  });
+  if (error) {
+    console.error("[zego-token] entitlement check failed", error.message);
+    return false;
+  }
+  return data === true;
+}
+
+
 export const Route = createFileRoute("/api/zego-token")({
   server: {
     handlers: {
@@ -104,8 +136,23 @@ export const Route = createFileRoute("/api/zego-token")({
         const callerId = await verifyBearer(bearer);
         if (!callerId) return json({ error: "unauthorized" }, 401);
 
+        // The uid is derived from the caller's user id — a client may not mint a
+        // token that impersonates another user's stream.
+        if (uidStr !== String(uidFromUuid(callerId))) {
+          return json({ error: "uid mismatch" }, 403);
+        }
+
+        // Publishing is an entitlement (host / seated / PK opponent / moderator),
+        // never something the client can simply ask for. Unentitled callers are
+        // silently downgraded to audience so viewing still works.
+        let effectiveRole: "publisher" | "audience" = roleName;
+        if (effectiveRole === "publisher") {
+          const allowed = await canPublish(callerId, channel);
+          if (!allowed) effectiveRole = "audience";
+        }
 
         const expireSeconds = 3600;
+
         const { generateZegoToken04 } = await import("@/lib/zego-token.server");
         let out: { token: string; expire: number };
         try {
@@ -115,7 +162,7 @@ export const Route = createFileRoute("/api/zego-token")({
             serverSecret,
             expireSeconds,
             channel,
-            { login: true, publish: roleName === "publisher" },
+            { login: true, publish: effectiveRole === "publisher" },
           );
         } catch (e) {
           console.error("[zego-token] generate failed", e);

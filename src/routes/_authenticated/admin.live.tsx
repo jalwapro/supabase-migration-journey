@@ -168,8 +168,9 @@ function LiveAdmin() {
               <Gift className="h-3 w-3" /> Gift host
             </Link>
             <Link
-              to="/chat/$userId"
-              params={{ userId: monitorRoom.host_id }}
+              to="/messages/$peerId"
+              params={{ peerId: monitorRoom.host_id }}
+
               className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold"
             >
               <MessageCircle className="h-3 w-3" /> Message
