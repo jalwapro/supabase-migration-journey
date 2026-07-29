@@ -1,13 +1,8 @@
 -- 0261: Gift media integrity
--- 1) Gifts flagged as video but with no clip -> clear clip_type (icon animation instead of stale video)
--- 2) Force green chroma key on every video gift (all clips are green-screen sourced)
--- 3) Deactivate duplicate gifts whose name does not match the shared clip they point at
---    (fixes "sent Money Gun but a car played" style mismatches)
+-- 1) Force green chroma key on every video gift (all clips are green-screen sourced)
+-- 2) Deactivate duplicate gifts whose name does not match the shared clip they point at
+--    (fixes "sent X but a car played" style mismatches)
 
-UPDATE public.gifts
-SET clip_type = NULL
-WHERE (clip_path IS NULL OR btrim(clip_path) = '')
-  AND clip_type IS NOT NULL;
 
 UPDATE public.gifts
 SET chromakey = 'green'
