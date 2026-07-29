@@ -92,7 +92,7 @@ function Page() {
     onError: (e: any) => toast.error(prettyErr(e.message)),
   });
 
-  const coinBal = (profile as any)?.coin_balance ?? (profile as any)?.coins ?? 0;
+  const coinBal = (profile as any)?.coins ?? 0;
   const diamondBal = (profile as any)?.diamonds ?? 0;
   const vipLevel = (profile as any)?.vip_level ?? 0;
 
