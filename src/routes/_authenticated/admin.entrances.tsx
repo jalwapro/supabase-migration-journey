@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminShell } from "@/components/admin/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -84,7 +83,6 @@ function Page() {
   }
 
   return (
-    <AdminShell>
       <div className="mx-auto max-w-6xl p-4">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-black">Entrance Effects</h1>
@@ -272,7 +270,6 @@ function Page() {
           </div>
         )}
       </div>
-    </AdminShell>
   );
 }
 
