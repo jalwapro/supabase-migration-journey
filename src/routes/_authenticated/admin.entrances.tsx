@@ -45,7 +45,15 @@ function Page() {
     },
   });
 
-  const cats = useMemo(() => ["All", ...ENTRANCE_CATEGORIES], []);
+  // Categories are free text in the DB: merge the built-in list with whatever
+  // categories admins have already created so filters stay in sync.
+  const allCategories = useMemo(() => {
+    const set = new Set<string>(ENTRANCE_CATEGORIES as readonly string[]);
+    for (const e of list.data ?? []) if (e.category) set.add(e.category);
+    return [...set].sort();
+  }, [list.data]);
+  const cats = useMemo(() => ["All", ...allCategories], [allCategories]);
+
   const rows = useMemo(() => {
     const all = list.data ?? [];
     return filter === "All" ? all : all.filter((e) => e.category === filter);
@@ -175,12 +183,18 @@ function Page() {
                 </Field>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Field label="Category">
-                    <select className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
-                      value={editing.category ?? "VIP"} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
-                      {ENTRANCE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                  <Field label="Category (type a new one to create it)">
+                    <input
+                      list="entrance-cat-options"
+                      className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
+                      value={editing.category ?? "VIP"}
+                      onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+                    />
+                    <datalist id="entrance-cat-options">
+                      {allCategories.map((c) => <option key={c} value={c} />)}
+                    </datalist>
                   </Field>
+
                   <Field label="Media type">
                     <select className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
                       value={editing.media_type ?? "mp4"} onChange={(e) => setEditing({ ...editing, media_type: e.target.value as any })}>

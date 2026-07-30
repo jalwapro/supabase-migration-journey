@@ -50,7 +50,14 @@ function Page() {
     },
   });
 
-  const cats = useMemo(() => ["All", ...PROFILE_CARD_CATEGORIES], []);
+  // Free-text categories: built-ins plus any custom ones admins have created.
+  const allCategories = useMemo(() => {
+    const set = new Set<string>(PROFILE_CARD_CATEGORIES as readonly string[]);
+    for (const c of list.data ?? []) if (c.category) set.add(c.category);
+    return [...set].sort();
+  }, [list.data]);
+  const cats = useMemo(() => ["All", ...allCategories], [allCategories]);
+
   const rows = useMemo(() => {
     const all = list.data ?? [];
     return filter === "All" ? all : all.filter((e) => e.category === filter);
@@ -181,6 +188,8 @@ function Page() {
           onCancel={() => setEditing(null)}
           onSave={save}
           onUpload={uploadTo}
+          categoryOptions={allCategories}
+
         />
       )}
     </>
@@ -193,13 +202,16 @@ function EditModal({
   onCancel,
   onSave,
   onUpload,
+  categoryOptions = [],
 }: {
   value: Partial<ProfileCard>;
   onChange: (v: Partial<ProfileCard>) => void;
   onCancel: () => void;
   onSave: () => void;
   onUpload: (field: "bg_media_url" | "thumbnail_url", file: File) => void;
+  categoryOptions?: string[];
 }) {
+
   const set = <K extends keyof ProfileCard>(k: K, v: ProfileCard[K] | any) => onChange({ ...value, [k]: v });
 
   return (
@@ -228,11 +240,20 @@ function EditModal({
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Category">
-                <select value={value.category ?? "Basic"} onChange={(e) => set("category", e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  {PROFILE_CARD_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+              <Field label="Category (type a new one to create it)">
+                <input
+                  list="pcard-cat-options"
+                  value={value.category ?? "Basic"}
+                  onChange={(e) => set("category", e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                />
+                <datalist id="pcard-cat-options">
+                  {(categoryOptions.length ? categoryOptions : [...PROFILE_CARD_CATEGORIES]).map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </Field>
+
               <Field label="Rarity">
                 <select value={value.rarity ?? "common"} onChange={(e) => set("rarity", e.target.value as any)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
                   {["common","rare","epic","legendary","mythic"].map((r) => <option key={r} value={r}>{r}</option>)}
