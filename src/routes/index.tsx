@@ -811,11 +811,13 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const fallback = tone === "gold" ? jalwaFrameGold.url : jalwaFrameViolet.url;
   const src = row?.media_url ?? fallback;
   const mediaType = row?.media_type ?? "png";
+  const isVideo = mediaType === "mp4" || mediaType === "webm";
   const chromakey = row?.chromakey ?? "none";
+  // Video frames are green-screen sourced — always key unless admin says none.
   const filter =
-    chromakey === "green"
+    chromakey === "green" || chromakey === "luma" || (isVideo && chromakey !== "none")
       ? "url(#room-frame-green-key)"
-      : chromakey === "luma"
+      : chromakey === "black"
       ? "url(#room-frame-luma-key)"
       : undefined;
   // The card clips overflow, so the frame must stay inside the card box.

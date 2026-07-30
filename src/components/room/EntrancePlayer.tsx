@@ -40,10 +40,13 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
 
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
-  // The green-key filter removes BOTH a green and a black backdrop, so an
-  // admin "luma" tag uses it too — luma clips are usually shot on green.
+  // Every entrance clip we ship is green-screen sourced, so key by default for
+  // video media. Only an explicit admin "none" renders the raw frame.
+  const isVideo = mediaType === "mp4" || mediaType === "webm";
   const chromakeyFilter =
-    event.chromakey === "green" || event.chromakey === "luma"
+    event.chromakey === "green" ||
+    event.chromakey === "luma" ||
+    (isVideo && event.chromakey !== "none")
       ? "url(#entrance-green-key)"
       : undefined;
 
@@ -62,7 +65,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       <div className="absolute inset-0 mx-auto max-w-[480px]">
         {url.startsWith("builtin:") ? (
           <BuiltinEntranceView mediaUrl={url} />
-        ) : mediaType === "mp4" || mediaType === "webm" ? (
+        ) : isVideo ? (
           <video
             src={url}
             autoPlay
