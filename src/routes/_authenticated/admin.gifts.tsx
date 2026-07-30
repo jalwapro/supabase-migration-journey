@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { FileUploader } from "@/components/FileUploader";
+
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
   component: GiftsAdmin,
@@ -54,6 +56,8 @@ type Draft = {
   sort_order: number;
   clip_path: string;
   clip_type: (typeof CLIP_TYPES)[number];
+  /** PNG/WebP thumbnail shown in the gift box grid. */
+  image_url: string;
   is_milestone: boolean;
   chromakey: Chromakey;
 };
@@ -67,9 +71,11 @@ const EMPTY_DRAFT: Draft = {
   sort_order: 99,
   clip_path: "",
   clip_type: "none",
+  image_url: "",
   is_milestone: false,
   chromakey: "auto",
 };
+
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
@@ -204,7 +210,7 @@ function GiftsAdmin() {
         sort_order: draft.sort_order,
         clip_path: royalRose ? ROYAL_ROSE_MP4_URL : draft.clip_type === "none" ? null : resolveGiftMediaUrl(draft.clip_path) || null,
         clip_type: royalRose ? "mp4" : draft.clip_type === "none" ? "mp4" : draft.clip_type,
-        ...(royalRose ? { image_url: ROYAL_ROSE_THUMB_URL } : {}),
+        image_url: royalRose ? ROYAL_ROSE_THUMB_URL : draft.image_url.trim() || null,
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
@@ -313,7 +319,9 @@ function GiftsAdmin() {
             ? "webm"
             : "mp4"
         : "none") as Draft["clip_type"],
+      image_url: royalRose ? ROYAL_ROSE_THUMB_URL : g.image_url ?? "",
       is_milestone: Boolean(g.is_milestone),
+
       chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -611,7 +619,31 @@ function GiftsAdmin() {
             </label>
           </div>
 
+          {/* Thumbnail (PNG shown in the gift box grid) */}
+          <div className="mt-3 rounded-xl border border-border bg-card/40 p-2">
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Gift box thumbnail (PNG/WebP)
+            </p>
+            <FileUploader
+              bucket="shop-assets"
+              folder="gift-thumbs"
+              accept="image/png,image/webp,image/jpeg,image/gif"
+              label="Upload thumbnail"
+              value={draft.image_url}
+              onChange={(url) => setDraft((d) => ({ ...d, image_url: url ?? "" }))}
+              previewKind="image"
+              maxSizeMB={8}
+            />
+            <input
+              placeholder="…or paste an image URL"
+              value={draft.image_url}
+              onChange={(e) => setDraft((d) => ({ ...d, image_url: e.target.value }))}
+              className="mt-2 w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+            />
+          </div>
+
           {/* Clip section */}
+
           <div className="mt-3 rounded-xl border border-border bg-card/40 p-2">
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Animation clip
