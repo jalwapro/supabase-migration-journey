@@ -97,13 +97,45 @@ async function canPublish(userId: string, channel: string): Promise<boolean> {
 }
 
 
+type DbRtcConfig = { app_id: number | null; server_secret: string | null; server_url: string | null };
+let rtcCache: { at: number; value: DbRtcConfig | null } | null = null;
+
+async function loadDbRtcConfig(): Promise<DbRtcConfig | null> {
+  if (rtcCache && Date.now() - rtcCache.at < 30_000) return rtcCache.value;
+  const serviceKey =
+    process.env.SB_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SB_SECRET_KEY;
+  if (!serviceKey) return null;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(resolveSupabaseUrl(), serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data } = await sb
+      .from("rtc_credentials")
+      .select("app_id,server_secret,server_url")
+      .eq("id", true)
+      .maybeSingle();
+    const value = (data as DbRtcConfig | null) ?? null;
+    rtcCache = { at: Date.now(), value };
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+
 export const Route = createFileRoute("/api/zego-token")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
       POST: async ({ request }) => {
-        const appIdRaw = process.env.ZEGO_APP_ID;
-        const serverSecret = process.env.ZEGO_SERVER_SECRET;
+        // Admin-panel credentials win over env secrets, so keys can be
+        // rotated from the dashboard without a redeploy.
+        const db = await loadDbRtcConfig();
+        const appIdRaw = db?.app_id ? String(db.app_id) : process.env.ZEGO_APP_ID;
+        const serverSecret = db?.server_secret || process.env.ZEGO_SERVER_SECRET;
         if (!appIdRaw || !serverSecret) {
           console.error("[zego-token] ZEGO_APP_ID / ZEGO_SERVER_SECRET missing");
           return json({ error: "ZEGO not configured on server" }, 503);
@@ -112,6 +144,7 @@ export const Route = createFileRoute("/api/zego-token")({
         if (!Number.isFinite(appId) || appId <= 0) {
           return json({ error: "ZEGO_APP_ID must be a positive integer" }, 500);
         }
+
 
         let body: {
           channel?: string;
@@ -172,8 +205,10 @@ export const Route = createFileRoute("/api/zego-token")({
         // Server URL: ZEGO Console value when configured; modern Web SDKs can
         // discover the endpoint with an empty string, so don't guess a URL.
         const serverUrl =
+          db?.server_url?.trim() ||
           process.env.ZEGO_SERVER_URL?.trim() ||
           "";
+
 
         return json({
           appId,
