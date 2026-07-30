@@ -102,8 +102,11 @@ export const Route = createFileRoute("/api/zego-token")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
       POST: async ({ request }) => {
-        const appIdRaw = process.env.ZEGO_APP_ID;
-        const serverSecret = process.env.ZEGO_SERVER_SECRET;
+        // Admin-panel credentials win over env secrets, so keys can be
+        // rotated from the dashboard without a redeploy.
+        const db = await loadDbRtcConfig();
+        const appIdRaw = db?.app_id ? String(db.app_id) : process.env.ZEGO_APP_ID;
+        const serverSecret = db?.server_secret || process.env.ZEGO_SERVER_SECRET;
         if (!appIdRaw || !serverSecret) {
           console.error("[zego-token] ZEGO_APP_ID / ZEGO_SERVER_SECRET missing");
           return json({ error: "ZEGO not configured on server" }, 503);
@@ -112,6 +115,7 @@ export const Route = createFileRoute("/api/zego-token")({
         if (!Number.isFinite(appId) || appId <= 0) {
           return json({ error: "ZEGO_APP_ID must be a positive integer" }, 500);
         }
+
 
         let body: {
           channel?: string;
