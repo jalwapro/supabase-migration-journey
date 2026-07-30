@@ -20,6 +20,32 @@ function rarityOf(price: number) {
   return { label: "Classic", cls: "from-zinc-400 to-zinc-600", ring: "ring-white/20" };
 }
 
+/** Green/luma keying so green-screen sourced entrance media never shows its background. */
+function keyFilter(chromakey?: string | null, isVideo = false) {
+  if (chromakey === "green" || chromakey === "luma" || (isVideo && chromakey && chromakey !== "none")) {
+    return "url(#shop-entrance-green-key)";
+  }
+  if (chromakey === "black") return "url(#shop-entrance-luma-key)";
+  return undefined;
+}
+
+function ChromaFilters() {
+  return (
+    <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+      <defs>
+        <filter id="shop-entrance-green-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0 0.08" />
+          <feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer>
+        </filter>
+        <filter id="shop-entrance-luma-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.2126 0.7152 0.0722 0 0" />
+          <feComponentTransfer><feFuncA type="linear" slope="5.2" intercept="-0.48" /></feComponentTransfer>
+        </filter>
+      </defs>
+    </svg>
+  );
+}
+
 function Media({ eff, className = "" }: { eff: EntranceEffect; className?: string }) {
   const t = eff.thumbnail_url;
   if (t) {
@@ -28,6 +54,7 @@ function Media({ eff, className = "" }: { eff: EntranceEffect; className?: strin
         src={t}
         alt={eff.name}
         loading="lazy"
+        style={{ filter: keyFilter(eff.chromakey, false) }}
         className={`absolute inset-0 h-full w-full object-cover ${className}`}
       />
     );
@@ -289,9 +316,9 @@ function Page() {
               {preview.media_url.startsWith("builtin:") ? (
                 <BuiltinEntranceView mediaUrl={preview.media_url} />
               ) : preview.media_type === "mp4" || preview.media_type === "webm" ? (
-                <video src={preview.media_url} autoPlay muted loop playsInline className="h-full w-full object-cover" />
+                <video src={preview.media_url} autoPlay muted loop playsInline style={{ filter: keyFilter(preview.chromakey, true) }} className="h-full w-full object-cover" />
               ) : (
-                <img src={preview.thumbnail_url ?? preview.media_url} alt={preview.name} className="h-full w-full animate-[kenburns_9s_ease-in-out_infinite_alternate] object-cover" />
+                <img src={preview.thumbnail_url ?? preview.media_url} alt={preview.name} style={{ filter: keyFilter(preview.chromakey, false) }} className="h-full w-full animate-[kenburns_9s_ease-in-out_infinite_alternate] object-cover" />
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-transparent to-black/40" />
               <button className="absolute right-2 top-2 rounded-full bg-black/70 p-2" onClick={() => setPreview(null)}>
@@ -350,6 +377,7 @@ function Page() {
         </div>
       )}
 
+      <ChromaFilters />
       <BottomNav />
     </div>
   );

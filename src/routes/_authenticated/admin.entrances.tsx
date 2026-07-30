@@ -92,6 +92,14 @@ function Page() {
 
   return (
       <div className="mx-auto max-w-6xl p-4">
+        <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+          <defs>
+            <filter id="admin-entrance-green-key" colorInterpolationFilters="sRGB">
+              <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0 0.08" />
+              <feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer>
+            </filter>
+          </defs>
+        </svg>
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-black">Entrance Effects</h1>
           <button
@@ -124,7 +132,12 @@ function Page() {
               <div key={eff.id} className="overflow-hidden rounded-xl border border-border bg-card">
                 <div className="relative aspect-square bg-gradient-to-br from-black to-[#1a0b2e]">
                   {eff.thumbnail_url ? (
-                    <img src={eff.thumbnail_url} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={eff.thumbnail_url}
+                      alt=""
+                      style={{ filter: eff.chromakey === "green" || eff.chromakey === "luma" ? "url(#admin-entrance-green-key)" : undefined }}
+                      className="h-full w-full object-cover"
+                    />
                   ) : eff.media_url.startsWith("builtin:") ? (
                     <BuiltinEntranceView mediaUrl={eff.media_url} />
                   ) : null}
