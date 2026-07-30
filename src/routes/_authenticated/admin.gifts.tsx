@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { FileUploader } from "@/components/FileUploader";
+
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
   component: GiftsAdmin,
