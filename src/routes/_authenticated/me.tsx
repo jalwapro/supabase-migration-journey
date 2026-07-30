@@ -184,23 +184,30 @@ function MePage() {
     <>
       <AppShell title="" subtitle="" showHeader={false}>
           <div data-adaptive="neon" className="me-profile-screen relative min-h-full [overflow-x:clip] bg-background text-foreground">
-          {/* Cyberpunk header background */}
+          {/* Header background — equipped Profile Card wins, else cyberpunk skyline */}
           <div data-keep-dark aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,#3b1360_0%,#1a0733_40%,#080812_85%)]" />
-            <div className="absolute inset-0 opacity-40 bg-[linear-gradient(180deg,transparent_0%,transparent_60%,rgba(255,45,149,0.35)_100%)]" />
-            {/* skyline silhouette */}
-            <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-24 w-full opacity-70">
-              <defs>
-                <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#ff2d95" stopOpacity="0.35" />
-                </linearGradient>
-              </defs>
-              <path fill="url(#sky)" d="M0,120 L0,80 L15,80 L20,60 L28,60 L28,40 L38,40 L38,70 L55,70 L60,50 L72,50 L72,30 L82,30 L82,65 L100,65 L104,45 L118,45 L118,25 L128,25 L128,58 L145,58 L152,38 L165,38 L165,60 L180,60 L184,40 L198,40 L198,20 L210,20 L210,55 L228,55 L233,35 L246,35 L246,58 L262,58 L268,40 L282,40 L282,22 L294,22 L294,58 L312,58 L316,40 L328,40 L328,62 L345,62 L350,45 L362,45 L362,25 L374,25 L374,60 L388,60 L392,45 L400,45 L400,120 Z" />
-            </svg>
-            {/* windows */}
-            <div className="absolute inset-x-0 bottom-4 h-16 opacity-40 [background-image:radial-gradient(circle,rgba(255,183,77,0.5)_1px,transparent_1.5px)] [background-size:14px_14px]" />
+            {equippedCard.data ? (
+              <PremiumProfileCard card={equippedCard.data} rounded="rounded-none" className="h-full w-full" />
+            ) : (
+              <>
+                <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,#3b1360_0%,#1a0733_40%,#080812_85%)]" />
+                <div className="absolute inset-0 opacity-40 bg-[linear-gradient(180deg,transparent_0%,transparent_60%,rgba(255,45,149,0.35)_100%)]" />
+                {/* skyline silhouette */}
+                <svg viewBox="0 0 400 120" preserveAspectRatio="none" className="absolute bottom-0 left-0 h-24 w-full opacity-70">
+                  <defs>
+                    <linearGradient id="sky" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.15" />
+                      <stop offset="100%" stopColor="#ff2d95" stopOpacity="0.35" />
+                    </linearGradient>
+                  </defs>
+                  <path fill="url(#sky)" d="M0,120 L0,80 L15,80 L20,60 L28,60 L28,40 L38,40 L38,70 L55,70 L60,50 L72,50 L72,30 L82,30 L82,65 L100,65 L104,45 L118,45 L118,25 L128,25 L128,58 L145,58 L152,38 L165,38 L165,60 L180,60 L184,40 L198,40 L198,20 L210,20 L210,55 L228,55 L233,35 L246,35 L246,58 L262,58 L268,40 L282,40 L282,22 L294,22 L294,58 L312,58 L316,40 L328,40 L328,62 L345,62 L350,45 L362,45 L362,25 L374,25 L374,60 L388,60 L392,45 L400,45 L400,120 Z" />
+                </svg>
+                {/* windows */}
+                <div className="absolute inset-x-0 bottom-4 h-16 opacity-40 [background-image:radial-gradient(circle,rgba(255,183,77,0.5)_1px,transparent_1.5px)] [background-size:14px_14px]" />
+              </>
+            )}
           </div>
+
 
           {/* Top action row */}
           <div data-keep-dark className="sticky top-0 z-30 flex items-center justify-between border-b border-white/10 bg-black/40 px-4 py-3 backdrop-blur-2xl" style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}>
