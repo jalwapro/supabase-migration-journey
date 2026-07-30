@@ -238,11 +238,20 @@ function EditModal({
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Category">
-                <select value={value.category ?? "Basic"} onChange={(e) => set("category", e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
-                  {PROFILE_CARD_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+              <Field label="Category (type a new one to create it)">
+                <input
+                  list="pcard-cat-options"
+                  value={value.category ?? "Basic"}
+                  onChange={(e) => set("category", e.target.value)}
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                />
+                <datalist id="pcard-cat-options">
+                  {(categoryOptions.length ? categoryOptions : [...PROFILE_CARD_CATEGORIES]).map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </Field>
+
               <Field label="Rarity">
                 <select value={value.rarity ?? "common"} onChange={(e) => set("rarity", e.target.value as any)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
                   {["common","rare","epic","legendary","mythic"].map((r) => <option key={r} value={r}>{r}</option>)}
