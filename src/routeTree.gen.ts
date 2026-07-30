@@ -34,7 +34,6 @@ import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
-import { Route as AuthenticatedShopProfileCardsRouteImport } from './routes/_authenticated/shop-profile-cards'
 import { Route as AuthenticatedShopEntrancesRouteImport } from './routes/_authenticated/shop-entrances'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
@@ -84,7 +83,6 @@ import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin.rankings'
 import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
-import { Route as AuthenticatedAdminProfileCardsRouteImport } from './routes/_authenticated/admin.profile-cards'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
@@ -231,12 +229,6 @@ const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedShopProfileCardsRoute =
-  AuthenticatedShopProfileCardsRouteImport.update({
-    id: '/shop-profile-cards',
-    path: '/shop-profile-cards',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedShopEntrancesRoute =
   AuthenticatedShopEntrancesRouteImport.update({
     id: '/shop-entrances',
@@ -504,12 +496,6 @@ const AuthenticatedAdminPushRoute = AuthenticatedAdminPushRouteImport.update({
   path: '/push',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
-const AuthenticatedAdminProfileCardsRoute =
-  AuthenticatedAdminProfileCardsRouteImport.update({
-    id: '/profile-cards',
-    path: '/profile-cards',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
 const AuthenticatedAdminProfileAdminRoute =
   AuthenticatedAdminProfileAdminRouteImport.update({
     id: '/profile-admin',
@@ -663,7 +649,6 @@ export interface FileRoutesByFullPath {
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
-  '/shop-profile-cards': typeof AuthenticatedShopProfileCardsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
@@ -695,7 +680,6 @@ export interface FileRoutesByFullPath {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
-  '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
   '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
@@ -759,7 +743,6 @@ export interface FileRoutesByTo {
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
-  '/shop-profile-cards': typeof AuthenticatedShopProfileCardsRoute
   '/support': typeof AuthenticatedSupportRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
@@ -791,7 +774,6 @@ export interface FileRoutesByTo {
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
-  '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
   '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
@@ -859,7 +841,6 @@ export interface FileRoutesById {
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shop-entrances': typeof AuthenticatedShopEntrancesRoute
-  '/_authenticated/shop-profile-cards': typeof AuthenticatedShopProfileCardsRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
@@ -891,7 +872,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
-  '/_authenticated/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
   '/_authenticated/admin/push': typeof AuthenticatedAdminPushRoute
   '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
@@ -959,7 +939,6 @@ export interface FileRouteTypes {
     | '/recharge-history'
     | '/settings'
     | '/shop-entrances'
-    | '/shop-profile-cards'
     | '/support'
     | '/theme-shop'
     | '/vip'
@@ -991,7 +970,6 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/pk'
     | '/admin/profile-admin'
-    | '/admin/profile-cards'
     | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
@@ -1055,7 +1033,6 @@ export interface FileRouteTypes {
     | '/recharge-history'
     | '/settings'
     | '/shop-entrances'
-    | '/shop-profile-cards'
     | '/support'
     | '/theme-shop'
     | '/vip'
@@ -1087,7 +1064,6 @@ export interface FileRouteTypes {
     | '/admin/payment-accounts'
     | '/admin/pk'
     | '/admin/profile-admin'
-    | '/admin/profile-cards'
     | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
@@ -1154,7 +1130,6 @@ export interface FileRouteTypes {
     | '/_authenticated/recharge-history'
     | '/_authenticated/settings'
     | '/_authenticated/shop-entrances'
-    | '/_authenticated/shop-profile-cards'
     | '/_authenticated/support'
     | '/_authenticated/theme-shop'
     | '/_authenticated/vip'
@@ -1186,7 +1161,6 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/payment-accounts'
     | '/_authenticated/admin/pk'
     | '/_authenticated/admin/profile-admin'
-    | '/_authenticated/admin/profile-cards'
     | '/_authenticated/admin/push'
     | '/_authenticated/admin/rankings'
     | '/_authenticated/admin/recharge'
@@ -1421,13 +1395,6 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AuthenticatedSupportRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/shop-profile-cards': {
-      id: '/_authenticated/shop-profile-cards'
-      path: '/shop-profile-cards'
-      fullPath: '/shop-profile-cards'
-      preLoaderRoute: typeof AuthenticatedShopProfileCardsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/shop-entrances': {
@@ -1773,13 +1740,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPushRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/profile-cards': {
-      id: '/_authenticated/admin/profile-cards'
-      path: '/profile-cards'
-      fullPath: '/admin/profile-cards'
-      preLoaderRoute: typeof AuthenticatedAdminProfileCardsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/profile-admin': {
       id: '/_authenticated/admin/profile-admin'
       path: '/profile-admin'
@@ -1952,7 +1912,6 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
   AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
   AuthenticatedAdminProfileAdminRoute: typeof AuthenticatedAdminProfileAdminRoute
-  AuthenticatedAdminProfileCardsRoute: typeof AuthenticatedAdminProfileCardsRoute
   AuthenticatedAdminPushRoute: typeof AuthenticatedAdminPushRoute
   AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
@@ -1999,7 +1958,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
     AuthenticatedAdminPaymentAccountsRoute,
   AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
-  AuthenticatedAdminProfileCardsRoute: AuthenticatedAdminProfileCardsRoute,
   AuthenticatedAdminPushRoute: AuthenticatedAdminPushRoute,
   AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
@@ -2062,7 +2020,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedShopEntrancesRoute: typeof AuthenticatedShopEntrancesRoute
-  AuthenticatedShopProfileCardsRoute: typeof AuthenticatedShopProfileCardsRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
@@ -2093,7 +2050,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedShopEntrancesRoute: AuthenticatedShopEntrancesRoute,
-  AuthenticatedShopProfileCardsRoute: AuthenticatedShopProfileCardsRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
@@ -2137,13 +2093,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
