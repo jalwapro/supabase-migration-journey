@@ -175,12 +175,18 @@ function Page() {
                 </Field>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <Field label="Category">
-                    <select className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
-                      value={editing.category ?? "VIP"} onChange={(e) => setEditing({ ...editing, category: e.target.value })}>
-                      {ENTRANCE_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                    </select>
+                  <Field label="Category (type a new one to create it)">
+                    <input
+                      list="entrance-cat-options"
+                      className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
+                      value={editing.category ?? "VIP"}
+                      onChange={(e) => setEditing({ ...editing, category: e.target.value })}
+                    />
+                    <datalist id="entrance-cat-options">
+                      {allCategories.map((c) => <option key={c} value={c} />)}
+                    </datalist>
                   </Field>
+
                   <Field label="Media type">
                     <select className="w-full rounded border border-border bg-background px-2 py-1.5 text-sm"
                       value={editing.media_type ?? "mp4"} onChange={(e) => setEditing({ ...editing, media_type: e.target.value as any })}>
