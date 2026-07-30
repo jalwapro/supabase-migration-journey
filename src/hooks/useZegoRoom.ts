@@ -660,6 +660,9 @@ export function useZegoRoom({
     const joinSeq = ++joinSeqRef.current;
     const isCurrentJoin = () => !cancelled && joinSeqRef.current === joinSeq;
     let boundEngine: ZegoEngine | null = null;
+    let sessionAppId: number | null = null;
+    let sessionStart = 0;
+
     const localUidStr = String(uid);
     const channelName = channel;
 
