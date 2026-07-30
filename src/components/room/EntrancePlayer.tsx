@@ -38,12 +38,13 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
 
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
+  // The green-key filter removes BOTH a green and a black backdrop, so an
+  // admin "luma" tag uses it too — luma clips are usually shot on green.
   const chromakeyFilter =
-    event.chromakey === "green"
+    event.chromakey === "green" || event.chromakey === "luma"
       ? "url(#entrance-green-key)"
-      : event.chromakey === "luma"
-      ? "url(#entrance-luma-key)"
       : undefined;
+
 
   return (
     <div

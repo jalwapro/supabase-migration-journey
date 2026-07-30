@@ -818,8 +818,10 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
       : chromakey === "luma"
       ? "url(#room-frame-luma-key)"
       : undefined;
+  // The card clips overflow, so the frame must stay inside the card box.
   const commonClass =
-    "pointer-events-none absolute -inset-[6%] h-[112%] w-[112%] max-w-none object-fill select-none z-20 drop-shadow-[0_0_18px_rgba(0,0,0,0.6)]";
+    "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-20";
+
 
   if (mediaType === "mp4" || mediaType === "webm") {
     return (
