@@ -54,6 +54,8 @@ function Integrations() {
     <>
       <AdminPageHeader title="Integrations" subtitle="Third-party keys, branding, economy" />
       <ZegoCard />
+      <ZegoPoolCard />
+
 
       {list.isLoading ? (
         <div className="p-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
@@ -227,6 +229,188 @@ function ZegoCard() {
           </button>
         </div>
       )}
+    </div>
+  );
+}
+
+type PoolRow = {
+  id: string;
+  slot: number;
+  label: string;
+  app_id: number;
+  secret_hint: string;
+  server_url: string;
+  minutes_limit: number;
+  minutes_used: number;
+  exhausted: boolean;
+  enabled: boolean;
+  last_used_at: string | null;
+};
+
+const EMPTY_DRAFT = { slot: "", label: "", appId: "", secret: "", serverUrl: "", limit: "10000" };
+
+function ZegoPoolCard() {
+  const qc = useQueryClient();
+  const pool = useQuery({
+    queryKey: ["rtc_pool"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_rtc_pool");
+      if (error) throw error;
+      return (data ?? []) as PoolRow[];
+    },
+    refetchInterval: 30_000,
+  });
+
+  const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
+
+  const rows = pool.data ?? [];
+  const activeSlot = rows.find((r) => r.enabled && !r.exhausted)?.slot ?? null;
+  const nextFreeSlot = (() => {
+    for (let i = 1; i <= 50; i++) if (!rows.some((r) => r.slot === i)) return i;
+    return 1;
+  })();
+
+  const save = useMutation({
+    mutationFn: async (d: typeof EMPTY_DRAFT) => {
+      const slot = Number(d.slot || nextFreeSlot);
+      const appId = Number(d.appId);
+      if (!Number.isFinite(appId) || appId <= 0) throw new Error("AppID must be a positive number");
+      const { error } = await supabase.rpc("admin_upsert_rtc_slot", {
+        _slot: slot,
+        _app_id: appId,
+        _server_secret: d.secret.trim() || null,
+        _server_url: d.serverUrl.trim(),
+        _label: d.label.trim(),
+        _minutes_limit: Number(d.limit) || 10000,
+        _enabled: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("ZEGO ID saved");
+      setDraft({ ...EMPTY_DRAFT });
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const act = useMutation({
+    mutationFn: async (a: { type: "delete" | "reset" | "toggle"; row: PoolRow }) => {
+      if (a.type === "delete") {
+        const { error } = await supabase.rpc("admin_delete_rtc_slot", { _slot: a.row.slot });
+        if (error) throw error;
+      } else if (a.type === "reset") {
+        const { error } = await supabase.rpc("admin_reset_rtc_slot", { _slot: a.row.slot });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.rpc("admin_upsert_rtc_slot", {
+          _slot: a.row.slot,
+          _app_id: a.row.app_id,
+          _server_secret: null,
+          _server_url: a.row.server_url,
+          _label: a.row.label,
+          _minutes_limit: a.row.minutes_limit,
+          _enabled: !a.row.enabled,
+        });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["rtc_pool"] }),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const inputCls =
+    "w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary";
+
+  return (
+    <div className="glass mb-4 rounded-2xl p-4">
+      <div className="flex items-center justify-between gap-2">
+        <div>
+          <h3 className="font-bold">ZEGOCLOUD ID Pool — auto rotation</h3>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Add up to 50 ZEGO IDs (e.g. 10). Jab ek ID ke minutes khatam ho jayen, app
+            khud-ba-khud agli ID par shift ho jata hai. Sab IDs khatam hone par cycle
+            reset ho kar dobara slot 1 se shuru hota hai.
+          </p>
+        </div>
+        <button
+          onClick={() => supabase.rpc("admin_reset_rtc_slot", { _slot: null }).then(() => { toast.success("All usage reset"); qc.invalidateQueries({ queryKey: ["rtc_pool"] }); })}
+          className="shrink-0 rounded-full border border-border px-3 py-1.5 text-[11px] font-semibold"
+        >
+          Reset all usage
+        </button>
+      </div>
+
+      {/* Add / update a slot */}
+      <div className="mt-3 grid gap-2 md:grid-cols-6">
+        <input className={inputCls} placeholder={`Slot #${nextFreeSlot}`} inputMode="numeric"
+          value={draft.slot} onChange={(e) => setDraft({ ...draft, slot: e.target.value.replace(/\D/g, "") })} />
+        <input className={inputCls} placeholder="Label (optional)"
+          value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
+        <input className={inputCls} placeholder="AppID" inputMode="numeric"
+          value={draft.appId} onChange={(e) => setDraft({ ...draft, appId: e.target.value.replace(/\D/g, "") })} />
+        <input className={inputCls} type="password" autoComplete="new-password" placeholder="ServerSecret"
+          value={draft.secret} onChange={(e) => setDraft({ ...draft, secret: e.target.value })} />
+        <input className={inputCls} placeholder="Minutes limit" inputMode="numeric"
+          value={draft.limit} onChange={(e) => setDraft({ ...draft, limit: e.target.value.replace(/\D/g, "") })} />
+        <button
+          onClick={() => save.mutate(draft)}
+          disabled={save.isPending}
+          className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+        >
+          {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Add / Update
+        </button>
+        <input className={`${inputCls} md:col-span-6`} placeholder="Server URL (optional, wss://...)"
+          value={draft.serverUrl} onChange={(e) => setDraft({ ...draft, serverUrl: e.target.value })} />
+      </div>
+
+      {/* Existing slots */}
+      <div className="mt-4 space-y-2">
+        {pool.isLoading ? (
+          <div className="p-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+        ) : rows.length === 0 ? (
+          <p className="py-4 text-center text-xs text-muted-foreground">No ZEGO IDs added yet.</p>
+        ) : (
+          rows.map((r) => {
+            const pct = Math.min(100, Math.round((Number(r.minutes_used) / Math.max(Number(r.minutes_limit), 1)) * 100));
+            return (
+              <div key={r.id} className="rounded-xl border border-border p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold">#{r.slot}</span>
+                  <span className="text-sm font-semibold">{r.label || `AppID ${r.app_id}`}</span>
+                  <span className="text-[11px] text-muted-foreground">{r.app_id} · {r.secret_hint}</span>
+                  {activeSlot === r.slot && (
+                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-500">ACTIVE</span>
+                  )}
+                  {r.exhausted && (
+                    <span className="rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold text-destructive">EXHAUSTED</span>
+                  )}
+                  {!r.enabled && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">DISABLED</span>
+                  )}
+                  <div className="ml-auto flex gap-1.5">
+                    <button onClick={() => act.mutate({ type: "toggle", row: r })} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold">
+                      {r.enabled ? "Disable" : "Enable"}
+                    </button>
+                    <button onClick={() => act.mutate({ type: "reset", row: r })} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold">
+                      Reset
+                    </button>
+                    <button onClick={() => act.mutate({ type: "delete", row: r })} className="rounded-full border border-destructive/40 px-2.5 py-1 text-[10px] font-semibold text-destructive">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+                  <div className={`h-full ${r.exhausted ? "bg-destructive" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  {Math.round(Number(r.minutes_used))} / {Math.round(Number(r.minutes_limit))} minutes used ({pct}%)
+                </p>
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

@@ -114,11 +114,31 @@ type ZegoMediaPlayerLike = {
 };
 
 
+// Reports consumed minutes / quota failures so the server-side ZEGO credential
+// pool can rotate to the next AppID automatically.
+function reportRtcUsage(appId: number, minutes: number, exhausted = false) {
+  if (!appId) return;
+  const payload = JSON.stringify({ appId, minutes, exhausted });
+  try {
+    if (!exhausted && typeof navigator !== "undefined" && navigator.sendBeacon) {
+      navigator.sendBeacon("/api/rtc-usage", new Blob([payload], { type: "application/json" }));
+      return;
+    }
+  } catch { /* fall through to fetch */ }
+  void fetch("/api/rtc-usage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(() => { /* ignore */ });
+}
+
 async function fetchToken(
   channel: string,
   uid: number,
   role: "publisher" | "audience",
 ) {
+
   const { data: sessionRes } = await supabase.auth.getSession();
   const accessToken = sessionRes.session?.access_token;
   if (!accessToken) throw new Error("Sign in first");
@@ -640,6 +660,9 @@ export function useZegoRoom({
     const joinSeq = ++joinSeqRef.current;
     const isCurrentJoin = () => !cancelled && joinSeqRef.current === joinSeq;
     let boundEngine: ZegoEngine | null = null;
+    let sessionAppId: number | null = null;
+    let sessionStart = 0;
+
     const localUidStr = String(uid);
     const channelName = channel;
 
@@ -955,11 +978,20 @@ export function useZegoRoom({
           { userUpdate: true },
         );
         try { engine.startSoundLevelMonitor?.({ millisecond: 300 }); } catch { /* ignore */ }
-        if (isCurrentJoin()) setStatus("connected");
+        if (isCurrentJoin()) {
+          setStatus("connected");
+          sessionAppId = tokenData.appId;
+          sessionStart = Date.now();
+        }
       } catch (e) {
         if (!isCurrentJoin()) return;
         console.error("[zego] loginRoom failed", e);
         const msg = e instanceof Error ? e.message : String(e);
+        // Quota / billing rejections retire this AppID so the pool rotates
+        // to the next manually-added ZEGO ID on the next attempt.
+        if (/quota|balance|arrear|expire|limit|欠费|1002033|1002050/i.test(msg)) {
+          reportRtcUsage(tokenData.appId, 0, true);
+        }
         setError(msg);
         setStatus("error");
       }
@@ -967,9 +999,15 @@ export function useZegoRoom({
 
     return () => {
       cancelled = true;
+      if (sessionAppId && sessionStart) {
+        reportRtcUsage(sessionAppId, (Date.now() - sessionStart) / 60000);
+        sessionAppId = null;
+        sessionStart = 0;
+      }
       const e = boundEngine;
       const room = channelName;
       const userIdStr = localUidStr;
+
       if (e) {
         for (const [, sid] of uidStreamRef.current)
           try { e.mutePlayStreamAudio(sid, true); } catch { /* ignore */ }
