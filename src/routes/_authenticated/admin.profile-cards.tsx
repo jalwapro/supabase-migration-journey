@@ -188,6 +188,8 @@ function Page() {
           onCancel={() => setEditing(null)}
           onSave={save}
           onUpload={uploadTo}
+          categoryOptions={allCategories}
+
         />
       )}
     </>
