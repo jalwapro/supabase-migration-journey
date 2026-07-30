@@ -821,9 +821,11 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
       : chromakey === "black"
       ? "url(#room-frame-luma-key)"
       : undefined;
-  // The card clips overflow, so the frame must stay inside the card box.
+  // The frame is rendered outside the card's clipped box and slightly oversized
+  // so the crown / corner ornaments sit around the cover instead of being cut.
   const commonClass =
-    "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-20";
+    "pointer-events-none absolute -inset-[7%] h-[114%] w-[114%] max-w-none object-contain select-none z-30";
+
 
 
   if (mediaType === "mp4" || mediaType === "webm") {
