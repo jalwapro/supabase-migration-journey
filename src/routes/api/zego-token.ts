@@ -97,6 +97,35 @@ async function canPublish(userId: string, channel: string): Promise<boolean> {
 }
 
 
+type DbRtcConfig = { app_id: number | null; server_secret: string | null; server_url: string | null };
+let rtcCache: { at: number; value: DbRtcConfig | null } | null = null;
+
+async function loadDbRtcConfig(): Promise<DbRtcConfig | null> {
+  if (rtcCache && Date.now() - rtcCache.at < 30_000) return rtcCache.value;
+  const serviceKey =
+    process.env.SB_SERVICE_ROLE_KEY ??
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
+    process.env.SB_SECRET_KEY;
+  if (!serviceKey) return null;
+  try {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(resolveSupabaseUrl(), serviceKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data } = await sb
+      .from("rtc_credentials")
+      .select("app_id,server_secret,server_url")
+      .eq("id", true)
+      .maybeSingle();
+    const value = (data as DbRtcConfig | null) ?? null;
+    rtcCache = { at: Date.now(), value };
+    return value;
+  } catch {
+    return null;
+  }
+}
+
+
 export const Route = createFileRoute("/api/zego-token")({
   server: {
     handlers: {
