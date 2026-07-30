@@ -136,6 +136,23 @@ type RtcConfig = {
   updated_at: string;
 };
 
+type RtcStatus = {
+  source: "pool" | "database" | "environment" | "none";
+  activeAppId: number | null;
+  env: { appId: number | null; secretSet: boolean; secretHint: string; serverUrl: string };
+};
+
+async function callRtcStatus(method: "GET" | "POST") {
+  const { data: sess } = await supabase.auth.getSession();
+  const res = await fetch("/api/rtc-status", {
+    method,
+    headers: { Authorization: `Bearer ${sess.session?.access_token ?? ""}` },
+  });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body?.error ?? "Request failed");
+  return body;
+}
+
 function ZegoCard() {
   const qc = useQueryClient();
   const cfg = useQuery({
@@ -145,6 +162,25 @@ function ZegoCard() {
       if (error) throw error;
       return ((data as RtcConfig[] | null)?.[0] ?? null) as RtcConfig | null;
     },
+  });
+
+  const status = useQuery({
+    queryKey: ["rtc_status"],
+    queryFn: async () => (await callRtcStatus("GET")) as RtcStatus,
+  });
+
+  const importEnv = useMutation({
+    mutationFn: async () => callRtcStatus("POST"),
+    onSuccess: (r: { slot?: number; alreadyPresent?: boolean }) => {
+      toast.success(
+        r?.alreadyPresent
+          ? `Already in pool (slot ${r.slot})`
+          : `Imported into pool slot ${r?.slot}`,
+      );
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const [appId, setAppId] = useState("");
@@ -157,6 +193,7 @@ function ZegoCard() {
     setAppId(cfg.data?.app_id ? String(cfg.data.app_id) : "");
     setServerUrl(cfg.data?.server_url ?? "");
   }
+
 
   const save = useMutation({
     mutationFn: async () => {
@@ -184,6 +221,43 @@ function ZegoCard() {
         Enter your ZEGOCLOUD AppID and ServerSecret manually. Saved values override the
         server environment secrets and take effect within ~30 seconds — no redeploy needed.
       </p>
+
+      {/* Live status — which credential the server is really using right now */}
+      {status.data && (
+        <div className="mt-3 rounded-xl border border-border bg-input/40 p-3 text-[11px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-bold uppercase tracking-wider text-muted-foreground">Active source</span>
+            <span className="rounded-full bg-primary/15 px-2 py-0.5 font-bold text-primary">
+              {status.data.source === "pool"
+                ? "ID Pool"
+                : status.data.source === "database"
+                ? "Admin panel"
+                : status.data.source === "environment"
+                ? "Server environment"
+                : "Not configured"}
+            </span>
+            {status.data.activeAppId ? <span>AppID: <b>{status.data.activeAppId}</b></span> : null}
+          </div>
+          {status.data.env.appId ? (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <span className="text-muted-foreground">
+                Environment credential found — AppID <b className="text-foreground">{status.data.env.appId}</b>
+                {status.data.env.secretSet ? ` · secret ${status.data.env.secretHint}` : " · secret missing"}
+              </span>
+              <button
+                onClick={() => importEnv.mutate()}
+                disabled={importEnv.isPending}
+                className="rounded-full border border-border px-3 py-1 font-semibold disabled:opacity-60"
+              >
+                {importEnv.isPending ? "Importing…" : "Import into ID Pool"}
+              </button>
+            </div>
+          ) : (
+            <div className="mt-2 text-muted-foreground">No ZEGO credentials in server environment.</div>
+          )}
+        </div>
+      )}
+
       {cfg.isLoading ? (
         <div className="p-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : (

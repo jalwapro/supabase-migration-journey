@@ -13,12 +13,29 @@ export function useRoomEntrances(roomId: string | null | undefined, localUserId:
   const queueRef = useRef<RoomEntranceEvent[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
 
-  // Fire the local user's entrance
+  // Fire the local user's entrance. The RPC returns the inserted row so we can
+  // play it locally right away — the realtime INSERT usually lands before the
+  // channel finishes subscribing, so the joining user never saw their own effect.
   useEffect(() => {
     if (!roomId || !localUserId) return;
-    void supabase.rpc("fire_room_entrance", { _room_id: roomId });
+    let cancelled = false;
+    void (async () => {
+      const { data } = await supabase.rpc("fire_room_entrance", { _room_id: roomId });
+      if (cancelled) return;
+      const row = (data as { event?: RoomEntranceEvent } | null)?.event;
+      if (!row?.id || seenRef.current.has(row.id)) return;
+      const age = Date.now() - new Date(row.created_at).getTime();
+      if (age > 20000) return;
+      seenRef.current.add(row.id);
+      queueRef.current.push(row);
+      pump();
+    })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, localUserId]);
+
 
   // Subscribe to realtime
   useEffect(() => {
