@@ -114,11 +114,31 @@ type ZegoMediaPlayerLike = {
 };
 
 
+// Reports consumed minutes / quota failures so the server-side ZEGO credential
+// pool can rotate to the next AppID automatically.
+function reportRtcUsage(appId: number, minutes: number, exhausted = false) {
+  if (!appId) return;
+  const payload = JSON.stringify({ appId, minutes, exhausted });
+  try {
+    if (!exhausted && typeof navigator !== "undefined" && navigator.sendBeacon) {
+      navigator.sendBeacon("/api/rtc-usage", new Blob([payload], { type: "application/json" }));
+      return;
+    }
+  } catch { /* fall through to fetch */ }
+  void fetch("/api/rtc-usage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(() => { /* ignore */ });
+}
+
 async function fetchToken(
   channel: string,
   uid: number,
   role: "publisher" | "audience",
 ) {
+
   const { data: sessionRes } = await supabase.auth.getSession();
   const accessToken = sessionRes.session?.access_token;
   if (!accessToken) throw new Error("Sign in first");
