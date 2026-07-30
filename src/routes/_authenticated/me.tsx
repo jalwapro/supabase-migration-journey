@@ -119,6 +119,26 @@ function MePage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Own equipped Profile Card — the owner must see the card they bought/equipped,
+  // exactly like visitors do on /u/:id.
+  const equippedCard = useQuery({
+    queryKey: ["equipped-profile-card", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_profile_cards")
+        .select("card_id, expires_at, profile_cards:card_id(*)")
+        .eq("user_id", user!.id)
+        .eq("is_equipped", true)
+        .maybeSingle();
+      if (error) throw error;
+      const row = data as { expires_at: string | null; profile_cards: unknown } | null;
+      if (!row?.profile_cards) return null;
+      if (row.expires_at && new Date(row.expires_at) < new Date()) return null;
+      return row.profile_cards as Parameters<typeof PremiumProfileCard>[0]["card"];
+    },
+  });
+
   const vipLevel = vip?.row.vip_level ?? 0;
   const tier = vipTierForLevel(vipLevel);
   const p = vipProgressFor(Number(vip?.row.total_gifted_coins ?? 0), vipLevel);
