@@ -317,7 +317,9 @@ function GiftsAdmin() {
             ? "webm"
             : "mp4"
         : "none") as Draft["clip_type"],
+      image_url: royalRose ? ROYAL_ROSE_THUMB_URL : g.image_url ?? "",
       is_milestone: Boolean(g.is_milestone),
+
       chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
