@@ -54,6 +54,8 @@ function Integrations() {
     <>
       <AdminPageHeader title="Integrations" subtitle="Third-party keys, branding, economy" />
       <ZegoCard />
+      <ZegoPoolCard />
+
 
       {list.isLoading ? (
         <div className="p-8 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
