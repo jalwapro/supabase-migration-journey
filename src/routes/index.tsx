@@ -800,7 +800,8 @@ function useTopRankFrames() {
       for (const r of (data ?? []) as TopFrameRow[]) map[r.slot] = r;
       return map;
     },
-    staleTime: 60_000,
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
   });
 }
 

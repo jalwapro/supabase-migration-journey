@@ -174,6 +174,7 @@ function RoomFramesAdmin() {
       toast.success("Frame added to library");
       setDraft(emptyDraft);
       qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] });
+      qc.invalidateQueries({ queryKey: ["room_top_frames_active"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -199,6 +200,7 @@ function RoomFramesAdmin() {
       toast.success("Saved");
       setEditingId(null);
       qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] });
+      qc.invalidateQueries({ queryKey: ["room_top_frames_active"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -223,6 +225,7 @@ function RoomFramesAdmin() {
     onSuccess: (_d, v) => {
       toast.success(v.slot === 0 ? "Returned to library" : `Set as #${v.slot} frame`);
       qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] });
+      qc.invalidateQueries({ queryKey: ["room_top_frames_active"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -235,7 +238,10 @@ function RoomFramesAdmin() {
         .eq("id", f.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] });
+      qc.invalidateQueries({ queryKey: ["room_top_frames_active"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -244,7 +250,10 @@ function RoomFramesAdmin() {
       const { error } = await supabase.from("room_top_frames").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["admin_room_top_frames"] });
+      qc.invalidateQueries({ queryKey: ["room_top_frames_active"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
 
