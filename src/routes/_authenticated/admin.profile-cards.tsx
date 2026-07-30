@@ -251,6 +251,18 @@ function EditModal({
               </div>
             </Field>
 
+            <Field label="Shop thumbnail (image)">
+              <div className="flex gap-2">
+                <input value={value.thumbnail_url ?? ""} onChange={(e) => set("thumbnail_url", e.target.value)} className="flex-1 rounded-lg border border-border bg-background px-3 py-2 text-sm" />
+                <label className="flex cursor-pointer items-center gap-1 rounded-lg bg-muted px-3 py-2 text-xs">
+                  <Upload className="h-3 w-3" />
+                  <input type="file" accept="image/*" hidden onChange={(e) => e.target.files && onUpload("thumbnail_url", e.target.files[0])} />
+                  Upload
+                </label>
+              </div>
+            </Field>
+
+
             <div className="grid grid-cols-3 gap-3">
               <Field label="Media type">
                 <select value={value.bg_media_type ?? "builtin"} onChange={(e) => set("bg_media_type", e.target.value as any)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm">
