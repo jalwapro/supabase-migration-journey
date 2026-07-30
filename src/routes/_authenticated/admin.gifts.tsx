@@ -54,6 +54,8 @@ type Draft = {
   sort_order: number;
   clip_path: string;
   clip_type: (typeof CLIP_TYPES)[number];
+  /** PNG/WebP thumbnail shown in the gift box grid. */
+  image_url: string;
   is_milestone: boolean;
   chromakey: Chromakey;
 };
@@ -67,9 +69,11 @@ const EMPTY_DRAFT: Draft = {
   sort_order: 99,
   clip_path: "",
   clip_type: "none",
+  image_url: "",
   is_milestone: false,
   chromakey: "auto",
 };
+
 
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
