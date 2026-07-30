@@ -100,18 +100,32 @@ async function canPublish(userId: string, channel: string): Promise<boolean> {
 type DbRtcConfig = { app_id: number | null; server_secret: string | null; server_url: string | null };
 let rtcCache: { at: number; value: DbRtcConfig | null } | null = null;
 
-async function loadDbRtcConfig(): Promise<DbRtcConfig | null> {
-  if (rtcCache && Date.now() - rtcCache.at < 30_000) return rtcCache.value;
-  const serviceKey =
+function serviceClientKey() {
+  return (
     process.env.SB_SERVICE_ROLE_KEY ??
     process.env.SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.SB_SECRET_KEY;
+    process.env.SB_SECRET_KEY
+  );
+}
+
+// Pool first (multi-AppID rotation), single-credential row as fallback.
+async function loadDbRtcConfig(): Promise<DbRtcConfig | null> {
+  if (rtcCache && Date.now() - rtcCache.at < 15_000) return rtcCache.value;
+  const serviceKey = serviceClientKey();
   if (!serviceKey) return null;
   try {
     const { createClient } = await import("@supabase/supabase-js");
     const sb = createClient(resolveSupabaseUrl(), serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+
+    const { data: picked } = await sb.rpc("rtc_pick_credential");
+    const row = Array.isArray(picked) ? (picked[0] as DbRtcConfig | undefined) : undefined;
+    if (row?.app_id && row.server_secret) {
+      rtcCache = { at: Date.now(), value: row };
+      return row;
+    }
+
     const { data } = await sb
       .from("rtc_credentials")
       .select("app_id,server_secret,server_url")
@@ -124,6 +138,7 @@ async function loadDbRtcConfig(): Promise<DbRtcConfig | null> {
     return null;
   }
 }
+
 
 
 export const Route = createFileRoute("/api/zego-token")({
