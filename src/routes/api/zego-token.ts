@@ -205,8 +205,10 @@ export const Route = createFileRoute("/api/zego-token")({
         // Server URL: ZEGO Console value when configured; modern Web SDKs can
         // discover the endpoint with an empty string, so don't guess a URL.
         const serverUrl =
+          db?.server_url?.trim() ||
           process.env.ZEGO_SERVER_URL?.trim() ||
           "";
+
 
         return json({
           appId,
