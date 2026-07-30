@@ -29,6 +29,7 @@ import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
 import { Route as ApiRtcUsageRouteImport } from './routes/api/rtc-usage'
+import { Route as ApiRtcStatusRouteImport } from './routes/api/rtc-status'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
@@ -203,6 +204,11 @@ const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
 const ApiRtcUsageRoute = ApiRtcUsageRouteImport.update({
   id: '/api/rtc-usage',
   path: '/api/rtc-usage',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRtcStatusRoute = ApiRtcStatusRouteImport.update({
+  id: '/api/rtc-status',
+  path: '/api/rtc-status',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -661,6 +667,7 @@ export interface FileRoutesByFullPath {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
@@ -756,6 +763,7 @@ export interface FileRoutesByTo {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
@@ -855,6 +863,7 @@ export interface FileRoutesById {
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
@@ -954,6 +963,7 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/rtc-status'
     | '/api/rtc-usage'
     | '/api/send-email'
     | '/api/zego-token'
@@ -1049,6 +1059,7 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/rtc-status'
     | '/api/rtc-usage'
     | '/api/send-email'
     | '/api/zego-token'
@@ -1147,6 +1158,7 @@ export interface FileRouteTypes {
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
+    | '/api/rtc-status'
     | '/api/rtc-usage'
     | '/api/send-email'
     | '/api/zego-token'
@@ -1222,6 +1234,7 @@ export interface RootRouteChildren {
   SplashRoute: typeof SplashRoute
   SvgaFramesPreviewRoute: typeof SvgaFramesPreviewRoute
   SvgaPreviewRoute: typeof SvgaPreviewRoute
+  ApiRtcStatusRoute: typeof ApiRtcStatusRoute
   ApiRtcUsageRoute: typeof ApiRtcUsageRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
@@ -1373,6 +1386,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rtc-usage'
       fullPath: '/api/rtc-usage'
       preLoaderRoute: typeof ApiRtcUsageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rtc-status': {
+      id: '/api/rtc-status'
+      path: '/api/rtc-status'
+      fullPath: '/api/rtc-status'
+      preLoaderRoute: typeof ApiRtcStatusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -2101,6 +2121,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplashRoute: SplashRoute,
   SvgaFramesPreviewRoute: SvgaFramesPreviewRoute,
   SvgaPreviewRoute: SvgaPreviewRoute,
+  ApiRtcStatusRoute: ApiRtcStatusRoute,
   ApiRtcUsageRoute: ApiRtcUsageRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
