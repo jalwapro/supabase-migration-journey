@@ -319,12 +319,14 @@ function AnimatedGiftVideo({
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
   }
 
-  // Admin metadata wins when it was set explicitly (forceKey); otherwise runtime
-  // detection wins, with metadata as the fallback before the clip is analysed.
-  const det = forceKey ? null : detectedKey;
-  const greenKeyEff = det === "green" || (!det && greenKey);
-  const lumaKeyEff = !greenKeyEff && (det === "luma" || (!det && lumaKey));
+  // Admin metadata wins when it was set explicitly (forceKey) — EXCEPT when the
+  // runtime frame analysis proves the clip has no key-able backdrop. Keying a
+  // full-scene clip erases it completely, which reads as "the gift never played".
+  const det = forceKey ? (detectedKey === "none" ? "none" : null) : detectedKey;
+  const greenKeyEff = det !== "none" && (det === "green" || (!det && greenKey));
+  const lumaKeyEff = det !== "none" && !greenKeyEff && (det === "luma" || (!det && lumaKey));
   const screenBlendEff = !greenKeyEff && !lumaKeyEff && det !== "none" && screenBlend;
+
 
   const filterParts: string[] = [];
   // #jalwa-green-key removes BOTH a green backdrop and a black backdrop, so the
