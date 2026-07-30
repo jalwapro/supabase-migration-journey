@@ -57,7 +57,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
         {url.startsWith("builtin:") ? (
           <BuiltinEntranceView mediaUrl={url} />
         ) : isVideo ? (
-          <EntranceVideoLayer url={url} chromakey={event.chromakey ?? "green"} poster={event.thumbnail_url ?? undefined} />
+          <EntranceVideoLayer url={url} chromakey={event.chromakey ?? "green"} />
         ) : (
           <img
             src={url}
@@ -121,5 +121,76 @@ function EntranceChromakeyFilters() {
         </filter>
       </defs>
     </svg>
+  );
+}
+
+/**
+ * Video entrance layer. Admin chromakey metadata is often wrong for a clip, and
+ * keying a full-scene video erases it entirely — which reads as "the entrance
+ * never played". So we sample the first frame's border pixels and only key when
+ * the clip really has a green/black backdrop.
+ */
+function EntranceVideoLayer({ url, chromakey }: { url: string; chromakey: string }) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [detected, setDetected] = useState<"green" | "luma" | "none" | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  const detect = () => {
+    const video = ref.current;
+    if (!video || !video.videoWidth || detected !== null) return;
+    try {
+      const w = 48;
+      const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const pts: Array<[number, number]> = [];
+      for (let x = 0; x < w; x++) pts.push([x, 0], [x, h - 1]);
+      for (let y = 0; y < h; y++) pts.push([0, y], [w - 1, y]);
+      let green = 0;
+      let dark = 0;
+      for (const [x, y] of pts) {
+        const i = (y * w + x) * 4;
+        const r = data[i], g = data[i + 1], b = data[i + 2], a = data[i + 3];
+        if (a < 24) continue;
+        if (g > 70 && g > r * 1.35 && g > b * 1.35) green++;
+        else if (r + g + b < 96) dark++;
+      }
+      setDetected(green / pts.length > 0.35 ? "green" : dark / pts.length > 0.55 ? "luma" : "none");
+    } catch {
+      setDetected(null);
+    }
+  };
+
+  useEffect(() => {
+    setDetected(null);
+    setFailed(false);
+  }, [url]);
+
+  if (failed) return null;
+
+  const meta = chromakey === "green" || chromakey === "luma" || chromakey === "black";
+  const shouldKey = detected ? detected !== "none" : meta;
+
+  return (
+    <video
+      ref={ref}
+      src={url}
+      autoPlay
+      muted
+      playsInline
+      preload="auto"
+      onLoadedData={() => {
+        detect();
+        void ref.current?.play().catch(() => undefined);
+      }}
+      onError={() => setFailed(true)}
+      className="absolute inset-0 h-full w-full object-cover"
+      style={{ filter: shouldKey ? "url(#entrance-green-key)" : undefined }}
+    />
   );
 }
