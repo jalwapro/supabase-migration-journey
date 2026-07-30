@@ -1812,6 +1812,7 @@ type GiftSendRow = {
             screenBlend={isBlackBg}
             lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
             greenKey={chromakeyMode === "green"}
+            forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
           />
 
         ) : hasSvga ? (
