@@ -40,16 +40,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
 
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
-  // Every entrance clip we ship is green-screen sourced, so key by default for
-  // video media. Only an explicit admin "none" renders the raw frame.
   const isVideo = mediaType === "mp4" || mediaType === "webm";
-  const chromakeyFilter =
-    event.chromakey === "green" ||
-    event.chromakey === "luma" ||
-    (isVideo && event.chromakey !== "none")
-      ? "url(#entrance-green-key)"
-      : undefined;
-
 
   return (
     <div
@@ -66,19 +57,23 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
         {url.startsWith("builtin:") ? (
           <BuiltinEntranceView mediaUrl={url} />
         ) : isVideo ? (
-          <video
-            src={url}
-            autoPlay
-            muted
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ filter: chromakeyFilter }}
-          />
+          <EntranceVideoLayer url={url} chromakey={event.chromakey ?? "green"} poster={event.thumbnail_url ?? undefined} />
         ) : (
-          <img src={url} alt="" className="absolute inset-0 h-full w-full object-cover" style={{ filter: chromakeyFilter }} />
+          <img
+            src={url}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{
+              filter:
+                event.chromakey === "green" || event.chromakey === "luma" || event.chromakey === "black"
+                  ? "url(#entrance-green-key)"
+                  : undefined,
+            }}
+          />
         )}
         <EntranceChromakeyFilters />
       </div>
+
 
       {/* User identity card */}
       <div className="relative z-10 mx-auto flex max-w-[480px] flex-col items-center px-6 text-center">
