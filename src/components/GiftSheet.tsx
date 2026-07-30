@@ -390,16 +390,8 @@ export function GiftSheet({
         {/* Header: recipient chip + tier tabs */}
         <div className="flex items-center justify-between gap-2 px-3 py-1.5">
           <div className="flex min-w-0 items-center gap-1.5 rounded-full border border-white/10 bg-[#1a0b2e] py-0.5 pl-0.5 pr-2">
-            {receivers.length > 1 && (
-              <button
-                onClick={() => setSendToAll((v) => !v)}
-                className={`grid h-6 shrink-0 place-items-center rounded-full px-2 text-[9px] font-black uppercase tracking-wider transition ${
-                  sendToAll ? "bg-gradient-to-r from-[#ff2d87] to-[#7c3aed] text-white" : "bg-white/5 text-white/70"
-                }`}
-              >
-                All
-              </button>
-            )}
+            {/* "All" receivers button hidden by product decision */}
+
             {!sendToAll && receivers.slice(0, 4).map((r) => {
               const active = receiverId === r.id;
               return (
