@@ -878,11 +878,15 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
     ? "shadow-[0_10px_30px_-6px_rgba(168,85,247,0.55)]"
     : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
-    <Link
-      to="/room/$roomId"
-      params={{ roomId: room.id }}
-      className={`group relative aspect-square overflow-hidden rounded-3xl border border-white/10 bg-card ${glow} transition active:scale-[0.98]`}
-    >
+    <div className="relative aspect-square">
+      {/* The rank frame sits OUTSIDE the clipped card so its crown and corner
+          ornaments are never cut off by the card's rounded overflow. */}
+      {frameTone && <RoomFrameSquare tone={frameTone} />}
+      <Link
+        to="/room/$roomId"
+        params={{ roomId: room.id }}
+        className={`group absolute inset-0 overflow-hidden rounded-3xl border border-white/10 bg-card ${glow} transition active:scale-[0.98]`}
+      >
       {room.cover_url ? (
         <img
           src={room.cover_url}
@@ -900,7 +904,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-black/30" />
 
-      {frameTone && <RoomFrameSquare tone={frameTone} />}
+
 
       {/* Live badge */}
       <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-[color:var(--destructive)]/95 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-white shadow">
