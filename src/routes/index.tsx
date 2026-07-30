@@ -954,7 +954,9 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
           {room.title}
         </h3>
       </div>
-    </Link>
+      </Link>
+    </div>
+
   );
 }
 
