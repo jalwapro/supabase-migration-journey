@@ -716,16 +716,17 @@ function SmallGiftFlyer({
     const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
     const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
-    // Continuation tap in an active combo: skip the hero slot panel so we
-    // don't spawn overlapping panels on every tap. Only flyers + counter.
-    const isComboContinuation = (comboTotal || 0) > quantity;
-    const HERO_INTRO_MS = isComboContinuation ? 0 : 240;
-    const HERO_HOLD_MS = isComboContinuation ? 0 : (isCombo ? 260 : 520);
+    // Hero slot panel is disabled: a basic gift must fly straight to the
+    // receiver's DP with no intro box in front of it.
+    const skipHeroPanel = true;
+    const HERO_INTRO_MS = 0;
+    const HERO_HOLD_MS = 0;
 
-    // Slot panel (fixed position, centered) — skipped on combo continuation.
+    // Slot panel (fixed position, centered) — disabled.
     const panel = document.createElement("div");
     let rafId = 0;
-    if (!isComboContinuation) {
+    if (!skipHeroPanel) {
+
     panel.style.cssText =
       `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
       `pointer-events:none;z-index:2147483646;opacity:0;` +
