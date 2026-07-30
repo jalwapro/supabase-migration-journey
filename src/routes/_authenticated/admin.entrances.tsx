@@ -305,20 +305,10 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function UploadBtn({ onFile, accept }: { onFile: (f: File) => void; accept: string }) {
   return (
-    <>
-      <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
-        <defs>
-          <filter id="admin-entrance-green-key" colorInterpolationFilters="sRGB">
-            <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0 0.08" />
-            <feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer>
-          </filter>
-        </defs>
-      </svg>
     <label className="flex cursor-pointer items-center gap-1 rounded border border-border bg-muted px-2 py-1.5 text-xs font-semibold">
       <Upload className="h-3.5 w-3.5" />
       <input type="file" className="hidden" accept={accept}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.currentTarget.value = ""; }} />
     </label>
-    </>
   );
 }
