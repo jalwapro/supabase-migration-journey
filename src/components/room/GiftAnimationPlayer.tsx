@@ -165,6 +165,7 @@ function AnimatedGiftVideo({
   screenBlend = false,
   lumaKey = false,
   greenKey = false,
+  forceKey = false,
 }: {
   src: string;
   type: string | null;
@@ -178,6 +179,8 @@ function AnimatedGiftVideo({
   screenBlend?: boolean;
   lumaKey?: boolean;
   greenKey?: boolean;
+  /** Admin set the chromakey explicitly — never let runtime detection override it. */
+  forceKey?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
