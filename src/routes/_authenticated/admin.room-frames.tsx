@@ -77,6 +77,70 @@ function FramePreview({ frame, size = 120 }: { frame: Pick<Frame, "media_url" | 
   );
 }
 
+function DraftFields({ d, set }: { d: Draft; set: (d: Draft) => void }) {
+  return (
+      <div className="grid grid-cols-2 gap-2">
+        <input
+          placeholder="Frame name"
+          value={d.name}
+          onChange={(e) => set({ ...d, name: e.target.value })}
+          className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
+        />
+        <div className="col-span-2">
+          <FileUploader
+            bucket="shop-assets"
+            folder="room-frames"
+            accept="image/png,image/gif,image/webp,video/mp4,video/webm,application/octet-stream,.svga"
+            label="Upload PNG / SVGA / MP4 / WebM (green background OK)"
+            value={d.media_url}
+            onChange={(url) => set({ ...d, media_url: url ?? "", media_type: url ? detectMediaType(url) : d.media_type })}
+            previewKind="auto"
+            maxSizeMB={40}
+          />
+        </div>
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Type
+          <select
+            value={d.media_type}
+            onChange={(e) => set({ ...d, media_type: e.target.value as MediaType })}
+            className="mt-1 block w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
+          >
+            <option value="png">PNG (transparent)</option>
+            <option value="gif">GIF</option>
+            <option value="svga">SVGA</option>
+            <option value="mp4">MP4 (video)</option>
+            <option value="webm">WebM (video)</option>
+          </select>
+        </label>
+        <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          Background
+          <select
+            value={d.chromakey}
+            onChange={(e) => set({ ...d, chromakey: e.target.value as Chromakey })}
+            className="mt-1 block w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
+          >
+            <option value="none">None (already transparent)</option>
+            <option value="green">Green screen — remove</option>
+            <option value="black">Black — screen blend</option>
+            <option value="luma">Dark — luma key</option>
+          </select>
+        </label>
+        <input
+          placeholder="Sort order"
+          type="number"
+          value={d.sort_order}
+          onChange={(e) => set({ ...d, sort_order: Number(e.target.value) })}
+          className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
+        />
+        {d.media_url && (
+          <div className="col-span-2 flex justify-center rounded-xl border border-white/10 bg-black/40 p-3">
+            <FramePreview frame={{ media_url: d.media_url, media_type: d.media_type, chromakey: d.chromakey }} size={140} />
+          </div>
+        )}
+      </div>
+  );
+}
+
 function RoomFramesAdmin() {
   const qc = useQueryClient();
   const list = useQuery({
@@ -199,67 +263,6 @@ function RoomFramesAdmin() {
   const slot2 = list.data?.find((f) => f.slot === 2 && f.is_active) ?? null;
   const library = (list.data ?? []).filter((f) => f.slot === 0 || !f.is_active);
 
-  const DraftFields = ({ d, set }: { d: Draft; set: (d: Draft) => void }) => (
-    <div className="grid grid-cols-2 gap-2">
-      <input
-        placeholder="Frame name"
-        value={d.name}
-        onChange={(e) => set({ ...d, name: e.target.value })}
-        className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
-      />
-      <div className="col-span-2">
-        <FileUploader
-          bucket="shop-assets"
-          folder="room-frames"
-          accept="image/png,image/gif,image/webp,video/mp4,video/webm,application/octet-stream,.svga"
-          label="Upload PNG / SVGA / MP4 / WebM (green background OK)"
-          value={d.media_url}
-          onChange={(url) => set({ ...d, media_url: url ?? "", media_type: url ? detectMediaType(url) : d.media_type })}
-          previewKind="auto"
-          maxSizeMB={40}
-        />
-      </div>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        Type
-        <select
-          value={d.media_type}
-          onChange={(e) => set({ ...d, media_type: e.target.value as MediaType })}
-          className="mt-1 block w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
-        >
-          <option value="png">PNG (transparent)</option>
-          <option value="gif">GIF</option>
-          <option value="svga">SVGA</option>
-          <option value="mp4">MP4 (video)</option>
-          <option value="webm">WebM (video)</option>
-        </select>
-      </label>
-      <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-        Background
-        <select
-          value={d.chromakey}
-          onChange={(e) => set({ ...d, chromakey: e.target.value as Chromakey })}
-          className="mt-1 block w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
-        >
-          <option value="none">None (already transparent)</option>
-          <option value="green">Green screen — remove</option>
-          <option value="black">Black — screen blend</option>
-          <option value="luma">Dark — luma key</option>
-        </select>
-      </label>
-      <input
-        placeholder="Sort order"
-        type="number"
-        value={d.sort_order}
-        onChange={(e) => set({ ...d, sort_order: Number(e.target.value) })}
-        className="col-span-2 rounded-lg border border-border bg-input px-2 py-1.5 text-xs"
-      />
-      {d.media_url && (
-        <div className="col-span-2 flex justify-center rounded-xl border border-white/10 bg-black/40 p-3">
-          <FramePreview frame={{ media_url: d.media_url, media_type: d.media_type, chromakey: d.chromakey }} size={140} />
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <>
