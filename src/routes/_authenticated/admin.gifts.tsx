@@ -617,7 +617,31 @@ function GiftsAdmin() {
             </label>
           </div>
 
+          {/* Thumbnail (PNG shown in the gift box grid) */}
+          <div className="mt-3 rounded-xl border border-border bg-card/40 p-2">
+            <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Gift box thumbnail (PNG/WebP)
+            </p>
+            <FileUploader
+              bucket="shop-assets"
+              folder="gift-thumbs"
+              accept="image/png,image/webp,image/jpeg,image/gif"
+              label="Upload thumbnail"
+              value={draft.image_url}
+              onChange={(url) => setDraft((d) => ({ ...d, image_url: url ?? "" }))}
+              previewKind="image"
+              maxSizeMB={8}
+            />
+            <input
+              placeholder="…or paste an image URL"
+              value={draft.image_url}
+              onChange={(e) => setDraft((d) => ({ ...d, image_url: e.target.value }))}
+              className="mt-2 w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+            />
+          </div>
+
           {/* Clip section */}
+
           <div className="mt-3 rounded-xl border border-border bg-card/40 p-2">
             <p className="mb-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
               Animation clip
