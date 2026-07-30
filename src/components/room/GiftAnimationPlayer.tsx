@@ -1810,7 +1810,7 @@ type GiftSendRow = {
             withSound={false}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            suppressEmojiFallback={true}
+            suppressEmojiFallback={Boolean(fallbackImage)}
             screenBlend={isBlackBg}
             lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
             greenKey={chromakeyMode === "green"}
