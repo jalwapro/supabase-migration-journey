@@ -125,3 +125,108 @@ function Card({
     </div>
   );
 }
+
+type RtcConfig = {
+  app_id: number | null;
+  secret_set: boolean;
+  secret_hint: string;
+  server_url: string;
+  updated_at: string;
+};
+
+function ZegoCard() {
+  const qc = useQueryClient();
+  const cfg = useQuery({
+    queryKey: ["rtc_config"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_get_rtc_config");
+      if (error) throw error;
+      return ((data as RtcConfig[] | null)?.[0] ?? null) as RtcConfig | null;
+    },
+  });
+
+  const [appId, setAppId] = useState("");
+  const [secret, setSecret] = useState("");
+  const [serverUrl, setServerUrl] = useState("");
+  const [loaded, setLoaded] = useState(false);
+
+  if (!loaded && cfg.data !== undefined) {
+    setLoaded(true);
+    setAppId(cfg.data?.app_id ? String(cfg.data.app_id) : "");
+    setServerUrl(cfg.data?.server_url ?? "");
+  }
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const id = Number(appId);
+      if (!Number.isFinite(id) || id <= 0) throw new Error("AppID must be a positive number");
+      const { error } = await supabase.rpc("admin_set_rtc_config", {
+        _app_id: id,
+        _server_secret: secret.trim() || null,
+        _server_url: serverUrl.trim(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("ZEGOCLOUD credentials saved");
+      setSecret("");
+      qc.invalidateQueries({ queryKey: ["rtc_config"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="glass mb-4 rounded-2xl p-4">
+      <h3 className="font-bold">ZEGOCLOUD — Voice &amp; Video RTC</h3>
+      <p className="mt-0.5 text-[11px] text-muted-foreground">
+        Enter your ZEGOCLOUD AppID and ServerSecret manually. Saved values override the
+        server environment secrets and take effect within ~30 seconds — no redeploy needed.
+      </p>
+      {cfg.isLoading ? (
+        <div className="p-6 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
+      ) : (
+        <div className="mt-3 grid gap-2.5 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">AppID</label>
+            <input
+              inputMode="numeric"
+              value={appId}
+              onChange={(e) => setAppId(e.target.value.replace(/[^\d]/g, ""))}
+              placeholder="1234567890"
+              className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              ServerSecret {cfg.data?.secret_set ? `(saved: ${cfg.data.secret_hint})` : "(not set)"}
+            </label>
+            <input
+              type="password"
+              autoComplete="new-password"
+              value={secret}
+              onChange={(e) => setSecret(e.target.value)}
+              placeholder={cfg.data?.secret_set ? "Leave blank to keep current" : "32-character secret"}
+              className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Server URL (optional)</label>
+            <input
+              value={serverUrl}
+              onChange={(e) => setServerUrl(e.target.value)}
+              placeholder="wss://webliveroom...zego.im/ws"
+              className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <button
+            onClick={() => save.mutate()}
+            disabled={save.isPending}
+            className="md:col-span-2 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save RTC credentials
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
