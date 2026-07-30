@@ -188,7 +188,9 @@ function Page() {
                       <option value="webm">WebM</option>
                       <option value="lottie">Lottie</option>
                       <option value="svga">SVGA</option>
+                      <option value="image">Image (PNG/JPG/GIF)</option>
                       <option value="svg">SVG (builtin)</option>
+
                     </select>
                   </Field>
                 </div>
