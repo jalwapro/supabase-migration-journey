@@ -377,6 +377,7 @@ function Page() {
         </div>
       )}
 
+      <ChromaFilters />
       <BottomNav />
     </div>
   );
