@@ -119,7 +119,9 @@ function EmojisAdmin() {
       };
       if (!row.slug) throw new Error("Slug required");
       if (!row.name) throw new Error("Name required");
-      if (!row.clip_path) throw new Error("Asset URL required (upload image/webm)");
+      // Unicode-only emojis are valid: an uploaded asset is optional.
+      if (!row.clip_path && !row.emoji) throw new Error("Add an emoji character or upload an asset");
+
       if (d.id) {
         const { error } = await supabase.from("chat_emojis").update(row).eq("id", d.id);
         if (error) throw error;

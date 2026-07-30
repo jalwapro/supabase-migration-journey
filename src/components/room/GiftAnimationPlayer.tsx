@@ -319,12 +319,14 @@ function AnimatedGiftVideo({
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
   }
 
-  // Admin metadata wins when it was set explicitly (forceKey); otherwise runtime
-  // detection wins, with metadata as the fallback before the clip is analysed.
-  const det = forceKey ? null : detectedKey;
-  const greenKeyEff = det === "green" || (!det && greenKey);
-  const lumaKeyEff = !greenKeyEff && (det === "luma" || (!det && lumaKey));
+  // Admin metadata wins when it was set explicitly (forceKey) — EXCEPT when the
+  // runtime frame analysis proves the clip has no key-able backdrop. Keying a
+  // full-scene clip erases it completely, which reads as "the gift never played".
+  const det = forceKey ? (detectedKey === "none" ? "none" : null) : detectedKey;
+  const greenKeyEff = det !== "none" && (det === "green" || (!det && greenKey));
+  const lumaKeyEff = det !== "none" && !greenKeyEff && (det === "luma" || (!det && lumaKey));
   const screenBlendEff = !greenKeyEff && !lumaKeyEff && det !== "none" && screenBlend;
+
 
   const filterParts: string[] = [];
   // #jalwa-green-key removes BOTH a green backdrop and a black backdrop, so the
@@ -714,16 +716,17 @@ function SmallGiftFlyer({
     const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
     const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
-    // Continuation tap in an active combo: skip the hero slot panel so we
-    // don't spawn overlapping panels on every tap. Only flyers + counter.
-    const isComboContinuation = (comboTotal || 0) > quantity;
-    const HERO_INTRO_MS = isComboContinuation ? 0 : 240;
-    const HERO_HOLD_MS = isComboContinuation ? 0 : (isCombo ? 260 : 520);
+    // Hero slot panel is disabled: a basic gift must fly straight to the
+    // receiver's DP with no intro box in front of it.
+    const skipHeroPanel = true;
+    const HERO_INTRO_MS = 0;
+    const HERO_HOLD_MS = 0;
 
-    // Slot panel (fixed position, centered) — skipped on combo continuation.
+    // Slot panel (fixed position, centered) — disabled.
     const panel = document.createElement("div");
     let rafId = 0;
-    if (!isComboContinuation) {
+    if (!skipHeroPanel) {
+
     panel.style.cssText =
       `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
       `pointer-events:none;z-index:2147483646;opacity:0;` +
@@ -906,7 +909,7 @@ function SmallGiftFlyer({
 
     // Fade slot panel after the last flyer has launched (only if we made one)
     const panelFadeAt = lastLaunchDelay + 240;
-    const panelFadeTimer = isComboContinuation ? 0 : window.setTimeout(() => {
+    const panelFadeTimer = skipHeroPanel ? 0 : window.setTimeout(() => {
       const fade = panel.animate(
         [
           { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
@@ -1041,7 +1044,7 @@ function spawnFlyer(
   ).onfinish = () => tail.remove();
 
   // -------- Comet head: the gift itself, no card/frame ------------------
-  const size = 96;
+  const size = 132;
   const half = size / 2;
   const el = document.createElement("div");
   el.style.cssText =
@@ -1808,7 +1811,7 @@ type GiftSendRow = {
             withSound={false}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
-            suppressEmojiFallback={true}
+            suppressEmojiFallback={Boolean(fallbackImage)}
             screenBlend={isBlackBg}
             lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
             greenKey={chromakeyMode === "green"}
