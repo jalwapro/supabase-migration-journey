@@ -48,6 +48,22 @@ function ChromaFilters() {
 
 function Media({ eff, className = "" }: { eff: EntranceEffect; className?: string }) {
   const t = eff.thumbnail_url;
+  const isVideo = eff.media_type === "mp4" || eff.media_type === "webm";
+  if (isVideo && !eff.media_url.startsWith("builtin:")) {
+    return (
+      <video
+        src={eff.media_url}
+        poster={t ?? undefined}
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="metadata"
+        style={{ filter: keyFilter(eff.chromakey, true) }}
+        className={`absolute inset-0 h-full w-full object-cover ${className}`}
+      />
+    );
+  }
   if (t) {
     return (
       <img
@@ -62,6 +78,7 @@ function Media({ eff, className = "" }: { eff: EntranceEffect; className?: strin
   if (eff.media_url.startsWith("builtin:")) return <BuiltinEntranceView mediaUrl={eff.media_url} />;
   return null;
 }
+
 
 function Page() {
   const { user, profile } = useAuth();
