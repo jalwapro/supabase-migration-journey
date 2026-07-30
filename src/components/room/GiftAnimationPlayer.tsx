@@ -1044,7 +1044,7 @@ function spawnFlyer(
   ).onfinish = () => tail.remove();
 
   // -------- Comet head: the gift itself, no card/frame ------------------
-  const size = 96;
+  const size = 132;
   const half = size / 2;
   const el = document.createElement("div");
   el.style.cssText =
