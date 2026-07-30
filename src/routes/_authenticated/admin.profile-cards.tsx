@@ -200,13 +200,16 @@ function EditModal({
   onCancel,
   onSave,
   onUpload,
+  categoryOptions = [],
 }: {
   value: Partial<ProfileCard>;
   onChange: (v: Partial<ProfileCard>) => void;
   onCancel: () => void;
   onSave: () => void;
   onUpload: (field: "bg_media_url" | "thumbnail_url", file: File) => void;
+  categoryOptions?: string[];
 }) {
+
   const set = <K extends keyof ProfileCard>(k: K, v: ProfileCard[K] | any) => onChange({ ...value, [k]: v });
 
   return (
