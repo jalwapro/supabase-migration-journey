@@ -208,7 +208,7 @@ function GiftsAdmin() {
         sort_order: draft.sort_order,
         clip_path: royalRose ? ROYAL_ROSE_MP4_URL : draft.clip_type === "none" ? null : resolveGiftMediaUrl(draft.clip_path) || null,
         clip_type: royalRose ? "mp4" : draft.clip_type === "none" ? "mp4" : draft.clip_type,
-        ...(royalRose ? { image_url: ROYAL_ROSE_THUMB_URL } : {}),
+        image_url: royalRose ? ROYAL_ROSE_THUMB_URL : draft.image_url.trim() || null,
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
