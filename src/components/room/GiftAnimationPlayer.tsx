@@ -319,17 +319,19 @@ function AnimatedGiftVideo({
     return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
   }
 
-  // Detection wins over admin metadata; metadata is the fallback when the clip
-  // is cross-origin (tainted canvas) or not analysed yet.
-  const greenKeyEff = detectedKey === "green" || (!detectedKey && greenKey);
-  const lumaKeyEff = !greenKeyEff && (detectedKey === "luma" || (!detectedKey && lumaKey));
-  const screenBlendEff = !greenKeyEff && !lumaKeyEff && detectedKey !== "none" && screenBlend;
+  // Admin metadata wins when it was set explicitly (forceKey); otherwise runtime
+  // detection wins, with metadata as the fallback before the clip is analysed.
+  const det = forceKey ? null : detectedKey;
+  const greenKeyEff = det === "green" || (!det && greenKey);
+  const lumaKeyEff = !greenKeyEff && (det === "luma" || (!det && lumaKey));
+  const screenBlendEff = !greenKeyEff && !lumaKeyEff && det !== "none" && screenBlend;
 
   const filterParts: string[] = [];
-  // Green-screen clips get a real chroma key (green pixels -> alpha 0) so the
-  // gift renders transparent over the room. Dark-background clips use the luma key.
-  if (greenKeyEff) filterParts.push("url(#jalwa-green-key)");
-  else if (lumaKeyEff || screenBlendEff) filterParts.push("url(#jalwa-luma-key)");
+  // #jalwa-green-key removes BOTH a green backdrop and a black backdrop, so the
+  // admin "luma" setting also uses it — a luma-tagged clip shot on green must
+  // still key out cleanly. Screen-blend keeps the softer luminance-only filter.
+  if (greenKeyEff || lumaKeyEff) filterParts.push("url(#jalwa-green-key)");
+  else if (screenBlendEff) filterParts.push("url(#jalwa-luma-key)");
   filterParts.push(
     screenBlendEff || lumaKeyEff || greenKeyEff
       ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
@@ -340,8 +342,7 @@ function AnimatedGiftVideo({
     <div
       className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent"
     >
-      {(lumaKey || screenBlend || greenKey) && (
-
+      {(
         <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
           <defs>
             <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
