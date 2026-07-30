@@ -45,7 +45,15 @@ function Page() {
     },
   });
 
-  const cats = useMemo(() => ["All", ...ENTRANCE_CATEGORIES], []);
+  // Categories are free text in the DB: merge the built-in list with whatever
+  // categories admins have already created so filters stay in sync.
+  const allCategories = useMemo(() => {
+    const set = new Set<string>(ENTRANCE_CATEGORIES as readonly string[]);
+    for (const e of list.data ?? []) if (e.category) set.add(e.category);
+    return [...set].sort();
+  }, [list.data]);
+  const cats = useMemo(() => ["All", ...allCategories], [allCategories]);
+
   const rows = useMemo(() => {
     const all = list.data ?? [];
     return filter === "All" ? all : all.filter((e) => e.category === filter);
