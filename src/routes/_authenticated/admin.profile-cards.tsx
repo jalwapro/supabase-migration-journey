@@ -50,7 +50,14 @@ function Page() {
     },
   });
 
-  const cats = useMemo(() => ["All", ...PROFILE_CARD_CATEGORIES], []);
+  // Free-text categories: built-ins plus any custom ones admins have created.
+  const allCategories = useMemo(() => {
+    const set = new Set<string>(PROFILE_CARD_CATEGORIES as readonly string[]);
+    for (const c of list.data ?? []) if (c.category) set.add(c.category);
+    return [...set].sort();
+  }, [list.data]);
+  const cats = useMemo(() => ["All", ...allCategories], [allCategories]);
+
   const rows = useMemo(() => {
     const all = list.data ?? [];
     return filter === "All" ? all : all.filter((e) => e.category === filter);
