@@ -11,7 +11,9 @@ import { shouldSkipHeavyEffects } from "@/lib/entrance/registry";
 export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; onDone: () => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [visible, setVisible] = useState(true);
-  const duration = Math.min(Math.max(event.duration_ms ?? 2500, 1200), 4000);
+  // Video entrances run ~5s; allow them the full clip length.
+  const duration = Math.min(Math.max(event.duration_ms ?? 2500, 1200), 6000);
+
 
   useEffect(() => {
     // Respect prefers-reduced-motion and slow networks by shortening
