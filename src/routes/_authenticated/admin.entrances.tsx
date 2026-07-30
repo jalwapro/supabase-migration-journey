@@ -92,6 +92,14 @@ function Page() {
 
   return (
       <div className="mx-auto max-w-6xl p-4">
+        <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+          <defs>
+            <filter id="admin-entrance-green-key" colorInterpolationFilters="sRGB">
+              <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0 0.08" />
+              <feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer>
+            </filter>
+          </defs>
+        </svg>
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-black">Entrance Effects</h1>
           <button
