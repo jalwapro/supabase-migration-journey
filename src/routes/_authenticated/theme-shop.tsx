@@ -375,25 +375,9 @@ function Page() {
           </div>
         )}
 
-        {/* Special shops */}
-        <div className="mt-6 grid grid-cols-2 gap-3 px-4">
-          <Link
-            to="/shop-entrances"
-            className="relative overflow-hidden rounded-2xl border border-amber-400/30 bg-gradient-to-br from-[#2a1254] to-[#0f071d] p-4"
-          >
-            <Sparkles className="h-6 w-6 text-amber-300" />
-            <p className="mt-2 text-sm font-black text-white">Entrance Effects</p>
-            <p className="text-[10px] text-white/50">Cinematic room entries</p>
-          </Link>
-          <Link
-            to="/shop-profile-cards"
-            className="relative overflow-hidden rounded-2xl border border-fuchsia-400/30 bg-gradient-to-br from-[#3b0d4d] to-[#0f071d] p-4"
-          >
-            <Crown className="h-6 w-6 text-fuchsia-300" />
-            <p className="mt-2 text-sm font-black text-white">Profile Cards</p>
-            <p className="text-[10px] text-white/50">Luxury profile designs</p>
-          </Link>
-        </div>
+        {/* Entrance + Profile Cards live in the category strip above — no duplicate cards here. */}
+
+
 
         {/* Grid header */}
 

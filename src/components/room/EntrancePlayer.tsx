@@ -11,7 +11,9 @@ import { shouldSkipHeavyEffects } from "@/lib/entrance/registry";
 export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; onDone: () => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [visible, setVisible] = useState(true);
-  const duration = Math.min(Math.max(event.duration_ms ?? 2500, 1200), 4000);
+  // Video entrances run ~5s; allow them the full clip length.
+  const duration = Math.min(Math.max(event.duration_ms ?? 2500, 1200), 6000);
+
 
   useEffect(() => {
     // Respect prefers-reduced-motion and slow networks by shortening
@@ -38,12 +40,13 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
 
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
+  // The green-key filter removes BOTH a green and a black backdrop, so an
+  // admin "luma" tag uses it too — luma clips are usually shot on green.
   const chromakeyFilter =
-    event.chromakey === "green"
+    event.chromakey === "green" || event.chromakey === "luma"
       ? "url(#entrance-green-key)"
-      : event.chromakey === "luma"
-      ? "url(#entrance-luma-key)"
       : undefined;
+
 
   return (
     <div
