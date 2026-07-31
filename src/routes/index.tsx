@@ -821,10 +821,11 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
       : chromakey === "black"
       ? "url(#room-frame-luma-key)"
       : undefined;
-  // The frame is rendered outside the card's clipped box and slightly oversized
-  // so the crown / corner ornaments sit around the cover instead of being cut.
+  // The frame overlays the whole card tile (the cover is inset inside it), so
+  // crown / corner ornaments always render fully.
   const commonClass =
-    "pointer-events-none absolute -inset-[7%] h-[114%] w-[114%] max-w-none object-contain select-none z-30";
+    "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
+
 
 
 
