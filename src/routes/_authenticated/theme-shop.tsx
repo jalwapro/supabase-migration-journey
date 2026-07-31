@@ -427,16 +427,17 @@ function Page() {
                 >
                   {media ? (
                     isVideo ? (
+                      // Nothing auto-plays in the browse grid: show the poster
+                      // (or the paused first frame). Video plays in the detail popup.
                       <video
-                        src={media}
-                        autoPlay
-                        loop
+                        src={`${media}#t=0.1`}
                         muted
                         playsInline
-                        preload="auto"
+                        preload="metadata"
                         poster={gridImage || undefined}
                         className="absolute inset-0 h-full w-full object-cover"
                       />
+
                     ) : (
                       <img
                         src={media}
