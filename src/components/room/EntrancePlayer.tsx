@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BuiltinEntranceView } from "@/lib/entrance/builtin";
-import { LevelAvatar } from "@/components/LevelAvatar";
 import type { RoomEntranceEvent } from "@/lib/entrance/registry";
 import { shouldSkipHeavyEffects } from "@/lib/entrance/registry";
 
