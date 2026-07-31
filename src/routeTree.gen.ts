@@ -78,6 +78,7 @@ import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminSpinPrizesRouteImport } from './routes/_authenticated/admin.spin-prizes'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminRoomsRouteImport } from './routes/_authenticated/admin.rooms'
+import { Route as AuthenticatedAdminRoomFramesPreviewRouteImport } from './routes/_authenticated/admin.room-frames-preview'
 import { Route as AuthenticatedAdminRoomFramesRouteImport } from './routes/_authenticated/admin.room-frames'
 import { Route as AuthenticatedAdminRoomBackgroundsRouteImport } from './routes/_authenticated/admin.room-backgrounds'
 import { Route as AuthenticatedAdminRolesRouteImport } from './routes/_authenticated/admin.roles'
@@ -468,6 +469,12 @@ const AuthenticatedAdminRoomsRoute = AuthenticatedAdminRoomsRouteImport.update({
   path: '/rooms',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminRoomFramesPreviewRoute =
+  AuthenticatedAdminRoomFramesPreviewRouteImport.update({
+    id: '/room-frames-preview',
+    path: '/room-frames-preview',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminRoomFramesRoute =
   AuthenticatedAdminRoomFramesRouteImport.update({
     id: '/room-frames',
@@ -701,6 +708,7 @@ export interface FileRoutesByFullPath {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
   '/admin/room-frames': typeof AuthenticatedAdminRoomFramesRoute
+  '/admin/room-frames-preview': typeof AuthenticatedAdminRoomFramesPreviewRoute
   '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
@@ -797,6 +805,7 @@ export interface FileRoutesByTo {
   '/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
   '/admin/room-frames': typeof AuthenticatedAdminRoomFramesRoute
+  '/admin/room-frames-preview': typeof AuthenticatedAdminRoomFramesPreviewRoute
   '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
@@ -897,6 +906,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/roles': typeof AuthenticatedAdminRolesRoute
   '/_authenticated/admin/room-backgrounds': typeof AuthenticatedAdminRoomBackgroundsRoute
   '/_authenticated/admin/room-frames': typeof AuthenticatedAdminRoomFramesRoute
+  '/_authenticated/admin/room-frames-preview': typeof AuthenticatedAdminRoomFramesPreviewRoute
   '/_authenticated/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
@@ -997,6 +1007,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/room-backgrounds'
     | '/admin/room-frames'
+    | '/admin/room-frames-preview'
     | '/admin/rooms'
     | '/admin/settings'
     | '/admin/spin-prizes'
@@ -1093,6 +1104,7 @@ export interface FileRouteTypes {
     | '/admin/roles'
     | '/admin/room-backgrounds'
     | '/admin/room-frames'
+    | '/admin/room-frames-preview'
     | '/admin/rooms'
     | '/admin/settings'
     | '/admin/spin-prizes'
@@ -1192,6 +1204,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/roles'
     | '/_authenticated/admin/room-backgrounds'
     | '/_authenticated/admin/room-frames'
+    | '/_authenticated/admin/room-frames-preview'
     | '/_authenticated/admin/rooms'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/spin-prizes'
@@ -1731,6 +1744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRoomsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/room-frames-preview': {
+      id: '/_authenticated/admin/room-frames-preview'
+      path: '/room-frames-preview'
+      fullPath: '/admin/room-frames-preview'
+      preLoaderRoute: typeof AuthenticatedAdminRoomFramesPreviewRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/room-frames': {
       id: '/_authenticated/admin/room-frames'
       path: '/room-frames'
@@ -1959,6 +1979,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminRoomBackgroundsRoute: typeof AuthenticatedAdminRoomBackgroundsRoute
   AuthenticatedAdminRoomFramesRoute: typeof AuthenticatedAdminRoomFramesRoute
+  AuthenticatedAdminRoomFramesPreviewRoute: typeof AuthenticatedAdminRoomFramesPreviewRoute
   AuthenticatedAdminRoomsRoute: typeof AuthenticatedAdminRoomsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminSpinPrizesRoute: typeof AuthenticatedAdminSpinPrizesRoute
@@ -2006,6 +2027,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRoomBackgroundsRoute:
     AuthenticatedAdminRoomBackgroundsRoute,
   AuthenticatedAdminRoomFramesRoute: AuthenticatedAdminRoomFramesRoute,
+  AuthenticatedAdminRoomFramesPreviewRoute:
+    AuthenticatedAdminRoomFramesPreviewRoute,
   AuthenticatedAdminRoomsRoute: AuthenticatedAdminRoomsRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminSpinPrizesRoute: AuthenticatedAdminSpinPrizesRoute,
