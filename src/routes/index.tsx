@@ -881,14 +881,14 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
     : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
     <div className="relative aspect-square">
-      {/* The rank frame sits OUTSIDE the clipped card so its crown and corner
-          ornaments are never cut off by the card's rounded overflow. */}
-      {frameTone && <RoomFrameSquare tone={frameTone} />}
       <Link
         to="/room/$roomId"
         params={{ roomId: room.id }}
-        className={`group absolute inset-0 overflow-hidden rounded-3xl border border-white/10 bg-card ${glow} transition active:scale-[0.98]`}
+        className={`group absolute overflow-hidden border border-white/10 bg-card ${glow} transition active:scale-[0.98] ${
+          frameTone ? "inset-[7%] rounded-2xl" : "inset-0 rounded-3xl"
+        }`}
       >
+
       {room.cover_url ? (
         <img
           src={room.cover_url}
