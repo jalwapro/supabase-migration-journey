@@ -41,6 +41,9 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
   const isVideo = mediaType === "mp4" || mediaType === "webm";
+  // Only the equipped shop effect should be visible. When the user has no
+  // effect we fall back to a slim entrance bar (no big avatar / name card).
+  const hasEffect = url.length > 0;
 
   return (
     <div
@@ -49,11 +52,12 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       }`}
       aria-hidden
     >
-      {/* Dark vignette backdrop — semi so voice UI is still faintly visible */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
+      {/* Light vignette only while a full effect plays */}
+      {hasEffect && <div className="absolute inset-0 bg-black/35" />}
 
       {/* Animation layer */}
       <div className="absolute inset-0 mx-auto max-w-[480px]">
+
         {url.startsWith("builtin:") ? (
           <BuiltinEntranceView mediaUrl={url} />
         ) : isVideo ? (
