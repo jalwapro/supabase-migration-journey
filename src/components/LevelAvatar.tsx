@@ -110,8 +110,10 @@ export function LevelAvatar({
       )}
 
 
-      {/* Inner disc */}
-      <div className="absolute inset-0 z-[4] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
+      {/* Inner disc — sits BEHIND the frame overlay (z-[2]) so the frame's
+          ornaments always paint on top of the photo. */}
+      <div className="absolute inset-0 z-[1] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
+
         {src ? (
           <img src={src} alt="" className="h-full w-full object-cover" />
         ) : (
