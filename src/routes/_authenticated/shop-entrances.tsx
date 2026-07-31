@@ -46,17 +46,35 @@ function ChromaFilters() {
   );
 }
 
-function Media({ eff, className = "" }: { eff: EntranceEffect; className?: string }) {
+/**
+ * Shop media. Nothing animates in the browse grid — cards show a still frame
+ * only. The real video/animation plays after the user taps Play (preview modal),
+ * where `play` is true.
+ */
+function Media({ eff, className = "", play = false }: { eff: EntranceEffect; className?: string; play?: boolean }) {
   const t = eff.thumbnail_url;
   const isVideo = eff.media_type === "mp4" || eff.media_type === "webm";
   if (isVideo && !eff.media_url.startsWith("builtin:")) {
+    // Still mode: prefer the thumbnail; otherwise show the first video frame paused.
+    if (!play && t) {
+      return (
+        <img
+          src={t}
+          alt={eff.name}
+          loading="lazy"
+          style={{ filter: keyFilter(eff.chromakey, false) }}
+          className={`absolute inset-0 h-full w-full object-cover ${className}`}
+        />
+      );
+    }
     return (
       <video
-        src={eff.media_url}
+        key={play ? "play" : "still"}
+        src={play ? eff.media_url : `${eff.media_url}#t=0.1`}
         poster={t ?? undefined}
-        autoPlay
+        autoPlay={play}
         muted
-        loop
+        loop={play}
         playsInline
         preload="metadata"
         style={{ filter: keyFilter(eff.chromakey, true) }}
@@ -75,9 +93,13 @@ function Media({ eff, className = "" }: { eff: EntranceEffect; className?: strin
       />
     );
   }
-  if (eff.media_url.startsWith("builtin:")) return <BuiltinEntranceView mediaUrl={eff.media_url} />;
+  if (eff.media_url.startsWith("builtin:")) {
+    // Builtin animations are CSS/SVG driven — only render them in the preview modal.
+    return play ? <BuiltinEntranceView mediaUrl={eff.media_url} /> : null;
+  }
   return null;
 }
+
 
 
 function Page() {

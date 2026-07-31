@@ -427,16 +427,17 @@ function Page() {
                 >
                   {media ? (
                     isVideo ? (
+                      // Nothing auto-plays in the browse grid: show the poster
+                      // (or the paused first frame). Video plays in the detail popup.
                       <video
-                        src={media}
-                        autoPlay
-                        loop
+                        src={`${media}#t=0.1`}
                         muted
                         playsInline
-                        preload="auto"
+                        preload="metadata"
                         poster={gridImage || undefined}
                         className="absolute inset-0 h-full w-full object-cover"
                       />
+
                     ) : (
                       <img
                         src={media}
@@ -566,14 +567,21 @@ function Page() {
                 style={{ background: `linear-gradient(160deg, ${it.primary_color}, ${it.accent_color})` }}
               >
                 {media && (isVideo ? (
-                  modalImage ? (
-                    <img src={modalImage} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
-                  ) : (
-                    <video src={media} muted playsInline preload="metadata" className="absolute inset-0 h-full w-full object-cover" />
-                  )
+                  // The popup is the only place media plays.
+                  <video
+                    src={media}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    poster={modalImage || undefined}
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
                 ) : (
                   <img src={media} alt={it.name} className="absolute inset-0 h-full w-full object-cover" />
                 ))}
+
                 {!media && (
                   <div className="absolute inset-0 grid place-items-center">
                     <ItemAnimation slug={cat?.slug} name={it.name} primary={it.primary_color} accent={it.accent_color} fill />
