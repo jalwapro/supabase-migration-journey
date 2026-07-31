@@ -957,6 +957,9 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
         </h3>
       </div>
       </Link>
+      {/* Rank frame paints ON TOP of the cover so its ornaments stay visible. */}
+      {frameTone && <RoomFrameSquare tone={frameTone} />}
+
     </div>
 
   );
