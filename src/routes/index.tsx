@@ -821,10 +821,11 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
       : chromakey === "black"
       ? "url(#room-frame-luma-key)"
       : undefined;
-  // The frame is rendered outside the card's clipped box and slightly oversized
-  // so the crown / corner ornaments sit around the cover instead of being cut.
+  // The frame overlays the whole card tile (the cover is inset inside it), so
+  // crown / corner ornaments always render fully.
   const commonClass =
-    "pointer-events-none absolute -inset-[7%] h-[114%] w-[114%] max-w-none object-contain select-none z-30";
+    "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
+
 
 
 
@@ -881,14 +882,14 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
     : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
     <div className="relative aspect-square">
-      {/* The rank frame sits OUTSIDE the clipped card so its crown and corner
-          ornaments are never cut off by the card's rounded overflow. */}
-      {frameTone && <RoomFrameSquare tone={frameTone} />}
       <Link
         to="/room/$roomId"
         params={{ roomId: room.id }}
-        className={`group absolute inset-0 overflow-hidden rounded-3xl border border-white/10 bg-card ${glow} transition active:scale-[0.98]`}
+        className={`group absolute overflow-hidden border border-white/10 bg-card ${glow} transition active:scale-[0.98] ${
+          frameTone ? "inset-[7%] rounded-2xl" : "inset-0 rounded-3xl"
+        }`}
       >
+
       {room.cover_url ? (
         <img
           src={room.cover_url}
@@ -957,6 +958,9 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
         </h3>
       </div>
       </Link>
+      {/* Rank frame paints ON TOP of the cover so its ornaments stay visible. */}
+      {frameTone && <RoomFrameSquare tone={frameTone} />}
+
     </div>
 
   );

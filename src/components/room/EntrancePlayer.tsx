@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BuiltinEntranceView } from "@/lib/entrance/builtin";
-import { LevelAvatar } from "@/components/LevelAvatar";
 import type { RoomEntranceEvent } from "@/lib/entrance/registry";
 import { shouldSkipHeavyEffects } from "@/lib/entrance/registry";
 
@@ -41,6 +40,9 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
   const isVideo = mediaType === "mp4" || mediaType === "webm";
+  // Only the equipped shop effect should be visible. When the user has no
+  // effect we fall back to a slim entrance bar (no big avatar / name card).
+  const hasEffect = url.length > 0;
 
   return (
     <div
@@ -49,11 +51,12 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       }`}
       aria-hidden
     >
-      {/* Dark vignette backdrop — semi so voice UI is still faintly visible */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70" />
+      {/* Light vignette only while a full effect plays */}
+      {hasEffect && <div className="absolute inset-0 bg-black/35" />}
 
       {/* Animation layer */}
       <div className="absolute inset-0 mx-auto max-w-[480px]">
+
         {url.startsWith("builtin:") ? (
           <BuiltinEntranceView mediaUrl={url} />
         ) : isVideo ? (
@@ -75,26 +78,21 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       </div>
 
 
-      {/* User identity card */}
-      <div className="relative z-10 mx-auto flex max-w-[480px] flex-col items-center px-6 text-center">
-        <div className="mb-4 animate-[entrance-scale_600ms_cubic-bezier(0.16,1,0.3,1)]">
-          <LevelAvatar
-            src={event.avatar_url}
-            name={event.username}
-            level={event.vip_level ?? 0}
-            size="xl"
-          />
-        </div>
-        <div className="rounded-2xl bg-gradient-to-br from-[color:var(--gold)]/95 to-[#7a5210] px-5 py-2 shadow-2xl">
-          <div className="text-lg font-black text-black drop-shadow-sm">
-            {event.username ?? "Guest"}
-          </div>
-          <div className="mt-0.5 flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-black/80">
-            {event.vip_level ? <span>VIP Lv {event.vip_level}</span> : null}
-            {event.country ? <span>· {event.country}</span> : null}
+      {/* No avatar / name card over the effect video. Users without an equipped
+          effect just get a slim entrance bar. */}
+      {!hasEffect && (
+        <div className="relative z-10 mx-auto w-full max-w-[480px] px-4">
+          <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)]/90 via-[#f5d271]/90 to-[color:var(--gold)]/90 px-4 py-1.5 shadow-2xl">
+            <span className="text-[11px] font-black uppercase tracking-widest text-black">
+              {event.username ?? "Guest"}
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-black/70">
+              entered
+            </span>
           </div>
         </div>
-      </div>
+      )}
+
 
       <style>{`
         @keyframes entrance-scale {
