@@ -12,6 +12,14 @@ export const Route = createFileRoute("/_authenticated/support")({
   component: SupportPage,
 });
 
+type Ticket = {
+  id: string;
+  subject: string;
+  status: string;
+  admin_reply: string | null;
+  created_at: string;
+};
+
 type Msg = {
   id: string;
   body: string;
@@ -23,6 +31,9 @@ function SupportPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [text, setText] = useState("");
+  const [ticketOpen, setTicketOpen] = useState(false);
+  const [subject, setSubject] = useState("");
+  const [detail, setDetail] = useState("");
   const scroller = useRef<HTMLDivElement>(null);
 
   const conv = useQuery({
