@@ -4173,7 +4173,31 @@ const ChatLine = React.memo(function ChatLine({
 });
 
 
+/** Small "replying to …" strip shown above a composer. */
+function ReplyBar({ reply, onCancel }: { reply: Message | null; onCancel: () => void }) {
+  if (!reply) return null;
+  const body = reply.text ?? reply.message ?? "";
+  return (
+    <div className="mb-2 flex items-center gap-2 rounded-xl border-l-2 border-[color:var(--secondary)] bg-white/5 px-2 py-1.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold text-[color:var(--secondary)]">
+          Replying to @{reply.user?.username ?? reply.sender_username ?? "user"}
+        </p>
+        <p className="truncate text-[10.5px] text-white/60">{body}</p>
+      </div>
+      <button
+        onClick={onCancel}
+        aria-label="Cancel reply"
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function EmptyChat() {
+
   return (
     <div className="grid h-full place-items-center py-4 text-center text-[11px] leading-snug text-white/50">
       <p>Say hi to break the ice 👋</p>
