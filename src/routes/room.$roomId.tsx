@@ -164,9 +164,20 @@ type Message = {
   sender_username?: string | null;
   sender_avatar?: string | null;
   sender_level?: number | null;
+  // Chat v2 (migration 0282): dedupe key + reply metadata + mentions.
+  client_id?: string | null;
+  reply_to_id?: string | null;
+  reply_to_username?: string | null;
+  reply_to_text?: string | null;
+  mentions?: string[] | null;
+  /** Local-only: optimistic message not yet acknowledged by the server. */
+  pending?: boolean;
+  /** Local-only: the insert failed; the row can be retried. */
+  failed?: boolean;
   // Kept for backward-compat with existing render code.
   user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
+
 
 
 
