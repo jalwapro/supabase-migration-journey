@@ -23,6 +23,7 @@ type Play = {
   receiverIds?: (string | null)[] | null;
   receiverName: string;
   receiverAvatar: string | null;
+  giftId?: string | null;
   giftName: string;
   giftEmoji: string;
   giftImageUrl?: string | null;
@@ -35,6 +36,12 @@ type Play = {
   soundUrl?: string | null;
   chromakey?: string | null;
   local?: boolean;
+  /** Higher priority pre-empts a lower-priority gift already on screen. */
+  priority?: number;
+  /** Per-gift audio gain (0–1) configured by admins. */
+  audioVolume?: number;
+  /** Wall-clock ms when this play entered the queue (telemetry). */
+  enqueuedAt?: number;
   /** Cumulative combo count (running total per sender+gift) — for train mode. */
   comboTotal?: number;
   /** Train wagons to render for this play (0 = normal flyer swarm). */
