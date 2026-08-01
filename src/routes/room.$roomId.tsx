@@ -164,9 +164,20 @@ type Message = {
   sender_username?: string | null;
   sender_avatar?: string | null;
   sender_level?: number | null;
+  // Chat v2 (migration 0282): dedupe key + reply metadata + mentions.
+  client_id?: string | null;
+  reply_to_id?: string | null;
+  reply_to_username?: string | null;
+  reply_to_text?: string | null;
+  mentions?: string[] | null;
+  /** Local-only: optimistic message not yet acknowledged by the server. */
+  pending?: boolean;
+  /** Local-only: the insert failed; the row can be retried. */
+  failed?: boolean;
   // Kept for backward-compat with existing render code.
   user: { username: string | null; avatar: string | null; level?: number | null } | null;
 };
+
 
 
 
@@ -304,6 +315,35 @@ function RoomPage() {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const chatEndVideoRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  /** Message the composer is currently replying to (chat v2). */
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  /** Ids already rendered — guards against realtime + optimistic double-add. */
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  /**
+   * Merge a message into the transcript: replaces the matching optimistic row
+   * (by client_id) and never inserts the same server id twice.
+   */
+  const mergeMessage = useCallback((row: Message) => {
+    setMessages((prev) => {
+      const byId = prev.findIndex((m) => m.id === row.id);
+      if (byId !== -1) {
+        const next = [...prev];
+        next[byId] = { ...prev[byId], ...row, pending: false, failed: false };
+        return next;
+      }
+      const byClient = row.client_id
+        ? prev.findIndex((m) => m.client_id && m.client_id === row.client_id)
+        : -1;
+      if (byClient !== -1) {
+        const next = [...prev];
+        next[byClient] = { ...prev[byClient], ...row, pending: false, failed: false };
+        return next;
+      }
+      seenMessageIdsRef.current.add(row.id);
+      return [...prev.slice(-99), row];
+    });
+  }, []);
+
   const [members, setMembers] = useState<Member[]>([]);
   const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
   const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
@@ -638,11 +678,12 @@ function RoomPage() {
       supabase
         .from("room_messages")
         .select(
-          "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level",
+          "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
         )
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
         .limit(50),
+
 
       supabase
         .from("room_seat_likes")
@@ -663,8 +704,10 @@ function RoomPage() {
     const loadedMembers = (mData ?? []) as unknown as Member[];
     membersRef.current = loadedMembers;
     setMembers(loadedMembers);
-    setMessages(
-      ((msgData ?? []) as unknown as Message[])
+    // Backfill after a socket drop must not swallow messages that are still
+    // in flight locally, so pending/failed rows are kept on top.
+    setMessages((prev) => {
+      const server = ((msgData ?? []) as unknown as Message[])
         .map((m) => ({
           ...m,
           user: m.user ?? {
@@ -673,8 +716,15 @@ function RoomPage() {
             level: m.sender_level ?? null,
           },
         }))
-        .reverse(),
-    );
+        .reverse();
+      const serverClientIds = new Set(server.map((m) => m.client_id).filter(Boolean));
+      const stillPending = prev.filter(
+        (m) => (m.pending || m.failed) && !(m.client_id && serverClientIds.has(m.client_id)),
+      );
+      seenMessageIdsRef.current = new Set(server.map((m) => m.id));
+      return [...server, ...stillPending];
+    });
+
     const likeMap: Record<number, number> = {};
     (likeData ?? []).forEach((row: { seat_index: number }) => {
       likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
@@ -774,7 +824,10 @@ function RoomPage() {
             avatar: row.sender_avatar ?? null,
             level: row.sender_level ?? null,
           };
-          setMessages((prev) => [...prev.slice(-99), row]);
+          // Dedupe: the sender already rendered this optimistically, and a
+          // resubscribe can replay an id we've seen. mergeMessage handles both.
+          mergeMessage(row);
+
         },
       )
       .on(
@@ -1471,27 +1524,88 @@ function RoomPage() {
   }
 
 
-  async function send() {
+  /** Extract @mentions ("@name") from a message body. */
+  function parseMentions(body: string): string[] {
+    return Array.from(new Set((body.match(/@([\p{L}\p{N}_.-]{2,32})/gu) ?? []).map((t) => t.slice(1))));
+  }
+
+  async function send(retryOf?: Message) {
     if (!user) {
       toast.error("Sign in to chat");
       return;
     }
-    const v = text.trim();
+    const v = (retryOf ? (retryOf.text ?? "") : text).trim();
     if (!v) return;
-    setText("");
-    const { error } = await supabase.from("room_messages").insert({
-      room_id: roomId,
+
+    const clientId = retryOf?.client_id ?? crypto.randomUUID();
+    const reply = retryOf
+      ? {
+          reply_to_id: retryOf.reply_to_id ?? null,
+          reply_to_username: retryOf.reply_to_username ?? null,
+          reply_to_text: retryOf.reply_to_text ?? null,
+        }
+      : {
+          reply_to_id: replyTo?.id ?? null,
+          reply_to_username: replyTo?.user?.username ?? replyTo?.sender_username ?? null,
+          reply_to_text: replyTo ? (replyTo.text ?? replyTo.message ?? "").slice(0, 120) : null,
+        };
+    const mentions = parseMentions(v);
+
+    // Optimistic echo: the message shows instantly, then the realtime INSERT
+    // (or the insert response) reconciles it via client_id.
+    const optimistic: Message = {
+      id: `local-${clientId}`,
+      client_id: clientId,
       user_id: user.id,
-      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
       kind: "chat",
       text: v,
       message: v,
-    });
-    if (error) {
-      toast.error(error.message);
-      setText(v);
+      created_at: new Date().toISOString(),
+      mentions,
+      ...reply,
+      pending: true,
+      user: {
+        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
+        avatar: profile?.avatar ?? null,
+        level: profile?.vip_level ?? 0,
+      },
+    };
+    if (retryOf) {
+      setMessages((prev) => prev.map((m) => (m.client_id === clientId ? optimistic : m)));
+    } else {
+      setText("");
+      setReplyTo(null);
+      setMessages((prev) => [...prev.slice(-99), optimistic]);
     }
+
+    const { data, error } = await supabase
+      .from("room_messages")
+      .insert({
+        room_id: roomId,
+        user_id: user.id,
+        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
+        kind: "chat",
+        text: v,
+        message: v,
+        client_id: clientId,
+        mentions,
+        ...reply,
+      })
+      .select(
+        "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
+      )
+      .maybeSingle();
+
+    if (error) {
+      setMessages((prev) =>
+        prev.map((m) => (m.client_id === clientId ? { ...m, pending: false, failed: true } : m)),
+      );
+      toast.error(error.message);
+      return;
+    }
+    if (data) mergeMessage({ ...(data as unknown as Message), user: optimistic.user });
   }
+
 
   // (sendQuickGift removed — see note above the QUICK_GIFTS deletion.)
 
@@ -2620,7 +2734,18 @@ function RoomPage() {
               .filter((m) => m.kind !== "emoji")
               .slice(-6)
               .map((m) => (
-                <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                <ChatLine
+                  key={m.id}
+                  m={m}
+                  isMe={!!(user?.id && m.user_id === user.id)}
+                  myName={profile?.username ?? null}
+                  onReply={(msg) => {
+                    setReplyTo(msg);
+                    setChatComposerOpen(true);
+                  }}
+                  onRetry={(msg) => void send(msg)}
+                />
+
               ))}
             <div ref={chatEndRef} />
           </div>
@@ -2718,7 +2843,15 @@ function RoomPage() {
               .filter((m) => m.kind !== "emoji")
               .slice(-30)
               .map((m) => (
-                <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                <ChatLine
+                  key={m.id}
+                  m={m}
+                  isMe={!!(user?.id && m.user_id === user.id)}
+                  myName={profile?.username ?? null}
+                  onReply={(msg) => setReplyTo(msg)}
+                  onRetry={(msg) => void send(msg)}
+                />
+
               ))}
             <div ref={chatEndVideoRef} />
           </div>
@@ -2791,7 +2924,9 @@ function RoomPage() {
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
           {/* Composer row */}
+          <ReplyBar reply={replyTo} onCancel={() => setReplyTo(null)} />
           <div className="mb-3 flex items-center gap-2">
+
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/70 pl-4 pr-1.5 py-2 backdrop-blur-md">
               <input
                 value={text}
@@ -2810,7 +2945,7 @@ function RoomPage() {
               </button>
             </div>
             <button
-              onClick={send}
+              onClick={() => void send()}
               aria-label="Send"
               disabled={!text.trim()}
               className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_16px_rgba(167,139,250,0.5)] disabled:opacity-40"
@@ -2978,11 +3113,14 @@ function RoomPage() {
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="fixed inset-x-0 z-[2147483001] flex items-center gap-2 border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed inset-x-0 z-[2147483001] border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             style={{ bottom: keyboardOffset }}
             onClick={(e) => e.stopPropagation()}
           >
+            <ReplyBar reply={replyTo} onCancel={() => setReplyTo(null)} />
+            <div className="flex items-center gap-2">
             <button
+
               aria-label="Emoji reactions"
               onClick={() => {
                 if (!iAmOnSeat) {
@@ -3023,7 +3161,9 @@ function RoomPage() {
             >
               <Send className="h-4 w-4" />
             </button>
+            </div>
           </div>
+
         </div>
       )}
 
@@ -3905,7 +4045,44 @@ function MiniAction({
 }
 
 
-const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
+/** Render body text with @mentions highlighted (mine get a stronger accent). */
+function MessageBody({ body, myName }: { body: string; myName?: string | null }) {
+  const parts = body.split(/(@[\p{L}\p{N}_.-]{2,32})/gu);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!part.startsWith("@")) return <span key={i}>{part}</span>;
+        const isMe = !!myName && part.slice(1).toLowerCase() === myName.toLowerCase();
+        return (
+          <span
+            key={i}
+            className={
+              isMe
+                ? "rounded bg-[color:var(--gold)]/25 px-1 font-bold text-[color:var(--gold)]"
+                : "font-semibold text-[color:var(--secondary)]"
+            }
+          >
+            {part}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+const ChatLine = React.memo(function ChatLine({
+  m,
+  isMe,
+  myName,
+  onReply,
+  onRetry,
+}: {
+  m: Message;
+  isMe: boolean;
+  myName?: string | null;
+  onReply?: (m: Message) => void;
+  onRetry?: (m: Message) => void;
+}) {
   const body = m.text ?? m.message ?? "";
   if (m.kind === "gift") {
     return (
@@ -3926,6 +4103,8 @@ const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: b
     );
   }
   const initial = (m.user?.username ?? "U").charAt(0).toUpperCase();
+  const mentionsMe =
+    !!myName && (m.mentions ?? []).some((n) => n.toLowerCase() === myName.toLowerCase());
   return (
     <div className="flex max-w-full items-start gap-1.5">
       {m.user?.avatar ? (
@@ -3940,25 +4119,85 @@ const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: b
         </div>
       )}
       <div
+        onDoubleClick={() => onReply?.(m)}
         className={`rounded-xl border px-2 py-1 backdrop-blur-sm ${
-          isMe
-            ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
-            : "border-white/10 bg-black/50"
-        }`}
+          m.failed
+            ? "border-red-500/60 bg-red-950/40"
+            : mentionsMe
+              ? "border-[color:var(--gold)]/60 bg-[color:var(--gold)]/10"
+              : isMe
+                ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
+                : "border-white/10 bg-black/50"
+        } ${m.pending ? "opacity-60" : ""}`}
       >
+        {m.reply_to_id && (
+          <div className="mb-0.5 truncate rounded-md border-l-2 border-[color:var(--secondary)] bg-white/5 px-1.5 py-0.5 text-[9.5px] text-white/60">
+            <span className="font-bold text-[color:var(--secondary)]">
+              @{m.reply_to_username ?? "user"}
+            </span>{" "}
+            {m.reply_to_text}
+          </div>
+        )}
         <span className="mr-1 inline-flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
           <VipBadge level={m.user?.level ?? 0} size="xs" />
           {m.user?.username ?? "user"}:
         </span>
         <span className="break-words text-[11.5px] leading-snug text-white/95">
-          {body}
+          <MessageBody body={body} myName={myName} />
         </span>
+        {isMe && (m.pending || m.failed) && (
+          <span className="ml-1 align-middle text-[9px]">
+            {m.failed ? (
+              <button
+                onClick={() => onRetry?.(m)}
+                className="font-bold text-red-300 underline"
+              >
+                failed · retry
+              </button>
+            ) : (
+              <span className="text-white/50">sending…</span>
+            )}
+          </span>
+        )}
+        {!isMe && onReply && (
+          <button
+            onClick={() => onReply(m)}
+            className="ml-1.5 align-middle text-[9px] font-semibold text-white/40"
+          >
+            reply
+          </button>
+        )}
       </div>
     </div>
   );
 });
 
+
+/** Small "replying to …" strip shown above a composer. */
+function ReplyBar({ reply, onCancel }: { reply: Message | null; onCancel: () => void }) {
+  if (!reply) return null;
+  const body = reply.text ?? reply.message ?? "";
+  return (
+    <div className="mb-2 flex items-center gap-2 rounded-xl border-l-2 border-[color:var(--secondary)] bg-white/5 px-2 py-1.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold text-[color:var(--secondary)]">
+          Replying to @{reply.user?.username ?? reply.sender_username ?? "user"}
+        </p>
+        <p className="truncate text-[10.5px] text-white/60">{body}</p>
+      </div>
+      <button
+        onClick={onCancel}
+        aria-label="Cancel reply"
+        className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white/70"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 function EmptyChat() {
+
   return (
     <div className="grid h-full place-items-center py-4 text-center text-[11px] leading-snug text-white/50">
       <p>Say hi to break the ice 👋</p>
