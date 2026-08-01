@@ -20,6 +20,42 @@ function safeSegment(input: string) {
   return input.replace(/[^a-zA-Z0-9._/-]/g, "").replace(/\.{2,}/g, "").replace(/^\/+/, "");
 }
 
+// Allow-list of uploadable asset types with per-kind size caps (bytes).
+const ALLOWED: Record<string, { mime: string[]; max: number }> = {
+  mp4: { mime: ["video/mp4"], max: 80 * 1024 * 1024 },
+  webm: { mime: ["video/webm"], max: 80 * 1024 * 1024 },
+  mov: { mime: ["video/quicktime"], max: 80 * 1024 * 1024 },
+  png: { mime: ["image/png"], max: 15 * 1024 * 1024 },
+  jpg: { mime: ["image/jpeg"], max: 15 * 1024 * 1024 },
+  jpeg: { mime: ["image/jpeg"], max: 15 * 1024 * 1024 },
+  webp: { mime: ["image/webp"], max: 15 * 1024 * 1024 },
+  gif: { mime: ["image/gif"], max: 15 * 1024 * 1024 },
+  svg: { mime: ["image/svg+xml"], max: 4 * 1024 * 1024 },
+  json: { mime: ["application/json", "text/plain"], max: 10 * 1024 * 1024 },
+  svga: { mime: ["application/octet-stream"], max: 25 * 1024 * 1024 },
+  mp3: { mime: ["audio/mpeg", "audio/mp3"], max: 20 * 1024 * 1024 },
+  wav: { mime: ["audio/wav", "audio/x-wav"], max: 30 * 1024 * 1024 },
+  ogg: { mime: ["audio/ogg"], max: 20 * 1024 * 1024 },
+  aac: { mime: ["audio/aac"], max: 20 * 1024 * 1024 },
+  m4a: { mime: ["audio/mp4", "audio/x-m4a"], max: 20 * 1024 * 1024 },
+  webp2: { mime: ["image/webp"], max: 15 * 1024 * 1024 },
+  bin: { mime: ["application/octet-stream"], max: 25 * 1024 * 1024 },
+};
+
+function validateUpload(path: string, contentType: string, size?: number) {
+  const ext = (path.split(".").pop() ?? "").toLowerCase();
+  const rule = ALLOWED[ext];
+  if (!rule) return `unsupported file type: .${ext || "unknown"}`;
+  const ct = contentType.split(";")[0]!.trim().toLowerCase();
+  if (ct && ct !== "application/octet-stream" && !rule.mime.includes(ct)) {
+    return `content-type ${ct} does not match .${ext}`;
+  }
+  if (typeof size === "number" && size > rule.max) {
+    return `file too large: ${(size / 1048576).toFixed(1)}MB (max ${Math.round(rule.max / 1048576)}MB)`;
+  }
+  return null;
+}
+
 async function verifyUser(request: Request): Promise<string | null> {
   const auth = request.headers.get("authorization") ?? "";
   const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
@@ -64,7 +100,7 @@ export const Route = createFileRoute("/api/r2-sign")({
         const userId = await verifyUser(request);
         if (!userId) return json({ error: "unauthorized" }, 401);
 
-        let body: { path?: string; contentType?: string; op?: string };
+        let body: { path?: string; contentType?: string; op?: string; size?: number };
         try {
           body = (await request.json()) as typeof body;
         } catch {
@@ -75,6 +111,11 @@ export const Route = createFileRoute("/api/r2-sign")({
         if (!path) return json({ error: "path required" }, 400);
         const contentType = (body.contentType || "application/octet-stream").slice(0, 120);
         const op = body.op === "get" ? "get" : "put";
+
+        if (op === "put") {
+          const invalid = validateUpload(path, contentType, body.size);
+          if (invalid) return json({ error: invalid }, 400);
+        }
 
         try {
           const { AwsClient } = await import("aws4fetch");

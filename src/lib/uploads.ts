@@ -9,41 +9,57 @@ export type UploadResult = {
 
 let r2Available: boolean | null = null;
 
+/** Thrown when R2 itself rejects the upload (bad type/size) — never falls back. */
+export class UploadRejectedError extends Error {}
+
 /** Upload straight to Cloudflare R2 via a short-lived presigned URL. */
 async function uploadToR2(key: string, file: File): Promise<UploadResult | null> {
   if (r2Available === false) return null;
-  try {
-    const { data: sess } = await supabase.auth.getSession();
-    const token = sess.session?.access_token;
-    if (!token) return null;
+  const { data: sess } = await supabase.auth.getSession();
+  const token = sess.session?.access_token;
+  if (!token) return null;
 
-    const signRes = await fetch("/api/r2-sign", {
+  let signRes: Response;
+  try {
+    signRes = await fetch("/api/r2-sign", {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ path: key, contentType: file.type || "application/octet-stream" }),
+      body: JSON.stringify({
+        path: key,
+        contentType: file.type || "application/octet-stream",
+        size: file.size,
+      }),
     });
-    if (!signRes.ok) {
-      if (signRes.status === 503) r2Available = false;
-      return null;
-    }
-    const { uploadUrl, publicUrl } = (await signRes.json()) as {
-      uploadUrl: string;
-      publicUrl: string;
-    };
-
-    const put = await fetch(uploadUrl, {
-      method: "PUT",
-      body: file,
-      headers: file.type ? { "Content-Type": file.type } : undefined,
-    });
-    if (!put.ok) throw new Error(`R2 upload failed (${put.status})`);
-
-    r2Available = true;
-    return { url: publicUrl, path: key, mime: file.type, size: file.size };
   } catch (e) {
-    console.warn("R2 upload failed, falling back to Supabase storage:", e);
+    console.warn("R2 sign request failed:", e);
     return null;
   }
+
+  if (!signRes.ok) {
+    // 400 = the file itself is not allowed. Surface it instead of silently
+    // writing the rejected asset to a second store.
+    if (signRes.status === 400) {
+      const body = (await signRes.json().catch(() => ({}))) as { error?: string };
+      throw new UploadRejectedError(body.error ?? "This file type or size is not allowed.");
+    }
+    if (signRes.status === 503) r2Available = false;
+    return null;
+  }
+
+  const { uploadUrl, publicUrl } = (await signRes.json()) as {
+    uploadUrl: string;
+    publicUrl: string;
+  };
+
+  const put = await fetch(uploadUrl, {
+    method: "PUT",
+    body: file,
+    headers: file.type ? { "Content-Type": file.type } : undefined,
+  });
+  if (!put.ok) throw new Error(`R2 upload failed (${put.status})`);
+
+  r2Available = true;
+  return { url: publicUrl, path: key, mime: file.type, size: file.size };
 }
 
 /**

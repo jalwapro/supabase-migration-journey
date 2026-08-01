@@ -1,33 +1,7 @@
+// Gift asset URL resolution. Every gift asset now lives on Cloudflare R2; the
+// helpers below only exist to absolutize the handful of legacy relative URLs
+// that may still be in flight (cached rows, optimistic events).
 const LOVABLE_ORIGIN = "https://cloud-to-soul.lovable.app";
-
-const LOCAL_GIFT_FILENAMES = new Set([
-  "jalwa-billionaire-empire",
-  "jalwa-crystal-piano",
-  "jalwa-diamond-fountain",
-  "jalwa-diamond-necklace",
-  "jalwa-diamond-safe",
-  "jalwa-diamond-watch",
-  
-  "jalwa-ferrari",
-  "jalwa-floating-luxury-island",
-  "jalwa-gold-bar",
-  "jalwa-golden-palace",
-  "jalwa-golden-peacock",
-  "jalwa-lamborghini",
-  "jalwa-luxury-perfume",
-  "jalwa-luxury-sports-car",
-  "jalwa-luxury-villa",
-  "jalwa-millionaire-mansion",
-  "jalwa-premium-handbag",
-  "jalwa-private-helicopter",
-  "jalwa-private-jet",
-  "jalwa-rolls-royce-phantom",
-  "jalwa-royal-ballroom",
-  "jalwa-royal-crown",
-  "jalwa-super-yacht",
-  "jalwa-treasure-chest",
-  "jalwa-white-stallion",
-]);
 
 const preloadedVideos = new Set<string>();
 
@@ -50,17 +24,19 @@ export function resolveGiftImageUrl(url: string | null | undefined) {
   return absolutizeLovableAsset(value);
 }
 
+/**
+ * Resolve a playable (video/svga) gift URL. R2 URLs pass through untouched —
+ * they are already the canonical source.
+ */
 export function resolvePlayableGiftUrl(url: string | null | undefined) {
   if (!url) return null;
-  const cleanUrl = url.split("?")[0]?.split("#")[0] ?? url;
-  const filename = cleanUrl.split("/").pop();
-  if (filename) {
-    const base = filename.replace(/\.(mp4|webm)$/i, "");
-    if (LOCAL_GIFT_FILENAMES.has(base)) return `/gifts/${base}.webm`;
-  }
-  return absolutizeLovableAsset(url);
+  const value = url.trim();
+  if (!value) return null;
+  if (value.startsWith("__l5e/assets-v1/")) return `${LOVABLE_ORIGIN}/${value}`;
+  return absolutizeLovableAsset(value);
 }
 
+/** Warm the browser/network cache for a gift clip so playback starts instantly. */
 export function preloadGiftVideo(url: string | null | undefined) {
   const src = resolvePlayableGiftUrl(url);
   if (!src || preloadedVideos.has(src) || typeof document === "undefined") return;
@@ -70,6 +46,7 @@ export function preloadGiftVideo(url: string | null | undefined) {
   link.rel = "preload";
   link.as = "video";
   link.href = src;
+  link.crossOrigin = "anonymous";
   document.head.appendChild(link);
 
   const video = document.createElement("video");
@@ -78,4 +55,42 @@ export function preloadGiftVideo(url: string | null | undefined) {
   video.playsInline = true;
   video.src = src;
   video.load();
+}
+
+/** Warm an audio asset (gift sound) ahead of playback. */
+const preloadedAudio = new Set<string>();
+export function preloadGiftAudio(url: string | null | undefined) {
+  const src = resolvePlayableGiftUrl(url);
+  if (!src || preloadedAudio.has(src) || typeof document === "undefined") return;
+  preloadedAudio.add(src);
+  const audio = new Audio();
+  audio.preload = "auto";
+  audio.src = src;
+  audio.load();
+}
+
+/** Warm every asset for a gift row (clip + audio + thumbnail). */
+export function preloadGiftAssets(gift: {
+  clip_path?: string | null;
+  preview_url?: string | null;
+  audio_url?: string | null;
+  sound_url?: string | null;
+  thumb_url?: string | null;
+  icon_path?: string | null;
+  image_url?: string | null;
+} | null | undefined) {
+  if (!gift) return;
+  const clip = gift.clip_path ?? gift.preview_url;
+  if (clip && /\.(mp4|webm|mov)$/i.test(clip)) preloadGiftVideo(clip);
+  preloadGiftAudio(gift.audio_url ?? gift.sound_url);
+  const thumb = resolveGiftImageUrl(gift.thumb_url ?? gift.icon_path ?? gift.image_url);
+  if (thumb && typeof Image !== "undefined") {
+    const img = new Image();
+    img.src = thumb;
+  }
+}
+
+export function clearGiftPreloadCache() {
+  preloadedVideos.clear();
+  preloadedAudio.clear();
 }

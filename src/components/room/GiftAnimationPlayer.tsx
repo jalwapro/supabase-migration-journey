@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { playGiftAudioCue, playGiftWhooshCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
+import { trackGiftPlayback } from "@/lib/giftTelemetry";
 import SvgaPlayer from "./SvgaPlayer";
 
 
@@ -23,6 +24,7 @@ type Play = {
   receiverIds?: (string | null)[] | null;
   receiverName: string;
   receiverAvatar: string | null;
+  giftId?: string | null;
   giftName: string;
   giftEmoji: string;
   giftImageUrl?: string | null;
@@ -35,6 +37,12 @@ type Play = {
   soundUrl?: string | null;
   chromakey?: string | null;
   local?: boolean;
+  /** Higher priority pre-empts a lower-priority gift already on screen. */
+  priority?: number;
+  /** Per-gift audio gain (0–1) configured by admins. */
+  audioVolume?: number;
+  /** Wall-clock ms when this play entered the queue (telemetry). */
+  enqueuedAt?: number;
   /** Cumulative combo count (running total per sender+gift) — for train mode. */
   comboTotal?: number;
   /** Train wagons to render for this play (0 = normal flyer swarm). */
@@ -1361,15 +1369,34 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       pushSmallPlay({ ...p, comboTotal: total, trainWagons: wagons });
       return;
     }
-    if (currentRef.current) {
-      preloadGiftVideo(getEffectiveGiftClip(p).url);
-      setQueue((q) => [...q.slice(-3), p]);
-    } else {
-      preloadGiftVideo(getEffectiveGiftClip(p).url);
-      currentRef.current = p;
-      setCurrent(p);
+    preloadGiftVideo(getEffectiveGiftClip(p).url);
+    const incoming = { ...p, enqueuedAt: Date.now() };
+    const active = currentRef.current;
+    const pr = incoming.priority ?? 0;
+
+    // A markedly higher-priority gift (e.g. a 100k-coin flagship) pre-empts a
+    // cheap animation already on screen instead of waiting behind it.
+    if (active && pr > 0 && pr >= (active.priority ?? 0) + 10) {
+      trackGiftPlayback({
+        roomId, giftId: active.giftId, eventKey: active.key, status: "skipped",
+      });
+      currentRef.current = incoming;
+      setCurrent(incoming);
+      return;
     }
-  }, [pushSmallPlay, computeCombo]);
+
+    if (active) {
+      // Bounded, priority-ordered waiting room (highest priority plays next).
+      setQueue((q) =>
+        [...q, incoming]
+          .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0))
+          .slice(0, 4),
+      );
+    } else {
+      currentRef.current = incoming;
+      setCurrent(incoming);
+    }
+  }, [pushSmallPlay, computeCombo, roomId]);
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
@@ -1379,11 +1406,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
 
+    trackGiftPlayback({ roomId, giftId: p.giftId, eventKey: p.key, status: "delivered" });
     enqueueOne({
       ...p,
       quantity: Math.max(1, Math.floor(Number(p.quantity) || 1)),
     });
-  }, [enqueueOne]);
+  }, [enqueueOne, roomId]);
 
 
   useEffect(() => {
@@ -1418,6 +1446,9 @@ type GiftSendRow = {
   gift_image_url: string | null;
   gift_sound_url: string | null;
   gift_chromakey: string | null;
+  gift_audio_url?: string | null;
+  gift_priority?: number | null;
+  gift_audio_volume?: number | string | null;
 };
 
   // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
@@ -1430,6 +1461,7 @@ type GiftSendRow = {
       receiverIds: r.receiver_id ? [r.receiver_id] : null,
       receiverName: r.receiver_username ?? "Host",
       receiverAvatar: r.receiver_avatar ?? null,
+      giftId: r.gift_id ?? null,
       giftName: r.gift_name ?? "Gift",
       giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
       giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
@@ -1439,8 +1471,11 @@ type GiftSendRow = {
       diamonds: r.diamonds_earned ?? 0,
       quantity: r.quantity ?? 1,
       animation: r.gift_animation ?? "pop",
-      soundUrl: r.gift_sound_url ?? null,
+      soundUrl: r.gift_audio_url ?? r.gift_sound_url ?? null,
       chromakey: r.gift_chromakey ?? "auto",
+      priority: Number(r.gift_priority ?? 0) || 0,
+      audioVolume:
+        r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
     };
     if (seenRef.current.has(play.key)) return;
     // Coalesce multi-receiver sends into ONE simultaneous play.
@@ -1482,7 +1517,7 @@ type GiftSendRow = {
           "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
             "sender_username,sender_avatar,receiver_username,receiver_avatar," +
             "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-            "gift_image_url,gift_sound_url,gift_chromakey",
+            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume",
         )
         .eq("room_id", roomId)
         .gt("created_at", since)
@@ -1636,16 +1671,37 @@ type GiftSendRow = {
     const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
-      volume: Math.min(1, audioPrefs.volume * (isPremiumLong ? 1 : 0.9)),
+      volume: Math.min(
+        1,
+        audioPrefs.volume * (current.audioVolume ?? (isPremiumLong ? 1 : 0.9)),
+      ),
       premium: false,
     });
-    if (!played) return;
+    if (!played) {
+      trackGiftPlayback({
+        roomId, giftId: current.giftId, eventKey: current.key,
+        status: "failed", error: "audio_cue_blocked",
+      });
+      return;
+    }
     setSoundPulseKey(current.key);
     const pulseTimer = setTimeout(() => setSoundPulseKey((key) => (key === current.key ? null : key)), 1400);
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+
+  // Report successful playback once the asset is actually on screen.
+  useEffect(() => {
+    if (!current || readyKey !== current.key) return;
+    trackGiftPlayback({
+      roomId,
+      giftId: current.giftId,
+      eventKey: current.key,
+      status: "played",
+      queueWaitMs: current.enqueuedAt ? Date.now() - current.enqueuedAt : null,
+    });
+  }, [current, readyKey, roomId]);
 
 
 
