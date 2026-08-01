@@ -179,6 +179,13 @@ function UsersAdmin() {
                     </td>
                     <td className="px-3 py-2">
                       <div className="flex justify-end gap-1">
+                        <a
+                          href={`/admin/logs?user=${encodeURIComponent(u.username ?? u.id)}`}
+                          className="flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-1 text-[10px] font-bold text-sky-300"
+                          title="View this user's activity logs"
+                        >
+                          Logs
+                        </a>
                         <div className="relative flex items-center gap-1 rounded-full bg-fuchsia-500/10 px-2 py-1 text-fuchsia-300">
                           <Crown className="h-3.5 w-3.5" />
                           <select
