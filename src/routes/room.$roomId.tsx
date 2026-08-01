@@ -3111,11 +3111,14 @@ function RoomPage() {
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="fixed inset-x-0 z-[2147483001] flex items-center gap-2 border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed inset-x-0 z-[2147483001] border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
             style={{ bottom: keyboardOffset }}
             onClick={(e) => e.stopPropagation()}
           >
+            <ReplyBar reply={replyTo} onCancel={() => setReplyTo(null)} />
+            <div className="flex items-center gap-2">
             <button
+
               aria-label="Emoji reactions"
               onClick={() => {
                 if (!iAmOnSeat) {
