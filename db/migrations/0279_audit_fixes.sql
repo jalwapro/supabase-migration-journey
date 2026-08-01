@@ -19,10 +19,12 @@ update storage.buckets
    and public;
 
 -- 2. Basic gifts are image/emoji pops, not videos ----------------------------
+-- clip_type is NOT NULL, so mark them as the image pops they actually are.
 update gifts
-   set clip_type = null
+   set clip_type = 'image'
  where coalesce(clip_path, '') = ''
-   and clip_type is not null;
+   and clip_type <> 'image';
+
 
 -- 3. Cinematic footage must never be chroma-keyed ----------------------------
 -- Detected by sampling frame corners: this clip's borders are dark scene
