@@ -417,6 +417,7 @@ function AnimatedGiftVideo({
         key={src}
         ref={videoRef}
         src={src}
+        crossOrigin="anonymous"
         playsInline
         disablePictureInPicture
         preload="auto"
