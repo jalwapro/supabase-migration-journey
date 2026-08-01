@@ -2924,7 +2924,7 @@ function RoomPage() {
               </button>
             </div>
             <button
-              onClick={send}
+              onClick={() => void send()}
               aria-label="Send"
               disabled={!text.trim()}
               className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 text-white shadow-[0_0_16px_rgba(167,139,250,0.5)] disabled:opacity-40"
