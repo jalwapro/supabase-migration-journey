@@ -1524,27 +1524,88 @@ function RoomPage() {
   }
 
 
-  async function send() {
+  /** Extract @mentions ("@name") from a message body. */
+  function parseMentions(body: string): string[] {
+    return Array.from(new Set((body.match(/@([\p{L}\p{N}_.-]{2,32})/gu) ?? []).map((t) => t.slice(1))));
+  }
+
+  async function send(retryOf?: Message) {
     if (!user) {
       toast.error("Sign in to chat");
       return;
     }
-    const v = text.trim();
+    const v = (retryOf ? (retryOf.text ?? "") : text).trim();
     if (!v) return;
-    setText("");
-    const { error } = await supabase.from("room_messages").insert({
-      room_id: roomId,
+
+    const clientId = retryOf?.client_id ?? crypto.randomUUID();
+    const reply = retryOf
+      ? {
+          reply_to_id: retryOf.reply_to_id ?? null,
+          reply_to_username: retryOf.reply_to_username ?? null,
+          reply_to_text: retryOf.reply_to_text ?? null,
+        }
+      : {
+          reply_to_id: replyTo?.id ?? null,
+          reply_to_username: replyTo?.user?.username ?? replyTo?.sender_username ?? null,
+          reply_to_text: replyTo ? (replyTo.text ?? replyTo.message ?? "").slice(0, 120) : null,
+        };
+    const mentions = parseMentions(v);
+
+    // Optimistic echo: the message shows instantly, then the realtime INSERT
+    // (or the insert response) reconciles it via client_id.
+    const optimistic: Message = {
+      id: `local-${clientId}`,
+      client_id: clientId,
       user_id: user.id,
-      username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
       kind: "chat",
       text: v,
       message: v,
-    });
-    if (error) {
-      toast.error(error.message);
-      setText(v);
+      created_at: new Date().toISOString(),
+      mentions,
+      ...reply,
+      pending: true,
+      user: {
+        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
+        avatar: profile?.avatar ?? null,
+        level: profile?.vip_level ?? 0,
+      },
+    };
+    if (retryOf) {
+      setMessages((prev) => prev.map((m) => (m.client_id === clientId ? optimistic : m)));
+    } else {
+      setText("");
+      setReplyTo(null);
+      setMessages((prev) => [...prev.slice(-99), optimistic]);
     }
+
+    const { data, error } = await supabase
+      .from("room_messages")
+      .insert({
+        room_id: roomId,
+        user_id: user.id,
+        username: profile?.username ?? user.email?.split("@")[0] ?? "Guest",
+        kind: "chat",
+        text: v,
+        message: v,
+        client_id: clientId,
+        mentions,
+        ...reply,
+      })
+      .select(
+        "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
+      )
+      .maybeSingle();
+
+    if (error) {
+      setMessages((prev) =>
+        prev.map((m) => (m.client_id === clientId ? { ...m, pending: false, failed: true } : m)),
+      );
+      toast.error(error.message);
+      return;
+    }
+    if (data) mergeMessage({ ...(data as unknown as Message), user: optimistic.user });
   }
+
 
   // (sendQuickGift removed — see note above the QUICK_GIFTS deletion.)
 
