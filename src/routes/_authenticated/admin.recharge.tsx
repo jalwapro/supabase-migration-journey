@@ -28,14 +28,14 @@ function ProofThumb({ url }: { url: string }) {
     const path = extractProofPath(url);
     if (!path) { setSigned(url); return; }
     (async () => {
-      const { data, error } = await supabase.storage
-        .from("recharge-proofs")
-        .createSignedUrl(path, 60 * 10); // 10 min
+      // R2-first (all media migrated), Supabase signed URL as fallback.
+      const resolved = await resolveMediaUrl(`storage://recharge-proofs/${path}`);
       if (!alive) return;
-      setSigned(error ? null : data?.signedUrl ?? null);
+      setSigned(resolved || null);
     })();
     return () => { alive = false; };
   }, [url]);
+
   if (!signed) {
     return (
       <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-card/60">
