@@ -678,11 +678,12 @@ function RoomPage() {
       supabase
         .from("room_messages")
         .select(
-          "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level",
+          "id,user_id,kind,text,message,created_at,sender_username,sender_avatar,sender_level,client_id,reply_to_id,reply_to_username,reply_to_text,mentions",
         )
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
         .limit(50),
+
 
       supabase
         .from("room_seat_likes")
