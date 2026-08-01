@@ -4019,7 +4019,44 @@ function MiniAction({
 }
 
 
-const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: boolean }) {
+/** Render body text with @mentions highlighted (mine get a stronger accent). */
+function MessageBody({ body, myName }: { body: string; myName?: string | null }) {
+  const parts = body.split(/(@[\p{L}\p{N}_.-]{2,32})/gu);
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (!part.startsWith("@")) return <span key={i}>{part}</span>;
+        const isMe = !!myName && part.slice(1).toLowerCase() === myName.toLowerCase();
+        return (
+          <span
+            key={i}
+            className={
+              isMe
+                ? "rounded bg-[color:var(--gold)]/25 px-1 font-bold text-[color:var(--gold)]"
+                : "font-semibold text-[color:var(--secondary)]"
+            }
+          >
+            {part}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+const ChatLine = React.memo(function ChatLine({
+  m,
+  isMe,
+  myName,
+  onReply,
+  onRetry,
+}: {
+  m: Message;
+  isMe: boolean;
+  myName?: string | null;
+  onReply?: (m: Message) => void;
+  onRetry?: (m: Message) => void;
+}) {
   const body = m.text ?? m.message ?? "";
   if (m.kind === "gift") {
     return (
@@ -4040,6 +4077,8 @@ const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: b
     );
   }
   const initial = (m.user?.username ?? "U").charAt(0).toUpperCase();
+  const mentionsMe =
+    !!myName && (m.mentions ?? []).some((n) => n.toLowerCase() === myName.toLowerCase());
   return (
     <div className="flex max-w-full items-start gap-1.5">
       {m.user?.avatar ? (
@@ -4054,23 +4093,59 @@ const ChatLine = React.memo(function ChatLine({ m, isMe }: { m: Message; isMe: b
         </div>
       )}
       <div
+        onDoubleClick={() => onReply?.(m)}
         className={`rounded-xl border px-2 py-1 backdrop-blur-sm ${
-          isMe
-            ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
-            : "border-white/10 bg-black/50"
-        }`}
+          m.failed
+            ? "border-red-500/60 bg-red-950/40"
+            : mentionsMe
+              ? "border-[color:var(--gold)]/60 bg-[color:var(--gold)]/10"
+              : isMe
+                ? "border-[color:var(--primary)]/50 bg-gradient-to-br from-[color:var(--primary)]/25 to-[color:var(--secondary)]/20"
+                : "border-white/10 bg-black/50"
+        } ${m.pending ? "opacity-60" : ""}`}
       >
+        {m.reply_to_id && (
+          <div className="mb-0.5 truncate rounded-md border-l-2 border-[color:var(--secondary)] bg-white/5 px-1.5 py-0.5 text-[9.5px] text-white/60">
+            <span className="font-bold text-[color:var(--secondary)]">
+              @{m.reply_to_username ?? "user"}
+            </span>{" "}
+            {m.reply_to_text}
+          </div>
+        )}
         <span className="mr-1 inline-flex items-center gap-1 text-[10px] font-bold text-[color:var(--gold)]">
           <VipBadge level={m.user?.level ?? 0} size="xs" />
           {m.user?.username ?? "user"}:
         </span>
         <span className="break-words text-[11.5px] leading-snug text-white/95">
-          {body}
+          <MessageBody body={body} myName={myName} />
         </span>
+        {isMe && (m.pending || m.failed) && (
+          <span className="ml-1 align-middle text-[9px]">
+            {m.failed ? (
+              <button
+                onClick={() => onRetry?.(m)}
+                className="font-bold text-red-300 underline"
+              >
+                failed · retry
+              </button>
+            ) : (
+              <span className="text-white/50">sending…</span>
+            )}
+          </span>
+        )}
+        {!isMe && onReply && (
+          <button
+            onClick={() => onReply(m)}
+            className="ml-1.5 align-middle text-[9px] font-semibold text-white/40"
+          >
+            reply
+          </button>
+        )}
       </div>
     </div>
   );
 });
+
 
 function EmptyChat() {
   return (
