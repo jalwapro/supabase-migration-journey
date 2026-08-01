@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -83,10 +84,13 @@ function Page() {
   async function uploadTo(field: "media_url" | "thumbnail_url" | "sound_url", file: File) {
     if (!editing) return;
     const path = `entrance-effects/${Date.now()}_${file.name.replace(/[^\w.-]+/g, "_")}`;
-    const { error: upErr } = await supabase.storage.from("shop-assets").upload(path, file, { upsert: true });
-    if (upErr) return toast.error(upErr.message);
-    const { data } = supabase.storage.from("shop-assets").getPublicUrl(path);
-    setEditing({ ...editing, [field]: data.publicUrl } as any);
+    let publicUrl: string;
+    try {
+      publicUrl = await uploadFileAtPath("shop-assets", path, file);
+    } catch (e) {
+      return toast.error(e instanceof Error ? e.message : "Upload failed");
+    }
+    setEditing({ ...editing, [field]: publicUrl } as any);
     toast.success("Uploaded");
   }
 

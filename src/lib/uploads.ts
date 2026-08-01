@@ -47,6 +47,27 @@ async function uploadToR2(key: string, file: File): Promise<UploadResult | null>
 }
 
 /**
+ * Upload a File to an explicit `bucket/path` key and return its public URL.
+ * Goes to Cloudflare R2 when configured, otherwise Supabase storage.
+ */
+export async function uploadFileAtPath(
+  bucket: string,
+  path: string,
+  file: File,
+): Promise<string> {
+  const r2 = await uploadToR2(`${bucket}/${path}`, file);
+  if (r2) return r2.url;
+
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    contentType: file.type || undefined,
+    upsert: true,
+    cacheControl: "3600",
+  });
+  if (error) throw error;
+  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+}
+
+/**
  * Upload a File and return its public URL. Uses Cloudflare R2 when configured,
  * otherwise falls back to the Supabase storage bucket.
  * `folder` becomes the first path segment (e.g. "banners/uuid.png").

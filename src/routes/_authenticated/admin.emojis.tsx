@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -189,12 +190,8 @@ function EmojisAdmin() {
     try {
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `emoji-assets/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("shop-assets")
-        .upload(path, file, { contentType: file.type, upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from("shop-assets").getPublicUrl(path);
-      onDone(data.publicUrl);
+      const publicUrl = await uploadFileAtPath("shop-assets", path, file);
+      onDone(publicUrl);
       toast.success("Uploaded");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
