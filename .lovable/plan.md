@@ -1,51 +1,66 @@
-# Premium Profile Card System
+# Gift Engine v2: R2 Storage, Real-Time Sync, Audio, Room Chat & Goal Rewards
 
-End-to-end profile-card cosmetics: shop → purchase (coins/diamonds) → equip → auto-render on every profile view, with an admin catalog.
+This is a large upgrade covering asset storage, real-time playback, audio, chat and the gift-goal UI. It is split into phases so each one ships working end-to-end (SQL migration + backend + UI), and nothing is left as a mock.
 
-## 1. Database — migration `0256_profile_cards.sql`
+## Current state (verified)
 
-- `profile_cards` — catalog: `id, key, name, description, category, rarity, bg_media_url, bg_media_type` (image/video/lottie/svga/builtin), `bg_chromakey, thumbnail_url, frame_effect, accent_color, glow_color, particle_style, price_coins, price_diamonds, min_vip_level, duration_days` (null = permanent), `is_active, is_limited, starts_at, ends_at, sort_order`.
-- `user_profile_cards` — ownership: `user_id, card_id, purchased_at, expires_at, is_equipped` (unique partial index for one equipped per user).
-- RPCs (SECURITY DEFINER, wallet-atomic): `purchase_profile_card(card_id, currency)`, `equip_profile_card(card_id)`, `unequip_profile_card()`, `admin_upsert_profile_card(...)`, `admin_delete_profile_card(id)`.
-- GRANTs + RLS: catalog readable by anon; ownership readable by anyone (so viewers can render the owner's equipped card); write RPCs gated by owner or `has_role('admin')`.
-- Seed ~45 cards across all 9 categories (Basic, VIP, Royal, Luxury, Fantasy, Galaxy, Nature, Neon, Event) using `builtin:` keys resolved to pure-SVG animated backgrounds — populated on day one, no media upload needed.
+- Uploads already go to Cloudflare R2 first (`/api/r2-sign` presigned PUT), Supabase Storage only as fallback. A one-time migration already copied all 129 objects to R2 and rewrote DB URLs.
+- Gift playback lives in `GiftAnimationPlayer.tsx` (1.9k lines) with `giftAudio.ts` for sound.
+- Room page `room.$roomId.tsx` is ~6k lines and holds chat, top-gifter bar and gift events.
+- Admin gift management is `admin.gifts.tsx`.
 
-## 2. Playback / rendering
+So the R2 part is mostly a hardening/verification job, not a fresh migration.
 
-- **`src/lib/profileCards/registry.ts`** — resolves a card's background (image/video/lottie/svga/builtin), frame effect, accent + glow colors, particle style.
-- **`src/lib/profileCards/builtin.tsx`** — 45 pure-SVG animated backgrounds (gradient shine, aurora, sakura fall, nebula drift, matrix rain, phoenix flames, dragon scales, etc.).
-- **`src/components/profile/PremiumProfileCard.tsx`** — reusable card shell:
-  - Animated background layer (respects chromakey for MP4/WebM)
-  - Glassmorphism content panel with slide-in + border-glow keyframes
-  - `LevelAvatar` (uses equipped avatar frame + VIP tier)
-  - Slots: username, ID, country flag, VIP badge, level, verified check, popularity, followers/following/friends, bio, online status, join date, signature
-  - Floating particles/sparkles layer per `particle_style`
-  - Action row: Follow, Message, Voice, Video, Invite, Gift, Report, Block, Share
-  - Respects `prefers-reduced-motion`
-- Wired into `src/routes/_authenticated/u.$userId.tsx` (visitor profile) and `me.tsx` preview — the card wraps the existing hero, replacing the current static hero background.
+---
 
-## 3. Shop — `src/routes/_authenticated/shop-profile-cards.tsx`
+## Phase 1 — R2 as the only asset source (hardening)
 
-- Category tabs (all 9), search bar, rarity filter.
-- Grid of cards, each: live mini preview, name, rarity chip, coin + diamond price, VIP requirement, duration badge, status chip (Owned / Equipped / Locked).
-- Tap → fullscreen preview modal with the real `PremiumProfileCard` populated with the viewer's data, plus Purchase (coins/diamonds toggle) + Equip buttons.
-- Added to existing Shop nav alongside Frames/Entrances/etc.
+- Add a repo-wide audit script that scans `gifts`, `entrance_effects`, `themes`, `emojis`, `profiles`, `banners`, `ads` for any non-R2 asset URL and re-uploads + rewrites stragglers.
+- Remove the silent Supabase fallback for gift/admin asset uploads: an upload that cannot reach R2 fails loudly with a clear admin error instead of writing to a second store.
+- Server-side upload validation in `/api/r2-sign`: allow-list of extensions/MIME (mp4, webm, json, svg, png, webp, mp3, aac, wav, ogg), per-type max size, path scoping per bucket prefix.
+- Any remaining local `public/gifts/*` and `src/assets/gifts-*` references get resolved to R2 URLs at the data layer.
 
-## 4. Admin panel — `src/routes/_authenticated/admin.profile-cards.tsx`
+## Phase 2 — Gift asset schema
 
-- CRUD grid with edit / toggle-active / delete + owned-count stats.
-- Upload background (image/mp4/webm/lottie/svga) + thumbnail via existing `FileUploader` → `shop-assets/profile-cards/`.
-- Fields: name, description, category, rarity, chromakey, price (coins + diamonds), min VIP, duration, limited-time window, accent + glow color pickers, particle style.
-- Sidebar link added to `AdminShell` under "Shop".
+Migration adds to `gifts` (nullable, backfilled from existing columns): `audio_url`, `thumb_url`, `preview_url`, `duration_ms`, `priority`, `loop`, `is_active`, `audio_volume`, `audio_enabled`. GRANTs + RLS policies included; admin write, public read of active rows.
 
-## 5. Design language
+## Phase 3 — Admin Gift Management upgrade
 
-Reuses existing tokens (`--gold`, `--primary`, `--secondary`), glassmorphism (`backdrop-blur-xl`, `bg-white/[0.03]`), gold ornaments from `JalwaFrame`. All new keyframes live in `src/styles.css`.
+In `admin.gifts.tsx`: upload/replace/delete for animation, audio, thumbnail and preview; inline audio preview with volume slider, mute and enable toggle; duration auto-detected on upload; priority, loop, category, coin price, active toggle; "Test playback" button that runs the real room playback engine in a modal.
 
-## Out of scope this turn
+## Phase 4 — Real-time gift engine
 
-- Recording real cinematic MP4 backgrounds — the seed uses premium animated SVG backgrounds. Admin can upload real videos any time; playback path handles them from day one.
-- Voice/Video call wiring — action buttons route to existing DM/call flows already in the app.
+- Single broadcast channel per room (`room:{id}:gifts`) so sender, host, co-hosts, audience and PK participants all receive the identical event; server timestamp in payload so every client schedules from the same clock.
+- Deduplicate by gift-event id (no double play on realtime + optimistic echo).
+- Priority queue with configurable interrupt: high-value gifts can pre-empt lower ones; others play sequentially.
+- Preload: room entry prefetches the top gifts' assets; a gift's assets are warmed the moment the sheet opens.
+- Audio starts on the same animation frame as the video (single scheduler, shared unlock of the audio context).
+- Playback telemetry table: sent / delivered / played / failed, queue wait, playback ms, R2 fetch ms, errors — visible in admin.
 
-## Ready to build?
-Confirm and I'll ship the migration + all files above in one pass.
+## Phase 5 — Voice room chat rebuild
+
+Extract chat out of the 6k-line room file into its own component + hook: virtualized smooth scroll, optimistic instant send with dedupe, auto-scroll with "jump to latest", reply, @mention, emoji, timestamps, read state, reconnect/backfill on WebSocket drop so nothing disappears, mobile-safe layout.
+
+## Phase 6 — Gift Goal system
+
+- Replace the top-gifter progress bar with a small floating circular button showing only the percentage.
+- New `room_gift_goals` table + realtime updates so every viewer sees the same percentage without refresh.
+- On 100%: play the admin-selected reward gift with its audio and celebration effect (confetti / fireworks / screen flash), then reset to 0% and start again, honouring the cooldown.
+- Admin "Goal Rewards" page: target coins, reward gift, reward audio, celebration effect, repeat, cooldown.
+
+## Phase 7 — Performance, network, compatibility
+
+Lazy loading and prefetch, decoded-frame cache with memory cap and cleanup on room exit, hardware-accelerated compositing, adaptive quality on low-end Android, retry with backoff and resume on flaky networks, no crash on failed asset — gift degrades to its thumbnail.
+
+---
+
+## Technical notes
+
+- All schema work goes in `db/migrations/` and is applied with `psql "$JALWA_DB_URL"`, with GRANTs + RLS in the same file.
+- No mock data anywhere: every list, admin table and analytics number reads real rows.
+- Existing features are preserved; the room file is refactored by extraction, not rewritten.
+- Signed URLs stay for private media; gift assets remain public-read on R2 with validation on write.
+
+## Suggested order
+
+Phases 1–4 first (storage correctness + the engine that everything else depends on), then 6 (goal UI, visible win), then 5 (chat rebuild), then 7 (polish). Tell me if you want a different order or want a phase dropped.
