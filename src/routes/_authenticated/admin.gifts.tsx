@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -180,12 +181,8 @@ function GiftsAdmin() {
       setUploading(true);
       const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
       const path = `gift-clips/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("shop-assets")
-        .upload(path, file, { contentType: file.type || "video/mp4", upsert: false });
-      if (error) throw error;
-      const { data } = supabase.storage.from("shop-assets").getPublicUrl(path);
-      setDraft((d) => ({ ...d, clip_path: data.publicUrl, clip_type: ext === "webm" ? "webm" : "mp4" }));
+      const publicUrl = await uploadFileAtPath("shop-assets", path, file);
+      setDraft((d) => ({ ...d, clip_path: publicUrl, clip_type: ext === "webm" ? "webm" : "mp4" }));
       toast.success("Video uploaded");
     } catch (e) {
       toast.error((e as Error).message);

@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { AppShell } from "@/components/layout/AppShell";
 import { PremiumProfileCard } from "@/components/profile/PremiumProfileCard";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -155,10 +156,8 @@ function MePage() {
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/avatar-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true, cacheControl: "3600" });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      const { error: dbErr } = await supabase.from("profiles").update({ avatar: pub.publicUrl }).eq("id", user.id);
+      const publicUrl = await uploadFileAtPath("avatars", path, file);
+      const { error: dbErr } = await supabase.from("profiles").update({ avatar: publicUrl }).eq("id", user.id);
       if (dbErr) throw dbErr;
       toast.success("Profile photo updated ✨");
       await refresh();

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -88,14 +89,10 @@ function AnimationsTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
     try {
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `spotlight/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("public-assets")
-        .upload(path, file, { contentType: file.type });
-      if (error) throw error;
-      const { data } = supabase.storage.from("public-assets").getPublicUrl(path);
+      const publicUrl = await uploadFileAtPath("public-assets", path, file);
       setDraft((d) => ({
         ...(d ?? {}),
-        [kind === "overlay" ? "overlay_asset_url" : "bg_animation_url"]: data.publicUrl,
+        [kind === "overlay" ? "overlay_asset_url" : "bg_animation_url"]: publicUrl,
       }));
       toast.success("Uploaded");
     } catch (e) {

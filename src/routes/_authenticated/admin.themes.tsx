@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,12 +71,7 @@ function ThemeMediaPreview({
 async function uploadToShop(file: File, folder: string) {
   const ext = file.name.split(".").pop() ?? "bin";
   const path = `${folder}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("shop-assets").upload(path, file, {
-    contentType: file.type,
-    upsert: false,
-  });
-  if (error) throw error;
-  return supabase.storage.from("shop-assets").getPublicUrl(path).data.publicUrl;
+  return uploadFileAtPath("shop-assets", path, file);
 }
 
 function ThemesAdmin() {

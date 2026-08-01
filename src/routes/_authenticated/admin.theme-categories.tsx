@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,9 +16,7 @@ type Cat = { id: string; name: string; slug: string | null; icon_url: string | n
 async function uploadIcon(file: File) {
   const ext = file.name.split(".").pop() ?? "png";
   const path = `category-icons/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabase.storage.from("shop-assets").upload(path, file, { contentType: file.type });
-  if (error) throw error;
-  return supabase.storage.from("shop-assets").getPublicUrl(path).data.publicUrl;
+  return uploadFileAtPath("shop-assets", path, file);
 }
 
 function ThemeCatsAdmin() {

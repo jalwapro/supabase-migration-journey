@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
@@ -76,12 +77,7 @@ function SplashAdmin() {
     try {
       const ext = file.name.split(".").pop() || (kind === "video" ? "mp4" : "jpg");
       const path = `${kind}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from("splash")
-        .upload(path, file, { upsert: true, cacheControl: "3600", contentType: file.type });
-      if (upErr) throw upErr;
-      const { data: pub } = supabase.storage.from("splash").getPublicUrl(path);
-      const url = pub.publicUrl;
+      const url = await uploadFileAtPath("splash", path, file);
       await save.mutateAsync(kind === "video" ? { splash_video: url } : { splash_video_poster: url });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed");
