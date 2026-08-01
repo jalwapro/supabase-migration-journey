@@ -101,16 +101,8 @@ BEGIN
      greatest(coalesce(_minutes_limit, 10000), 1), coalesce(_enabled, true), auth.uid());
 END; $$;
 
--- keep the old 7-arg signature working for existing callers
+-- old 7-arg overload removed: it made named-arg RPC calls ambiguous.
 DROP FUNCTION IF EXISTS public.admin_upsert_rtc_slot(int, bigint, text, text, text, numeric, boolean);
-CREATE OR REPLACE FUNCTION public.admin_upsert_rtc_slot(
-  _slot int, _app_id bigint, _server_secret text, _server_url text,
-  _label text, _minutes_limit numeric, _enabled boolean
-)
-RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path = public AS $$
-  SELECT public.admin_upsert_rtc_slot(_slot, _app_id, _server_secret, _server_url,
-                                      _label, _minutes_limit, _enabled, 'production');
-$$;
 
 -- ------------------------------------------------------------------ listing
 DROP FUNCTION IF EXISTS public.admin_list_rtc_pool();
@@ -221,5 +213,3 @@ GRANT EXECUTE ON FUNCTION public.rtc_set_verify_state(int, text, text) TO servic
 -- re-grant recreated functions (DROP removed prior grants)
 REVOKE ALL ON FUNCTION public.admin_list_rtc_pool() FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.admin_list_rtc_pool() TO authenticated;
-REVOKE ALL ON FUNCTION public.admin_upsert_rtc_slot(int, bigint, text, text, text, numeric, boolean) FROM public, anon;
-GRANT EXECUTE ON FUNCTION public.admin_upsert_rtc_slot(int, bigint, text, text, text, numeric, boolean) TO authenticated;
