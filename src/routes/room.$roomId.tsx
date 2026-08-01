@@ -315,6 +315,35 @@ function RoomPage() {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const chatEndVideoRef = useRef<HTMLDivElement | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  /** Message the composer is currently replying to (chat v2). */
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  /** Ids already rendered — guards against realtime + optimistic double-add. */
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  /**
+   * Merge a message into the transcript: replaces the matching optimistic row
+   * (by client_id) and never inserts the same server id twice.
+   */
+  const mergeMessage = useCallback((row: Message) => {
+    setMessages((prev) => {
+      const byId = prev.findIndex((m) => m.id === row.id);
+      if (byId !== -1) {
+        const next = [...prev];
+        next[byId] = { ...prev[byId], ...row, pending: false, failed: false };
+        return next;
+      }
+      const byClient = row.client_id
+        ? prev.findIndex((m) => m.client_id && m.client_id === row.client_id)
+        : -1;
+      if (byClient !== -1) {
+        const next = [...prev];
+        next[byClient] = { ...prev[byClient], ...row, pending: false, failed: false };
+        return next;
+      }
+      seenMessageIdsRef.current.add(row.id);
+      return [...prev.slice(-99), row];
+    });
+  }, []);
+
   const [members, setMembers] = useState<Member[]>([]);
   const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
   const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
