@@ -152,9 +152,6 @@ function giftSignature(p: Play) {
   return `${p.senderName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-/**
- * AnimatedGiftVideo - COMPLETE FIXED VERSION with CORS bypass, audio enable, and separate audio element
- */
 function AnimatedGiftVideo({
   src,
   type,
@@ -163,8 +160,8 @@ function AnimatedGiftVideo({
   onDuration,
   fallbackEmoji,
   fallbackImage,
-  withSound = true,
-  soundUrl = null,
+  withSound = false,
+  volume = 1,
   suppressEmojiFallback = false,
   screenBlend = false,
   lumaKey = false,
@@ -179,181 +176,41 @@ function AnimatedGiftVideo({
   fallbackEmoji: string;
   fallbackImage: string | null;
   withSound?: boolean;
-  soundUrl?: string | null;
+  /** 0..1 — scales the boosted gain; comes from the user's gift-audio volume pref. */
+  volume?: number;
   suppressEmojiFallback?: boolean;
   screenBlend?: boolean;
   lumaKey?: boolean;
   greenKey?: boolean;
+  /** Admin set the chromakey explicitly — never let runtime detection override it. */
   forceKey?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const readyOnceRef = useRef(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string>(src);
   const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
   const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
 
-  // ========== FIX 1: Fetch video as blob to bypass CORS issues ==========
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchVideo = async () => {
-      if (!src) return;
-      
-      if (src.startsWith('blob:') || src.startsWith('data:')) {
-        if (isMounted) setVideoUrl(src);
-        return;
-      }
-
-      if (src.includes('supabase.co/storage')) {
-        try {
-          const response = await fetch(src, {
-            mode: 'cors',
-            credentials: 'omit',
-            headers: {
-              'Accept': 'video/mp4,video/webm,video/*',
-            },
-          });
-          
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-          }
-          
-          const blob = await response.blob();
-          const blobUrl = URL.createObjectURL(blob);
-          if (isMounted) {
-            setVideoUrl(blobUrl);
-            console.log('🎵 Video fetched as blob (CORS bypass):', blobUrl);
-          }
-        } catch (error) {
-          console.warn('🎵 Failed to fetch video as blob, using original URL:', error);
-          if (isMounted) setVideoUrl(src);
-        }
-      } else {
-        setVideoUrl(src);
-      }
-    };
-
-    fetchVideo();
-
-    return () => {
-      isMounted = false;
-      if (videoUrl.startsWith('blob:')) {
-        URL.revokeObjectURL(videoUrl);
-      }
-    };
-  }, [src]);
-
-  // ========== FIX 2: Play separate audio from same video URL ==========
-  useEffect(() => {
-    if (!withSound || !videoUrl) return;
-    
-    // Create separate audio element from the same video URL
-    // This forces audio playback even if browser says hasAudio: false
-    const audio = new Audio(videoUrl);
-    audio.crossOrigin = 'anonymous';
-    audio.volume = 1;
-    audio.muted = false;
-    audioRef.current = audio;
-    
-    const video = videoRef.current;
-    let isAudioPlaying = false;
-    
-    const playAudio = () => {
-      if (isAudioPlaying) return;
-      isAudioPlaying = true;
-      
-      // Sync audio with video position
-      if (video) {
-        audio.currentTime = video.currentTime || 0;
-      }
-      
-      audio.play().catch(() => {
-        // If audio fails, try video's native audio
-        if (video) {
-          video.muted = false;
-          video.volume = 1;
-          video.play().catch(() => {});
-        }
-      });
-    };
-    
-    const pauseAudio = () => {
-      isAudioPlaying = false;
-      audio.pause();
-    };
-    
-    if (video) {
-      video.addEventListener('play', playAudio);
-      video.addEventListener('pause', pauseAudio);
-      video.addEventListener('ended', pauseAudio);
-      video.addEventListener('timeupdate', () => {
-        // Keep audio in sync with video
-        if (audio.currentTime !== video.currentTime && !audio.paused) {
-          audio.currentTime = video.currentTime || 0;
-        }
-      });
+  // NOTE: we intentionally do NOT route audio through the Web Audio API
+  // (createMediaElementSource) here — that requires the media response to
+  // carry permissive CORS headers, and Supabase Storage's public bucket
+  // does not reliably send those for range requests. Without them, Web
+  // Audio silently outputs zeroes (and setting `crossOrigin` on the
+  // <video> to try to satisfy it makes the browser abort the whole
+  // fetch instead, breaking playback entirely). Native <video> playback
+  // has no such restriction — cross-origin video plays with full audio
+  // regardless of CORS — so we just unmute the element directly.
+  const applyVolume = useCallback((video: HTMLVideoElement) => {
+    if (withSound) {
+      video.muted = false;
+      video.volume = Math.max(0, Math.min(1, volume));
+    } else {
+      video.muted = true;
+      video.volume = 0;
     }
-    
-    return () => {
-      if (video) {
-        video.removeEventListener('play', playAudio);
-        video.removeEventListener('pause', pauseAudio);
-        video.removeEventListener('ended', pauseAudio);
-        video.removeEventListener('timeupdate', () => {});
-      }
-      audio.pause();
-      audio.src = '';
-      audioRef.current = null;
-    };
-  }, [videoUrl, withSound]);
+  }, [withSound, volume]);
 
-  // ========== FIX 3: Use soundUrl if provided ==========
-  useEffect(() => {
-    if (!soundUrl || !withSound) return;
-    
-    const audio = new Audio(soundUrl);
-    audio.crossOrigin = 'anonymous';
-    audio.volume = 1;
-    audio.muted = false;
-    audioRef.current = audio;
-    
-    const video = videoRef.current;
-    let isAudioPlaying = false;
-    
-    const playAudio = () => {
-      if (isAudioPlaying) return;
-      isAudioPlaying = true;
-      audio.currentTime = 0;
-      audio.play().catch(() => {});
-    };
-    
-    const pauseAudio = () => {
-      isAudioPlaying = false;
-      audio.pause();
-    };
-    
-    if (video) {
-      video.addEventListener('play', playAudio);
-      video.addEventListener('pause', pauseAudio);
-      video.addEventListener('ended', pauseAudio);
-    }
-    
-    return () => {
-      if (video) {
-        video.removeEventListener('play', playAudio);
-        video.removeEventListener('pause', pauseAudio);
-        video.removeEventListener('ended', pauseAudio);
-      }
-      audio.pause();
-      audio.src = '';
-      audioRef.current = null;
-    };
-  }, [soundUrl, withSound]);
-
-  // ========== FIX 4: Force unmute ==========
   useEffect(() => {
     readyOnceRef.current = false;
     setReady(false);
@@ -362,23 +219,25 @@ function AnimatedGiftVideo({
     setDetectedKey(null);
     const video = videoRef.current;
     if (!video) return;
-    
-    video.muted = false;
-    video.volume = 1;
-    video.defaultMuted = false;
-    
-    // Also ensure audio element is ready
-    if (audioRef.current) {
-      audioRef.current.muted = false;
-      audioRef.current.volume = 1;
-    }
-    
-    console.log("🎵 Video audio ENABLED:", { 
-      muted: video.muted, 
-      volume: video.volume,
-      src: videoUrl 
+    // Start muted (safest for autoplay); startPlayback flips this once play() is attempted.
+    video.muted = true;
+    video.volume = 0;
+    // Do NOT call video.load() — the JSX `src` prop + `key` remount already
+    // triggers a single fetch. A manual load() here causes a second request
+    // and a visible stutter on first play.
+  }, [src, withSound]);
+
+  const startPlayback = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    applyVolume(video);
+    video.play().catch(() => {
+      // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
+      // retry muted so at least the visual plays.
+      video.muted = true;
+      video.play().catch(() => {});
     });
-  }, [videoUrl]);
+  }, [applyVolume]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -386,47 +245,6 @@ function AnimatedGiftVideo({
       video.pause();
       video.removeAttribute("src");
       video.load();
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-    }
-    if (videoUrl.startsWith('blob:')) {
-      URL.revokeObjectURL(videoUrl);
-    }
-  }, [videoUrl]);
-
-  const startPlayback = useCallback(async () => {
-    const video = videoRef.current;
-    if (!video) return;
-    
-    video.muted = false;
-    video.volume = 1;
-    
-    try {
-      await video.play();
-      console.log("🎵 Video playing WITH audio");
-      
-      // Also play audio element if exists
-      if (audioRef.current && !audioRef.current.paused) {
-        audioRef.current.currentTime = video.currentTime || 0;
-        audioRef.current.play().catch(() => {});
-      }
-    } catch (error) {
-      console.warn("🎵 Play failed, retrying:", error);
-      video.muted = true;
-      try {
-        await video.play();
-        video.muted = false;
-        video.volume = 1;
-        console.log("🎵 Video playing (unmuted after)");
-        
-        if (audioRef.current) {
-          audioRef.current.play().catch(() => {});
-        }
-      } catch (e) {
-        console.error("🎵 Play failed:", e);
-      }
     }
   }, []);
 
@@ -583,41 +401,27 @@ function AnimatedGiftVideo({
 
       {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
       <video
-        key={videoUrl}
+        key={src}
         ref={videoRef}
-        src={videoUrl}
+        src={src}
         playsInline
         disablePictureInPicture
         preload="auto"
         autoPlay
-        muted={false}
-        crossOrigin="anonymous"
-        onLoadedData={() => {
-          if (videoRef.current) {
-            videoRef.current.muted = false;
-            videoRef.current.volume = 1;
-          }
-          startPlayback();
-        }}
+        muted
+        onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
           // Clamp: some encodes report Infinity / bogus durations which would
           // otherwise freeze the gift slot forever on slower devices.
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
-          
-          const video = e.currentTarget;
-          console.log("🎵 Metadata loaded:", {
-            hasAudio: video.mozHasAudio || video.audioTracks?.length > 0,
-            duration: d,
-            readyState: video.readyState,
-          });
         }}
+
         onCanPlayThrough={() => {
           startPlayback();
         }}
         onPlaying={markReady}
-        onError={(e) => {
-          console.error("🎵 Video error:", e);
+        onError={() => {
           setFailed(true);
           onReady();
         }}
@@ -1502,53 +1306,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
 
-  // ========== FIX: Force audio unlock on user interaction ==========
-  useEffect(() => {
-    let audioCtx: AudioContext | null = null;
-    
-    const unlockAudio = async () => {
-      try {
-        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        if (audioCtx.state === 'suspended') {
-          await audioCtx.resume();
-        }
-        // Play silent buffer to unlock
-        const buffer = audioCtx.createBuffer(1, 1, 22050);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-        console.log("🎵 Audio UNLOCKED!");
-        
-        // Unlock all videos
-        document.querySelectorAll('video').forEach(v => {
-          v.muted = false;
-          v.volume = 1;
-        });
-      } catch (e) {
-        console.warn("🎵 Audio unlock failed:", e);
-      }
-    };
-
-    // Unlock on user interaction
-    const events = ['click', 'touchstart', 'pointerdown', 'keydown'];
-    events.forEach(event => {
-      window.addEventListener(event, unlockAudio, { once: true, passive: true });
-    });
-
-    // Try immediately if document has focus
-    if (document.hasFocus()) {
-      unlockAudio();
-    }
-
-    return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, unlockAudio);
-      });
-      if (audioCtx) audioCtx.close().catch(() => {});
-    };
-  }, []);
-
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
@@ -1991,6 +1748,11 @@ type GiftSendRow = {
       {/* Fully transparent stage: no black room-cover behind gifts. */}
       <div className="absolute inset-0 z-0 bg-transparent" />
 
+      {/* Cinematic pre-play overlay removed per user request */}
+
+
+
+
       {/* sender chip */}
       <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
         {current.senderAvatar ? (
@@ -2028,14 +1790,16 @@ type GiftSendRow = {
         ) : isSpaceship ? (
           <SpaceshipGiftVisual onReady={markCurrentReady} />
         ) : hasVideo ? (
+
+
           <AnimatedGiftVideo
             src={giftClipUrl ?? ""}
             type={giftClip.type}
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={true}
-            soundUrl={current?.soundUrl}
+            withSound={!audioPrefs.muted && audioPrefs.volume > 0}
+            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
@@ -2044,6 +1808,7 @@ type GiftSendRow = {
             greenKey={chromakeyMode === "green"}
             forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
           />
+
         ) : hasSvga ? (
           <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
             <SvgaPlayer
@@ -2052,6 +1817,7 @@ type GiftSendRow = {
               style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
             />
           </div>
+
         ) : hasSvg ? (
           <AnimatedGiftImage
             src={giftClipUrl ?? ""}
