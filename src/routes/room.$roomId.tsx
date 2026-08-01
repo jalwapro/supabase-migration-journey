@@ -209,6 +209,42 @@ function RoomPage() {
 
   const [text, setText] = useState("");
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
+
+  // Freeze the whole page in place while the composer is open — otherwise
+  // mobile browsers auto-scroll the nearest scrollable ancestor to keep the
+  // focused input visible above the keyboard, dragging the entire room
+  // (header, seats, everything) up with it even though the composer itself
+  // is `position: fixed`. Locking body scroll + pinning its position stops
+  // that reflow; only the small composer bar reacts to the keyboard.
+  useEffect(() => {
+    if (!chatComposerOpen) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+      overflow: body.style.overflow,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      body.style.overflow = prev.overflow;
+      window.scrollTo(0, scrollY);
+    };
+  }, [chatComposerOpen]);
+
   const [giftOpen, setGiftOpen] = useState(false);
   const [comboState, setComboState] = useState<ComboState | null>(null);
   
