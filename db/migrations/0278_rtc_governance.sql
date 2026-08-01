@@ -217,3 +217,9 @@ GRANT EXECUTE ON FUNCTION public.admin_upsert_rtc_slot(int, bigint, text, text, 
 GRANT EXECUTE ON FUNCTION public.admin_list_rtc_history(int) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_rollback_rtc_slot(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.rtc_set_verify_state(int, text, text) TO service_role;
+
+-- re-grant recreated functions (DROP removed prior grants)
+REVOKE ALL ON FUNCTION public.admin_list_rtc_pool() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.admin_list_rtc_pool() TO authenticated;
+REVOKE ALL ON FUNCTION public.admin_upsert_rtc_slot(int, bigint, text, text, text, numeric, boolean) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.admin_upsert_rtc_slot(int, bigint, text, text, text, numeric, boolean) TO authenticated;
