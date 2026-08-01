@@ -2552,26 +2552,8 @@ function RoomPage() {
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       {!isVideo ? (
         <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
-          <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_20%] gap-2">
-            <div className="flex min-h-0 flex-col rounded-2xl border border-violet-300/30 bg-black/90 p-3 shadow-[inset_0_0_22px_rgba(255,255,255,0.04)] backdrop-blur-md">
-              <div className="mb-2 flex items-center justify-between border-b border-white/10 px-1 pb-2">
-                <span className="text-sm font-bold text-white">Room Chat</span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-white/50">
-                  Live
-                </span>
-              </div>
-              <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto pr-1 scrollbar-hide">
-                {messages.length === 0 && <EmptyChat />}
-                {messages
-                  .filter((m) => m.kind !== "emoji")
-                  .map((m) => (
-                    <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
-                  ))}
-                <div ref={chatEndRef} />
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-col gap-2">
+          <div className="flex min-h-0 flex-1 justify-end gap-2">
+            <div className="flex w-[20%] min-h-0 flex-col gap-2">
               <button
                 onClick={() => openMilestoneSheet()}
                 className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
@@ -2775,6 +2757,7 @@ function RoomPage() {
               <Gift className="h-5 w-5" />
               <span className="text-[10px] font-semibold">Gift</span>
             </button>
+            <GiftAudioControl className="shrink-0" />
             <button
               onClick={share}
               aria-label="Share"
@@ -2883,12 +2866,14 @@ function RoomPage() {
               </button>
             </div>
 
+            <GiftAudioControl className="shrink-0" />
             <button
               onClick={() => setGiftOpen(true)}
               aria-label="Send gift"
-              className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_8px_24px_-8px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
             >
-              <Gift className="h-4 w-4" />
+              <Gift className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Gift</span>
             </button>
             <button
               onClick={() => setVideoSettingsOpen(true)}
@@ -5834,6 +5819,5 @@ function MiniProfileSheet({
     </>
   );
 }
-
 
 
