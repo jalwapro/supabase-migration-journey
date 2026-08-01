@@ -7,8 +7,48 @@ export type UploadResult = {
   size: number;
 };
 
+let r2Available: boolean | null = null;
+
+/** Upload straight to Cloudflare R2 via a short-lived presigned URL. */
+async function uploadToR2(key: string, file: File): Promise<UploadResult | null> {
+  if (r2Available === false) return null;
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) return null;
+
+    const signRes = await fetch("/api/r2-sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ path: key, contentType: file.type || "application/octet-stream" }),
+    });
+    if (!signRes.ok) {
+      if (signRes.status === 503) r2Available = false;
+      return null;
+    }
+    const { uploadUrl, publicUrl } = (await signRes.json()) as {
+      uploadUrl: string;
+      publicUrl: string;
+    };
+
+    const put = await fetch(uploadUrl, {
+      method: "PUT",
+      body: file,
+      headers: file.type ? { "Content-Type": file.type } : undefined,
+    });
+    if (!put.ok) throw new Error(`R2 upload failed (${put.status})`);
+
+    r2Available = true;
+    return { url: publicUrl, path: key, mime: file.type, size: file.size };
+  } catch (e) {
+    console.warn("R2 upload failed, falling back to Supabase storage:", e);
+    return null;
+  }
+}
+
 /**
- * Upload a File to a Supabase storage bucket and return its public URL.
+ * Upload a File and return its public URL. Uses Cloudflare R2 when configured,
+ * otherwise falls back to the Supabase storage bucket.
  * `folder` becomes the first path segment (e.g. "banners/uuid.png").
  */
 export async function uploadToBucket(
@@ -19,6 +59,10 @@ export async function uploadToBucket(
   const ext = (file.name.split(".").pop() ?? "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
   const id = crypto.randomUUID();
   const path = folder ? `${folder}/${id}.${ext}` : `${id}.${ext}`;
+
+  const r2 = await uploadToR2(`${bucket}/${path}`, file);
+  if (r2) return { ...r2, path };
+
   const { error } = await supabase.storage.from(bucket).upload(path, file, {
     contentType: file.type || undefined,
     upsert: false,
@@ -28,6 +72,7 @@ export async function uploadToBucket(
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return { url: data.publicUrl, path, mime: file.type, size: file.size };
 }
+
 
 /**
  * Upload a File into the signed-in user's folder inside a bucket that uses

@@ -30,6 +30,7 @@ import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
 import { Route as ApiRtcUsageRouteImport } from './routes/api/rtc-usage'
 import { Route as ApiRtcStatusRouteImport } from './routes/api/rtc-status'
+import { Route as ApiR2SignRouteImport } from './routes/api/r2-sign'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
@@ -210,6 +211,11 @@ const ApiRtcUsageRoute = ApiRtcUsageRouteImport.update({
 const ApiRtcStatusRoute = ApiRtcStatusRouteImport.update({
   id: '/api/rtc-status',
   path: '/api/rtc-status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiR2SignRoute = ApiR2SignRouteImport.update({
+  id: '/api/r2-sign',
+  path: '/api/r2-sign',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -674,6 +680,7 @@ export interface FileRoutesByFullPath {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/send-email': typeof ApiSendEmailRoute
@@ -771,6 +778,7 @@ export interface FileRoutesByTo {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/send-email': typeof ApiSendEmailRoute
@@ -872,6 +880,7 @@ export interface FileRoutesById {
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/send-email': typeof ApiSendEmailRoute
@@ -973,6 +982,7 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
     | '/api/send-email'
@@ -1070,6 +1080,7 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
     | '/api/send-email'
@@ -1170,6 +1181,7 @@ export interface FileRouteTypes {
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
+    | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
     | '/api/send-email'
@@ -1247,6 +1259,7 @@ export interface RootRouteChildren {
   SplashRoute: typeof SplashRoute
   SvgaFramesPreviewRoute: typeof SvgaFramesPreviewRoute
   SvgaPreviewRoute: typeof SvgaPreviewRoute
+  ApiR2SignRoute: typeof ApiR2SignRoute
   ApiRtcStatusRoute: typeof ApiRtcStatusRoute
   ApiRtcUsageRoute: typeof ApiRtcUsageRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
@@ -1406,6 +1419,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rtc-status'
       fullPath: '/api/rtc-status'
       preLoaderRoute: typeof ApiRtcStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/r2-sign': {
+      id: '/api/r2-sign'
+      path: '/api/r2-sign'
+      fullPath: '/api/r2-sign'
+      preLoaderRoute: typeof ApiR2SignRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -2144,6 +2164,7 @@ const rootRouteChildren: RootRouteChildren = {
   SplashRoute: SplashRoute,
   SvgaFramesPreviewRoute: SvgaFramesPreviewRoute,
   SvgaPreviewRoute: SvgaPreviewRoute,
+  ApiR2SignRoute: ApiR2SignRoute,
   ApiRtcStatusRoute: ApiRtcStatusRoute,
   ApiRtcUsageRoute: ApiRtcUsageRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
@@ -2158,13 +2179,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
