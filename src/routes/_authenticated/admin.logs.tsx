@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/admin/logs")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    user: typeof search['user'] === "string" ? (search['user'] as string) : undefined,
+  }),
   component: LogsAdmin,
 });
 
@@ -43,8 +46,9 @@ const ACTION_GROUPS: Record<string, string> = {
 };
 
 function LogsAdmin() {
+  const { user: userParam } = Route.useSearch();
   const [group, setGroup] = useState<string>("all");
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(userParam ?? "");
   const [page, setPage] = useState(0);
 
   // Resolve a username search term to user ids so logs can be filtered
