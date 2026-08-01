@@ -245,6 +245,36 @@ function RoomPage() {
     };
   }, [chatComposerOpen]);
 
+  // Some mobile browsers (notably Xiaomi/MIUI's browser and some in-app
+  // WebViews) don't respect `position: fixed` correctly once the on-screen
+  // keyboard opens — the whole page still visibly shifts. The `visualViewport`
+  // API reports the REAL visible area regardless of that, so we track it
+  // directly and pin the composer's `bottom` offset in pixels ourselves
+  // instead of trusting the browser's fixed-positioning math.
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+  useEffect(() => {
+    if (!chatComposerOpen) {
+      setKeyboardOffset(0);
+      return;
+    }
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardOffset(offset);
+      // Some browsers also nudge the page's own scroll position while the
+      // keyboard is up — snap it back so nothing drifts.
+      window.scrollTo(0, 0);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [chatComposerOpen]);
+
   const [giftOpen, setGiftOpen] = useState(false);
   const [comboState, setComboState] = useState<ComboState | null>(null);
   
@@ -2948,7 +2978,8 @@ function RoomPage() {
         >
           <div className="absolute inset-0 bg-black/40" />
           <div
-            className="fixed inset-x-0 bottom-0 z-[2147483001] flex items-center gap-2 border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            className="fixed inset-x-0 z-[2147483001] flex items-center gap-2 border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            style={{ bottom: keyboardOffset }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
