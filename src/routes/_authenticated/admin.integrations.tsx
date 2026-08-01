@@ -319,9 +319,60 @@ type PoolRow = {
   exhausted: boolean;
   enabled: boolean;
   last_used_at: string | null;
+  environment: string;
+  verified_at: string | null;
+  verify_status: string;
+  verify_error: string | null;
+  updated_at: string;
 };
 
-const EMPTY_DRAFT = { slot: "", label: "", appId: "", secret: "", serverUrl: "", limit: "10000" };
+type HistoryRow = {
+  id: string;
+  slot: number;
+  action: string;
+  label: string;
+  app_id: number | null;
+  secret_hint: string;
+  server_url: string;
+  environment: string;
+  enabled: boolean;
+  changed_by_name: string | null;
+  created_at: string;
+};
+
+type VerifyResult = {
+  ok: boolean;
+  status: "verified" | "token_only" | "invalid";
+  message: string;
+  appId: number;
+};
+
+async function verifyCredentials(input: { slot?: number; appId?: number; secret?: string }) {
+  const { data: sess } = await supabase.auth.getSession();
+  const res = await fetch("/api/rtc-verify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+    },
+    body: JSON.stringify(input),
+  });
+  const body = await res.json();
+  if (!res.ok && !body?.status) throw new Error(body?.error ?? "Verification failed");
+  return body as VerifyResult;
+}
+
+const ENVIRONMENTS = ["production", "staging", "development"] as const;
+
+const EMPTY_DRAFT = {
+  slot: "",
+  label: "",
+  appId: "",
+  secret: "",
+  serverUrl: "",
+  limit: "10000",
+  environment: "production",
+};
 
 function ZegoPoolCard() {
   const qc = useQueryClient();
@@ -335,7 +386,17 @@ function ZegoPoolCard() {
     refetchInterval: 30_000,
   });
 
+  const history = useQuery({
+    queryKey: ["rtc_history"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_rtc_history", { _limit: 25 });
+      if (error) throw error;
+      return (data ?? []) as HistoryRow[];
+    },
+  });
+
   const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
+  const [showHistory, setShowHistory] = useState(false);
 
   const rows = pool.data ?? [];
   const activeSlot = rows.find((r) => r.enabled && !r.exhausted)?.slot ?? null;
@@ -343,6 +404,7 @@ function ZegoPoolCard() {
     for (let i = 1; i <= 50; i++) if (!rows.some((r) => r.slot === i)) return i;
     return 1;
   })();
+
 
   const save = useMutation({
     mutationFn: async (d: typeof EMPTY_DRAFT) => {
