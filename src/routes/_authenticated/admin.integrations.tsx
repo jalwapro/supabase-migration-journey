@@ -584,7 +584,31 @@ function ZegoPoolCard() {
                   {!r.enabled && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">DISABLED</span>
                   )}
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                    {r.environment ?? "production"}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      r.verify_status === "verified"
+                        ? "bg-emerald-500/15 text-emerald-500"
+                        : r.verify_status === "invalid"
+                          ? "bg-destructive/15 text-destructive"
+                          : "bg-amber-500/15 text-amber-500"
+                    }`}
+                    title={r.verify_error ?? undefined}
+                  >
+                    {r.verify_status === "verified"
+                      ? "VERIFIED"
+                      : r.verify_status === "invalid"
+                        ? "INVALID"
+                        : r.verify_status === "token_only"
+                          ? "TOKEN OK"
+                          : "UNVERIFIED"}
+                  </span>
                   <div className="ml-auto flex gap-1.5">
+                    <button onClick={() => verify.mutate(r)} disabled={verify.isPending} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold disabled:opacity-60">
+                      {verify.isPending ? "Testing…" : "Test connection"}
+                    </button>
                     <button onClick={() => act.mutate({ type: "toggle", row: r })} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold">
                       {r.enabled ? "Disable" : "Enable"}
                     </button>
@@ -601,12 +625,56 @@ function ZegoPoolCard() {
                 </div>
                 <p className="mt-1 text-[10px] text-muted-foreground">
                   {Math.round(Number(r.minutes_used))} / {Math.round(Number(r.minutes_limit))} minutes used ({pct}%)
+                  {r.verified_at ? ` · verified ${new Date(r.verified_at).toLocaleString()}` : ""}
+                  {r.updated_at ? ` · updated ${new Date(r.updated_at).toLocaleString()}` : ""}
                 </p>
+                {r.verify_status !== "verified" && r.verify_error ? (
+                  <p className="mt-1 text-[10px] text-destructive">{r.verify_error}</p>
+                ) : null}
               </div>
             );
           })
         )}
       </div>
+
+      {/* Configuration history + rollback */}
+      <div className="mt-4 border-t border-border pt-3">
+        <button
+          onClick={() => setShowHistory((v) => !v)}
+          className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+        >
+          {showHistory ? "▾" : "▸"} Configuration history ({history.data?.length ?? 0})
+        </button>
+        {showHistory ? (
+          <div className="mt-2 space-y-1.5">
+            {history.isLoading ? (
+              <div className="p-4 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
+            ) : (history.data ?? []).length === 0 ? (
+              <p className="py-3 text-center text-[11px] text-muted-foreground">No changes recorded yet.</p>
+            ) : (
+              (history.data ?? []).map((h) => (
+                <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-[11px]">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase">{h.action}</span>
+                  <span className="font-semibold">#{h.slot}</span>
+                  <span className="text-muted-foreground">AppID {h.app_id ?? "—"} · {h.secret_hint} · {h.environment}</span>
+                  <span className="text-muted-foreground">by {h.changed_by_name ?? "system"}</span>
+                  <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
+                  {h.action !== "delete" && h.app_id ? (
+                    <button
+                      onClick={() => rollback.mutate(h.id)}
+                      disabled={rollback.isPending}
+                      className="ml-auto rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold disabled:opacity-60"
+                    >
+                      Rollback
+                    </button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        ) : null}
+      </div>
+
     </div>
   );
 }
