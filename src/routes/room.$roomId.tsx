@@ -824,7 +824,10 @@ function RoomPage() {
             avatar: row.sender_avatar ?? null,
             level: row.sender_level ?? null,
           };
-          setMessages((prev) => [...prev.slice(-99), row]);
+          // Dedupe: the sender already rendered this optimistically, and a
+          // resubscribe can replay an id we've seen. mergeMessage handles both.
+          mergeMessage(row);
+
         },
       )
       .on(
