@@ -1671,16 +1671,37 @@ type GiftSendRow = {
     const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
-      volume: Math.min(1, audioPrefs.volume * (isPremiumLong ? 1 : 0.9)),
+      volume: Math.min(
+        1,
+        audioPrefs.volume * (current.audioVolume ?? (isPremiumLong ? 1 : 0.9)),
+      ),
       premium: false,
     });
-    if (!played) return;
+    if (!played) {
+      trackGiftPlayback({
+        roomId, giftId: current.giftId, eventKey: current.key,
+        status: "failed", error: "audio_cue_blocked",
+      });
+      return;
+    }
     setSoundPulseKey(current.key);
     const pulseTimer = setTimeout(() => setSoundPulseKey((key) => (key === current.key ? null : key)), 1400);
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+
+  // Report successful playback once the asset is actually on screen.
+  useEffect(() => {
+    if (!current || readyKey !== current.key) return;
+    trackGiftPlayback({
+      roomId,
+      giftId: current.giftId,
+      eventKey: current.key,
+      status: "played",
+      queueWaitMs: current.enqueuedAt ? Date.now() - current.enqueuedAt : null,
+    });
+  }, [current, readyKey, roomId]);
 
 
 
