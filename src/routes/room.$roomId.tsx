@@ -2924,7 +2924,9 @@ function RoomPage() {
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
           {/* Composer row */}
+          <ReplyBar reply={replyTo} onCancel={() => setReplyTo(null)} />
           <div className="mb-3 flex items-center gap-2">
+
             <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/70 pl-4 pr-1.5 py-2 backdrop-blur-md">
               <input
                 value={text}
