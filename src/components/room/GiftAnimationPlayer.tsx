@@ -160,7 +160,8 @@ function AnimatedGiftVideo({
   onDuration,
   fallbackEmoji,
   fallbackImage,
-  withSound = true, // Changed: default true now
+  withSound = false,
+  volume = 1,
   suppressEmojiFallback = false,
   screenBlend = false,
   lumaKey = false,
@@ -175,6 +176,8 @@ function AnimatedGiftVideo({
   fallbackEmoji: string;
   fallbackImage: string | null;
   withSound?: boolean;
+  /** 0..1 — scales the boosted gain; comes from the user's gift-audio volume pref. */
+  volume?: number;
   suppressEmojiFallback?: boolean;
   screenBlend?: boolean;
   lumaKey?: boolean;
@@ -209,12 +212,12 @@ function AnimatedGiftVideo({
         gainRef.current = ctx.createGain();
         sourceRef.current.connect(gainRef.current).connect(ctx.destination);
       }
-      if (gainRef.current) gainRef.current.gain.value = 3; // small headroom; audio already loudnorm'd in mux
+      if (gainRef.current) gainRef.current.gain.value = Math.max(0, Math.min(1, volume)) * 3; // small headroom; audio already loudnorm'd in mux
     } catch {
       // AudioContext may already be wired to this element; fall back to element volume.
       try { video.volume = 1; } catch { /* ignore */ }
     }
-  }, [withSound]);
+  }, [withSound, volume]);
 
   useEffect(() => {
     readyOnceRef.current = false;
@@ -224,9 +227,8 @@ function AnimatedGiftVideo({
     setDetectedKey(null);
     const video = videoRef.current;
     if (!video) return;
-    // REMOVED: video.muted = true;
-    // REMOVED: video.volume = 0;
-    video.volume = 1; // Set full volume
+    video.muted = true;
+    video.volume = 0;
     // Do NOT call video.load() — the JSX `src` prop + `key` remount already
     // triggers a single fetch. A manual load() here causes a second request
     // and a visible stutter on first play.
@@ -248,12 +250,12 @@ function AnimatedGiftVideo({
   const startPlayback = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    // REMOVED: video.muted = true;
-    // REMOVED: video.volume = 0;
-    video.volume = 1;
+    video.muted = true;
+    video.volume = 0;
     if (withSound) ensureAudioBoost();
     video.play().catch(() => {
-      // If unmuted autoplay is blocked, retry muted so at least the visual plays.
+      // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
+      // retry muted so at least the visual plays.
       video.muted = true;
       video.play().catch(() => {});
     });
@@ -419,7 +421,7 @@ function AnimatedGiftVideo({
         disablePictureInPicture
         preload="auto"
         autoPlay
-        // REMOVED: muted
+        muted
         onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
@@ -1809,7 +1811,8 @@ type GiftSendRow = {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={true} // CHANGED: Now true to enable audio
+            withSound={!audioPrefs.muted && audioPrefs.volume > 0}
+            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
