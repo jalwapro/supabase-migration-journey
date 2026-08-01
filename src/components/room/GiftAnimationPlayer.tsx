@@ -153,7 +153,7 @@ function giftSignature(p: Play) {
 }
 
 /**
- * AnimatedGiftVideo - FIXED VERSION with CORS bypass and audio enabled
+ * AnimatedGiftVideo - COMPLETE FIXED VERSION with CORS bypass, audio enable, and separate audio element
  */
 function AnimatedGiftVideo({
   src,
@@ -164,6 +164,7 @@ function AnimatedGiftVideo({
   fallbackEmoji,
   fallbackImage,
   withSound = true,
+  soundUrl = null,
   suppressEmojiFallback = false,
   screenBlend = false,
   lumaKey = false,
@@ -178,6 +179,7 @@ function AnimatedGiftVideo({
   fallbackEmoji: string;
   fallbackImage: string | null;
   withSound?: boolean;
+  soundUrl?: string | null;
   suppressEmojiFallback?: boolean;
   screenBlend?: boolean;
   lumaKey?: boolean;
@@ -185,6 +187,7 @@ function AnimatedGiftVideo({
   forceKey?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const readyOnceRef = useRef(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -192,20 +195,18 @@ function AnimatedGiftVideo({
   const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
   const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
 
-  // ========== FIX: Fetch video as blob to bypass CORS issues ==========
+  // ========== FIX 1: Fetch video as blob to bypass CORS issues ==========
   useEffect(() => {
     let isMounted = true;
     
     const fetchVideo = async () => {
       if (!src) return;
       
-      // If already a blob URL or data URL, use as is
       if (src.startsWith('blob:') || src.startsWith('data:')) {
         if (isMounted) setVideoUrl(src);
         return;
       }
 
-      // For Supabase storage URLs, fetch as blob
       if (src.includes('supabase.co/storage')) {
         try {
           const response = await fetch(src, {
@@ -245,7 +246,114 @@ function AnimatedGiftVideo({
     };
   }, [src]);
 
-  // ========== FIX: Force unmute ==========
+  // ========== FIX 2: Play separate audio from same video URL ==========
+  useEffect(() => {
+    if (!withSound || !videoUrl) return;
+    
+    // Create separate audio element from the same video URL
+    // This forces audio playback even if browser says hasAudio: false
+    const audio = new Audio(videoUrl);
+    audio.crossOrigin = 'anonymous';
+    audio.volume = 1;
+    audio.muted = false;
+    audioRef.current = audio;
+    
+    const video = videoRef.current;
+    let isAudioPlaying = false;
+    
+    const playAudio = () => {
+      if (isAudioPlaying) return;
+      isAudioPlaying = true;
+      
+      // Sync audio with video position
+      if (video) {
+        audio.currentTime = video.currentTime || 0;
+      }
+      
+      audio.play().catch(() => {
+        // If audio fails, try video's native audio
+        if (video) {
+          video.muted = false;
+          video.volume = 1;
+          video.play().catch(() => {});
+        }
+      });
+    };
+    
+    const pauseAudio = () => {
+      isAudioPlaying = false;
+      audio.pause();
+    };
+    
+    if (video) {
+      video.addEventListener('play', playAudio);
+      video.addEventListener('pause', pauseAudio);
+      video.addEventListener('ended', pauseAudio);
+      video.addEventListener('timeupdate', () => {
+        // Keep audio in sync with video
+        if (audio.currentTime !== video.currentTime && !audio.paused) {
+          audio.currentTime = video.currentTime || 0;
+        }
+      });
+    }
+    
+    return () => {
+      if (video) {
+        video.removeEventListener('play', playAudio);
+        video.removeEventListener('pause', pauseAudio);
+        video.removeEventListener('ended', pauseAudio);
+        video.removeEventListener('timeupdate', () => {});
+      }
+      audio.pause();
+      audio.src = '';
+      audioRef.current = null;
+    };
+  }, [videoUrl, withSound]);
+
+  // ========== FIX 3: Use soundUrl if provided ==========
+  useEffect(() => {
+    if (!soundUrl || !withSound) return;
+    
+    const audio = new Audio(soundUrl);
+    audio.crossOrigin = 'anonymous';
+    audio.volume = 1;
+    audio.muted = false;
+    audioRef.current = audio;
+    
+    const video = videoRef.current;
+    let isAudioPlaying = false;
+    
+    const playAudio = () => {
+      if (isAudioPlaying) return;
+      isAudioPlaying = true;
+      audio.currentTime = 0;
+      audio.play().catch(() => {});
+    };
+    
+    const pauseAudio = () => {
+      isAudioPlaying = false;
+      audio.pause();
+    };
+    
+    if (video) {
+      video.addEventListener('play', playAudio);
+      video.addEventListener('pause', pauseAudio);
+      video.addEventListener('ended', pauseAudio);
+    }
+    
+    return () => {
+      if (video) {
+        video.removeEventListener('play', playAudio);
+        video.removeEventListener('pause', pauseAudio);
+        video.removeEventListener('ended', pauseAudio);
+      }
+      audio.pause();
+      audio.src = '';
+      audioRef.current = null;
+    };
+  }, [soundUrl, withSound]);
+
+  // ========== FIX 4: Force unmute ==========
   useEffect(() => {
     readyOnceRef.current = false;
     setReady(false);
@@ -258,6 +366,12 @@ function AnimatedGiftVideo({
     video.muted = false;
     video.volume = 1;
     video.defaultMuted = false;
+    
+    // Also ensure audio element is ready
+    if (audioRef.current) {
+      audioRef.current.muted = false;
+      audioRef.current.volume = 1;
+    }
     
     console.log("🎵 Video audio ENABLED:", { 
       muted: video.muted, 
@@ -272,6 +386,10 @@ function AnimatedGiftVideo({
       video.pause();
       video.removeAttribute("src");
       video.load();
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
     }
     if (videoUrl.startsWith('blob:')) {
       URL.revokeObjectURL(videoUrl);
@@ -288,6 +406,12 @@ function AnimatedGiftVideo({
     try {
       await video.play();
       console.log("🎵 Video playing WITH audio");
+      
+      // Also play audio element if exists
+      if (audioRef.current && !audioRef.current.paused) {
+        audioRef.current.currentTime = video.currentTime || 0;
+        audioRef.current.play().catch(() => {});
+      }
     } catch (error) {
       console.warn("🎵 Play failed, retrying:", error);
       video.muted = true;
@@ -296,6 +420,10 @@ function AnimatedGiftVideo({
         video.muted = false;
         video.volume = 1;
         console.log("🎵 Video playing (unmuted after)");
+        
+        if (audioRef.current) {
+          audioRef.current.play().catch(() => {});
+        }
       } catch (e) {
         console.error("🎵 Play failed:", e);
       }
@@ -1907,6 +2035,7 @@ type GiftSendRow = {
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
             withSound={true}
+            soundUrl={current?.soundUrl}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
