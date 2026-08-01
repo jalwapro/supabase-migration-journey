@@ -79,7 +79,12 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/assign-frame", label: "Assign DP Frame", icon: Crown },
     ],
   },
+  {
+    label: "Developer Tools",
+    items: [{ to: "/admin/factory-reset", label: "Factory Reset", icon: Trash2 }],
+  },
 ];
+
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
