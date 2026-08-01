@@ -62,7 +62,7 @@ async function uploadToR2(key: string, file: File): Promise<UploadResult> {
 
 /**
  * Upload a File to an explicit `bucket/path` key and return its public URL.
- * Goes to Cloudflare R2 when configured, otherwise Supabase storage.
+ * Always stored in Cloudflare R2.
  */
 export async function uploadFileAtPath(
   bucket: string,
@@ -70,20 +70,12 @@ export async function uploadFileAtPath(
   file: File,
 ): Promise<string> {
   const r2 = await uploadToR2(`${bucket}/${path}`, file);
-  if (r2) return r2.url;
-
-  const { error } = await supabase.storage.from(bucket).upload(path, file, {
-    contentType: file.type || undefined,
-    upsert: true,
-    cacheControl: "3600",
-  });
-  if (error) throw error;
-  return supabase.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+  return r2.url;
 }
 
 /**
- * Upload a File and return its public URL. Uses Cloudflare R2 when configured,
- * otherwise falls back to the Supabase storage bucket.
+ * Upload a File and return its public URL. Cloudflare R2 is the only storage
+ * provider — a failed upload throws instead of writing anywhere else.
  * `folder` becomes the first path segment (e.g. "banners/uuid.png").
  */
 export async function uploadToBucket(
@@ -96,16 +88,7 @@ export async function uploadToBucket(
   const path = folder ? `${folder}/${id}.${ext}` : `${id}.${ext}`;
 
   const r2 = await uploadToR2(`${bucket}/${path}`, file);
-  if (r2) return { ...r2, path };
-
-  const { error } = await supabase.storage.from(bucket).upload(path, file, {
-    contentType: file.type || undefined,
-    upsert: false,
-    cacheControl: "3600",
-  });
-  if (error) throw error;
-  const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-  return { url: data.publicUrl, path, mime: file.type, size: file.size };
+  return { ...r2, path };
 }
 
 
@@ -142,15 +125,8 @@ export async function uploadPrivateToUserFolder(
 
   // Private media also lives on R2; the `storage://` marker is resolved to a
   // short-lived presigned URL at render time (see `@/lib/signedMedia`).
-  const r2 = await uploadToR2(`${bucket}/${path}`, file);
-  if (!r2) {
-    const { error } = await supabase.storage.from(bucket).upload(path, file, {
-      contentType: file.type || undefined,
-      upsert: false,
-      cacheControl: "3600",
-    });
-    if (error) throw error;
-  }
+  await uploadToR2(`${bucket}/${path}`, file);
+
   return { url: `storage://${bucket}/${path}`, path, mime: file.type, size: file.size };
 }
 
