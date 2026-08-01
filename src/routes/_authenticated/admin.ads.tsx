@@ -24,6 +24,14 @@ type Ad = {
 type Draft = { title: string; image_url: string; link_url: string; placement: string; sort_order: number };
 const empty: Draft = { title: "", image_url: "", link_url: "", placement: "home", sort_order: 99 };
 
+/** DB requires link_url to start with http(s):// or "/" — normalise user input. */
+function normalizeLink(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  if (/^(https?:\/\/|\/)/.test(v)) return v;
+  return `https://${v.replace(/^\/+/, "")}`;
+}
+
 function AdsAdmin() {
   const qc = useQueryClient();
   const list = useQuery({
@@ -42,7 +50,7 @@ function AdsAdmin() {
   const create = useMutation({
     mutationFn: async () => {
       if (!draft.title.trim()) throw new Error("Title required");
-      const { error } = await supabase.from("ads").insert({ ...draft, is_active: true });
+      const { error } = await supabase.from("ads").insert({ ...draft, image_url: draft.image_url || null, link_url: normalizeLink(draft.link_url), is_active: true });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -60,7 +68,7 @@ function AdsAdmin() {
       const { error } = await supabase.from("ads").update({
         title: editDraft.title,
         image_url: editDraft.image_url || null,
-        link_url: editDraft.link_url || null,
+        link_url: normalizeLink(editDraft.link_url),
         placement: editDraft.placement,
         sort_order: editDraft.sort_order,
       }).eq("id", editingId);

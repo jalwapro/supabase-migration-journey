@@ -89,7 +89,7 @@ function AnimationsTab({ qc }: { qc: ReturnType<typeof useQueryClient> }) {
     try {
       const ext = file.name.split(".").pop() ?? "bin";
       const path = `spotlight/${crypto.randomUUID()}.${ext}`;
-      const publicUrl = await uploadFileAtPath("public-assets", path, file);
+      const publicUrl = await uploadFileAtPath("shop-assets", path, file);
       setDraft((d) => ({
         ...(d ?? {}),
         [kind === "overlay" ? "overlay_asset_url" : "bg_animation_url"]: publicUrl,
