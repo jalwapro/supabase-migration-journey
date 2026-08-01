@@ -208,6 +208,7 @@ function RoomPage() {
 
 
   const [text, setText] = useState("");
+  const [chatComposerOpen, setChatComposerOpen] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
   const [comboState, setComboState] = useState<ComboState | null>(null);
   
@@ -2848,10 +2849,15 @@ function RoomPage() {
 
 
 
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md">
-              <button
+            <button
+              type="button"
+              onClick={() => setChatComposerOpen(true)}
+              className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md text-left"
+            >
+              <span
                 aria-label="Emoji reactions"
-                onClick={() => {
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (!iAmOnSeat) {
                     toast.error("Take a seat to react");
                     return;
@@ -2863,24 +2869,17 @@ function RoomPage() {
                 }`}
               >
                 <Smile className="h-3.5 w-3.5" />
-              </button>
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-                placeholder="Say hi…"
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-white placeholder:text-white/40 outline-none"
-                disabled={!user}
-              />
-              <button
-                onClick={send}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
+                {text.trim() ? text : "Say hi…"}
+              </span>
+              <span
                 aria-label="Send"
-                disabled={!text.trim()}
-                className="glow-4d grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+                className="glow-4d grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)]"
               >
                 <Send className="h-3.5 w-3.5" />
-              </button>
-            </div>
+              </span>
+            </button>
 
             <GiftAudioControl className="shrink-0" />
             <button
@@ -2900,6 +2899,63 @@ function RoomPage() {
             </button>
 
 
+          </div>
+        </div>
+      )}
+
+      {/* ─── Chat composer popup — fixed to the viewport bottom so it sits
+          above the keyboard instead of the whole room scrolling/resizing. ── */}
+      {chatComposerOpen && (
+        <div
+          className="fixed inset-0 z-[2147483000]"
+          onClick={() => setChatComposerOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/40" />
+          <div
+            className="fixed inset-x-0 bottom-0 z-[2147483001] flex items-center gap-2 border-t border-white/10 bg-[#120a1f] px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              aria-label="Emoji reactions"
+              onClick={() => {
+                if (!iAmOnSeat) {
+                  toast.error("Take a seat to react");
+                  return;
+                }
+                openEmojiSheet();
+              }}
+              className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white ${
+                iAmOnSeat ? "" : "opacity-50"
+              }`}
+            >
+              <Smile className="h-4 w-4" />
+            </button>
+            <input
+              autoFocus
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  send();
+                  setChatComposerOpen(false);
+                }
+                if (e.key === "Escape") setChatComposerOpen(false);
+              }}
+              placeholder="Say hi…"
+              disabled={!user}
+              className="min-w-0 flex-1 rounded-full border border-white/10 bg-black/50 px-3 py-2 text-[13px] text-white placeholder:text-white/40 outline-none"
+            />
+            <button
+              onClick={() => {
+                send();
+                setChatComposerOpen(false);
+              }}
+              aria-label="Send"
+              disabled={!text.trim()}
+              className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] disabled:opacity-40"
+            >
+              <Send className="h-4 w-4" />
+            </button>
           </div>
         </div>
       )}
