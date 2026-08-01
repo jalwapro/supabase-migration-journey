@@ -2843,7 +2843,15 @@ function RoomPage() {
               .filter((m) => m.kind !== "emoji")
               .slice(-30)
               .map((m) => (
-                <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                <ChatLine
+                  key={m.id}
+                  m={m}
+                  isMe={!!(user?.id && m.user_id === user.id)}
+                  myName={profile?.username ?? null}
+                  onReply={(msg) => setReplyTo(msg)}
+                  onRetry={(msg) => void send(msg)}
+                />
+
               ))}
             <div ref={chatEndVideoRef} />
           </div>
