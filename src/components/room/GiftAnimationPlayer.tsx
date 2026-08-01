@@ -1368,15 +1368,34 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       pushSmallPlay({ ...p, comboTotal: total, trainWagons: wagons });
       return;
     }
-    if (currentRef.current) {
-      preloadGiftVideo(getEffectiveGiftClip(p).url);
-      setQueue((q) => [...q.slice(-3), p]);
-    } else {
-      preloadGiftVideo(getEffectiveGiftClip(p).url);
-      currentRef.current = p;
-      setCurrent(p);
+    preloadGiftVideo(getEffectiveGiftClip(p).url);
+    const incoming = { ...p, enqueuedAt: Date.now() };
+    const active = currentRef.current;
+    const pr = incoming.priority ?? 0;
+
+    // A markedly higher-priority gift (e.g. a 100k-coin flagship) pre-empts a
+    // cheap animation already on screen instead of waiting behind it.
+    if (active && pr > 0 && pr >= (active.priority ?? 0) + 10) {
+      trackGiftPlayback({
+        roomId, giftId: active.giftId, eventKey: active.key, status: "skipped",
+      });
+      currentRef.current = incoming;
+      setCurrent(incoming);
+      return;
     }
-  }, [pushSmallPlay, computeCombo]);
+
+    if (active) {
+      // Bounded, priority-ordered waiting room (highest priority plays next).
+      setQueue((q) =>
+        [...q, incoming]
+          .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0))
+          .slice(0, 4),
+      );
+    } else {
+      currentRef.current = incoming;
+      setCurrent(incoming);
+    }
+  }, [pushSmallPlay, computeCombo, roomId]);
 
   const enqueue = useCallback((p: Play) => {
     if (seenRef.current.has(p.key)) return;
@@ -1386,11 +1405,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (p.local) localGiftRef.current.set(signature, Date.now() + 9000);
     seenRef.current.add(p.key);
 
+    trackGiftPlayback({ roomId, giftId: p.giftId, eventKey: p.key, status: "delivered" });
     enqueueOne({
       ...p,
       quantity: Math.max(1, Math.floor(Number(p.quantity) || 1)),
     });
-  }, [enqueueOne]);
+  }, [enqueueOne, roomId]);
 
 
   useEffect(() => {
