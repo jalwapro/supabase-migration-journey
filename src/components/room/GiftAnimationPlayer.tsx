@@ -160,7 +160,7 @@ function AnimatedGiftVideo({
   onDuration,
   fallbackEmoji,
   fallbackImage,
-  withSound = false,
+  withSound = true, // Changed: default true now
   suppressEmojiFallback = false,
   screenBlend = false,
   lumaKey = false,
@@ -224,8 +224,9 @@ function AnimatedGiftVideo({
     setDetectedKey(null);
     const video = videoRef.current;
     if (!video) return;
-    video.muted = true;
-    video.volume = 0;
+    // REMOVED: video.muted = true;
+    // REMOVED: video.volume = 0;
+    video.volume = 1; // Set full volume
     // Do NOT call video.load() — the JSX `src` prop + `key` remount already
     // triggers a single fetch. A manual load() here causes a second request
     // and a visible stutter on first play.
@@ -247,12 +248,12 @@ function AnimatedGiftVideo({
   const startPlayback = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = true;
-    video.volume = 0;
+    // REMOVED: video.muted = true;
+    // REMOVED: video.volume = 0;
+    video.volume = 1;
     if (withSound) ensureAudioBoost();
     video.play().catch(() => {
-      // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
-      // retry muted so at least the visual plays.
+      // If unmuted autoplay is blocked, retry muted so at least the visual plays.
       video.muted = true;
       video.play().catch(() => {});
     });
@@ -418,7 +419,7 @@ function AnimatedGiftVideo({
         disablePictureInPicture
         preload="auto"
         autoPlay
-        muted
+        // REMOVED: muted
         onLoadedData={startPlayback}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
@@ -1808,7 +1809,7 @@ type GiftSendRow = {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={false}
+            withSound={true} // CHANGED: Now true to enable audio
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
