@@ -2734,7 +2734,18 @@ function RoomPage() {
               .filter((m) => m.kind !== "emoji")
               .slice(-6)
               .map((m) => (
-                <ChatLine key={m.id} m={m} isMe={!!(user?.id && m.user_id === user.id)} />
+                <ChatLine
+                  key={m.id}
+                  m={m}
+                  isMe={!!(user?.id && m.user_id === user.id)}
+                  myName={profile?.username ?? null}
+                  onReply={(msg) => {
+                    setReplyTo(msg);
+                    setChatComposerOpen(true);
+                  }}
+                  onRetry={(msg) => void send(msg)}
+                />
+
               ))}
             <div ref={chatEndRef} />
           </div>
