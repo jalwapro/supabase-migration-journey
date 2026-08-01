@@ -47,8 +47,25 @@ function LogsAdmin() {
   const [q, setQ] = useState("");
   const [page, setPage] = useState(0);
 
+  // Resolve a username search term to user ids so logs can be filtered
+  // by "who did it" or "who it was done to".
+  const matchedUsers = useQuery({
+    queryKey: ["admin_logs_user_match", q],
+    enabled: q.trim().length >= 2,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .ilike("username", `%${q.trim()}%`)
+        .limit(50);
+      if (error) throw error;
+      return (data ?? []).map((r) => r.id as string);
+    },
+  });
+
   const list = useQuery({
-    queryKey: ["admin_logs", group, q, page],
+    queryKey: ["admin_logs", group, q, page, matchedUsers.data?.join(",") ?? ""],
+    enabled: q.trim().length < 2 || !matchedUsers.isLoading,
     placeholderData: keepPreviousData,
     queryFn: async () => {
       let query = supabase
@@ -62,10 +79,16 @@ function LogsAdmin() {
       }
       const term = q.trim();
       if (term) {
-        // Search action, target, or admin_id substring
-        query = query.or(
-          `action.ilike.%${term}%,target.ilike.%${term}%,admin_id::text.ilike.%${term}%`,
-        );
+        const ids = matchedUsers.data ?? [];
+        const clauses = [
+          `action.ilike.%${term}%`,
+          `target.ilike.%${term}%`,
+          `admin_id::text.ilike.%${term}%`,
+        ];
+        if (ids.length) {
+          clauses.push(`admin_id.in.(${ids.join(",")})`, `target.in.(${ids.join(",")})`);
+        }
+        query = query.or(clauses.join(","));
       }
 
       const { data, error, count } = await query;
@@ -73,6 +96,35 @@ function LogsAdmin() {
       return { rows: (data ?? []) as Log[], total: count ?? 0 };
     },
   });
+
+  // Names for the actor (admin) and the affected user shown on each row.
+  const idsOnPage = useMemo(() => {
+    const set = new Set<string>();
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    for (const l of list.data?.rows ?? []) {
+      if (l.admin_id) set.add(l.admin_id);
+      if (l.target && uuid.test(l.target)) set.add(l.target);
+    }
+    return [...set];
+  }, [list.data?.rows]);
+
+  const names = useQuery({
+    queryKey: ["admin_logs_names", idsOnPage.join(",")],
+    enabled: idsOnPage.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,username,avatar")
+        .in("id", idsOnPage);
+      if (error) throw error;
+      const map: Record<string, { username: string | null; avatar: string | null }> = {};
+      for (const r of data ?? []) map[r.id as string] = { username: r.username as string | null, avatar: r.avatar as string | null };
+      return map;
+    },
+  });
+
+  const nameOf = (id: string | null) =>
+    !id ? "system" : (names.data?.[id]?.username ?? `${id.slice(0, 8)}…`);
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil((list.data?.total ?? 0) / PAGE_SIZE)),
@@ -111,7 +163,7 @@ function LogsAdmin() {
             setQ(e.target.value);
             setPage(0);
           }}
-          placeholder="Search action, target, admin id…"
+          placeholder="Search by username, action, target, or user id…"
           className="h-9 flex-1 text-xs"
         />
         <div className="ml-auto flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -155,12 +207,22 @@ function LogsAdmin() {
                 <p className="truncate">
                   <b>{l.action}</b>{" "}
                   {l.target && (
-                    <span className="text-muted-foreground">→ {l.target}</span>
+                    <span className="text-muted-foreground">→ {nameOf(l.target)}</span>
                   )}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {l.admin_id?.slice(0, 8) ?? "system"} ·{" "}
-                  {new Date(l.created_at).toLocaleString()}
+                  <button
+                    type="button"
+                    className="font-semibold text-[color:var(--primary)] hover:underline"
+                    onClick={() => {
+                      if (!l.admin_id) return;
+                      setQ(names.data?.[l.admin_id]?.username ?? l.admin_id);
+                      setPage(0);
+                    }}
+                  >
+                    {nameOf(l.admin_id)}
+                  </button>{" "}
+                  · {new Date(l.created_at).toLocaleString()}
                 </p>
                 {l.details ? (
                   <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted/40 p-1.5 text-[10px] leading-tight text-muted-foreground">
