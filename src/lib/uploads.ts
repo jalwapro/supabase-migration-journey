@@ -49,15 +49,27 @@ async function uploadToR2(key: string, file: File): Promise<UploadResult> {
     publicUrl: string;
   };
 
-  const put = await fetch(uploadUrl, {
-    method: "PUT",
-    body: file,
-    headers: file.type ? { "Content-Type": file.type } : undefined,
-  });
-  if (!put.ok) throw new Error(`R2 upload failed (${put.status})`);
-
-  return { url: publicUrl, path: key, mime: file.type, size: file.size };
+  // Automatic retry with backoff — a transient network blip must not end up
+  // writing a broken reference (or falling back to another storage provider).
+  let lastErr = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 400 * attempt));
+    try {
+      const put = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: file.type ? { "Content-Type": file.type } : undefined,
+      });
+      if (put.ok) return { url: publicUrl, path: key, mime: file.type, size: file.size };
+      lastErr = `R2 upload failed (${put.status})`;
+      if (put.status < 500) break; // client error — retrying won't help
+    } catch (e) {
+      lastErr = e instanceof Error ? e.message : "network error";
+    }
+  }
+  throw new Error(`${lastErr} — nothing was saved, please try again.`);
 }
+
 
 
 /**
