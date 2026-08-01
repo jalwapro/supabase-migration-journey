@@ -28,6 +28,7 @@ import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
+import { Route as ApiRtcVerifyRouteImport } from './routes/api/rtc-verify'
 import { Route as ApiRtcUsageRouteImport } from './routes/api/rtc-usage'
 import { Route as ApiRtcStatusRouteImport } from './routes/api/rtc-status'
 import { Route as ApiR2SignRouteImport } from './routes/api/r2-sign'
@@ -201,6 +202,11 @@ const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
 const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
   id: '/api/send-email',
   path: '/api/send-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRtcVerifyRoute = ApiRtcVerifyRouteImport.update({
+  id: '/api/rtc-verify',
+  path: '/api/rtc-verify',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRtcUsageRoute = ApiRtcUsageRouteImport.update({
@@ -683,6 +689,7 @@ export interface FileRoutesByFullPath {
   '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
+  '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
@@ -781,6 +788,7 @@ export interface FileRoutesByTo {
   '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
+  '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
@@ -883,6 +891,7 @@ export interface FileRoutesById {
   '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
+  '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
@@ -985,6 +994,7 @@ export interface FileRouteTypes {
     | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
+    | '/api/rtc-verify'
     | '/api/send-email'
     | '/api/zego-token'
     | '/messages/$peerId'
@@ -1083,6 +1093,7 @@ export interface FileRouteTypes {
     | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
+    | '/api/rtc-verify'
     | '/api/send-email'
     | '/api/zego-token'
     | '/messages/$peerId'
@@ -1184,6 +1195,7 @@ export interface FileRouteTypes {
     | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
+    | '/api/rtc-verify'
     | '/api/send-email'
     | '/api/zego-token'
     | '/messages_/$peerId'
@@ -1262,6 +1274,7 @@ export interface RootRouteChildren {
   ApiR2SignRoute: typeof ApiR2SignRoute
   ApiRtcStatusRoute: typeof ApiRtcStatusRoute
   ApiRtcUsageRoute: typeof ApiRtcUsageRoute
+  ApiRtcVerifyRoute: typeof ApiRtcVerifyRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
@@ -1405,6 +1418,13 @@ declare module '@tanstack/react-router' {
       path: '/api/send-email'
       fullPath: '/api/send-email'
       preLoaderRoute: typeof ApiSendEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rtc-verify': {
+      id: '/api/rtc-verify'
+      path: '/api/rtc-verify'
+      fullPath: '/api/rtc-verify'
+      preLoaderRoute: typeof ApiRtcVerifyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rtc-usage': {
@@ -2167,6 +2187,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiR2SignRoute: ApiR2SignRoute,
   ApiRtcStatusRoute: ApiRtcStatusRoute,
   ApiRtcUsageRoute: ApiRtcUsageRoute,
+  ApiRtcVerifyRoute: ApiRtcVerifyRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,

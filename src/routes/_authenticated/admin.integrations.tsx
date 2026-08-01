@@ -319,9 +319,60 @@ type PoolRow = {
   exhausted: boolean;
   enabled: boolean;
   last_used_at: string | null;
+  environment: string;
+  verified_at: string | null;
+  verify_status: string;
+  verify_error: string | null;
+  updated_at: string;
 };
 
-const EMPTY_DRAFT = { slot: "", label: "", appId: "", secret: "", serverUrl: "", limit: "10000" };
+type HistoryRow = {
+  id: string;
+  slot: number;
+  action: string;
+  label: string;
+  app_id: number | null;
+  secret_hint: string;
+  server_url: string;
+  environment: string;
+  enabled: boolean;
+  changed_by_name: string | null;
+  created_at: string;
+};
+
+type VerifyResult = {
+  ok: boolean;
+  status: "verified" | "token_only" | "invalid";
+  message: string;
+  appId: number;
+};
+
+async function verifyCredentials(input: { slot?: number; appId?: number; secret?: string }) {
+  const { data: sess } = await supabase.auth.getSession();
+  const res = await fetch("/api/rtc-verify", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+    },
+    body: JSON.stringify(input),
+  });
+  const body = await res.json();
+  if (!res.ok && !body?.status) throw new Error(body?.error ?? "Verification failed");
+  return body as VerifyResult;
+}
+
+const ENVIRONMENTS = ["production", "staging", "development"] as const;
+
+const EMPTY_DRAFT = {
+  slot: "",
+  label: "",
+  appId: "",
+  secret: "",
+  serverUrl: "",
+  limit: "10000",
+  environment: "production",
+};
 
 function ZegoPoolCard() {
   const qc = useQueryClient();
@@ -335,7 +386,17 @@ function ZegoPoolCard() {
     refetchInterval: 30_000,
   });
 
+  const history = useQuery({
+    queryKey: ["rtc_history"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("admin_list_rtc_history", { _limit: 25 });
+      if (error) throw error;
+      return (data ?? []) as HistoryRow[];
+    },
+  });
+
   const [draft, setDraft] = useState({ ...EMPTY_DRAFT });
+  const [showHistory, setShowHistory] = useState(false);
 
   const rows = pool.data ?? [];
   const activeSlot = rows.find((r) => r.enabled && !r.exhausted)?.slot ?? null;
@@ -344,26 +405,70 @@ function ZegoPoolCard() {
     return 1;
   })();
 
+
+  // Save = verify first, then persist. Invalid credentials are rejected so a
+  // live configuration is never replaced by a broken one.
   const save = useMutation({
     mutationFn: async (d: typeof EMPTY_DRAFT) => {
       const slot = Number(d.slot || nextFreeSlot);
       const appId = Number(d.appId);
       if (!Number.isFinite(appId) || appId <= 0) throw new Error("AppID must be a positive number");
+      const secret = d.secret.trim();
+      const existing = rows.find((r) => r.slot === slot);
+      if (!secret && !existing) throw new Error("ServerSecret required");
+      if (secret && secret.length !== 32) throw new Error("ServerSecret must be exactly 32 characters");
+
+      const check = await verifyCredentials({
+        slot: existing ? slot : undefined,
+        appId,
+        ...(secret ? { secret } : {}),
+      });
+      if (!check.ok) throw new Error(check.message);
+
       const { error } = await supabase.rpc("admin_upsert_rtc_slot", {
         _slot: slot,
         _app_id: appId,
-        _server_secret: d.secret.trim() || null,
+        _server_secret: secret || null,
         _server_url: d.serverUrl.trim(),
         _label: d.label.trim(),
         _minutes_limit: Number(d.limit) || 10000,
         _enabled: true,
+        _environment: d.environment,
       });
+      if (error) throw error;
+      // stamp the freshly-saved slot with its verification result
+      await verifyCredentials({ slot });
+      return check;
+    },
+    onSuccess: (check) => {
+      toast.success(check.message);
+      setDraft({ ...EMPTY_DRAFT });
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_history"] });
+      qc.invalidateQueries({ queryKey: ["rtc_status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const verify = useMutation({
+    mutationFn: async (row: PoolRow) => verifyCredentials({ slot: row.slot }),
+    onSuccess: (r) => {
+      if (r.ok) toast.success(r.message);
+      else toast.error(r.message);
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rollback = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_rollback_rtc_slot", { _history_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("ZEGO ID saved");
-      setDraft({ ...EMPTY_DRAFT });
+      toast.success("Rolled back to previous configuration");
       qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_history"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -385,13 +490,18 @@ function ZegoPoolCard() {
           _label: a.row.label,
           _minutes_limit: a.row.minutes_limit,
           _enabled: !a.row.enabled,
+          _environment: a.row.environment ?? "production",
         });
         if (error) throw error;
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rtc_pool"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_history"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const inputCls =
     "w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary";
@@ -423,20 +533,32 @@ function ZegoPoolCard() {
           value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
         <input className={inputCls} placeholder="AppID" inputMode="numeric"
           value={draft.appId} onChange={(e) => setDraft({ ...draft, appId: e.target.value.replace(/\D/g, "") })} />
-        <input className={inputCls} type="password" autoComplete="new-password" placeholder="ServerSecret"
+        <input className={inputCls} type="password" autoComplete="new-password" placeholder="ServerSecret (32 chars)"
           value={draft.secret} onChange={(e) => setDraft({ ...draft, secret: e.target.value })} />
         <input className={inputCls} placeholder="Minutes limit" inputMode="numeric"
           value={draft.limit} onChange={(e) => setDraft({ ...draft, limit: e.target.value.replace(/\D/g, "") })} />
+        <select className={inputCls} value={draft.environment}
+          onChange={(e) => setDraft({ ...draft, environment: e.target.value })}>
+          {ENVIRONMENTS.map((env) => (
+            <option key={env} value={env}>{env}</option>
+          ))}
+        </select>
+        <input className={`${inputCls} md:col-span-4`} placeholder="Server URL (optional, wss://...)"
+          value={draft.serverUrl} onChange={(e) => setDraft({ ...draft, serverUrl: e.target.value })} />
         <button
           onClick={() => save.mutate(draft)}
           disabled={save.isPending}
-          className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          className="md:col-span-2 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
         >
-          {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Add / Update
+          {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {save.isPending ? "Verifying…" : "Verify & Save"}
         </button>
-        <input className={`${inputCls} md:col-span-6`} placeholder="Server URL (optional, wss://...)"
-          value={draft.serverUrl} onChange={(e) => setDraft({ ...draft, serverUrl: e.target.value })} />
       </div>
+      <p className="mt-1.5 text-[10px] text-muted-foreground">
+        Save se pehle credentials ZEGOCLOUD se verify hote hain aur ek test token banta hai.
+        Galat credentials reject ho jate hain — live rooms kabhi nahi tootte.
+      </p>
+
 
       {/* Existing slots */}
       <div className="mt-4 space-y-2">
@@ -462,7 +584,31 @@ function ZegoPoolCard() {
                   {!r.enabled && (
                     <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">DISABLED</span>
                   )}
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                    {r.environment ?? "production"}
+                  </span>
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                      r.verify_status === "verified"
+                        ? "bg-emerald-500/15 text-emerald-500"
+                        : r.verify_status === "invalid"
+                          ? "bg-destructive/15 text-destructive"
+                          : "bg-amber-500/15 text-amber-500"
+                    }`}
+                    title={r.verify_error ?? undefined}
+                  >
+                    {r.verify_status === "verified"
+                      ? "VERIFIED"
+                      : r.verify_status === "invalid"
+                        ? "INVALID"
+                        : r.verify_status === "token_only"
+                          ? "TOKEN OK"
+                          : "UNVERIFIED"}
+                  </span>
                   <div className="ml-auto flex gap-1.5">
+                    <button onClick={() => verify.mutate(r)} disabled={verify.isPending} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold disabled:opacity-60">
+                      {verify.isPending ? "Testing…" : "Test connection"}
+                    </button>
                     <button onClick={() => act.mutate({ type: "toggle", row: r })} className="rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold">
                       {r.enabled ? "Disable" : "Enable"}
                     </button>
@@ -479,12 +625,56 @@ function ZegoPoolCard() {
                 </div>
                 <p className="mt-1 text-[10px] text-muted-foreground">
                   {Math.round(Number(r.minutes_used))} / {Math.round(Number(r.minutes_limit))} minutes used ({pct}%)
+                  {r.verified_at ? ` · verified ${new Date(r.verified_at).toLocaleString()}` : ""}
+                  {r.updated_at ? ` · updated ${new Date(r.updated_at).toLocaleString()}` : ""}
                 </p>
+                {r.verify_status !== "verified" && r.verify_error ? (
+                  <p className="mt-1 text-[10px] text-destructive">{r.verify_error}</p>
+                ) : null}
               </div>
             );
           })
         )}
       </div>
+
+      {/* Configuration history + rollback */}
+      <div className="mt-4 border-t border-border pt-3">
+        <button
+          onClick={() => setShowHistory((v) => !v)}
+          className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
+        >
+          {showHistory ? "▾" : "▸"} Configuration history ({history.data?.length ?? 0})
+        </button>
+        {showHistory ? (
+          <div className="mt-2 space-y-1.5">
+            {history.isLoading ? (
+              <div className="p-4 text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" /></div>
+            ) : (history.data ?? []).length === 0 ? (
+              <p className="py-3 text-center text-[11px] text-muted-foreground">No changes recorded yet.</p>
+            ) : (
+              (history.data ?? []).map((h) => (
+                <div key={h.id} className="flex flex-wrap items-center gap-2 rounded-lg border border-border px-2.5 py-1.5 text-[11px]">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase">{h.action}</span>
+                  <span className="font-semibold">#{h.slot}</span>
+                  <span className="text-muted-foreground">AppID {h.app_id ?? "—"} · {h.secret_hint} · {h.environment}</span>
+                  <span className="text-muted-foreground">by {h.changed_by_name ?? "system"}</span>
+                  <span className="text-muted-foreground">{new Date(h.created_at).toLocaleString()}</span>
+                  {h.action !== "delete" && h.app_id ? (
+                    <button
+                      onClick={() => rollback.mutate(h.id)}
+                      disabled={rollback.isPending}
+                      className="ml-auto rounded-full border border-border px-2.5 py-1 text-[10px] font-semibold disabled:opacity-60"
+                    >
+                      Rollback
+                    </button>
+                  ) : null}
+                </div>
+              ))
+            )}
+          </div>
+        ) : null}
+      </div>
+
     </div>
   );
 }

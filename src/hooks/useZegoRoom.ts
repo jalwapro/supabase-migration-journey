@@ -115,23 +115,29 @@ type ZegoMediaPlayerLike = {
 
 
 // Reports consumed minutes / quota failures so the server-side ZEGO credential
-// pool can rotate to the next AppID automatically.
+// pool can rotate to the next AppID automatically. The endpoint is
+// authenticated (it can retire an AppID), so the bearer token is attached —
+// that rules out sendBeacon, which cannot set headers.
 function reportRtcUsage(appId: number, minutes: number, exhausted = false) {
   if (!appId) return;
   const payload = JSON.stringify({ appId, minutes, exhausted });
-  try {
-    if (!exhausted && typeof navigator !== "undefined" && navigator.sendBeacon) {
-      navigator.sendBeacon("/api/rtc-usage", new Blob([payload], { type: "application/json" }));
-      return;
+  void (async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return;
+      await fetch("/api/rtc-usage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: payload,
+        keepalive: true,
+      });
+    } catch {
+      /* ignore — usage reporting is best-effort */
     }
-  } catch { /* fall through to fetch */ }
-  void fetch("/api/rtc-usage", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: payload,
-    keepalive: true,
-  }).catch(() => { /* ignore */ });
+  })();
 }
+
 
 async function fetchToken(
   channel: string,
