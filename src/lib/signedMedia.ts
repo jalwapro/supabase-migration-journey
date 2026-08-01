@@ -71,10 +71,9 @@ async function signR2Get(key: string): Promise<string | null> {
       return null;
     }
     const out = (await res.json()) as { url?: string };
-    if (!out?.url) return null;
-    // Verify the object actually exists in R2 before handing it to <audio>.
-    const head = await fetch(out.url, { method: "HEAD" });
-    if (!head.ok) return null;
+    // Note: the URL is signed for GET only — a HEAD probe would 403.
+    r2ReadAvailable = true;
+
     r2ReadAvailable = true;
     return out.url;
   } catch {
