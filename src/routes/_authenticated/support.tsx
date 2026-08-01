@@ -106,6 +106,88 @@ function SupportPage() {
     <>
       <AppShell title="Customer Support" subtitle="Chat with our team">
         <div className="flex h-[calc(100dvh-140px)] flex-col">
+          <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+            <button
+              type="button"
+              onClick={() => setTicketOpen(true)}
+              className="rounded-full bg-[color:var(--primary)] px-3 py-1.5 text-[11px] font-bold text-primary-foreground"
+            >
+              + New Ticket
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              {(tickets.data ?? []).length} ticket{(tickets.data ?? []).length === 1 ? "" : "s"}
+            </span>
+          </div>
+
+          {(tickets.data ?? []).length > 0 && (
+            <div className="max-h-32 space-y-1 overflow-y-auto border-b border-border px-3 py-2">
+              {tickets.data?.map((t) => (
+                <div key={t.id} className="rounded-lg border border-border bg-card/60 px-2 py-1.5 text-[11px]">
+                  <div className="flex items-center justify-between gap-2">
+                    <b className="truncate">{t.subject}</b>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase ${
+                        t.status === "open"
+                          ? "bg-[color:var(--primary)]/15 text-[color:var(--primary)]"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {t.status}
+                    </span>
+                  </div>
+                  {t.admin_reply && (
+                    <p className="mt-0.5 text-muted-foreground">Reply: {t.admin_reply}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {ticketOpen && (
+            <div
+              data-jalwa-overlay
+              className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-5"
+              onClick={() => setTicketOpen(false)}
+            >
+              <div
+                className="w-full max-w-sm rounded-2xl border border-border bg-card p-4"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="mb-2 font-bold">New Support Ticket</p>
+                <input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Subject"
+                  className="mb-2 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none"
+                />
+                <textarea
+                  value={detail}
+                  onChange={(e) => setDetail(e.target.value)}
+                  placeholder="Describe your issue…"
+                  rows={4}
+                  className="mb-3 w-full rounded-lg border border-border bg-input px-3 py-2 text-sm outline-none"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTicketOpen(false)}
+                    className="rounded-full px-3 py-1.5 text-xs text-muted-foreground"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={createTicket.isPending || !subject.trim() || !detail.trim()}
+                    onClick={() => createTicket.mutate()}
+                    className="rounded-full bg-[color:var(--primary)] px-4 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-60"
+                  >
+                    {createTicket.isPending ? "Sending…" : "Submit"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {conv.isLoading || messages.isLoading ? (
             <div className="grid flex-1 place-items-center">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
