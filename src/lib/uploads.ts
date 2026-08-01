@@ -125,12 +125,19 @@ export async function uploadPrivateToUserFolder(
   const id = crypto.randomUUID();
   const folder = subfolder ? `${userId}/${subfolder}` : userId;
   const path = `${folder}/${id}.${ext}`;
-  const { error } = await supabase.storage.from(bucket).upload(path, file, {
-    contentType: file.type || undefined,
-    upsert: false,
-    cacheControl: "3600",
-  });
-  if (error) throw error;
+
+  // Private media also lives on R2; the `storage://` marker is resolved to a
+  // short-lived presigned URL at render time (see `@/lib/signedMedia`).
+  const r2 = await uploadToR2(`${bucket}/${path}`, file);
+  if (!r2) {
+    const { error } = await supabase.storage.from(bucket).upload(path, file, {
+      contentType: file.type || undefined,
+      upsert: false,
+      cacheControl: "3600",
+    });
+    if (error) throw error;
+  }
   return { url: `storage://${bucket}/${path}`, path, mime: file.type, size: file.size };
 }
+
 

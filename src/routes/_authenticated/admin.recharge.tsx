@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveMediaUrl } from "@/lib/signedMedia";
+
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Loader2, Check, X, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
@@ -28,14 +30,14 @@ function ProofThumb({ url }: { url: string }) {
     const path = extractProofPath(url);
     if (!path) { setSigned(url); return; }
     (async () => {
-      const { data, error } = await supabase.storage
-        .from("recharge-proofs")
-        .createSignedUrl(path, 60 * 10); // 10 min
+      // R2-first (all media migrated), Supabase signed URL as fallback.
+      const resolved = await resolveMediaUrl(`storage://recharge-proofs/${path}`);
       if (!alive) return;
-      setSigned(error ? null : data?.signedUrl ?? null);
+      setSigned(resolved || null);
     })();
     return () => { alive = false; };
   }, [url]);
+
   if (!signed) {
     return (
       <div className="grid h-20 w-20 shrink-0 place-items-center rounded-lg bg-card/60">

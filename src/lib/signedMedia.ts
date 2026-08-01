@@ -36,6 +36,15 @@ export async function resolveMediaUrl(input: string | null | undefined): Promise
   const now = Math.floor(Date.now() / 1000);
   const hit = cache.get(key);
   if (hit && hit.exp - 60 > now) return hit.url;
+
+  // Primary: Cloudflare R2 (all media lives there now) via a short-lived
+  // presigned GET. Falls back to Supabase storage for anything not migrated.
+  const r2 = await signR2Get(key);
+  if (r2) {
+    cache.set(key, { url: r2, exp: now + SIGN_TTL_SECONDS });
+    return r2;
+  }
+
   const { data, error } = await supabase.storage
     .from(ref.bucket)
     .createSignedUrl(ref.path, SIGN_TTL_SECONDS);
@@ -43,6 +52,35 @@ export async function resolveMediaUrl(input: string | null | undefined): Promise
   cache.set(key, { url: data.signedUrl, exp: now + SIGN_TTL_SECONDS });
   return data.signedUrl;
 }
+
+let r2ReadAvailable: boolean | null = null;
+
+async function signR2Get(key: string): Promise<string | null> {
+  if (r2ReadAvailable === false) return null;
+  try {
+    const { data: sess } = await supabase.auth.getSession();
+    const token = sess.session?.access_token;
+    if (!token) return null;
+    const res = await fetch("/api/r2-sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ op: "get", path: key }),
+    });
+    if (!res.ok) {
+      if (res.status === 503) r2ReadAvailable = false;
+      return null;
+    }
+    const out = (await res.json()) as { url?: string };
+    if (!out?.url) return null;
+    // Note: the URL is signed for GET only — a HEAD probe would 403.
+    r2ReadAvailable = true;
+    return out.url;
+
+  } catch {
+    return null;
+  }
+}
+
 
 export function useSignedMediaUrl(input: string | null | undefined): string {
   const [url, setUrl] = useState<string>(() => {
