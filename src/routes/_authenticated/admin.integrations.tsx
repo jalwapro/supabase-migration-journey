@@ -533,20 +533,32 @@ function ZegoPoolCard() {
           value={draft.label} onChange={(e) => setDraft({ ...draft, label: e.target.value })} />
         <input className={inputCls} placeholder="AppID" inputMode="numeric"
           value={draft.appId} onChange={(e) => setDraft({ ...draft, appId: e.target.value.replace(/\D/g, "") })} />
-        <input className={inputCls} type="password" autoComplete="new-password" placeholder="ServerSecret"
+        <input className={inputCls} type="password" autoComplete="new-password" placeholder="ServerSecret (32 chars)"
           value={draft.secret} onChange={(e) => setDraft({ ...draft, secret: e.target.value })} />
         <input className={inputCls} placeholder="Minutes limit" inputMode="numeric"
           value={draft.limit} onChange={(e) => setDraft({ ...draft, limit: e.target.value.replace(/\D/g, "") })} />
+        <select className={inputCls} value={draft.environment}
+          onChange={(e) => setDraft({ ...draft, environment: e.target.value })}>
+          {ENVIRONMENTS.map((env) => (
+            <option key={env} value={env}>{env}</option>
+          ))}
+        </select>
+        <input className={`${inputCls} md:col-span-4`} placeholder="Server URL (optional, wss://...)"
+          value={draft.serverUrl} onChange={(e) => setDraft({ ...draft, serverUrl: e.target.value })} />
         <button
           onClick={() => save.mutate(draft)}
           disabled={save.isPending}
-          className="flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          className="md:col-span-2 flex items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
         >
-          {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Add / Update
+          {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {save.isPending ? "Verifying…" : "Verify & Save"}
         </button>
-        <input className={`${inputCls} md:col-span-6`} placeholder="Server URL (optional, wss://...)"
-          value={draft.serverUrl} onChange={(e) => setDraft({ ...draft, serverUrl: e.target.value })} />
       </div>
+      <p className="mt-1.5 text-[10px] text-muted-foreground">
+        Save se pehle credentials ZEGOCLOUD se verify hote hain aur ek test token banta hai.
+        Galat credentials reject ho jate hain — live rooms kabhi nahi tootte.
+      </p>
+
 
       {/* Existing slots */}
       <div className="mt-4 space-y-2">
