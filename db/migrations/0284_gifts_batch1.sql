@@ -8,7 +8,7 @@ insert into public.gifts
    sort_order, priority, is_active, active, batch_name, batch_created_at)
 select
   v.name, v.emoji, v.emoji, v.category, v.price, v.price, v.price,
-  v.url, v.url, v.url, 'mp4', 'green', 'pop',
+  u.url, u.url, u.url, 'mp4', 'green', 'pop',
   300 + v.ord, v.priority, true, true, 'batch1_premium', now()
 from (values
   ('Aurora Whale',          '🐋', 'cosmic',    9999,  14, 1),
