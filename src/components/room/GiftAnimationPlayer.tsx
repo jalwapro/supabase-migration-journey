@@ -152,6 +152,9 @@ function giftSignature(p: Play) {
   return `${p.senderName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
+/**
+ * AnimatedGiftVideo - FIXED VERSION with CORS bypass and audio enabled
+ */
 function AnimatedGiftVideo({
   src,
   type,
@@ -179,17 +182,70 @@ function AnimatedGiftVideo({
   screenBlend?: boolean;
   lumaKey?: boolean;
   greenKey?: boolean;
-  /** Admin set the chromakey explicitly — never let runtime detection override it. */
   forceKey?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string>(src);
   const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
   const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
 
-  // FORCE UNMUTE - Simplified audio control
+  // ========== FIX: Fetch video as blob to bypass CORS issues ==========
+  useEffect(() => {
+    let isMounted = true;
+    
+    const fetchVideo = async () => {
+      if (!src) return;
+      
+      // If already a blob URL or data URL, use as is
+      if (src.startsWith('blob:') || src.startsWith('data:')) {
+        if (isMounted) setVideoUrl(src);
+        return;
+      }
+
+      // For Supabase storage URLs, fetch as blob
+      if (src.includes('supabase.co/storage')) {
+        try {
+          const response = await fetch(src, {
+            mode: 'cors',
+            credentials: 'omit',
+            headers: {
+              'Accept': 'video/mp4,video/webm,video/*',
+            },
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          if (isMounted) {
+            setVideoUrl(blobUrl);
+            console.log('🎵 Video fetched as blob (CORS bypass):', blobUrl);
+          }
+        } catch (error) {
+          console.warn('🎵 Failed to fetch video as blob, using original URL:', error);
+          if (isMounted) setVideoUrl(src);
+        }
+      } else {
+        setVideoUrl(src);
+      }
+    };
+
+    fetchVideo();
+
+    return () => {
+      isMounted = false;
+      if (videoUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(videoUrl);
+      }
+    };
+  }, [src]);
+
+  // ========== FIX: Force unmute ==========
   useEffect(() => {
     readyOnceRef.current = false;
     setReady(false);
@@ -199,7 +255,6 @@ function AnimatedGiftVideo({
     const video = videoRef.current;
     if (!video) return;
     
-    // CRITICAL: Force audio enabled
     video.muted = false;
     video.volume = 1;
     video.defaultMuted = false;
@@ -207,9 +262,9 @@ function AnimatedGiftVideo({
     console.log("🎵 Video audio ENABLED:", { 
       muted: video.muted, 
       volume: video.volume,
-      src: src 
+      src: videoUrl 
     });
-  }, [src]);
+  }, [videoUrl]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -218,13 +273,15 @@ function AnimatedGiftVideo({
       video.removeAttribute("src");
       video.load();
     }
-  }, []);
+    if (videoUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(videoUrl);
+    }
+  }, [videoUrl]);
 
   const startPlayback = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
     
-    // Ensure audio is enabled
     video.muted = false;
     video.volume = 1;
     
@@ -233,7 +290,6 @@ function AnimatedGiftVideo({
       console.log("🎵 Video playing WITH audio");
     } catch (error) {
       console.warn("🎵 Play failed, retrying:", error);
-      // Retry with muted then unmute
       video.muted = true;
       try {
         await video.play();
@@ -399,9 +455,9 @@ function AnimatedGiftVideo({
 
       {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
       <video
-        key={src}
+        key={videoUrl}
         ref={videoRef}
-        src={src}
+        src={videoUrl}
         playsInline
         disablePictureInPicture
         preload="auto"
@@ -424,16 +480,16 @@ function AnimatedGiftVideo({
           const video = e.currentTarget;
           console.log("🎵 Metadata loaded:", {
             hasAudio: video.mozHasAudio || video.audioTracks?.length > 0,
-            duration: d
+            duration: d,
+            readyState: video.readyState,
           });
         }}
-
         onCanPlayThrough={() => {
           startPlayback();
         }}
         onPlaying={markReady}
-        onError={() => {
-          console.error("🎵 Video error");
+        onError={(e) => {
+          console.error("🎵 Video error:", e);
           setFailed(true);
           onReady();
         }}
@@ -1318,7 +1374,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
 
-  // FORCE AUDIO UNLOCK on user interaction
+  // ========== FIX: Force audio unlock on user interaction ==========
   useEffect(() => {
     let audioCtx: AudioContext | null = null;
     
@@ -1807,8 +1863,6 @@ type GiftSendRow = {
       {/* Fully transparent stage: no black room-cover behind gifts. */}
       <div className="absolute inset-0 z-0 bg-transparent" />
 
-      {/* Cinematic pre-play overlay removed per user request */}
-
       {/* sender chip */}
       <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
         {current.senderAvatar ? (
@@ -1846,8 +1900,6 @@ type GiftSendRow = {
         ) : isSpaceship ? (
           <SpaceshipGiftVisual onReady={markCurrentReady} />
         ) : hasVideo ? (
-
-
           <AnimatedGiftVideo
             src={giftClipUrl ?? ""}
             type={giftClip.type}
@@ -1863,7 +1915,6 @@ type GiftSendRow = {
             greenKey={chromakeyMode === "green"}
             forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
           />
-
         ) : hasSvga ? (
           <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
             <SvgaPlayer
@@ -1872,7 +1923,6 @@ type GiftSendRow = {
               style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
             />
           </div>
-
         ) : hasSvg ? (
           <AnimatedGiftImage
             src={giftClipUrl ?? ""}
