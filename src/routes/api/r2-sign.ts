@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/r2-sign")({
         const userId = await verifyUser(request);
         if (!userId) return json({ error: "unauthorized" }, 401);
 
-        let body: { path?: string; contentType?: string };
+        let body: { path?: string; contentType?: string; op?: string };
         try {
           body = (await request.json()) as typeof body;
         } catch {
@@ -74,6 +74,7 @@ export const Route = createFileRoute("/api/r2-sign")({
         const path = safeSegment(String(body.path ?? "")).slice(0, 300);
         if (!path) return json({ error: "path required" }, 400);
         const contentType = (body.contentType || "application/octet-stream").slice(0, 120);
+        const op = body.op === "get" ? "get" : "put";
 
         try {
           const { AwsClient } = await import("aws4fetch");
@@ -84,6 +85,14 @@ export const Route = createFileRoute("/api/r2-sign")({
             region: "auto",
           });
           const target = `${endpoint.replace(/\/+$/, "")}/${bucket}/${path}`;
+          if (op === "get") {
+            // Short-lived read URL for private assets (voice notes, proofs).
+            const signedGet = await client.sign(
+              new Request(`${target}?X-Amz-Expires=3600`, { method: "GET" }),
+              { aws: { signQuery: true } },
+            );
+            return json({ url: signedGet.url, path, expiresIn: 3600 });
+          }
           const signed = await client.sign(
             new Request(`${target}?X-Amz-Expires=900`, { method: "PUT" }),
             { aws: { signQuery: true } },
@@ -94,6 +103,7 @@ export const Route = createFileRoute("/api/r2-sign")({
             path,
             contentType,
           });
+
         } catch (e) {
           console.error("r2-sign failed:", e instanceof Error ? e.message : e);
           return json({ error: "sign_failed" }, 500);
