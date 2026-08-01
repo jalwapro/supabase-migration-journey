@@ -113,6 +113,7 @@ RETURNS void LANGUAGE sql SECURITY INVOKER SET search_path = public AS $$
 $$;
 
 -- ------------------------------------------------------------------ listing
+DROP FUNCTION IF EXISTS public.admin_list_rtc_pool();
 CREATE OR REPLACE FUNCTION public.admin_list_rtc_pool()
 RETURNS TABLE (
   id uuid, slot int, label text, app_id bigint, secret_hint text,
