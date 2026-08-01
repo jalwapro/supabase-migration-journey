@@ -1461,6 +1461,7 @@ type GiftSendRow = {
       receiverIds: r.receiver_id ? [r.receiver_id] : null,
       receiverName: r.receiver_username ?? "Host",
       receiverAvatar: r.receiver_avatar ?? null,
+      giftId: r.gift_id ?? null,
       giftName: r.gift_name ?? "Gift",
       giftEmoji: getSafeGiftEmoji(r.gift_emoji, r.gift_icon),
       giftImageUrl: resolveGiftImageUrl(r.gift_image_url ?? (isAssetUrlLike(r.gift_icon) ? r.gift_icon : null)),
@@ -1470,8 +1471,11 @@ type GiftSendRow = {
       diamonds: r.diamonds_earned ?? 0,
       quantity: r.quantity ?? 1,
       animation: r.gift_animation ?? "pop",
-      soundUrl: r.gift_sound_url ?? null,
+      soundUrl: r.gift_audio_url ?? r.gift_sound_url ?? null,
       chromakey: r.gift_chromakey ?? "auto",
+      priority: Number(r.gift_priority ?? 0) || 0,
+      audioVolume:
+        r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
     };
     if (seenRef.current.has(play.key)) return;
     // Coalesce multi-receiver sends into ONE simultaneous play.
