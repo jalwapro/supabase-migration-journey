@@ -704,8 +704,10 @@ function RoomPage() {
     const loadedMembers = (mData ?? []) as unknown as Member[];
     membersRef.current = loadedMembers;
     setMembers(loadedMembers);
-    setMessages(
-      ((msgData ?? []) as unknown as Message[])
+    // Backfill after a socket drop must not swallow messages that are still
+    // in flight locally, so pending/failed rows are kept on top.
+    setMessages((prev) => {
+      const server = ((msgData ?? []) as unknown as Message[])
         .map((m) => ({
           ...m,
           user: m.user ?? {
@@ -714,8 +716,15 @@ function RoomPage() {
             level: m.sender_level ?? null,
           },
         }))
-        .reverse(),
-    );
+        .reverse();
+      const serverClientIds = new Set(server.map((m) => m.client_id).filter(Boolean));
+      const stillPending = prev.filter(
+        (m) => (m.pending || m.failed) && !(m.client_id && serverClientIds.has(m.client_id)),
+      );
+      seenMessageIdsRef.current = new Set(server.map((m) => m.id));
+      return [...server, ...stillPending];
+    });
+
     const likeMap: Record<number, number> = {};
     (likeData ?? []).forEach((row: { seat_index: number }) => {
       likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
