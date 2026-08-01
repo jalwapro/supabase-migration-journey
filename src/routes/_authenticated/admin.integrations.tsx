@@ -406,26 +406,69 @@ function ZegoPoolCard() {
   })();
 
 
+  // Save = verify first, then persist. Invalid credentials are rejected so a
+  // live configuration is never replaced by a broken one.
   const save = useMutation({
     mutationFn: async (d: typeof EMPTY_DRAFT) => {
       const slot = Number(d.slot || nextFreeSlot);
       const appId = Number(d.appId);
       if (!Number.isFinite(appId) || appId <= 0) throw new Error("AppID must be a positive number");
+      const secret = d.secret.trim();
+      const existing = rows.find((r) => r.slot === slot);
+      if (!secret && !existing) throw new Error("ServerSecret required");
+      if (secret && secret.length !== 32) throw new Error("ServerSecret must be exactly 32 characters");
+
+      const check = await verifyCredentials({
+        slot: existing ? slot : undefined,
+        appId,
+        ...(secret ? { secret } : {}),
+      });
+      if (!check.ok) throw new Error(check.message);
+
       const { error } = await supabase.rpc("admin_upsert_rtc_slot", {
         _slot: slot,
         _app_id: appId,
-        _server_secret: d.secret.trim() || null,
+        _server_secret: secret || null,
         _server_url: d.serverUrl.trim(),
         _label: d.label.trim(),
         _minutes_limit: Number(d.limit) || 10000,
         _enabled: true,
+        _environment: d.environment,
       });
+      if (error) throw error;
+      // stamp the freshly-saved slot with its verification result
+      await verifyCredentials({ slot });
+      return check;
+    },
+    onSuccess: (check) => {
+      toast.success(check.message);
+      setDraft({ ...EMPTY_DRAFT });
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_history"] });
+      qc.invalidateQueries({ queryKey: ["rtc_status"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const verify = useMutation({
+    mutationFn: async (row: PoolRow) => verifyCredentials({ slot: row.slot }),
+    onSuccess: (r) => {
+      if (r.ok) toast.success(r.message);
+      else toast.error(r.message);
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rollback = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.rpc("admin_rollback_rtc_slot", { _history_id: id });
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("ZEGO ID saved");
-      setDraft({ ...EMPTY_DRAFT });
+      toast.success("Rolled back to previous configuration");
       qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_history"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -447,13 +490,18 @@ function ZegoPoolCard() {
           _label: a.row.label,
           _minutes_limit: a.row.minutes_limit,
           _enabled: !a.row.enabled,
+          _environment: a.row.environment ?? "production",
         });
         if (error) throw error;
       }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["rtc_pool"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["rtc_pool"] });
+      qc.invalidateQueries({ queryKey: ["rtc_history"] });
+    },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const inputCls =
     "w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary";
