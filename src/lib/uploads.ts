@@ -7,17 +7,17 @@ export type UploadResult = {
   size: number;
 };
 
-let r2Available: boolean | null = null;
-
-/** Thrown when R2 itself rejects the upload (bad type/size) — never falls back. */
+/** Thrown when R2 rejects the upload (bad type/size) or is unreachable. */
 export class UploadRejectedError extends Error {}
 
-/** Upload straight to Cloudflare R2 via a short-lived presigned URL. */
-async function uploadToR2(key: string, file: File): Promise<UploadResult | null> {
-  if (r2Available === false) return null;
+/**
+ * Upload straight to Cloudflare R2 via a short-lived presigned URL.
+ * R2 is the single, permanent storage provider — there is no fallback.
+ */
+async function uploadToR2(key: string, file: File): Promise<UploadResult> {
   const { data: sess } = await supabase.auth.getSession();
   const token = sess.session?.access_token;
-  if (!token) return null;
+  if (!token) throw new UploadRejectedError("Sign in to upload files.");
 
   let signRes: Response;
   try {
@@ -31,19 +31,17 @@ async function uploadToR2(key: string, file: File): Promise<UploadResult | null>
       }),
     });
   } catch (e) {
-    console.warn("R2 sign request failed:", e);
-    return null;
+    throw new Error(
+      `Cloud storage unreachable — upload cancelled. (${e instanceof Error ? e.message : "network error"})`,
+    );
   }
 
   if (!signRes.ok) {
-    // 400 = the file itself is not allowed. Surface it instead of silently
-    // writing the rejected asset to a second store.
+    const body = (await signRes.json().catch(() => ({}))) as { error?: string };
     if (signRes.status === 400) {
-      const body = (await signRes.json().catch(() => ({}))) as { error?: string };
       throw new UploadRejectedError(body.error ?? "This file type or size is not allowed.");
     }
-    if (signRes.status === 503) r2Available = false;
-    return null;
+    throw new Error(body.error ?? `Cloud storage error (${signRes.status}) — upload cancelled.`);
   }
 
   const { uploadUrl, publicUrl } = (await signRes.json()) as {
@@ -58,9 +56,9 @@ async function uploadToR2(key: string, file: File): Promise<UploadResult | null>
   });
   if (!put.ok) throw new Error(`R2 upload failed (${put.status})`);
 
-  r2Available = true;
   return { url: publicUrl, path: key, mime: file.type, size: file.size };
 }
+
 
 /**
  * Upload a File to an explicit `bucket/path` key and return its public URL.
