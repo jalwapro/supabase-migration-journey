@@ -160,8 +160,7 @@ function AnimatedGiftVideo({
   onDuration,
   fallbackEmoji,
   fallbackImage,
-  withSound = false,
-  volume = 1,
+  withSound = true,
   suppressEmojiFallback = false,
   screenBlend = false,
   lumaKey = false,
@@ -176,8 +175,6 @@ function AnimatedGiftVideo({
   fallbackEmoji: string;
   fallbackImage: string | null;
   withSound?: boolean;
-  /** 0..1 — scales the boosted gain; comes from the user's gift-audio volume pref. */
-  volume?: number;
   suppressEmojiFallback?: boolean;
   screenBlend?: boolean;
   lumaKey?: boolean;
@@ -187,38 +184,12 @@ function AnimatedGiftVideo({
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
   const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
 
-  // Wire the video element to a Web Audio graph with a 5x GainNode so premium
-  // gifts play at boosted volume (~500%) — the whole room hears the gift.
-  const ensureAudioBoost = useCallback(() => {
-    const video = videoRef.current;
-    if (!video || !withSound) return;
-    try {
-      if (!audioCtxRef.current) {
-        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-        audioCtxRef.current = new Ctx();
-      }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === "suspended") void ctx.resume();
-      if (!sourceRef.current) {
-        sourceRef.current = ctx.createMediaElementSource(video);
-        gainRef.current = ctx.createGain();
-        sourceRef.current.connect(gainRef.current).connect(ctx.destination);
-      }
-      if (gainRef.current) gainRef.current.gain.value = Math.max(0, Math.min(1, volume)) * 3; // small headroom; audio already loudnorm'd in mux
-    } catch {
-      // AudioContext may already be wired to this element; fall back to element volume.
-      try { video.volume = 1; } catch { /* ignore */ }
-    }
-  }, [withSound, volume]);
-
+  // FORCE UNMUTE - Simplified audio control
   useEffect(() => {
     readyOnceRef.current = false;
     setReady(false);
@@ -227,12 +198,18 @@ function AnimatedGiftVideo({
     setDetectedKey(null);
     const video = videoRef.current;
     if (!video) return;
-    video.muted = true;
-    video.volume = 0;
-    // Do NOT call video.load() — the JSX `src` prop + `key` remount already
-    // triggers a single fetch. A manual load() here causes a second request
-    // and a visible stutter on first play.
-  }, [src, withSound]);
+    
+    // CRITICAL: Force audio enabled
+    video.muted = false;
+    video.volume = 1;
+    video.defaultMuted = false;
+    
+    console.log("🎵 Video audio ENABLED:", { 
+      muted: video.muted, 
+      volume: video.volume,
+      src: src 
+    });
+  }, [src]);
 
   useEffect(() => () => {
     const video = videoRef.current;
@@ -241,25 +218,33 @@ function AnimatedGiftVideo({
       video.removeAttribute("src");
       video.load();
     }
-    try { void audioCtxRef.current?.close(); } catch { /* ignore */ }
-    audioCtxRef.current = null;
-    gainRef.current = null;
-    sourceRef.current = null;
   }, []);
 
-  const startPlayback = useCallback(() => {
+  const startPlayback = useCallback(async () => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = true;
-    video.volume = 0;
-    if (withSound) ensureAudioBoost();
-    video.play().catch(() => {
-      // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
-      // retry muted so at least the visual plays.
+    
+    // Ensure audio is enabled
+    video.muted = false;
+    video.volume = 1;
+    
+    try {
+      await video.play();
+      console.log("🎵 Video playing WITH audio");
+    } catch (error) {
+      console.warn("🎵 Play failed, retrying:", error);
+      // Retry with muted then unmute
       video.muted = true;
-      video.play().catch(() => {});
-    });
-  }, [ensureAudioBoost, withSound]);
+      try {
+        await video.play();
+        video.muted = false;
+        video.volume = 1;
+        console.log("🎵 Video playing (unmuted after)");
+      } catch (e) {
+        console.error("🎵 Play failed:", e);
+      }
+    }
+  }, []);
 
   // Inspect the first frame's border pixels to decide the real backdrop of this
   // clip. Admin metadata is often wrong/stale, and a mislabelled clip renders a
@@ -417,18 +402,30 @@ function AnimatedGiftVideo({
         key={src}
         ref={videoRef}
         src={src}
-        crossOrigin="anonymous"
         playsInline
         disablePictureInPicture
         preload="auto"
         autoPlay
-        muted
-        onLoadedData={startPlayback}
+        muted={false}
+        crossOrigin="anonymous"
+        onLoadedData={() => {
+          if (videoRef.current) {
+            videoRef.current.muted = false;
+            videoRef.current.volume = 1;
+          }
+          startPlayback();
+        }}
         onLoadedMetadata={(e) => {
           const d = e.currentTarget.duration;
           // Clamp: some encodes report Infinity / bogus durations which would
           // otherwise freeze the gift slot forever on slower devices.
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
+          
+          const video = e.currentTarget;
+          console.log("🎵 Metadata loaded:", {
+            hasAudio: video.mozHasAudio || video.audioTracks?.length > 0,
+            duration: d
+          });
         }}
 
         onCanPlayThrough={() => {
@@ -436,6 +433,7 @@ function AnimatedGiftVideo({
         }}
         onPlaying={markReady}
         onError={() => {
+          console.error("🎵 Video error");
           setFailed(true);
           onReady();
         }}
@@ -1320,6 +1318,53 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
 
+  // FORCE AUDIO UNLOCK on user interaction
+  useEffect(() => {
+    let audioCtx: AudioContext | null = null;
+    
+    const unlockAudio = async () => {
+      try {
+        audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+          await audioCtx.resume();
+        }
+        // Play silent buffer to unlock
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
+        console.log("🎵 Audio UNLOCKED!");
+        
+        // Unlock all videos
+        document.querySelectorAll('video').forEach(v => {
+          v.muted = false;
+          v.volume = 1;
+        });
+      } catch (e) {
+        console.warn("🎵 Audio unlock failed:", e);
+      }
+    };
+
+    // Unlock on user interaction
+    const events = ['click', 'touchstart', 'pointerdown', 'keydown'];
+    events.forEach(event => {
+      window.addEventListener(event, unlockAudio, { once: true, passive: true });
+    });
+
+    // Try immediately if document has focus
+    if (document.hasFocus()) {
+      unlockAudio();
+    }
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, unlockAudio);
+      });
+      if (audioCtx) audioCtx.close().catch(() => {});
+    };
+  }, []);
+
   useEffect(() => {
     currentRef.current = current;
   }, [current]);
@@ -1764,9 +1809,6 @@ type GiftSendRow = {
 
       {/* Cinematic pre-play overlay removed per user request */}
 
-
-
-
       {/* sender chip */}
       <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
         {current.senderAvatar ? (
@@ -1812,8 +1854,7 @@ type GiftSendRow = {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={!audioPrefs.muted && audioPrefs.volume > 0}
-            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
+            withSound={true}
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
