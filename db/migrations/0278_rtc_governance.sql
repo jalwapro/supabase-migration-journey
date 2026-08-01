@@ -102,6 +102,7 @@ BEGIN
 END; $$;
 
 -- keep the old 7-arg signature working for existing callers
+DROP FUNCTION IF EXISTS public.admin_upsert_rtc_slot(int, bigint, text, text, text, numeric, boolean);
 CREATE OR REPLACE FUNCTION public.admin_upsert_rtc_slot(
   _slot int, _app_id bigint, _server_secret text, _server_url text,
   _label text, _minutes_limit numeric, _enabled boolean
