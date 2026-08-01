@@ -102,6 +102,50 @@ function SupportPage() {
     send.mutate(body);
   };
 
+  const tickets = useQuery({
+    enabled: !!user,
+    queryKey: ["support-tickets", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("support_tickets")
+        .select("id,subject,status,admin_reply,created_at")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as Ticket[];
+    },
+  });
+
+  const createTicket = useMutation({
+    mutationFn: async () => {
+      if (!user) throw new Error("Not signed in");
+      const s = subject.trim();
+      const d = detail.trim();
+      const { error } = await supabase
+        .from("support_tickets")
+        .insert({ user_id: user.id, subject: s, message: d, status: "open" });
+      if (error) throw error;
+      if (conversationId) {
+        await supabase.from("support_messages").insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          sender_kind: "user",
+          body: `🎫 New ticket — ${s}\n${d}`,
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success("Ticket created");
+      setTicketOpen(false);
+      setSubject("");
+      setDetail("");
+      qc.invalidateQueries({ queryKey: ["support-tickets", user?.id] });
+      qc.invalidateQueries({ queryKey: ["support-msgs", conversationId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+
   return (
     <>
       <AppShell title="Customer Support" subtitle="Chat with our team">
