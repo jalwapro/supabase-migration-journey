@@ -100,7 +100,7 @@ export const Route = createFileRoute("/api/r2-sign")({
         const userId = await verifyUser(request);
         if (!userId) return json({ error: "unauthorized" }, 401);
 
-        let body: { path?: string; contentType?: string; op?: string };
+        let body: { path?: string; contentType?: string; op?: string; size?: number };
         try {
           body = (await request.json()) as typeof body;
         } catch {
@@ -111,6 +111,11 @@ export const Route = createFileRoute("/api/r2-sign")({
         if (!path) return json({ error: "path required" }, 400);
         const contentType = (body.contentType || "application/octet-stream").slice(0, 120);
         const op = body.op === "get" ? "get" : "put";
+
+        if (op === "put") {
+          const invalid = validateUpload(path, contentType, body.size);
+          if (invalid) return json({ error: invalid }, 400);
+        }
 
         try {
           const { AwsClient } = await import("aws4fetch");
