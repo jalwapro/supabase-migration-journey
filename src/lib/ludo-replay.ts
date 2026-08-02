@@ -115,3 +115,43 @@ export const ludoLog = {
     if (error) throw error;
   },
 };
+
+/** Serializable export payload for a match log. */
+export function buildReplayExport(replay: LudoReplay) {
+  return {
+    format: "jalwa.ludo.replay",
+    version: 1,
+    exported_at: new Date().toISOString(),
+    match: replay.match,
+    players: replay.players,
+    summary: {
+      total_events: replay.events.length,
+      rejected_events: replay.events.filter((e) => !e.valid).length,
+      turns: replay.match.turn_count,
+      winner_id: replay.match.winner_id,
+    },
+    events: replay.events,
+  };
+}
+
+/** Shareable deep link that reopens this exact match in the replay viewer. */
+export function buildReplayShareLink(matchId: string, adminMode = false) {
+  if (typeof window === "undefined") return "";
+  const path = adminMode ? "/admin/ludo-replays" : "/games/ludo-replays";
+  return `${window.location.origin}${path}?match=${matchId}`;
+}
+
+/** Trigger a client-side JSON download of the match log. */
+export function downloadReplayJson(replay: LudoReplay) {
+  const blob = new Blob([JSON.stringify(buildReplayExport(replay), null, 2)], {
+    type: "application/json",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `ludo-replay-${replay.match.id.slice(0, 8)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

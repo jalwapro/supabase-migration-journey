@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Dices,
+  Download,
+  Link2,
   Loader2,
   Pause,
   Play,
@@ -11,7 +14,14 @@ import {
   ShieldCheck,
   Trophy,
 } from "lucide-react";
-import { useLudoMatches, useLudoReplay, type LudoEvent } from "@/lib/ludo-replay";
+import {
+  buildReplayShareLink,
+  downloadReplayJson,
+  useLudoMatches,
+  useLudoReplay,
+  type LudoEvent,
+} from "@/lib/ludo-replay";
+
 
 const KIND_STYLE: Record<string, string> = {
   start: "bg-sky-500/15 text-sky-300 border-sky-500/30",
@@ -61,6 +71,13 @@ export function LudoReplayViewer({
 }) {
   const matches = useLudoMatches(adminMode ? userId : null, adminMode ? 60 : 30);
   const [selected, setSelected] = useState<string | null>(null);
+
+  // Deep link support: /games/ludo-replays?match=<id>
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("match");
+    if (id) setSelected(id);
+  }, []);
+
   const replay = useLudoReplay(selected);
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -152,16 +169,46 @@ export function LudoReplayViewer({
         >
           <ChevronLeft className="h-3.5 w-3.5" /> Matches
         </button>
-        <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={onlyInvalid}
-            onChange={(e) => setOnlyInvalid(e.target.checked)}
-            className="accent-[color:var(--primary)]"
-          />
-          Only rejected turns
-        </label>
+        <div className="flex items-center gap-2">
+          <button
+            disabled={!replay.data}
+            onClick={() => {
+              if (!replay.data) return;
+              downloadReplayJson(replay.data);
+              toast.success("Match log exported as JSON");
+            }}
+            className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5" /> Export JSON
+          </button>
+          <button
+            onClick={async () => {
+              const link = buildReplayShareLink(selected, adminMode);
+              try {
+                await navigator.clipboard.writeText(link);
+                toast.success("Share link copied");
+              } catch {
+                toast.error(link);
+              }
+            }}
+            className="grid h-8 w-8 place-items-center rounded-full border border-border bg-card"
+            aria-label="Copy share link"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
+
+      <label className="flex items-center justify-end gap-2 text-[11px] text-muted-foreground">
+        <input
+          type="checkbox"
+          checked={onlyInvalid}
+          onChange={(e) => setOnlyInvalid(e.target.checked)}
+          className="accent-[color:var(--primary)]"
+        />
+        Only rejected turns
+      </label>
+
 
       {replay.isLoading && (
         <div className="grid place-items-center py-10 text-muted-foreground">
