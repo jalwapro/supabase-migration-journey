@@ -41,6 +41,8 @@ type Play = {
   priority?: number;
   /** Per-gift audio gain (0–1) configured by admins. */
   audioVolume?: number;
+  /** Admin master switch — false means this gift is silent for everyone. */
+  audioEnabled?: boolean;
   /** Wall-clock ms when this play entered the queue (telemetry). */
   enqueuedAt?: number;
   /** Cumulative combo count (running total per sender+gift) — for train mode. */
