@@ -105,6 +105,7 @@ import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminGiftBatchesRouteImport } from './routes/_authenticated/admin.gift-batches'
 import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
+import { Route as AuthenticatedAdminFramesRouteImport } from './routes/_authenticated/admin.frames'
 import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
 import { Route as AuthenticatedAdminFactoryResetRouteImport } from './routes/_authenticated/admin.factory-reset'
 import { Route as AuthenticatedAdminEntrancesRouteImport } from './routes/_authenticated/admin.entrances'
@@ -633,6 +634,12 @@ const AuthenticatedAdminFreeAccountsRoute =
     path: '/free-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminFramesRoute =
+  AuthenticatedAdminFramesRouteImport.update({
+    id: '/frames',
+    path: '/frames',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFinanceReportsRoute =
   AuthenticatedAdminFinanceReportsRouteImport.update({
     id: '/finance-reports',
@@ -762,6 +769,7 @@ export interface FileRoutesByFullPath {
   '/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -869,6 +877,7 @@ export interface FileRoutesByTo {
   '/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -980,6 +989,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/_authenticated/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/_authenticated/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/_authenticated/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -1091,6 +1101,7 @@ export interface FileRouteTypes {
     | '/admin/entrances'
     | '/admin/factory-reset'
     | '/admin/finance-reports'
+    | '/admin/frames'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
     | '/admin/gifts'
@@ -1198,6 +1209,7 @@ export interface FileRouteTypes {
     | '/admin/entrances'
     | '/admin/factory-reset'
     | '/admin/finance-reports'
+    | '/admin/frames'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
     | '/admin/gifts'
@@ -1308,6 +1320,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/entrances'
     | '/_authenticated/admin/factory-reset'
     | '/_authenticated/admin/finance-reports'
+    | '/_authenticated/admin/frames'
     | '/_authenticated/admin/free-accounts'
     | '/_authenticated/admin/gift-batches'
     | '/_authenticated/admin/gifts'
@@ -2063,6 +2076,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFreeAccountsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/frames': {
+      id: '/_authenticated/admin/frames'
+      path: '/frames'
+      fullPath: '/admin/frames'
+      preLoaderRoute: typeof AuthenticatedAdminFramesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/finance-reports': {
       id: '/_authenticated/admin/finance-reports'
       path: '/finance-reports'
@@ -2162,6 +2182,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminEntrancesRoute: typeof AuthenticatedAdminEntrancesRoute
   AuthenticatedAdminFactoryResetRoute: typeof AuthenticatedAdminFactoryResetRoute
   AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
+  AuthenticatedAdminFramesRoute: typeof AuthenticatedAdminFramesRoute
   AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
   AuthenticatedAdminGiftBatchesRoute: typeof AuthenticatedAdminGiftBatchesRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
@@ -2212,6 +2233,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminEntrancesRoute: AuthenticatedAdminEntrancesRoute,
   AuthenticatedAdminFactoryResetRoute: AuthenticatedAdminFactoryResetRoute,
   AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
+  AuthenticatedAdminFramesRoute: AuthenticatedAdminFramesRoute,
   AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
   AuthenticatedAdminGiftBatchesRoute: AuthenticatedAdminGiftBatchesRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
