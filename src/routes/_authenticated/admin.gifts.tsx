@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
 
@@ -542,6 +542,9 @@ function GiftsAdmin() {
                         imageUrl: g.image_url ?? null,
                         emoji: g.emoji ?? g.icon ?? null,
                         chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
+                        audioUrl: resolveGiftMediaUrl(g.audio_url ?? g.sound_url),
+                        audioEnabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
+                        audioVolume: Number(g.audio_volume ?? 1),
                       })
                     }
                     className="rounded-lg bg-[color:var(--gold)]/15 px-2 text-[color:var(--gold)]"
