@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign, Volume2, VolumeX } from "lucide-react";
