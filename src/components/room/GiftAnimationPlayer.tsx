@@ -1451,6 +1451,7 @@ type GiftSendRow = {
   gift_audio_url?: string | null;
   gift_priority?: number | null;
   gift_audio_volume?: number | string | null;
+  gift_audio_enabled?: boolean | null;
 };
 
   // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
