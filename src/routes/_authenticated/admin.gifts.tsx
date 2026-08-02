@@ -167,6 +167,20 @@ function GiftsAdmin() {
   const [previewVolume, setPreviewVolume] = useState(1);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+  // A gift muted in the admin panel is silent in the preview too.
+  const effectiveMuted = previewMuted || previewVolume <= 0 || preview?.audioEnabled === false;
+  // Preview plays at the gift's saved gain multiplied by the local preview slider.
+  useEffect(() => {
+    const gain = Math.max(0, Math.min(1, previewVolume * (preview?.audioVolume ?? 1)));
+    if (previewAudioRef.current) previewAudioRef.current.volume = gain;
+    if (previewVideoRef.current) previewVideoRef.current.volume = gain;
+  }, [previewVolume, preview?.audioVolume, preview?.audioUrl, preview?.clipPath, effectiveMuted]);
+  // Reset the preview slider each time a different gift is opened.
+  useEffect(() => {
+    setPreviewMuted(false);
+    setPreviewVolume(1);
+  }, [preview?.name, preview?.clipPath]);
+
   const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
