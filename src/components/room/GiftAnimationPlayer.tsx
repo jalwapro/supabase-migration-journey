@@ -1479,6 +1479,7 @@ type GiftSendRow = {
       priority: Number(r.gift_priority ?? 0) || 0,
       audioVolume:
         r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
+      audioEnabled: r.gift_audio_enabled == null ? true : Boolean(r.gift_audio_enabled),
     };
     if (seenRef.current.has(play.key)) return;
     // Coalesce multi-receiver sends into ONE simultaneous play.
