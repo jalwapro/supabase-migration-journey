@@ -45,6 +45,7 @@ import {
 import { toast } from "sonner";
 import { useRef, useState, type ComponentType } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { GamesProfileSection } from "@/components/games/GamesProfileSection";
 import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
@@ -334,6 +335,11 @@ function MePage() {
             </div>
           </div>
 
+          {/* Games */}
+          <div className="relative z-10 mt-4 px-3">
+            <GamesProfileSection userId={user?.id} />
+          </div>
+
           {/* Feature grid */}
           <div className="relative z-10 mt-4 space-y-3 px-3 pb-28">
             <div className="grid grid-cols-2 gap-2.5">
@@ -347,7 +353,7 @@ function MePage() {
               <FeatureCard to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
               <FeatureCard to="/vip" icon={Crown} title="VIP Membership" sub="Upgrade & unlock milestone rewards" color="#fbbf24" />
               <FeatureCard to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
-              <FeatureCard to="/games" icon={Gamepad2} title="Games" sub="Daily spin, lucky spin & more" color="#8b5cf6" />
+              <FeatureCard to="/games" icon={Gamepad2} title="Games" sub="Game Center · 10 mini games" color="#8b5cf6" />
               <FeatureCard to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
               <FeatureCard to="/create-room" icon={Mic} title="Go Live" sub="Start a voice room now" color="#8b5cf6" />
               <FeatureCard to="/pk-history" icon={Swords} title="PK History" sub="Battle wins & losses" color="#ff2d95" />

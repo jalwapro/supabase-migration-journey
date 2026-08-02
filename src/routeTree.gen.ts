@@ -66,6 +66,7 @@ import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
+import { Route as AuthenticatedGamesLeaderboardRouteImport } from './routes/_authenticated/games.leaderboard'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authenticated/admin.vip-levels'
@@ -93,6 +94,7 @@ import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
+import { Route as AuthenticatedAdminMinigamesRouteImport } from './routes/_authenticated/admin.minigames'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
 import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
@@ -110,6 +112,7 @@ import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 import { Route as AuthenticatedAdminAssignFrameRouteImport } from './routes/_authenticated/admin.assign-frame'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
+import { Route as AuthenticatedGamesPlaySlugRouteImport } from './routes/_authenticated/games.play.$slug'
 
 const SvgaPreviewRoute = SvgaPreviewRouteImport.update({
   id: '/svga-preview',
@@ -401,6 +404,12 @@ const AuthenticatedGamesLuckySpinRoute =
     path: '/lucky-spin',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
+const AuthenticatedGamesLeaderboardRoute =
+  AuthenticatedGamesLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 const AuthenticatedGamesDailySpinRoute =
   AuthenticatedGamesDailySpinRouteImport.update({
     id: '/daily-spin',
@@ -557,6 +566,12 @@ const AuthenticatedAdminNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminMinigamesRoute =
+  AuthenticatedAdminMinigamesRouteImport.update({
+    id: '/minigames',
+    path: '/minigames',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -653,6 +668,12 @@ const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedGamesPlaySlugRoute =
+  AuthenticatedGamesPlaySlugRouteImport.update({
+    id: '/play/$slug',
+    path: '/play/$slug',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -718,6 +739,7 @@ export interface FileRoutesByFullPath {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
@@ -745,6 +767,7 @@ export interface FileRoutesByFullPath {
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
+  '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -755,6 +778,7 @@ export interface FileRoutesByFullPath {
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
+  '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -818,6 +842,7 @@ export interface FileRoutesByTo {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
@@ -845,6 +870,7 @@ export interface FileRoutesByTo {
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
+  '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -855,6 +881,7 @@ export interface FileRoutesByTo {
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
+  '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -922,6 +949,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
@@ -949,6 +977,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
+  '/_authenticated/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -959,6 +988,7 @@ export interface FileRoutesById {
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
+  '/_authenticated/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1026,6 +1056,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/minigames'
     | '/admin/notifications'
     | '/admin/partners'
     | '/admin/payment-accounts'
@@ -1053,6 +1084,7 @@ export interface FileRouteTypes {
     | '/admin/vip-levels'
     | '/admin/withdrawals'
     | '/games/daily-spin'
+    | '/games/leaderboard'
     | '/games/lucky-spin'
     | '/pk/$roomId'
     | '/settings/notifications'
@@ -1063,6 +1095,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-verify'
     | '/admin/'
     | '/games/'
+    | '/games/play/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1126,6 +1159,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/minigames'
     | '/admin/notifications'
     | '/admin/partners'
     | '/admin/payment-accounts'
@@ -1153,6 +1187,7 @@ export interface FileRouteTypes {
     | '/admin/vip-levels'
     | '/admin/withdrawals'
     | '/games/daily-spin'
+    | '/games/leaderboard'
     | '/games/lucky-spin'
     | '/pk/$roomId'
     | '/settings/notifications'
@@ -1163,6 +1198,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-verify'
     | '/admin'
     | '/games'
+    | '/games/play/$slug'
   id:
     | '__root__'
     | '/'
@@ -1229,6 +1265,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/live'
     | '/_authenticated/admin/logs'
+    | '/_authenticated/admin/minigames'
     | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/partners'
     | '/_authenticated/admin/payment-accounts'
@@ -1256,6 +1293,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vip-levels'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/daily-spin'
+    | '/_authenticated/games/leaderboard'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings_/notifications'
@@ -1266,6 +1304,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
     | '/_authenticated/games/'
+    | '/_authenticated/games/play/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1699,6 +1738,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesLuckySpinRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/games/leaderboard': {
+      id: '/_authenticated/games/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/games/leaderboard'
+      preLoaderRoute: typeof AuthenticatedGamesLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
     '/_authenticated/games/daily-spin': {
       id: '/_authenticated/games/daily-spin'
       path: '/daily-spin'
@@ -1888,6 +1934,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminNotificationsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/minigames': {
+      id: '/_authenticated/admin/minigames'
+      path: '/minigames'
+      fullPath: '/admin/minigames'
+      preLoaderRoute: typeof AuthenticatedAdminMinigamesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/logs': {
       id: '/_authenticated/admin/logs'
       path: '/logs'
@@ -2007,6 +2060,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/games/play/$slug': {
+      id: '/_authenticated/games/play/$slug'
+      path: '/play/$slug'
+      fullPath: '/games/play/$slug'
+      preLoaderRoute: typeof AuthenticatedGamesPlaySlugRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
   }
 }
 
@@ -2028,6 +2088,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
   AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
+  AuthenticatedAdminMinigamesRoute: typeof AuthenticatedAdminMinigamesRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
@@ -2075,6 +2136,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,
   AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
+  AuthenticatedAdminMinigamesRoute: AuthenticatedAdminMinigamesRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
@@ -2113,14 +2175,18 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedGamesRouteChildren {
   AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
+  AuthenticatedGamesLeaderboardRoute: typeof AuthenticatedGamesLeaderboardRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
+  AuthenticatedGamesPlaySlugRoute: typeof AuthenticatedGamesPlaySlugRoute
 }
 
 const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
   AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
+  AuthenticatedGamesLeaderboardRoute: AuthenticatedGamesLeaderboardRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
+  AuthenticatedGamesPlaySlugRoute: AuthenticatedGamesPlaySlugRoute,
 }
 
 const AuthenticatedGamesRouteWithChildren =
