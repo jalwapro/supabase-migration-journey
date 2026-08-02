@@ -2,13 +2,10 @@
  * Background preset registry. Combined with the segmenter, these drive
  * the background layer under the person mask.
  */
-import beach from "@/assets/backgrounds/beach.jpg";
-import galaxy from "@/assets/backgrounds/galaxy.jpg";
-import neon from "@/assets/backgrounds/neon.jpg";
-import palace from "@/assets/backgrounds/palace.jpg";
-import sunset from "@/assets/backgrounds/sunset.jpg";
-import cafe from "@/assets/backgrounds/cafe.jpg";
-import forest from "@/assets/backgrounds/forest.jpg";
+
+import { R2_BACKGROUNDS } from "@/lib/r2-static";
+
+const { beach, galaxy, neon, palace, sunset, cafe, forest } = R2_BACKGROUNDS;
 
 export type BackgroundKind = "none" | "blur" | "image";
 

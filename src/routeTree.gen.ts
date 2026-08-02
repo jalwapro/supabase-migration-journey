@@ -37,6 +37,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
+import { Route as AuthenticatedSupportRoomRouteImport } from './routes/_authenticated/support-room'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedShopEntrancesRouteImport } from './routes/_authenticated/shop-entrances'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -65,6 +66,7 @@ import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-te
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
+import { Route as AuthenticatedGamesLudoReplaysRouteImport } from './routes/_authenticated/games.ludo-replays'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedGamesLeaderboardRouteImport } from './routes/_authenticated/games.leaderboard'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
@@ -74,6 +76,7 @@ import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
+import { Route as AuthenticatedAdminSupportRoomRouteImport } from './routes/_authenticated/admin.support-room'
 import { Route as AuthenticatedAdminSupportChatRouteImport } from './routes/_authenticated/admin.support-chat'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedAdminSpotlightsRouteImport } from './routes/_authenticated/admin.spotlights'
@@ -95,6 +98,7 @@ import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
 import { Route as AuthenticatedAdminMinigamesRouteImport } from './routes/_authenticated/admin.minigames'
+import { Route as AuthenticatedAdminLudoReplaysRouteImport } from './routes/_authenticated/admin.ludo-replays'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
 import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
@@ -253,6 +257,12 @@ const AuthenticatedThemeShopRoute = AuthenticatedThemeShopRouteImport.update({
   path: '/theme-shop',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSupportRoomRoute =
+  AuthenticatedSupportRoomRouteImport.update({
+    id: '/support-room',
+    path: '/support-room',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -398,6 +408,12 @@ const AuthenticatedPkRoomIdRoute = AuthenticatedPkRoomIdRouteImport.update({
   path: '/pk/$roomId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGamesLudoReplaysRoute =
+  AuthenticatedGamesLudoReplaysRouteImport.update({
+    id: '/ludo-replays',
+    path: '/ludo-replays',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
     id: '/lucky-spin',
@@ -448,6 +464,12 @@ const AuthenticatedAdminThemeCategoriesRoute =
   AuthenticatedAdminThemeCategoriesRouteImport.update({
     id: '/theme-categories',
     path: '/theme-categories',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminSupportRoomRoute =
+  AuthenticatedAdminSupportRoomRouteImport.update({
+    id: '/support-room',
+    path: '/support-room',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSupportChatRoute =
@@ -570,6 +592,12 @@ const AuthenticatedAdminMinigamesRoute =
   AuthenticatedAdminMinigamesRouteImport.update({
     id: '/minigames',
     path: '/minigames',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminLudoReplaysRoute =
+  AuthenticatedAdminLudoReplaysRouteImport.update({
+    id: '/ludo-replays',
+    path: '/ludo-replays',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
@@ -709,6 +737,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
@@ -739,6 +768,7 @@ export interface FileRoutesByFullPath {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
@@ -760,6 +790,7 @@ export interface FileRoutesByFullPath {
   '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
+  '/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -769,6 +800,7 @@ export interface FileRoutesByFullPath {
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -812,6 +844,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
@@ -842,6 +875,7 @@ export interface FileRoutesByTo {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
@@ -863,6 +897,7 @@ export interface FileRoutesByTo {
   '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
+  '/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -872,6 +907,7 @@ export interface FileRoutesByTo {
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -919,6 +955,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shop-entrances': typeof AuthenticatedShopEntrancesRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
+  '/_authenticated/support-room': typeof AuthenticatedSupportRoomRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
@@ -949,6 +986,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/_authenticated/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
@@ -970,6 +1008,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
+  '/_authenticated/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -979,6 +1018,7 @@ export interface FileRoutesById {
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/_authenticated/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/_authenticated/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -1026,6 +1066,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop-entrances'
     | '/support'
+    | '/support-room'
     | '/theme-shop'
     | '/vip'
     | '/visitors'
@@ -1056,6 +1097,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/ludo-replays'
     | '/admin/minigames'
     | '/admin/notifications'
     | '/admin/partners'
@@ -1077,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/spotlights'
     | '/admin/support'
     | '/admin/support-chat'
+    | '/admin/support-room'
     | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
@@ -1086,6 +1129,7 @@ export interface FileRouteTypes {
     | '/games/daily-spin'
     | '/games/leaderboard'
     | '/games/lucky-spin'
+    | '/games/ludo-replays'
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
@@ -1129,6 +1173,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop-entrances'
     | '/support'
+    | '/support-room'
     | '/theme-shop'
     | '/vip'
     | '/visitors'
@@ -1159,6 +1204,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/ludo-replays'
     | '/admin/minigames'
     | '/admin/notifications'
     | '/admin/partners'
@@ -1180,6 +1226,7 @@ export interface FileRouteTypes {
     | '/admin/spotlights'
     | '/admin/support'
     | '/admin/support-chat'
+    | '/admin/support-room'
     | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
@@ -1189,6 +1236,7 @@ export interface FileRouteTypes {
     | '/games/daily-spin'
     | '/games/leaderboard'
     | '/games/lucky-spin'
+    | '/games/ludo-replays'
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
@@ -1235,6 +1283,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/shop-entrances'
     | '/_authenticated/support'
+    | '/_authenticated/support-room'
     | '/_authenticated/theme-shop'
     | '/_authenticated/vip'
     | '/_authenticated/visitors'
@@ -1265,6 +1314,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/live'
     | '/_authenticated/admin/logs'
+    | '/_authenticated/admin/ludo-replays'
     | '/_authenticated/admin/minigames'
     | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/partners'
@@ -1286,6 +1336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/spotlights'
     | '/_authenticated/admin/support'
     | '/_authenticated/admin/support-chat'
+    | '/_authenticated/admin/support-room'
     | '/_authenticated/admin/theme-categories'
     | '/_authenticated/admin/themes'
     | '/_authenticated/admin/users'
@@ -1295,6 +1346,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games/daily-spin'
     | '/_authenticated/games/leaderboard'
     | '/_authenticated/games/lucky-spin'
+    | '/_authenticated/games/ludo-replays'
     | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
@@ -1535,6 +1587,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedThemeShopRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/support-room': {
+      id: '/_authenticated/support-room'
+      path: '/support-room'
+      fullPath: '/support-room'
+      preLoaderRoute: typeof AuthenticatedSupportRoomRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/support': {
       id: '/_authenticated/support'
       path: '/support'
@@ -1731,6 +1790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPkRoomIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/games/ludo-replays': {
+      id: '/_authenticated/games/ludo-replays'
+      path: '/ludo-replays'
+      fullPath: '/games/ludo-replays'
+      preLoaderRoute: typeof AuthenticatedGamesLudoReplaysRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
     '/_authenticated/games/lucky-spin': {
       id: '/_authenticated/games/lucky-spin'
       path: '/lucky-spin'
@@ -1792,6 +1858,13 @@ declare module '@tanstack/react-router' {
       path: '/theme-categories'
       fullPath: '/admin/theme-categories'
       preLoaderRoute: typeof AuthenticatedAdminThemeCategoriesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/support-room': {
+      id: '/_authenticated/admin/support-room'
+      path: '/support-room'
+      fullPath: '/admin/support-room'
+      preLoaderRoute: typeof AuthenticatedAdminSupportRoomRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/support-chat': {
@@ -1941,6 +2014,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMinigamesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/ludo-replays': {
+      id: '/_authenticated/admin/ludo-replays'
+      path: '/ludo-replays'
+      fullPath: '/admin/ludo-replays'
+      preLoaderRoute: typeof AuthenticatedAdminLudoReplaysRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/logs': {
       id: '/_authenticated/admin/logs'
       path: '/logs'
@@ -2088,6 +2168,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
   AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
+  AuthenticatedAdminLudoReplaysRoute: typeof AuthenticatedAdminLudoReplaysRoute
   AuthenticatedAdminMinigamesRoute: typeof AuthenticatedAdminMinigamesRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
@@ -2109,6 +2190,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSpotlightsRoute: typeof AuthenticatedAdminSpotlightsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedAdminSupportChatRoute: typeof AuthenticatedAdminSupportChatRoute
+  AuthenticatedAdminSupportRoomRoute: typeof AuthenticatedAdminSupportRoomRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -2136,6 +2218,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,
   AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
+  AuthenticatedAdminLudoReplaysRoute: AuthenticatedAdminLudoReplaysRoute,
   AuthenticatedAdminMinigamesRoute: AuthenticatedAdminMinigamesRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
@@ -2160,6 +2243,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSpotlightsRoute: AuthenticatedAdminSpotlightsRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedAdminSupportChatRoute: AuthenticatedAdminSupportChatRoute,
+  AuthenticatedAdminSupportRoomRoute: AuthenticatedAdminSupportRoomRoute,
   AuthenticatedAdminThemeCategoriesRoute:
     AuthenticatedAdminThemeCategoriesRoute,
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
@@ -2177,6 +2261,7 @@ interface AuthenticatedGamesRouteChildren {
   AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
   AuthenticatedGamesLeaderboardRoute: typeof AuthenticatedGamesLeaderboardRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
+  AuthenticatedGamesLudoReplaysRoute: typeof AuthenticatedGamesLudoReplaysRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
   AuthenticatedGamesPlaySlugRoute: typeof AuthenticatedGamesPlaySlugRoute
 }
@@ -2185,6 +2270,7 @@ const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
   AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
   AuthenticatedGamesLeaderboardRoute: AuthenticatedGamesLeaderboardRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
+  AuthenticatedGamesLudoReplaysRoute: AuthenticatedGamesLudoReplaysRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
   AuthenticatedGamesPlaySlugRoute: AuthenticatedGamesPlaySlugRoute,
 }
@@ -2212,6 +2298,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedShopEntrancesRoute: typeof AuthenticatedShopEntrancesRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedSupportRoomRoute: typeof AuthenticatedSupportRoomRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedVisitorsRoute: typeof AuthenticatedVisitorsRoute
@@ -2242,6 +2329,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedShopEntrancesRoute: AuthenticatedShopEntrancesRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedSupportRoomRoute: AuthenticatedSupportRoomRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedVisitorsRoute: AuthenticatedVisitorsRoute,
