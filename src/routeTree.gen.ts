@@ -39,6 +39,7 @@ import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vi
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
 import { Route as AuthenticatedSupportRoomRouteImport } from './routes/_authenticated/support-room'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
+import { Route as AuthenticatedShopFramesRouteImport } from './routes/_authenticated/shop-frames'
 import { Route as AuthenticatedShopEntrancesRouteImport } from './routes/_authenticated/shop-entrances'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
@@ -105,6 +106,7 @@ import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_au
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedAdminGiftBatchesRouteImport } from './routes/_authenticated/admin.gift-batches'
 import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
+import { Route as AuthenticatedAdminFramesRouteImport } from './routes/_authenticated/admin.frames'
 import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
 import { Route as AuthenticatedAdminFactoryResetRouteImport } from './routes/_authenticated/admin.factory-reset'
 import { Route as AuthenticatedAdminEntrancesRouteImport } from './routes/_authenticated/admin.entrances'
@@ -266,6 +268,11 @@ const AuthenticatedSupportRoomRoute =
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedShopFramesRoute = AuthenticatedShopFramesRouteImport.update({
+  id: '/shop-frames',
+  path: '/shop-frames',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedShopEntrancesRoute =
@@ -633,6 +640,12 @@ const AuthenticatedAdminFreeAccountsRoute =
     path: '/free-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminFramesRoute =
+  AuthenticatedAdminFramesRouteImport.update({
+    id: '/frames',
+    path: '/frames',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminFinanceReportsRoute =
   AuthenticatedAdminFinanceReportsRouteImport.update({
     id: '/finance-reports',
@@ -736,6 +749,7 @@ export interface FileRoutesByFullPath {
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
+  '/shop-frames': typeof AuthenticatedShopFramesRoute
   '/support': typeof AuthenticatedSupportRoute
   '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
@@ -762,6 +776,7 @@ export interface FileRoutesByFullPath {
   '/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -843,6 +858,7 @@ export interface FileRoutesByTo {
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
+  '/shop-frames': typeof AuthenticatedShopFramesRoute
   '/support': typeof AuthenticatedSupportRoute
   '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
@@ -869,6 +885,7 @@ export interface FileRoutesByTo {
   '/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -954,6 +971,7 @@ export interface FileRoutesById {
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shop-entrances': typeof AuthenticatedShopEntrancesRoute
+  '/_authenticated/shop-frames': typeof AuthenticatedShopFramesRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/support-room': typeof AuthenticatedSupportRoomRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
@@ -980,6 +998,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/_authenticated/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
+  '/_authenticated/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/_authenticated/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
@@ -1065,6 +1084,7 @@ export interface FileRouteTypes {
     | '/recharge-history'
     | '/settings'
     | '/shop-entrances'
+    | '/shop-frames'
     | '/support'
     | '/support-room'
     | '/theme-shop'
@@ -1091,6 +1111,7 @@ export interface FileRouteTypes {
     | '/admin/entrances'
     | '/admin/factory-reset'
     | '/admin/finance-reports'
+    | '/admin/frames'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
     | '/admin/gifts'
@@ -1172,6 +1193,7 @@ export interface FileRouteTypes {
     | '/recharge-history'
     | '/settings'
     | '/shop-entrances'
+    | '/shop-frames'
     | '/support'
     | '/support-room'
     | '/theme-shop'
@@ -1198,6 +1220,7 @@ export interface FileRouteTypes {
     | '/admin/entrances'
     | '/admin/factory-reset'
     | '/admin/finance-reports'
+    | '/admin/frames'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
     | '/admin/gifts'
@@ -1282,6 +1305,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recharge-history'
     | '/_authenticated/settings'
     | '/_authenticated/shop-entrances'
+    | '/_authenticated/shop-frames'
     | '/_authenticated/support'
     | '/_authenticated/support-room'
     | '/_authenticated/theme-shop'
@@ -1308,6 +1332,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/entrances'
     | '/_authenticated/admin/factory-reset'
     | '/_authenticated/admin/finance-reports'
+    | '/_authenticated/admin/frames'
     | '/_authenticated/admin/free-accounts'
     | '/_authenticated/admin/gift-batches'
     | '/_authenticated/admin/gifts'
@@ -1599,6 +1624,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/shop-frames': {
+      id: '/_authenticated/shop-frames'
+      path: '/shop-frames'
+      fullPath: '/shop-frames'
+      preLoaderRoute: typeof AuthenticatedShopFramesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/shop-entrances': {
@@ -2063,6 +2095,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminFreeAccountsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/frames': {
+      id: '/_authenticated/admin/frames'
+      path: '/frames'
+      fullPath: '/admin/frames'
+      preLoaderRoute: typeof AuthenticatedAdminFramesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/finance-reports': {
       id: '/_authenticated/admin/finance-reports'
       path: '/finance-reports'
@@ -2162,6 +2201,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminEntrancesRoute: typeof AuthenticatedAdminEntrancesRoute
   AuthenticatedAdminFactoryResetRoute: typeof AuthenticatedAdminFactoryResetRoute
   AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
+  AuthenticatedAdminFramesRoute: typeof AuthenticatedAdminFramesRoute
   AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
   AuthenticatedAdminGiftBatchesRoute: typeof AuthenticatedAdminGiftBatchesRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
@@ -2212,6 +2252,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminEntrancesRoute: AuthenticatedAdminEntrancesRoute,
   AuthenticatedAdminFactoryResetRoute: AuthenticatedAdminFactoryResetRoute,
   AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
+  AuthenticatedAdminFramesRoute: AuthenticatedAdminFramesRoute,
   AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
   AuthenticatedAdminGiftBatchesRoute: AuthenticatedAdminGiftBatchesRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
@@ -2297,6 +2338,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedShopEntrancesRoute: typeof AuthenticatedShopEntrancesRoute
+  AuthenticatedShopFramesRoute: typeof AuthenticatedShopFramesRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedSupportRoomRoute: typeof AuthenticatedSupportRoomRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
@@ -2328,6 +2370,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedShopEntrancesRoute: AuthenticatedShopEntrancesRoute,
+  AuthenticatedShopFramesRoute: AuthenticatedShopFramesRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedSupportRoomRoute: AuthenticatedSupportRoomRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,

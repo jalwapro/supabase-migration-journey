@@ -45,6 +45,8 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/gift-batches", label: "Gift Batches", icon: GiftIcon },
       { to: "/admin/emojis", label: "Emoji Management", icon: Sparkles },
       { to: "/admin/entrances", label: "Entrance Effects", icon: Sparkles },
+      { to: "/admin/frames", label: "Profile Frames", icon: ImagePlus },
+
       { to: "/admin/spotlights", label: "Profile Spotlights", icon: Crown },
       { to: "/admin/ads", label: "Ads Management", icon: Megaphone },
       { to: "/admin/banners", label: "Home Banners", icon: GalleryHorizontal },
