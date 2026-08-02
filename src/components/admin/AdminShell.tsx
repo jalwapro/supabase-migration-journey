@@ -39,6 +39,7 @@ export const ADMIN_NAV: NavGroup[] = [
     label: "Content",
     items: [
       { to: "/admin/gifts", label: "Gifts Management", icon: GiftIcon },
+      { to: "/admin/minigames", label: "Mini Games", icon: Dices },
       { to: "/admin/gift-batches", label: "Gift Batches", icon: GiftIcon },
       { to: "/admin/emojis", label: "Emoji Management", icon: Sparkles },
       { to: "/admin/entrances", label: "Entrance Effects", icon: Sparkles },
