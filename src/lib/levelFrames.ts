@@ -11,7 +11,7 @@ const A = (path: string) =>
 export const LEVEL_FRAMES: LevelFrame[] = [
   { level: 1, series: "Celestial", url: A("/__l5e/assets-v1/84f57c2f-871f-4a3a-88c3-b8890d17321e/celestial-lv1.png") },
   { level: 2, series: "Celestial", url: A("/__l5e/assets-v1/3946d93d-9eeb-46e4-80f2-d16fdf9a7fb3/celestial-lv2.png") },
-  { level: 3, series: "Celestial", url: A("/__l5e/assets-v1/a22fdacd-8b98-47e7-b1a7-ddefdb08a48f/celestial-lv3.png") },
+  { level: 3, series: "Celestial", url: "https://pub-788f85351d2748f4911a8c6d85d011af.r2.dev/static/level-frames/celestial-lv3.png" },
   { level: 4, series: "Celestial", url: A("/__l5e/assets-v1/189de10c-ad81-4f2d-9bb1-89e3dd340b88/celestial-lv4.png") },
   { level: 5, series: "Celestial", url: A("/__l5e/assets-v1/01d8bdb7-f09d-4317-8c12-ea77b73e5168/celestial-lv5.png") },
   { level: 6, series: "Celestial", url: A("/__l5e/assets-v1/99d93fde-864b-4bc2-aeca-0896f4f6f426/celestial-lv6.png") },

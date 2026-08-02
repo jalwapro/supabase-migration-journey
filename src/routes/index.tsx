@@ -10,7 +10,7 @@ import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { MiniGamesFloatingButton } from "@/components/MiniGamesFloatingButton";
 import { formatCompact } from "@/lib/utils";
 
-import jalwaLogo from "@/assets/jalwa-logo.png";
+import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
 import jalwaFrameViolet from "@/assets/jalwa-frame-violet.png.asset.json";
 import {

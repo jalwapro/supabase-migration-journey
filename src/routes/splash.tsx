@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Mic, Video, Gift } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import logo from "@/assets/jalwa-logo.png";
+import { JALWA_LOGO as logo } from "@/lib/r2-static";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/splash")({
