@@ -150,7 +150,11 @@ function authorizeWrite(path: string, userId: string, admin: boolean): string | 
   if (admin) return null;
   const [bucket, second] = path.split("/");
   if (!bucket) return "path required";
-  if (ADMIN_ONLY_PREFIXES.includes(bucket)) return "admin_only_namespace";
+  // Shared catalogue root is admin-only, but a user may still own a personal
+  // sub-folder inside it (e.g. shop-assets/<uid>/custom-themes/...).
+  if (ADMIN_ONLY_PREFIXES.includes(bucket)) {
+    return second === userId ? null : "admin_only_namespace";
+  }
   if (USER_SCOPED_PREFIXES.includes(bucket)) {
     return second === userId ? null : "path_outside_your_folder";
   }
