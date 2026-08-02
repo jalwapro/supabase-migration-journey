@@ -65,6 +65,7 @@ import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-te
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
+import { Route as AuthenticatedGamesLudoReplaysRouteImport } from './routes/_authenticated/games.ludo-replays'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
 import { Route as AuthenticatedGamesLeaderboardRouteImport } from './routes/_authenticated/games.leaderboard'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
@@ -398,6 +399,12 @@ const AuthenticatedPkRoomIdRoute = AuthenticatedPkRoomIdRouteImport.update({
   path: '/pk/$roomId',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGamesLudoReplaysRoute =
+  AuthenticatedGamesLudoReplaysRouteImport.update({
+    id: '/ludo-replays',
+    path: '/ludo-replays',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
     id: '/lucky-spin',
@@ -769,6 +776,7 @@ export interface FileRoutesByFullPath {
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -872,6 +880,7 @@ export interface FileRoutesByTo {
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -979,6 +988,7 @@ export interface FileRoutesById {
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/_authenticated/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
+  '/_authenticated/games/ludo-replays': typeof AuthenticatedGamesLudoReplaysRoute
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
@@ -1086,6 +1096,7 @@ export interface FileRouteTypes {
     | '/games/daily-spin'
     | '/games/leaderboard'
     | '/games/lucky-spin'
+    | '/games/ludo-replays'
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
@@ -1189,6 +1200,7 @@ export interface FileRouteTypes {
     | '/games/daily-spin'
     | '/games/leaderboard'
     | '/games/lucky-spin'
+    | '/games/ludo-replays'
     | '/pk/$roomId'
     | '/settings/notifications'
     | '/u/$userId'
@@ -1295,6 +1307,7 @@ export interface FileRouteTypes {
     | '/_authenticated/games/daily-spin'
     | '/_authenticated/games/leaderboard'
     | '/_authenticated/games/lucky-spin'
+    | '/_authenticated/games/ludo-replays'
     | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
@@ -1730,6 +1743,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pk/$roomId'
       preLoaderRoute: typeof AuthenticatedPkRoomIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/games/ludo-replays': {
+      id: '/_authenticated/games/ludo-replays'
+      path: '/ludo-replays'
+      fullPath: '/games/ludo-replays'
+      preLoaderRoute: typeof AuthenticatedGamesLudoReplaysRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
     }
     '/_authenticated/games/lucky-spin': {
       id: '/_authenticated/games/lucky-spin'
@@ -2177,6 +2197,7 @@ interface AuthenticatedGamesRouteChildren {
   AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
   AuthenticatedGamesLeaderboardRoute: typeof AuthenticatedGamesLeaderboardRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
+  AuthenticatedGamesLudoReplaysRoute: typeof AuthenticatedGamesLudoReplaysRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
   AuthenticatedGamesPlaySlugRoute: typeof AuthenticatedGamesPlaySlugRoute
 }
@@ -2185,6 +2206,7 @@ const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
   AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
   AuthenticatedGamesLeaderboardRoute: AuthenticatedGamesLeaderboardRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
+  AuthenticatedGamesLudoReplaysRoute: AuthenticatedGamesLudoReplaysRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
   AuthenticatedGamesPlaySlugRoute: AuthenticatedGamesPlaySlugRoute,
 }
