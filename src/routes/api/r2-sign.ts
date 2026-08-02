@@ -174,8 +174,8 @@ export const Route = createFileRoute("/api/r2-sign")({
           return json({ error: "r2_not_configured" }, 503);
         }
 
-        const userId = await verifyUser(request);
-        if (!userId) return json({ error: "unauthorized" }, 401);
+        const user = await verifyUser(request);
+        if (!user) return json({ error: "unauthorized" }, 401);
 
         let body: { path?: string; contentType?: string; op?: string; size?: number };
         try {
@@ -192,6 +192,11 @@ export const Route = createFileRoute("/api/r2-sign")({
         if (op === "put") {
           const invalid = validateUpload(path, contentType, body.size);
           if (invalid) return json({ error: invalid }, 400);
+          // Namespace authorization: shared catalogue media is admin-only and
+          // everything else must live under the caller's own user folder.
+          let denied = authorizeWrite(path, user.id, false);
+          if (denied && (await isAdmin(user.id, user.token))) denied = null;
+          if (denied) return json({ error: denied }, 403);
         }
 
         try {
