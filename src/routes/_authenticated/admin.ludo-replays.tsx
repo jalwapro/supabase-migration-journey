@@ -18,7 +18,7 @@ function AdminLudoReplays() {
     <div className="space-y-4">
       <AdminPageHeader
         title="Ludo Replays"
-        description="Inspect any match turn-by-turn: dice rolls, moves and server validation verdicts."
+        subtitle="Inspect any match turn-by-turn: dice rolls, moves and server validation verdicts."
       />
       <div className="flex gap-2">
         <input

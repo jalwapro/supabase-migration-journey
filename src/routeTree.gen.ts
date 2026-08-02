@@ -96,6 +96,7 @@ import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
 import { Route as AuthenticatedAdminMinigamesRouteImport } from './routes/_authenticated/admin.minigames'
+import { Route as AuthenticatedAdminLudoReplaysRouteImport } from './routes/_authenticated/admin.ludo-replays'
 import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authenticated/admin.logs'
 import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
@@ -579,6 +580,12 @@ const AuthenticatedAdminMinigamesRoute =
     path: '/minigames',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminLudoReplaysRoute =
+  AuthenticatedAdminLudoReplaysRouteImport.update({
+    id: '/ludo-replays',
+    path: '/ludo-replays',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminLogsRoute = AuthenticatedAdminLogsRouteImport.update({
   id: '/logs',
   path: '/logs',
@@ -746,6 +753,7 @@ export interface FileRoutesByFullPath {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
@@ -850,6 +858,7 @@ export interface FileRoutesByTo {
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
   '/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
@@ -958,6 +967,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
   '/_authenticated/admin/logs': typeof AuthenticatedAdminLogsRoute
+  '/_authenticated/admin/ludo-replays': typeof AuthenticatedAdminLudoReplaysRoute
   '/_authenticated/admin/minigames': typeof AuthenticatedAdminMinigamesRoute
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
@@ -1066,6 +1076,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/ludo-replays'
     | '/admin/minigames'
     | '/admin/notifications'
     | '/admin/partners'
@@ -1170,6 +1181,7 @@ export interface FileRouteTypes {
     | '/admin/integrations'
     | '/admin/live'
     | '/admin/logs'
+    | '/admin/ludo-replays'
     | '/admin/minigames'
     | '/admin/notifications'
     | '/admin/partners'
@@ -1277,6 +1289,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/live'
     | '/_authenticated/admin/logs'
+    | '/_authenticated/admin/ludo-replays'
     | '/_authenticated/admin/minigames'
     | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/partners'
@@ -1961,6 +1974,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminMinigamesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/ludo-replays': {
+      id: '/_authenticated/admin/ludo-replays'
+      path: '/ludo-replays'
+      fullPath: '/admin/ludo-replays'
+      preLoaderRoute: typeof AuthenticatedAdminLudoReplaysRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/logs': {
       id: '/_authenticated/admin/logs'
       path: '/logs'
@@ -2108,6 +2128,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
   AuthenticatedAdminLogsRoute: typeof AuthenticatedAdminLogsRoute
+  AuthenticatedAdminLudoReplaysRoute: typeof AuthenticatedAdminLudoReplaysRoute
   AuthenticatedAdminMinigamesRoute: typeof AuthenticatedAdminMinigamesRoute
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
@@ -2156,6 +2177,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,
   AuthenticatedAdminLogsRoute: AuthenticatedAdminLogsRoute,
+  AuthenticatedAdminLudoReplaysRoute: AuthenticatedAdminLudoReplaysRoute,
   AuthenticatedAdminMinigamesRoute: AuthenticatedAdminMinigamesRoute,
   AuthenticatedAdminNotificationsRoute: AuthenticatedAdminNotificationsRoute,
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
