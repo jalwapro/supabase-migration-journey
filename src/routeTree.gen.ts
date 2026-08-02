@@ -66,6 +66,7 @@ import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
 import { Route as AuthenticatedPkRoomIdRouteImport } from './routes/_authenticated/pk.$roomId'
 import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authenticated/games.lucky-spin'
+import { Route as AuthenticatedGamesLeaderboardRouteImport } from './routes/_authenticated/games.leaderboard'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
 import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authenticated/admin.vip-levels'
@@ -400,6 +401,12 @@ const AuthenticatedGamesLuckySpinRoute =
   AuthenticatedGamesLuckySpinRouteImport.update({
     id: '/lucky-spin',
     path: '/lucky-spin',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
+const AuthenticatedGamesLeaderboardRoute =
+  AuthenticatedGamesLeaderboardRouteImport.update({
+    id: '/leaderboard',
+    path: '/leaderboard',
     getParentRoute: () => AuthenticatedGamesRoute,
   } as any)
 const AuthenticatedGamesDailySpinRoute =
@@ -752,6 +759,7 @@ export interface FileRoutesByFullPath {
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
+  '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -853,6 +861,7 @@ export interface FileRoutesByTo {
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
+  '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -958,6 +967,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
+  '/_authenticated/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
   '/_authenticated/games/lucky-spin': typeof AuthenticatedGamesLuckySpinRoute
   '/_authenticated/pk/$roomId': typeof AuthenticatedPkRoomIdRoute
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
@@ -1063,6 +1073,7 @@ export interface FileRouteTypes {
     | '/admin/vip-levels'
     | '/admin/withdrawals'
     | '/games/daily-spin'
+    | '/games/leaderboard'
     | '/games/lucky-spin'
     | '/pk/$roomId'
     | '/settings/notifications'
@@ -1164,6 +1175,7 @@ export interface FileRouteTypes {
     | '/admin/vip-levels'
     | '/admin/withdrawals'
     | '/games/daily-spin'
+    | '/games/leaderboard'
     | '/games/lucky-spin'
     | '/pk/$roomId'
     | '/settings/notifications'
@@ -1268,6 +1280,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/vip-levels'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/daily-spin'
+    | '/_authenticated/games/leaderboard'
     | '/_authenticated/games/lucky-spin'
     | '/_authenticated/pk/$roomId'
     | '/_authenticated/settings_/notifications'
@@ -1712,6 +1725,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGamesLuckySpinRouteImport
       parentRoute: typeof AuthenticatedGamesRoute
     }
+    '/_authenticated/games/leaderboard': {
+      id: '/_authenticated/games/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/games/leaderboard'
+      preLoaderRoute: typeof AuthenticatedGamesLeaderboardRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
     '/_authenticated/games/daily-spin': {
       id: '/_authenticated/games/daily-spin'
       path: '/daily-spin'
@@ -2133,6 +2153,7 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedGamesRouteChildren {
   AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
+  AuthenticatedGamesLeaderboardRoute: typeof AuthenticatedGamesLeaderboardRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
   AuthenticatedGamesPlaySlugRoute: typeof AuthenticatedGamesPlaySlugRoute
@@ -2140,6 +2161,7 @@ interface AuthenticatedGamesRouteChildren {
 
 const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
   AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
+  AuthenticatedGamesLeaderboardRoute: AuthenticatedGamesLeaderboardRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
   AuthenticatedGamesPlaySlugRoute: AuthenticatedGamesPlaySlugRoute,
