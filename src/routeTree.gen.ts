@@ -37,6 +37,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
+import { Route as AuthenticatedSupportRoomRouteImport } from './routes/_authenticated/support-room'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
 import { Route as AuthenticatedShopEntrancesRouteImport } from './routes/_authenticated/shop-entrances'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
@@ -255,6 +256,12 @@ const AuthenticatedThemeShopRoute = AuthenticatedThemeShopRouteImport.update({
   path: '/theme-shop',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSupportRoomRoute =
+  AuthenticatedSupportRoomRouteImport.update({
+    id: '/support-room',
+    path: '/support-room',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -723,6 +730,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
@@ -828,6 +836,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
   '/support': typeof AuthenticatedSupportRoute
+  '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
@@ -937,6 +946,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shop-entrances': typeof AuthenticatedShopEntrancesRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
+  '/_authenticated/support-room': typeof AuthenticatedSupportRoomRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
@@ -1046,6 +1056,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop-entrances'
     | '/support'
+    | '/support-room'
     | '/theme-shop'
     | '/vip'
     | '/visitors'
@@ -1151,6 +1162,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/shop-entrances'
     | '/support'
+    | '/support-room'
     | '/theme-shop'
     | '/vip'
     | '/visitors'
@@ -1259,6 +1271,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/shop-entrances'
     | '/_authenticated/support'
+    | '/_authenticated/support-room'
     | '/_authenticated/theme-shop'
     | '/_authenticated/vip'
     | '/_authenticated/visitors'
@@ -1559,6 +1572,13 @@ declare module '@tanstack/react-router' {
       path: '/theme-shop'
       fullPath: '/theme-shop'
       preLoaderRoute: typeof AuthenticatedThemeShopRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/support-room': {
+      id: '/_authenticated/support-room'
+      path: '/support-room'
+      fullPath: '/support-room'
+      preLoaderRoute: typeof AuthenticatedSupportRoomRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/support': {
@@ -2256,6 +2276,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedShopEntrancesRoute: typeof AuthenticatedShopEntrancesRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
+  AuthenticatedSupportRoomRoute: typeof AuthenticatedSupportRoomRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedVisitorsRoute: typeof AuthenticatedVisitorsRoute
@@ -2286,6 +2307,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedShopEntrancesRoute: AuthenticatedShopEntrancesRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
+  AuthenticatedSupportRoomRoute: AuthenticatedSupportRoomRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedVisitorsRoute: AuthenticatedVisitorsRoute,
