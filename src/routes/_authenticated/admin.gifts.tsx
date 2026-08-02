@@ -946,10 +946,11 @@ function GiftsAdmin() {
                   return (
                     <div className="grid h-full w-full place-items-center" style={{ background: greenStage ? "var(--gift-chromakey-green)" : "transparent" }}>
                       <video
+                        ref={previewVideoRef}
                         src={src}
                         autoPlay
                         loop
-                        muted
+                        muted={effectiveMuted || Boolean(preview.audioUrl)}
                         playsInline
                         style={{ ...style, ...(greenStage ? { mixBlendMode: "screen" as const } : {}) }}
                       />
@@ -959,7 +960,50 @@ function GiftsAdmin() {
                 return <img src={src} alt={preview.name} style={style} />;
               })()}
             </div>
-            <p className="mt-3 text-center text-[10px] text-muted-foreground">
+            {preview.audioUrl && (
+              <audio
+                ref={previewAudioRef}
+                key={preview.audioUrl}
+                src={preview.audioUrl}
+                autoPlay
+                loop
+                muted={effectiveMuted}
+              />
+            )}
+
+            <div className="mt-3 flex w-full items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+              <button
+                onClick={() => setPreviewMuted((m) => !m)}
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                  effectiveMuted ? "bg-red-500/20 text-red-400" : "bg-[color:var(--primary)] text-primary-foreground"
+                }`}
+                aria-label={effectiveMuted ? "Unmute preview" : "Mute preview"}
+              >
+                {effectiveMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={Math.round(previewVolume * 100)}
+                onChange={(e) => {
+                  const v = Number(e.target.value) / 100;
+                  setPreviewVolume(v);
+                  if (v > 0) setPreviewMuted(false);
+                }}
+                className="flex-1 accent-[color:var(--primary)]"
+              />
+              <span className="w-16 shrink-0 text-right text-[10px] font-bold tabular-nums text-white/80">
+                {effectiveMuted ? "Muted" : `${Math.round(previewVolume * 100)}%`}
+              </span>
+            </div>
+            <p className="mt-1 text-center text-[10px] text-muted-foreground">
+              {preview.audioEnabled
+                ? `Saved gift volume: ${Math.round(preview.audioVolume * 100)}% — this preview plays it exactly as rooms will.`
+                : "This gift is muted in the admin panel — it plays silently for every user."}
+            </p>
+            <p className="mt-1 text-center text-[10px] text-muted-foreground">
               Tap outside to close. Room viewers will see this exact rendering.
             </p>
           </div>
