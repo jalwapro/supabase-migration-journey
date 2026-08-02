@@ -33,6 +33,10 @@ type GiftRow = {
   image_url?: string | null;
   is_milestone?: boolean | null;
   chromakey?: string | null;
+  audio_url?: string | null;
+  sound_url?: string | null;
+  audio_enabled?: boolean | null;
+  audio_volume?: number | string | null;
 };
 
 const CATEGORIES = ["popular", "classic", "love", "romantic", "party", "fantasy", "luxury", "premium", "vip", "lucky"] as const;
@@ -61,6 +65,12 @@ type Draft = {
   image_url: string;
   is_milestone: boolean;
   chromakey: Chromakey;
+  /** Dedicated sound file (falls back to the clip's own audio track). */
+  audio_url: string;
+  /** Admin master switch — off means this gift is silent for every user. */
+  audio_enabled: boolean;
+  /** Per-gift gain 0–1 applied on top of the user's own volume. */
+  audio_volume: number;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -75,6 +85,9 @@ const EMPTY_DRAFT: Draft = {
   image_url: "",
   is_milestone: false,
   chromakey: "auto",
+  audio_url: "",
+  audio_enabled: true,
+  audio_volume: 1,
 };
 
 
@@ -149,7 +162,11 @@ function GiftsAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey } | null>(null);
+  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey; audioUrl: string | null; audioEnabled: boolean; audioVolume: number } | null>(null);
+  const [previewMuted, setPreviewMuted] = useState(false);
+  const [previewVolume, setPreviewVolume] = useState(1);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
   const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
@@ -160,7 +177,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey,audio_url,sound_url,audio_enabled,audio_volume")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -212,6 +229,9 @@ function GiftsAdmin() {
         active: true,
         is_milestone: draft.is_milestone,
         chromakey: draft.chromakey,
+        audio_url: draft.audio_url.trim() || null,
+        audio_enabled: draft.audio_enabled,
+        audio_volume: draft.audio_enabled ? Math.max(0, Math.min(1, draft.audio_volume)) : 0,
       };
       // Multiple milestone gifts allowed (host picks one on 100%).
       if (draft.id) {
@@ -318,6 +338,9 @@ function GiftsAdmin() {
         : "none") as Draft["clip_type"],
       image_url: royalRose ? ROYAL_ROSE_THUMB_URL : g.image_url ?? "",
       is_milestone: Boolean(g.is_milestone),
+      audio_url: g.audio_url ?? g.sound_url ?? "",
+      audio_enabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
+      audio_volume: Number(g.audio_volume ?? 1),
 
       chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
@@ -733,6 +756,9 @@ function GiftsAdmin() {
                 imageUrl: null,
                 emoji: draft.emoji,
                 chromakey: draft.chromakey,
+                audioUrl: resolveGiftMediaUrl(draft.audio_url),
+                audioEnabled: draft.audio_enabled,
+                audioVolume: draft.audio_volume,
               })
             }
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/10 py-2 text-xs font-bold text-[color:var(--gold)]"
