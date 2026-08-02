@@ -56,11 +56,7 @@ function validateUpload(path: string, contentType: string, size?: number) {
   return null;
 }
 
-async function verifyUser(request: Request): Promise<string | null> {
-  const auth = request.headers.get("authorization") ?? "";
-  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
-  if (!token) return null;
-
+function supabaseEnv() {
   const url =
     process.env.SUPABASE_URL ||
     process.env.VITE_SUPABASE_URL ||
@@ -70,17 +66,98 @@ async function verifyUser(request: Request): Promise<string | null> {
     process.env.SUPABASE_ANON_KEY ||
     process.env.VITE_SUPABASE_ANON_KEY ||
     "";
+  return { url, anon };
+}
+
+async function verifyUser(request: Request): Promise<{ id: string; token: string } | null> {
+  const auth = request.headers.get("authorization") ?? "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  if (!token) return null;
+
+  const { url, anon } = supabaseEnv();
   try {
     const res = await fetch(`${url}/auth/v1/user`, {
       headers: { Authorization: `Bearer ${token}`, apikey: anon },
     });
     if (!res.ok) return null;
     const user = (await res.json()) as { id?: string };
-    return user?.id ?? null;
+    return user?.id ? { id: user.id, token } : null;
   } catch {
     return null;
   }
 }
+
+/** Server-side admin check — never trust a client-supplied role claim. */
+async function isAdmin(userId: string, token: string): Promise<boolean> {
+  const { url, anon } = supabaseEnv();
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/is_admin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+        apikey: anon,
+      },
+      body: JSON.stringify({ _user_id: userId }),
+    });
+    if (!res.ok) return false;
+    return (await res.json()) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Shared namespaces hold catalogue media (gifts, frames, entrances, banners…)
+ * that every user reads. Only admins may write there — otherwise any signed-in
+ * account could overwrite a live gift or splash asset.
+ */
+const ADMIN_ONLY_PREFIXES = [
+  "shop-assets",
+  "gifts",
+  "frames",
+  "entrances",
+  "entrance-effects",
+  "banners",
+  "splash",
+  "ads",
+  "poster",
+  "room-bg",
+  "video",
+  "themes",
+  "theme-categories",
+  "spotlights",
+  "room-frames",
+  "profile-cards",
+  "vip",
+  "emoji",
+  "admin",
+];
+
+/** Buckets whose objects are namespaced per user: `<bucket>/<userId>/...`. */
+const USER_SCOPED_PREFIXES = [
+  "avatars",
+  "gallery",
+  "chat-media",
+  "voice-notes",
+  "moments",
+  "proofs",
+  "kyc",
+];
+
+/** Returns an error string when this user may not write to `path`. */
+function authorizeWrite(path: string, userId: string, admin: boolean): string | null {
+  if (admin) return null;
+  const [bucket, second] = path.split("/");
+  if (!bucket) return "path required";
+  if (ADMIN_ONLY_PREFIXES.includes(bucket)) return "admin_only_namespace";
+  if (USER_SCOPED_PREFIXES.includes(bucket)) {
+    return second === userId ? null : "path_outside_your_folder";
+  }
+  // Unknown namespace: force it under the user's own folder.
+  return second === userId ? null : "path_outside_your_folder";
+}
+
 
 export const Route = createFileRoute("/api/r2-sign")({
   server: {
