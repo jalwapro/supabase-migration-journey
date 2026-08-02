@@ -266,20 +266,20 @@ declare
   me uuid := auth.uid();
   sess public.mini_game_sessions%rowtype;
   g public.mini_games%rowtype;
-  mult numeric := 0;
-  reward bigint := 0;
-  xp int := 0;
-  score int := greatest(0, coalesce(p_score, 0));
+  v_mult numeric := 0;
+  v_reward bigint := 0;
+  v_xp int := 0;
+  v_score int := greatest(0, coalesce(p_score, 0));
   dur_ms bigint;
   tier jsonb;
   prizes jsonb;
   prize jsonb;
-  label text := null;
+  v_label text := null;
   bal bigint;
   today date := (now() at time zone 'utc')::date;
   st public.mini_game_stats%rowtype;
   new_streak int := 1;
-  win boolean := false;
+  v_win boolean := false;
 begin
   if me is null then raise exception 'not authenticated'; end if;
 
@@ -300,70 +300,64 @@ begin
 
   -- ---------- anti-cheat ----------
   if dur_ms < g.min_duration_ms then
-    perform public._mg_flag(me, sess.id, g.slug, 'too_fast', jsonb_build_object('duration_ms', dur_ms, 'min', g.min_duration_ms, 'score', score));
-    score := 0;
+    perform public._mg_flag(me, sess.id, g.slug, 'too_fast', jsonb_build_object('duration_ms', dur_ms, 'min', g.min_duration_ms, 'score', v_score));
+    v_score := 0;
   end if;
-  if score > g.max_score then
-    perform public._mg_flag(me, sess.id, g.slug, 'impossible_score', jsonb_build_object('score', score, 'max', g.max_score));
-    score := 0;
+  if v_score > g.max_score then
+    perform public._mg_flag(me, sess.id, g.slug, 'impossible_score', jsonb_build_object('score', v_score, 'max', g.max_score));
+    v_score := 0;
   end if;
   if sess.expires_at < now() then
     perform public._mg_flag(me, sess.id, g.slug, 'expired_submit', jsonb_build_object('duration_ms', dur_ms));
-    score := 0;
+    v_score := 0;
   end if;
   if (select count(*) from public.mini_game_sessions
         where user_id = me and started_at > now() - interval '1 minute') > 30 then
     perform public._mg_flag(me, sess.id, g.slug, 'rate_abuse', jsonb_build_object('window', '1m'));
-    score := 0;
+    v_score := 0;
   end if;
 
-  -- ---------- reward ----------
+  -- ---------- reward (server is the only authority) ----------
   if coalesce(g.config->>'mode','score') = 'weighted' then
     prizes := coalesce(g.config->'prizes','[]'::jsonb);
     prize := prizes -> coalesce((sess.payload->>'prize_index')::int, 0);
-    mult := coalesce((prize->>'mult')::numeric, 0);
-    label := prize->>'label';
-    reward := coalesce((prize->>'coins')::bigint, floor(greatest(g.reward_base, g.entry_cost) * mult)::bigint);
+    v_mult := coalesce((prize->>'mult')::numeric, 0);
+    v_label := prize->>'label';
+    v_reward := coalesce((prize->>'coins')::bigint, floor(greatest(g.reward_base, g.entry_cost) * v_mult)::bigint);
   else
     for tier in select t from jsonb_array_elements(coalesce(g.config->'tiers','[]'::jsonb)) t
                 order by ((t->>'min')::numeric) asc loop
-      if score >= (tier->>'min')::int then
-        mult := (tier->>'mult')::numeric;
-        label := tier->>'label';
+      if v_score >= (tier->>'min')::int then
+        v_mult := (tier->>'mult')::numeric;
+        v_label := tier->>'label';
       end if;
     end loop;
-    reward := floor(greatest(g.reward_base, g.entry_cost) * mult)::bigint;
+    v_reward := floor(greatest(g.reward_base, g.entry_cost) * v_mult)::bigint;
   end if;
 
-  reward := greatest(0, reward);
-  win := reward > sess.entry_cost;
-  xp := case when score > 0 then g.xp_reward else 0 end;
+  v_reward := greatest(0, v_reward);
+  v_win := v_reward > sess.entry_cost;
+  v_xp := case when v_score > 0 or v_reward > 0 then g.xp_reward else 0 end;
 
-  if reward > 0 then
-    update public.profiles set coins = coins + reward, xp = xp + xp_reward_safe
-      from (select g.xp_reward as xp_reward_safe) q
-     where id = me
-     returning coins into bal;
-  else
-    select coins into bal from public.profiles where id = me;
-  end if;
-  if xp > 0 and reward = 0 then
-    update public.profiles set xp = xp + xp where id = me;
-  end if;
+  update public.profiles
+     set coins = coins + v_reward,
+         xp = xp + v_xp
+   where id = me
+   returning coins into bal;
 
   update public.mini_game_sessions
-     set status = 'finished', score = score, multiplier = mult, reward_coins = reward,
-         xp_awarded = xp, finished_at = now(),
+     set status = 'finished', score = v_score, multiplier = v_mult, reward_coins = v_reward,
+         xp_awarded = v_xp, finished_at = now(),
          result = jsonb_build_object(
-           'session_id', sess.id, 'slug', g.slug, 'score', score,
-           'multiplier', mult, 'label', label, 'reward_coins', reward,
-           'entry_cost', sess.entry_cost, 'xp', xp, 'win', win, 'balance', bal)
+           'session_id', id, 'slug', g.slug, 'score', v_score,
+           'multiplier', v_mult, 'label', v_label, 'reward_coins', v_reward,
+           'entry_cost', entry_cost, 'xp', v_xp, 'win', v_win, 'balance', bal)
    where id = sess.id
    returning * into sess;
 
-  if reward > 0 then
+  if v_reward > 0 then
     insert into public.wallet_transactions (user_id, kind, coins_delta, note, ref_type, ref_id, balance_coins_after)
-    values (me, 'game_reward', reward, g.name || ' reward', 'mini_game_session', sess.id, bal);
+    values (me, 'game_reward', v_reward, g.name || ' reward', 'mini_game_session', sess.id, bal);
   end if;
 
   -- stats + daily streak
@@ -375,10 +369,10 @@ begin
 
   insert into public.mini_game_stats as s
     (user_id, game_id, plays, wins, best_score, total_score, coins_won, xp_earned, streak_days, last_play_date, last_played_at)
-  values (me, g.id, 1, case when win then 1 else 0 end, score, score, reward, xp, new_streak, today, now())
+  values (me, g.id, 1, case when v_win then 1 else 0 end, v_score, v_score, v_reward, v_xp, new_streak, today, now())
   on conflict (user_id, game_id) do update set
     plays = s.plays + 1,
-    wins = s.wins + case when win then 1 else 0 end,
+    wins = s.wins + case when v_win then 1 else 0 end,
     best_score = greatest(s.best_score, excluded.best_score),
     total_score = s.total_score + excluded.total_score,
     coins_won = s.coins_won + excluded.coins_won,
