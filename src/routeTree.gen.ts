@@ -76,6 +76,7 @@ import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
+import { Route as AuthenticatedAdminSupportRoomRouteImport } from './routes/_authenticated/admin.support-room'
 import { Route as AuthenticatedAdminSupportChatRouteImport } from './routes/_authenticated/admin.support-chat'
 import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authenticated/admin.support'
 import { Route as AuthenticatedAdminSpotlightsRouteImport } from './routes/_authenticated/admin.spotlights'
@@ -465,6 +466,12 @@ const AuthenticatedAdminThemeCategoriesRoute =
     path: '/theme-categories',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSupportRoomRoute =
+  AuthenticatedAdminSupportRoomRouteImport.update({
+    id: '/support-room',
+    path: '/support-room',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminSupportChatRoute =
   AuthenticatedAdminSupportChatRouteImport.update({
     id: '/support-chat',
@@ -783,6 +790,7 @@ export interface FileRoutesByFullPath {
   '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
+  '/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -889,6 +897,7 @@ export interface FileRoutesByTo {
   '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/admin/support': typeof AuthenticatedAdminSupportRoute
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
+  '/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -999,6 +1008,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
   '/_authenticated/admin/support': typeof AuthenticatedAdminSupportRoute
   '/_authenticated/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
+  '/_authenticated/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -1109,6 +1119,7 @@ export interface FileRouteTypes {
     | '/admin/spotlights'
     | '/admin/support'
     | '/admin/support-chat'
+    | '/admin/support-room'
     | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
@@ -1215,6 +1226,7 @@ export interface FileRouteTypes {
     | '/admin/spotlights'
     | '/admin/support'
     | '/admin/support-chat'
+    | '/admin/support-room'
     | '/admin/theme-categories'
     | '/admin/themes'
     | '/admin/users'
@@ -1324,6 +1336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/spotlights'
     | '/_authenticated/admin/support'
     | '/_authenticated/admin/support-chat'
+    | '/_authenticated/admin/support-room'
     | '/_authenticated/admin/theme-categories'
     | '/_authenticated/admin/themes'
     | '/_authenticated/admin/users'
@@ -1847,6 +1860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminThemeCategoriesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/support-room': {
+      id: '/_authenticated/admin/support-room'
+      path: '/support-room'
+      fullPath: '/admin/support-room'
+      preLoaderRoute: typeof AuthenticatedAdminSupportRoomRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/support-chat': {
       id: '/_authenticated/admin/support-chat'
       path: '/support-chat'
@@ -2170,6 +2190,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSpotlightsRoute: typeof AuthenticatedAdminSpotlightsRoute
   AuthenticatedAdminSupportRoute: typeof AuthenticatedAdminSupportRoute
   AuthenticatedAdminSupportChatRoute: typeof AuthenticatedAdminSupportChatRoute
+  AuthenticatedAdminSupportRoomRoute: typeof AuthenticatedAdminSupportRoomRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -2222,6 +2243,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSpotlightsRoute: AuthenticatedAdminSpotlightsRoute,
   AuthenticatedAdminSupportRoute: AuthenticatedAdminSupportRoute,
   AuthenticatedAdminSupportChatRoute: AuthenticatedAdminSupportChatRoute,
+  AuthenticatedAdminSupportRoomRoute: AuthenticatedAdminSupportRoomRoute,
   AuthenticatedAdminThemeCategoriesRoute:
     AuthenticatedAdminThemeCategoriesRoute,
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
