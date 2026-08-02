@@ -1,3 +1,4 @@
+import type React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameConfig, GamePrize } from "@/lib/minigames";
 
@@ -722,7 +723,7 @@ export function ColorMatchGame({ config, onSubmit, submitting }: GameProps) {
   );
 }
 
-export const GAME_COMPONENTS: Record<string, (p: GameProps) => JSX.Element> = {
+export const GAME_COMPONENTS: Record<string, (p: GameProps) => React.ReactElement> = {
   daily_spin: DailySpinGame,
   lucky_box: LuckyBoxGame,
   memory_match: MemoryMatchGame,
