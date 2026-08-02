@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign } from "lucide-react";
+import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, DollarSign, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
 
@@ -33,6 +33,10 @@ type GiftRow = {
   image_url?: string | null;
   is_milestone?: boolean | null;
   chromakey?: string | null;
+  audio_url?: string | null;
+  sound_url?: string | null;
+  audio_enabled?: boolean | null;
+  audio_volume?: number | string | null;
 };
 
 const CATEGORIES = ["popular", "classic", "love", "romantic", "party", "fantasy", "luxury", "premium", "vip", "lucky"] as const;
@@ -61,6 +65,12 @@ type Draft = {
   image_url: string;
   is_milestone: boolean;
   chromakey: Chromakey;
+  /** Dedicated sound file (falls back to the clip's own audio track). */
+  audio_url: string;
+  /** Admin master switch — off means this gift is silent for every user. */
+  audio_enabled: boolean;
+  /** Per-gift gain 0–1 applied on top of the user's own volume. */
+  audio_volume: number;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -75,6 +85,9 @@ const EMPTY_DRAFT: Draft = {
   image_url: "",
   is_milestone: false,
   chromakey: "auto",
+  audio_url: "",
+  audio_enabled: true,
+  audio_volume: 1,
 };
 
 
@@ -149,7 +162,25 @@ function GiftsAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey } | null>(null);
+  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey; audioUrl: string | null; audioEnabled: boolean; audioVolume: number } | null>(null);
+  const [previewMuted, setPreviewMuted] = useState(false);
+  const [previewVolume, setPreviewVolume] = useState(1);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
+  // A gift muted in the admin panel is silent in the preview too.
+  const effectiveMuted = previewMuted || previewVolume <= 0 || preview?.audioEnabled === false;
+  // Preview plays at the gift's saved gain multiplied by the local preview slider.
+  useEffect(() => {
+    const gain = Math.max(0, Math.min(1, previewVolume * (preview?.audioVolume ?? 1)));
+    if (previewAudioRef.current) previewAudioRef.current.volume = gain;
+    if (previewVideoRef.current) previewVideoRef.current.volume = gain;
+  }, [previewVolume, preview?.audioVolume, preview?.audioUrl, preview?.clipPath, effectiveMuted]);
+  // Reset the preview slider each time a different gift is opened.
+  useEffect(() => {
+    setPreviewMuted(false);
+    setPreviewVolume(1);
+  }, [preview?.name, preview?.clipPath]);
+
   const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
@@ -160,7 +191,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey,audio_url,sound_url,audio_enabled,audio_volume")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -212,6 +243,9 @@ function GiftsAdmin() {
         active: true,
         is_milestone: draft.is_milestone,
         chromakey: draft.chromakey,
+        audio_url: draft.audio_url.trim() || null,
+        audio_enabled: draft.audio_enabled,
+        audio_volume: draft.audio_enabled ? Math.max(0, Math.min(1, draft.audio_volume)) : 0,
       };
       // Multiple milestone gifts allowed (host picks one on 100%).
       if (draft.id) {
@@ -318,6 +352,9 @@ function GiftsAdmin() {
         : "none") as Draft["clip_type"],
       image_url: royalRose ? ROYAL_ROSE_THUMB_URL : g.image_url ?? "",
       is_milestone: Boolean(g.is_milestone),
+      audio_url: g.audio_url ?? g.sound_url ?? "",
+      audio_enabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
+      audio_volume: Number(g.audio_volume ?? 1),
 
       chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
@@ -519,6 +556,9 @@ function GiftsAdmin() {
                         imageUrl: g.image_url ?? null,
                         emoji: g.emoji ?? g.icon ?? null,
                         chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
+                        audioUrl: resolveGiftMediaUrl(g.audio_url ?? g.sound_url),
+                        audioEnabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
+                        audioVolume: Number(g.audio_volume ?? 1),
                       })
                     }
                     className="rounded-lg bg-[color:var(--gold)]/15 px-2 text-[color:var(--gold)]"
@@ -724,6 +764,72 @@ function GiftsAdmin() {
             </div>
           </div>
 
+          {/* Gift audio — admin master control */}
+          <div className="mt-3 rounded-xl border border-border bg-card/40 p-2">
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Gift audio
+              </p>
+              <button
+                onClick={() => setDraft((d) => ({ ...d, audio_enabled: !d.audio_enabled }))}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                  draft.audio_enabled
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-red-500/20 text-red-400"
+                }`}
+              >
+                {draft.audio_enabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
+                {draft.audio_enabled ? "Sound on" : "Muted"}
+              </button>
+            </div>
+
+            <FileUploader
+              bucket="shop-assets"
+              folder="gift-audio"
+              accept="audio/mpeg,audio/mp3,audio/aac,audio/wav,audio/ogg,audio/*"
+              label="Upload sound (MP3/AAC/WAV)"
+              value={draft.audio_url}
+              onChange={(url) => setDraft((d) => ({ ...d, audio_url: url ?? "" }))}
+              maxSizeMB={8}
+            />
+            <input
+              placeholder="…or paste an audio URL (blank = use the clip's own audio)"
+              value={draft.audio_url}
+              onChange={(e) => setDraft((d) => ({ ...d, audio_url: e.target.value }))}
+              className="mt-2 w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+            />
+
+            <div className="mt-2 flex items-center gap-2">
+              <VolumeX className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                disabled={!draft.audio_enabled}
+                value={Math.round(draft.audio_volume * 100)}
+                onChange={(e) => setDraft((d) => ({ ...d, audio_volume: Number(e.target.value) / 100 }))}
+                className="flex-1 accent-[color:var(--primary)] disabled:opacity-40"
+              />
+              <span className="w-9 shrink-0 text-right text-[10px] font-bold tabular-nums">
+                {draft.audio_enabled ? `${Math.round(draft.audio_volume * 100)}%` : "0%"}
+              </span>
+            </div>
+            {draft.audio_url && (
+              <audio
+                key={draft.audio_url}
+                src={resolveGiftMediaUrl(draft.audio_url) ?? undefined}
+                controls
+                className="mt-2 h-8 w-full"
+              />
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Muting here silences this gift for every user in every room. Volume is applied on top of
+              each user&apos;s own gift-sound setting.
+            </p>
+          </div>
+
+
           <button
             onClick={() =>
               setPreview({
@@ -733,6 +839,9 @@ function GiftsAdmin() {
                 imageUrl: null,
                 emoji: draft.emoji,
                 chromakey: draft.chromakey,
+                audioUrl: resolveGiftMediaUrl(draft.audio_url),
+                audioEnabled: draft.audio_enabled,
+                audioVolume: draft.audio_volume,
               })
             }
             className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/10 py-2 text-xs font-bold text-[color:var(--gold)]"
@@ -851,10 +960,11 @@ function GiftsAdmin() {
                   return (
                     <div className="grid h-full w-full place-items-center" style={{ background: greenStage ? "var(--gift-chromakey-green)" : "transparent" }}>
                       <video
+                        ref={previewVideoRef}
                         src={src}
                         autoPlay
                         loop
-                        muted
+                        muted={effectiveMuted || Boolean(preview.audioUrl)}
                         playsInline
                         style={{ ...style, ...(greenStage ? { mixBlendMode: "screen" as const } : {}) }}
                       />
@@ -864,7 +974,50 @@ function GiftsAdmin() {
                 return <img src={src} alt={preview.name} style={style} />;
               })()}
             </div>
-            <p className="mt-3 text-center text-[10px] text-muted-foreground">
+            {preview.audioUrl && (
+              <audio
+                ref={previewAudioRef}
+                key={preview.audioUrl}
+                src={preview.audioUrl}
+                autoPlay
+                loop
+                muted={effectiveMuted}
+              />
+            )}
+
+            <div className="mt-3 flex w-full items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+              <button
+                onClick={() => setPreviewMuted((m) => !m)}
+                className={`grid h-7 w-7 shrink-0 place-items-center rounded-full ${
+                  effectiveMuted ? "bg-red-500/20 text-red-400" : "bg-[color:var(--primary)] text-primary-foreground"
+                }`}
+                aria-label={effectiveMuted ? "Unmute preview" : "Mute preview"}
+              >
+                {effectiveMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+              </button>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={Math.round(previewVolume * 100)}
+                onChange={(e) => {
+                  const v = Number(e.target.value) / 100;
+                  setPreviewVolume(v);
+                  if (v > 0) setPreviewMuted(false);
+                }}
+                className="flex-1 accent-[color:var(--primary)]"
+              />
+              <span className="w-16 shrink-0 text-right text-[10px] font-bold tabular-nums text-white/80">
+                {effectiveMuted ? "Muted" : `${Math.round(previewVolume * 100)}%`}
+              </span>
+            </div>
+            <p className="mt-1 text-center text-[10px] text-muted-foreground">
+              {preview.audioEnabled
+                ? `Saved gift volume: ${Math.round(preview.audioVolume * 100)}% — this preview plays it exactly as rooms will.`
+                : "This gift is muted in the admin panel — it plays silently for every user."}
+            </p>
+            <p className="mt-1 text-center text-[10px] text-muted-foreground">
               Tap outside to close. Room viewers will see this exact rendering.
             </p>
           </div>

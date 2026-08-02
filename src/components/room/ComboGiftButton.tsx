@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isAssetUrlLike, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { toast } from "sonner";
 import type { Gift, GiftReceiver } from "@/components/GiftSheet";
+import { giftAudioEnabled, giftAudioGain, giftSoundSrc } from "@/components/GiftSheet";
 
 const COMBO_MS = 5000;
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
@@ -102,12 +103,12 @@ export function ComboGiftButton({
     setCount((c) => c + 1);
 
     // Play sound (in a user gesture so autoplay allows it)
-    if (gift.sound_url) {
+    if (giftSoundSrc(gift) && giftAudioEnabled(gift)) {
       try {
-        const raw = gift.sound_url;
+        const raw = giftSoundSrc(gift)!;
         const src = raw.startsWith("/__l5e/") ? `${LOVABLE_ASSET_ORIGIN}${raw}` : raw;
         const a = new Audio(src);
-        a.volume = 0.9;
+        a.volume = Math.min(1, 0.9 * giftAudioGain(gift));
         void a.play().catch(() => {});
       } catch { /* noop */ }
     }
@@ -133,7 +134,9 @@ export function ComboGiftButton({
           diamonds: gift.diamonds_value,
           quantity: 1,
           animation: gift.animation ?? "pop",
-          soundUrl: gift.sound_url ?? null,
+          soundUrl: giftSoundSrc(gift),
+          audioEnabled: giftAudioEnabled(gift),
+          audioVolume: giftAudioGain(gift),
           local: true,
           combo: true,
         },

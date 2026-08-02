@@ -41,6 +41,8 @@ type Play = {
   priority?: number;
   /** Per-gift audio gain (0–1) configured by admins. */
   audioVolume?: number;
+  /** Admin master switch — false means this gift is silent for everyone. */
+  audioEnabled?: boolean;
   /** Wall-clock ms when this play entered the queue (telemetry). */
   enqueuedAt?: number;
   /** Cumulative combo count (running total per sender+gift) — for train mode. */
@@ -1449,6 +1451,7 @@ type GiftSendRow = {
   gift_audio_url?: string | null;
   gift_priority?: number | null;
   gift_audio_volume?: number | string | null;
+  gift_audio_enabled?: boolean | null;
 };
 
   // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
@@ -1476,6 +1479,7 @@ type GiftSendRow = {
       priority: Number(r.gift_priority ?? 0) || 0,
       audioVolume:
         r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
+      audioEnabled: r.gift_audio_enabled == null ? true : Boolean(r.gift_audio_enabled),
     };
     if (seenRef.current.has(play.key)) return;
     // Coalesce multi-receiver sends into ONE simultaneous play.
@@ -1517,7 +1521,7 @@ type GiftSendRow = {
           "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
             "sender_username,sender_avatar,receiver_username,receiver_avatar," +
             "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume",
+            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled",
         )
         .eq("room_id", roomId)
         .gt("created_at", since)
@@ -1666,6 +1670,8 @@ type GiftSendRow = {
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
+    // Admin master switch: a gift muted in the admin panel is silent everywhere.
+    if (current.audioEnabled === false || current.audioVolume === 0) return;
     if (isSmallGift) return;
     if (!current.soundUrl) return; // no synthetic Jalwa signature anymore
     const played = playGiftAudioCue({
@@ -1689,7 +1695,7 @@ type GiftSendRow = {
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.audioEnabled, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
   // Report successful playback once the asset is actually on screen.
   useEffect(() => {
@@ -1854,8 +1860,17 @@ type GiftSendRow = {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={!audioPrefs.muted && audioPrefs.volume > 0}
-            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
+            withSound={
+              !audioPrefs.muted &&
+              audioPrefs.volume > 0 &&
+              current.audioEnabled !== false &&
+              (current.audioVolume ?? 1) > 0
+            }
+            volume={
+              audioPrefs.muted || current.audioEnabled === false
+                ? 0
+                : audioPrefs.volume * (current.audioVolume ?? 1)
+            }
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}

@@ -24,8 +24,24 @@ export type Gift = {
   clip_path?: string | null;
   clip_type?: string | null;
   sound_url?: string | null;
+  audio_url?: string | null;
+  audio_enabled?: boolean | null;
+  audio_volume?: number | string | null;
   chromakey?: string | null;
 };
+
+/** Admin-configured audio for a gift: master mute + per-gift gain. */
+export function giftAudioEnabled(g: { audio_enabled?: boolean | null; audio_volume?: number | string | null }) {
+  if (g.audio_enabled === false) return false;
+  return Number(g.audio_volume ?? 1) > 0;
+}
+export function giftAudioGain(g: { audio_volume?: number | string | null }) {
+  const v = Number(g.audio_volume ?? 1);
+  return Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 1;
+}
+export function giftSoundSrc(g: { audio_url?: string | null; sound_url?: string | null }) {
+  return g.audio_url ?? g.sound_url ?? null;
+}
 
 export type GiftReceiver = { id: string; username: string | null; avatar: string | null };
 
@@ -140,7 +156,7 @@ export function GiftSheet({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,chromakey,sort_order,is_active,active")
+        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,audio_url,audio_enabled,audio_volume,chromakey,sort_order,is_active,active")
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
@@ -301,16 +317,16 @@ export function GiftSheet({
 
     // Play gift sound INSIDE this click handler so the browser autoplay policy
     // allows it. Unlocks the audio context for subsequent gift sounds too.
-    if (selectedGift.sound_url) {
+    if (giftSoundSrc(selectedGift) && giftAudioEnabled(selectedGift)) {
       const prefs = getGiftAudioPrefs();
       if (!prefs.muted && prefs.volume > 0) {
         try {
-          const raw = selectedGift.sound_url;
+          const raw = giftSoundSrc(selectedGift)!;
           const src = raw.startsWith("/__l5e/")
             ? `https://cloud-to-soul.lovable.app${raw}`
             : raw;
           const a = new Audio(src);
-          a.volume = Math.min(1, 0.9 * prefs.volume);
+          a.volume = Math.min(1, 0.9 * prefs.volume * giftAudioGain(selectedGift));
           void a.play().catch(() => {});
         } catch {
           /* noop */
@@ -338,7 +354,9 @@ export function GiftSheet({
           diamonds: selectedGift.diamonds_value * qty,
           quantity: qty,
           animation: selectedGift.animation ?? "pop",
-          soundUrl: selectedGift.sound_url ?? null,
+          soundUrl: giftSoundSrc(selectedGift),
+          audioEnabled: giftAudioEnabled(selectedGift),
+          audioVolume: giftAudioGain(selectedGift),
           chromakey: selectedGift.chromakey ?? "auto",
           local: true,
         },
@@ -481,9 +499,9 @@ export function GiftSheet({
                             if (!prefs.muted && prefs.volume > 0) {
                               const vol = Math.min(1, prefs.volume * 0.7);
                               const tier = tierOf(price(g));
-                              if (g.sound_url) {
-                                playGiftAudioCue({ soundUrl: g.sound_url, volume: vol });
-                              } else if (tier !== "small") {
+                              if (giftSoundSrc(g) && giftAudioEnabled(g)) {
+                                playGiftAudioCue({ soundUrl: giftSoundSrc(g)!, volume: vol * giftAudioGain(g) });
+                              } else if (tier !== "small" && giftAudioEnabled(g)) {
                                 playJalwaSignature(vol);
                               }
                             }
