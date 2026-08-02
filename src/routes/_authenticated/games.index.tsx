@@ -1,120 +1,143 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Gamepad2, Trophy, Coins, Flame, Loader2, Dices } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Gamepad2, ArrowRight, Sparkles } from "lucide-react";
-import { TheatreCard, TheatreDivider, TheatreRow } from "@/components/theatre/TheatreCard";
+import { useAuth } from "@/hooks/useAuth";
+import { useMiniGames, useMyGameSummary } from "@/lib/minigames";
 
 export const Route = createFileRoute("/_authenticated/games/")({
-  component: GamesPage,
+  head: () => ({
+    meta: [
+      { title: "Game Center — Play & Win Coins | Jalwa" },
+      { name: "description", content: "Play 10 premium mini games — spin, match, tap and quiz your way to more coins." },
+      { property: "og:title", content: "Jalwa Game Center" },
+      { property: "og:description", content: "Play 10 premium mini games and win coins instantly." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
+  component: GameCenter,
 });
 
-type Game = {
-  id: string;
-  slug: string;
-  name: string;
-  description: string | null;
-  icon: string | null;
-  min_bet: number;
-  max_bet: number;
-};
-
-function GamesPage() {
-  const games = useQuery({
-    queryKey: ["games"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("games")
-        .select("id,slug,name,description,icon,min_bet,max_bet")
-        .eq("active", true);
-      if (error) throw error;
-      return (data ?? []) as Game[];
-    },
-  });
+function GameCenter() {
+  const { user, profile } = useAuth();
+  const games = useMiniGames();
+  const summary = useMyGameSummary(user?.id);
 
   return (
     <>
-      <AppShell title="Games" subtitle="Play & win coins">
-        <TheatreCard>
-          <div className="px-6 pt-8 pb-3 text-center">
-            <div className="relative mx-auto w-fit">
-              <Gamepad2
-                className="h-12 w-12 text-[#ffd66a] drop-shadow-[0_0_16px_rgba(255,200,80,0.9)]"
-                strokeWidth={2}
-              />
-              <div className="absolute -inset-3 rounded-full bg-[#ffd66a]/25 blur-2xl" />
+      <AppShell title="Game Center" subtitle="Play · Win · Climb">
+        <div className="mx-auto max-w-md px-4 pb-6">
+          {/* hero */}
+          <section className="relative mt-2 overflow-hidden rounded-3xl border border-[color:var(--gold)]/30 bg-gradient-to-br from-[color:var(--primary)]/25 via-[color:var(--secondary)]/20 to-transparent p-5">
+            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[color:var(--gold)]/20 blur-3xl" />
+            <div className="relative flex items-center gap-3">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl border border-[color:var(--gold)]/50 bg-black/30">
+                <Gamepad2 className="h-7 w-7 text-[color:var(--gold)]" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-black">Mini Games</p>
+                <p className="text-[11px] text-foreground/60">
+                  Fair play · server-verified rewards
+                </p>
+              </div>
             </div>
-            <p className="mt-3 text-xl font-black tracking-wide text-white">Arcade Hall</p>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#ffcf6a]/70">
-              Play · Win · Collect
-            </p>
-          </div>
+            <div className="relative mt-4 grid grid-cols-3 gap-2">
+              <Stat icon={<Coins className="h-3.5 w-3.5" />} label="Balance" value={(profile?.coins ?? 0).toLocaleString()} />
+              <Stat icon={<Trophy className="h-3.5 w-3.5" />} label="Won" value={(summary.data?.coins_won ?? 0).toLocaleString()} />
+              <Stat icon={<Flame className="h-3.5 w-3.5" />} label="Streak" value={`${summary.data?.streak ?? 0}d`} />
+            </div>
+          </section>
 
-          <TheatreDivider label="Featured" />
-
-          <div className="space-y-3 px-3 pt-5 pb-6">
-            <Link to="/games/daily-spin" className="block">
-              <TheatreRow className="border-[#ffcf6a]/40">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-3xl shadow-[0_6px_18px_rgba(255,207,106,0.45)]"
-                    style={{
-                      background:
-                        "linear-gradient(135deg,#ffe8a8,#ffcf6a 45%,#c48a1a)",
-                    }}
-                  >
-                    🎁
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-black text-white">Daily Spin</p>
-                    <p className="truncate text-[11px] text-white/60">
-                      Free reward every 24 hours — coins, diamonds, frames &amp; themes
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[10px] font-bold text-[#ffcf6a]">
-                      <Sparkles className="h-3 w-3" /> Free to spin
-                    </p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-[#ffcf6a]/70" />
-                </div>
-              </TheatreRow>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link
+              to="/games/leaderboard"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-widest"
+            >
+              <Trophy className="h-4 w-4 text-[color:var(--gold)]" /> Leaderboard
             </Link>
-
-            {games.isLoading && (
-              <p className="py-8 text-center text-sm text-white/50">Loading…</p>
-            )}
-            {games.data?.map((g) => {
-              const to = g.slug === "lucky_spin" ? "/games/lucky-spin" : "/games";
-              return (
-                <Link key={g.id} to={to} className="block">
-                  <TheatreRow>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl border border-[#ffcf6a]/30 text-3xl"
-                        style={{
-                          background:
-                            "linear-gradient(135deg,rgba(255,207,106,0.25),rgba(120,60,20,0.35))",
-                        }}
-                      >
-                        {g.icon ?? <Gamepad2 className="h-6 w-6 text-[#ffcf6a]" />}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-black text-white">{g.name}</p>
-                        <p className="truncate text-[11px] text-white/60">{g.description}</p>
-                        <p className="mt-0.5 text-[10px] font-bold text-[#ffcf6a]">
-                          Bet {g.min_bet.toLocaleString()} – {g.max_bet.toLocaleString()}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-4 w-4 text-[#ffcf6a]/70" />
-                    </div>
-                  </TheatreRow>
-                </Link>
-              );
-            })}
+            <Link
+              to="/games/daily-spin"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-widest"
+            >
+              <Dices className="h-4 w-4 text-[color:var(--primary)]" /> Classic Spin
+            </Link>
           </div>
-        </TheatreCard>
+
+          {/* grid */}
+          <h2 className="mt-6 mb-2 text-xs font-black uppercase tracking-widest text-foreground/70">
+            All games
+          </h2>
+          {games.isLoading ? (
+            <div className="grid place-items-center py-16">
+              <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {games.data?.map((g, i) => (
+                <Link
+                  key={g.id}
+                  to="/games/play/$slug"
+                  params={{ slug: g.slug }}
+                  className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 transition-transform active:scale-[0.97]"
+                  style={{ animation: `gcIn .35s ${i * 0.04}s both` }}
+                >
+                  <div
+                    className="absolute -right-6 -top-6 h-20 w-20 rounded-full blur-2xl"
+                    style={{ background: `${g.color}44` }}
+                  />
+                  <div
+                    className="relative grid h-14 w-14 place-items-center rounded-2xl text-3xl"
+                    style={{ background: `${g.color}22`, border: `1px solid ${g.color}66` }}
+                  >
+                    {g.icon}
+                  </div>
+                  <p className="relative mt-3 truncate text-sm font-black">{g.name}</p>
+                  <p className="relative mt-0.5 line-clamp-2 h-8 text-[10px] leading-4 text-foreground/55">
+                    {g.description}
+                  </p>
+                  <div className="relative mt-2 flex items-center justify-between">
+                    <span className="rounded-full bg-[color:var(--gold)]/15 px-2 py-0.5 text-[10px] font-black text-[color:var(--gold)]">
+                      {g.entry_cost > 0 ? `${g.entry_cost} coins` : "FREE"}
+                    </span>
+                    {g.maintenance && (
+                      <span className="text-[9px] font-bold uppercase text-amber-400">Maintenance</span>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* my stats */}
+          {summary.data && summary.data.plays > 0 && (
+            <>
+              <h2 className="mt-7 mb-2 text-xs font-black uppercase tracking-widest text-foreground/70">
+                My performance
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                <Stat label="Games played" value={summary.data.plays} />
+                <Stat label="Wins" value={summary.data.wins} />
+                <Stat label="Coins spent" value={summary.data.coins_spent.toLocaleString()} />
+                <Stat label="Coins earned" value={summary.data.coins_won.toLocaleString()} />
+              </div>
+            </>
+          )}
+          <style>{`@keyframes gcIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}`}</style>
+        </div>
       </AppShell>
       <BottomNav />
     </>
+  );
+}
+
+function Stat({ label, value, icon }: { label: string; value: string | number; icon?: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2">
+      <p className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-widest text-foreground/50">
+        {icon} {label}
+      </p>
+      <p className="truncate text-sm font-black">{value}</p>
+    </div>
   );
 }

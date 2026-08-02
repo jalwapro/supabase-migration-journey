@@ -110,6 +110,7 @@ import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 import { Route as AuthenticatedAdminAssignFrameRouteImport } from './routes/_authenticated/admin.assign-frame'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
+import { Route as AuthenticatedGamesPlaySlugRouteImport } from './routes/_authenticated/games.play.$slug'
 
 const SvgaPreviewRoute = SvgaPreviewRouteImport.update({
   id: '/svga-preview',
@@ -653,6 +654,12 @@ const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedGamesPlaySlugRoute =
+  AuthenticatedGamesPlaySlugRouteImport.update({
+    id: '/play/$slug',
+    path: '/play/$slug',
+    getParentRoute: () => AuthenticatedGamesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -755,6 +762,7 @@ export interface FileRoutesByFullPath {
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
+  '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -855,6 +863,7 @@ export interface FileRoutesByTo {
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
+  '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -959,6 +968,7 @@ export interface FileRoutesById {
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
+  '/_authenticated/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1063,6 +1073,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-verify'
     | '/admin/'
     | '/games/'
+    | '/games/play/$slug'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1163,6 +1174,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-verify'
     | '/admin'
     | '/games'
+    | '/games/play/$slug'
   id:
     | '__root__'
     | '/'
@@ -1266,6 +1278,7 @@ export interface FileRouteTypes {
     | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
     | '/_authenticated/games/'
+    | '/_authenticated/games/play/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -2007,6 +2020,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/games/play/$slug': {
+      id: '/_authenticated/games/play/$slug'
+      path: '/play/$slug'
+      fullPath: '/games/play/$slug'
+      preLoaderRoute: typeof AuthenticatedGamesPlaySlugRouteImport
+      parentRoute: typeof AuthenticatedGamesRoute
+    }
   }
 }
 
@@ -2115,12 +2135,14 @@ interface AuthenticatedGamesRouteChildren {
   AuthenticatedGamesDailySpinRoute: typeof AuthenticatedGamesDailySpinRoute
   AuthenticatedGamesLuckySpinRoute: typeof AuthenticatedGamesLuckySpinRoute
   AuthenticatedGamesIndexRoute: typeof AuthenticatedGamesIndexRoute
+  AuthenticatedGamesPlaySlugRoute: typeof AuthenticatedGamesPlaySlugRoute
 }
 
 const AuthenticatedGamesRouteChildren: AuthenticatedGamesRouteChildren = {
   AuthenticatedGamesDailySpinRoute: AuthenticatedGamesDailySpinRoute,
   AuthenticatedGamesLuckySpinRoute: AuthenticatedGamesLuckySpinRoute,
   AuthenticatedGamesIndexRoute: AuthenticatedGamesIndexRoute,
+  AuthenticatedGamesPlaySlugRoute: AuthenticatedGamesPlaySlugRoute,
 }
 
 const AuthenticatedGamesRouteWithChildren =
