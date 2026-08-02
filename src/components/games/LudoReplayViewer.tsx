@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Dices,
+  Download,
+  Link2,
   Loader2,
   Pause,
   Play,
@@ -11,7 +14,14 @@ import {
   ShieldCheck,
   Trophy,
 } from "lucide-react";
-import { useLudoMatches, useLudoReplay, type LudoEvent } from "@/lib/ludo-replay";
+import {
+  buildReplayShareLink,
+  downloadReplayJson,
+  useLudoMatches,
+  useLudoReplay,
+  type LudoEvent,
+} from "@/lib/ludo-replay";
+
 
 const KIND_STYLE: Record<string, string> = {
   start: "bg-sky-500/15 text-sky-300 border-sky-500/30",
