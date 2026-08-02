@@ -39,6 +39,7 @@ import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vi
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
 import { Route as AuthenticatedSupportRoomRouteImport } from './routes/_authenticated/support-room'
 import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticated/support'
+import { Route as AuthenticatedShopFramesRouteImport } from './routes/_authenticated/shop-frames'
 import { Route as AuthenticatedShopEntrancesRouteImport } from './routes/_authenticated/shop-entrances'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
@@ -267,6 +268,11 @@ const AuthenticatedSupportRoomRoute =
 const AuthenticatedSupportRoute = AuthenticatedSupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedShopFramesRoute = AuthenticatedShopFramesRouteImport.update({
+  id: '/shop-frames',
+  path: '/shop-frames',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedShopEntrancesRoute =
@@ -743,6 +749,7 @@ export interface FileRoutesByFullPath {
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
+  '/shop-frames': typeof AuthenticatedShopFramesRoute
   '/support': typeof AuthenticatedSupportRoute
   '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
@@ -851,6 +858,7 @@ export interface FileRoutesByTo {
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/shop-entrances': typeof AuthenticatedShopEntrancesRoute
+  '/shop-frames': typeof AuthenticatedShopFramesRoute
   '/support': typeof AuthenticatedSupportRoute
   '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
@@ -963,6 +971,7 @@ export interface FileRoutesById {
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/shop-entrances': typeof AuthenticatedShopEntrancesRoute
+  '/_authenticated/shop-frames': typeof AuthenticatedShopFramesRoute
   '/_authenticated/support': typeof AuthenticatedSupportRoute
   '/_authenticated/support-room': typeof AuthenticatedSupportRoomRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
@@ -1075,6 +1084,7 @@ export interface FileRouteTypes {
     | '/recharge-history'
     | '/settings'
     | '/shop-entrances'
+    | '/shop-frames'
     | '/support'
     | '/support-room'
     | '/theme-shop'
@@ -1183,6 +1193,7 @@ export interface FileRouteTypes {
     | '/recharge-history'
     | '/settings'
     | '/shop-entrances'
+    | '/shop-frames'
     | '/support'
     | '/support-room'
     | '/theme-shop'
@@ -1294,6 +1305,7 @@ export interface FileRouteTypes {
     | '/_authenticated/recharge-history'
     | '/_authenticated/settings'
     | '/_authenticated/shop-entrances'
+    | '/_authenticated/shop-frames'
     | '/_authenticated/support'
     | '/_authenticated/support-room'
     | '/_authenticated/theme-shop'
@@ -1612,6 +1624,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AuthenticatedSupportRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/shop-frames': {
+      id: '/_authenticated/shop-frames'
+      path: '/shop-frames'
+      fullPath: '/shop-frames'
+      preLoaderRoute: typeof AuthenticatedShopFramesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/shop-entrances': {
@@ -2319,6 +2338,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedShopEntrancesRoute: typeof AuthenticatedShopEntrancesRoute
+  AuthenticatedShopFramesRoute: typeof AuthenticatedShopFramesRoute
   AuthenticatedSupportRoute: typeof AuthenticatedSupportRoute
   AuthenticatedSupportRoomRoute: typeof AuthenticatedSupportRoomRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
@@ -2350,6 +2370,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedShopEntrancesRoute: AuthenticatedShopEntrancesRoute,
+  AuthenticatedShopFramesRoute: AuthenticatedShopFramesRoute,
   AuthenticatedSupportRoute: AuthenticatedSupportRoute,
   AuthenticatedSupportRoomRoute: AuthenticatedSupportRoomRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
