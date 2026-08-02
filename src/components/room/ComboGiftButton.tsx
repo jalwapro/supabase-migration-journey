@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { isAssetUrlLike, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { toast } from "sonner";
 import type { Gift, GiftReceiver } from "@/components/GiftSheet";
+import { giftAudioEnabled, giftAudioGain, giftSoundSrc } from "@/components/GiftSheet";
 
 const COMBO_MS = 5000;
 const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
