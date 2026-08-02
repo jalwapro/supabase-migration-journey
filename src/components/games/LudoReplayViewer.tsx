@@ -71,6 +71,13 @@ export function LudoReplayViewer({
 }) {
   const matches = useLudoMatches(adminMode ? userId : null, adminMode ? 60 : 30);
   const [selected, setSelected] = useState<string | null>(null);
+
+  // Deep link support: /games/ludo-replays?match=<id>
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("match");
+    if (id) setSelected(id);
+  }, []);
+
   const replay = useLudoReplay(selected);
   const [cursor, setCursor] = useState(0);
   const [playing, setPlaying] = useState(false);
