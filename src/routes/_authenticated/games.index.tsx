@@ -64,6 +64,13 @@ function GameCenter() {
             </Link>
           </div>
 
+          <Link
+            to="/games/ludo-replays"
+            className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 py-3 text-xs font-black uppercase tracking-widest"
+          >
+            <Dices className="h-4 w-4 text-[color:var(--secondary)]" /> Ludo Replays
+          </Link>
+
           {/* grid */}
           <h2 className="mt-6 mb-2 text-xs font-black uppercase tracking-widest text-foreground/70">
             All games
