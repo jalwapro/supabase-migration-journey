@@ -1695,7 +1695,7 @@ type GiftSendRow = {
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.audioEnabled, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
   // Report successful playback once the asset is actually on screen.
   useEffect(() => {
