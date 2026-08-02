@@ -747,6 +747,72 @@ function GiftsAdmin() {
             </div>
           </div>
 
+          {/* Gift audio — admin master control */}
+          <div className="mt-3 rounded-xl border border-border bg-card/40 p-2">
+            <div className="mb-1.5 flex items-center justify-between">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Gift audio
+              </p>
+              <button
+                onClick={() => setDraft((d) => ({ ...d, audio_enabled: !d.audio_enabled }))}
+                className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${
+                  draft.audio_enabled
+                    ? "bg-emerald-500/20 text-emerald-400"
+                    : "bg-red-500/20 text-red-400"
+                }`}
+              >
+                {draft.audio_enabled ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
+                {draft.audio_enabled ? "Sound on" : "Muted"}
+              </button>
+            </div>
+
+            <FileUploader
+              bucket="shop-assets"
+              folder="gift-audio"
+              accept="audio/mpeg,audio/mp3,audio/aac,audio/wav,audio/ogg,audio/*"
+              label="Upload sound (MP3/AAC/WAV)"
+              value={draft.audio_url}
+              onChange={(url) => setDraft((d) => ({ ...d, audio_url: url ?? "" }))}
+              maxSizeMB={8}
+            />
+            <input
+              placeholder="…or paste an audio URL (blank = use the clip's own audio)"
+              value={draft.audio_url}
+              onChange={(e) => setDraft((d) => ({ ...d, audio_url: e.target.value }))}
+              className="mt-2 w-full rounded-lg border border-border bg-input px-2 py-1.5 text-xs outline-none"
+            />
+
+            <div className="mt-2 flex items-center gap-2">
+              <VolumeX className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                disabled={!draft.audio_enabled}
+                value={Math.round(draft.audio_volume * 100)}
+                onChange={(e) => setDraft((d) => ({ ...d, audio_volume: Number(e.target.value) / 100 }))}
+                className="flex-1 accent-[color:var(--primary)] disabled:opacity-40"
+              />
+              <span className="w-9 shrink-0 text-right text-[10px] font-bold tabular-nums">
+                {draft.audio_enabled ? `${Math.round(draft.audio_volume * 100)}%` : "0%"}
+              </span>
+            </div>
+            {draft.audio_url && (
+              <audio
+                key={draft.audio_url}
+                src={resolveGiftMediaUrl(draft.audio_url) ?? undefined}
+                controls
+                className="mt-2 h-8 w-full"
+              />
+            )}
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Muting here silences this gift for every user in every room. Volume is applied on top of
+              each user&apos;s own gift-sound setting.
+            </p>
+          </div>
+
+
           <button
             onClick={() =>
               setPreview({
