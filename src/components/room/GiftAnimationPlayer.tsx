@@ -1670,6 +1670,8 @@ type GiftSendRow = {
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
+    // Admin master switch: a gift muted in the admin panel is silent everywhere.
+    if (current.audioEnabled === false || current.audioVolume === 0) return;
     if (isSmallGift) return;
     if (!current.soundUrl) return; // no synthetic Jalwa signature anymore
     const played = playGiftAudioCue({
