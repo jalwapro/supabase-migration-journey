@@ -1521,7 +1521,7 @@ type GiftSendRow = {
           "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
             "sender_username,sender_avatar,receiver_username,receiver_avatar," +
             "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume",
+            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled",
         )
         .eq("room_id", roomId)
         .gt("created_at", since)
