@@ -1860,8 +1860,17 @@ type GiftSendRow = {
             onReady={markCurrentReady}
             onDone={clearCurrent}
             onDuration={(ms) => setVideoDurationMs(ms)}
-            withSound={!audioPrefs.muted && audioPrefs.volume > 0}
-            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
+            withSound={
+              !audioPrefs.muted &&
+              audioPrefs.volume > 0 &&
+              current.audioEnabled !== false &&
+              (current.audioVolume ?? 1) > 0
+            }
+            volume={
+              audioPrefs.muted || current.audioEnabled === false
+                ? 0
+                : audioPrefs.volume * (current.audioVolume ?? 1)
+            }
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
