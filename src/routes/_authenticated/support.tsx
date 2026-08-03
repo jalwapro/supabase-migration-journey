@@ -1,11 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-import { Loader2, Send, LifeBuoy } from "lucide-react";
+import { Headphones, Loader2, Radio, Send, LifeBuoy } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/support")({
@@ -161,6 +161,19 @@ function SupportPage() {
     <>
       <AppShell title="Customer Support" subtitle="Chat with our team">
         <div className="flex h-[calc(100dvh-140px)] flex-col">
+          <Link
+            to="/support-room"
+            className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-[color:var(--primary)]/30 bg-[color:var(--primary)]/10 p-3"
+          >
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-primary-foreground">
+              <Headphones className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-black">24/7 Support Voice Room</span>
+              <span className="block text-[11px] text-muted-foreground">Talk live with a verified support host</span>
+            </span>
+            <Radio className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
+          </Link>
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <button
               type="button"

@@ -742,7 +742,7 @@ function Home() {
           <DialogHeader>
             <DialogTitle>Menu</DialogTitle>
           </DialogHeader>
-          <div className="mt-2 grid grid-cols-3 gap-3">
+          <div className="mt-2 grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => { setMenuOpen(false); setShareOpen(true); }}
@@ -751,9 +751,13 @@ function Home() {
               <Share2 className="h-5 w-5 text-[color:var(--primary)]" />
               Share app
             </button>
+            <Link to="/support-room" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-[color:var(--primary)]/30 bg-[color:var(--primary)]/10 p-3 text-xs font-bold">
+              <Radio className="h-5 w-5 text-[color:var(--primary)]" />
+              24/7 Voice Support
+            </Link>
             <Link to="/support" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs">
               <LifeBuoy className="h-5 w-5 text-[color:var(--primary)]" />
-              Support
+              Support Chat
             </Link>
             <Link to="/settings" onClick={() => setMenuOpen(false)} className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card/60 p-3 text-xs">
               <Sparkles className="h-5 w-5 text-[color:var(--primary)]" />
