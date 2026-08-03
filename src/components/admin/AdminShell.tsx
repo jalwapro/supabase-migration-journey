@@ -8,7 +8,10 @@ type NavGroup = { label: string; items: NavItem[] };
 export const ADMIN_NAV: NavGroup[] = [
   {
     label: "Overview",
-    items: [{ to: "/admin", label: "Dashboard", icon: LayoutDashboard }],
+    items: [
+      { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/admin/support-room", label: "Support Room 24/7", icon: LifeBuoy },
+    ],
   },
   {
     label: "Users & Rooms",
@@ -41,7 +44,6 @@ export const ADMIN_NAV: NavGroup[] = [
       { to: "/admin/gifts", label: "Gifts Management", icon: GiftIcon },
       { to: "/admin/minigames", label: "Mini Games", icon: Dices },
       { to: "/admin/ludo-replays", label: "Ludo Replays", icon: Dices },
-      { to: "/admin/support-room", label: "Support Room 24/7", icon: LifeBuoy },
       { to: "/admin/gift-batches", label: "Gift Batches", icon: GiftIcon },
       { to: "/admin/emojis", label: "Emoji Management", icon: Sparkles },
       { to: "/admin/entrances", label: "Entrance Effects", icon: Sparkles },
