@@ -228,12 +228,13 @@ export const Route = createFileRoute("/api/r2-sign")({
         try {
           const { AwsClient } = await import("aws4fetch");
           const client = new AwsClient({
-            accessKeyId,
-            secretAccessKey,
+            accessKeyId: r2Key,
+            secretAccessKey: r2Secret,
             service: "s3",
             region: "auto",
           });
-          const target = `${endpoint.replace(/\/+$/, "")}/${bucket}/${path}`;
+          const target = `${r2Endpoint.replace(/\/+$/, "")}/${r2Bucket}/${path}`;
+
           if (op === "get") {
             // Short-lived read URL for private assets (voice notes, proofs).
             const signedGet = await client.sign(
