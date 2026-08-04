@@ -168,15 +168,32 @@ export const Route = createFileRoute("/api/r2-sign")({
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
       POST: async ({ request }) => {
-        const endpoint = process.env.R2_ENDPOINT;
-        const bucket = process.env.R2_BUCKET;
-        const accessKeyId = process.env.R2_ACCESS_KEY_ID;
-        const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-        const publicBase = (process.env.R2_PUBLIC_URL ?? "").replace(/\/+$/, "");
+        const endpoint = process.env['R2_ENDPOINT'];
+        const bucket = process.env['R2_BUCKET'];
+        const accessKeyId = process.env['R2_ACCESS_KEY_ID'];
+        const secretAccessKey = process.env['R2_SECRET_ACCESS_KEY'];
+        const publicBase = (process.env['R2_PUBLIC_URL'] ?? "").replace(/\/+$/, "");
 
-        if (!endpoint || !bucket || !accessKeyId || !secretAccessKey || !publicBase) {
-          return json({ error: "r2_not_configured" }, 503);
+        const missing = [
+          ["R2_ENDPOINT", endpoint],
+          ["R2_BUCKET", bucket],
+          ["R2_ACCESS_KEY_ID", accessKeyId],
+          ["R2_SECRET_ACCESS_KEY", secretAccessKey],
+          ["R2_PUBLIC_URL", publicBase],
+        ].filter(([, v]) => !v).map(([k]) => k);
+
+        if (missing.length) {
+          console.error("[r2-sign] missing env:", missing.join(", "));
+          return json(
+            {
+              error: `Cloud storage is not configured on the server (missing: ${missing.join(", ")}). Add these keys and redeploy.`,
+              code: "r2_not_configured",
+              missing,
+            },
+            503,
+          );
         }
+
 
         const user = await verifyUser(request);
         if (!user) return json({ error: "unauthorized" }, 401);
