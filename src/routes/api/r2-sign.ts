@@ -193,6 +193,11 @@ export const Route = createFileRoute("/api/r2-sign")({
             503,
           );
         }
+        const r2Endpoint = endpoint as string;
+        const r2Bucket = bucket as string;
+        const r2Key = accessKeyId as string;
+        const r2Secret = secretAccessKey as string;
+
 
 
         const user = await verifyUser(request);
