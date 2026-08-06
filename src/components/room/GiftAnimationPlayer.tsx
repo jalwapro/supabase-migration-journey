@@ -6,6 +6,8 @@ import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableG
 import { playGiftAudioCue, playGiftWhooshCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
 import { trackGiftPlayback } from "@/lib/giftTelemetry";
 import SvgaPlayer from "./SvgaPlayer";
+import GiftGLVideo from "./GiftGLVideo";
+import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
 
 /**
@@ -1454,6 +1456,7 @@ type GiftSendRow = {
   gift_priority?: number | null;
   gift_audio_volume?: number | string | null;
   gift_audio_enabled?: boolean | null;
+  gift_render_config?: unknown;
 };
 
   // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
@@ -1482,6 +1485,7 @@ type GiftSendRow = {
       audioVolume:
         r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
       audioEnabled: r.gift_audio_enabled == null ? true : Boolean(r.gift_audio_enabled),
+      renderConfig: r.gift_render_config ?? null,
     };
     if (seenRef.current.has(play.key)) return;
     // Coalesce multi-receiver sends into ONE simultaneous play.
@@ -1523,7 +1527,7 @@ type GiftSendRow = {
           "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
             "sender_username,sender_avatar,receiver_username,receiver_avatar," +
             "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled",
+            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled,gift_render_config",
         )
         .eq("room_id", roomId)
         .gt("created_at", since)
