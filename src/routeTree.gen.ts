@@ -104,6 +104,7 @@ import { Route as AuthenticatedAdminLogsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminLiveRouteImport } from './routes/_authenticated/admin.live'
 import { Route as AuthenticatedAdminIntegrationsRouteImport } from './routes/_authenticated/admin.integrations'
 import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
+import { Route as AuthenticatedAdminGiftStudioRouteImport } from './routes/_authenticated/admin.gift-studio'
 import { Route as AuthenticatedAdminGiftBatchesRouteImport } from './routes/_authenticated/admin.gift-batches'
 import { Route as AuthenticatedAdminFreeAccountsRouteImport } from './routes/_authenticated/admin.free-accounts'
 import { Route as AuthenticatedAdminFramesRouteImport } from './routes/_authenticated/admin.frames'
@@ -628,6 +629,12 @@ const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
   path: '/gifts',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminGiftStudioRoute =
+  AuthenticatedAdminGiftStudioRouteImport.update({
+    id: '/gift-studio',
+    path: '/gift-studio',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminGiftBatchesRoute =
   AuthenticatedAdminGiftBatchesRouteImport.update({
     id: '/gift-batches',
@@ -779,6 +786,7 @@ export interface FileRoutesByFullPath {
   '/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
+  '/admin/gift-studio': typeof AuthenticatedAdminGiftStudioRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
@@ -888,6 +896,7 @@ export interface FileRoutesByTo {
   '/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
+  '/admin/gift-studio': typeof AuthenticatedAdminGiftStudioRoute
   '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/admin/live': typeof AuthenticatedAdminLiveRoute
@@ -1001,6 +1010,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/frames': typeof AuthenticatedAdminFramesRoute
   '/_authenticated/admin/free-accounts': typeof AuthenticatedAdminFreeAccountsRoute
   '/_authenticated/admin/gift-batches': typeof AuthenticatedAdminGiftBatchesRoute
+  '/_authenticated/admin/gift-studio': typeof AuthenticatedAdminGiftStudioRoute
   '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/admin/integrations': typeof AuthenticatedAdminIntegrationsRoute
   '/_authenticated/admin/live': typeof AuthenticatedAdminLiveRoute
@@ -1114,6 +1124,7 @@ export interface FileRouteTypes {
     | '/admin/frames'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
+    | '/admin/gift-studio'
     | '/admin/gifts'
     | '/admin/integrations'
     | '/admin/live'
@@ -1223,6 +1234,7 @@ export interface FileRouteTypes {
     | '/admin/frames'
     | '/admin/free-accounts'
     | '/admin/gift-batches'
+    | '/admin/gift-studio'
     | '/admin/gifts'
     | '/admin/integrations'
     | '/admin/live'
@@ -1335,6 +1347,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/frames'
     | '/_authenticated/admin/free-accounts'
     | '/_authenticated/admin/gift-batches'
+    | '/_authenticated/admin/gift-studio'
     | '/_authenticated/admin/gifts'
     | '/_authenticated/admin/integrations'
     | '/_authenticated/admin/live'
@@ -2081,6 +2094,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/gift-studio': {
+      id: '/_authenticated/admin/gift-studio'
+      path: '/gift-studio'
+      fullPath: '/admin/gift-studio'
+      preLoaderRoute: typeof AuthenticatedAdminGiftStudioRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/gift-batches': {
       id: '/_authenticated/admin/gift-batches'
       path: '/gift-batches'
@@ -2204,6 +2224,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminFramesRoute: typeof AuthenticatedAdminFramesRoute
   AuthenticatedAdminFreeAccountsRoute: typeof AuthenticatedAdminFreeAccountsRoute
   AuthenticatedAdminGiftBatchesRoute: typeof AuthenticatedAdminGiftBatchesRoute
+  AuthenticatedAdminGiftStudioRoute: typeof AuthenticatedAdminGiftStudioRoute
   AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedAdminIntegrationsRoute: typeof AuthenticatedAdminIntegrationsRoute
   AuthenticatedAdminLiveRoute: typeof AuthenticatedAdminLiveRoute
@@ -2255,6 +2276,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminFramesRoute: AuthenticatedAdminFramesRoute,
   AuthenticatedAdminFreeAccountsRoute: AuthenticatedAdminFreeAccountsRoute,
   AuthenticatedAdminGiftBatchesRoute: AuthenticatedAdminGiftBatchesRoute,
+  AuthenticatedAdminGiftStudioRoute: AuthenticatedAdminGiftStudioRoute,
   AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedAdminIntegrationsRoute: AuthenticatedAdminIntegrationsRoute,
   AuthenticatedAdminLiveRoute: AuthenticatedAdminLiveRoute,

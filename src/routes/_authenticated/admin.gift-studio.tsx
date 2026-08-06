@@ -279,7 +279,7 @@ function GiftStudio() {
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Gift Studio" description="Size, position, crop, chroma key, colour grade, blur & timing — live, per gift." />
+      <AdminPageHeader title="Gift Studio" subtitle="Size, position, crop, chroma key, colour grade, blur & timing — live, per gift." />
 
       <div className="grid gap-4 lg:grid-cols-[240px_minmax(0,380px)_minmax(0,1fr)]">
         {/* ---------- gift list ---------- */}
