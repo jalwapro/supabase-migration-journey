@@ -6,6 +6,8 @@ import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableG
 import { playGiftAudioCue, playGiftWhooshCue, unlockGiftAudio, useGiftAudioPrefs } from "@/lib/giftAudio";
 import { trackGiftPlayback } from "@/lib/giftTelemetry";
 import SvgaPlayer from "./SvgaPlayer";
+import GiftGLVideo from "./GiftGLVideo";
+import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
 
 /**
@@ -36,6 +38,8 @@ type Play = {
   animation: string;
   soundUrl?: string | null;
   chromakey?: string | null;
+  /** Admin "Gift Studio" render/VFX config (jsonb snapshot from gift_sends). */
+  renderConfig?: unknown;
   local?: boolean;
   /** Higher priority pre-empts a lower-priority gift already on screen. */
   priority?: number;
@@ -1452,6 +1456,7 @@ type GiftSendRow = {
   gift_priority?: number | null;
   gift_audio_volume?: number | string | null;
   gift_audio_enabled?: boolean | null;
+  gift_render_config?: unknown;
 };
 
   // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
@@ -1480,6 +1485,7 @@ type GiftSendRow = {
       audioVolume:
         r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
       audioEnabled: r.gift_audio_enabled == null ? true : Boolean(r.gift_audio_enabled),
+      renderConfig: r.gift_render_config ?? null,
     };
     if (seenRef.current.has(play.key)) return;
     // Coalesce multi-receiver sends into ONE simultaneous play.
@@ -1521,7 +1527,7 @@ type GiftSendRow = {
           "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
             "sender_username,sender_avatar,receiver_username,receiver_avatar," +
             "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled",
+            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled,gift_render_config",
         )
         .eq("room_id", roomId)
         .gt("created_at", since)
@@ -1608,6 +1614,13 @@ type GiftSendRow = {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
+  // Gift Studio: when an admin configured this gift in /admin/gift-studio the
+  // full GPU pipeline (size/position/crop/chroma/grade/blur) takes over.
+  const advCfgRaw = current?.renderConfig;
+  const hasAdvCfg =
+    !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
+  const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
+
   // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
   const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
@@ -1854,6 +1867,32 @@ type GiftSendRow = {
         ) : hasVideo ? (
 
 
+          hasAdvCfg ? (
+            <div style={renderConfigToStyle(advCfg)}>
+              <GiftGLVideo
+                src={giftClipUrl ?? ""}
+                config={advCfg}
+                loop={advCfg.loop}
+                objectFit={OBJECT_FIT[advCfg.fit]}
+                className="h-full w-full"
+                muted={
+                  audioPrefs.muted ||
+                  current.audioEnabled === false ||
+                  audioPrefs.volume <= 0 ||
+                  (current.audioVolume ?? 1) <= 0
+                }
+                volume={
+                  audioPrefs.muted || current.audioEnabled === false
+                    ? 0
+                    : audioPrefs.volume * (current.audioVolume ?? 1)
+                }
+                onReady={markCurrentReady}
+                onEnded={clearCurrent}
+                onError={clearCurrent}
+                onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
+              />
+            </div>
+          ) : (
           <AnimatedGiftVideo
             src={giftClipUrl ?? ""}
             type={giftClip.type}
@@ -1879,6 +1918,7 @@ type GiftSendRow = {
             greenKey={chromakeyMode === "green"}
             forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
           />
+          )
 
         ) : hasSvga ? (
           <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
