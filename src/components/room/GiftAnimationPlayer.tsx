@@ -36,6 +36,8 @@ type Play = {
   animation: string;
   soundUrl?: string | null;
   chromakey?: string | null;
+  /** Admin "Gift Studio" render/VFX config (jsonb snapshot from gift_sends). */
+  renderConfig?: unknown;
   local?: boolean;
   /** Higher priority pre-empts a lower-priority gift already on screen. */
   priority?: number;
