@@ -1614,6 +1614,13 @@ type GiftSendRow = {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
+  // Gift Studio: when an admin configured this gift in /admin/gift-studio the
+  // full GPU pipeline (size/position/crop/chroma/grade/blur) takes over.
+  const advCfgRaw = current?.renderConfig;
+  const hasAdvCfg =
+    !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
+  const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
+
   // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
   const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
@@ -1860,6 +1867,32 @@ type GiftSendRow = {
         ) : hasVideo ? (
 
 
+          hasAdvCfg ? (
+            <div style={renderConfigToStyle(advCfg)}>
+              <GiftGLVideo
+                src={giftClipUrl ?? ""}
+                config={advCfg}
+                loop={advCfg.loop}
+                objectFit={OBJECT_FIT[advCfg.fit]}
+                className="h-full w-full"
+                muted={
+                  audioPrefs.muted ||
+                  current.audioEnabled === false ||
+                  audioPrefs.volume <= 0 ||
+                  (current.audioVolume ?? 1) <= 0
+                }
+                volume={
+                  audioPrefs.muted || current.audioEnabled === false
+                    ? 0
+                    : audioPrefs.volume * (current.audioVolume ?? 1)
+                }
+                onReady={markCurrentReady}
+                onEnded={clearCurrent}
+                onError={clearCurrent}
+                onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
+              />
+            </div>
+          ) : (
           <AnimatedGiftVideo
             src={giftClipUrl ?? ""}
             type={giftClip.type}
@@ -1885,6 +1918,7 @@ type GiftSendRow = {
             greenKey={chromakeyMode === "green"}
             forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
           />
+          )
 
         ) : hasSvga ? (
           <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
