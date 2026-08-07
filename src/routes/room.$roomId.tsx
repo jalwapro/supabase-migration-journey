@@ -70,6 +70,10 @@ import { TapHearts } from "@/components/room/TapHearts";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
 import { SlotsGamePopup } from "@/components/room/SlotsGamePopup";
+import { CrashXGame } from "@/components/room/casino/CrashXGame";
+import { DragonTigerGame } from "@/components/room/casino/DragonTigerGame";
+import { InOutGame } from "@/components/room/casino/InOutGame";
+import { PlinkoGame } from "@/components/room/casino/PlinkoGame";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
@@ -295,6 +299,10 @@ function RoomPage() {
   const [ludoOpen, setLudoOpen] = useState(false);
   const [gamesSheetOpen, setGamesSheetOpen] = useState(false);
   const [slotsOpen, setSlotsOpen] = useState(false);
+  const [crashOpen, setCrashOpen] = useState(false);
+  const [dragonTigerOpen, setDragonTigerOpen] = useState(false);
+  const [inOutOpen, setInOutOpen] = useState(false);
+  const [plinkoOpen, setPlinkoOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   
@@ -3345,8 +3353,28 @@ function RoomPage() {
           setGamesSheetOpen(false);
           setSlotsOpen(true);
         }}
+        onOpenCrash={() => {
+          setGamesSheetOpen(false);
+          setCrashOpen(true);
+        }}
+        onOpenDragonTiger={() => {
+          setGamesSheetOpen(false);
+          setDragonTigerOpen(true);
+        }}
+        onOpenInOut={() => {
+          setGamesSheetOpen(false);
+          setInOutOpen(true);
+        }}
+        onOpenPlinko={() => {
+          setGamesSheetOpen(false);
+          setPlinkoOpen(true);
+        }}
       />
       <SlotsGamePopup open={slotsOpen} onClose={() => setSlotsOpen(false)} roomId={roomId} />
+      <CrashXGame open={crashOpen} onClose={() => setCrashOpen(false)} roomId={roomId} />
+      <DragonTigerGame open={dragonTigerOpen} onClose={() => setDragonTigerOpen(false)} roomId={roomId} />
+      <InOutGame open={inOutOpen} onClose={() => setInOutOpen(false)} roomId={roomId} />
+      <PlinkoGame open={plinkoOpen} onClose={() => setPlinkoOpen(false)} roomId={roomId} />
       <GifterListSheet
         roomId={roomId}
         receiver={gifterListReceiver}
