@@ -203,7 +203,7 @@ grant execute on function public.casino_play(text, bigint, jsonb, uuid) to authe
 create or replace function public.casino_recent(p_game text, p_limit int default 12)
 returns table (username text, avatar_url text, bet bigint, payout bigint, created_at timestamptz)
 language sql stable security definer set search_path = public as $$
-  select coalesce(pr.username, 'Player'), pr.avatar_url, b.bet, b.payout, b.created_at
+  select coalesce(pr.username, 'Player'), pr.avatar, b.bet, b.payout, b.created_at
   from public.casino_bets b
   join public.profiles pr on pr.id = b.user_id
   where b.game = p_game and b.payout > 0
@@ -214,13 +214,13 @@ $$;
 create or replace function public.casino_leaderboard(p_game text default null, p_days int default 7, p_limit int default 20)
 returns table (user_id uuid, username text, avatar_url text, total_bet bigint, total_won bigint, net bigint, rounds bigint)
 language sql stable security definer set search_path = public as $$
-  select b.user_id, coalesce(pr.username, 'Player'), pr.avatar_url,
+  select b.user_id, coalesce(pr.username, 'Player'), pr.avatar,
          sum(b.bet)::bigint, sum(b.payout)::bigint, (sum(b.payout) - sum(b.bet))::bigint, count(*)::bigint
   from public.casino_bets b
   join public.profiles pr on pr.id = b.user_id
   where b.created_at > now() - (coalesce(p_days, 7) || ' days')::interval
     and (p_game is null or b.game = p_game)
-  group by b.user_id, pr.username, pr.avatar_url
+  group by b.user_id, pr.username, pr.avatar
   order by 6 desc
   limit least(coalesce(p_limit, 20), 100);
 $$;
