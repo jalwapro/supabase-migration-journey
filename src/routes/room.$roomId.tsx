@@ -68,6 +68,7 @@ import GiftComboHud from "@/components/room/GiftComboHud";
 import { GiftAudioControl } from "@/components/room/GiftAudioControl";
 import { TapHearts } from "@/components/room/TapHearts";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
+import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
@@ -291,6 +292,7 @@ function RoomPage() {
   
   
   const [ludoOpen, setLudoOpen] = useState(false);
+  const [gamesSheetOpen, setGamesSheetOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   
@@ -3330,6 +3332,14 @@ function RoomPage() {
         players={ludoPlayers}
         isHost={isHost}
       />
+      <RoomGamesSheet
+        open={gamesSheetOpen}
+        onClose={() => setGamesSheetOpen(false)}
+        onOpenLudo={() => {
+          setGamesSheetOpen(false);
+          openLudo();
+        }}
+      />
       <GifterListSheet
         roomId={roomId}
         receiver={gifterListReceiver}
@@ -3396,7 +3406,7 @@ function RoomPage() {
         }}
         onOpenGames={() => {
           setVideoSettingsOpen(false);
-          openLudo();
+          setGamesSheetOpen(true);
         }}
         onShare={() => {
           setVideoSettingsOpen(false);
@@ -6197,4 +6207,3 @@ function MiniProfileSheet({
     </>
   );
 }
-
