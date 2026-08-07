@@ -1888,10 +1888,6 @@ function RoomPage() {
   });
 
   function openLudo() {
-    if (seatedCount < 4) {
-      toast.error(`Ludo needs 4 users on seats (currently ${seatedCount})`);
-      return;
-    }
     setLudoOpen(true);
   }
 
@@ -3341,6 +3337,7 @@ function RoomPage() {
         onClose={() => setLudoOpen(false)}
         players={ludoPlayers}
         isHost={isHost}
+        roomId={roomId}
       />
       <RoomGamesSheet
         open={gamesSheetOpen}
