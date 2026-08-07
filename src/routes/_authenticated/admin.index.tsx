@@ -344,7 +344,7 @@ function Dashboard() {
         <div className="emboss rounded-2xl p-5 lg:col-span-2">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-sm font-bold">Recent Activity</p>
-            <Link to="/admin/logs" className="text-[11px] font-bold text-primary hover:underline">View all</Link>
+            <Link to="/admin/logs" search={{ user: undefined }} className="text-[11px] font-bold text-primary hover:underline">View all</Link>
           </div>
           <div className="space-y-1.5">
             {(activity.data ?? []).map((row) => (
