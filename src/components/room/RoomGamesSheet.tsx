@@ -37,11 +37,19 @@ export function RoomGamesSheet({
   onClose,
   onOpenLudo,
   onOpenSlots,
+  onOpenCrash,
+  onOpenDragonTiger,
+  onOpenInOut,
+  onOpenPlinko,
 }: {
   open: boolean;
   onClose: () => void;
   onOpenLudo: () => void;
   onOpenSlots: () => void;
+  onOpenCrash?: () => void;
+  onOpenDragonTiger?: () => void;
+  onOpenInOut?: () => void;
+  onOpenPlinko?: () => void;
 }) {
   const [activeGame, setActiveGame] = useState<RoomGame | null>(null);
 
@@ -75,7 +83,16 @@ export function RoomGamesSheet({
         {activeGame ? (
           <GameFrame game={activeGame} onBack={() => setActiveGame(null)} onClose={close} />
         ) : (
-          <GamesPicker onClose={close} onOpenLudo={onOpenLudo} onOpenSlots={onOpenSlots} onPickGame={setActiveGame} />
+          <GamesPicker
+            onClose={close}
+            onOpenLudo={onOpenLudo}
+            onOpenSlots={onOpenSlots}
+            onOpenCrash={onOpenCrash}
+            onOpenDragonTiger={onOpenDragonTiger}
+            onOpenInOut={onOpenInOut}
+            onOpenPlinko={onOpenPlinko}
+            onPickGame={setActiveGame}
+          />
         )}
       </div>
     </>
@@ -90,11 +107,19 @@ function GamesPicker({
   onClose,
   onOpenLudo,
   onOpenSlots,
+  onOpenCrash,
+  onOpenDragonTiger,
+  onOpenInOut,
+  onOpenPlinko,
   onPickGame,
 }: {
   onClose: () => void;
   onOpenLudo: () => void;
   onOpenSlots: () => void;
+  onOpenCrash?: () => void;
+  onOpenDragonTiger?: () => void;
+  onOpenInOut?: () => void;
+  onOpenPlinko?: () => void;
   onPickGame: (g: RoomGame) => void;
 }) {
   const games = useRoomGames();
@@ -142,6 +167,66 @@ function GamesPicker({
           <p className="relative mt-3 text-sm font-black">777 Slots</p>
           <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
             Jackpot · free spins
+          </p>
+        </button>
+
+        {/* Crash X — native casino game, real coins, server-side crash point */}
+        <button
+          onClick={onOpenCrash}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
+        >
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-orange-500/30 blur-2xl" />
+          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-orange-500/50 bg-orange-500/15 text-3xl">
+            🚀
+          </div>
+          <p className="relative mt-3 text-sm font-black">Crash X</p>
+          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
+            Ride the multiplier · cash out
+          </p>
+        </button>
+
+        {/* Dragon vs Tiger — native casino game */}
+        <button
+          onClick={onOpenDragonTiger}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
+        >
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-red-500/30 blur-2xl" />
+          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-red-500/50 bg-red-500/15 text-3xl">
+            🐉
+          </div>
+          <p className="relative mt-3 text-sm font-black">Dragon vs Tiger</p>
+          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
+            Pick a side · instant result
+          </p>
+        </button>
+
+        {/* In & Out — native casino game */}
+        <button
+          onClick={onOpenInOut}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
+        >
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-rose-500/30 blur-2xl" />
+          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-rose-500/50 bg-rose-500/15 text-3xl">
+            🔴
+          </div>
+          <p className="relative mt-3 text-sm font-black">In & Out</p>
+          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
+            Roll the dice · pick in or out
+          </p>
+        </button>
+
+        {/* Plinko — native casino game */}
+        <button
+          onClick={onOpenPlinko}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
+        >
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-purple-500/30 blur-2xl" />
+          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-purple-500/50 bg-purple-500/15 text-3xl">
+            🟣
+          </div>
+          <p className="relative mt-3 text-sm font-black">Plinko</p>
+          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
+            Drop the ball · chase multipliers
           </p>
         </button>
 
