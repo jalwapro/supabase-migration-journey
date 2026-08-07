@@ -69,6 +69,7 @@ import { GiftAudioControl } from "@/components/room/GiftAudioControl";
 import { TapHearts } from "@/components/room/TapHearts";
 import { LudoSheet, type LudoPlayer } from "@/components/room/LudoSheet";
 import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
+import { SlotsGamePopup } from "@/components/room/SlotsGamePopup";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
@@ -293,6 +294,7 @@ function RoomPage() {
   
   const [ludoOpen, setLudoOpen] = useState(false);
   const [gamesSheetOpen, setGamesSheetOpen] = useState(false);
+  const [slotsOpen, setSlotsOpen] = useState(false);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   
@@ -3339,7 +3341,12 @@ function RoomPage() {
           setGamesSheetOpen(false);
           openLudo();
         }}
+        onOpenSlots={() => {
+          setGamesSheetOpen(false);
+          setSlotsOpen(true);
+        }}
       />
+      <SlotsGamePopup open={slotsOpen} onClose={() => setSlotsOpen(false)} roomId={roomId} />
       <GifterListSheet
         roomId={roomId}
         receiver={gifterListReceiver}
