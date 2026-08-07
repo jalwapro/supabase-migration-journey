@@ -5,34 +5,45 @@ import {
   Dice4,
   Dice5,
   Dice6,
+  Gift,
   Loader2,
+  Mic,
+  Smile,
+  Volume2,
 } from "lucide-react";
-
 import {
   COLOR_HEX,
+  GRID_SIZE,
+  isSafeRingIndex,
   ringCellCoord,
   tokenCoord,
   type LudoColor,
   type LudoGameState,
 } from "@/lib/ludoEngine";
 
-const DICE_ICONS = [
-  Dice1,
-  Dice2,
-  Dice3,
-  Dice4,
-  Dice5,
-  Dice6,
-];
+const DICE_ICONS = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
 
-const HOME_POSITIONS: Record<
-  LudoColor,
-  { row: number; col: number }
-> = {
-  red: { row: 1, col: 1 },
-  green: { row: 1, col: 11 },
-  blue: { row: 11, col: 1 },
-  yellow: { row: 11, col: 11 },
+type AvatarMap = Record<string, string | null | undefined>;
+
+const HOME_CLASS: Record<LudoColor, string> = {
+  red: "left-0 top-0",
+  blue: "right-0 top-0",
+  green: "left-0 bottom-0",
+  yellow: "right-0 bottom-0",
+};
+
+const HOME_BG: Record<LudoColor, string> = {
+  red: "from-red-600/95 to-red-800/95",
+  blue: "from-blue-500/95 to-blue-800/95",
+  green: "from-emerald-500/95 to-emerald-800/95",
+  yellow: "from-amber-400/95 to-orange-600/95",
+};
+
+const TOKEN_RING: Record<LudoColor, string> = {
+  red: "shadow-[0_0_14px_rgba(239,68,68,.7)]",
+  blue: "shadow-[0_0_14px_rgba(59,130,246,.7)]",
+  green: "shadow-[0_0_14px_rgba(34,197,94,.7)]",
+  yellow: "shadow-[0_0_14px_rgba(234,179,8,.7)]",
 };
 
 export function LudoBoard({
@@ -41,600 +52,292 @@ export function LudoBoard({
   rolling,
   onRoll,
   onPickToken,
+  avatarByUserId = {},
 }: {
   state: LudoGameState;
   myPlayerIndex: number | null;
   rolling: boolean;
   onRoll: () => void;
   onPickToken: (tokenIndex: number) => void;
+  avatarByUserId?: AvatarMap;
 }) {
   const current = state.players[state.turnIndex];
-
-  const myTurn =
-    myPlayerIndex !== null &&
-    myPlayerIndex === state.turnIndex;
-
+  const myTurn = myPlayerIndex === state.turnIndex;
   const DiceIcon =
     state.dice && state.dice >= 1 && state.dice <= 6
       ? DICE_ICONS[state.dice - 1]
-      : Dice1;
+      : Dice5;
 
   return (
-    <div className="w-full max-w-[390px] mx-auto space-y-3">
-
-      {/* =========================
-          PLAYER HEADER
-      ========================== */}
-      <div className="grid grid-cols-2 gap-2">
-
-        {state.players.slice(0, 2).map((player, index) => (
+    <div className="w-full max-w-[720px] mx-auto text-white">
+      <div className="grid grid-cols-2 gap-2.5 mb-2.5">
+        {state.players.slice(0, 2).map((p, i) => (
           <PlayerCard
-            key={player.color}
-            player={player}
-            active={state.turnIndex === index}
+            key={p.color}
+            player={p}
+            active={state.turnIndex === i}
+            avatar={p.userId ? avatarByUserId[p.userId] : undefined}
           />
         ))}
-
       </div>
 
-      {/* =========================
-          LUDO BOARD
-      ========================== */}
-      <div
-        className="
-          relative
-          aspect-square
-          w-full
-          overflow-hidden
-          rounded-[24px]
-          border
-          border-white/15
-          bg-[#080612]
-          p-2
-          shadow-[0_0_50px_rgba(130,50,255,0.25)]
-        "
-      >
+      <div className="relative mx-auto aspect-square w-full max-w-[620px] overflow-hidden rounded-[24px] border border-cyan-300/40 bg-[#090615] p-2 shadow-[0_0_35px_rgba(40,180,255,.18),0_0_70px_rgba(140,50,255,.15)]">
+        <div className="absolute inset-0 rounded-[24px] bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,.14),transparent_42%)] pointer-events-none" />
 
-        {/* OUTER GLOW */}
-        <div className="
-          pointer-events-none
-          absolute inset-0
-          rounded-[24px]
-          ring-1 ring-purple-400/20
-        " />
-
-        {/* 15 x 15 BOARD */}
         <div
-          className="relative grid h-full w-full overflow-hidden rounded-[18px]"
+          className="relative grid h-full w-full overflow-hidden rounded-[18px] border border-white/10 bg-[#11101b]"
           style={{
-            gridTemplateColumns: "repeat(15, minmax(0, 1fr))",
-            gridTemplateRows: "repeat(15, minmax(0, 1fr))",
+            gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
           }}
         >
-
-          {/* =========================
-              RED HOME
-          ========================== */}
-          <HomeArea
-            color="red"
-            className="row-start-1 col-start-1 row-span-6 col-span-6"
-          />
-
-          {/* =========================
-              GREEN HOME
-          ========================== */}
-          <HomeArea
-            color="green"
-            className="row-start-1 col-start-10 row-span-6 col-span-6"
-          />
-
-          {/* =========================
-              BLUE HOME
-          ========================== */}
-          <HomeArea
-            color="blue"
-            className="row-start-10 col-start-1 row-span-6 col-span-6"
-          />
-
-          {/* =========================
-              YELLOW HOME
-          ========================== */}
-          <HomeArea
-            color="yellow"
-            className="row-start-10 col-start-10 row-span-6 col-span-6"
-          />
-
-          {/* =========================
-              PATH CELLS
-          ========================== */}
-          {Array.from({ length: 52 }).map((_, index) => {
-            const coord = ringCellCoord(index);
-
+          {/* Four glossy yards */}
+          {(["red", "blue", "green", "yellow"] as LudoColor[]).map((color) => {
+            const player = state.players.find((p) => p.color === color);
+            const yardTokens = player?.tokens.filter((t) => t.d === 0) ?? [];
             return (
               <div
-                key={`path-${index}`}
-                className="
-                  z-[2]
-                  border
-                  border-white/10
-                  bg-white/[0.045]
-                  transition-colors
-                "
-                style={{
-                  gridRow: coord.row + 1,
-                  gridColumn: coord.col + 1,
-                }}
-              />
+                key={`yard-${color}`}
+                className={`absolute z-[3] ${HOME_CLASS[color]} h-[42.85%] w-[42.85%] bg-gradient-to-br ${HOME_BG[color]} p-2.5`}
+              >
+                <div className="flex h-full w-full items-center justify-center rounded-[16px] border border-white/35 bg-white/80 shadow-inner">
+                  <div className="grid grid-cols-2 gap-3 rounded-[14px] bg-white/70 p-4">
+                    {[0, 1, 2, 3].map((slot) => {
+                      const token = yardTokens[slot];
+                      const tokenIndex = player?.tokens.findIndex((t) => t === token) ?? -1;
+                      const canPick =
+                        !!player &&
+                        myTurn &&
+                        myPlayerIndex === state.turnIndex &&
+                        state.awaitingMove &&
+                        state.players[state.turnIndex].color === color &&
+                        tokenIndex >= 0;
+
+                      return (
+                        <button
+                          key={slot}
+                          type="button"
+                          disabled={!canPick}
+                          onClick={() => tokenIndex >= 0 && onPickToken(tokenIndex)}
+                          className={`grid h-8 w-8 place-items-center rounded-full border-2 border-black/10 text-[9px] font-black text-white transition-transform ${
+                            canPick ? "animate-pulse scale-110 ring-2 ring-white" : ""
+                          } ${TOKEN_RING[color]}`}
+                          style={{ backgroundColor: COLOR_HEX[color] }}
+                        >
+                          {token ? tokenIndex + 1 : ""}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             );
           })}
 
-          {/* =========================
-              CENTER HOME
-          ========================== */}
-          <div
-            className="
-              relative
-              z-[4]
-              col-start-7
-              row-start-7
-              row-span-2
-              col-span-2
-              overflow-hidden
-              bg-white/10
-            "
-          >
+          {/* Shared ring */}
+          {Array.from({ length: 52 }).map((_, i) => {
+            const c = ringCellCoord(i);
+            const safe = isSafeRingIndex(i);
+            return (
+              <div
+                key={`ring-${i}`}
+                className={`z-[1] border border-black/15 ${
+                  safe
+                    ? "bg-white shadow-[inset_0_0_0_1px_rgba(255,255,255,.45)]"
+                    : "bg-[#f7f4ec]"
+                }`}
+                style={{ gridRow: c.row + 1, gridColumn: c.col + 1 }}
+              >
+                {safe && (
+                  <div className="grid h-full w-full place-items-center text-[10px] font-black text-slate-400">
+                    ★
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-            {/* RED TRIANGLE */}
-            <div
-              className="
-                absolute
-                inset-0
-                bg-red-500
-              "
-              style={{
-                clipPath: "polygon(0 0, 100% 0, 50% 50%)",
-              }}
-            />
+          {/* Home-stretch lanes */}
+          {(["red", "blue", "yellow", "green"] as LudoColor[]).map((color) => {
+            const player = state.players.find((p) => p.color === color);
+            const cells = player ? player.tokens : [];
+            const lane = cells.length ? tokenCoord : null;
+            void lane;
+            const coords =
+              color === "red"
+                ? [5, 4, 3, 2, 1, 0].map((col) => ({ row: 7, col }))
+                : color === "blue"
+                  ? [5, 4, 3, 2, 1, 0].map((row) => ({ row, col: 7 }))
+                  : color === "yellow"
+                    ? [8, 9, 10, 11, 12, 13].map((col) => ({ row: 6, col }))
+                    : [8, 9, 10, 11, 12, 13].map((row) => ({ row, col: 6 }));
 
-            {/* GREEN TRIANGLE */}
-            <div
-              className="
-                absolute
-                inset-0
-                bg-green-500
-              "
-              style={{
-                clipPath: "polygon(0 0, 50% 50%, 0 100%)",
-              }}
-            />
+            return coords.map((c, i) => (
+              <div
+                key={`${color}-lane-${i}`}
+                className="z-[2] border border-white/20"
+                style={{
+                  gridRow: c.row + 1,
+                  gridColumn: c.col + 1,
+                  backgroundColor: `${COLOR_HEX[color]}d9`,
+                }}
+              />
+            ));
+          })}
 
-            {/* YELLOW TRIANGLE */}
-            <div
-              className="
-                absolute
-                inset-0
-                bg-yellow-500
-              "
-              style={{
-                clipPath: "polygon(100% 0, 100% 100%, 50% 50%)",
-              }}
-            />
-
-            {/* BLUE TRIANGLE */}
-            <div
-              className="
-                absolute
-                inset-0
-                bg-blue-500
-              "
-              style={{
-                clipPath: "polygon(0 100%, 100% 100%, 50% 50%)",
-              }}
-            />
-
-            {/* CENTER */}
-            <div
-              className="
-                absolute
-                left-1/2
-                top-1/2
-                h-3
-                w-3
-                -translate-x-1/2
-                -translate-y-1/2
-                rounded-full
-                bg-white
-                shadow-[0_0_12px_white]
-              "
-            />
-
+          {/* Center four-color finish */}
+          <div className="absolute left-[42.85%] top-[42.85%] z-[4] h-[14.3%] w-[14.3%] overflow-hidden">
+            <div className="absolute inset-0 bg-red-500" style={{ clipPath: "polygon(0 0,100% 0,50% 50%)" }} />
+            <div className="absolute inset-0 bg-blue-500" style={{ clipPath: "polygon(100% 0,100% 100%,50% 50%)" }} />
+            <div className="absolute inset-0 bg-yellow-500" style={{ clipPath: "polygon(100% 100%,0 100%,50% 50%)" }} />
+            <div className="absolute inset-0 bg-green-500" style={{ clipPath: "polygon(0 100%,0 0,50% 50%)" }} />
+            <div className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_14px_white]" />
           </div>
 
-          {/* =========================
-              TOKENS
-          ========================== */}
-          {state.players.flatMap((player, playerIndex) =>
-            player.tokens.map((token, tokenIndex) => {
-
-              const coord = tokenCoord(
-                player.color,
-                token.d
-              );
-
+          {/* On-board tokens */}
+          {state.players.flatMap((p, pIdx) =>
+            p.tokens.map((t, tIdx) => {
+              const coord = tokenCoord(p.color, t.d);
               if (!coord) return null;
-
               const canPick =
                 myTurn &&
-                myPlayerIndex === playerIndex &&
+                myPlayerIndex === pIdx &&
                 state.awaitingMove;
 
               return (
                 <button
-                  key={`${player.color}-${tokenIndex}`}
+                  key={`${p.color}-${tIdx}`}
                   type="button"
                   disabled={!canPick}
-                  onClick={() =>
-                    onPickToken(tokenIndex)
-                  }
-                  className={`
-                    z-[20]
-                    flex
-                    items-center
-                    justify-center
-                    rounded-full
-                    border-2
-                    border-white
-                    text-[9px]
-                    font-black
-                    text-white
-                    shadow-[0_4px_12px_rgba(0,0,0,.5)]
-                    transition-all
-                    ${
-                      canPick
-                        ? `
-                          cursor-pointer
-                          scale-110
-                          animate-pulse
-                          ring-2
-                          ring-white
-                          ring-offset-2
-                          ring-offset-transparent
-                        `
-                        : "cursor-default"
-                    }
-                  `}
+                  onClick={() => onPickToken(tIdx)}
+                  className={`z-[20] grid place-items-center rounded-full border-2 border-white text-[9px] font-black text-white transition-all ${
+                    canPick
+                      ? "cursor-pointer animate-pulse scale-110 ring-2 ring-white"
+                      : "cursor-default"
+                  } ${TOKEN_RING[p.color]}`}
                   style={{
                     gridRow: coord.row + 1,
                     gridColumn: coord.col + 1,
-                    backgroundColor:
-                      COLOR_HEX[player.color],
-                    margin: "3px",
+                    margin: "2px",
+                    background: `linear-gradient(145deg, ${COLOR_HEX[p.color]}, #111)`,
                   }}
                 >
-                  {tokenIndex + 1}
+                  {tIdx + 1}
                 </button>
               );
-            })
+            }),
           )}
-
         </div>
       </div>
 
-      {/* =========================
-          BOTTOM PLAYERS
-      ========================== */}
-      <div className="grid grid-cols-2 gap-2">
-
-        {state.players.slice(2, 4).map((player, index) => (
+      <div className="grid grid-cols-2 gap-2.5 mt-2.5">
+        {state.players.slice(2, 4).map((p, i) => (
           <PlayerCard
-            key={player.color}
-            player={player}
-            active={
-              state.turnIndex === index + 2
-            }
+            key={p.color}
+            player={p}
+            active={state.turnIndex === i + 2}
+            avatar={p.userId ? avatarByUserId[p.userId] : undefined}
           />
         ))}
-
       </div>
 
-      {/* =========================
-          DICE CONTROL
-      ========================== */}
-      <div
-        className="
-          flex
-          items-center
-          justify-between
-          rounded-2xl
-          border
-          border-white/10
-          bg-black/30
-          p-3
-        "
-      >
-
-        <div className="flex items-center gap-2">
-
-          <span
-            className="h-3 w-3 rounded-full"
-            style={{
-              backgroundColor:
-                COLOR_HEX[current.color],
-            }}
-          />
-
-          <div>
-            <p className="text-xs font-bold">
-              {myTurn
-                ? "Your turn"
-                : `${current.name ?? current.color}'s turn`}
-            </p>
-
-            {state.awaitingMove && (
-              <p className="text-[10px] text-white/50">
-                Pick a token
-              </p>
-            )}
-          </div>
-
-        </div>
-
-        {/* DICE */}
+      <div className="mt-2.5 flex items-center justify-center gap-3">
         <button
           type="button"
-          onClick={onRoll}
-          disabled={
-            !myTurn ||
-            state.awaitingMove ||
-            rolling ||
-            !!state.winnerIndex
-          }
-          className="
-            flex
-            h-14
-            w-14
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-purple-400/60
-            bg-gradient-to-br
-            from-purple-500
-            to-indigo-700
-            shadow-[0_0_25px_rgba(140,70,255,.5)]
-            transition-all
-            active:scale-90
-            disabled:opacity-40
-          "
+          className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold"
         >
-
-          {rolling ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : (
-            <DiceIcon className="h-7 w-7" />
-          )}
-
+          ↩ Undo
         </button>
 
-        <span className="text-[10px] text-white/50">
-          {state.awaitingMove
-            ? "Pick"
-            : "Tap to Roll"}
-        </span>
-
-      </div>
-
-      {/* =========================
-          VOICE ROOM STATUS
-      ========================== */}
-      <div
-        className="
-          flex
-          items-center
-          justify-between
-          rounded-2xl
-          border
-          border-white/10
-          bg-black/30
-          px-4
-          py-3
-        "
-      >
-
-        <div>
-          <p className="text-xs font-bold">
-            🎙️ Voice Room Active
-          </p>
-
-          <p className="text-[10px] text-white/50">
-            You can talk while playing
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onRoll}
+            disabled={!myTurn || state.awaitingMove || rolling || !!state.winnerIndex}
+            className="grid h-20 w-20 place-items-center rounded-full border-2 border-fuchsia-400/70 bg-gradient-to-br from-white to-slate-200 text-slate-900 shadow-[0_0_25px_rgba(168,85,247,.7)] transition-transform active:scale-90 disabled:opacity-40"
+            aria-label="Roll dice"
+          >
+            {rolling ? (
+              <Loader2 className="h-8 w-8 animate-spin text-purple-700" />
+            ) : (
+              <DiceIcon className="h-9 w-9" />
+            )}
+          </button>
+          <p className="mt-1 text-[11px] font-semibold text-white/70">
+            {state.awaitingMove ? "Pick a token" : "Tap to Roll"}
           </p>
         </div>
 
-        <div className="flex gap-2">
-
-          <button
-            className="
-              h-10
-              w-10
-              rounded-full
-              border
-              border-green-400/40
-              bg-green-500/10
-              text-green-400
-            "
-          >
-            🎙️
-          </button>
-
-          <button
-            className="
-              h-10
-              w-10
-              rounded-full
-              border
-              border-white/10
-              bg-white/5
-            "
-          >
-            🔊
-          </button>
-
-        </div>
-
+        <button
+          type="button"
+          className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold"
+        >
+          ✦ Auto Move
+        </button>
       </div>
 
-      {/* LOG */}
-      {state.log.length > 0 && (
-        <p className="truncate text-center text-[10px] text-white/40">
-          {state.log[state.log.length - 1]}
-        </p>
-      )}
-
+      <div className="mt-2.5 flex items-center gap-2 rounded-2xl border border-white/10 bg-[#0b0918]/90 p-2.5">
+        <div className="flex-1">
+          <p className="text-xs font-extrabold">
+            🎙 Voice <span className="text-emerald-400">Room Active</span>
+          </p>
+          <p className="text-[10px] text-white/55">You can talk while playing</p>
+        </div>
+        <button className="grid h-10 w-10 place-items-center rounded-full border border-emerald-400/50 bg-emerald-500/10 text-emerald-300">
+          <Mic className="h-5 w-5" />
+        </button>
+        <button className="grid h-10 w-10 place-items-center rounded-full border border-cyan-400/40 bg-cyan-500/10 text-cyan-300">
+          <Volume2 className="h-5 w-5" />
+        </button>
+        <button className="flex h-10 items-center gap-1 rounded-xl border border-amber-300/30 bg-amber-500/10 px-3 text-xs font-bold">
+          <Smile className="h-4 w-4" /> Emoji
+        </button>
+        <button className="flex h-10 items-center gap-1 rounded-xl border border-red-400/40 bg-red-500/10 px-3 text-xs font-bold text-red-300">
+          Exit Game
+        </button>
+      </div>
     </div>
   );
 }
-
-
-/* =====================================================
-   HOME AREA
-===================================================== */
-
-function HomeArea({
-  color,
-  className,
-}: {
-  color: LudoColor;
-  className: string;
-}) {
-  const colorClass: Record<LudoColor, string> = {
-    red: "bg-red-600",
-    green: "bg-green-600",
-    blue: "bg-blue-600",
-    yellow: "bg-yellow-500",
-  };
-
-  const innerClass: Record<LudoColor, string> = {
-    red: "bg-red-100",
-    green: "bg-green-100",
-    blue: "bg-blue-100",
-    yellow: "bg-yellow-100",
-  };
-
-  return (
-    <div
-      className={`
-        relative
-        z-[1]
-        ${className}
-        ${colorClass[color]}
-        p-2
-      `}
-    >
-
-      <div
-        className={`
-          flex
-          h-full
-          w-full
-          items-center
-          justify-center
-          rounded-xl
-          ${innerClass[color]}
-        `}
-      >
-
-        <div className="grid grid-cols-2 gap-3">
-
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className={`
-                h-6
-                w-6
-                rounded-full
-                border-2
-                border-black/10
-                shadow-inner
-                ${
-                  color === "red"
-                    ? "bg-red-500/80"
-                    : color === "green"
-                    ? "bg-green-500/80"
-                    : color === "blue"
-                    ? "bg-blue-500/80"
-                    : "bg-yellow-500/80"
-                }
-              `}
-            />
-          ))}
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-
-/* =====================================================
-   PLAYER CARD
-===================================================== */
 
 function PlayerCard({
   player,
   active,
+  avatar,
 }: {
-  player: any;
+  player: LudoGameState["players"][number];
   active: boolean;
+  avatar?: string | null;
 }) {
   return (
     <div
-      className={`
-        flex
-        items-center
-        gap-2
-        rounded-xl
-        border
-        px-3
-        py-2
-        ${
-          active
-            ? "border-purple-400/70 bg-purple-500/10"
-            : "border-white/10 bg-black/20"
-        }
-      `}
+      className={`flex min-w-0 items-center gap-2 rounded-2xl border px-2.5 py-2 ${
+        active ? "border-white/50 bg-white/10" : "border-white/10 bg-black/20"
+      }`}
+      style={{ borderColor: active ? COLOR_HEX[player.color] : undefined }}
     >
+      {avatar ? (
+        <img
+          src={avatar}
+          alt=""
+          className="h-11 w-11 shrink-0 rounded-full border-2 object-cover"
+          style={{ borderColor: COLOR_HEX[player.color] }}
+        />
+      ) : (
+        <div
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 text-sm font-black"
+          style={{ borderColor: COLOR_HEX[player.color], backgroundColor: `${COLOR_HEX[player.color]}44` }}
+        >
+          {(player.name ?? player.color).slice(0, 1).toUpperCase()}
+        </div>
+      )}
 
-      <div
-        className="h-8 w-8 rounded-full border-2"
-        style={{
-          borderColor:
-            COLOR_HEX[player.color],
-          background:
-            COLOR_HEX[player.color],
-          boxShadow: active
-            ? `0 0 12px ${COLOR_HEX[player.color]}`
-            : "none",
-        }}
-      />
-
-      <div className="min-w-0">
-
-        <p className="truncate text-xs font-bold">
-          {player.name ?? player.color}
-        </p>
-
-        <p className="text-[9px] text-white/50">
-          {player.tokens?.filter(
-            (t: any) => t.d === 58
-          ).length ?? 0}
-          /4 Home
-        </p>
-
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-extrabold">{player.name ?? player.color}</p>
+        <p className="text-[10px] text-white/60">🪙  {player.tokens.filter((t) => t.d === 58).length * 1000 + 7200}</p>
       </div>
 
+      <Gift className="h-5 w-5 shrink-0" style={{ color: COLOR_HEX[player.color] }} />
     </div>
   );
 }
