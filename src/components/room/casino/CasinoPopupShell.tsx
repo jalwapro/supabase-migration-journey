@@ -3,10 +3,9 @@ import { X, Trophy, History as HistoryIcon } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
 
 /**
- * Glass popup shell shared by every casino mini game.
- * Sizing follows the app size guide: 92% width, 78% height, 24px radius,
- * centered, blurred backdrop — the voice room stays visible and audible
- * behind it (nothing here touches the RTC engine).
+ * Shared premium Jalwa casino popup.
+ * Wide on desktop, responsive on mobile, with the voice room visible behind it.
+ * RTC/audio is untouched by this component.
  */
 export function CasinoPopupShell({
   open,
@@ -30,40 +29,45 @@ export function CasinoPopupShell({
   footer?: ReactNode;
 }) {
   if (!open) return null;
+
   return (
     <>
       <div
         data-jalwa-overlay="true"
-        className="fixed inset-0 z-50 bg-black/55 backdrop-blur-md animate-fade-in"
+        className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-md"
         onClick={onClose}
       />
+
       <div
         data-jalwa-overlay-content="true"
         role="dialog"
+        aria-modal="true"
         aria-label={title}
-        className="fixed left-1/2 z-50 flex w-[92%] max-w-[480px] -translate-x-1/2 flex-col overflow-hidden border shadow-2xl animate-scale-in"
+        className="fixed left-1/2 top-1/2 z-[81] flex w-[calc(100vw-20px)] max-w-[1180px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border shadow-2xl"
         style={{
-          height: "78%",
-          bottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)",
-          borderRadius: 24,
-          borderColor: `color-mix(in oklab, ${accent} 45%, transparent)`,
+          height: "min(90vh, 900px)",
+          borderRadius: 28,
+          borderColor: `color-mix(in oklab, ${accent} 55%, transparent)`,
           background:
-            "linear-gradient(160deg, color-mix(in oklab, var(--card) 82%, transparent), color-mix(in oklab, #0b0413 88%, transparent))",
-          backdropFilter: "blur(22px) saturate(140%)",
-          boxShadow: `0 24px 70px -20px color-mix(in oklab, ${accent} 55%, transparent)`,
-          willChange: "transform",
+            "linear-gradient(145deg, color-mix(in oklab, #170b2b 94%, transparent), color-mix(in oklab, #030107 97%, transparent))",
+          backdropFilter: "blur(24px) saturate(145%)",
+          boxShadow: `0 30px 100px -25px color-mix(in oklab, ${accent} 65%, transparent), inset 0 1px 0 rgba(255,255,255,.08)`,
         }}
       >
-        <header className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-2.5">
+        <header className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-black/20 px-4 py-3 sm:px-5">
           <span
-            className="grid h-9 w-9 place-items-center rounded-xl text-lg"
-            style={{ background: `color-mix(in oklab, ${accent} 18%, transparent)`, border: `1px solid color-mix(in oklab, ${accent} 45%, transparent)` }}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl"
+            style={{
+              background: `color-mix(in oklab, ${accent} 18%, transparent)`,
+              border: `1px solid color-mix(in oklab, ${accent} 55%, transparent)`,
+              boxShadow: `0 0 24px -8px ${accent}`,
+            }}
           >
             {icon}
           </span>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-black leading-tight">{title}</p>
-            <p className="text-[10px] font-bold text-[color:var(--gold)]">
+            <p className="truncate text-base font-black sm:text-lg">{title}</p>
+            <p className="text-[11px] font-bold text-[color:var(--gold)] sm:text-xs">
               🪙 {formatCompact(balance)}
             </p>
           </div>
@@ -71,15 +75,21 @@ export function CasinoPopupShell({
           <button
             onClick={onClose}
             aria-label="Close game"
-            className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/40 transition active:scale-95"
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white transition hover:bg-white/10 active:scale-95"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4">
+          {children}
+        </div>
 
-        {footer && <div className="shrink-0 border-t border-white/10 px-3 py-2.5">{footer}</div>}
+        {footer && (
+          <div className="shrink-0 border-t border-white/10 bg-black/20 px-3 py-3 sm:px-5">
+            {footer}
+          </div>
+        )}
       </div>
     </>
   );
@@ -132,7 +142,9 @@ export function TabBtn({
     <button
       onClick={onClick}
       className={`rounded-full border px-3 py-1 text-[10px] font-black transition ${
-        active ? "border-[color:var(--gold)] bg-[color:var(--gold)]/20 text-[color:var(--gold)]" : "border-white/15 bg-white/5 text-foreground/60"
+        active
+          ? "border-[color:var(--gold)] bg-[color:var(--gold)]/20 text-[color:var(--gold)]"
+          : "border-white/15 bg-white/5 text-foreground/60"
       }`}
     >
       {children}
@@ -143,17 +155,17 @@ export function TabBtn({
 export function WinBurst({ show, amount }: { show: boolean; amount: number }) {
   if (!show) return null;
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center">
-      <div className="animate-scale-in rounded-2xl border border-[color:var(--gold)]/60 bg-black/70 px-5 py-3 text-center shadow-[0_0_40px_-6px_var(--gold)]">
+    <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center overflow-hidden">
+      <div className="animate-scale-in rounded-2xl border border-[color:var(--gold)]/60 bg-black/80 px-6 py-4 text-center shadow-[0_0_50px_-6px_var(--gold)]">
         <p className="text-[10px] font-black uppercase tracking-widest text-[color:var(--gold)]">You win</p>
-        <p className="text-2xl font-black text-[color:var(--gold)]">+{formatCompact(amount)}</p>
+        <p className="text-3xl font-black text-[color:var(--gold)]">+{formatCompact(amount)}</p>
       </div>
-      {Array.from({ length: 14 }).map((_, i) => (
+      {Array.from({ length: 18 }).map((_, i) => (
         <span
           key={i}
           className="absolute text-lg"
           style={{
-            left: `${8 + (i * 6.4) % 84}%`,
+            left: `${5 + (i * 5.4) % 90}%`,
             top: "-8%",
             animation: `jalwa-coin-fall ${1 + (i % 5) * 0.22}s linear ${(i % 7) * 0.08}s 1 forwards`,
           }}
@@ -161,7 +173,7 @@ export function WinBurst({ show, amount }: { show: boolean; amount: number }) {
           🪙
         </span>
       ))}
-      <style>{`@keyframes jalwa-coin-fall{0%{transform:translateY(-10%) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(420px) rotate(340deg);opacity:0}}`}</style>
+      <style>{`@keyframes jalwa-coin-fall{0%{transform:translateY(-10%) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(620px) rotate(340deg);opacity:0}}`}</style>
     </div>
   );
 }
