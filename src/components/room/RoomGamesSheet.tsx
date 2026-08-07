@@ -36,10 +36,12 @@ export function RoomGamesSheet({
   open,
   onClose,
   onOpenLudo,
+  onOpenSlots,
 }: {
   open: boolean;
   onClose: () => void;
   onOpenLudo: () => void;
+  onOpenSlots: () => void;
 }) {
   const [activeGame, setActiveGame] = useState<RoomGame | null>(null);
 
@@ -73,7 +75,7 @@ export function RoomGamesSheet({
         {activeGame ? (
           <GameFrame game={activeGame} onBack={() => setActiveGame(null)} onClose={close} />
         ) : (
-          <GamesPicker onClose={close} onOpenLudo={onOpenLudo} onPickGame={setActiveGame} />
+          <GamesPicker onClose={close} onOpenLudo={onOpenLudo} onOpenSlots={onOpenSlots} onPickGame={setActiveGame} />
         )}
       </div>
     </>
@@ -87,10 +89,12 @@ export function RoomGamesSheet({
 function GamesPicker({
   onClose,
   onOpenLudo,
+  onOpenSlots,
   onPickGame,
 }: {
   onClose: () => void;
   onOpenLudo: () => void;
+  onOpenSlots: () => void;
   onPickGame: (g: RoomGame) => void;
 }) {
   const games = useRoomGames();
@@ -123,6 +127,21 @@ function GamesPicker({
           <p className="relative mt-3 text-sm font-black">Ludo Battle</p>
           <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
             4 seats · live board · room bet
+          </p>
+        </button>
+
+        {/* 777 Slots — native game, real coins, server-side spin */}
+        <button
+          onClick={onOpenSlots}
+          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
+        >
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[#F0C674]/30 blur-2xl" />
+          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-[#F0C674]/50 bg-[#F0C674]/15 text-3xl">
+            🎰
+          </div>
+          <p className="relative mt-3 text-sm font-black">777 Slots</p>
+          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
+            Jackpot · free spins
           </p>
         </button>
 
