@@ -49,7 +49,7 @@ export function PlinkoGame({
     setBall({ row: 0, col: 0 });
     try {
       const r = await play.mutateAsync({ bet, params: {} });
-      const slot = Number(r.slot ?? Math.floor(multipliers.length / 2));
+      const slot = Number(r.bucket ?? Math.floor(multipliers.length / 2));
       // Build a peg path that necessarily terminates at the server's slot.
       const steps: number[] = [];
       let right = slot;
@@ -132,7 +132,7 @@ export function PlinkoGame({
 
           <div className="mt-3 flex gap-1">
             {multipliers.map((m, i) => {
-              const hit = !dropping && result?.slot === i;
+              const hit = !dropping && result?.bucket === i;
               return (
                 <div
                   key={i}
