@@ -250,7 +250,12 @@ function GamesPicker({
           >
             <div className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-black/30">
               {g.icon_url ? (
-                <img src={g.icon_url} alt={g.name} className="h-full w-full object-cover" loading="lazy" />
+                <img
+                  src={g.icon_url}
+                  alt={g.name}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
               ) : (
                 <span className="text-3xl">🎮</span>
               )}
