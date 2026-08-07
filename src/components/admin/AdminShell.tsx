@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Swords, Trophy, Coins, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, PiggyBank, UserPlus, Bell, ImagePlus, Dices, Database, Trash2 } from "lucide-react";
+import { type LucideIcon, LayoutDashboard, Users, DoorOpen, Image as ImageIcon, Radio, Swords, Trophy, Coins, Wallet, CreditCard, ArrowUpFromLine, Handshake, Gift as GiftIcon, Megaphone, GalleryHorizontal, FileText, LifeBuoy, Flag, ScrollText, Sparkles, Plug, Settings, ShieldCheck, Palette, FolderTree, Crown, UserCog, LogOut, BarChart3, PiggyBank, UserPlus, Bell, ImagePlus, Dices, Database, Trash2, Wand2 } from "lucide-react";
 import type { ReactNode } from "react";
 
 type NavItem = { to: string; label: string; icon: LucideIcon };
@@ -42,6 +42,7 @@ export const ADMIN_NAV: NavGroup[] = [
     label: "Content",
     items: [
       { to: "/admin/gifts", label: "Gifts Management", icon: GiftIcon },
+      { to: "/admin/gift-studio", label: "Gift Studio (Render Config)", icon: Wand2 },
       { to: "/admin/minigames", label: "Mini Games", icon: Dices },
       { to: "/admin/room-games", label: "Room Games", icon: Dices },
       { to: "/admin/ludo-replays", label: "Ludo Replays", icon: Dices },
