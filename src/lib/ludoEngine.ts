@@ -30,13 +30,11 @@ export const COLOR_HEX: Record<LudoColor, string> = {
   yellow: "#eab308",
   blue: "#3b82f6",
 };
-// Visual/game start positions aligned with the Jalwa reference UI:
-// Red = left, Blue = top, Yellow = right, Green = bottom.
 export const START_OFFSET: Record<LudoColor, number> = {
-  red: 45,
-  green: 33,
-  yellow: 20,
-  blue: 7,
+  red: 0,
+  green: 13,
+  yellow: 26,
+  blue: 39,
 };
 /** Safe cells (can't be captured while sitting here): every color's own
  *  entry cell, plus one "star" cell 8 steps after it — 8 safe cells total. */
@@ -304,19 +302,19 @@ export function ringCellCoord(idx: number): { row: number; col: number } {
 /** Diagonal home-stretch lane (6 cells) for each color, converging near the
  *  grid's center — purely a visual path, not part of the shared ring. */
 const HOME_STRETCH: Record<LudoColor, { row: number; col: number }[]> = {
-  red:   [5, 4, 3, 2, 1, 0].map((col) => ({ row: 7, col })),
-  blue:  [5, 4, 3, 2, 1, 0].map((row) => ({ row, col: 7 })),
-  yellow:[8, 9, 10, 11, 12, 13].map((col) => ({ row: 6, col })),
-  green: [8, 9, 10, 11, 12, 13].map((row) => ({ row, col: 6 })),
+  red: [1, 2, 3, 4, 5, 6].map((n) => ({ row: n, col: n })),
+  green: [1, 2, 3, 4, 5, 6].map((n) => ({ row: n, col: 13 - n })),
+  yellow: [1, 2, 3, 4, 5, 6].map((n) => ({ row: 12 - n, col: 12 - n })),
+  blue: [1, 2, 3, 4, 5, 6].map((n) => ({ row: 12 - n, col: 1 + n })),
 };
 
 /** Center resting spot for finished tokens of each color (slightly offset so
  *  all 4 colors' finished tokens are visible at once). */
 const FINISH_SPOT: Record<LudoColor, { row: number; col: number }> = {
-  red: { row: 7, col: 6 },
-  blue: { row: 6, col: 7 },
+  red: { row: 6, col: 6 },
+  green: { row: 6, col: 7 },
   yellow: { row: 7, col: 7 },
-  green: { row: 6, col: 6 },
+  blue: { row: 7, col: 6 },
 };
 
 /** Pixel-independent grid coordinate (row, col in a 14x14 grid) for a token
