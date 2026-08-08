@@ -211,3 +211,55 @@ export function blip(freq = 660, dur = 0.09, type: OscillatorType = "triangle") 
     /* ignore */
   }
 }
+
+// --------------------------------------------------------------------------
+// 777 Slots — its own server engine (slots_spin), same UX contract
+// --------------------------------------------------------------------------
+
+export type SlotsResult = CasinoResult & {
+  reels: string[];
+  is_jackpot?: boolean;
+  jackpot?: number;
+  free_spins_remaining?: number;
+  free_spins_awarded?: number;
+};
+
+export function useSlotsSpin(roomId?: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ bet }: { bet: number; params?: Record<string, unknown> }) => {
+      const { data, error } = await supabase.rpc("slots_spin" as never, {
+        p_bet: bet,
+        p_room_id: roomId ?? null,
+      } as never);
+      if (error) throw error;
+      const r = data as unknown as SlotsResult;
+      return { ...r, won: (r.payout ?? 0) > 0, bet } as SlotsResult;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["casino_history"] }),
+  });
+}
+
+/** The signed-in player's own rounds — powers the in-game History popup. */
+export function useCasinoMyHistory(game: string | null, open: boolean) {
+  return useQuery({
+    queryKey: ["casino_history", game],
+    enabled: open,
+    staleTime: 10_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("casino_my_history" as never, {
+        p_game: game,
+        p_limit: 30,
+      } as never);
+      if (error) throw error;
+      return (data ?? []) as unknown as {
+        id: string;
+        game: string;
+        bet: number;
+        payout: number;
+        result: Record<string, unknown>;
+        created_at: string;
+      }[];
+    },
+  });
+}

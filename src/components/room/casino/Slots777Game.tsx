@@ -2,25 +2,25 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { formatCompact } from "@/lib/utils";
-import { CASINO_CHIPS, blip, haptic, useCasinoPlay, type CasinoResult } from "@/lib/casino";
+import { CASINO_CHIPS, blip, haptic, useSlotsSpin, type SlotsResult } from "@/lib/casino";
 import { CasinoPopupShell, ChipRow, WinBurst } from "./CasinoPopupShell";
 
 const SYMBOLS = ["🔔", "🍒", "💎", "👑", "🐯", "💰", "7️⃣"];
 const PAYOUTS: Record<string, number> = { "7️⃣": 50, "💎": 20, "👑": 15, "💰": 10, "🔔": 5, "🐯": 3, "🍒": 2 };
 
-type Props = { open: boolean; onClose: () => void; roomId?: string; gameKey?: string };
+type Props = { open: boolean; onClose: () => void; roomId?: string };
 
 /**
  * Jalwa 777 Slots UI. The result is still server-authoritative through useCasinoPlay.
  * If the backend uses another game key, pass gameKey from the caller.
  */
-export function Slots777Game({ open, onClose, roomId, gameKey = "slots_777" }: Props) {
+export function Slots777Game({ open, onClose, roomId }: Props) {
   const { profile, refresh } = useAuth();
-  const play = useCasinoPlay(gameKey, roomId);
+  const play = useSlotsSpin(roomId);
   const [bet, setBet] = useState(500);
   const [spinning, setSpinning] = useState(false);
   const [reels, setReels] = useState(["7️⃣", "7️⃣", "7️⃣"]);
-  const [result, setResult] = useState<CasinoResult | null>(null);
+  const [result, setResult] = useState<SlotsResult | null>(null);
   const balance = Number(profile?.coins ?? 0);
 
   const spin = async () => {
@@ -36,7 +36,7 @@ export function Slots777Game({ open, onClose, roomId, gameKey = "slots_777" }: P
       const r = await play.mutateAsync({ bet, params: {} });
       window.setTimeout(() => {
         window.clearInterval(timer);
-        const serverReels = (r as CasinoResult & { reels?: string[] }).reels;
+        const serverReels = r.reels;
         if (Array.isArray(serverReels) && serverReels.length >= 3) setReels(serverReels.slice(0, 3));
         setResult(r);
         setSpinning(false);
