@@ -1,11 +1,17 @@
-import { type ReactNode } from "react";
-import { X, Trophy, History as HistoryIcon } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { X, HelpCircle, History as HistoryIcon } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
+import { GameBalance } from "./GameBalance";
+import { GameHistory } from "./GameHistory";
 
 /**
- * Shared premium Jalwa casino popup.
- * Wide on desktop, responsive on mobile, with the voice room visible behind it.
- * RTC/audio is untouched by this component.
+ * CasinoPopupShell — the single premium popup used by EVERY Jalwa mini game.
+ *
+ * Sizing follows the Jalwa spec: 92% of the screen width and 78% of the
+ * height on mobile (with a ~76px gap above the room footer so mic / chat /
+ * gift controls stay reachable), a sensible max-width on tablet/desktop.
+ * The voice room stays mounted and visible behind the dark blurred overlay —
+ * nothing here navigates or unmounts the room.
  */
 export function CasinoPopupShell({
   open,
@@ -14,6 +20,8 @@ export function CasinoPopupShell({
   icon,
   balance,
   accent = "var(--primary)",
+  gameSlug,
+  help,
   headerRight,
   children,
   footer,
@@ -24,73 +32,111 @@ export function CasinoPopupShell({
   icon: ReactNode;
   balance: number;
   accent?: string;
+  /** casino_games slug — powers the History popup */
+  gameSlug?: string;
+  help?: ReactNode;
   headerRight?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+
   if (!open) return null;
 
   return (
     <>
       <div
         data-jalwa-overlay="true"
-        className="fixed inset-0 z-[80] bg-black/60 backdrop-blur-md"
+        className="fixed inset-0 z-[80] animate-fade-in bg-black/65 backdrop-blur-md"
         onClick={onClose}
       />
 
       <div
         data-jalwa-overlay-content="true"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-        className="fixed left-1/2 top-1/2 z-[81] flex w-[calc(100vw-20px)] max-w-[1180px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden border shadow-2xl"
-        style={{
-          height: "min(90vh, 900px)",
-          borderRadius: 28,
-          borderColor: `color-mix(in oklab, ${accent} 55%, transparent)`,
-          background:
-            "linear-gradient(145deg, color-mix(in oklab, #170b2b 94%, transparent), color-mix(in oklab, #030107 97%, transparent))",
-          backdropFilter: "blur(24px) saturate(145%)",
-          boxShadow: `0 30px 100px -25px color-mix(in oklab, ${accent} 65%, transparent), inset 0 1px 0 rgba(255,255,255,.08)`,
-        }}
+        className="pointer-events-none fixed inset-0 z-[81] flex items-center justify-center px-3"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 76px)" }}
       >
-        <header className="flex shrink-0 items-center gap-3 border-b border-white/10 bg-black/20 px-4 py-3 sm:px-5">
-          <span
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-xl"
-            style={{
-              background: `color-mix(in oklab, ${accent} 18%, transparent)`,
-              border: `1px solid color-mix(in oklab, ${accent} 55%, transparent)`,
-              boxShadow: `0 0 24px -8px ${accent}`,
-            }}
-          >
-            {icon}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-base font-black sm:text-lg">{title}</p>
-            <p className="text-[11px] font-bold text-[color:var(--gold)] sm:text-xs">
-              🪙 {formatCompact(balance)}
-            </p>
-          </div>
-          {headerRight}
-          <button
-            onClick={onClose}
-            aria-label="Close game"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white transition hover:bg-white/10 active:scale-95"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </header>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+          className="pointer-events-auto flex w-[92vw] max-w-[560px] flex-col overflow-hidden border shadow-2xl md:max-w-[620px]"
+          style={{
+            height: "min(78vh, 900px)",
+            borderRadius: 24,
+            borderColor: `color-mix(in oklab, ${accent} 55%, transparent)`,
+            background:
+              "linear-gradient(160deg, color-mix(in oklab, #1b0b33 94%, transparent), color-mix(in oklab, #05010b 97%, transparent))",
+            backdropFilter: "blur(24px) saturate(150%)",
+            boxShadow: `0 30px 90px -25px color-mix(in oklab, ${accent} 70%, transparent), inset 0 1px 0 rgba(255,255,255,.08)`,
+            animation: "jalwa-pop-in .18s ease-out",
+          }}
+        >
+          {/* ── header ─────────────────────────────────────────────── */}
+          <header className="flex shrink-0 items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2.5">
+            <button
+              onClick={() => setHelpOpen((v) => !v)}
+              aria-label="How to play"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-black/40 text-white/70 transition active:scale-95"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </button>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3 sm:px-5 sm:py-4">
-          {children}
+            <div className="flex min-w-0 flex-1 flex-col items-center text-center">
+              <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-black tracking-wide sm:text-base">
+                <span aria-hidden>{icon}</span>
+                <span className="truncate">{title}</span>
+              </p>
+              <GameBalance balance={balance} compact />
+            </div>
+
+            {headerRight}
+            {gameSlug && (
+              <button
+                onClick={() => setHistoryOpen(true)}
+                aria-label="History"
+                className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-black/40 text-white/70 transition active:scale-95"
+              >
+                <HistoryIcon className="h-5 w-5" />
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              aria-label="Close game"
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white transition hover:bg-white/10 active:scale-95"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </header>
+
+          {/* ── content ────────────────────────────────────────────── */}
+          <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-3 py-3">
+            {helpOpen && help && (
+              <div className="mb-3 rounded-2xl border border-white/15 bg-black/50 p-3 text-[11px] leading-relaxed text-white/75">
+                {help}
+              </div>
+            )}
+            {children}
+          </div>
+
+          {/* ── betting / action controls ──────────────────────────── */}
+          {footer && (
+            <div
+              className="shrink-0 border-t border-white/10 bg-black/30 px-3 py-3"
+              style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 0px))" }}
+            >
+              {footer}
+            </div>
+          )}
         </div>
-
-        {footer && (
-          <div className="shrink-0 border-t border-white/10 bg-black/20 px-3 py-3 sm:px-5">
-            {footer}
-          </div>
-        )}
       </div>
+
+      {gameSlug && (
+        <GameHistory open={historyOpen} onClose={() => setHistoryOpen(false)} game={gameSlug} title={title} />
+      )}
+
+      <style>{`@keyframes jalwa-pop-in{from{transform:scale(.94);opacity:0}to{transform:scale(1);opacity:1}}`}</style>
     </>
   );
 }
@@ -152,30 +198,4 @@ export function TabBtn({
   );
 }
 
-export function WinBurst({ show, amount }: { show: boolean; amount: number }) {
-  if (!show) return null;
-  return (
-    <div className="pointer-events-none absolute inset-0 z-20 grid place-items-center overflow-hidden">
-      <div className="animate-scale-in rounded-2xl border border-[color:var(--gold)]/60 bg-black/80 px-6 py-4 text-center shadow-[0_0_50px_-6px_var(--gold)]">
-        <p className="text-[10px] font-black uppercase tracking-widest text-[color:var(--gold)]">You win</p>
-        <p className="text-3xl font-black text-[color:var(--gold)]">+{formatCompact(amount)}</p>
-      </div>
-      {Array.from({ length: 18 }).map((_, i) => (
-        <span
-          key={i}
-          className="absolute text-lg"
-          style={{
-            left: `${5 + (i * 5.4) % 90}%`,
-            top: "-8%",
-            animation: `jalwa-coin-fall ${1 + (i % 5) * 0.22}s linear ${(i % 7) * 0.08}s 1 forwards`,
-          }}
-        >
-          🪙
-        </span>
-      ))}
-      <style>{`@keyframes jalwa-coin-fall{0%{transform:translateY(-10%) rotate(0);opacity:0}10%{opacity:1}100%{transform:translateY(620px) rotate(340deg);opacity:0}}`}</style>
-    </div>
-  );
-}
-
-export const CasinoIcons = { Trophy, HistoryIcon };
+export { WinAnimation as WinBurst } from "./WinAnimation";
