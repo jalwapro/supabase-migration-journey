@@ -1,7 +1,17 @@
 export { CasinoPopupShell, ChipRow, TabBtn, WinBurst } from "./CasinoPopupShell";
+export { GameBalance, InsufficientCoins } from "./GameBalance";
+export { GameHistory } from "./GameHistory";
+export { WinAnimation } from "./WinAnimation";
+export { BetSelector, BetControls, GameActionButton } from "./BetControls";
 export { CrashXGame } from "./CrashXGame";
 export { DragonTigerGame } from "./DragonTigerGame";
 export { InOutGame } from "./InOutGame";
 export { PlinkoGame } from "./PlinkoGame";
 export { Slots777Game } from "./Slots777Game";
-export { LudoSheet } from "./LudoSheet";
+export { UnderOver7 } from "./games/UnderOver7";
+export { CrashPoint } from "./games/CrashPoint";
+export { ScratchCard } from "./games/ScratchCard";
+export { AppleOfFortune } from "./games/AppleOfFortune";
+export { SpinWin } from "./games/SpinWin";
+export { VampireCurse } from "./games/VampireCurse";
+export { LudoSheet } from "../LudoSheet";
