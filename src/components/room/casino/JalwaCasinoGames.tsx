@@ -4,4 +4,4 @@ export { DragonTigerGame } from "./DragonTigerGame";
 export { InOutGame } from "./InOutGame";
 export { PlinkoGame } from "./PlinkoGame";
 export { Slots777Game } from "./Slots777Game";
-export { LudoSheet } from "./LudoSheet";
+export { LudoSheet } from "../LudoSheet";

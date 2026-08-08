@@ -356,3 +356,88 @@ export function LudoSheet({
     </>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Mode picker — stake + who you play against
+// ---------------------------------------------------------------------------
+
+const LUDO_BETS = [100, 500, 1000, 5000, 10000];
+const LUDO_MODES: { mode: LudoMode; label: string; hint: string }[] = [
+  { mode: "1v1", label: "1 v 1", hint: "2 players" },
+  { mode: "1v3", label: "1 v 3", hint: "4 players" },
+  { mode: "2v2", label: "2 v 2", hint: "teams" },
+];
+
+function ModePicker({
+  bet,
+  setBet,
+  onPickSolo,
+  onPickFriends,
+}: {
+  bet: number;
+  setBet: (v: number) => void;
+  onPickSolo: (mode: LudoMode) => void;
+  onPickFriends: (mode: LudoMode) => void;
+}) {
+  const [mode, setMode] = useState<LudoMode>("1v1");
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="mb-2 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">
+          <Coins className="h-3 w-3 text-[color:var(--gold)]" /> Stake
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {LUDO_BETS.map((b) => (
+            <button
+              key={b}
+              onClick={() => setBet(b)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-black transition active:scale-95 ${
+                b === bet
+                  ? "border-[color:var(--gold)] bg-[color:var(--gold)]/20 text-[color:var(--gold)]"
+                  : "border-border bg-background/50 text-muted-foreground"
+              }`}
+            >
+              {b.toLocaleString()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Mode</p>
+        <div className="grid grid-cols-3 gap-2">
+          {LUDO_MODES.map((m) => (
+            <button
+              key={m.mode}
+              onClick={() => setMode(m.mode)}
+              className={`rounded-2xl border px-2 py-3 text-center transition active:scale-95 ${
+                m.mode === mode
+                  ? "border-[color:var(--primary)] bg-[color:var(--primary)]/15"
+                  : "border-border bg-background/50"
+              }`}
+            >
+              <p className="text-sm font-black">{m.label}</p>
+              <p className="text-[10px] text-muted-foreground">{m.hint}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          onClick={() => onPickSolo(mode)}
+          className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-background/60 py-3 text-sm font-black active:scale-95"
+        >
+          <Bot className="h-4 w-4" /> vs Computer
+        </button>
+        <button
+          onClick={() => onPickFriends(mode)}
+          className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-primary-foreground active:scale-95"
+        >
+          <Users className="h-4 w-4" /> Play with room
+        </button>
+      </div>
+    </div>
+  );
+}
