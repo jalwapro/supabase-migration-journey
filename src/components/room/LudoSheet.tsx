@@ -363,8 +363,8 @@ export function LudoSheet({
 
 const LUDO_BETS = [100, 500, 1000, 5000, 10000];
 const LUDO_MODES: { mode: LudoMode; label: string; hint: string }[] = [
-  { mode: "1v1", label: "1 v 1", hint: "2 players" },
-  { mode: "1v3", label: "1 v 3", hint: "4 players" },
+  { mode: "2p", label: "1 v 1", hint: "2 players" },
+  { mode: "4p", label: "1 v 3", hint: "4 players" },
   { mode: "2v2", label: "2 v 2", hint: "teams" },
 ];
 
@@ -379,7 +379,7 @@ function ModePicker({
   onPickSolo: (mode: LudoMode) => void;
   onPickFriends: (mode: LudoMode) => void;
 }) {
-  const [mode, setMode] = useState<LudoMode>("1v1");
+  const [mode, setMode] = useState<LudoMode>("2p");
 
   return (
     <div className="space-y-4">
