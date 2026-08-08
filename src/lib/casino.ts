@@ -1,7 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export type CasinoSlug = "dragon_tiger" | "in_out" | "crash" | "plinko";
+export type CasinoSlug =
+  | "dragon_tiger"
+  | "in_out"
+  | "crash"
+  | "plinko"
+  | "under_over_7"
+  | "crash_point"
+  | "scratch_card"
+  | "apple_fortune"
+  | "spin_win"
+  | "vampire_curse";
+
 
 export type CasinoGame = {
   slug: CasinoSlug;
