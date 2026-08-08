@@ -14,7 +14,7 @@ const MULTS = [1.4, 2, 2.9, 4.2, 6.1, 9];
 /** Apple of Fortune — pick a clean apple on each of 6 rows; one hides a worm. */
 export function AppleOfFortune({ open, onClose, roomId }: { open: boolean; onClose: () => void; roomId?: string }) {
   const { profile, refresh } = useAuth();
-  const play = useCasinoPlay("apple_of_fortune", roomId);
+  const play = useCasinoPlay("apple_fortune", roomId);
   const [bet, setBet] = useState(500);
   const [level, setLevel] = useState(0);
   const [picks, setPicks] = useState<number[]>([]);
@@ -63,7 +63,7 @@ export function AppleOfFortune({ open, onClose, roomId }: { open: boolean; onClo
       icon="🍎"
       accent="#ef4444"
       balance={balance}
-      gameSlug="apple_of_fortune"
+      gameSlug="apple_fortune"
       help="Each row has one wormy apple. Pick a clean apple to climb the multiplier ladder; hit the worm and the round ends."
       footer={
         <div className="space-y-2">
