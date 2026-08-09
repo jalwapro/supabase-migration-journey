@@ -38,7 +38,7 @@ function RoomGamesAdmin() {
       return;
     }
     create.mutate(
-      { ...form, icon_url: form.icon_url ?? null, enabled: true },
+      { ...form, icon_url: form.icon_url ?? null, enabled: true, visible: true, kind: "iframe" as const, category: "casino", subtitle: null, thumb_url: null },
       {
         onSuccess: () => {
           toast.success("Game added");
@@ -161,7 +161,7 @@ function GameRow({
 
       <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
         <input
-          value={draft.game_url}
+          value={draft.game_url ?? ""}
           onChange={(e) => setDraft((d) => ({ ...d, game_url: e.target.value.trim() }))}
           className="min-w-0 rounded-lg border border-border bg-input px-2 py-1.5 text-[11px]"
         />
