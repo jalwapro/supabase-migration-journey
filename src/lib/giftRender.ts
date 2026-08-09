@@ -238,9 +238,24 @@ export function renderConfigToStyle(cfg: GiftRenderConfig): React.CSSProperties 
   const centerX = anchorStyle.left === "50%";
   const centerY = anchorStyle.top === "50%";
 
+  // Percent mode keeps a gift in the same relative spot on every screen size:
+  // the offset is applied to the anchor edges as a % of the playback stage.
+  const percent = cfg.positionUnit !== "px";
+  if (percent) {
+    const x = cfg.positionX;
+    const y = cfg.positionY;
+    if (centerX) anchorStyle.left = `calc(50% + ${x}%)`;
+    else if (anchorStyle.left === 0) anchorStyle.left = `${x}%`;
+    else if (anchorStyle.right === 0) anchorStyle.right = `${-x}%`;
+    if (centerY) anchorStyle.top = `calc(50% + ${y}%)`;
+    else if (anchorStyle.top === 0) anchorStyle.top = `${y}%`;
+    else if (anchorStyle.bottom === 0) anchorStyle.bottom = `${-y}%`;
+  }
+
   const parts: string[] = [];
   if (centerX || centerY) parts.push(`translate(${centerX ? "-50%" : "0"}, ${centerY ? "-50%" : "0"})`);
-  parts.push(`translate3d(${cfg.positionX}px, ${cfg.positionY}px, 0)`);
+  if (!percent) parts.push(`translate3d(${cfg.positionX}px, ${cfg.positionY}px, 0)`);
+
   if (cfg.rotation) parts.push(`rotate(${cfg.rotation}deg)`);
   const sx = cfg.scale * cfg.scaleX * cfg.zoom * (cfg.flipH ? -1 : 1);
   const sy = cfg.scale * cfg.scaleY * cfg.zoom * (cfg.flipV ? -1 : 1);
