@@ -1,55 +1,26 @@
 import { useState } from "react";
-import { X, Dice5, Sparkles, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
-import { useRoomGames, type RoomGame } from "@/lib/roomGames";
+import { X, Sparkles, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
+import { useRoomGames, NATIVE_GAME_EMOJI, type RoomGame } from "@/lib/roomGames";
 
 /**
  * RoomGamesSheet.tsx
  * -------------------
- * Room's Games popup: Ludo (native board game) + every game the admin has
- * added in Admin → Room games. Each admin game is a PNG button; tapping it
- * opens that game's `game_url` inline via <iframe>, without leaving the
- * room (voice/video keeps running behind this sheet).
+ * Room's Games popup. The whole list is backend-driven from `room_games`
+ * (Admin → Room Games): ordering, visibility and icons are controlled there.
  *
- * Nothing here needs to change when you add a new game — just add it in
- * the admin panel (Admin → Room games) and it appears automatically.
+ *  - kind = "native"  → a game built into the app; opened by slug via onOpenNative.
+ *  - kind = "iframe"  → externally hosted game; opened inline in an <iframe>.
  *
- * INTEGRATION — in src/routes/_authenticated/room.$roomId.tsx:
- *
- *   1. const [gamesSheetOpen, setGamesSheetOpen] = useState(false);
- *
- *   2. onOpenGames={() => {
- *        setVideoSettingsOpen(false);
- *        setGamesSheetOpen(true);   // was: openLudo()
- *      }}
- *
- *   3. <RoomGamesSheet
- *        open={gamesSheetOpen}
- *        onClose={() => setGamesSheetOpen(false)}
- *        onOpenLudo={() => {
- *          setGamesSheetOpen(false);
- *          openLudo();
- *        }}
- *      />
+ * Nothing here needs to change when a game is added, hidden or reordered.
  */
-
 export function RoomGamesSheet({
   open,
   onClose,
-  onOpenLudo,
-  onOpenSlots,
-  onOpenCrash,
-  onOpenDragonTiger,
-  onOpenInOut,
-  onOpenPlinko,
+  onOpenNative,
 }: {
   open: boolean;
   onClose: () => void;
-  onOpenLudo: () => void;
-  onOpenSlots: () => void;
-  onOpenCrash?: () => void;
-  onOpenDragonTiger?: () => void;
-  onOpenInOut?: () => void;
-  onOpenPlinko?: () => void;
+  onOpenNative: (slug: string) => void;
 }) {
   const [activeGame, setActiveGame] = useState<RoomGame | null>(null);
 
@@ -85,13 +56,14 @@ export function RoomGamesSheet({
         ) : (
           <GamesPicker
             onClose={close}
-            onOpenLudo={onOpenLudo}
-            onOpenSlots={onOpenSlots}
-            onOpenCrash={onOpenCrash}
-            onOpenDragonTiger={onOpenDragonTiger}
-            onOpenInOut={onOpenInOut}
-            onOpenPlinko={onOpenPlinko}
-            onPickGame={setActiveGame}
+            onPick={(g) => {
+              if (g.kind === "native") {
+                close();
+                onOpenNative(g.slug);
+              } else if (g.game_url) {
+                setActiveGame(g);
+              }
+            }}
           />
         )}
       </div>
@@ -100,28 +72,10 @@ export function RoomGamesSheet({
 }
 
 // ---------------------------------------------------------------------------
-// Step 1 — picker grid: Ludo + every admin-added game (PNG buttons)
+// Step 1 — picker grid, entirely from the admin-managed catalogue
 // ---------------------------------------------------------------------------
 
-function GamesPicker({
-  onClose,
-  onOpenLudo,
-  onOpenSlots,
-  onOpenCrash,
-  onOpenDragonTiger,
-  onOpenInOut,
-  onOpenPlinko,
-  onPickGame,
-}: {
-  onClose: () => void;
-  onOpenLudo: () => void;
-  onOpenSlots: () => void;
-  onOpenCrash?: () => void;
-  onOpenDragonTiger?: () => void;
-  onOpenInOut?: () => void;
-  onOpenPlinko?: () => void;
-  onPickGame: (g: RoomGame) => void;
-}) {
+function GamesPicker({ onClose, onPick }: { onClose: () => void; onPick: (g: RoomGame) => void }) {
   const games = useRoomGames();
 
   return (
@@ -140,96 +94,6 @@ function GamesPicker({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {/* Ludo — native board game, kept as its own seat/bet flow */}
-        <button
-          onClick={onOpenLudo}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-        >
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[color:var(--primary)]/30 blur-2xl" />
-          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-[color:var(--primary)]/50 bg-[color:var(--primary)]/15">
-            <Dice5 className="h-7 w-7 text-[color:var(--primary)]" />
-          </div>
-          <p className="relative mt-3 text-sm font-black">Ludo Battle</p>
-          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-            4 seats · live board · room bet
-          </p>
-        </button>
-
-        {/* 777 Slots — native game, real coins, server-side spin */}
-        <button
-          onClick={onOpenSlots}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-        >
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[#F0C674]/30 blur-2xl" />
-          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-[#F0C674]/50 bg-[#F0C674]/15 text-3xl">
-            🎰
-          </div>
-          <p className="relative mt-3 text-sm font-black">777 Slots</p>
-          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-            Jackpot · free spins
-          </p>
-        </button>
-
-        {/* Crash X — native casino game, real coins, server-side crash point */}
-        <button
-          onClick={onOpenCrash}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-        >
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-orange-500/30 blur-2xl" />
-          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-orange-500/50 bg-orange-500/15 text-3xl">
-            🚀
-          </div>
-          <p className="relative mt-3 text-sm font-black">Crash X</p>
-          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-            Ride the multiplier · cash out
-          </p>
-        </button>
-
-        {/* Dragon vs Tiger — native casino game */}
-        <button
-          onClick={onOpenDragonTiger}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-        >
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-red-500/30 blur-2xl" />
-          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-red-500/50 bg-red-500/15 text-3xl">
-            🐉
-          </div>
-          <p className="relative mt-3 text-sm font-black">Dragon vs Tiger</p>
-          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-            Pick a side · instant result
-          </p>
-        </button>
-
-        {/* In & Out — native casino game */}
-        <button
-          onClick={onOpenInOut}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-        >
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-rose-500/30 blur-2xl" />
-          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-rose-500/50 bg-rose-500/15 text-3xl">
-            🔴
-          </div>
-          <p className="relative mt-3 text-sm font-black">In & Out</p>
-          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-            Roll the dice · pick in or out
-          </p>
-        </button>
-
-        {/* Plinko — native casino game */}
-        <button
-          onClick={onOpenPlinko}
-          className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-        >
-          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-purple-500/30 blur-2xl" />
-          <div className="relative grid h-14 w-14 place-items-center rounded-2xl border border-purple-500/50 bg-purple-500/15 text-3xl">
-            🟣
-          </div>
-          <p className="relative mt-3 text-sm font-black">Plinko</p>
-          <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-            Drop the ball · chase multipliers
-          </p>
-        </button>
-
         {games.isLoading && (
           <div className="col-span-2 grid place-items-center py-10">
             <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" />
@@ -238,38 +102,40 @@ function GamesPicker({
 
         {!games.isLoading && games.data?.length === 0 && (
           <p className="col-span-2 py-6 text-center text-xs text-foreground/50">
-            No games added yet. Add one in Admin → Room games.
+            No games available right now.
           </p>
         )}
 
-        {games.data?.map((g) => (
-          <button
-            key={g.id}
-            onClick={() => onPickGame(g)}
-            className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-          >
-            <div className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-black/30">
-              {g.icon_url ? (
-                <img
-                  src={g.icon_url}
-                  alt={g.name}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <span className="text-3xl">🎮</span>
-              )}
-            </div>
-            <p className="relative mt-3 truncate text-sm font-black">{g.name}</p>
-          </button>
-        ))}
+        {games.data?.map((g) => {
+          const icon = g.icon_url ?? g.thumb_url;
+          return (
+            <button
+              key={g.id}
+              onClick={() => onPick(g)}
+              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
+            >
+              <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[color:var(--primary)]/25 blur-2xl" />
+              <div className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-black/30 text-3xl">
+                {icon ? (
+                  <img src={icon} alt={g.name} className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <span>{NATIVE_GAME_EMOJI[g.slug] ?? "🎮"}</span>
+                )}
+              </div>
+              <p className="relative mt-3 truncate text-sm font-black">{g.name}</p>
+              <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
+                {g.subtitle ?? ""}
+              </p>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Step 2 — the tapped game opens right here, inside an iframe
+// Step 2 — hosted games open right here, inside an iframe
 // ---------------------------------------------------------------------------
 
 function GameFrame({
@@ -320,7 +186,7 @@ function GameFrame({
         )}
         {!failed && (
           <iframe
-            src={game.game_url}
+            src={game.game_url ?? ""}
             title={game.name}
             className="h-full w-full border-0"
             allow="autoplay; fullscreen; gamepad"
