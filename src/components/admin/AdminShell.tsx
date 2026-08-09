@@ -43,6 +43,7 @@ export const ADMIN_NAV: NavGroup[] = [
     items: [
       { to: "/admin/gifts", label: "Gifts Management", icon: GiftIcon },
       { to: "/admin/gift-studio", label: "Gift Studio (Render Config)", icon: Wand2 },
+      { to: "/admin/entrance-studio", label: "Entrance Studio", icon: Wand2 },
       { to: "/admin/minigames", label: "Mini Games", icon: Dices },
       { to: "/admin/room-games", label: "Room Games", icon: Dices },
       { to: "/admin/ludo-replays", label: "Ludo Replays", icon: Dices },
