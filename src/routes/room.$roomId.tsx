@@ -74,6 +74,12 @@ import { CrashXGame } from "@/components/room/casino/CrashXGame";
 import { DragonTigerGame } from "@/components/room/casino/DragonTigerGame";
 import { InOutGame } from "@/components/room/casino/InOutGame";
 import { PlinkoGame } from "@/components/room/casino/PlinkoGame";
+import { UnderOver7 } from "@/components/room/casino/games/UnderOver7";
+import { CrashPoint } from "@/components/room/casino/games/CrashPoint";
+import { ScratchCard } from "@/components/room/casino/games/ScratchCard";
+import { AppleOfFortune } from "@/components/room/casino/games/AppleOfFortune";
+import { SpinWin } from "@/components/room/casino/games/SpinWin";
+import { VampireCurse } from "@/components/room/casino/games/VampireCurse";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
@@ -303,6 +309,7 @@ function RoomPage() {
   const [dragonTigerOpen, setDragonTigerOpen] = useState(false);
   const [inOutOpen, setInOutOpen] = useState(false);
   const [plinkoOpen, setPlinkoOpen] = useState(false);
+  const [nativeGame, setNativeGame] = useState<string | null>(null);
   const [musicOpen, setMusicOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   
