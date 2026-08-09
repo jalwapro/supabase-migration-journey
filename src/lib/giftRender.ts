@@ -167,7 +167,7 @@ export const DEFAULT_GIFT_RENDER: GiftRenderConfig = {
   contrastRecovery: 0,
   edgeCleanup: 8,
 
-  positionUnit: "percent",
+  positionUnit: "px",
   delayMs: 0,
   holdMs: 0,
   endMs: null,
@@ -240,7 +240,7 @@ export function renderConfigToStyle(cfg: GiftRenderConfig): React.CSSProperties 
 
   // Percent mode keeps a gift in the same relative spot on every screen size:
   // the offset is applied to the anchor edges as a % of the playback stage.
-  const percent = cfg.positionUnit !== "px";
+  const percent = cfg.positionUnit === "percent";
   if (percent) {
     const x = cfg.positionX;
     const y = cfg.positionY;
