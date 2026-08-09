@@ -112,6 +112,7 @@ import { Route as AuthenticatedAdminFramesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminFinanceReportsRouteImport } from './routes/_authenticated/admin.finance-reports'
 import { Route as AuthenticatedAdminFactoryResetRouteImport } from './routes/_authenticated/admin.factory-reset'
 import { Route as AuthenticatedAdminEntrancesRouteImport } from './routes/_authenticated/admin.entrances'
+import { Route as AuthenticatedAdminEntranceStudioRouteImport } from './routes/_authenticated/admin.entrance-studio'
 import { Route as AuthenticatedAdminEmojisRouteImport } from './routes/_authenticated/admin.emojis'
 import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
 import { Route as AuthenticatedAdminConnectionRouteImport } from './routes/_authenticated/admin.connection'
@@ -678,6 +679,12 @@ const AuthenticatedAdminEntrancesRoute =
     path: '/entrances',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEntranceStudioRoute =
+  AuthenticatedAdminEntranceStudioRouteImport.update({
+    id: '/entrance-studio',
+    path: '/entrance-studio',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminEmojisRoute =
   AuthenticatedAdminEmojisRouteImport.update({
     id: '/emojis',
@@ -787,6 +794,7 @@ export interface FileRoutesByFullPath {
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
+  '/admin/entrance-studio': typeof AuthenticatedAdminEntranceStudioRoute
   '/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
@@ -898,6 +906,7 @@ export interface FileRoutesByTo {
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
+  '/admin/entrance-studio': typeof AuthenticatedAdminEntranceStudioRoute
   '/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
@@ -1013,6 +1022,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/_authenticated/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/_authenticated/admin/emojis': typeof AuthenticatedAdminEmojisRoute
+  '/_authenticated/admin/entrance-studio': typeof AuthenticatedAdminEntranceStudioRoute
   '/_authenticated/admin/entrances': typeof AuthenticatedAdminEntrancesRoute
   '/_authenticated/admin/factory-reset': typeof AuthenticatedAdminFactoryResetRoute
   '/_authenticated/admin/finance-reports': typeof AuthenticatedAdminFinanceReportsRoute
@@ -1128,6 +1138,7 @@ export interface FileRouteTypes {
     | '/admin/connection'
     | '/admin/custom-themes'
     | '/admin/emojis'
+    | '/admin/entrance-studio'
     | '/admin/entrances'
     | '/admin/factory-reset'
     | '/admin/finance-reports'
@@ -1239,6 +1250,7 @@ export interface FileRouteTypes {
     | '/admin/connection'
     | '/admin/custom-themes'
     | '/admin/emojis'
+    | '/admin/entrance-studio'
     | '/admin/entrances'
     | '/admin/factory-reset'
     | '/admin/finance-reports'
@@ -1353,6 +1365,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/connection'
     | '/_authenticated/admin/custom-themes'
     | '/_authenticated/admin/emojis'
+    | '/_authenticated/admin/entrance-studio'
     | '/_authenticated/admin/entrances'
     | '/_authenticated/admin/factory-reset'
     | '/_authenticated/admin/finance-reports'
@@ -2163,6 +2176,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminEntrancesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/entrance-studio': {
+      id: '/_authenticated/admin/entrance-studio'
+      path: '/entrance-studio'
+      fullPath: '/admin/entrance-studio'
+      preLoaderRoute: typeof AuthenticatedAdminEntranceStudioRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/emojis': {
       id: '/_authenticated/admin/emojis'
       path: '/emojis'
@@ -2238,6 +2258,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminConnectionRoute: typeof AuthenticatedAdminConnectionRoute
   AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
   AuthenticatedAdminEmojisRoute: typeof AuthenticatedAdminEmojisRoute
+  AuthenticatedAdminEntranceStudioRoute: typeof AuthenticatedAdminEntranceStudioRoute
   AuthenticatedAdminEntrancesRoute: typeof AuthenticatedAdminEntrancesRoute
   AuthenticatedAdminFactoryResetRoute: typeof AuthenticatedAdminFactoryResetRoute
   AuthenticatedAdminFinanceReportsRoute: typeof AuthenticatedAdminFinanceReportsRoute
@@ -2291,6 +2312,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminConnectionRoute: AuthenticatedAdminConnectionRoute,
   AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
   AuthenticatedAdminEmojisRoute: AuthenticatedAdminEmojisRoute,
+  AuthenticatedAdminEntranceStudioRoute: AuthenticatedAdminEntranceStudioRoute,
   AuthenticatedAdminEntrancesRoute: AuthenticatedAdminEntrancesRoute,
   AuthenticatedAdminFactoryResetRoute: AuthenticatedAdminFactoryResetRoute,
   AuthenticatedAdminFinanceReportsRoute: AuthenticatedAdminFinanceReportsRoute,
