@@ -3342,29 +3342,15 @@ function RoomPage() {
       <RoomGamesSheet
         open={gamesSheetOpen}
         onClose={() => setGamesSheetOpen(false)}
-        onOpenLudo={() => {
+        onOpenNative={(slug) => {
           setGamesSheetOpen(false);
-          openLudo();
-        }}
-        onOpenSlots={() => {
-          setGamesSheetOpen(false);
-          setSlotsOpen(true);
-        }}
-        onOpenCrash={() => {
-          setGamesSheetOpen(false);
-          setCrashOpen(true);
-        }}
-        onOpenDragonTiger={() => {
-          setGamesSheetOpen(false);
-          setDragonTigerOpen(true);
-        }}
-        onOpenInOut={() => {
-          setGamesSheetOpen(false);
-          setInOutOpen(true);
-        }}
-        onOpenPlinko={() => {
-          setGamesSheetOpen(false);
-          setPlinkoOpen(true);
+          if (slug === "ludo") openLudo();
+          else if (slug === "slots777") setSlotsOpen(true);
+          else if (slug === "crash_x") setCrashOpen(true);
+          else if (slug === "dragon_tiger") setDragonTigerOpen(true);
+          else if (slug === "in_out") setInOutOpen(true);
+          else if (slug === "plinko") setPlinkoOpen(true);
+          else setNativeGame(slug);
         }}
       />
       <SlotsGamePopup open={slotsOpen} onClose={() => setSlotsOpen(false)} roomId={roomId} />
@@ -3372,6 +3358,13 @@ function RoomPage() {
       <DragonTigerGame open={dragonTigerOpen} onClose={() => setDragonTigerOpen(false)} roomId={roomId} />
       <InOutGame open={inOutOpen} onClose={() => setInOutOpen(false)} roomId={roomId} />
       <PlinkoGame open={plinkoOpen} onClose={() => setPlinkoOpen(false)} roomId={roomId} />
+      <UnderOver7 open={nativeGame === "under_over_7"} onClose={() => setNativeGame(null)} roomId={roomId} />
+      <CrashPoint open={nativeGame === "crash_point"} onClose={() => setNativeGame(null)} roomId={roomId} />
+      <ScratchCard open={nativeGame === "scratch_card"} onClose={() => setNativeGame(null)} roomId={roomId} />
+      <AppleOfFortune open={nativeGame === "apple_fortune"} onClose={() => setNativeGame(null)} roomId={roomId} />
+      <SpinWin open={nativeGame === "spin_win"} onClose={() => setNativeGame(null)} roomId={roomId} />
+      <VampireCurse open={nativeGame === "vampire_curse"} onClose={() => setNativeGame(null)} roomId={roomId} />
+
       <GifterListSheet
         roomId={roomId}
         receiver={gifterListReceiver}
