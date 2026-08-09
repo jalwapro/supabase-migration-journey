@@ -91,11 +91,22 @@ export interface GiftRenderConfig {
   contrastRecovery: number;// 0..100
   edgeCleanup: number;     // 0..100 (alpha erode/choke)
 
+  // --- position units ---
+  /**
+   * "percent" (recommended) → positionX/Y are a % of the playback stage, so a
+   * gift lands in the same spot on phone, tablet and desktop.
+   * "px" → legacy absolute offsets (kept for already-configured gifts).
+   */
+  positionUnit: "px" | "percent";
+
   // --- timing ---
   delayMs: number;
+  holdMs: number;      // extra time the last frame is held on screen
   endMs: number | null; // hard cut-off; null = clip length
   loop: boolean;
+  loopCount: number;   // 0 = infinite while visible
 }
+
 
 export const DEFAULT_GIFT_RENDER: GiftRenderConfig = {
   width: null,
