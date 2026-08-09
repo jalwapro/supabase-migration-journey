@@ -167,10 +167,14 @@ export const DEFAULT_GIFT_RENDER: GiftRenderConfig = {
   contrastRecovery: 0,
   edgeCleanup: 8,
 
+  positionUnit: "percent",
   delayMs: 0,
+  holdMs: 0,
   endMs: null,
   loop: false,
+  loopCount: 0,
 };
+
 
 /** Merge a partial/unknown jsonb blob onto the defaults, coercing types. */
 export function normalizeRenderConfig(raw: unknown): GiftRenderConfig {
