@@ -335,10 +335,7 @@ function MePage() {
             </div>
           </div>
 
-          {/* Games */}
-          <div className="relative z-10 mt-4 px-3">
-            <GamesProfileSection userId={user?.id} />
-          </div>
+
 
           {/* Feature grid */}
           <div className="relative z-10 mt-4 space-y-3 px-3 pb-28">
