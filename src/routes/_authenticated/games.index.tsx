@@ -79,8 +79,24 @@ function GameCenter() {
             <div className="grid place-items-center py-16">
               <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" />
             </div>
+          ) : games.isError ? (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center">
+              <p className="text-sm font-black">Unable to load games</p>
+              <p className="mt-1 text-[11px] text-foreground/60">Please try again in a moment.</p>
+              <button
+                onClick={() => void games.refetch()}
+                className="mt-3 rounded-full border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/15 px-4 py-2 text-[11px] font-black uppercase tracking-widest text-[color:var(--gold)]"
+              >
+                Retry
+              </button>
+            </div>
+          ) : (games.data?.length ?? 0) === 0 ? (
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6 text-center text-[11px] text-foreground/60">
+              No games are available right now.
+            </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
+
               {games.data?.map((g, i) => (
                 <Link
                   key={g.id}
