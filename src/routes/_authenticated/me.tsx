@@ -45,7 +45,6 @@ import {
 import { toast } from "sonner";
 import { useRef, useState, type ComponentType } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { GamesProfileSection } from "@/components/games/GamesProfileSection";
 import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
