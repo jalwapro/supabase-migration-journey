@@ -45,7 +45,6 @@ import {
 import { toast } from "sonner";
 import { useRef, useState, type ComponentType } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { GamesProfileSection } from "@/components/games/GamesProfileSection";
 import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
@@ -335,10 +334,7 @@ function MePage() {
             </div>
           </div>
 
-          {/* Games */}
-          <div className="relative z-10 mt-4 px-3">
-            <GamesProfileSection userId={user?.id} />
-          </div>
+
 
           {/* Feature grid */}
           <div className="relative z-10 mt-4 space-y-3 px-3 pb-28">
