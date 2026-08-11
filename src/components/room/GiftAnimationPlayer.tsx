@@ -1400,11 +1400,28 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
     if (active) {
       // Bounded, priority-ordered waiting room (highest priority plays next).
-      setQueue((q) =>
-        [...q, incoming]
-          .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0))
-          .slice(0, 4),
-      );
+      // IMPORTANT: gifts that don't fit must never simply vanish — that's
+      // exactly what caused "coins deducted but no animation shown". Any
+      // overflow beyond the big-slot queue capacity is downgraded to the
+      // lightweight small-gift lane instead, so it still visibly plays.
+      setQueue((q) => {
+        const merged = [...q, incoming].sort(
+          (a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0),
+        );
+        if (merged.length > 4) {
+          const overflow = merged.slice(4);
+          for (const o of overflow) {
+            if (import.meta.env?.DEV) {
+              console.warn("Gift queue full — downgrading to small lane instead of dropping", {
+                giftId: o.giftId, eventKey: o.key,
+              });
+            }
+            trackGiftPlayback({ roomId, giftId: o.giftId, eventKey: o.key, status: "skipped" });
+            pushSmallPlay({ ...o, comboTotal: 0, trainWagons: 0 });
+          }
+        }
+        return merged.slice(0, 4);
+      });
     } else {
       currentRef.current = incoming;
       setCurrent(incoming);
@@ -1837,7 +1854,6 @@ type GiftSendRow = {
     return smallLayer ? createPortal(smallLayer, portalRoot) : null;
   }
 
-  const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
   return createPortal(
@@ -1862,26 +1878,8 @@ type GiftSendRow = {
 
 
 
-      {/* sender chip */}
-      <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
-        {current.senderAvatar ? (
-          <img
-            src={current.senderAvatar}
-            alt=""
-            className="h-10 w-10 rounded-full border-2 border-[color:var(--gold)] object-cover shadow-lg"
-          />
-        ) : (
-          <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-bold text-white">
-            {initial}
-          </div>
-        )}
-        <div className="rounded-full bg-black/70 px-3 py-1">
-          <p className="text-[11px] font-bold text-white leading-none">{current.senderName}</p>
-          <p className="text-[10px] font-bold text-[color:var(--gold)] leading-tight">
-            sent {current.giftName}
-          </p>
-        </div>
-      </div>
+      {/* Sender + gift name announcement banner removed per spec — only the
+          gift animation itself should be visible on screen. */}
 
       {/* center/front-screen gift animation */}
       <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
@@ -2007,16 +2005,13 @@ type GiftSendRow = {
         )}
         {!isSmallGift ? (
           <>
-            <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
-              <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
-                {current.giftName}
-              </span>
-              {current.quantity > 1 && (
+            {current.quantity > 1 && (
+              <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
                 <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
                   ×{current.quantity}
                 </span>
-              )}
-            </div>
+              </div>
+            )}
             {current.coins > 0 && (
               <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
                 🪙 {current.coins.toLocaleString()}
@@ -2025,9 +2020,6 @@ type GiftSendRow = {
           </>
         ) : (
           <div className="pointer-events-none absolute left-1/2 top-[62%] z-[230] -translate-x-1/2 flex items-center gap-2">
-            <span className="rounded-full bg-black/75 px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white shadow-lg ring-1 ring-white/10">
-              {current.giftName}
-            </span>
             {current.quantity > 1 && (
               <span className="rounded-full bg-gradient-to-r from-[#ffd76a] to-[#ff8f2b] px-3 py-1 text-[13px] font-black text-black shadow-lg">
                 ×{current.quantity}
