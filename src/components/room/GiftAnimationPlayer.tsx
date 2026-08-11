@@ -9,8 +9,47 @@ import SvgaPlayer from "./SvgaPlayer";
 import GiftGLVideo from "./GiftGLVideo";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
-const GIFT_STAGE_W = 428;
-const GIFT_STAGE_H = 926;
+// =============== CONSTANTS ===============
+
+const COMBO_IDLE_MS = 1800;
+const TRAIN_UNIT = 10;
+const MAX_TRAIN_WAGONS = 20;
+const PLAY_MS = 3200;
+const VIDEO_PLAY_MS = 3800;
+const MAX_GIFT_Z_INDEX = 2147483647;
+const GIFT_PORTAL_ID = "jalwa-gift-animation-layer";
+const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
+const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
+const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
+
+// =============== SVG FILTERS (GLOBAL) ===============
+
+const SVG_FILTERS = (
+  <svg aria-hidden width="0" height="0" style={{ position: "absolute", zIndex: -1, pointerEvents: "none" }}>
+    <defs>
+      <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
+        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0" />
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="5.2" intercept="-0.48" />
+        </feComponentTransfer>
+      </filter>
+      <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
+        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12" result="gkRaw" />
+        <feComponentTransfer in="gkRaw" result="gk">
+          <feFuncA type="linear" slope="6" intercept="-0.12" />
+        </feComponentTransfer>
+        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0" result="lumaRaw" />
+        <feComponentTransfer in="lumaRaw" result="lk">
+          <feFuncA type="linear" slope="7" intercept="-0.12" />
+        </feComponentTransfer>
+        <feComposite in="gk" in2="lk" operator="in" result="keyed" />
+        <feColorMatrix in="keyed" type="matrix" values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0" />
+      </filter>
+    </defs>
+  </svg>
+);
+
+// =============== TYPES ===============
 
 type Play = {
   key: string;
@@ -42,43 +81,36 @@ type Play = {
   trainWagons?: number;
 };
 
-const COMBO_IDLE_MS = 1800;
-const TRAIN_UNIT = 10;
-const MAX_TRAIN_WAGONS = 20;
-const PLAY_MS = 3200;
-const VIDEO_PLAY_MS = 3800;
-const MAX_GIFT_Z_INDEX = 2147483647;
-const GIFT_PORTAL_ID = "jalwa-gift-animation-layer";
-const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
-const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
-const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
+type GiftSendRow = {
+  id: string;
+  sender_id: string;
+  receiver_id: string | null;
+  gift_id: string;
+  quantity: number;
+  coins_spent: number;
+  diamonds_earned: number;
+  created_at?: string | null;
+  sender_username: string | null;
+  sender_avatar: string | null;
+  receiver_username: string | null;
+  receiver_avatar: string | null;
+  gift_name: string | null;
+  gift_emoji: string | null;
+  gift_icon: string | null;
+  gift_animation: string | null;
+  gift_clip_path: string | null;
+  gift_clip_type: string | null;
+  gift_image_url: string | null;
+  gift_sound_url: string | null;
+  gift_chromakey: string | null;
+  gift_audio_url?: string | null;
+  gift_priority?: number | null;
+  gift_audio_volume?: number | string | null;
+  gift_audio_enabled?: boolean | null;
+  gift_render_config?: unknown;
+};
 
-// =============== SVG FILTERS - GLOBAL (FIX 1) ===============
-// یہ فلٹرز صرف ایک بار بنائے جاتے ہیں اور پوری ایپ میں استعمال ہوتے ہیں
-const SVG_FILTERS = (
-  <svg aria-hidden width="0" height="0" style={{ position: "absolute", zIndex: -1, pointerEvents: "none" }}>
-    <defs>
-      <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
-        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0" />
-        <feComponentTransfer>
-          <feFuncA type="linear" slope="5.2" intercept="-0.48" />
-        </feComponentTransfer>
-      </filter>
-      <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
-        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12" result="gkRaw" />
-        <feComponentTransfer in="gkRaw" result="gk">
-          <feFuncA type="linear" slope="6" intercept="-0.12" />
-        </feComponentTransfer>
-        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0" result="lumaRaw" />
-        <feComponentTransfer in="lumaRaw" result="lk">
-          <feFuncA type="linear" slope="7" intercept="-0.12" />
-        </feComponentTransfer>
-        <feComposite in="gk" in2="lk" operator="in" result="keyed" />
-        <feColorMatrix in="keyed" type="matrix" values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0" />
-      </filter>
-    </defs>
-  </svg>
-);
+// =============== HELPER FUNCTIONS ===============
 
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
@@ -209,6 +241,8 @@ function pickGiftAnimClass(name: string | null | undefined): string {
   return "gift-anim-pop";
 }
 
+// =============== GIFT FALLBACK VISUAL ===============
+
 function GiftFallbackVisual({
   emoji,
   image,
@@ -312,8 +346,8 @@ function AnimatedGiftImage({
   );
 }
 
-// =============== ANIMATED GIFT VIDEO (FIX 2) ===============
-// اس میں سے GiftSvgFilters ہٹا دیا گیا ہے
+// =============== ANIMATED GIFT VIDEO (WITH RENDER CONFIG) ===============
+
 function AnimatedGiftVideo({
   src,
   type,
@@ -329,6 +363,7 @@ function AnimatedGiftVideo({
   lumaKey = false,
   greenKey = false,
   forceKey = false,
+  renderConfig,
 }: {
   src: string;
   type: string | null;
@@ -344,6 +379,7 @@ function AnimatedGiftVideo({
   lumaKey?: boolean;
   greenKey?: boolean;
   forceKey?: boolean;
+  renderConfig?: any;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -466,44 +502,73 @@ function AnimatedGiftVideo({
       : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
   );
 
+  const configStyles = renderConfig ? renderConfigToStyle(renderConfig) : {};
+  
+  const videoWrapperStyle = {
+    ...configStyles,
+    position: "absolute" as const,
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none" as const,
+  };
+
   return (
-    <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
-      {/* ❌ GiftSvgFilters ہٹا دیا گیا - اب ویڈیو اوپر نہیں آئے گا */}
-      <video
-        key={src}
-        ref={videoRef}
-        src={src}
-        playsInline
-        disablePictureInPicture
-        preload="auto"
-        autoPlay
-        muted
-        onLoadedData={startPlayback}
-        onLoadedMetadata={(e) => {
-          const d = e.currentTarget.duration;
-          if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
-        }}
-        onCanPlayThrough={() => startPlayback()}
-        onPlaying={markReady}
-        onError={() => {
-          setFailed(true);
-          onReady();
-        }}
-        onEnded={onDone}
-        className="gift-anim-video gift-transparent-video absolute inset-0 h-full w-full scale-110 object-contain"
-        style={{
-          opacity: ready ? 1 : 0,
-          transform: ready ? "scale(1.1)" : "scale(1.02)",
-          transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
-          background: "transparent",
-          willChange: "opacity, transform",
-          mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
-          filter: filterParts.join(" "),
-        }}
-      />
+    <div 
+      className="pointer-events-none absolute inset-0 z-[120]"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div style={videoWrapperStyle}>
+        <video
+          key={src}
+          ref={videoRef}
+          src={src}
+          playsInline
+          disablePictureInPicture
+          preload="auto"
+          autoPlay
+          muted
+          onLoadedData={startPlayback}
+          onLoadedMetadata={(e) => {
+            const d = e.currentTarget.duration;
+            if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
+          }}
+          onCanPlayThrough={() => startPlayback()}
+          onPlaying={markReady}
+          onError={() => {
+            setFailed(true);
+            onReady();
+          }}
+          onEnded={onDone}
+          className="gift-anim-video gift-transparent-video"
+          style={{
+            opacity: ready ? 1 : 0,
+            transform: ready ? "scale(1.1)" : "scale(1.02)",
+            transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
+            background: "transparent",
+            willChange: "opacity, transform",
+            mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
+            filter: filterParts.join(" "),
+            width: "100%",
+            height: "100%",
+            objectFit: renderConfig?.fit || "contain",
+          }}
+        />
+      </div>
     </div>
   );
 }
+
+// =============== SPACESHIP GIFT VISUAL ===============
 
 function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
   const readyOnceRef = useRef(false);
@@ -896,8 +961,7 @@ function spawnGiftTrain(
   };
 }
 
-// =============== SMALL GIFT FLYER COMPONENT (FIX 3) ===============
-// onReady sirf ek baar call hota hai
+// =============== SMALL GIFT FLYER COMPONENT ===============
 
 function SmallGiftFlyer({
   emoji,
@@ -923,7 +987,6 @@ function SmallGiftFlyer({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const readyOnce = useRef(false);
 
-  // FIX: onReady sirf ek baar call ho
   useEffect(() => {
     if (!readyOnce.current) {
       readyOnce.current = true;
@@ -946,6 +1009,15 @@ function SmallGiftFlyer({
     const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
     const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
+    const skipHeroPanel = true;
+    const HERO_INTRO_MS = 0;
+    const HERO_HOLD_MS = 0;
+
+    const panel = document.createElement("div");
+    let rafId = 0;
+    if (!skipHeroPanel) {
+      // Panel code (disabled)
+    }
 
     let jackpotEls: HTMLElement[] = [];
     if (isJackpot) {
@@ -989,7 +1061,7 @@ function SmallGiftFlyer({
     }
 
     const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
-    const flyerStartDelay = 0;
+    const flyerStartDelay = HERO_INTRO_MS + HERO_HOLD_MS;
 
     const cleanupTimers: number[] = [];
     let lastLaunchDelay = 0;
@@ -1012,45 +1084,30 @@ function SmallGiftFlyer({
       }
     });
 
+    const panelFadeAt = lastLaunchDelay + 240;
+    const panelFadeTimer = skipHeroPanel ? 0 : setTimeout(() => {
+      const fade = panel.animate(
+        [
+          { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+          { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
+        ],
+        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
+      );
+      fade.onfinish = () => panel.remove();
+    }, panelFadeAt);
+    if (panelFadeTimer) cleanupTimers.push(panelFadeTimer);
+
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
-      jackpotEls.forEach((el) => { try { el.remove(); } catch { /* noop */ } });
+      if (rafId) cancelAnimationFrame(rafId);
+      try { panel.remove(); jackpotEls.forEach((el) => el.remove()); } catch { /* noop */ }
     };
   }, [emoji, image, quantity, trainWagons, comboTotal, receiverIds, fallbackReceiverId, volume]);
 
   return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
 }
 
-// =============== MAIN COMPONENT ===============
-
-type GiftSendRow = {
-  id: string;
-  sender_id: string;
-  receiver_id: string | null;
-  gift_id: string;
-  quantity: number;
-  coins_spent: number;
-  diamonds_earned: number;
-  created_at?: string | null;
-  sender_username: string | null;
-  sender_avatar: string | null;
-  receiver_username: string | null;
-  receiver_avatar: string | null;
-  gift_name: string | null;
-  gift_emoji: string | null;
-  gift_icon: string | null;
-  gift_animation: string | null;
-  gift_clip_path: string | null;
-  gift_clip_type: string | null;
-  gift_image_url: string | null;
-  gift_sound_url: string | null;
-  gift_chromakey: string | null;
-  gift_audio_url?: string | null;
-  gift_priority?: number | null;
-  gift_audio_volume?: number | string | null;
-  gift_audio_enabled?: boolean | null;
-  gift_render_config?: unknown;
-};
+// =============== MAIN GIFT ANIMATION PLAYER ===============
 
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
@@ -1060,17 +1117,18 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [readyKey, setReadyKey] = useState<string | null>(null);
   const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
-  const [stageScale, setStageScale] = useState(1);
   
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
-  const processingRef = useRef(false);
   const coalesceRef = useRef<Map<string, { play: Play; timer: number; ids: string[] }>>(new Map());
   const comboRef = useRef<Map<string, { count: number; lastAt: number }>>(new Map());
   const audioPrefs = useGiftAudioPrefs();
 
-  // =============== PORTAL SETUP ===============
+  useEffect(() => {
+    currentRef.current = current;
+  }, [current]);
+
   useEffect(() => {
     const root = ensureGiftPortalRoot();
     setPortalRoot(root);
@@ -1079,7 +1137,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, []);
 
-  // =============== AUDIO UNLOCK ===============
   useEffect(() => {
     const unlock = () => unlockGiftAudio();
     window.addEventListener("pointerdown", unlock, { passive: true });
@@ -1092,23 +1149,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, []);
 
-  // =============== STAGE SCALE ===============
-  useEffect(() => {
-    const compute = () => {
-      const vw = window.innerWidth || GIFT_STAGE_W;
-      const vh = window.innerHeight || GIFT_STAGE_H;
-      setStageScale(Math.max(vw / GIFT_STAGE_W, vh / GIFT_STAGE_H));
-    };
-    compute();
-    window.addEventListener("resize", compute);
-    window.addEventListener("orientationchange", compute);
-    return () => {
-      window.removeEventListener("resize", compute);
-      window.removeEventListener("orientationchange", compute);
-    };
-  }, []);
-
-  // =============== COMBO TRACKING ===============
   const computeCombo = useCallback((p: Play): { total: number; wagons: number } => {
     const sig = `${p.senderName}|${p.giftName}`;
     const now = Date.now();
@@ -1120,7 +1160,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return { total, wagons };
   }, []);
 
-  // =============== SMALL PLAY MANAGEMENT ===============
   const pushSmallPlay = useCallback((p: Play) => {
     setSmallPlays((prev) => {
       const next = prev.length >= 8 ? prev.slice(-7) : prev;
@@ -1132,14 +1171,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }, ttl);
   }, []);
 
-  // =============== ENQUEUE LOGIC ===============
   const enqueueOne = useCallback((p: Play) => {
     if (isSmallGiftPlay(p)) {
       const { total, wagons } = computeCombo(p);
       pushSmallPlay({ ...p, comboTotal: total, trainWagons: wagons });
       return;
     }
-    
     preloadGiftVideo(getEffectiveGiftClip(p).url);
     const incoming = { ...p, enqueuedAt: Date.now() };
     const active = currentRef.current;
@@ -1155,24 +1192,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }
 
     if (active) {
-      setQueue((q) => {
-        const merged = [...q, incoming].sort(
-          (a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0),
-        );
-        if (merged.length > 4) {
-          const overflow = merged.slice(4);
-          for (const o of overflow) {
-            if (import.meta.env?.DEV) {
-              console.warn("Gift queue full — downgrading to small lane", {
-                giftId: o.giftId, eventKey: o.key,
-              });
-            }
-            trackGiftPlayback({ roomId, giftId: o.giftId, eventKey: o.key, status: "skipped" });
-            pushSmallPlay({ ...o, comboTotal: 0, trainWagons: 0 });
-          }
-        }
-        return merged.slice(0, 4);
-      });
+      setQueue((q) =>
+        [...q, incoming]
+          .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0))
+          .slice(0, 4),
+      );
     } else {
       currentRef.current = incoming;
       setCurrent(incoming);
@@ -1194,7 +1218,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     });
   }, [enqueueOne, roomId]);
 
-  // =============== LOCAL GIFT LISTENER ===============
   useEffect(() => {
     const onLocalGift = (event: Event) => {
       const detail = (event as CustomEvent<Play>).detail;
@@ -1205,7 +1228,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => window.removeEventListener("jalwa:gift-sent", onLocalGift);
   }, [enqueue]);
 
-  // =============== GIFT ROW HANDLER ===============
   const handleGiftRow = useCallback((r: GiftSendRow) => {
     const play: Play = {
       key: `sd-${r.id}`,
@@ -1233,7 +1255,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       audioEnabled: r.gift_audio_enabled == null ? true : Boolean(r.gift_audio_enabled),
       renderConfig: r.gift_render_config ?? null,
     };
-    
     if (seenRef.current.has(play.key)) return;
     
     const bucketKey = `${r.sender_id}|${r.gift_id}|${r.quantity}|${r.coins_spent}`;
@@ -1245,17 +1266,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       }
       return;
     }
-    
     const ids = r.receiver_id ? [r.receiver_id] : [];
     const entry = { play, ids, timer: 0 };
-    entry.timer = window.setTimeout(() => {
+    entry.timer = setTimeout(() => {
       coalesceRef.current.delete(bucketKey);
       enqueue(entry.play);
     }, 220);
     coalesceRef.current.set(bucketKey, entry);
   }, [enqueue]);
 
-  // =============== REAL-TIME SUBSCRIPTION ===============
+  // Realtime subscription
   useEffect(() => {
     let disposed = false;
     let ch: ReturnType<typeof supabase.channel> | null = null;
@@ -1265,57 +1285,43 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     let lastSeenAt = new Date(Date.now() - 5000).toISOString();
 
     const pollOnce = async () => {
-      if (disposed) return;
       const since = lastSeenAt;
-      try {
-        const { data, error } = await supabase
-          .from("gift_sends")
-          .select(
-            "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
-              "sender_username,sender_avatar,receiver_username,receiver_avatar," +
-              "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-              "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled,gift_render_config",
-          )
-          .eq("room_id", roomId)
-          .gt("created_at", since)
-          .order("created_at", { ascending: true })
-          .limit(10);
-          
-        if (disposed || error || !data?.length) return;
-        for (const row of data) {
-          const created = (row as { created_at?: string }).created_at;
-          if (created && created > lastSeenAt) lastSeenAt = created;
-          handleGiftRow(row as unknown as GiftSendRow);
-        }
-      } catch {
-        // Silent fail on poll
+      const { data } = await supabase
+        .from("gift_sends")
+        .select(
+          "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
+            "sender_username,sender_avatar,receiver_username,receiver_avatar," +
+            "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
+            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled,gift_render_config",
+        )
+        .eq("room_id", roomId)
+        .gt("created_at", since)
+        .order("created_at", { ascending: true })
+        .limit(10);
+      if (disposed || !data?.length) return;
+      for (const row of data) {
+        const created = (row as { created_at?: string }).created_at;
+        if (created && created > lastSeenAt) lastSeenAt = created;
+        handleGiftRow(row as unknown as GiftSendRow);
       }
     };
 
     const startPolling = () => {
       if (poll || disposed) return;
-      poll = window.setInterval(() => { void pollOnce(); }, 5000);
+      poll = setInterval(() => { void pollOnce(); }, 5000);
     };
-    
     const stopPolling = () => {
       if (poll) { clearInterval(poll); poll = undefined; }
     };
 
     const connect = () => {
       if (disposed) return;
-      
-      if (ch) {
-        supabase.removeChannel(ch);
-        ch = null;
-      }
-      
       ch = supabase
         .channel(`gift-anim-${roomId}-${Math.random().toString(36).slice(2, 8)}`)
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
           (payload) => {
-            if (disposed) return;
             const row = payload.new as GiftSendRow & { created_at?: string };
             if (row.created_at && row.created_at > lastSeenAt) lastSeenAt = row.created_at;
             handleGiftRow(row);
@@ -1329,21 +1335,15 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             void pollOnce();
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             startPolling();
-            const delay = Math.min(15000, 1000 * 2 ** Math.min(attempts, 6));
-            attempts++;
-            if (retry) clearTimeout(retry);
-            retry = window.setTimeout(connect, delay);
+            const delay = Math.min(15000, 1000 * 2 ** attempts++);
+            if (ch) { const dead = ch; ch = null; void supabase.removeChannel(dead); }
+            retry = setTimeout(connect, delay);
           }
         });
     };
 
     connect();
-
-    const onVisible = () => { 
-      if (document.visibilityState === "visible" && !disposed) {
-        void pollOnce();
-      }
-    };
+    const onVisible = () => { if (document.visibilityState === "visible") void pollOnce(); };
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
@@ -1351,34 +1351,57 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       document.removeEventListener("visibilitychange", onVisible);
       if (retry) clearTimeout(retry);
       stopPolling();
-      if (ch) {
-        supabase.removeChannel(ch);
-        ch = null;
-      }
+      if (ch) void supabase.removeChannel(ch);
       coalesceRef.current.forEach((e) => clearTimeout(e.timer));
       coalesceRef.current.clear();
     };
   }, [roomId, handleGiftRow]);
 
-  // =============== QUEUE ADVANCEMENT (FIX 4) ===============
-  // processingRef سے انفینیٹ لوپ سے بچا
+  // Advance queue
   useEffect(() => {
-    if (current || queue.length === 0 || processingRef.current) return;
-    processingRef.current = true;
-    const next = queue[0];
-    currentRef.current = next;
-    setCurrent(next);
+    if (current || queue.length === 0) return;
+    currentRef.current = queue[0];
+    setCurrent(queue[0]);
     setQueue((q) => q.slice(1));
-    processingRef.current = false;
   }, [queue, current]);
 
-  // =============== CURRENT MANAGEMENT (FIX 5) ===============
+  const giftClip = current ? getEffectiveGiftClip(current) : { url: null, type: null };
+  const giftClipUrl = giftClip.url;
+  const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
+  const hasSvga = !!giftClipUrl && (giftClip.type === "svga" || giftClipUrl.toLowerCase().endsWith(".svga"));
+  const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
+  const isRoyalRose = isRoyalRoseGift(current?.giftName);
+  const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
+  const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
+  
+  const advCfgRaw = current?.renderConfig;
+  const hasAdvCfg = !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
+  const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
+
+  const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
+  const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
+  const isBlackBg =
+    chromakeyMode === "screen" || chromakeyMode === "luma"
+      ? true
+      : chromakeyMode === "none"
+        ? false
+        : autoBlackBg;
+  
+  const isSmallGift =
+    !!current &&
+    !isSpaceship &&
+    !isRoyalRose &&
+    !isRoyalCrownGift(current.giftName) &&
+    (current.coins ?? 0) <= 300;
+
+  const fallbackImage = isRoyalRose
+    ? ROYAL_ROSE_THUMB_URL
+    : resolveGiftImageUrl(current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null));
+
   const clearCurrent = useCallback(() => {
-    if (currentRef.current) {
-      currentRef.current = null;
-      setCurrent(null);
-      setVideoDurationMs(null);
-    }
+    currentRef.current = null;
+    setCurrent(null);
+    setVideoDurationMs(null);
   }, []);
 
   const markCurrentReady = useCallback(() => {
@@ -1386,36 +1409,28 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     setReadyKey(currentRef.current.key);
   }, []);
 
-  // =============== READY KEY SETUP ===============
   useEffect(() => {
     setReadyKey(null);
     setVideoDurationMs(null);
-    if (current) {
-      const clip = getEffectiveGiftClip(current);
-      const hasVideo = !!clip.url && ["mp4", "webm"].includes(clip.type ?? "");
-      const hasSvg = !!clip.url && !hasVideo;
-      if (!hasVideo && !hasSvg) {
-        setReadyKey(current.key);
-      }
+    if (current && !hasVideo && !hasSvg) {
+      setReadyKey(current.key);
     }
-  }, [current]);
+  }, [current?.key, current, hasVideo, hasSvg, hasSvga]);
 
-  // =============== SAFETY TIMEOUT ===============
   useEffect(() => {
     if (!current || readyKey === current.key) return;
     const t = setTimeout(() => setReadyKey(current.key), 2500);
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // =============== AUDIO PLAYBACK ===============
+  // Audio playback
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
     if (current.audioEnabled === false || current.audioVolume === 0) return;
-    if (isSmallGiftPlay(current)) return;
+    if (isSmallGift) return;
     if (!current.soundUrl) return;
     
-    const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current.giftName ?? "");
     const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
@@ -1425,7 +1440,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       ),
       premium: false,
     });
-    
     if (!played) {
       trackGiftPlayback({
         roomId, giftId: current.giftId, eventKey: current.key,
@@ -1433,15 +1447,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       });
       return;
     }
-    
     setSoundPulseKey(current.key);
     const pulseTimer = setTimeout(() => setSoundPulseKey((key) => (key === current.key ? null : key)), 1400);
     return () => {
       clearTimeout(pulseTimer);
     };
-  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.audioEnabled, current?.giftId, roomId, audioPrefs.muted, audioPrefs.volume]);
+  }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.audioEnabled, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
-  // =============== PLAYBACK TRACKING ===============
+  // Track playback
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
     trackGiftPlayback({
@@ -1453,79 +1466,43 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     });
   }, [current, readyKey, roomId]);
 
-  // =============== AUTO-CLEAR TIMER ===============
+  // Auto-clear
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
     let ms: number;
-    
-    if (isSmallGiftPlay(current)) {
+    if (isSmallGift) {
       const q = Math.max(1, Math.min(99, current.quantity || 1));
       const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
       const receivers = Math.max(1, (current.receiverIds?.length ?? 1));
       ms = 360 + perStagger * q + receivers * 22 + 900;
+    } else if (hasVideo) {
+      ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
-      const clip = getEffectiveGiftClip(current);
-      const hasVideo = !!clip.url && ["mp4", "webm"].includes(clip.type ?? "");
-      const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current.giftName ?? "");
-      if (hasVideo) {
-        ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
-      } else {
-        ms = PLAY_MS;
-      }
+      ms = PLAY_MS;
     }
-    
     const t = setTimeout(clearCurrent, ms + 200);
     return () => clearTimeout(t);
-  }, [current, readyKey, videoDurationMs, clearCurrent]);
+  }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
 
-  // =============== HARD WATCHDOG ===============
+  // Hard watchdog
   useEffect(() => {
     if (!current) return;
     const t = setTimeout(clearCurrent, 16000);
     return () => clearTimeout(t);
   }, [current?.key, current, clearCurrent]);
 
-  // =============== PREFETCH NEXT ===============
+  // Prefetch next
   const nextPlay = queue[0] ?? null;
   const nextClip = nextPlay ? getEffectiveGiftClip(nextPlay) : null;
   const nextPrefetchUrl = nextClip && ["mp4", "webm"].includes(nextClip.type ?? "") ? nextClip.url : null;
-  
   useEffect(() => {
     if (!nextPrefetchUrl) return;
     preloadGiftVideo(nextPrefetchUrl);
   }, [nextPrefetchUrl]);
 
-  // =============== RENDER ===============
   if (typeof document === "undefined" || !portalRoot) return null;
 
-  // Current gift data
-  const isSpaceship = current ? isJalwaSpaceshipGift(current.giftName) : false;
-  const isRoyalRose = current ? isRoyalRoseGift(current.giftName) : false;
-  const isRoyalCrown = current ? isRoyalCrownGift(current.giftName) : false;
-  const isSmall = current ? isSmallGiftPlay(current) : false;
-  
-  const giftClip = current ? getEffectiveGiftClip(current) : { url: null, type: null };
-  const giftClipUrl = giftClip.url;
-  const hasVideo = !!giftClipUrl && ["mp4", "webm"].includes(giftClip.type ?? "");
-  const hasSvga = !!giftClipUrl && (giftClip.type === "svga" || giftClipUrl.toLowerCase().endsWith(".svga"));
-  const hasSvg = !!giftClipUrl && !hasVideo && !hasSvga;
-  const fallbackImage = isRoyalRose
-    ? ROYAL_ROSE_THUMB_URL
-    : resolveGiftImageUrl(current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null));
-  
-  const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
-  const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
-  const isBlackBg = chromakeyMode === "screen" || chromakeyMode === "luma"
-    ? true
-    : chromakeyMode === "none"
-      ? false
-      : autoBlackBg;
-  
-  const advCfgRaw = current?.renderConfig;
-  const hasAdvCfg = !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
-  const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
-
-  // Parallel small-gift layer
+  // Small layer
   const smallLayer = smallPlays.length > 0 ? (
     <div
       className="pointer-events-none fixed inset-0 overflow-hidden"
@@ -1558,12 +1535,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return smallLayer ? createPortal(smallLayer, portalRoot) : null;
   }
 
+  const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  // =============== FINAL RENDER WITH SVG FILTERS ===============
+  // =============== RENDER ===============
   return createPortal(
     <>
-      {/* ✅ SVG فلٹرز صرف ایک بار یہاں ڈالے گئے ہیں */}
       {SVG_FILTERS}
       {smallLayer}
       <div
@@ -1579,8 +1556,30 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       >
         <div className="absolute inset-0 z-0 bg-transparent" />
 
+        {/* sender chip */}
+        <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
+          {current.senderAvatar ? (
+            <img
+              src={current.senderAvatar}
+              alt=""
+              className="h-10 w-10 rounded-full border-2 border-[color:var(--gold)] object-cover shadow-lg"
+            />
+          ) : (
+            <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-bold text-white">
+              {initial}
+            </div>
+          )}
+          <div className="rounded-full bg-black/70 px-3 py-1">
+            <p className="text-[11px] font-bold text-white leading-none">{current.senderName}</p>
+            <p className="text-[10px] font-bold text-[color:var(--gold)] leading-tight">
+              sent {current.giftName}
+            </p>
+          </div>
+        </div>
+
+        {/* center/front-screen gift animation */}
         <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
-          {isSmall ? (
+          {isSmallGift ? (
             <SmallGiftFlyer
               emoji={current.giftEmoji}
               image={fallbackImage}
@@ -1595,24 +1594,39 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             <SpaceshipGiftVisual onReady={markCurrentReady} />
           ) : hasVideo ? (
             hasAdvCfg ? (
-              <div
+              <div 
+                className="absolute inset-0 flex items-center justify-center"
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  width: GIFT_STAGE_W,
-                  height: GIFT_STAGE_H,
-                  transform: `translate(-50%, -50%) scale(${stageScale})`,
-                  transformOrigin: "center center",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  pointerEvents: "none",
                 }}
               >
-                <div style={renderConfigToStyle(advCfg)}>
+                <div 
+                  style={{
+                    ...renderConfigToStyle(advCfg),
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    position: "relative",
+                  }}
+                >
                   <GiftGLVideo
                     src={giftClipUrl ?? ""}
                     config={advCfg}
                     loop={advCfg.loop}
-                    objectFit={OBJECT_FIT[advCfg.fit]}
+                    objectFit={OBJECT_FIT[advCfg.fit] || "contain"}
                     className="h-full w-full"
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: advCfg.fit || "contain",
+                    }}
                     muted={
                       audioPrefs.muted ||
                       current.audioEnabled === false ||
@@ -1626,7 +1640,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
                     }
                     onReady={markCurrentReady}
                     onEnded={clearCurrent}
-                    onError={clearCurrent}
+                    onError={() => {
+                      setVideoDurationMs(PLAY_MS);
+                      clearCurrent();
+                    }}
                     onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
                   />
                 </div>
@@ -1656,14 +1673,16 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
                 lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
                 greenKey={chromakeyMode === "green"}
                 forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
+                renderConfig={advCfg}
               />
             )
           ) : hasSvga ? (
-            <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
+            <div className="relative z-[160] flex h-full w-full items-center justify-center">
               <SvgaPlayer
                 src={giftClipUrl ?? ""}
                 className="h-full w-full"
                 style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
+                onLoad={markCurrentReady}
               />
             </div>
           ) : hasSvg ? (
@@ -1685,7 +1704,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             />
           )}
 
-          {isRoyalCrown && (current.receiverAvatar || current.receiverName) && (
+          {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
             <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
               <div className="relative -translate-y-[6%]">
                 <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-lg opacity-70" />
@@ -1704,42 +1723,34 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             </div>
           )}
 
-          {!isSmall && (
+          {!isSmallGift ? (
             <>
-              {current.quantity > 1 && (
-                <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
+              <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
+                <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
+                  {current.giftName}
+                </span>
+                {current.quantity > 1 && (
                   <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
                     ×{current.quantity}
                   </span>
-                </div>
-              )}
+                )}
+              </div>
               {current.coins > 0 && (
                 <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
                   🪙 {current.coins.toLocaleString()}
                 </p>
               )}
             </>
-          )}
-
-          {!isSmall && (current.receiverAvatar || current.receiverName) && (
-            <div className="absolute inset-x-0 bottom-2 z-[220] flex flex-col items-center gift-anim-caption">
-              <div className="relative">
-                <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
-                {current.receiverAvatar ? (
-                  <img
-                    src={current.receiverAvatar}
-                    alt=""
-                    className="relative h-20 w-20 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
-                  />
-                ) : (
-                  <div className="relative grid h-20 w-20 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-2xl font-black text-white shadow-2xl">
-                    {rInitial}
-                  </div>
-                )}
-              </div>
-              <p className="mt-2 rounded-full bg-black/70 px-3 py-0.5 text-[11px] font-bold text-white">
-                {current.receiverName}
-              </p>
+          ) : (
+            <div className="pointer-events-none absolute left-1/2 top-[62%] z-[230] -translate-x-1/2 flex items-center gap-2">
+              <span className="rounded-full bg-black/75 px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white shadow-lg ring-1 ring-white/10">
+                {current.giftName}
+              </span>
+              {current.quantity > 1 && (
+                <span className="rounded-full bg-gradient-to-r from-[#ffd76a] to-[#ff8f2b] px-3 py-1 text-[13px] font-black text-black shadow-lg">
+                  ×{current.quantity}
+                </span>
+              )}
             </div>
           )}
 
@@ -1750,6 +1761,29 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             </div>
           )}
         </div>
+
+        {/* receiver DP */}
+        {!isSmallGift && (current.receiverAvatar || current.receiverName) && (
+          <div className="absolute inset-x-0 bottom-2 z-[220] flex flex-col items-center gift-anim-caption">
+            <div className="relative">
+              <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
+              {current.receiverAvatar ? (
+                <img
+                  src={current.receiverAvatar}
+                  alt=""
+                  className="relative h-20 w-20 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
+                />
+              ) : (
+                <div className="relative grid h-20 w-20 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-2xl font-black text-white shadow-2xl">
+                  {rInitial}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 rounded-full bg-black/70 px-3 py-0.5 text-[11px] font-bold text-white">
+              {current.receiverName}
+            </p>
+          </div>
+        )}
       </div>
     </>,
     portalRoot,
