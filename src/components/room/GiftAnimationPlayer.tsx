@@ -180,6 +180,7 @@ function AnimatedGiftVideo({
   lumaKey = false,
   greenKey = false,
   forceKey = false,
+  playbackKey,
 }: {
   src: string;
   type: string | null;
@@ -197,6 +198,7 @@ function AnimatedGiftVideo({
   greenKey?: boolean;
   /** Admin set the chromakey explicitly — never let runtime detection override it. */
   forceKey?: boolean;
+  playbackKey: string;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -414,7 +416,7 @@ function AnimatedGiftVideo({
 
       {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
       <video
-        key={src}
+        key={playbackKey}
         ref={videoRef}
         src={src}
         playsInline
@@ -1895,6 +1897,7 @@ type GiftSendRow = {
                 onEnded={clearCurrent}
                 onError={clearCurrent}
                 onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
+                playbackKey={current.key}
               />
             </div>
           ) : (
@@ -1922,6 +1925,7 @@ type GiftSendRow = {
             lumaKey={chromakeyMode === "auto" && isBlackBg}
             greenKey={chromakeyMode === "green"}
             forceKey={chromakeyMode !== "auto"}
+            playbackKey={current.key}
           />
           )
 
