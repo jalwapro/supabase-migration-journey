@@ -53,49 +53,32 @@ const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
 const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
-// =============== SVG FILTERS (FIX 1) ===============
-function GiftSvgFilters() {
-  return (
-    <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
-      <defs>
-        <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
-          <feColorMatrix
-            type="matrix"
-            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0"
-          />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="5.2" intercept="-0.48" />
-          </feComponentTransfer>
-        </filter>
-        <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
-          <feColorMatrix
-            type="matrix"
-            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12"
-            result="gkRaw"
-          />
-          <feComponentTransfer in="gkRaw" result="gk">
-            <feFuncA type="linear" slope="6" intercept="-0.12" />
-          </feComponentTransfer>
-          <feColorMatrix
-            in="SourceGraphic"
-            type="matrix"
-            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0"
-            result="lumaRaw"
-          />
-          <feComponentTransfer in="lumaRaw" result="lk">
-            <feFuncA type="linear" slope="7" intercept="-0.12" />
-          </feComponentTransfer>
-          <feComposite in="gk" in2="lk" operator="in" result="keyed" />
-          <feColorMatrix
-            in="keyed"
-            type="matrix"
-            values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0"
-          />
-        </filter>
-      </defs>
-    </svg>
-  );
-}
+// =============== SVG FILTERS - GLOBAL (FIX 1) ===============
+// یہ فلٹرز صرف ایک بار بنائے جاتے ہیں اور پوری ایپ میں استعمال ہوتے ہیں
+const SVG_FILTERS = (
+  <svg aria-hidden width="0" height="0" style={{ position: "absolute", zIndex: -1, pointerEvents: "none" }}>
+    <defs>
+      <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
+        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0" />
+        <feComponentTransfer>
+          <feFuncA type="linear" slope="5.2" intercept="-0.48" />
+        </feComponentTransfer>
+      </filter>
+      <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
+        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12" result="gkRaw" />
+        <feComponentTransfer in="gkRaw" result="gk">
+          <feFuncA type="linear" slope="6" intercept="-0.12" />
+        </feComponentTransfer>
+        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0" result="lumaRaw" />
+        <feComponentTransfer in="lumaRaw" result="lk">
+          <feFuncA type="linear" slope="7" intercept="-0.12" />
+        </feComponentTransfer>
+        <feComposite in="gk" in2="lk" operator="in" result="keyed" />
+        <feColorMatrix in="keyed" type="matrix" values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0" />
+      </filter>
+    </defs>
+  </svg>
+);
 
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
@@ -329,6 +312,8 @@ function AnimatedGiftImage({
   );
 }
 
+// =============== ANIMATED GIFT VIDEO (FIX 2) ===============
+// اس میں سے GiftSvgFilters ہٹا دیا گیا ہے
 function AnimatedGiftVideo({
   src,
   type,
@@ -483,7 +468,7 @@ function AnimatedGiftVideo({
 
   return (
     <div className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent">
-      <GiftSvgFilters />
+      {/* ❌ GiftSvgFilters ہٹا دیا گیا - اب ویڈیو اوپر نہیں آئے گا */}
       <video
         key={src}
         ref={videoRef}
@@ -911,7 +896,8 @@ function spawnGiftTrain(
   };
 }
 
-// =============== SMALL GIFT FLYER COMPONENT ===============
+// =============== SMALL GIFT FLYER COMPONENT (FIX 3) ===============
+// onReady sirf ek baar call hota hai
 
 function SmallGiftFlyer({
   emoji,
@@ -937,7 +923,7 @@ function SmallGiftFlyer({
   const hostRef = useRef<HTMLDivElement | null>(null);
   const readyOnce = useRef(false);
 
-  // FIX 4: onReady sirf ek baar call ho
+  // FIX: onReady sirf ek baar call ho
   useEffect(() => {
     if (!readyOnce.current) {
       readyOnce.current = true;
@@ -961,7 +947,6 @@ function SmallGiftFlyer({
     const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
 
-    // Jackpot flash + banner + coin rain
     let jackpotEls: HTMLElement[] = [];
     if (isJackpot) {
       const flash = document.createElement("div");
@@ -1375,7 +1360,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, [roomId, handleGiftRow]);
 
-  // =============== QUEUE ADVANCEMENT (FIX 5) ===============
+  // =============== QUEUE ADVANCEMENT (FIX 4) ===============
+  // processingRef سے انفینیٹ لوپ سے بچا
   useEffect(() => {
     if (current || queue.length === 0 || processingRef.current) return;
     processingRef.current = true;
@@ -1386,7 +1372,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     processingRef.current = false;
   }, [queue, current]);
 
-  // =============== CURRENT MANAGEMENT (FIX 6) ===============
+  // =============== CURRENT MANAGEMENT (FIX 5) ===============
   const clearCurrent = useCallback(() => {
     if (currentRef.current) {
       currentRef.current = null;
@@ -1574,8 +1560,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
+  // =============== FINAL RENDER WITH SVG FILTERS ===============
   return createPortal(
     <>
+      {/* ✅ SVG فلٹرز صرف ایک بار یہاں ڈالے گئے ہیں */}
+      {SVG_FILTERS}
       {smallLayer}
       <div
         data-gift-overlay-root="true"
