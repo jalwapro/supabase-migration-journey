@@ -9,19 +9,6 @@ import SvgaPlayer from "./SvgaPlayer";
 import GiftGLVideo from "./GiftGLVideo";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
-// =============== CONSTANTS ===============
-
-const COMBO_IDLE_MS = 1800;
-const TRAIN_UNIT = 10;
-const MAX_TRAIN_WAGONS = 20;
-const PLAY_MS = 3200;
-const VIDEO_PLAY_MS = 3800;
-const MAX_GIFT_Z_INDEX = 2147483647;
-const GIFT_PORTAL_ID = "jalwa-gift-animation-layer";
-const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
-const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
-const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
-
 // =============== SVG FILTERS (GLOBAL) ===============
 
 const SVG_FILTERS = (
@@ -49,7 +36,13 @@ const SVG_FILTERS = (
   </svg>
 );
 
-// =============== TYPES ===============
+/**
+ * TikTok-style full-screen gift animation player.
+ * Plays incoming gifts one-by-one as a rich full-screen animation with:
+ *  - Sender chip (top-left)
+ *  - Big gift clip (SVG/MP4) or emoji in the center
+ *  - Receiver DP below the gift
+ */
 
 type Play = {
   key: string;
@@ -71,52 +64,42 @@ type Play = {
   animation: string;
   soundUrl?: string | null;
   chromakey?: string | null;
+  /** Admin "Gift Studio" render/VFX config (jsonb snapshot from gift_sends). */
   renderConfig?: unknown;
   local?: boolean;
+  /** Higher priority pre-empts a lower-priority gift already on screen. */
   priority?: number;
+  /** Per-gift audio gain (0–1) configured by admins. */
   audioVolume?: number;
+  /** Admin master switch — false means this gift is silent for everyone. */
   audioEnabled?: boolean;
+  /** Wall-clock ms when this play entered the queue (telemetry). */
   enqueuedAt?: number;
+  /** Cumulative combo count (running total per sender+gift) — for train mode. */
   comboTotal?: number;
+  /** Train wagons to render for this play (0 = normal flyer swarm). */
   trainWagons?: number;
 };
 
-type GiftSendRow = {
-  id: string;
-  sender_id: string;
-  receiver_id: string | null;
-  gift_id: string;
-  quantity: number;
-  coins_spent: number;
-  diamonds_earned: number;
-  created_at?: string | null;
-  sender_username: string | null;
-  sender_avatar: string | null;
-  receiver_username: string | null;
-  receiver_avatar: string | null;
-  gift_name: string | null;
-  gift_emoji: string | null;
-  gift_icon: string | null;
-  gift_animation: string | null;
-  gift_clip_path: string | null;
-  gift_clip_type: string | null;
-  gift_image_url: string | null;
-  gift_sound_url: string | null;
-  gift_chromakey: string | null;
-  gift_audio_url?: string | null;
-  gift_priority?: number | null;
-  gift_audio_volume?: number | string | null;
-  gift_audio_enabled?: boolean | null;
-  gift_render_config?: unknown;
-};
+const COMBO_IDLE_MS = 1800;
+const TRAIN_UNIT = 10;
+const MAX_TRAIN_WAGONS = 20;
 
-// =============== HELPER FUNCTIONS ===============
+const PLAY_MS = 3200;
+const VIDEO_PLAY_MS = 3800;
+const MAX_GIFT_Z_INDEX = 2147483647;
+const GIFT_PORTAL_ID = "jalwa-gift-animation-layer";
+const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
+const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
+const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
   return normalized === "royal rose" || (normalized.includes("royal") && normalized.includes("rose"));
 }
 
+// Royal Crown gift ships with a placeholder DP baked into the SVGA/MP4;
+// we overlay the actual receiver's avatar in the crown's DP slot.
 function isRoyalCrownGift(name: string | null | undefined) {
   const n = (name ?? "").toLowerCase();
   return n.includes("royal") && n.includes("crown");
@@ -127,10 +110,12 @@ function isJalwaSpaceshipGift(name: string | null | undefined) {
   return n.includes("spaceship") || (n.includes("galaxy") && n.includes("party"));
 }
 
+// Gifts rendered on a pure-black background — we screen-blend them so the black
+// disappears against the room and only the effect shows. Also implies the MP4
+// already carries baked-in audio, so we should unmute the video element.
 const POPULAR_MP4_GIFT_NAMES = new Set([
   "heart","like","balloon","cake","fire","star","butterfly","sunflower","bunny","music note",
 ]);
-
 function isBlackBgGift(name: string | null | undefined) {
   const n = (name ?? "").toLowerCase();
   if (n.includes("money gun") || n.includes("hand heart")) return false;
@@ -138,6 +123,7 @@ function isBlackBgGift(name: string | null | undefined) {
   if (POPULAR_MP4_GIFT_NAMES.has(n)) return true;
   return false;
 }
+
 
 function resolveGiftClipUrl(url: string | null) {
   if (!url) return null;
@@ -173,54 +159,303 @@ function getSafeGiftEmoji(emoji: string | null | undefined, icon: string | null 
 
 function getEffectiveGiftClip(p: Play) {
   if (isRoyalRoseGift(p.giftName) || p.giftClipUrl?.includes("royal-rose")) {
-    return { url: ROYAL_ROSE_MP4_URL, type: "mp4" };
+    return {
+      url: ROYAL_ROSE_MP4_URL,
+      type: "mp4",
+    };
   }
 
   const url = resolveGiftClipUrl(p.giftClipUrl);
   const lower = (url ?? "").split("?")[0]?.split("#")[0]?.toLowerCase() ?? "";
-  const inferredType = lower.endsWith(".webm") ? "webm"
-    : lower.endsWith(".mp4") ? "mp4"
-    : lower.endsWith(".svga") ? "svga"
-    : lower.endsWith(".svg") ? "svg"
-    : p.giftClipType;
+  const inferredType = lower.endsWith(".webm")
+    ? "webm"
+    : lower.endsWith(".mp4")
+      ? "mp4"
+      : lower.endsWith(".svga")
+        ? "svga"
+        : lower.endsWith(".svg")
+          ? "svg"
+          : p.giftClipType;
 
-  return { url, type: inferredType };
+  return {
+    url,
+    type: inferredType,
+  };
 }
 
+
+
 function giftSignature(p: Play) {
+  // NOTE: receiverName is intentionally excluded so a single local dispatch
+  // (multi-receiver "send to all") suppresses every per-row realtime insert
+  // that follows — otherwise viewers would see the gift play N separate times.
   return `${p.senderName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-function isSmallGiftPlay(p: Play) {
-  if (isJalwaSpaceshipGift(p.giftName)) return false;
-  if (isRoyalRoseGift(p.giftName)) return false;
-  if (isRoyalCrownGift(p.giftName)) return false;
-  return (p.coins ?? 0) <= 300;
-}
+// =============== ANIMATED GIFT VIDEO WITH RENDER CONFIG SUPPORT ===============
 
-function smallPlayDurationMs(p: Play) {
-  const q = Math.max(1, Math.min(99, p.quantity || 1));
-  const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
-  const receivers = Math.max(1, (p.receiverIds?.length ?? 1));
-  return 300 + perStagger * q + receivers * 22 + 900;
-}
+function AnimatedGiftVideo({
+  src,
+  type,
+  onReady,
+  onDone,
+  onDuration,
+  fallbackEmoji,
+  fallbackImage,
+  withSound = false,
+  volume = 1,
+  suppressEmojiFallback = false,
+  screenBlend = false,
+  lumaKey = false,
+  greenKey = false,
+  forceKey = false,
+  renderConfig,
+}: {
+  src: string;
+  type: string | null;
+  onReady: () => void;
+  onDone: () => void;
+  onDuration?: (ms: number) => void;
+  fallbackEmoji: string;
+  fallbackImage: string | null;
+  withSound?: boolean;
+  /** 0..1 — scales the boosted gain; comes from the user's gift-audio volume pref. */
+  volume?: number;
+  suppressEmojiFallback?: boolean;
+  screenBlend?: boolean;
+  lumaKey?: boolean;
+  greenKey?: boolean;
+  /** Admin set the chromakey explicitly — never let runtime detection override it. */
+  forceKey?: boolean;
+  renderConfig?: any;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const readyOnceRef = useRef(false);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
+  const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
 
-function findReceiverDpRect(receiverId: string | null | undefined): DOMRect | null {
-  if (typeof document === "undefined") return null;
-  if (receiverId) {
-    const el = document.querySelector(`[data-user-dp="${CSS.escape(receiverId)}"]`);
-    if (el) return (el as HTMLElement).getBoundingClientRect();
+  // NOTE: we intentionally do NOT route audio through the Web Audio API
+  // (createMediaElementSource) here — that requires the media response to
+  // carry permissive CORS headers, and Supabase Storage's public bucket
+  // does not reliably send those for range requests. Without them, Web
+  // Audio silently outputs zeroes (and setting `crossOrigin` on the
+  // <video> to try to satisfy it makes the browser abort the whole
+  // fetch instead, breaking playback entirely). Native <video> playback
+  // has no such restriction — cross-origin video plays with full audio
+  // regardless of CORS — so we just unmute the element directly.
+  const applyVolume = useCallback((video: HTMLVideoElement) => {
+    if (withSound) {
+      video.muted = false;
+      video.volume = Math.max(0, Math.min(1, volume));
+    } else {
+      video.muted = true;
+      video.volume = 0;
+    }
+  }, [withSound, volume]);
+
+  useEffect(() => {
+    readyOnceRef.current = false;
+    setReady(false);
+    setFailed(false);
+    detectedKeyRef.current = null;
+    setDetectedKey(null);
+    const video = videoRef.current;
+    if (!video) return;
+    // Start muted (safest for autoplay); startPlayback flips this once play() is attempted.
+    video.muted = true;
+    video.volume = 0;
+    // Do NOT call video.load() — the JSX `src` prop + `key` remount already
+    // triggers a single fetch. A manual load() here causes a second request
+    // and a visible stutter on first play.
+  }, [src, withSound]);
+
+  const startPlayback = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    applyVolume(video);
+    video.play().catch(() => {
+      // If unmuted autoplay is blocked (rare — sending a gift IS a user gesture),
+      // retry muted so at least the visual plays.
+      video.muted = true;
+      video.play().catch(() => {});
+    });
+  }, [applyVolume]);
+
+  useEffect(() => () => {
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+    }
+  }, []);
+
+  // Inspect the first frame's border pixels to decide the real backdrop of this
+  // clip. Admin metadata is often wrong/stale, and a mislabelled clip renders a
+  // solid green screen over the room — detection makes that impossible.
+  const detectBackdrop = useCallback(() => {
+    if (detectedKeyRef.current !== null) return;
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    try {
+      const w = 48;
+      const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, w, h);
+      const data = ctx.getImageData(0, 0, w, h).data;
+      const samples: Array<[number, number]> = [];
+      for (let x = 0; x < w; x += 1) {
+        samples.push([x, 0], [x, h - 1]);
+      }
+      for (let y = 0; y < h; y += 1) {
+        samples.push([0, y], [w - 1, y]);
+      }
+      let green = 0;
+      let dark = 0;
+      for (const [x, y] of samples) {
+        const i = (y * w + x) * 4;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+        if (a < 24) continue; // already transparent (webm alpha)
+        if (g > 70 && g > r * 1.35 && g > b * 1.35) green += 1;
+        else if (r + g + b < 96) dark += 1;
+      }
+      const total = samples.length;
+      const mode: "green" | "luma" | "none" =
+        green / total > 0.35 ? "green" : dark / total > 0.55 ? "luma" : "none";
+      detectedKeyRef.current = mode;
+      setDetectedKey(mode);
+    } catch {
+      // Cross-origin clip: canvas is tainted, keep the metadata-driven mode.
+      detectedKeyRef.current = "unknown";
+    }
+  }, []);
+
+  const markReady = useCallback(() => {
+    detectBackdrop();
+    setReady(true);
+    if (!readyOnceRef.current) {
+      readyOnceRef.current = true;
+      onReady();
+    }
+    startPlayback();
+  }, [detectBackdrop, onReady, startPlayback]);
+
+  if (failed) {
+    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
   }
-  const host = document.querySelector('[data-seat-index="0"]');
-  if (host) return (host as HTMLElement).getBoundingClientRect();
-  return null;
+
+  // Admin metadata wins when it was set explicitly (forceKey) — EXCEPT when the
+  // runtime frame analysis proves the clip has no key-able backdrop. Keying a
+  // full-scene clip erases it completely, which reads as "the gift never played".
+  const det = forceKey ? (detectedKey === "none" ? "none" : null) : detectedKey;
+  const greenKeyEff = det !== "none" && (det === "green" || (!det && greenKey));
+  const lumaKeyEff = det !== "none" && !greenKeyEff && (det === "luma" || (!det && lumaKey));
+  const screenBlendEff = !greenKeyEff && !lumaKeyEff && det !== "none" && screenBlend;
+
+
+  const filterParts: string[] = [];
+  // #jalwa-green-key removes BOTH a green backdrop and a black backdrop, so the
+  // admin "luma" setting also uses it — a luma-tagged clip shot on green must
+  // still key out cleanly. Screen-blend keeps the softer luminance-only filter.
+  if (greenKeyEff || lumaKeyEff) filterParts.push("url(#jalwa-green-key)");
+  else if (screenBlendEff) filterParts.push("url(#jalwa-luma-key)");
+  filterParts.push(
+    screenBlendEff || lumaKeyEff || greenKeyEff
+      ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
+      : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
+  );
+
+  // =============== RENDER CONFIG SUPPORT ===============
+  // Safe styles extraction — sirf safe properties ko apply karein
+  const configStyles = renderConfig ? renderConfigToStyle(renderConfig) : {};
+  const safeStyles: any = {};
+  if (configStyles) {
+    const allowedProps = ['width', 'height', 'opacity', 'transform', 'filter', 'borderRadius', 'boxShadow', 'background'];
+    for (const key of allowedProps) {
+      if (configStyles[key] !== undefined) {
+        safeStyles[key] = configStyles[key];
+      }
+    }
+  }
+
+  const videoWrapperStyle = {
+    position: "absolute" as const,
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none" as const,
+    ...safeStyles,
+  };
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 z-[120]"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      {/* SVG Filters — ab yahan nahi ban rahe, global hain */}
+      <div style={videoWrapperStyle}>
+        <video
+          key={src}
+          ref={videoRef}
+          src={src}
+          playsInline
+          disablePictureInPicture
+          preload="auto"
+          autoPlay
+          muted
+          onLoadedData={startPlayback}
+          onLoadedMetadata={(e) => {
+            const d = e.currentTarget.duration;
+            // Clamp: some encodes report Infinity / bogus durations which would
+            // otherwise freeze the gift slot forever on slower devices.
+            if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
+          }}
+          onCanPlayThrough={() => {
+            startPlayback();
+          }}
+          onPlaying={markReady}
+          onError={() => {
+            setFailed(true);
+            onReady();
+          }}
+          onEnded={onDone}
+          className="gift-anim-video gift-transparent-video"
+          style={{
+            opacity: ready ? 1 : 0,
+            transform: ready ? "scale(1.1)" : "scale(1.02)",
+            transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
+            background: "transparent",
+            willChange: "opacity, transform",
+            mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
+            filter: filterParts.join(" "),
+            width: "100%",
+            height: "100%",
+            objectFit: renderConfig?.fit || "contain",
+          }}
+        />
+      </div>
+    </div>
+  );
 }
 
-function hashStr(s: string) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
-  return h;
-}
 
 const GIFT_ANIM_MAP: Array<{ match: RegExp; cls: string }> = [
   { match: /heart|kiss|rose|love/i, cls: "gift-anim-heartbeat" },
@@ -240,8 +475,6 @@ function pickGiftAnimClass(name: string | null | undefined): string {
   for (const row of GIFT_ANIM_MAP) if (row.match.test(n)) return row.cls;
   return "gift-anim-pop";
 }
-
-// =============== GIFT FALLBACK VISUAL ===============
 
 function GiftFallbackVisual({
   emoji,
@@ -277,6 +510,7 @@ function GiftFallbackVisual({
   if (image && !imageFailed) {
     return (
       <div className="relative grid min-h-[42vh] place-items-center">
+        {/* Sparkle particles behind the gift for constant motion */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {Array.from({ length: 12 }).map((_, i) => (
             <span
@@ -307,7 +541,9 @@ function GiftFallbackVisual({
     );
   }
 
-  if (suppressEmoji) return null;
+  if (suppressEmoji) {
+    return null;
+  }
 
   return (
     <span
@@ -345,230 +581,6 @@ function AnimatedGiftImage({
     />
   );
 }
-
-// =============== ANIMATED GIFT VIDEO (WITH RENDER CONFIG) ===============
-
-function AnimatedGiftVideo({
-  src,
-  type,
-  onReady,
-  onDone,
-  onDuration,
-  fallbackEmoji,
-  fallbackImage,
-  withSound = false,
-  volume = 1,
-  suppressEmojiFallback = false,
-  screenBlend = false,
-  lumaKey = false,
-  greenKey = false,
-  forceKey = false,
-  renderConfig,
-}: {
-  src: string;
-  type: string | null;
-  onReady: () => void;
-  onDone: () => void;
-  onDuration?: (ms: number) => void;
-  fallbackEmoji: string;
-  fallbackImage: string | null;
-  withSound?: boolean;
-  volume?: number;
-  suppressEmojiFallback?: boolean;
-  screenBlend?: boolean;
-  lumaKey?: boolean;
-  greenKey?: boolean;
-  forceKey?: boolean;
-  renderConfig?: any;
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const readyOnceRef = useRef(false);
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const [detectedKey, setDetectedKey] = useState<"green" | "luma" | "none" | null>(null);
-  const detectedKeyRef = useRef<"green" | "luma" | "none" | "unknown" | null>(null);
-
-  const applyVolume = useCallback((video: HTMLVideoElement) => {
-    if (withSound) {
-      video.muted = false;
-      video.volume = Math.max(0, Math.min(1, volume));
-    } else {
-      video.muted = true;
-      video.volume = 0;
-    }
-  }, [withSound, volume]);
-
-  useEffect(() => {
-    readyOnceRef.current = false;
-    setReady(false);
-    setFailed(false);
-    detectedKeyRef.current = null;
-    setDetectedKey(null);
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = true;
-    video.volume = 0;
-  }, [src, withSound]);
-
-  const startPlayback = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    applyVolume(video);
-    video.play().catch(() => {
-      video.muted = true;
-      video.play().catch(() => {});
-    });
-  }, [applyVolume]);
-
-  useEffect(() => {
-    return () => {
-      const video = videoRef.current;
-      if (video) {
-        video.pause();
-        video.removeAttribute("src");
-        video.load();
-      }
-    };
-  }, []);
-
-  const detectBackdrop = useCallback(() => {
-    if (detectedKeyRef.current !== null) return;
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return;
-    try {
-      const w = 48;
-      const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      if (!ctx) return;
-      ctx.drawImage(video, 0, 0, w, h);
-      const data = ctx.getImageData(0, 0, w, h).data;
-      const samples: Array<[number, number]> = [];
-      for (let x = 0; x < w; x += 1) {
-        samples.push([x, 0], [x, h - 1]);
-      }
-      for (let y = 0; y < h; y += 1) {
-        samples.push([0, y], [w - 1, y]);
-      }
-      let green = 0;
-      let dark = 0;
-      for (const [x, y] of samples) {
-        const i = (y * w + x) * 4;
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-        if (a < 24) continue;
-        if (g > 70 && g > r * 1.35 && g > b * 1.35) green += 1;
-        else if (r + g + b < 96) dark += 1;
-      }
-      const total = samples.length;
-      const mode: "green" | "luma" | "none" =
-        green / total > 0.35 ? "green" : dark / total > 0.55 ? "luma" : "none";
-      detectedKeyRef.current = mode;
-      setDetectedKey(mode);
-    } catch {
-      detectedKeyRef.current = "unknown";
-    }
-  }, []);
-
-  const markReady = useCallback(() => {
-    detectBackdrop();
-    setReady(true);
-    if (!readyOnceRef.current) {
-      readyOnceRef.current = true;
-      onReady();
-    }
-    startPlayback();
-  }, [detectBackdrop, onReady, startPlayback]);
-
-  if (failed) {
-    return <GiftFallbackVisual emoji={fallbackEmoji} image={fallbackImage} onReady={onReady} suppressEmoji={suppressEmojiFallback} name={fallbackEmoji} />;
-  }
-
-  const det = forceKey ? (detectedKey === "none" ? "none" : null) : detectedKey;
-  const greenKeyEff = det !== "none" && (det === "green" || (!det && greenKey));
-  const lumaKeyEff = det !== "none" && !greenKeyEff && (det === "luma" || (!det && lumaKey));
-  const screenBlendEff = !greenKeyEff && !lumaKeyEff && det !== "none" && screenBlend;
-
-  const filterParts: string[] = [];
-  if (greenKeyEff || lumaKeyEff) filterParts.push("url(#jalwa-green-key)");
-  else if (screenBlendEff) filterParts.push("url(#jalwa-luma-key)");
-  filterParts.push(
-    screenBlendEff || lumaKeyEff || greenKeyEff
-      ? "brightness(1.42) saturate(1.32) contrast(1.18) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.72))"
-      : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
-  );
-
-  const configStyles = renderConfig ? renderConfigToStyle(renderConfig) : {};
-  
-  const videoWrapperStyle = {
-    ...configStyles,
-    position: "absolute" as const,
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: "none" as const,
-  };
-
-  return (
-    <div 
-      className="pointer-events-none absolute inset-0 z-[120]"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <div style={videoWrapperStyle}>
-        <video
-          key={src}
-          ref={videoRef}
-          src={src}
-          playsInline
-          disablePictureInPicture
-          preload="auto"
-          autoPlay
-          muted
-          onLoadedData={startPlayback}
-          onLoadedMetadata={(e) => {
-            const d = e.currentTarget.duration;
-            if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
-          }}
-          onCanPlayThrough={() => startPlayback()}
-          onPlaying={markReady}
-          onError={() => {
-            setFailed(true);
-            onReady();
-          }}
-          onEnded={onDone}
-          className="gift-anim-video gift-transparent-video"
-          style={{
-            opacity: ready ? 1 : 0,
-            transform: ready ? "scale(1.1)" : "scale(1.02)",
-            transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
-            background: "transparent",
-            willChange: "opacity, transform",
-            mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
-            filter: filterParts.join(" "),
-            width: "100%",
-            height: "100%",
-            objectFit: renderConfig?.fit || "contain",
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-// =============== SPACESHIP GIFT VISUAL ===============
 
 function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
   const readyOnceRef = useRef(false);
@@ -633,7 +645,297 @@ function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
   );
 }
 
-// =============== FLYER FUNCTIONS ===============
+/**
+ * Locate the receiver's on-screen DP element (a seat tile carrying
+ * `data-user-dp={userId}`). Falls back to bottom-center if not found.
+ */
+function findReceiverDpRect(receiverId: string | null | undefined): DOMRect | null {
+  if (typeof document === "undefined") return null;
+  if (receiverId) {
+    const el = document.querySelector(`[data-user-dp="${CSS.escape(receiverId)}"]`);
+    if (el) return (el as HTMLElement).getBoundingClientRect();
+  }
+  // Fallback: host seat (index 0) is the primary receiver in most rooms.
+  const host = document.querySelector('[data-seat-index="0"]');
+  if (host) return (host as HTMLElement).getBoundingClientRect();
+  return null;
+}
+
+/**
+ * TikTok-style small-gift flyer: shows the gift at center, then a copy flies
+ * to each receiver's DP for every unit of quantity (with slight stagger),
+ * and disappears there while a coin-drop cue plays per landing.
+ */
+function SmallGiftFlyer({
+  emoji,
+  image,
+  quantity,
+  trainWagons = 0,
+  comboTotal = 0,
+  receiverIds,
+  fallbackReceiverId,
+  volume,
+  onReady,
+}: {
+  emoji: string;
+  image: string | null;
+  quantity: number;
+  trainWagons?: number;
+  comboTotal?: number;
+  receiverIds: (string | null | undefined)[];
+  fallbackReceiverId?: string | null;
+  volume: number;
+  onReady: () => void;
+}) {
+  const hostRef = useRef<HTMLDivElement | null>(null);
+  const readyOnce = useRef(false);
+
+  useEffect(() => {
+    if (readyOnce.current) return;
+    readyOnce.current = true;
+    onReady();
+  }, [onReady]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const targets: string[] = (receiverIds && receiverIds.length > 0
+      ? receiverIds
+      : [fallbackReceiverId ?? null]
+    ).filter((v): v is string => !!v);
+    const effectiveTargets = targets.length > 0 ? targets : [""];
+    const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
+    let soundFired = false;
+
+    // ------------------------------------------------------------------
+    // 🎰 Slot-Machine Combo hero
+    // A dark neon slot-panel appears center-screen containing:
+    //  • the gift icon in a spinning reel
+    //  • a rolling ×N counter (uses comboTotal when combo is active)
+    //  • JACKPOT flash + coin rain when comboTotal >= 10
+    // The gift then streams to every receiver DP (existing flyer logic).
+    // ------------------------------------------------------------------
+    const displayCount = Math.max(quantity, comboTotal || 0);
+    // Only fire JACKPOT on the tap that CROSSES the 10 threshold — not on
+    // every subsequent tap. Prevents stacked banners/coin rain at 10+ combo.
+    const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
+    const isJackpot = displayCount >= 10 && prevTotal < 10;
+    const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
+    // Hero slot panel is disabled: a basic gift must fly straight to the
+    // receiver's DP with no intro box in front of it.
+    const skipHeroPanel = true;
+    const HERO_INTRO_MS = 0;
+    const HERO_HOLD_MS = 0;
+
+    // Slot panel (fixed position, centered) — disabled.
+    const panel = document.createElement("div");
+    let rafId = 0;
+    if (!skipHeroPanel) {
+
+    panel.style.cssText =
+      `position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);` +
+      `pointer-events:none;z-index:2147483646;opacity:0;` +
+      `display:flex;align-items:center;gap:14px;padding:14px 22px 14px 16px;` +
+      `border-radius:22px;` +
+      `background:linear-gradient(145deg,rgba(20,6,40,.92) 0%,rgba(50,10,70,.92) 60%,rgba(90,20,60,.92) 100%);` +
+      `border:2px solid rgba(255,215,120,.9);` +
+      `box-shadow:0 0 0 2px rgba(255,105,180,.35),0 20px 60px rgba(0,0,0,.55),0 0 60px rgba(255,180,80,.45);` +
+      `backdrop-filter:blur(6px);will-change:transform,opacity;`;
+
+    // Reel window (holds the gift icon spinning in)
+    const reel = document.createElement("div");
+    reel.style.cssText =
+      `position:relative;width:96px;height:96px;border-radius:16px;overflow:hidden;` +
+      `background:radial-gradient(circle at 50% 40%,rgba(255,220,140,.28) 0%,rgba(0,0,0,.55) 70%);` +
+      `border:1.5px solid rgba(255,215,120,.7);` +
+      `box-shadow:inset 0 0 24px rgba(255,180,80,.35),inset 0 -8px 18px rgba(0,0,0,.5);` +
+      `display:grid;place-items:center;`;
+    const reelInner = document.createElement("div");
+    reelInner.style.cssText = `width:100%;height:100%;display:grid;place-items:center;will-change:transform;`;
+    if (image) {
+      const img = document.createElement("img");
+      img.src = image;
+      img.alt = "";
+      img.style.cssText =
+        "width:86%;height:86%;object-fit:contain;" +
+        "filter:drop-shadow(0 6px 14px rgba(0,0,0,.6)) drop-shadow(0 0 14px rgba(255,220,140,.9));";
+      img.onerror = () => {
+        img.remove();
+        const es = document.createElement("span");
+        es.textContent = emoji || "🎁";
+        es.style.cssText = `font-size:64px;line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,.6));`;
+        reelInner.appendChild(es);
+      };
+      reelInner.appendChild(img);
+    } else {
+      const es = document.createElement("span");
+      es.textContent = emoji || "🎁";
+      es.style.cssText = `font-size:64px;line-height:1;filter:drop-shadow(0 6px 12px rgba(0,0,0,.6));`;
+      reelInner.appendChild(es);
+    }
+    reel.appendChild(reelInner);
+    reelInner.animate(
+      [
+        { transform: "translateY(-140%) rotate(-25deg)", opacity: 0 },
+        { transform: "translateY(18%) rotate(6deg)", opacity: 1, offset: 0.6 },
+        { transform: "translateY(-6%) rotate(-2deg)", opacity: 1, offset: 0.8 },
+        { transform: "translateY(0) rotate(0)", opacity: 1 },
+      ],
+      { duration: 520, easing: "cubic-bezier(.2,.8,.3,1.2)", fill: "forwards" },
+    );
+
+    // Scanline sweep across reel
+    const scan = document.createElement("div");
+    scan.style.cssText =
+      `position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(255,230,160,.55) 50%,transparent 60%);` +
+      `mix-blend-mode:screen;pointer-events:none;`;
+    reel.appendChild(scan);
+    scan.animate(
+      [{ transform: "translateY(-100%)" }, { transform: "translateY(100%)" }],
+      { duration: 900, iterations: Infinity, easing: "linear" },
+    );
+
+    // ×N rolling counter
+    const counterWrap = document.createElement("div");
+    counterWrap.style.cssText =
+      `display:flex;align-items:baseline;gap:2px;font-family:'Orbitron','Impact',system-ui,sans-serif;` +
+      `font-weight:900;letter-spacing:1px;`;
+    const times = document.createElement("span");
+    times.textContent = "×";
+    times.style.cssText =
+      `font-size:32px;color:#ffd166;text-shadow:0 0 12px rgba(255,180,80,.9),0 2px 4px rgba(0,0,0,.6);`;
+    const num = document.createElement("span");
+    num.textContent = "0";
+    num.style.cssText =
+      `font-size:56px;line-height:1;` +
+      `background:linear-gradient(180deg,#fff6c9 0%,#ffd166 45%,#ff8ec4 100%);` +
+      `-webkit-background-clip:text;background-clip:text;color:transparent;` +
+      `text-shadow:0 4px 14px rgba(255,120,180,.55);will-change:transform;`;
+    counterWrap.appendChild(times);
+    counterWrap.appendChild(num);
+
+    panel.appendChild(reel);
+    panel.appendChild(counterWrap);
+    host.appendChild(panel);
+
+    // Panel entry
+    panel.animate(
+      [
+        { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
+        { transform: "translate(-50%,-50%) scale(1.08) rotate(1deg)", opacity: 1, offset: 0.65 },
+        { transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1 },
+      ],
+      { duration: HERO_INTRO_MS + 80, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
+    );
+
+    // Roll counter from 0 → displayCount
+    const rollStart = performance.now();
+    const rollDuration = Math.min(600, 220 + displayCount * 12);
+    const step = (now: number) => {
+      const t = Math.min(1, (now - rollStart) / rollDuration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const v = Math.max(1, Math.round(eased * displayCount));
+      num.textContent = String(v);
+      num.style.transform = `scale(${1 + (1 - t) * 0.15})`;
+      if (t < 1) rafId = requestAnimationFrame(step);
+      else num.style.transform = "scale(1)";
+    };
+    rafId = requestAnimationFrame(step);
+    } // end if (!isComboContinuation) — hero slot panel + counter
+
+    // Jackpot flash + banner + coin rain
+    let jackpotEls: HTMLElement[] = [];
+    if (isJackpot) {
+      const flash = document.createElement("div");
+      flash.style.cssText =
+        `position:fixed;inset:0;pointer-events:none;z-index:2147483644;` +
+        `background:radial-gradient(circle at 50% 50%,rgba(255,220,140,.55) 0%,rgba(255,120,200,.25) 40%,transparent 70%);` +
+        `opacity:0;mix-blend-mode:screen;`;
+      host.appendChild(flash);
+      flash.animate(
+        [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }],
+        { duration: 700, easing: "ease-out", fill: "forwards" },
+      ).onfinish = () => flash.remove();
+      jackpotEls.push(flash);
+
+      const banner = document.createElement("div");
+      banner.textContent = "JACKPOT!";
+      banner.style.cssText =
+        `position:fixed;left:50%;top:calc(50% - 92px);transform:translate(-50%,-50%);` +
+        `pointer-events:none;z-index:2147483647;` +
+        `font-family:'Orbitron','Impact',sans-serif;font-weight:900;font-size:38px;letter-spacing:3px;` +
+        `background:linear-gradient(180deg,#fff6c9 0%,#ffd166 40%,#ff6ec7 100%);` +
+        `-webkit-background-clip:text;background-clip:text;color:transparent;` +
+        `text-shadow:0 6px 22px rgba(255,120,180,.7),0 0 28px rgba(255,220,140,.9);` +
+        `opacity:0;will-change:transform,opacity;`;
+      host.appendChild(banner);
+      banner.animate(
+        [
+          { transform: "translate(-50%,-50%) scale(.4) rotate(-8deg)", opacity: 0 },
+          { transform: "translate(-50%,-50%) scale(1.2) rotate(3deg)", opacity: 1, offset: 0.4 },
+          { transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1, offset: 0.7 },
+          { transform: "translate(-50%,-50%) scale(1.1) rotate(0)", opacity: 0 },
+        ],
+        { duration: 1100, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
+      ).onfinish = () => banner.remove();
+      jackpotEls.push(banner);
+
+      // Coin rain toward each receiver
+      effectiveTargets.forEach((tid, idx) => {
+        window.setTimeout(() => spawnCoinRain(host, tid, 14), 180 + idx * 60);
+      });
+    }
+
+
+    // Rhythmic combo stream — tighter for high qty so it feels alive
+    const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
+    const flyerStartDelay = HERO_INTRO_MS + HERO_HOLD_MS;
+
+    const cleanupTimers: number[] = [];
+    let lastLaunchDelay = 0;
+    effectiveTargets.forEach((targetId, tIdx) => {
+      for (let i = 0; i < qty; i++) {
+        const delay = flyerStartDelay + i * trailStagger + tIdx * 28;
+        lastLaunchDelay = Math.max(lastLaunchDelay, delay);
+        const isFirstOfEvent = !soundFired && i === 0 && tIdx === 0;
+        if (isFirstOfEvent) soundFired = true;
+        const t = window.setTimeout(() => {
+          spawnFlyer(host, {
+            emoji,
+            image,
+            targetId,
+            volume,
+            fireOnce: isFirstOfEvent,
+          });
+        }, delay);
+        cleanupTimers.push(t);
+      }
+    });
+
+    // Fade slot panel after the last flyer has launched (only if we made one)
+    const panelFadeAt = lastLaunchDelay + 240;
+    const panelFadeTimer = skipHeroPanel ? 0 : window.setTimeout(() => {
+      const fade = panel.animate(
+        [
+          { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+          { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
+        ],
+        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
+      );
+      fade.onfinish = () => panel.remove();
+    }, panelFadeAt);
+    if (panelFadeTimer) cleanupTimers.push(panelFadeTimer);
+
+    return () => {
+      cleanupTimers.forEach((t) => clearTimeout(t));
+      if (rafId) cancelAnimationFrame(rafId);
+      try { panel.remove(); jackpotEls.forEach((el) => el.remove()); } catch { /* noop */ }
+    };
+  }, [emoji, image, quantity, trainWagons, comboTotal, receiverIds, fallbackReceiverId, volume]);
+
+
+  return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
+}
 
 function spawnCoinRain(host: HTMLElement, targetId: string, count: number) {
   if (typeof document === "undefined") return;
@@ -693,6 +995,7 @@ function spawnFlyer(
   const midY = (startY + endY) / 2 + perpY * arc;
   const duration = 620;
 
+  // -------- Fluid glowing tail (SVG path with stroke-dash reveal) --------
   const tailSvgNS = "http://www.w3.org/2000/svg";
   const tail = document.createElementNS(tailSvgNS, "svg");
   tail.setAttribute("width", String(vw));
@@ -728,11 +1031,13 @@ function spawnFlyer(
   tail.appendChild(path);
   host.appendChild(tail);
 
+  // approximate path length for dash reveal (chord + small arc bulge)
   const chord = Math.hypot(endX - startX, endY - startY);
   const pathLen = chord + Math.abs(arc) * 1.2;
   path.setAttribute("stroke-dasharray", `${pathLen} ${pathLen}`);
   path.setAttribute("stroke-dashoffset", String(pathLen));
 
+  // Tail draws in, then fades out from the tail-end
   path.animate(
     [
       { strokeDashoffset: pathLen, opacity: 0.0 },
@@ -743,6 +1048,7 @@ function spawnFlyer(
     { duration: duration + 120, easing: "cubic-bezier(.4,.2,.2,1)", fill: "forwards" },
   ).onfinish = () => tail.remove();
 
+  // -------- Comet head: the gift itself, no card/frame ------------------
   const size = 132;
   const half = size / 2;
   const el = document.createElement("div");
@@ -751,6 +1057,7 @@ function spawnFlyer(
     `will-change:transform,opacity;pointer-events:none;z-index:2147483646;` +
     `display:grid;place-items:center;overflow:visible;`;
 
+  // Warm glow behind
   const halo = document.createElement("div");
   halo.style.cssText =
     `position:absolute;inset:-30%;border-radius:9999px;` +
@@ -785,6 +1092,7 @@ function spawnFlyer(
     try { playGiftWhooshCue(Math.min(0.5, opts.volume)); } catch { /* noop */ }
   }
 
+  // Rotation follows the tangent direction — cinematic
   const rot = Math.atan2(endY - startY, endX - startX) * (180 / Math.PI);
 
   const anim = el.animate(
@@ -804,7 +1112,14 @@ function spawnFlyer(
   };
 }
 
+function hashStr(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return h;
+}
+
 function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
+  // Two concentric rings — clean, no confetti dots (looked cluttered)
   const mk = (size: number, delay: number, dur: number, color: string) => {
     const ring = document.createElement("div");
     ring.style.cssText =
@@ -812,7 +1127,7 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
       `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
       `border:2px solid ${color};box-shadow:0 0 24px ${color};opacity:0;`;
     host.appendChild(ring);
-    setTimeout(() => {
+    window.setTimeout(() => {
       ring.animate(
         [
           { transform: "scale(0.35)", opacity: 0.95 },
@@ -825,6 +1140,7 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
   mk(120, 0, 520, "rgba(255,220,140,.9)");
   mk(90, 90, 480, "rgba(255,120,200,.85)");
 
+  // Soft golden bloom
   const bloom = document.createElement("div");
   const bs = 130;
   bloom.style.cssText =
@@ -842,6 +1158,11 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
   ).onfinish = () => bloom.remove();
 }
 
+/**
+ * Gift TRAIN — plays every 10-combo. A locomotive with N wagons rolls
+ * across the screen left→right, each wagon carrying the gift icon.
+ * Wagons grow with combo (1 wagon per 10 units, capped).
+ */
 function spawnGiftTrain(
   host: HTMLElement,
   opts: { emoji: string; image: string | null; wagons: number; volume: number },
@@ -853,6 +1174,7 @@ function spawnGiftTrain(
   const wagonSize = Math.max(56, Math.min(78, Math.round(vw / 8)));
   const wagons = Math.max(1, Math.min(20, opts.wagons));
   const gap = 8;
+  // Locomotive + wagons; total width used for start/end offscreen calc.
   const trainWidth = (wagons + 1) * (wagonSize + gap);
   const duration = 2400 + wagons * 80;
 
@@ -868,6 +1190,7 @@ function spawnGiftTrain(
       `width:${wagonSize}px;height:${wagonSize}px;display:grid;place-items:center;position:relative;` +
       `border-radius:18px;` +
       `background:radial-gradient(circle at 30% 30%, rgba(255,235,170,.35), rgba(255,120,200,.18) 55%, transparent 78%);`;
+    // Bobbing
     car.animate(
       [{ transform: "translateY(0)" }, { transform: "translateY(-4px)" }, { transform: "translateY(0)" }],
       { duration: 380, iterations: Infinity, easing: "ease-in-out" },
@@ -905,11 +1228,9 @@ function spawnGiftTrain(
   for (let i = 0; i < wagons; i++) rail.appendChild(makeCar(false));
   host.appendChild(rail);
 
+  // Steam puffs above locomotive
   const puffs: HTMLDivElement[] = [];
-  let currentTx = -trainWidth;
-  const lastLocoX = () => currentTx + wagonSize / 2;
-
-  const puffTimer = setInterval(() => {
+  const puffTimer = window.setInterval(() => {
     const puff = document.createElement("div");
     puff.style.cssText =
       `position:fixed;left:0;top:${laneY - wagonSize}px;width:22px;height:22px;border-radius:9999px;` +
@@ -926,6 +1247,9 @@ function spawnGiftTrain(
     ).onfinish = () => puff.remove();
   }, 140);
 
+  let currentTx = -trainWidth;
+  const lastLocoX = () => currentTx + wagonSize / 2;
+
   const anim = rail.animate(
     [
       { transform: `translateX(-${trainWidth}px)` },
@@ -933,7 +1257,7 @@ function spawnGiftTrain(
     ],
     { duration, easing: "cubic-bezier(.4,.15,.55,.9)", fill: "forwards" },
   );
-
+  // Track x for steam puff positioning
   const rafTick = () => {
     const t = anim.currentTime;
     if (typeof t === "number") {
@@ -944,185 +1268,57 @@ function spawnGiftTrain(
   };
   requestAnimationFrame(rafTick);
 
+  // Whistle-ish whoosh at start
   try { playGiftWhooshCue(Math.min(0.55, opts.volume)); } catch { /* noop */ }
 
-  const doneTimer = setTimeout(() => {
-    clearInterval(puffTimer);
+  const doneTimer = window.setTimeout(() => {
+    window.clearInterval(puffTimer);
     rail.remove();
     puffs.forEach((p) => p.remove());
   }, duration + 100);
 
   return () => {
-    clearInterval(puffTimer);
-    clearTimeout(doneTimer);
+    window.clearInterval(puffTimer);
+    window.clearTimeout(doneTimer);
     try { anim.cancel(); } catch { /* noop */ }
     try { rail.remove(); } catch { /* noop */ }
     puffs.forEach((p) => { try { p.remove(); } catch { /* noop */ } });
   };
 }
 
-// =============== SMALL GIFT FLYER COMPONENT ===============
 
-function SmallGiftFlyer({
-  emoji,
-  image,
-  quantity,
-  trainWagons = 0,
-  comboTotal = 0,
-  receiverIds,
-  fallbackReceiverId,
-  volume,
-  onReady,
-}: {
-  emoji: string;
-  image: string | null;
-  quantity: number;
-  trainWagons?: number;
-  comboTotal?: number;
-  receiverIds: (string | null | undefined)[];
-  fallbackReceiverId?: string | null;
-  volume: number;
-  onReady: () => void;
-}) {
-  const hostRef = useRef<HTMLDivElement | null>(null);
-  const readyOnce = useRef(false);
 
-  useEffect(() => {
-    if (!readyOnce.current) {
-      readyOnce.current = true;
-      onReady();
-    }
-  }, [onReady]);
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    const targets: string[] = (receiverIds && receiverIds.length > 0
-      ? receiverIds
-      : [fallbackReceiverId ?? null]
-    ).filter((v): v is string => !!v);
-    const effectiveTargets = targets.length > 0 ? targets : [""];
-    const qty = Math.max(1, Math.min(99, Math.floor(quantity || 1)));
-    let soundFired = false;
-
-    const displayCount = Math.max(quantity, comboTotal || 0);
-    const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
-    const isJackpot = displayCount >= 10 && prevTotal < 10;
-    const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
-    const skipHeroPanel = true;
-    const HERO_INTRO_MS = 0;
-    const HERO_HOLD_MS = 0;
-
-    const panel = document.createElement("div");
-    let rafId = 0;
-    if (!skipHeroPanel) {
-      // Panel code (disabled)
-    }
-
-    let jackpotEls: HTMLElement[] = [];
-    if (isJackpot) {
-      const flash = document.createElement("div");
-      flash.style.cssText =
-        `position:fixed;inset:0;pointer-events:none;z-index:2147483644;` +
-        `background:radial-gradient(circle at 50% 50%,rgba(255,220,140,.55) 0%,rgba(255,120,200,.25) 40%,transparent 70%);` +
-        `opacity:0;mix-blend-mode:screen;`;
-      host.appendChild(flash);
-      flash.animate(
-        [{ opacity: 0 }, { opacity: 1, offset: 0.3 }, { opacity: 0 }],
-        { duration: 700, easing: "ease-out", fill: "forwards" },
-      ).onfinish = () => flash.remove();
-      jackpotEls.push(flash);
-
-      const banner = document.createElement("div");
-      banner.textContent = "JACKPOT!";
-      banner.style.cssText =
-        `position:fixed;left:50%;top:calc(50% - 92px);transform:translate(-50%,-50%);` +
-        `pointer-events:none;z-index:2147483647;` +
-        `font-family:'Orbitron','Impact',sans-serif;font-weight:900;font-size:38px;letter-spacing:3px;` +
-        `background:linear-gradient(180deg,#fff6c9 0%,#ffd166 40%,#ff6ec7 100%);` +
-        `-webkit-background-clip:text;background-clip:text;color:transparent;` +
-        `text-shadow:0 6px 22px rgba(255,120,180,.7),0 0 28px rgba(255,220,140,.9);` +
-        `opacity:0;will-change:transform,opacity;`;
-      host.appendChild(banner);
-      banner.animate(
-        [
-          { transform: "translate(-50%,-50%) scale(.4) rotate(-8deg)", opacity: 0 },
-          { transform: "translate(-50%,-50%) scale(1.2) rotate(3deg)", opacity: 1, offset: 0.4 },
-          { transform: "translate(-50%,-50%) scale(1) rotate(0)", opacity: 1, offset: 0.7 },
-          { transform: "translate(-50%,-50%) scale(1.1) rotate(0)", opacity: 0 },
-        ],
-        { duration: 1100, easing: "cubic-bezier(.2,.7,.3,1.25)", fill: "forwards" },
-      ).onfinish = () => banner.remove();
-      jackpotEls.push(banner);
-
-      effectiveTargets.forEach((tid, idx) => {
-        setTimeout(() => spawnCoinRain(host, tid, 14), 180 + idx * 60);
-      });
-    }
-
-    const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
-    const flyerStartDelay = HERO_INTRO_MS + HERO_HOLD_MS;
-
-    const cleanupTimers: number[] = [];
-    let lastLaunchDelay = 0;
-    effectiveTargets.forEach((targetId, tIdx) => {
-      for (let i = 0; i < qty; i++) {
-        const delay = flyerStartDelay + i * trailStagger + tIdx * 28;
-        lastLaunchDelay = Math.max(lastLaunchDelay, delay);
-        const isFirstOfEvent = !soundFired && i === 0 && tIdx === 0;
-        if (isFirstOfEvent) soundFired = true;
-        const t = setTimeout(() => {
-          spawnFlyer(host, {
-            emoji,
-            image,
-            targetId,
-            volume,
-            fireOnce: isFirstOfEvent,
-          });
-        }, delay);
-        cleanupTimers.push(t);
-      }
-    });
-
-    const panelFadeAt = lastLaunchDelay + 240;
-    const panelFadeTimer = skipHeroPanel ? 0 : setTimeout(() => {
-      const fade = panel.animate(
-        [
-          { transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
-          { transform: "translate(-50%,-50%) scale(.55) rotate(-4deg)", opacity: 0 },
-        ],
-        { duration: 260, easing: "cubic-bezier(.4,.2,.6,1)", fill: "forwards" },
-      );
-      fade.onfinish = () => panel.remove();
-    }, panelFadeAt);
-    if (panelFadeTimer) cleanupTimers.push(panelFadeTimer);
-
-    return () => {
-      cleanupTimers.forEach((t) => clearTimeout(t));
-      if (rafId) cancelAnimationFrame(rafId);
-      try { panel.remove(); jackpotEls.forEach((el) => el.remove()); } catch { /* noop */ }
-    };
-  }, [emoji, image, quantity, trainWagons, comboTotal, receiverIds, fallbackReceiverId, volume]);
-
-  return <div ref={hostRef} className="pointer-events-none absolute inset-0" aria-hidden="true" />;
+function isSmallGiftPlay(p: Play) {
+  if (isJalwaSpaceshipGift(p.giftName)) return false;
+  if (isRoyalRoseGift(p.giftName)) return false;
+  if (isRoyalCrownGift(p.giftName)) return false;
+  return (p.coins ?? 0) <= 300;
 }
 
-// =============== MAIN GIFT ANIMATION PLAYER ===============
+function smallPlayDurationMs(p: Play) {
+  const q = Math.max(1, Math.min(99, p.quantity || 1));
+  const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
+  const receivers = Math.max(1, (p.receiverIds?.length ?? 1));
+  return 300 + perStagger * q + receivers * 22 + 900;
+}
 
 export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [queue, setQueue] = useState<Play[]>([]);
   const [current, setCurrent] = useState<Play | null>(null);
+  // Small gifts play IN PARALLEL — they never block the big-gift slot and
+  // never block each other (TikTok-style: many taps = many concurrent flyers).
   const [smallPlays, setSmallPlays] = useState<Play[]>([]);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
-  const [readyKey, setReadyKey] = useState<string | null>(null);
-  const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
-  const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
-  
   const currentRef = useRef<Play | null>(null);
   const seenRef = useRef<Set<string>>(new Set());
   const localGiftRef = useRef<Map<string, number>>(new Map());
+  // Multi-receiver coalescing buffer: realtime `gift_sends` INSERTs arrive
+  // one-per-row when a user sends to "All". We buffer inserts sharing
+  // sender+gift+quantity for a short window and dispatch ONE aggregated Play
+  // with every receiverId — so all seats' DPs are hit simultaneously.
   const coalesceRef = useRef<Map<string, { play: Play; timer: number; ids: string[] }>>(new Map());
-  const comboRef = useRef<Map<string, { count: number; lastAt: number }>>(new Map());
+  const [readyKey, setReadyKey] = useState<string | null>(null);
+  const [soundPulseKey, setSoundPulseKey] = useState<string | null>(null);
   const audioPrefs = useGiftAudioPrefs();
 
   useEffect(() => {
@@ -1149,6 +1345,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, []);
 
+  // Combo tracker (cumulative per sender+gift) — drives train mode.
+  const comboRef = useRef<Map<string, { count: number; lastAt: number }>>(new Map());
+
   const computeCombo = useCallback((p: Play): { total: number; wagons: number } => {
     const sig = `${p.senderName}|${p.giftName}`;
     const now = Date.now();
@@ -1166,7 +1365,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       return [...next, p];
     });
     const ttl = smallPlayDurationMs(p) + 200;
-    setTimeout(() => {
+    window.setTimeout(() => {
       setSmallPlays((prev) => prev.filter((x) => x.key !== p.key));
     }, ttl);
   }, []);
@@ -1182,6 +1381,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     const active = currentRef.current;
     const pr = incoming.priority ?? 0;
 
+    // A markedly higher-priority gift (e.g. a 100k-coin flagship) pre-empts a
+    // cheap animation already on screen instead of waiting behind it.
     if (active && pr > 0 && pr >= (active.priority ?? 0) + 10) {
       trackGiftPlayback({
         roomId, giftId: active.giftId, eventKey: active.key, status: "skipped",
@@ -1192,6 +1393,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }
 
     if (active) {
+      // Bounded, priority-ordered waiting room (highest priority plays next).
       setQueue((q) =>
         [...q, incoming]
           .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0) || (a.enqueuedAt ?? 0) - (b.enqueuedAt ?? 0))
@@ -1218,6 +1420,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     });
   }, [enqueueOne, roomId]);
 
+
   useEffect(() => {
     const onLocalGift = (event: Event) => {
       const detail = (event as CustomEvent<Play>).detail;
@@ -1228,6 +1431,36 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => window.removeEventListener("jalwa:gift-sent", onLocalGift);
   }, [enqueue]);
 
+type GiftSendRow = {
+  id: string;
+  sender_id: string;
+  receiver_id: string | null;
+  gift_id: string;
+  quantity: number;
+  coins_spent: number;
+  diamonds_earned: number;
+  created_at?: string | null;
+  sender_username: string | null;
+  sender_avatar: string | null;
+  receiver_username: string | null;
+  receiver_avatar: string | null;
+  gift_name: string | null;
+  gift_emoji: string | null;
+  gift_icon: string | null;
+  gift_animation: string | null;
+  gift_clip_path: string | null;
+  gift_clip_type: string | null;
+  gift_image_url: string | null;
+  gift_sound_url: string | null;
+  gift_chromakey: string | null;
+  gift_audio_url?: string | null;
+  gift_priority?: number | null;
+  gift_audio_volume?: number | string | null;
+  gift_audio_enabled?: boolean | null;
+  gift_render_config?: unknown;
+};
+
+  // Maps a denormalized gift_sends row → Play, with multi-receiver coalescing.
   const handleGiftRow = useCallback((r: GiftSendRow) => {
     const play: Play = {
       key: `sd-${r.id}`,
@@ -1256,7 +1489,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       renderConfig: r.gift_render_config ?? null,
     };
     if (seenRef.current.has(play.key)) return;
-    
+    // Coalesce multi-receiver sends into ONE simultaneous play.
     const bucketKey = `${r.sender_id}|${r.gift_id}|${r.quantity}|${r.coins_spent}`;
     const existing = coalesceRef.current.get(bucketKey);
     if (existing) {
@@ -1268,14 +1501,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     }
     const ids = r.receiver_id ? [r.receiver_id] : [];
     const entry = { play, ids, timer: 0 };
-    entry.timer = setTimeout(() => {
+    entry.timer = window.setTimeout(() => {
       coalesceRef.current.delete(bucketKey);
       enqueue(entry.play);
     }, 220);
     coalesceRef.current.set(bucketKey, entry);
   }, [enqueue]);
 
-  // Realtime subscription
+  // realtime subscriptions (+ resilient reconnect and polling backstop)
   useEffect(() => {
     let disposed = false;
     let ch: ReturnType<typeof supabase.channel> | null = null;
@@ -1284,6 +1517,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     let poll: number | undefined;
     let lastSeenAt = new Date(Date.now() - 5000).toISOString();
 
+    // Backstop: if the websocket is unhealthy on this device (flaky mobile
+    // network, backgrounded tab, blocked ws), gifts sent from other devices
+    // would never render. Poll recent rows until realtime recovers.
     const pollOnce = async () => {
       const since = lastSeenAt;
       const { data } = await supabase
@@ -1308,7 +1544,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
     const startPolling = () => {
       if (poll || disposed) return;
-      poll = setInterval(() => { void pollOnce(); }, 5000);
+      poll = window.setInterval(() => { void pollOnce(); }, 5000);
     };
     const stopPolling = () => {
       if (poll) { clearInterval(poll); poll = undefined; }
@@ -1318,6 +1554,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       if (disposed) return;
       ch = supabase
         .channel(`gift-anim-${roomId}-${Math.random().toString(36).slice(2, 8)}`)
+        // PERF: gift_sends is fully denormalized (migration 0121) — no extra
+        // lookups per viewer per gift.
         .on(
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
@@ -1332,17 +1570,20 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           if (status === "SUBSCRIBED") {
             attempts = 0;
             stopPolling();
+            // Catch up on anything missed while the socket was down.
             void pollOnce();
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
             startPolling();
             const delay = Math.min(15000, 1000 * 2 ** attempts++);
             if (ch) { const dead = ch; ch = null; void supabase.removeChannel(dead); }
-            retry = setTimeout(connect, delay);
+            retry = window.setTimeout(connect, delay);
           }
         });
     };
 
     connect();
+    // If the tab was backgrounded (mobile), realtime often silently drops —
+    // reconcile on resume.
     const onVisible = () => { if (document.visibilityState === "visible") void pollOnce(); };
     document.addEventListener("visibilitychange", onVisible);
 
@@ -1357,7 +1598,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, [roomId, handleGiftRow]);
 
-  // Advance queue
+
+  // Advance queue → current when idle.
   useEffect(() => {
     if (current || queue.length === 0) return;
     currentRef.current = queue[0];
@@ -1373,11 +1615,14 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const isRoyalRose = isRoyalRoseGift(current?.giftName);
   const isSpaceship = isJalwaSpaceshipGift(current?.giftName);
   const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current?.giftName ?? "");
-  
+  // Gift Studio: when an admin configured this gift in /admin/gift-studio the
+  // full GPU pipeline (size/position/crop/chroma/grade/blur) takes over.
   const advCfgRaw = current?.renderConfig;
-  const hasAdvCfg = !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
+  const hasAdvCfg =
+    !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
   const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
 
+  // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
   const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
   const isBlackBg =
@@ -1386,7 +1631,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       : chromakeyMode === "none"
         ? false
         : autoBlackBg;
-  
+  // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
+  // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
+  // clip attached to these gifts — small tier must feel uniform and snappy,
+  // never a heavyweight cinematic clip.
   const isSmallGift =
     !!current &&
     !isSpaceship &&
@@ -1394,9 +1642,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     !isRoyalCrownGift(current.giftName) &&
     (current.coins ?? 0) <= 300;
 
+  // Premium/Luxury/VIP: real sample sounds. Jalwa signature chime as fallback.
+  const isPremiumTier = !!current && !isSmallGift && (current.coins ?? 0) >= 500;
+
   const fallbackImage = isRoyalRose
     ? ROYAL_ROSE_THUMB_URL
     : resolveGiftImageUrl(current?.giftImageUrl ?? (current?.giftClipType === "image" ? current.giftClipUrl : null));
+  const [videoDurationMs, setVideoDurationMs] = useState<number | null>(null);
 
   const clearCurrent = useCallback(() => {
     currentRef.current = null;
@@ -1413,24 +1665,29 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     setReadyKey(null);
     setVideoDurationMs(null);
     if (current && !hasVideo && !hasSvg) {
+      // svga renders via canvas, mark ready immediately so play timer starts
       setReadyKey(current.key);
     }
   }, [current?.key, current, hasVideo, hasSvg, hasSvga]);
 
+  // Safety net: never let a broken asset keep the gift invisible forever.
+  // Long enough that a slow first-fetch of the video doesn't fall back to
+  // emoji + skip the actual animation.
   useEffect(() => {
     if (!current || readyKey === current.key) return;
     const t = setTimeout(() => setReadyKey(current.key), 2500);
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
-  // Audio playback
+  // Premium/VIP sounds hata diye — sirf real soundUrl bajta hai (jaise Money Gun).
+  // Chhote gifts already coin-drop bajate hain per-landing.
   useEffect(() => {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
+    // Admin master switch: a gift muted in the admin panel is silent everywhere.
     if (current.audioEnabled === false || current.audioVolume === 0) return;
     if (isSmallGift) return;
-    if (!current.soundUrl) return;
-    
+    if (!current.soundUrl) return; // no synthetic Jalwa signature anymore
     const played = playGiftAudioCue({
       soundUrl: current.soundUrl,
       giftName: current.giftName,
@@ -1454,7 +1711,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     };
   }, [current?.key, current?.soundUrl, current?.giftName, current?.audioVolume, current?.audioEnabled, current?.giftId, roomId, isPremiumLong, isSmallGift, audioPrefs.muted, audioPrefs.volume]);
 
-  // Track playback
+  // Report successful playback once the asset is actually on screen.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
     trackGiftPlayback({
@@ -1466,7 +1723,10 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     });
   }, [current, readyKey, roomId]);
 
-  // Auto-clear
+
+
+  // Auto-clear current after play duration. For videos, use the actual clip
+  // duration (from loadedmetadata) so 8–10s premium gifts play through fully.
   useEffect(() => {
     if (!current || readyKey !== current.key) return;
     let ms: number;
@@ -1474,7 +1734,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       const q = Math.max(1, Math.min(99, current.quantity || 1));
       const perStagger = q > 1 ? Math.max(24, 70 - q * 3) : 0;
       const receivers = Math.max(1, (current.receiverIds?.length ?? 1));
+      // hero(360) + flyer trail + flyer duration(620) + safety.
       ms = 360 + perStagger * q + receivers * 22 + 900;
+
     } else if (hasVideo) {
       ms = videoDurationMs ?? (isPremiumLong ? 11000 : VIDEO_PLAY_MS);
     } else {
@@ -1484,17 +1746,23 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => clearTimeout(t);
   }, [current, readyKey, hasVideo, isPremiumLong, videoDurationMs, isSmallGift, clearCurrent]);
 
-  // Hard watchdog
+  // HARD watchdog: on low-end devices a video can stall (decoder busy, low FPS,
+  // background tab) so `readyKey` never fires and the big-gift slot would stay
+  // occupied forever — every later gift then silently queues and never shows.
+  // This guarantees the slot frees up no matter what.
   useEffect(() => {
     if (!current) return;
     const t = setTimeout(clearCurrent, 16000);
     return () => clearTimeout(t);
   }, [current?.key, current, clearCurrent]);
 
-  // Prefetch next
+
+
+  // Prefetch next queued gift's clip so it's warm in cache when it plays.
   const nextPlay = queue[0] ?? null;
   const nextClip = nextPlay ? getEffectiveGiftClip(nextPlay) : null;
-  const nextPrefetchUrl = nextClip && ["mp4", "webm"].includes(nextClip.type ?? "") ? nextClip.url : null;
+  const nextPrefetchUrl =
+    nextClip && ["mp4", "webm"].includes(nextClip.type ?? "") ? nextClip.url : null;
   useEffect(() => {
     if (!nextPrefetchUrl) return;
     preloadGiftVideo(nextPrefetchUrl);
@@ -1502,7 +1770,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   if (typeof document === "undefined" || !portalRoot) return null;
 
-  // Small layer
+  // Parallel small-gift layer: renders independently of the big-gift slot so
+  // many small gifts stream to receiver DPs concurrently (no serial blocking).
   const smallLayer = smallPlays.length > 0 ? (
     <div
       className="pointer-events-none fixed inset-0 overflow-hidden"
@@ -1524,7 +1793,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverIds={sp.receiverIds ?? (sp.receiverId ? [sp.receiverId] : [])}
             fallbackReceiverId={sp.receiverId ?? null}
             volume={audioPrefs.muted ? 0 : audioPrefs.volume}
-            onReady={() => {}}
+            onReady={() => { /* parallel — no ready gating */ }}
           />
         );
       })}
@@ -1554,6 +1823,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
           contain: "layout paint style",
         }}
       >
+        {/* Fully transparent stage: no black room-cover behind gifts. */}
         <div className="absolute inset-0 z-0 bg-transparent" />
 
         {/* sender chip */}
@@ -1677,12 +1947,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               />
             )
           ) : hasSvga ? (
-            <div className="relative z-[160] flex h-full w-full items-center justify-center">
+            <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
               <SvgaPlayer
                 src={giftClipUrl ?? ""}
                 className="h-full w-full"
                 style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
-                onLoad={markCurrentReady}
               />
             </div>
           ) : hasSvg ? (
@@ -1695,15 +1964,8 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               name={current.giftName}
             />
           ) : (
-            <GiftFallbackVisual 
-              emoji={current.giftEmoji} 
-              image={fallbackImage} 
-              onReady={markCurrentReady} 
-              suppressEmoji={isRoyalRose} 
-              name={current.giftName} 
-            />
+            <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} name={current.giftName} />
           )}
-
           {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
             <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
               <div className="relative -translate-y-[6%]">
@@ -1722,7 +1984,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               </div>
             </div>
           )}
-
           {!isSmallGift ? (
             <>
               <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
@@ -1753,7 +2014,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
               )}
             </div>
           )}
-
           {soundPulseKey === current.key && (
             <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
               <span className="text-[13px]">🔊</span>
