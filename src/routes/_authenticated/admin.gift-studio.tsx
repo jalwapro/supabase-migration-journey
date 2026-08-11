@@ -20,6 +20,7 @@ type GiftRow = {
   name: string;
   category: string;
   clip_path: string | null;
+  clip_type: string | null;
   render_config: unknown;
 };
 
@@ -31,7 +32,7 @@ function GiftStudio() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,category,clip_path,render_config")
+        .select("id,name,category,clip_path,clip_type,render_config")
         .order("price", { ascending: false })
         .limit(1000);
       if (error) throw error;
@@ -46,6 +47,7 @@ function GiftStudio() {
         name: g.name,
         category: g.category,
         clipUrl: resolvePlayableGiftUrl(g.clip_path),
+        clipType: g.clip_type,
         render_config: g.render_config,
       })),
     [gifts],
