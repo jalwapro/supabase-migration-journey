@@ -9,6 +9,13 @@ import SvgaPlayer from "./SvgaPlayer";
 import GiftGLVideo from "./GiftGLVideo";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
+// Design-time reference resolution for Gift Studio px-based configs.
+// Every device scales this same logical stage to fit its own viewport, so
+// absolute px positions/sizes configured in Gift Studio land in the same
+// proportional spot for every viewer regardless of screen size.
+const GIFT_STAGE_W = 428;
+const GIFT_STAGE_H = 926;
+
 
 /**
  * TikTok-style full-screen gift animation player.
@@ -1621,6 +1628,33 @@ type GiftSendRow = {
     !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
   const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
 
+  // --- Reference-stage scaling ---------------------------------------------
+  // Gift Studio positionX/Y and width/height can be stored as absolute px
+  // (positionUnit: "px", the legacy/default mode). Absolute px only lands in
+  // the same visual spot if every viewer's screen is the same size — it
+  // isn't. Sender on a tablet and receiver on a small phone previously saw
+  // the SAME numbers rendered at very different relative positions/sizes,
+  // which looked like "different settings" even though the config was
+  // identical. Fix: render config-driven gifts inside a fixed reference
+  // stage (GIFT_STAGE_W x GIFT_STAGE_H) and uniformly scale that whole stage
+  // to cover the real viewport. Every device now renders the exact same
+  // config at the same *proportional* position/size.
+  const [stageScale, setStageScale] = useState(1);
+  useEffect(() => {
+    const compute = () => {
+      const vw = window.innerWidth || GIFT_STAGE_W;
+      const vh = window.innerHeight || GIFT_STAGE_H;
+      setStageScale(Math.max(vw / GIFT_STAGE_W, vh / GIFT_STAGE_H));
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    window.addEventListener("orientationchange", compute);
+    return () => {
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("orientationchange", compute);
+    };
+  }, []);
+
   // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
   const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
@@ -1868,29 +1902,41 @@ type GiftSendRow = {
 
 
           hasAdvCfg ? (
-            <div style={renderConfigToStyle(advCfg)}>
-              <GiftGLVideo
-                src={giftClipUrl ?? ""}
-                config={advCfg}
-                loop={advCfg.loop}
-                objectFit={OBJECT_FIT[advCfg.fit]}
-                className="h-full w-full"
-                muted={
-                  audioPrefs.muted ||
-                  current.audioEnabled === false ||
-                  audioPrefs.volume <= 0 ||
-                  (current.audioVolume ?? 1) <= 0
-                }
-                volume={
-                  audioPrefs.muted || current.audioEnabled === false
-                    ? 0
-                    : audioPrefs.volume * (current.audioVolume ?? 1)
-                }
-                onReady={markCurrentReady}
-                onEnded={clearCurrent}
-                onError={clearCurrent}
-                onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
-              />
+            <div
+              style={{
+                position: "absolute",
+                top: "50%",
+                left: "50%",
+                width: GIFT_STAGE_W,
+                height: GIFT_STAGE_H,
+                transform: `translate(-50%, -50%) scale(${stageScale})`,
+                transformOrigin: "center center",
+              }}
+            >
+              <div style={renderConfigToStyle(advCfg)}>
+                <GiftGLVideo
+                  src={giftClipUrl ?? ""}
+                  config={advCfg}
+                  loop={advCfg.loop}
+                  objectFit={OBJECT_FIT[advCfg.fit]}
+                  className="h-full w-full"
+                  muted={
+                    audioPrefs.muted ||
+                    current.audioEnabled === false ||
+                    audioPrefs.volume <= 0 ||
+                    (current.audioVolume ?? 1) <= 0
+                  }
+                  volume={
+                    audioPrefs.muted || current.audioEnabled === false
+                      ? 0
+                      : audioPrefs.volume * (current.audioVolume ?? 1)
+                  }
+                  onReady={markCurrentReady}
+                  onEnded={clearCurrent}
+                  onError={clearCurrent}
+                  onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
+                />
+              </div>
             </div>
           ) : (
           <AnimatedGiftVideo
