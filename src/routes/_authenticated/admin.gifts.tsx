@@ -32,7 +32,6 @@ type GiftRow = {
   clip_type: string | null;
   image_url?: string | null;
   is_milestone?: boolean | null;
-  chromakey?: string | null;
   audio_url?: string | null;
   sound_url?: string | null;
   audio_enabled?: boolean | null;
@@ -42,14 +41,6 @@ type GiftRow = {
 const CATEGORIES = ["popular", "classic", "love", "romantic", "party", "fantasy", "luxury", "premium", "vip", "lucky"] as const;
 const CATEGORY_TABS = ["all", ...CATEGORIES] as const;
 const CLIP_TYPES = ["none", "svg", "mp4", "webm"] as const;
-const CHROMAKEY_OPTIONS = [
-  { value: "auto", label: "Auto", hint: "Detect from name (default)" },
-  { value: "none", label: "None", hint: "No key — render as-is" },
-  { value: "screen", label: "Screen blend", hint: "Knock out pure-black bg" },
-  { value: "luma", label: "Luma key", hint: "Aggressive black removal" },
-  { value: "green", label: "Green key", hint: "Remove green-screen background" },
-] as const;
-type Chromakey = (typeof CHROMAKEY_OPTIONS)[number]["value"];
 
 type Draft = {
   id?: string;
@@ -64,7 +55,6 @@ type Draft = {
   /** PNG/WebP thumbnail shown in the gift box grid. */
   image_url: string;
   is_milestone: boolean;
-  chromakey: Chromakey;
   /** Dedicated sound file (falls back to the clip's own audio track). */
   audio_url: string;
   /** Admin master switch — off means this gift is silent for every user. */
@@ -84,7 +74,6 @@ const EMPTY_DRAFT: Draft = {
   clip_type: "none",
   image_url: "",
   is_milestone: false,
-  chromakey: "auto",
   audio_url: "",
   audio_enabled: true,
   audio_volume: 1,
@@ -162,7 +151,7 @@ function GiftsAdmin() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [uploading, setUploading] = useState(false);
-  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; chromakey: Chromakey; audioUrl: string | null; audioEnabled: boolean; audioVolume: number } | null>(null);
+  const [preview, setPreview] = useState<{ name: string; clipPath: string | null; clipType: string | null; imageUrl: string | null; emoji: string | null; audioUrl: string | null; audioEnabled: boolean; audioVolume: number } | null>(null);
   const [previewMuted, setPreviewMuted] = useState(false);
   const [previewVolume, setPreviewVolume] = useState(1);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -191,7 +180,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,chromakey,audio_url,sound_url,audio_enabled,audio_volume")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,audio_url,sound_url,audio_enabled,audio_volume")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -242,7 +231,6 @@ function GiftsAdmin() {
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
-        chromakey: draft.chromakey,
         audio_url: draft.audio_url.trim() || null,
         audio_enabled: draft.audio_enabled,
         audio_volume: draft.audio_enabled ? Math.max(0, Math.min(1, draft.audio_volume)) : 0,
@@ -355,8 +343,6 @@ function GiftsAdmin() {
       audio_url: g.audio_url ?? g.sound_url ?? "",
       audio_enabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
       audio_volume: Number(g.audio_volume ?? 1),
-
-      chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? (g.chromakey as Chromakey) : "auto"),
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -555,7 +541,6 @@ function GiftsAdmin() {
                         clipType: g.clip_type ?? null,
                         imageUrl: g.image_url ?? null,
                         emoji: g.emoji ?? g.icon ?? null,
-                        chromakey: (["auto", "none", "screen", "luma", "green"].includes(g.chromakey ?? "") ? g.chromakey : "auto") as Chromakey,
                         audioUrl: resolveGiftMediaUrl(g.audio_url ?? g.sound_url),
                         audioEnabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
                         audioVolume: Number(g.audio_volume ?? 1),
@@ -740,28 +725,6 @@ function GiftsAdmin() {
                 )}
               </>
             )}
-
-            {/* Chromakey */}
-            <div className="mt-3">
-              <p className="mb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Chromakey / transparency
-              </p>
-              <div className="grid grid-cols-5 gap-1">
-                {CHROMAKEY_OPTIONS.map((c) => (
-                  <button
-                    key={c.value}
-                    onClick={() => setDraft((d) => ({ ...d, chromakey: c.value }))}
-                    title={c.hint}
-                    className={`rounded-lg px-1 py-1.5 text-[10px] font-bold uppercase ${draft.chromakey === c.value ? "bg-[color:var(--gold)] text-black" : "bg-card text-muted-foreground"}`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1 text-[10px] text-muted-foreground">
-                {CHROMAKEY_OPTIONS.find((c) => c.value === draft.chromakey)?.hint}
-              </p>
-            </div>
           </div>
 
           {/* Gift audio — admin master control */}
@@ -838,7 +801,6 @@ function GiftsAdmin() {
                 clipType: draft.clip_type === "none" ? null : draft.clip_type,
                 imageUrl: null,
                 emoji: draft.emoji,
-                chromakey: draft.chromakey,
                 audioUrl: resolveGiftMediaUrl(draft.audio_url),
                 audioEnabled: draft.audio_enabled,
                 audioVolume: draft.audio_volume,
@@ -884,73 +846,15 @@ function GiftsAdmin() {
             </button>
             <div className="mb-3 text-center">
               <p className="text-sm font-bold text-white">{preview.name}</p>
-              <p className="text-[10px] uppercase tracking-widest text-[color:var(--gold)]">
-                chromakey: {preview.chromakey}
-              </p>
             </div>
             <div className="grid flex-1 w-full place-items-center overflow-hidden rounded-2xl">
-              <svg aria-hidden width="0" height="0" className="absolute">
-                <defs>
-                  <filter id="jalwa-admin-luma-key" colorInterpolationFilters="sRGB">
-                    <feColorMatrix
-                      type="matrix"
-                      values="1 0 0 0 0
-                              0 1 0 0 0
-                              0 0 1 0 0
-                              0.2126 0.7152 0.0722 0 0"
-                    />
-                    <feComponentTransfer>
-                      <feFuncA type="linear" slope="5.2" intercept="-0.48" />
-                    </feComponentTransfer>
-                  </filter>
-                  <filter id="jalwa-admin-green-key" colorInterpolationFilters="sRGB">
-                    <feColorMatrix
-                      type="matrix"
-                      values="1 0 0 0 0
-                              0 1 0 0 0
-                              0 0 1 0 0
-                              1 -1.35 1 0 0.12"
-                      result="gkRaw"
-                    />
-                    <feComponentTransfer in="gkRaw" result="gk">
-                      <feFuncA type="linear" slope="6" intercept="-0.12" />
-                    </feComponentTransfer>
-                    <feColorMatrix
-                      in="SourceGraphic"
-                      type="matrix"
-                      values="0 0 0 0 0
-                              0 0 0 0 0
-                              0 0 0 0 0
-                              0.2126 0.7152 0.0722 0 0"
-                      result="lumaRaw"
-                    />
-                    <feComponentTransfer in="lumaRaw" result="lk">
-                      <feFuncA type="linear" slope="7" intercept="-0.12" />
-                    </feComponentTransfer>
-                    <feComposite in="gk" in2="lk" operator="in" result="keyed" />
-                    <feColorMatrix
-                      in="keyed"
-                      type="matrix"
-                      values="1    0    0    0 0
-                              0.28 0.58 0.28 0 0
-                              0    0    1    0 0
-                              0    0    0    1 0"
-                    />
-                  </filter>
-
-                </defs>
-              </svg>
               {(() => {
                 const isVideo = (preview.clipType === "mp4" || preview.clipType === "webm") || !!preview.clipPath?.match(/\.(mp4|webm)(\?|$)/i);
-                const greenStage = false;
                 const style: React.CSSProperties = {
                   maxHeight: "100%",
                   maxWidth: "100%",
                   objectFit: "contain",
                   background: "transparent",
-                  ...(preview.chromakey === "screen" ? { mixBlendMode: "screen" as const } : {}),
-                  ...(preview.chromakey === "luma" ? { filter: "url(#jalwa-admin-luma-key)" } : {}),
-                  ...(preview.chromakey === "green" ? { filter: "url(#jalwa-admin-green-key)" } : {}),
                 };
                 const src = preview.clipPath || preview.imageUrl;
                 if (!src) {
@@ -958,7 +862,7 @@ function GiftsAdmin() {
                 }
                 if (isVideo) {
                   return (
-                    <div className="grid h-full w-full place-items-center" style={{ background: greenStage ? "var(--gift-chromakey-green)" : "transparent" }}>
+                    <div className="grid h-full w-full place-items-center">
                       <video
                         ref={previewVideoRef}
                         src={src}
@@ -966,7 +870,7 @@ function GiftsAdmin() {
                         loop
                         muted={effectiveMuted || Boolean(preview.audioUrl)}
                         playsInline
-                        style={{ ...style, ...(greenStage ? { mixBlendMode: "screen" as const } : {}) }}
+                        style={style}
                       />
                     </div>
                   );
