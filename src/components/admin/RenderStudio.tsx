@@ -140,6 +140,7 @@ export default function RenderStudio({
     redoStack.current = [];
     setCfgState(normalizeRenderConfig(selected.render_config));
     setDirty(false);
+    setReplayKey((k) => k + 1); // Trigger replay when switching gifts
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setCfg = useCallback((patch: Partial<GiftRenderConfig>) => {
@@ -340,7 +341,7 @@ export default function RenderStudio({
           {clipUrl && isVideo ? (
             <div style={renderConfigToStyle(cfg)}>
               <GiftGLVideo
-                key={`${clipUrl}-${replayKey}`}
+                key={`${clipUrl}-${replayKey}-${selectedId}`}
                 src={clipUrl}
                 config={cfg}
                 loop
@@ -348,6 +349,7 @@ export default function RenderStudio({
                 objectFit={OBJECT_FIT[cfg.fit]}
                 className="h-full w-full"
                 onError={() => console.error("GiftGLVideo error for:", clipUrl)}
+                playbackKey={`${clipUrl}-${replayKey}-${selectedId}`}
               />
             </div>
           ) : clipUrl ? (
@@ -430,38 +432,38 @@ export default function RenderStudio({
           <TabsContent value="transform" className="max-h-[62vh] overflow-y-auto pr-1">
             <Row label="Width (px)">
               <Input type="number" value={cfg.width ?? ""} placeholder="auto"
-                onChange={(e) => setCfg({ width: e.target.value === "" ? null : Number(e.target.value) })} />
+                onChange={(e) => setCfg({ width: e.target.value === "" ? null : Number(e.target.value) }, true)} />
             </Row>
             <Row label="Height (px)">
               <Input type="number" value={cfg.height ?? ""} placeholder="auto"
-                onChange={(e) => setCfg({ height: e.target.value === "" ? null : Number(e.target.value) })} />
+                onChange={(e) => setCfg({ height: e.target.value === "" ? null : Number(e.target.value) }, true)} />
             </Row>
-            <SelectRow label="Fit mode" value={cfg.fit} options={FITS} onChange={(v) => setCfg({ fit: v })} />
-            <SliderRow label="Scale" value={cfg.scale} min={0.1} max={3} step={0.01} onChange={(v) => setCfg({ scale: v })} suffix="x" />
-            <SliderRow label="Scale X" value={cfg.scaleX} min={0.1} max={3} step={0.01} onChange={(v) => setCfg({ scaleX: v })} />
-            <SliderRow label="Scale Y" value={cfg.scaleY} min={0.1} max={3} step={0.01} onChange={(v) => setCfg({ scaleY: v })} />
-            <SliderRow label="Zoom" value={cfg.zoom} min={0.5} max={3} step={0.01} onChange={(v) => setCfg({ zoom: v })} suffix="x" />
-            <SelectRow label="Position unit" value={cfg.positionUnit} options={UNITS} onChange={(v) => setCfg({ positionUnit: v, positionX: 0, positionY: 0 })} />
+            <SelectRow label="Fit mode" value={cfg.fit} options={FITS} onChange={(v) => setCfg({ fit: v }, true)} />
+            <SliderRow label="Scale" value={cfg.scale} min={0.1} max={3} step={0.01} onChange={(v) => setCfg({ scale: v }, true)} suffix="x" />
+            <SliderRow label="Scale X" value={cfg.scaleX} min={0.1} max={3} step={0.01} onChange={(v) => setCfg({ scaleX: v }, true)} />
+            <SliderRow label="Scale Y" value={cfg.scaleY} min={0.1} max={3} step={0.01} onChange={(v) => setCfg({ scaleY: v }, true)} />
+            <SliderRow label="Zoom" value={cfg.zoom} min={0.5} max={3} step={0.01} onChange={(v) => setCfg({ zoom: v }, true)} suffix="x" />
+            <SelectRow label="Position unit" value={cfg.positionUnit} options={UNITS} onChange={(v) => setCfg({ positionUnit: v, positionX: 0, positionY: 0 }, true)} />
             {cfg.positionUnit === "percent" ? (
               <>
-                <SliderRow label="Position X" value={cfg.positionX} min={-50} max={50} step={0.5} onChange={(v) => setCfg({ positionX: v })} suffix="%" />
-                <SliderRow label="Position Y" value={cfg.positionY} min={-50} max={50} step={0.5} onChange={(v) => setCfg({ positionY: v })} suffix="%" />
+                <SliderRow label="Position X" value={cfg.positionX} min={-50} max={50} step={0.5} onChange={(v) => setCfg({ positionX: v }, true)} suffix="%" />
+                <SliderRow label="Position Y" value={cfg.positionY} min={-50} max={50} step={0.5} onChange={(v) => setCfg({ positionY: v }, true)} suffix="%" />
               </>
             ) : (
               <>
-                <SliderRow label="Position X" value={cfg.positionX} min={-800} max={800} onChange={(v) => setCfg({ positionX: v })} suffix="px" />
-                <SliderRow label="Position Y" value={cfg.positionY} min={-800} max={800} onChange={(v) => setCfg({ positionY: v })} suffix="px" />
+                <SliderRow label="Position X" value={cfg.positionX} min={-800} max={800} onChange={(v) => setCfg({ positionX: v }, true)} suffix="px" />
+                <SliderRow label="Position Y" value={cfg.positionY} min={-800} max={800} onChange={(v) => setCfg({ positionY: v }, true)} suffix="px" />
               </>
             )}
-            <SelectRow label="Anchor" value={cfg.anchor} options={ANCHORS} onChange={(v) => setCfg({ anchor: v })} />
-            <SliderRow label="Rotation" value={cfg.rotation} min={-180} max={180} onChange={(v) => setCfg({ rotation: v })} suffix="°" />
-            <SliderRow label="Opacity" value={cfg.opacity} min={0} max={100} onChange={(v) => setCfg({ opacity: v })} suffix="%" />
+            <SelectRow label="Anchor" value={cfg.anchor} options={ANCHORS} onChange={(v) => setCfg({ anchor: v }, true)} />
+            <SliderRow label="Rotation" value={cfg.rotation} min={-180} max={180} onChange={(v) => setCfg({ rotation: v }, true)} suffix="°" />
+            <SliderRow label="Opacity" value={cfg.opacity} min={0} max={100} onChange={(v) => setCfg({ opacity: v }, true)} suffix="%" />
             <Row label="Flip">
               <div className="flex gap-2">
-                <Button size="sm" variant={cfg.flipH ? "default" : "outline"} onClick={() => setCfg({ flipH: !cfg.flipH })}>
+                <Button size="sm" variant={cfg.flipH ? "default" : "outline"} onClick={() => setCfg({ flipH: !cfg.flipH }, true)}>
                   <FlipHorizontal className="mr-1 h-4 w-4" />H
                 </Button>
-                <Button size="sm" variant={cfg.flipV ? "default" : "outline"} onClick={() => setCfg({ flipV: !cfg.flipV })}>
+                <Button size="sm" variant={cfg.flipV ? "default" : "outline"} onClick={() => setCfg({ flipV: !cfg.flipV }, true)}>
                   <FlipVertical className="mr-1 h-4 w-4" />V
                 </Button>
                 <Button size="sm" variant="outline" onClick={() => setCfg({ positionX: 0, positionY: 0, rotation: 0 })}>
@@ -476,72 +478,72 @@ export default function RenderStudio({
           </TabsContent>
 
           <TabsContent value="crop" className="max-h-[62vh] overflow-y-auto pr-1">
-            <SliderRow label="Crop top" value={cfg.cropTop} min={0} max={600} onChange={(v) => setCfg({ cropTop: v })} suffix="px" />
-            <SliderRow label="Crop bottom" value={cfg.cropBottom} min={0} max={600} onChange={(v) => setCfg({ cropBottom: v })} suffix="px" />
-            <SliderRow label="Crop left" value={cfg.cropLeft} min={0} max={600} onChange={(v) => setCfg({ cropLeft: v })} suffix="px" />
-            <SliderRow label="Crop right" value={cfg.cropRight} min={0} max={600} onChange={(v) => setCfg({ cropRight: v })} suffix="px" />
-            <Button size="sm" variant="outline" onClick={() => setCfg({ cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0 })}>Reset crop</Button>
+            <SliderRow label="Crop top" value={cfg.cropTop} min={0} max={600} onChange={(v) => setCfg({ cropTop: v }, true)} suffix="px" />
+            <SliderRow label="Crop bottom" value={cfg.cropBottom} min={0} max={600} onChange={(v) => setCfg({ cropBottom: v }, true)} suffix="px" />
+            <SliderRow label="Crop left" value={cfg.cropLeft} min={0} max={600} onChange={(v) => setCfg({ cropLeft: v }, true)} suffix="px" />
+            <SliderRow label="Crop right" value={cfg.cropRight} min={0} max={600} onChange={(v) => setCfg({ cropRight: v }, true)} suffix="px" />
+            <Button size="sm" variant="outline" onClick={() => setCfg({ cropTop: 0, cropBottom: 0, cropLeft: 0, cropRight: 0 }, true)}>Reset crop</Button>
           </TabsContent>
 
           <TabsContent value="chroma" className="max-h-[62vh] overflow-y-auto pr-1">
-            <SelectRow label="Mode" value={cfg.chromaMode} options={CHROMA} onChange={(v) => setCfg({ chromaMode: v })} />
+            <SelectRow label="Mode" value={cfg.chromaMode} options={CHROMA} onChange={(v) => setCfg({ chromaMode: v }, true)} />
             <Row label="Key colour">
-              <Input type="color" className="h-9 w-16 p-1" value={cfg.keyColor} onChange={(e) => setCfg({ keyColor: e.target.value })} />
+              <Input type="color" className="h-9 w-16 p-1" value={cfg.keyColor} onChange={(e) => setCfg({ keyColor: e.target.value }, true)} />
             </Row>
-            <SliderRow label="Tolerance" value={cfg.greenTolerance} min={0} max={100} onChange={(v) => setCfg({ greenTolerance: v })} />
-            <SliderRow label="Edge softness" value={cfg.edgeSoftness} min={0} max={100} onChange={(v) => setCfg({ edgeSoftness: v })} />
-            <SliderRow label="Spill suppress" value={cfg.spillSuppression} min={0} max={100} onChange={(v) => setCfg({ spillSuppression: v })} />
-            <SliderRow label="Shadow protect" value={cfg.shadowProtection} min={0} max={100} onChange={(v) => setCfg({ shadowProtection: v })} />
-            <SliderRow label="Colour recovery" value={cfg.colorRecovery} min={0} max={100} onChange={(v) => setCfg({ colorRecovery: v })} />
-            <SliderRow label="Contrast recovery" value={cfg.contrastRecovery} min={0} max={100} onChange={(v) => setCfg({ contrastRecovery: v })} />
-            <SliderRow label="Edge cleanup" value={cfg.edgeCleanup} min={0} max={100} onChange={(v) => setCfg({ edgeCleanup: v })} />
-            <SliderRow label="Sharpness" value={cfg.sharpness} min={0} max={100} onChange={(v) => setCfg({ sharpness: v })} />
-            <SliderRow label="Noise reduction" value={cfg.denoise} min={0} max={100} onChange={(v) => setCfg({ denoise: v })} />
+            <SliderRow label="Tolerance" value={cfg.greenTolerance} min={0} max={100} onChange={(v) => setCfg({ greenTolerance: v }, true)} />
+            <SliderRow label="Edge softness" value={cfg.edgeSoftness} min={0} max={100} onChange={(v) => setCfg({ edgeSoftness: v }, true)} />
+            <SliderRow label="Spill suppress" value={cfg.spillSuppression} min={0} max={100} onChange={(v) => setCfg({ spillSuppression: v }, true)} />
+            <SliderRow label="Shadow protect" value={cfg.shadowProtection} min={0} max={100} onChange={(v) => setCfg({ shadowProtection: v }, true)} />
+            <SliderRow label="Colour recovery" value={cfg.colorRecovery} min={0} max={100} onChange={(v) => setCfg({ colorRecovery: v }, true)} />
+            <SliderRow label="Contrast recovery" value={cfg.contrastRecovery} min={0} max={100} onChange={(v) => setCfg({ contrastRecovery: v }, true)} />
+            <SliderRow label="Edge cleanup" value={cfg.edgeCleanup} min={0} max={100} onChange={(v) => setCfg({ edgeCleanup: v }, true)} />
+            <SliderRow label="Sharpness" value={cfg.sharpness} min={0} max={100} onChange={(v) => setCfg({ sharpness: v }, true)} />
+            <SliderRow label="Noise reduction" value={cfg.denoise} min={0} max={100} onChange={(v) => setCfg({ denoise: v }, true)} />
           </TabsContent>
 
           <TabsContent value="color" className="max-h-[62vh] overflow-y-auto pr-1">
-            <SliderRow label="Brightness" value={cfg.brightness} min={-100} max={100} onChange={(v) => setCfg({ brightness: v })} />
-            <SliderRow label="Contrast" value={cfg.contrast} min={-100} max={100} onChange={(v) => setCfg({ contrast: v })} />
-            <SliderRow label="Saturation" value={cfg.saturation} min={0} max={2} step={0.01} onChange={(v) => setCfg({ saturation: v })} />
-            <SliderRow label="Temperature" value={cfg.temperature} min={-100} max={100} onChange={(v) => setCfg({ temperature: v })} />
-            <SliderRow label="Tint" value={cfg.tint} min={-100} max={100} onChange={(v) => setCfg({ tint: v })} />
-            <SliderRow label="Highlights" value={cfg.highlights} min={-100} max={100} onChange={(v) => setCfg({ highlights: v })} />
-            <SliderRow label="Shadows" value={cfg.shadows} min={-100} max={100} onChange={(v) => setCfg({ shadows: v })} />
-            <SliderRow label="Exposure" value={cfg.exposure} min={-100} max={100} onChange={(v) => setCfg({ exposure: v })} />
-            <SliderRow label="Gamma" value={cfg.gamma} min={0.2} max={3} step={0.01} onChange={(v) => setCfg({ gamma: v })} />
-            <SliderRow label="Hue" value={cfg.hue} min={-180} max={180} onChange={(v) => setCfg({ hue: v })} suffix="°" />
+            <SliderRow label="Brightness" value={cfg.brightness} min={-100} max={100} onChange={(v) => setCfg({ brightness: v }, true)} />
+            <SliderRow label="Contrast" value={cfg.contrast} min={-100} max={100} onChange={(v) => setCfg({ contrast: v }, true)} />
+            <SliderRow label="Saturation" value={cfg.saturation} min={0} max={2} step={0.01} onChange={(v) => setCfg({ saturation: v }, true)} />
+            <SliderRow label="Temperature" value={cfg.temperature} min={-100} max={100} onChange={(v) => setCfg({ temperature: v }, true)} />
+            <SliderRow label="Tint" value={cfg.tint} min={-100} max={100} onChange={(v) => setCfg({ tint: v }, true)} />
+            <SliderRow label="Highlights" value={cfg.highlights} min={-100} max={100} onChange={(v) => setCfg({ highlights: v }, true)} />
+            <SliderRow label="Shadows" value={cfg.shadows} min={-100} max={100} onChange={(v) => setCfg({ shadows: v }, true)} />
+            <SliderRow label="Exposure" value={cfg.exposure} min={-100} max={100} onChange={(v) => setCfg({ exposure: v }, true)} />
+            <SliderRow label="Gamma" value={cfg.gamma} min={0.2} max={3} step={0.01} onChange={(v) => setCfg({ gamma: v }, true)} />
+            <SliderRow label="Hue" value={cfg.hue} min={-180} max={180} onChange={(v) => setCfg({ hue: v }, true)} suffix="°" />
             <Button size="sm" variant="outline" onClick={() => setCfg({
               brightness: 0, contrast: 0, saturation: 1, temperature: 0, tint: 0,
               highlights: 0, shadows: 0, exposure: 0, gamma: 1, hue: 0,
-            })}>Reset colour</Button>
+            }, true)}>Reset colour</Button>
           </TabsContent>
 
           <TabsContent value="blur" className="max-h-[62vh] overflow-y-auto pr-1">
-            <SliderRow label="Top mask" value={cfg.blurTop} min={0} max={100} onChange={(v) => setCfg({ blurTop: v })} suffix="%" />
-            <SliderRow label="Bottom mask" value={cfg.blurBottom} min={0} max={100} onChange={(v) => setCfg({ blurBottom: v })} suffix="%" />
-            <SliderRow label="Left mask" value={cfg.blurLeft} min={0} max={100} onChange={(v) => setCfg({ blurLeft: v })} suffix="%" />
-            <SliderRow label="Right mask" value={cfg.blurRight} min={0} max={100} onChange={(v) => setCfg({ blurRight: v })} suffix="%" />
-            <SliderRow label="Blur radius" value={cfg.blurRadius} min={0} max={100} onChange={(v) => setCfg({ blurRadius: v })} />
-            <SliderRow label="Feather" value={cfg.blurFeather} min={0} max={100} onChange={(v) => setCfg({ blurFeather: v })} />
+            <SliderRow label="Top mask" value={cfg.blurTop} min={0} max={100} onChange={(v) => setCfg({ blurTop: v }, true)} suffix="%" />
+            <SliderRow label="Bottom mask" value={cfg.blurBottom} min={0} max={100} onChange={(v) => setCfg({ blurBottom: v }, true)} suffix="%" />
+            <SliderRow label="Left mask" value={cfg.blurLeft} min={0} max={100} onChange={(v) => setCfg({ blurLeft: v }, true)} suffix="%" />
+            <SliderRow label="Right mask" value={cfg.blurRight} min={0} max={100} onChange={(v) => setCfg({ blurRight: v }, true)} suffix="%" />
+            <SliderRow label="Blur radius" value={cfg.blurRadius} min={0} max={100} onChange={(v) => setCfg({ blurRadius: v }, true)} />
+            <SliderRow label="Feather" value={cfg.blurFeather} min={0} max={100} onChange={(v) => setCfg({ blurFeather: v }, true)} />
           </TabsContent>
 
           <TabsContent value="layer" className="max-h-[62vh] overflow-y-auto pr-1">
-            <SelectRow label="Layer" value={cfg.layer} options={LAYERS} onChange={(v) => setCfg({ layer: v })} />
-            <SliderRow label="Priority" value={cfg.priority} min={0} max={100} onChange={(v) => setCfg({ priority: v })} />
+            <SelectRow label="Layer" value={cfg.layer} options={LAYERS} onChange={(v) => setCfg({ layer: v }, true)} />
+            <SliderRow label="Priority" value={cfg.priority} min={0} max={100} onChange={(v) => setCfg({ priority: v }, true)} />
           </TabsContent>
 
           <TabsContent value="timing" className="max-h-[62vh] overflow-y-auto pr-1">
-            <SliderRow label="Start delay" value={cfg.delayMs} min={0} max={5000} step={50} onChange={(v) => setCfg({ delayMs: v })} suffix="ms" />
-            <SliderRow label="Hold at end" value={cfg.holdMs} min={0} max={5000} step={50} onChange={(v) => setCfg({ holdMs: v })} suffix="ms" />
+            <SliderRow label="Start delay" value={cfg.delayMs} min={0} max={5000} step={50} onChange={(v) => setCfg({ delayMs: v }, true)} suffix="ms" />
+            <SliderRow label="Hold at end" value={cfg.holdMs} min={0} max={5000} step={50} onChange={(v) => setCfg({ holdMs: v }, true)} suffix="ms" />
             <Row label="End after (ms)">
               <Input type="number" value={cfg.endMs ?? ""} placeholder="clip length"
-                onChange={(e) => setCfg({ endMs: e.target.value === "" ? null : Number(e.target.value) })} />
+                onChange={(e) => setCfg({ endMs: e.target.value === "" ? null : Number(e.target.value) }, true)} />
             </Row>
             <Row label="Loop">
-              <Switch checked={cfg.loop} onCheckedChange={(v) => setCfg({ loop: v })} />
+              <Switch checked={cfg.loop} onCheckedChange={(v) => setCfg({ loop: v }, true)} />
             </Row>
             {cfg.loop && (
-              <SliderRow label="Loop count" value={cfg.loopCount} min={0} max={10} onChange={(v) => setCfg({ loopCount: v })} suffix={cfg.loopCount === 0 ? " (∞)" : "x"} />
+              <SliderRow label="Loop count" value={cfg.loopCount} min={0} max={10} onChange={(v) => setCfg({ loopCount: v }, true)} suffix={cfg.loopCount === 0 ? " (∞)" : "x"} />
             )}
           </TabsContent>
         </Tabs>
