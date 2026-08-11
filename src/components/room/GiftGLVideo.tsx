@@ -215,6 +215,7 @@ export interface GiftGLVideoProps {
   onEnded?: () => void;
   onError?: () => void;
   onDuration?: (ms: number) => void;
+  playbackKey?: string;
 }
 
 export function GiftGLVideo({
@@ -230,6 +231,7 @@ export function GiftGLVideo({
   onEnded,
   onError,
   onDuration,
+  playbackKey,
 }: GiftGLVideoProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -461,7 +463,7 @@ export function GiftGLVideo({
   return (
     <>
       <video
-        key={src}
+        key={playbackKey || src}
         ref={videoRef}
         src={src}
         crossOrigin={glFailed ? undefined : "anonymous"}
