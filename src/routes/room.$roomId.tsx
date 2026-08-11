@@ -2229,24 +2229,21 @@ function RoomPage() {
               </div>
             </div>
           </div>
-          {/* Action icons */}
+          {/* Action icons - matching image */}
           <div className="flex items-start gap-2">
             <HeaderIcon
-              onClick={async () => {
-                const reason = window.prompt("Report this room? (e.g. harassment, spam, nudity)");
-                if (!reason || reason.trim().length < 3) return;
-                const { error } = await supabase.rpc("submit_user_report", {
-                  _reported_user: room.data?.host_id ?? null,
-                  _room_id: roomId,
-                  _reason: reason.trim(),
-                  _details: null,
-                });
-                if (error) toast.error(error.message);
-                else toast.success("Report submitted");
-              }}
-              label="Report"
+              onClick={() => setSeatsSheetOpen(true)}
+              label="Settings"
             >
-              <Flag className="h-4 w-4" />
+              <Settings className="h-4 w-4" />
+            </HeaderIcon>
+            <HeaderIcon
+              onClick={() => {
+                toast.success("Room bookmarked");
+              }}
+              label="Bookmark"
+            >
+              <Armchair className="h-4 w-4" />
             </HeaderIcon>
             <HeaderIcon onClick={share} label="Share">
               <Share2 className="h-4 w-4" />
@@ -2257,16 +2254,17 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Rank bar + members row */}
+        {/* Rank bar + members row - matching image */}
         <div className="mt-2 flex items-center justify-between gap-2">
           <button
             onClick={() => void navigate({ to: "/rank" })}
             className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 px-2 py-1 backdrop-blur"
             aria-label="Open leaderboard"
           >
-            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Top</span>
+            <Trophy className="h-4 w-4 text-[color:var(--gold)]" />
+            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Ranking</span>
             {topGifters.length === 0 ? (
-              <span className="text-[10px] font-semibold text-white/50">No gifters yet</span>
+              <span className="text-[10px] font-semibold text-white/50">No ranking yet</span>
             ) : (
               <div className="flex items-center -space-x-2">
                 {topGifters.slice(0, 3).map((g, i) => (
@@ -2299,6 +2297,7 @@ function RoomPage() {
               </span>
             )}
           </button>
+        </div>
           {!isHost && (
             <button
               onClick={() => void joinFamily()}
@@ -2772,6 +2771,18 @@ function RoomPage() {
         <EnterRoomBanner latestEnter={latestEnter} />
       </div>
 
+      {/* ─── User entry prompt (matching image) ── */}
+      {latestEnter && (
+        <div className="pointer-events-none absolute inset-x-0 top-[220px] z-30 mx-auto w-full max-w-md px-3">
+          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 backdrop-blur-md">
+            <Mic className="h-4 w-4 text-white/60" />
+            <span className="text-[11px] font-semibold text-white/80">
+              {latestEnter.enterer_username ?? "Someone"} enters the room
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       {!isVideo ? (
         <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
@@ -3087,7 +3098,7 @@ function RoomPage() {
                 <Smile className="h-3.5 w-3.5" />
               </span>
               <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
-                {text.trim() ? text : "Say hi…"}
+                {text.trim() ? text : "Type a message..."}
               </span>
               <span
                 aria-label="Send"
@@ -3107,11 +3118,27 @@ function RoomPage() {
               <span className="text-[10px] font-semibold">Gift</span>
             </button>
             <button
+              onClick={() => setGamesSheetOpen(true)}
+              aria-label="Games"
+              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+            >
+              <Gamepad2 className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Games</span>
+            </button>
+            <button
+              onClick={() => setInviteOpen(true)}
+              aria-label="Messages"
+              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+            >
+              <Inbox className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">Msg</span>
+            </button>
+            <button
               onClick={() => setVideoSettingsOpen(true)}
               aria-label="More"
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
-              <MoreHorizontal className="h-4 w-4" />
+              <Grid3x3 className="h-4 w-4" />
             </button>
 
 
