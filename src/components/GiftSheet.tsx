@@ -28,6 +28,7 @@ export type Gift = {
   audio_enabled?: boolean | null;
   audio_volume?: number | string | null;
   chromakey?: string | null;
+  render_config?: unknown;
 };
 
 /** Admin-configured audio for a gift: master mute + per-gift gain. */
@@ -156,7 +157,7 @@ export function GiftSheet({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,audio_url,audio_enabled,audio_volume,chromakey,sort_order,is_active,active")
+        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,audio_url,audio_enabled,audio_volume,chromakey,render_config,sort_order,is_active,active")
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
@@ -310,6 +311,10 @@ export function GiftSheet({
       toast.error("Pick a receiver");
       return;
     }
+    const firstReceiver = receivers.find((r) => r.id === targets[0]) ?? null;
+    const royalRose = isRoyalRoseGift(selectedGift.name);
+    const clipUrl = royalRose ? ROYAL_ROSE_MP4_URL : giftVideoUrl(selectedGift);
+    const thumbUrl = royalRose ? ROYAL_ROSE_THUMB_URL : giftThumbUrl(selectedGift);
 
     // Play gift sound INSIDE this click handler so the browser autoplay policy
     // allows it. Unlocks the audio context for subsequent gift sounds too.
@@ -330,16 +335,35 @@ export function GiftSheet({
       }
     }
 
-    // NOTE: We deliberately do NOT locally preview the gift here anymore.
-    // This used to dispatch a "jalwa:gift-sent" CustomEvent built from the
-    // Gifts Management/catalog fields (no Gift Studio render_config), and
-    // GiftAnimationPlayer would then suppress the correct DB-driven event
-    // for 9s as a "duplicate" — so the sender never actually saw their
-    // Gift Studio settings, only receivers did. The sender now sees the
-    // gift the same way everyone else does: via the realtime `gift_sends`
-    // row, which already carries the canonical `gift_render_config`. This
-    // keeps Gift Studio as the single source of truth for every viewer,
-    // sender included, through one shared renderer.
+    window.dispatchEvent(
+
+      new CustomEvent("jalwa:gift-sent", {
+        detail: {
+          key: `local-${selectedGift.id}-${Date.now()}`,
+          senderName: profile?.username ?? "Guest",
+          senderAvatar: profile?.avatar ?? null,
+          receiverId: firstReceiver?.id ?? null,
+          receiverIds: targets,
+          receiverName: firstReceiver?.username ?? "Host",
+          receiverAvatar: firstReceiver?.avatar ?? null,
+          giftName: selectedGift.name,
+          giftEmoji: clipUrl ? "" : selectedGift.emoji ?? (isAssetUrlLike(selectedGift.icon) ? "" : selectedGift.icon) ?? "🎁",
+          giftImageUrl: thumbUrl,
+          giftClipUrl: clipUrl ?? thumbUrl,
+          giftClipType: clipUrl ? selectedGift.clip_type : (thumbUrl ? "image" : null),
+          coins: price(selectedGift) * qty,
+          diamonds: selectedGift.diamonds_value * qty,
+          quantity: qty,
+          animation: selectedGift.animation ?? "pop",
+          soundUrl: giftSoundSrc(selectedGift),
+          audioEnabled: giftAudioEnabled(selectedGift),
+          audioVolume: giftAudioGain(selectedGift),
+          chromakey: selectedGift.chromakey ?? "auto",
+          renderConfig: selectedGift.render_config,
+          local: true,
+        },
+      }),
+    );
     onClose();
     send.mutate({ gift: selectedGift, targets, quantity: qty });
     onSent?.({ gift: selectedGift, targets });
