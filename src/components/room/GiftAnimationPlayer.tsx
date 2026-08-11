@@ -37,7 +37,6 @@ type Play = {
   quantity: number;
   animation: string;
   soundUrl?: string | null;
-  chromakey?: string | null;
   /** Admin "Gift Studio" render/VFX config (jsonb snapshot from gift_sends). */
   renderConfig?: unknown;
   local?: boolean;
@@ -435,9 +434,11 @@ function AnimatedGiftVideo({
           startPlayback();
         }}
         onPlaying={markReady}
-        onError={() => {
+        onError={(e) => {
+          console.error("Gift video error:", e, src);
           setFailed(true);
           onReady();
+          onDone(); // Ensure we move to next gift even on error
         }}
         onEnded={onDone}
         className="gift-anim-video gift-transparent-video absolute inset-0 h-full w-full scale-110 object-contain"
@@ -530,7 +531,8 @@ function GiftFallbackVisual({
             setImageLoaded(true);
             markReady();
           }}
-          onError={() => {
+          onError={(e) => {
+            console.error("Gift image error:", e, image);
             setImageFailed(true);
             markReady();
           }}
@@ -1451,7 +1453,6 @@ type GiftSendRow = {
   gift_clip_type: string | null;
   gift_image_url: string | null;
   gift_sound_url: string | null;
-  gift_chromakey: string | null;
   gift_audio_url?: string | null;
   gift_priority?: number | null;
   gift_audio_volume?: number | string | null;
@@ -1480,7 +1481,6 @@ type GiftSendRow = {
       quantity: r.quantity ?? 1,
       animation: r.gift_animation ?? "pop",
       soundUrl: r.gift_audio_url ?? r.gift_sound_url ?? null,
-      chromakey: r.gift_chromakey ?? "auto",
       priority: Number(r.gift_priority ?? 0) || 0,
       audioVolume:
         r.gift_audio_volume == null ? undefined : Math.max(0, Math.min(1, Number(r.gift_audio_volume))),
@@ -1527,7 +1527,7 @@ type GiftSendRow = {
           "id,sender_id,receiver_id,gift_id,quantity,coins_spent,diamonds_earned,created_at," +
             "sender_username,sender_avatar,receiver_username,receiver_avatar," +
             "gift_name,gift_emoji,gift_icon,gift_animation,gift_clip_path,gift_clip_type," +
-            "gift_image_url,gift_sound_url,gift_chromakey,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled,gift_render_config",
+            "gift_image_url,gift_sound_url,gift_audio_url,gift_priority,gift_audio_volume,gift_audio_enabled,gift_render_config",
         )
         .eq("room_id", roomId)
         .gt("created_at", since)
@@ -1622,15 +1622,13 @@ type GiftSendRow = {
   const hasAdvCfg = !!advCfgRaw && typeof advCfgRaw === "object";
   const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
 
-  // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
-  const chromakeyMode = (current?.chromakey ?? "auto") as "auto" | "none" | "screen" | "luma" | "green";
+  // Gift Studio chromakey settings take precedence
+  const chromakeyMode = advCfg.chromaMode as "off" | "auto" | "green" | "blue" | "black" | "white";
   const autoBlackBg = isBlackBgGift(current?.giftName) || hasVideo || hasSvga;
   const isBlackBg =
-    chromakeyMode === "screen" || chromakeyMode === "luma"
-      ? true
-      : chromakeyMode === "none"
-        ? false
-        : autoBlackBg;
+    chromakeyMode === "auto" ? autoBlackBg
+    : chromakeyMode === "off" ? false
+    : true;
   // Small/cheap gifts (Tier 1, ≤300 coins): always render as tiny fast flyer
   // to receiver DP + coin-drop cue. We deliberately ignore any video/svga
   // clip attached to these gifts — small tier must feel uniform and snappy,
@@ -1675,7 +1673,10 @@ type GiftSendRow = {
   // emoji + skip the actual animation.
   useEffect(() => {
     if (!current || readyKey === current.key) return;
-    const t = setTimeout(() => setReadyKey(current.key), 2500);
+    const t = setTimeout(() => {
+      console.warn(`Gift ready timeout for ${current.giftName} (${current.key}) - forcing ready`);
+      setReadyKey(current.key);
+    }, 2500);
     return () => clearTimeout(t);
   }, [current, readyKey]);
 
@@ -1752,7 +1753,10 @@ type GiftSendRow = {
   // This guarantees the slot frees up no matter what.
   useEffect(() => {
     if (!current) return;
-    const t = setTimeout(clearCurrent, 16000);
+    const t = setTimeout(() => {
+      console.warn(`Gift watchdog timeout for ${current.giftName} (${current.key}) - clearing slot`);
+      clearCurrent();
+    }, 16000);
     return () => clearTimeout(t);
   }, [current?.key, current, clearCurrent]);
 
@@ -1845,7 +1849,7 @@ type GiftSendRow = {
         <div className="rounded-full bg-black/70 px-3 py-1">
           <p className="text-[11px] font-bold text-white leading-none">{current.senderName}</p>
           <p className="text-[10px] font-bold text-[color:var(--gold)] leading-tight">
-            sent {current.giftName}
+            sent a gift
           </p>
         </div>
       </div>
@@ -1914,10 +1918,10 @@ type GiftSendRow = {
             fallbackEmoji={current.giftEmoji}
             fallbackImage={fallbackImage}
             suppressEmojiFallback={Boolean(fallbackImage)}
-            screenBlend={isBlackBg}
-            lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
+            screenBlend={chromakeyMode === "auto" && isBlackBg}
+            lumaKey={chromakeyMode === "auto" && isBlackBg}
             greenKey={chromakeyMode === "green"}
-            forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
+            forceKey={chromakeyMode !== "auto"}
           />
           )
 
@@ -1927,6 +1931,10 @@ type GiftSendRow = {
               src={giftClipUrl ?? ""}
               className="h-full w-full"
               style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
+              onError={(e) => {
+                console.error("SVGA player error:", e, giftClipUrl);
+                markCurrentReady(); // Still mark ready so we can show fallback
+              }}
             />
           </div>
 
@@ -1963,9 +1971,6 @@ type GiftSendRow = {
         {!isSmallGift ? (
           <>
             <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
-              <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
-                {current.giftName}
-              </span>
               {current.quantity > 1 && (
                 <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
                   ×{current.quantity}
