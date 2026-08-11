@@ -5,6 +5,7 @@
 import catalog from "./gifts.catalog.sample.json";
 import type { Gift } from "@/components/GiftSheet";
 import { absolutizeLovableAsset, resolvePlayableGiftUrl } from "@/lib/giftMedia";
+import { DEFAULT_GIFT_RENDER } from "./giftRender";
 
 type CatalogEntry = {
   id: string;
@@ -28,6 +29,7 @@ type CatalogEntry = {
   min_vip_level?: number;
   is_combo_enabled?: boolean;
   is_active?: boolean;
+  render_config?: unknown;
 };
 
 function toGift(entry: CatalogEntry): Gift & { rarity?: string; source: "catalog" } {
@@ -48,6 +50,7 @@ function toGift(entry: CatalogEntry): Gift & { rarity?: string; source: "catalog
     clip_type: clipType,
     sound_url: absolutizeLovableAsset(entry.sound_url),
     rarity: entry.rarity,
+    render_config: entry.render_config,
     source: "catalog",
   };
 }
