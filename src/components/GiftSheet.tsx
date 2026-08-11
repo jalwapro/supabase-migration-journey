@@ -27,7 +27,6 @@ export type Gift = {
   audio_url?: string | null;
   audio_enabled?: boolean | null;
   audio_volume?: number | string | null;
-  chromakey?: string | null;
   render_config?: unknown;
 };
 
@@ -157,7 +156,7 @@ export function GiftSheet({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,audio_url,audio_enabled,audio_volume,chromakey,render_config,sort_order,is_active,active")
+        .select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,audio_url,audio_enabled,audio_volume,render_config,sort_order,is_active,active")
         .order("sort_order");
       if (error) throw error;
       const rows = (data ?? []) as (Gift & { sort_order?: number; is_active?: boolean; active?: boolean })[];
@@ -358,7 +357,6 @@ export function GiftSheet({
           soundUrl: giftSoundSrc(selectedGift),
           audioEnabled: giftAudioEnabled(selectedGift),
           audioVolume: giftAudioGain(selectedGift),
-          chromakey: selectedGift.chromakey ?? "auto",
           renderConfig: selectedGift.render_config,
           local: true,
         },
