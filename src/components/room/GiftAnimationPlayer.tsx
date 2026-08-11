@@ -9,32 +9,6 @@ import SvgaPlayer from "./SvgaPlayer";
 import GiftGLVideo from "./GiftGLVideo";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
-// =============== SVG FILTERS (GLOBAL) ===============
-
-const SVG_FILTERS = (
-  <svg aria-hidden width="0" height="0" style={{ position: "absolute", zIndex: -1, pointerEvents: "none" }}>
-    <defs>
-      <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
-        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0" />
-        <feComponentTransfer>
-          <feFuncA type="linear" slope="5.2" intercept="-0.48" />
-        </feComponentTransfer>
-      </filter>
-      <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
-        <feColorMatrix type="matrix" values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12" result="gkRaw" />
-        <feComponentTransfer in="gkRaw" result="gk">
-          <feFuncA type="linear" slope="6" intercept="-0.12" />
-        </feComponentTransfer>
-        <feColorMatrix in="SourceGraphic" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0" result="lumaRaw" />
-        <feComponentTransfer in="lumaRaw" result="lk">
-          <feFuncA type="linear" slope="7" intercept="-0.12" />
-        </feComponentTransfer>
-        <feComposite in="gk" in2="lk" operator="in" result="keyed" />
-        <feColorMatrix in="keyed" type="matrix" values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0" />
-      </filter>
-    </defs>
-  </svg>
-);
 
 /**
  * TikTok-style full-screen gift animation player.
@@ -192,8 +166,6 @@ function giftSignature(p: Play) {
   return `${p.senderName}|${p.giftName}|${p.quantity}|${p.coins}`;
 }
 
-// =============== ANIMATED GIFT VIDEO WITH RENDER CONFIG SUPPORT ===============
-
 function AnimatedGiftVideo({
   src,
   type,
@@ -209,7 +181,6 @@ function AnimatedGiftVideo({
   lumaKey = false,
   greenKey = false,
   forceKey = false,
-  renderConfig,
 }: {
   src: string;
   type: string | null;
@@ -227,7 +198,6 @@ function AnimatedGiftVideo({
   greenKey?: boolean;
   /** Admin set the chromakey explicitly — never let runtime detection override it. */
   forceKey?: boolean;
-  renderConfig?: any;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const readyOnceRef = useRef(false);
@@ -374,84 +344,113 @@ function AnimatedGiftVideo({
       : "brightness(1.22) saturate(1.22) contrast(1.06) drop-shadow(0 20px 54px rgba(255, 210, 90, 0.58))",
   );
 
-  // =============== RENDER CONFIG SUPPORT ===============
-  // Safe styles extraction — sirf safe properties ko apply karein
-  const configStyles = renderConfig ? renderConfigToStyle(renderConfig) : {};
-  const safeStyles: any = {};
-  if (configStyles) {
-    const allowedProps = ['width', 'height', 'opacity', 'transform', 'filter', 'borderRadius', 'boxShadow', 'background'];
-    for (const key of allowedProps) {
-      if (configStyles[key] !== undefined) {
-        safeStyles[key] = configStyles[key];
-      }
-    }
-  }
-
-  const videoWrapperStyle = {
-    position: "absolute" as const,
-    top: "50%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    pointerEvents: "none" as const,
-    ...safeStyles,
-  };
-
   return (
     <div
-      className="pointer-events-none absolute inset-0 z-[120]"
-      style={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+      className="pointer-events-none absolute inset-0 z-[120] grid place-items-center bg-transparent"
     >
-      {/* SVG Filters — ab yahan nahi ban rahe, global hain */}
-      <div style={videoWrapperStyle}>
-        <video
-          key={src}
-          ref={videoRef}
-          src={src}
-          playsInline
-          disablePictureInPicture
-          preload="auto"
-          autoPlay
-          muted
-          onLoadedData={startPlayback}
-          onLoadedMetadata={(e) => {
-            const d = e.currentTarget.duration;
-            // Clamp: some encodes report Infinity / bogus durations which would
-            // otherwise freeze the gift slot forever on slower devices.
-            if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
-          }}
-          onCanPlayThrough={() => {
-            startPlayback();
-          }}
-          onPlaying={markReady}
-          onError={() => {
-            setFailed(true);
-            onReady();
-          }}
-          onEnded={onDone}
-          className="gift-anim-video gift-transparent-video"
-          style={{
-            opacity: ready ? 1 : 0,
-            transform: ready ? "scale(1.1)" : "scale(1.02)",
-            transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
-            background: "transparent",
-            willChange: "opacity, transform",
-            mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
-            filter: filterParts.join(" "),
-            width: "100%",
-            height: "100%",
-            objectFit: renderConfig?.fit || "contain",
-          }}
-        />
-      </div>
+      {(
+        <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+          <defs>
+            <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
+              {/* Compute luminance into the alpha channel */}
+              <feColorMatrix
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        0.2126 0.7152 0.0722 0 0"
+              />
+              {/* Boost alpha contrast so dark background pixels fall to 0 */}
+              <feComponentTransfer>
+                <feFuncA type="linear" slope="5.2" intercept="-0.48" />
+              </feComponentTransfer>
+            </filter>
+
+            {/* Real chroma key: kills the green backdrop AND any pure-black
+                backdrop, then suppresses green spill on the subject edges. */}
+            <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
+              {/* 1. alpha from "greenness": pure green -> 0, everything else -> 1 */}
+              <feColorMatrix
+                type="matrix"
+                values="1 0 0 0 0
+                        0 1 0 0 0
+                        0 0 1 0 0
+                        1 -1.35 1 0 0.12"
+                result="gkRaw"
+              />
+              <feComponentTransfer in="gkRaw" result="gk">
+                <feFuncA type="linear" slope="6" intercept="-0.12" />
+              </feComponentTransfer>
+
+              {/* 2. alpha from luminance so black-backdrop clips key out too */}
+              <feColorMatrix
+                in="SourceGraphic"
+                type="matrix"
+                values="0 0 0 0 0
+                        0 0 0 0 0
+                        0 0 0 0 0
+                        0.2126 0.7152 0.0722 0 0"
+                result="lumaRaw"
+              />
+              <feComponentTransfer in="lumaRaw" result="lk">
+                <feFuncA type="linear" slope="7" intercept="-0.12" />
+              </feComponentTransfer>
+
+              {/* 3. keep only pixels that pass both tests */}
+              <feComposite in="gk" in2="lk" operator="in" result="keyed" />
+
+              {/* 4. green spill suppression on the surviving subject */}
+              <feColorMatrix
+                in="keyed"
+                type="matrix"
+                values="1    0    0    0 0
+                        0.28 0.58 0.28 0 0
+                        0    0    1    0 0
+                        0    0    0    1 0"
+              />
+            </filter>
+          </defs>
+        </svg>
+      )}
+
+      {/* No placeholder while video buffers — avoids static PNG/emoji flash before the clip plays. */}
+      <video
+        key={src}
+        ref={videoRef}
+        src={src}
+        playsInline
+        disablePictureInPicture
+        preload="auto"
+        autoPlay
+        muted
+        onLoadedData={startPlayback}
+        onLoadedMetadata={(e) => {
+          const d = e.currentTarget.duration;
+          // Clamp: some encodes report Infinity / bogus durations which would
+          // otherwise freeze the gift slot forever on slower devices.
+          if (onDuration && isFinite(d) && d > 0) onDuration(Math.min(15000, Math.ceil(d * 1000)));
+        }}
+
+        onCanPlayThrough={() => {
+          startPlayback();
+        }}
+        onPlaying={markReady}
+        onError={() => {
+          setFailed(true);
+          onReady();
+        }}
+        onEnded={onDone}
+        className="gift-anim-video gift-transparent-video absolute inset-0 h-full w-full scale-110 object-contain"
+        style={{
+          opacity: ready ? 1 : 0,
+          transform: ready ? "scale(1.1)" : "scale(1.02)",
+          transition: "opacity 320ms ease-out, transform 520ms cubic-bezier(0.22, 1, 0.36, 1)",
+          background: "transparent",
+          willChange: "opacity, transform",
+          mixBlendMode: !lumaKey && !greenKey && screenBlend ? "screen" : undefined,
+          filter: filterParts.join(" "),
+        }}
+      />
     </div>
   );
 }
@@ -1618,8 +1617,9 @@ type GiftSendRow = {
   // Gift Studio: when an admin configured this gift in /admin/gift-studio the
   // full GPU pipeline (size/position/crop/chroma/grade/blur) takes over.
   const advCfgRaw = current?.renderConfig;
-  const hasAdvCfg =
-    !!advCfgRaw && typeof advCfgRaw === "object" && Object.keys(advCfgRaw as object).length > 0;
+  // Always use renderConfig if present, even if it looks like defaults
+  // Admin may have intentionally set defaults
+  const hasAdvCfg = !!advCfgRaw && typeof advCfgRaw === "object";
   const advCfg = hasAdvCfg ? normalizeRenderConfig(advCfgRaw) : DEFAULT_GIFT_RENDER;
 
   // Admin-controlled chromakey (auto|none|screen|luma|green) overrides the heuristic.
@@ -1807,198 +1807,220 @@ type GiftSendRow = {
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  // =============== RENDER - FIXED: Sirf AnimatedGiftVideo use karein ===============
   return createPortal(
     <>
-      {SVG_FILTERS}
-      {smallLayer}
-      <div
-        data-gift-overlay-root="true"
-        className="jalwa-gift-overlay pointer-events-none fixed inset-0 overflow-hidden"
-        aria-live="polite"
-        style={{
-          zIndex: MAX_GIFT_Z_INDEX,
-          isolation: "isolate",
-          transform: "translateZ(0)",
-          contain: "layout paint style",
-        }}
-      >
-        {/* Fully transparent stage: no black room-cover behind gifts. */}
-        <div className="absolute inset-0 z-0 bg-transparent" />
+    {smallLayer}
+    <div
+      data-gift-overlay-root="true"
+      className="jalwa-gift-overlay pointer-events-none fixed inset-0 overflow-hidden"
+      aria-live="polite"
+      style={{
+        zIndex: MAX_GIFT_Z_INDEX,
+        isolation: "isolate",
+        transform: "translateZ(0)",
+        contain: "layout paint style",
+      }}
+    >
+      {/* Fully transparent stage: no black room-cover behind gifts. */}
+      <div className="absolute inset-0 z-0 bg-transparent" />
 
-        {/* sender chip */}
-        <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
-          {current.senderAvatar ? (
-            <img
-              src={current.senderAvatar}
-              alt=""
-              className="h-10 w-10 rounded-full border-2 border-[color:var(--gold)] object-cover shadow-lg"
-            />
-          ) : (
-            <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-bold text-white">
-              {initial}
-            </div>
-          )}
-          <div className="rounded-full bg-black/70 px-3 py-1">
-            <p className="text-[11px] font-bold text-white leading-none">{current.senderName}</p>
-            <p className="text-[10px] font-bold text-[color:var(--gold)] leading-tight">
-              sent {current.giftName}
-            </p>
+      {/* Cinematic pre-play overlay removed per user request */}
+
+
+
+
+      {/* sender chip */}
+      <div className="absolute left-4 top-2 z-[180] flex items-center gap-2 gift-anim-sender">
+        {current.senderAvatar ? (
+          <img
+            src={current.senderAvatar}
+            alt=""
+            className="h-10 w-10 rounded-full border-2 border-[color:var(--gold)] object-cover shadow-lg"
+          />
+        ) : (
+          <div className="grid h-10 w-10 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-sm font-bold text-white">
+            {initial}
           </div>
+        )}
+        <div className="rounded-full bg-black/70 px-3 py-1">
+          <p className="text-[11px] font-bold text-white leading-none">{current.senderName}</p>
+          <p className="text-[10px] font-bold text-[color:var(--gold)] leading-tight">
+            sent {current.giftName}
+          </p>
         </div>
+      </div>
 
-        {/* center/front-screen gift animation */}
-        <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
-          {isSmallGift ? (
-            <SmallGiftFlyer
-              emoji={current.giftEmoji}
-              image={fallbackImage}
-              quantity={current.quantity}
-              comboTotal={current.comboTotal ?? 0}
-              receiverIds={current.receiverIds ?? (current.receiverId ? [current.receiverId] : [])}
-              fallbackReceiverId={current.receiverId ?? null}
-              volume={audioPrefs.muted ? 0 : audioPrefs.volume}
-              onReady={markCurrentReady}
-            />
-          ) : isSpaceship ? (
-            <SpaceshipGiftVisual onReady={markCurrentReady} />
-          ) : hasVideo ? (
-            // ✅ FIX: Sirf AnimatedGiftVideo use karein, GiftGLVideo nahi
-            // hasAdvCfg ko ignore karein aur hamesha AnimatedGiftVideo use karein
-            <AnimatedGiftVideo
-              src={giftClipUrl ?? ""}
-              type={giftClip.type}
-              onReady={markCurrentReady}
-              onDone={clearCurrent}
-              onDuration={(ms) => setVideoDurationMs(ms)}
-              withSound={
-                !audioPrefs.muted &&
-                audioPrefs.volume > 0 &&
-                current.audioEnabled !== false &&
-                (current.audioVolume ?? 1) > 0
-              }
-              volume={
-                audioPrefs.muted || current.audioEnabled === false
-                  ? 0
-                  : audioPrefs.volume * (current.audioVolume ?? 1)
-              }
-              fallbackEmoji={current.giftEmoji}
-              fallbackImage={fallbackImage}
-              suppressEmojiFallback={Boolean(fallbackImage)}
-              screenBlend={isBlackBg}
-              lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
-              greenKey={chromakeyMode === "green"}
-              forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
-              renderConfig={advCfg}
-            />
-          ) : hasSvga ? (
-            <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
-              <SvgaPlayer
+      {/* center/front-screen gift animation */}
+      <div className="absolute inset-0 z-[150] flex flex-col items-center justify-center px-2">
+        {isSmallGift ? (
+          <SmallGiftFlyer
+            emoji={current.giftEmoji}
+            image={fallbackImage}
+            quantity={current.quantity}
+            comboTotal={current.comboTotal ?? 0}
+            receiverIds={current.receiverIds ?? (current.receiverId ? [current.receiverId] : [])}
+            fallbackReceiverId={current.receiverId ?? null}
+            volume={audioPrefs.muted ? 0 : audioPrefs.volume}
+            onReady={markCurrentReady}
+          />
+        ) : isSpaceship ? (
+          <SpaceshipGiftVisual onReady={markCurrentReady} />
+        ) : hasVideo ? (
+
+
+          hasAdvCfg ? (
+            <div style={renderConfigToStyle(advCfg)}>
+              <GiftGLVideo
                 src={giftClipUrl ?? ""}
+                config={advCfg}
+                loop={advCfg.loop}
+                objectFit={OBJECT_FIT[advCfg.fit]}
                 className="h-full w-full"
-                style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
+                muted={
+                  audioPrefs.muted ||
+                  current.audioEnabled === false ||
+                  audioPrefs.volume <= 0 ||
+                  (current.audioVolume ?? 1) <= 0
+                }
+                volume={
+                  audioPrefs.muted || current.audioEnabled === false
+                    ? 0
+                    : audioPrefs.volume * (current.audioVolume ?? 1)
+                }
+                onReady={markCurrentReady}
+                onEnded={clearCurrent}
+                onError={clearCurrent}
+                onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
               />
             </div>
-          ) : hasSvg ? (
-            <AnimatedGiftImage
-              src={giftClipUrl ?? ""}
-              onReady={markCurrentReady}
-              fallbackEmoji={current.giftEmoji}
-              fallbackImage={fallbackImage}
-              suppressEmojiFallback={isRoyalRose || Boolean(fallbackImage)}
-              name={current.giftName}
-            />
           ) : (
-            <GiftFallbackVisual 
-              emoji={current.giftEmoji} 
-              image={fallbackImage} 
-              onReady={markCurrentReady} 
-              suppressEmoji={isRoyalRose} 
-              name={current.giftName} 
-            />
-          )}
-          
-          {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
-            <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
-              <div className="relative -translate-y-[6%]">
-                <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-lg opacity-70" />
-                {current.receiverAvatar ? (
-                  <img
-                    src={current.receiverAvatar}
-                    alt=""
-                    className="relative h-24 w-24 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
-                  />
-                ) : (
-                  <div className="relative grid h-24 w-24 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-3xl font-black text-white shadow-2xl">
-                    {rInitial}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {!isSmallGift ? (
-            <>
-              <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
-                <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
-                  {current.giftName}
-                </span>
-                {current.quantity > 1 && (
-                  <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
-                    ×{current.quantity}
-                  </span>
-                )}
-              </div>
-              {current.coins > 0 && (
-                <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
-                  🪙 {current.coins.toLocaleString()}
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="pointer-events-none absolute left-1/2 top-[62%] z-[230] -translate-x-1/2 flex items-center gap-2">
-              <span className="rounded-full bg-black/75 px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white shadow-lg ring-1 ring-white/10">
-                {current.giftName}
-              </span>
-              {current.quantity > 1 && (
-                <span className="rounded-full bg-gradient-to-r from-[#ffd76a] to-[#ff8f2b] px-3 py-1 text-[13px] font-black text-black shadow-lg">
-                  ×{current.quantity}
-                </span>
-              )}
-            </div>
-          )}
-          
-          {soundPulseKey === current.key && (
-            <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
-              <span className="text-[13px]">🔊</span>
-              <span>Sound</span>
-            </div>
-          )}
-        </div>
+          <AnimatedGiftVideo
+            src={giftClipUrl ?? ""}
+            type={giftClip.type}
+            onReady={markCurrentReady}
+            onDone={clearCurrent}
+            onDuration={(ms) => setVideoDurationMs(ms)}
+            withSound={
+              !audioPrefs.muted &&
+              audioPrefs.volume > 0 &&
+              current.audioEnabled !== false &&
+              (current.audioVolume ?? 1) > 0
+            }
+            volume={
+              audioPrefs.muted || current.audioEnabled === false
+                ? 0
+                : audioPrefs.volume * (current.audioVolume ?? 1)
+            }
+            fallbackEmoji={current.giftEmoji}
+            fallbackImage={fallbackImage}
+            suppressEmojiFallback={Boolean(fallbackImage)}
+            screenBlend={isBlackBg}
+            lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
+            greenKey={chromakeyMode === "green"}
+            forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
+          />
+          )
 
-        {/* receiver DP */}
-        {!isSmallGift && (current.receiverAvatar || current.receiverName) && (
-          <div className="absolute inset-x-0 bottom-2 z-[220] flex flex-col items-center gift-anim-caption">
-            <div className="relative">
-              <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
+        ) : hasSvga ? (
+          <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
+            <SvgaPlayer
+              src={giftClipUrl ?? ""}
+              className="h-full w-full"
+              style={{ width: "100dvw", height: "100dvh", minHeight: "100dvh" }}
+            />
+          </div>
+
+        ) : hasSvg ? (
+          <AnimatedGiftImage
+            src={giftClipUrl ?? ""}
+            onReady={markCurrentReady}
+            fallbackEmoji={current.giftEmoji}
+            fallbackImage={fallbackImage}
+            suppressEmojiFallback={isRoyalRose || Boolean(fallbackImage)}
+            name={current.giftName}
+          />
+        ) : (
+          <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} name={current.giftName} />
+        )}
+        {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
+          <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
+            <div className="relative -translate-y-[6%]">
+              <div className="absolute inset-0 -m-2 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-lg opacity-70" />
               {current.receiverAvatar ? (
                 <img
                   src={current.receiverAvatar}
                   alt=""
-                  className="relative h-20 w-20 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
+                  className="relative h-24 w-24 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
                 />
               ) : (
-                <div className="relative grid h-20 w-20 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-2xl font-black text-white shadow-2xl">
+                <div className="relative grid h-24 w-24 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-3xl font-black text-white shadow-2xl">
                   {rInitial}
                 </div>
               )}
             </div>
-            <p className="mt-2 rounded-full bg-black/70 px-3 py-0.5 text-[11px] font-bold text-white">
-              {current.receiverName}
-            </p>
+          </div>
+        )}
+        {!isSmallGift ? (
+          <>
+            <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
+              <span className="rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--destructive)] px-3 py-1 text-[13px] font-black uppercase tracking-wider text-black shadow-lg">
+                {current.giftName}
+              </span>
+              {current.quantity > 1 && (
+                <span className="rounded-full bg-white px-3 py-1 text-[13px] font-black text-black shadow-lg">
+                  ×{current.quantity}
+                </span>
+              )}
+            </div>
+            {current.coins > 0 && (
+              <p className="relative z-[230] mt-1 text-[11px] font-black text-[color:var(--gold)] gift-anim-caption">
+                🪙 {current.coins.toLocaleString()}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="pointer-events-none absolute left-1/2 top-[62%] z-[230] -translate-x-1/2 flex items-center gap-2">
+            <span className="rounded-full bg-black/75 px-3 py-1 text-[12px] font-black uppercase tracking-wider text-white shadow-lg ring-1 ring-white/10">
+              {current.giftName}
+            </span>
+            {current.quantity > 1 && (
+              <span className="rounded-full bg-gradient-to-r from-[#ffd76a] to-[#ff8f2b] px-3 py-1 text-[13px] font-black text-black shadow-lg">
+                ×{current.quantity}
+              </span>
+            )}
+          </div>
+        )}
+        {soundPulseKey === current.key && (
+          <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
+            <span className="text-[13px]">🔊</span>
+            <span>Sound</span>
           </div>
         )}
       </div>
+
+      {/* receiver DP */}
+      {!isSmallGift && (current.receiverAvatar || current.receiverName) && (
+        <div className="absolute inset-x-0 bottom-2 z-[220] flex flex-col items-center gift-anim-caption">
+          <div className="relative">
+            <div className="absolute inset-0 -m-1 rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] blur-md opacity-80" />
+            {current.receiverAvatar ? (
+              <img
+                src={current.receiverAvatar}
+                alt=""
+                className="relative h-20 w-20 rounded-full border-4 border-[color:var(--gold)] object-cover shadow-2xl"
+              />
+            ) : (
+              <div className="relative grid h-20 w-20 place-items-center rounded-full border-4 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-2xl font-black text-white shadow-2xl">
+                {rInitial}
+              </div>
+            )}
+          </div>
+          <p className="mt-2 rounded-full bg-black/70 px-3 py-0.5 text-[11px] font-bold text-white">
+            {current.receiverName}
+          </p>
+        </div>
+      )}
+    </div>
     </>,
     portalRoot,
   );
