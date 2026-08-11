@@ -1807,7 +1807,7 @@ type GiftSendRow = {
   const initial = (current.senderName ?? "?").slice(0, 1).toUpperCase();
   const rInitial = (current.receiverName ?? "?").slice(0, 1).toUpperCase();
 
-  // =============== RENDER ===============
+  // =============== RENDER - FIXED: Sirf AnimatedGiftVideo use karein ===============
   return createPortal(
     <>
       {SVG_FILTERS}
@@ -1863,89 +1863,34 @@ type GiftSendRow = {
           ) : isSpaceship ? (
             <SpaceshipGiftVisual onReady={markCurrentReady} />
           ) : hasVideo ? (
-            hasAdvCfg ? (
-              <div 
-                className="absolute inset-0 flex items-center justify-center"
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  pointerEvents: "none",
-                }}
-              >
-                <div 
-                  style={{
-                    ...renderConfigToStyle(advCfg),
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    position: "relative",
-                  }}
-                >
-                  <GiftGLVideo
-                    src={giftClipUrl ?? ""}
-                    config={advCfg}
-                    loop={advCfg.loop}
-                    objectFit={OBJECT_FIT[advCfg.fit] || "contain"}
-                    className="h-full w-full"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: advCfg.fit || "contain",
-                    }}
-                    muted={
-                      audioPrefs.muted ||
-                      current.audioEnabled === false ||
-                      audioPrefs.volume <= 0 ||
-                      (current.audioVolume ?? 1) <= 0
-                    }
-                    volume={
-                      audioPrefs.muted || current.audioEnabled === false
-                        ? 0
-                        : audioPrefs.volume * (current.audioVolume ?? 1)
-                    }
-                    onReady={markCurrentReady}
-                    onEnded={clearCurrent}
-                    onError={() => {
-                      setVideoDurationMs(PLAY_MS);
-                      clearCurrent();
-                    }}
-                    onDuration={(ms) => setVideoDurationMs(advCfg.endMs ?? Math.min(15000, ms))}
-                  />
-                </div>
-              </div>
-            ) : (
-              <AnimatedGiftVideo
-                src={giftClipUrl ?? ""}
-                type={giftClip.type}
-                onReady={markCurrentReady}
-                onDone={clearCurrent}
-                onDuration={(ms) => setVideoDurationMs(ms)}
-                withSound={
-                  !audioPrefs.muted &&
-                  audioPrefs.volume > 0 &&
-                  current.audioEnabled !== false &&
-                  (current.audioVolume ?? 1) > 0
-                }
-                volume={
-                  audioPrefs.muted || current.audioEnabled === false
-                    ? 0
-                    : audioPrefs.volume * (current.audioVolume ?? 1)
-                }
-                fallbackEmoji={current.giftEmoji}
-                fallbackImage={fallbackImage}
-                suppressEmojiFallback={Boolean(fallbackImage)}
-                screenBlend={isBlackBg}
-                lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
-                greenKey={chromakeyMode === "green"}
-                forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
-                renderConfig={advCfg}
-              />
-            )
+            // ✅ FIX: Sirf AnimatedGiftVideo use karein, GiftGLVideo nahi
+            // hasAdvCfg ko ignore karein aur hamesha AnimatedGiftVideo use karein
+            <AnimatedGiftVideo
+              src={giftClipUrl ?? ""}
+              type={giftClip.type}
+              onReady={markCurrentReady}
+              onDone={clearCurrent}
+              onDuration={(ms) => setVideoDurationMs(ms)}
+              withSound={
+                !audioPrefs.muted &&
+                audioPrefs.volume > 0 &&
+                current.audioEnabled !== false &&
+                (current.audioVolume ?? 1) > 0
+              }
+              volume={
+                audioPrefs.muted || current.audioEnabled === false
+                  ? 0
+                  : audioPrefs.volume * (current.audioVolume ?? 1)
+              }
+              fallbackEmoji={current.giftEmoji}
+              fallbackImage={fallbackImage}
+              suppressEmojiFallback={Boolean(fallbackImage)}
+              screenBlend={isBlackBg}
+              lumaKey={chromakeyMode === "luma" || (chromakeyMode === "auto" && (isBlackBg || (current.coins ?? 0) >= 2000))}
+              greenKey={chromakeyMode === "green"}
+              forceKey={chromakeyMode === "luma" || chromakeyMode === "green" || chromakeyMode === "none"}
+              renderConfig={advCfg}
+            />
           ) : hasSvga ? (
             <div className="relative z-[160] flex h-full w-full items-center justify-center" onLoad={markCurrentReady}>
               <SvgaPlayer
@@ -1964,8 +1909,15 @@ type GiftSendRow = {
               name={current.giftName}
             />
           ) : (
-            <GiftFallbackVisual emoji={current.giftEmoji} image={fallbackImage} onReady={markCurrentReady} suppressEmoji={isRoyalRose} name={current.giftName} />
+            <GiftFallbackVisual 
+              emoji={current.giftEmoji} 
+              image={fallbackImage} 
+              onReady={markCurrentReady} 
+              suppressEmoji={isRoyalRose} 
+              name={current.giftName} 
+            />
           )}
+          
           {isRoyalCrownGift(current.giftName) && (current.receiverAvatar || current.receiverName) && (
             <div className="pointer-events-none absolute inset-0 z-[220] flex items-center justify-center">
               <div className="relative -translate-y-[6%]">
@@ -1984,6 +1936,7 @@ type GiftSendRow = {
               </div>
             </div>
           )}
+          
           {!isSmallGift ? (
             <>
               <div className="relative z-[230] mt-2 flex items-center gap-2 gift-anim-caption">
@@ -2014,6 +1967,7 @@ type GiftSendRow = {
               )}
             </div>
           )}
+          
           {soundPulseKey === current.key && (
             <div className="gift-sound-pulse pointer-events-none absolute right-5 top-16 z-[240] flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[11px] font-black text-white ring-1 ring-white/15">
               <span className="text-[13px]">🔊</span>
