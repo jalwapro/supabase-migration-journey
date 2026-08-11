@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
@@ -9,7 +9,6 @@ import SvgaPlayer from "./SvgaPlayer";
 import GiftGLVideo from "./GiftGLVideo";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT } from "@/lib/giftRender";
 
-// Design-time reference resolution for Gift Studio px-based configs.
 const GIFT_STAGE_W = 428;
 const GIFT_STAGE_H = 926;
 
@@ -54,7 +53,49 @@ const LOVABLE_ASSET_ORIGIN = "https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_MP4_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/82be6f35-cb0c-44fc-8232-8514da26b101/royal-rose.mp4`;
 const ROYAL_ROSE_THUMB_URL = `${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 
-// =============== HELPER FUNCTIONS ===============
+// =============== SVG FILTERS (FIX 1) ===============
+function GiftSvgFilters() {
+  return (
+    <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
+      <defs>
+        <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0"
+          />
+          <feComponentTransfer>
+            <feFuncA type="linear" slope="5.2" intercept="-0.48" />
+          </feComponentTransfer>
+        </filter>
+        <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix
+            type="matrix"
+            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12"
+            result="gkRaw"
+          />
+          <feComponentTransfer in="gkRaw" result="gk">
+            <feFuncA type="linear" slope="6" intercept="-0.12" />
+          </feComponentTransfer>
+          <feColorMatrix
+            in="SourceGraphic"
+            type="matrix"
+            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0"
+            result="lumaRaw"
+          />
+          <feComponentTransfer in="lumaRaw" result="lk">
+            <feFuncA type="linear" slope="7" intercept="-0.12" />
+          </feComponentTransfer>
+          <feComposite in="gk" in2="lk" operator="in" result="keyed" />
+          <feColorMatrix
+            in="keyed"
+            type="matrix"
+            values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0"
+          />
+        </filter>
+      </defs>
+    </svg>
+  );
+}
 
 function isRoyalRoseGift(name: string | null | undefined) {
   const normalized = (name ?? "").toLowerCase().replace(/[^a-z]+/g, " ").trim();
@@ -185,53 +226,6 @@ function pickGiftAnimClass(name: string | null | undefined): string {
   return "gift-anim-pop";
 }
 
-// =============== SVG FILTERS (Memoized) ===============
-
-const GiftSvgFilters = () => {
-  return useMemo(() => (
-    <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
-      <defs>
-        <filter id="jalwa-luma-key" colorInterpolationFilters="sRGB">
-          <feColorMatrix
-            type="matrix"
-            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0.2126 0.7152 0.0722 0 0"
-          />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope="5.2" intercept="-0.48" />
-          </feComponentTransfer>
-        </filter>
-        <filter id="jalwa-green-key" colorInterpolationFilters="sRGB">
-          <feColorMatrix
-            type="matrix"
-            values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 1 -1.35 1 0 0.12"
-            result="gkRaw"
-          />
-          <feComponentTransfer in="gkRaw" result="gk">
-            <feFuncA type="linear" slope="6" intercept="-0.12" />
-          </feComponentTransfer>
-          <feColorMatrix
-            in="SourceGraphic"
-            type="matrix"
-            values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.2126 0.7152 0.0722 0 0"
-            result="lumaRaw"
-          />
-          <feComponentTransfer in="lumaRaw" result="lk">
-            <feFuncA type="linear" slope="7" intercept="-0.12" />
-          </feComponentTransfer>
-          <feComposite in="gk" in2="lk" operator="in" result="keyed" />
-          <feColorMatrix
-            in="keyed"
-            type="matrix"
-            values="1 0 0 0 0 0.28 0.58 0.28 0 0 0 0 1 0 0 0 0 0 1 0"
-          />
-        </filter>
-      </defs>
-    </svg>
-  ), []);
-};
-
-// =============== SUB-COMPONENTS ===============
-
 function GiftFallbackVisual({
   emoji,
   image,
@@ -259,9 +253,6 @@ function GiftFallbackVisual({
     setImageFailed(false);
     setImageLoaded(false);
     if (!image) markReady();
-    return () => {
-      readyOnceRef.current = false;
-    };
   }, [image, markReady]);
 
   const animClass = pickGiftAnimClass(name || emoji);
@@ -413,7 +404,7 @@ function AnimatedGiftVideo({
       const video = videoRef.current;
       if (video) {
         video.pause();
-        video.src = '';
+        video.removeAttribute("src");
         video.load();
       }
     };
@@ -536,9 +527,6 @@ function SpaceshipGiftVisual({ onReady }: { onReady: () => void }) {
     if (readyOnceRef.current) return;
     readyOnceRef.current = true;
     onReady();
-    return () => {
-      readyOnceRef.current = false;
-    };
   }, [onReady]);
 
   return (
@@ -774,7 +762,7 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
       `border-radius:9999px;pointer-events:none;z-index:2147483645;` +
       `border:2px solid ${color};box-shadow:0 0 24px ${color};opacity:0;`;
     host.appendChild(ring);
-    const timer = setTimeout(() => {
+    setTimeout(() => {
       ring.animate(
         [
           { transform: "scale(0.35)", opacity: 0.95 },
@@ -783,12 +771,9 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
         { duration: dur, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
       ).onfinish = () => ring.remove();
     }, delay);
-    return timer;
   };
-  const timers = [
-    mk(120, 0, 520, "rgba(255,220,140,.9)"),
-    mk(90, 90, 480, "rgba(255,120,200,.85)")
-  ];
+  mk(120, 0, 520, "rgba(255,220,140,.9)");
+  mk(90, 90, 480, "rgba(255,120,200,.85)");
 
   const bloom = document.createElement("div");
   const bs = 130;
@@ -805,11 +790,6 @@ function spawnLandingBurst(host: HTMLElement, x: number, y: number) {
     ],
     { duration: 540, easing: "cubic-bezier(.2,.7,.3,1)", fill: "forwards" },
   ).onfinish = () => bloom.remove();
-
-  return () => {
-    timers.forEach(t => clearTimeout(t));
-    try { bloom.remove(); } catch { /* noop */ }
-  };
 }
 
 function spawnGiftTrain(
@@ -956,15 +936,13 @@ function SmallGiftFlyer({
 }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const readyOnce = useRef(false);
-  const cleanupRef = useRef<(() => void)[]>([]);
 
+  // FIX 4: onReady sirf ek baar call ho
   useEffect(() => {
-    if (readyOnce.current) return;
-    readyOnce.current = true;
-    onReady();
-    return () => {
-      readyOnce.current = false;
-    };
+    if (!readyOnce.current) {
+      readyOnce.current = true;
+      onReady();
+    }
   }, [onReady]);
 
   useEffect(() => {
@@ -982,9 +960,6 @@ function SmallGiftFlyer({
     const prevTotal = Math.max(0, (comboTotal || 0) - quantity);
     const isJackpot = displayCount >= 10 && prevTotal < 10;
     const isCombo = quantity > 1 || (comboTotal || 0) > 1 || effectiveTargets.length > 1;
-
-    // Clean up function for this effect
-    const cleanupFns: (() => void)[] = [];
 
     // Jackpot flash + banner + coin rain
     let jackpotEls: HTMLElement[] = [];
@@ -1024,12 +999,10 @@ function SmallGiftFlyer({
       jackpotEls.push(banner);
 
       effectiveTargets.forEach((tid, idx) => {
-        const timer = setTimeout(() => spawnCoinRain(host, tid, 14), 180 + idx * 60);
-        cleanupFns.push(() => clearTimeout(timer));
+        setTimeout(() => spawnCoinRain(host, tid, 14), 180 + idx * 60);
       });
     }
 
-    // Rhythmic combo stream
     const trailStagger = isCombo ? Math.max(22, 60 - qty * 2) : 0;
     const flyerStartDelay = 0;
 
@@ -1051,16 +1024,11 @@ function SmallGiftFlyer({
           });
         }, delay);
         cleanupTimers.push(t);
-        cleanupFns.push(() => clearTimeout(t));
       }
     });
 
-    // Cleanup all timers and elements
-    cleanupRef.current = [...cleanupFns];
-
     return () => {
       cleanupTimers.forEach((t) => clearTimeout(t));
-      cleanupFns.forEach(fn => fn());
       jackpotEls.forEach((el) => { try { el.remove(); } catch { /* noop */ } });
     };
   }, [emoji, image, quantity, trainWagons, comboTotal, receiverIds, fallbackReceiverId, volume]);
@@ -1117,26 +1085,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const comboRef = useRef<Map<string, { count: number; lastAt: number }>>(new Map());
   const audioPrefs = useGiftAudioPrefs();
 
-  // =============== CLEANUP INTERVALS ===============
-  useEffect(() => {
-    // Clean up old localGiftRef entries
-    const cleanupInterval = setInterval(() => {
-      const now = Date.now();
-      for (const [key, timestamp] of localGiftRef.current) {
-        if (now - timestamp > 9000) {
-          localGiftRef.current.delete(key);
-        }
-      }
-      // Limit seenRef size
-      if (seenRef.current.size > 1000) {
-        const entries = Array.from(seenRef.current).slice(-500);
-        seenRef.current = new Set(entries);
-      }
-    }, 60000);
-
-    return () => clearInterval(cleanupInterval);
-  }, []);
-
   // =============== PORTAL SETUP ===============
   useEffect(() => {
     const root = ensureGiftPortalRoot();
@@ -1181,14 +1129,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     const now = Date.now();
     const prev = comboRef.current.get(sig);
     const qty = Math.max(1, Math.floor(p.quantity || 1));
-    
-    let total: number;
-    if (prev && now - prev.lastAt < COMBO_IDLE_MS) {
-      total = prev.count + qty;
-    } else {
-      total = qty;
-    }
-    
+    const total = prev && now - prev.lastAt < COMBO_IDLE_MS ? prev.count + qty : qty;
     comboRef.current.set(sig, { count: total, lastAt: now });
     const wagons = Math.min(MAX_TRAIN_WAGONS, Math.floor(total / TRAIN_UNIT));
     return { total, wagons };
@@ -1201,10 +1142,9 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       return [...next, p];
     });
     const ttl = smallPlayDurationMs(p) + 200;
-    const timer = setTimeout(() => {
+    setTimeout(() => {
       setSmallPlays((prev) => prev.filter((x) => x.key !== p.key));
     }, ttl);
-    return () => clearTimeout(timer);
   }, []);
 
   // =============== ENQUEUE LOGIC ===============
@@ -1326,7 +1266,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     entry.timer = window.setTimeout(() => {
       coalesceRef.current.delete(bucketKey);
       enqueue(entry.play);
-    }, 400);
+    }, 220);
     coalesceRef.current.set(bucketKey, entry);
   }, [enqueue]);
 
@@ -1379,7 +1319,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     const connect = () => {
       if (disposed) return;
       
-      // Clean up any existing channel
       if (ch) {
         supabase.removeChannel(ch);
         ch = null;
@@ -1418,10 +1357,6 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     const onVisible = () => { 
       if (document.visibilityState === "visible" && !disposed) {
         void pollOnce();
-        // Reconnect if channel is dead
-        if (ch?.state !== "subscribed") {
-          connect();
-        }
       }
     };
     document.addEventListener("visibilitychange", onVisible);
@@ -1435,13 +1370,12 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
         supabase.removeChannel(ch);
         ch = null;
       }
-      // Clear coalesce timeouts
       coalesceRef.current.forEach((e) => clearTimeout(e.timer));
       coalesceRef.current.clear();
     };
   }, [roomId, handleGiftRow]);
 
-  // =============== QUEUE ADVANCEMENT ===============
+  // =============== QUEUE ADVANCEMENT (FIX 5) ===============
   useEffect(() => {
     if (current || queue.length === 0 || processingRef.current) return;
     processingRef.current = true;
@@ -1452,11 +1386,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     processingRef.current = false;
   }, [queue, current]);
 
-  // =============== CURRENT MANAGEMENT ===============
+  // =============== CURRENT MANAGEMENT (FIX 6) ===============
   const clearCurrent = useCallback(() => {
-    currentRef.current = null;
-    setCurrent(null);
-    setVideoDurationMs(null);
+    if (currentRef.current) {
+      currentRef.current = null;
+      setCurrent(null);
+      setVideoDurationMs(null);
+    }
   }, []);
 
   const markCurrentReady = useCallback(() => {
@@ -1490,9 +1426,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (!current) return;
     if (audioPrefs.muted || audioPrefs.volume <= 0) return;
     if (current.audioEnabled === false || current.audioVolume === 0) return;
-    
-    const isSmall = isSmallGiftPlay(current);
-    if (isSmall) return;
+    if (isSmallGiftPlay(current)) return;
     if (!current.soundUrl) return;
     
     const isPremiumLong = /royal\s*lion|lion\s*king|spaceship|galaxy\s*party/i.test(current.giftName ?? "");
@@ -1627,14 +1561,13 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
             receiverIds={sp.receiverIds ?? (sp.receiverId ? [sp.receiverId] : [])}
             fallbackReceiverId={sp.receiverId ?? null}
             volume={audioPrefs.muted ? 0 : audioPrefs.volume}
-            onReady={() => { /* parallel */ }}
+            onReady={() => {}}
           />
         );
       })}
     </div>
   ) : null;
 
-  // If no current gift, just render small layer
   if (!current) {
     return smallLayer ? createPortal(smallLayer, portalRoot) : null;
   }
