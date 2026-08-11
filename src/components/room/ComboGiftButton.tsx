@@ -137,6 +137,7 @@ export function ComboGiftButton({
           soundUrl: giftSoundSrc(gift),
           audioEnabled: giftAudioEnabled(gift),
           audioVolume: giftAudioGain(gift),
+          renderConfig: (gift as any).render_config,
           local: true,
           combo: true,
         },
