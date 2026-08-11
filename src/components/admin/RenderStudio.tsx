@@ -168,7 +168,8 @@ export default function RenderStudio({
   const save = useMutation({
     mutationFn: async (config: GiftRenderConfig) => {
       if (!selectedId) throw new Error("Nothing selected");
-      await onSave(selectedId, diffRenderConfig(config));
+      // Always save the full config to ensure Gift Studio settings are applied
+      await onSave(selectedId, config as unknown as Record<string, unknown>);
     },
     onSuccess: () => setDirty(false),
     onError: (e: Error) => toast.error(e.message),
