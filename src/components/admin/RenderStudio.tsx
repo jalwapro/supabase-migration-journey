@@ -36,6 +36,7 @@ export type StudioItem = {
   name: string;
   category?: string | null;
   clipUrl: string | null;
+  clipType?: string | null; // Add clipType to help with video detection
   render_config: unknown;
 };
 
@@ -108,7 +109,6 @@ export default function RenderStudio({
   const [showGrid, setShowGrid] = useState(true);
   const [safeAreaOn, setSafeAreaOn] = useState(true);
   const [replayKey, setReplayKey] = useState(0);
-  const [device, setDevice] = useState<"mobile" | "desktop">("mobile");
   const undoStack = useRef<GiftRenderConfig[]>([]);
   const redoStack = useRef<GiftRenderConfig[]>([]);
 
@@ -211,6 +211,7 @@ export default function RenderStudio({
     const stage = stageRef.current;
     if (d.mode === "move") {
       const percent = d.cfg.positionUnit === "percent";
+      const stage = stageRef.current;
       const rx = percent ? (stage ? 100 / stage.clientWidth : 0.3) : (stage ? 1080 / stage.clientWidth : 1);
       const ry = percent ? (stage ? 100 / stage.clientHeight : 0.3) : (stage ? 1080 / stage.clientWidth : 1);
       const snap = (v: number) => (Math.abs(v) < (percent ? 1.5 : 12) ? 0 : Number(v.toFixed(percent ? 2 : 0)));
@@ -232,7 +233,12 @@ export default function RenderStudio({
   };
 
   const clipUrl = selected?.clipUrl ?? null;
-  const isVideo = !!clipUrl && /\.(mp4|webm|mov)(\?|$)/i.test(clipUrl);
+  const clipType = selected?.clipType ?? null;
+  // Better video detection - use clipType from database and extension check
+  const isVideo = !!clipUrl && (
+    clipType === "mp4" || clipType === "webm" || clipType === "mov" ||
+    /\.(mp4|webm|mov|avi|mkv)(\?|$)/i.test(clipUrl)
+  );
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(diffRenderConfig(cfg), null, 2)], { type: "application/json" });
@@ -302,9 +308,7 @@ export default function RenderStudio({
       <div className="space-y-3">
         <div
           ref={stageRef}
-          className={`relative mx-auto w-full overflow-hidden rounded-[28px] border-4 border-neutral-800 bg-neutral-950 shadow-2xl ${
-            device === "mobile" ? "aspect-[9/16] max-w-[340px]" : "aspect-[16/9] max-w-[560px]"
-          }`}
+          className="relative mx-auto w-full max-w-[340px] overflow-hidden rounded-[28px] border-4 border-neutral-800 bg-neutral-950 shadow-2xl aspect-[9/16]"
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
@@ -343,10 +347,16 @@ export default function RenderStudio({
                 muted
                 objectFit={OBJECT_FIT[cfg.fit]}
                 className="h-full w-full"
+                onError={() => console.error("GiftGLVideo error for:", clipUrl)}
               />
             </div>
           ) : clipUrl ? (
-            <img alt="" src={clipUrl} style={{ ...renderConfigToStyle(cfg), objectFit: OBJECT_FIT[cfg.fit] }} />
+            <img 
+              alt="" 
+              src={clipUrl} 
+              style={{ ...renderConfigToStyle(cfg), objectFit: OBJECT_FIT[cfg.fit] }} 
+              onError={() => console.error("Image error for:", clipUrl)}
+            />
           ) : (
             <div className="absolute inset-0 grid place-items-center text-xs text-white/40">{emptyLabel}</div>
           )}
@@ -372,9 +382,6 @@ export default function RenderStudio({
 
         <div className="flex flex-wrap items-center justify-center gap-2">
           <Button size="sm" variant="secondary" onClick={() => setReplayKey((k) => k + 1)}>Replay</Button>
-          <Button size="sm" variant="outline" onClick={() => setDevice((d) => (d === "mobile" ? "desktop" : "mobile"))}>
-            {device === "mobile" ? "Mobile" : "Desktop"}
-          </Button>
           <Button size="sm" variant="outline" onClick={() => setShowGrid((v) => !v)}>Grid</Button>
           <Button size="sm" variant="outline" onClick={() => setSafeAreaOn((v) => !v)}>Safe area</Button>
           <Button size="sm" variant="outline" onClick={undo}><Undo2 className="h-4 w-4" /></Button>
