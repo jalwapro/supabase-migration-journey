@@ -23,13 +23,11 @@ BEGIN
   END IF;
   IF NEW.gift_id IS NOT NULL THEN
     SELECT name, emoji, icon, animation, clip_path, clip_type, image_url,
-           COALESCE(audio_url, sound_url), chromakey,
            COALESCE(audio_url, sound_url), priority, duration_ms, loop,
            audio_volume, audio_enabled
       INTO NEW.gift_name, NEW.gift_emoji, NEW.gift_icon, NEW.gift_animation,
            NEW.gift_clip_path, NEW.gift_clip_type, NEW.gift_image_url,
-           NEW.gift_sound_url, NEW.gift_chromakey,
-           NEW.gift_audio_url, NEW.gift_priority, NEW.gift_duration_ms,
+           NEW.gift_sound_url, NEW.gift_audio_url, NEW.gift_priority, NEW.gift_duration_ms,
            NEW.gift_loop, NEW.gift_audio_volume, NEW.gift_audio_enabled
       FROM public.gifts WHERE id = NEW.gift_id;
   END IF;
