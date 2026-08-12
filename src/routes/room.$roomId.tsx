@@ -2187,7 +2187,7 @@ function RoomPage() {
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          {/* Host chip */}
+          {/* Room header - matching reference image */}
           <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)]">
             <div className="glow-4d grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
               {r.host?.avatar ? (
@@ -2224,8 +2224,14 @@ function RoomPage() {
                   />
                 )}
               </div>
-              <div className="truncate text-[10px] font-semibold text-white/60">
-                ID:{roomCode}
+              <div className="flex items-center gap-2">
+                <div className="truncate text-[10px] font-semibold text-white/60">
+                  ID:{roomCode}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] font-semibold text-white/60">
+                  <Users className="h-3 w-3" />
+                  <span>{Math.max(r.viewer_count, members.length)}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2681,7 +2687,30 @@ function RoomPage() {
           <div className="p-0">
             {(() => {
               const sc = Math.max(4, r.seat_count);
-              const cols = sc <= 8 ? 4 : 5;
+              // Dynamic layout based on seat count to match reference:
+              // 4 seats: 2x2
+              // 8 seats: 4x2
+              // 12 seats: 4x3
+              // 16 seats: 4x4
+              // 20 seats: 5x4
+              let cols: number;
+              let rows: number;
+              if (sc === 4) {
+                cols = 2;
+                rows = 2;
+              } else if (sc === 8) {
+                cols = 4;
+                rows = 2;
+              } else if (sc === 12) {
+                cols = 4;
+                rows = 3;
+              } else if (sc === 16) {
+                cols = 4;
+                rows = 4;
+              } else { // 20 seats or more
+                cols = 5;
+                rows = 4;
+              }
               return (
                 <div
                   className="grid gap-x-2 gap-y-3"
@@ -2742,6 +2771,11 @@ function RoomPage() {
       {/* ─── Live comments (directly under the seats) ───────────── */}
       {!isVideo && (
         <div className="relative z-10 mx-auto mt-1 w-full max-w-md px-3">
+          {/* Chat tabs - matching reference */}
+          <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-2">
+            <button className="text-[11px] font-bold text-white">All</button>
+            <button className="text-[11px] font-semibold text-white/40">Chat</button>
+          </div>
           <div className="max-h-28 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
             {messages.length === 0 && <EmptyChat />}
             {messages
