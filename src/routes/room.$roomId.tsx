@@ -4794,8 +4794,8 @@ function Seat({
           }`}
         />
 
-        {/* Inner disc (avatar / content) - simplified */}
-        <div className="absolute inset-[12%] overflow-hidden rounded-full bg-black/40">
+        {/* Inner disc (avatar / content) - matching reference */}
+        <div className="absolute inset-[15%] overflow-hidden rounded-full bg-black/50">
           {displayAvatar && !remote?.videoTrack && (
             <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
@@ -4803,42 +4803,9 @@ function Seat({
           {!displayAvatar && !remote?.videoTrack && !hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center">
               {locked ? (
-                <span className="text-lg">🔒</span>
-              ) : isHostSeat ? (
-                <img
-                  src={HOST_THRONE_URL}
-                  alt=""
-                  draggable={false}
-                  className="h-[110%] w-[110%] object-contain drop-shadow-[0_2px_8px_rgba(255,215,0,0.55)]"
-                />
+                <span className="text-xl">🔒</span>
               ) : (
-                <div className="relative h-[110%] w-[110%]">
-                  <img
-                    src={HOST_THRONE_URL}
-                    alt=""
-                    draggable={false}
-                    className="h-full w-full object-contain drop-shadow-[0_2px_8px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
-                    style={{ filter: "grayscale(0.4) brightness(0.95)" }}
-                  />
-                  {/* Theme-tinted overlay: empty seats adopt the user's shop theme colors */}
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0"
-                    style={{
-                      backgroundColor: "var(--primary)",
-                      mixBlendMode: "color",
-                      opacity: 0.9,
-                      WebkitMaskImage: `url(${HOST_THRONE_URL})`,
-                      maskImage: `url(${HOST_THRONE_URL})`,
-                      WebkitMaskRepeat: "no-repeat",
-                      maskRepeat: "no-repeat",
-                      WebkitMaskPosition: "center",
-                      maskPosition: "center",
-                      WebkitMaskSize: "contain",
-                      maskSize: "contain",
-                    }}
-                  />
-                </div>
+                <UserIcon className="h-5 w-5 text-white/40" />
               )}
             </div>
           )}
@@ -4869,56 +4836,41 @@ function Seat({
         {/* (badge moved below DP) */}
 
 
+        {/* Seat number badge - matching reference (top-left) */}
+        <span className="absolute -top-1 -left-1 grid h-4 w-4 place-items-center rounded-full border border-white/30 bg-black/80 text-[8px] font-bold text-white">
+          {seatNo}
+        </span>
+
+        {/* Heart/like count - matching reference (bottom-right) */}
+        <span className="absolute -bottom-1 right-1 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[7px] font-bold text-white/80 backdrop-blur">
+          <Heart className="h-1.5 w-1.5 text-rose-400" />
+          {likeCount}
+        </span>
+
+        {/* Mic status - matching reference */}
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
-          <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
-            <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
+          <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full bg-black/70">
+            <MicOff className="h-1.5 w-1.5 text-[color:var(--destructive)]" />
           </span>
         )}
-        {member?.is_moderator && !isHostSeat && (
-          <span
-            title="Moderator"
-            className="absolute -top-0.5 -right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full bg-sky-500 ring-2 ring-black shadow-[0_0_8px_rgba(56,189,248,0.9)]"
-          />
-        )}
-        {likeCount > 0 && (
-          <span className="absolute -bottom-0.5 left-0.5 z-20 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[8px] font-bold text-white/80 backdrop-blur">
-            <Heart className="h-2 w-2 text-[color:var(--destructive)]" />
-            {likeCount}
-          </span>
-        )}
-        {isKing && (
-          <span
-            title="Top gifter"
-            className="pointer-events-none absolute -top-2 -right-2 z-30 grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-amber-400 to-orange-500 text-sm leading-none shadow-[0_0_14px_rgba(255,200,60,0.95)] ring-2 ring-black animate-bounce"
-          >
+
+        {/* Host crown - matching reference */}
+        {isHostSeat && (
+          <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-[10px] leading-none shadow-[0_0_10px_rgba(255,215,0,0.6)]">
             👑
           </span>
         )}
       </button>
-      {!member && (hostAwayFromSeat || locked) && (
-        <span className="text-[9px] font-medium leading-tight text-white/60">
-          {hostAwayFromSeat ? "Tap to return" : "Locked"}
+
+      {/* Username below seat - matching reference */}
+      {member && displayName && (
+        <span className="max-w-[60px] truncate text-[10px] font-semibold text-white">
+          {displayName}
         </span>
       )}
-      {/* Bottom hex badge: seat number, or gift points on host seat when host is seated */}
-      <div
-        className="pointer-events-none -mt-1 flex h-5 min-w-[26px] items-center justify-center px-1"
-        style={{ filter: activeRing ? `drop-shadow(0 0 4px ${ringHue})` : "none" }}
-      >
-        <svg viewBox="0 0 100 115" preserveAspectRatio="none" className="absolute h-5 w-full">
-          <polygon
-            points="50 5, 95 30, 95 85, 50 110, 5 85, 5 30"
-            fill={activeRing ? "#1a0033" : "#05000a"}
-            stroke={ringHue}
-            strokeOpacity={activeRing ? 1 : 0.6}
-            strokeWidth={6}
-          />
-        </svg>
-        <span className={`relative px-1 text-[9px] font-bold leading-none ${activeRing ? "text-white" : "text-white/70"}`}>
-          {member || (isHostSeat && member)
-            ? formatGiftPoints(giftPoints ?? 0)
-            : `No.${seatNo}`}
-        </span>
+      {!member && (
+        <span className="text-[10px] text-white/40">Empty</span>
+      )}
 
 
       </div>
