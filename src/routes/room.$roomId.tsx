@@ -4752,25 +4752,19 @@ function Seat({
   const hostAwayFromSeat = isHostSeat && !member;
   const seatNo = index + 1;
 
-  // Neon Core Prime palette
+  // Simple palette matching reference
   const ringHue = isHostSeat
     ? "#ffd166"
     : hostAwayFromSeat
       ? "#ef4444"
       : "#bf00ff";
   const activeRing = !!member || isHostSeat;
-  const outerRingCls = activeRing
-    ? `border-2 shadow-[0_0_12px_${ringHue},inset_0_0_8px_${ringHue}]`
-    : "border-2 opacity-70 shadow-[0_0_10px_rgba(191,0,255,0.55)]";
-  const innerRingCls = activeRing
-    ? "border-2 shadow-[inset_0_0_10px_currentColor]"
-    : "border-2 opacity-40";
 
   return (
     <div
       data-seat-index={index}
       data-user-dp={member?.user_id ?? ""}
-      className={`relative flex flex-col items-center gap-1 transition-shadow duration-300 ${
+      className={`relative flex flex-col items-center gap-1.5 ${
         glowing ? "drop-shadow-[0_0_18px_rgba(255,209,102,0.75)] animate-pulse" : ""
       }`}
     >
@@ -4871,11 +4865,6 @@ function Seat({
       {!member && (
         <span className="text-[10px] text-white/40">Empty</span>
       )}
-
-
-      </div>
-
-
     </div>
   );
 }
