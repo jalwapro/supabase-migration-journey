@@ -4785,54 +4785,17 @@ function Seat({
         className="relative aspect-square w-full"
         aria-label={member ? `Manage seat No.${seatNo}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked No.${seatNo}` : `Take No.${seatNo}`}
       >
-        {/* Outer neon ring */}
+        {/* Simple circular border - matching reference */}
         <div
-          className={`pointer-events-none absolute inset-0 rounded-full ${outerRingCls}`}
-          style={{ borderColor: ringHue, color: ringHue }}
-        />
-        {/* Gold accent ring */}
-        <div
-          className="pointer-events-none absolute inset-[3px] rounded-full border opacity-60"
-          style={{ borderColor: "#ffd700" }}
-        />
-        {/* Inner neon ring */}
-        <div
-          className={`pointer-events-none absolute inset-[6px] rounded-full ${innerRingCls}`}
-          style={{ borderColor: ringHue, color: ringHue }}
+          className={`pointer-events-none absolute inset-0 rounded-full border-2 ${
+            activeRing
+              ? "border-purple-500 shadow-[0_0_16px_rgba(168,85,247,0.6)]"
+              : "border-white/20 opacity-60"
+          }`}
         />
 
-        {/* Speaking glow + pulse bubble */}
-        {speaking && !hostAwayFromSeat && (
-          <>
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-[-14%] z-0 rounded-full animate-ping"
-              style={{ background: `radial-gradient(circle, ${ringHue}55 0%, transparent 70%)` }}
-            />
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-[-6%] z-0 rounded-full border-2 animate-pulse"
-              style={{ borderColor: `${ringHue}cc`, boxShadow: `0 0 22px ${ringHue}aa` }}
-            />
-          </>
-        )}
-
-        {/* Halftone dot texture for empty state */}
-        {!member && !hostAwayFromSeat && !locked && (
-          <div
-            className="pointer-events-none absolute inset-[8px] rounded-full opacity-15"
-            style={{
-              backgroundImage: `radial-gradient(${ringHue} 1px, transparent 1px)`,
-              backgroundSize: "4px 4px",
-            }}
-          />
-        )}
-
-        {/* Inner disc (avatar / content) */}
-        <div className="absolute inset-[10%] overflow-hidden rounded-full">
-          {isHostSeat && !displayAvatar && cover && !hostAwayFromSeat && (
-            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
-          )}
+        {/* Inner disc (avatar / content) - simplified */}
+        <div className="absolute inset-[12%] overflow-hidden rounded-full bg-black/40">
           {displayAvatar && !remote?.videoTrack && (
             <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
