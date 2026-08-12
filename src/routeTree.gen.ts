@@ -85,6 +85,9 @@ import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminSpinPrizesRouteImport } from './routes/_authenticated/admin.spin-prizes'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminRoomsRouteImport } from './routes/_authenticated/admin.rooms'
+import { Route as AuthenticatedAdminRoomLayoutsRouteImport } from './routes/_authenticated/admin.room-layouts'
+import { Route as AuthenticatedAdminRoomLayoutsIdEditRouteImport } from './routes/_authenticated/admin.room-layouts.$id.edit'
+import { Route as AuthenticatedAdminRoomLayoutsIdPreviewRouteImport } from './routes/_authenticated/admin.room-layouts.$id.preview'
 import { Route as AuthenticatedAdminRoomGamesRouteImport } from './routes/_authenticated/admin.room-games'
 import { Route as AuthenticatedAdminRoomFramesPreviewRouteImport } from './routes/_authenticated/admin.room-frames-preview'
 import { Route as AuthenticatedAdminRoomFramesRouteImport } from './routes/_authenticated/admin.room-frames'
@@ -518,6 +521,21 @@ const AuthenticatedAdminSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminRoomLayoutsRoute = AuthenticatedAdminRoomLayoutsRouteImport.update({
+  id: '/admin/room-layouts',
+  path: '/room-layouts',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminRoomLayoutsIdEditRoute = AuthenticatedAdminRoomLayoutsIdEditRouteImport.update({
+  id: '/admin/room-layouts/$id/edit',
+  path: '/room-layouts/$id/edit',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminRoomLayoutsIdPreviewRoute = AuthenticatedAdminRoomLayoutsIdPreviewRouteImport.update({
+  id: '/admin/room-layouts/$id/preview',
+  path: '/room-layouts/$id/preview',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminRoomsRoute = AuthenticatedAdminRoomsRouteImport.update({
   id: '/rooms',
   path: '/rooms',
@@ -2283,6 +2301,9 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminReportsRoute: typeof AuthenticatedAdminReportsRoute
   AuthenticatedAdminRolesRoute: typeof AuthenticatedAdminRolesRoute
   AuthenticatedAdminRoomBackgroundsRoute: typeof AuthenticatedAdminRoomBackgroundsRoute
+  AuthenticatedAdminRoomLayoutsRoute: typeof AuthenticatedAdminRoomLayoutsRoute
+  AuthenticatedAdminRoomLayoutsIdEditRoute: typeof AuthenticatedAdminRoomLayoutsIdEditRoute
+  AuthenticatedAdminRoomLayoutsIdPreviewRoute: typeof AuthenticatedAdminRoomLayoutsIdPreviewRoute
   AuthenticatedAdminRoomFramesRoute: typeof AuthenticatedAdminRoomFramesRoute
   AuthenticatedAdminRoomFramesPreviewRoute: typeof AuthenticatedAdminRoomFramesPreviewRoute
   AuthenticatedAdminRoomGamesRoute: typeof AuthenticatedAdminRoomGamesRoute
@@ -2339,6 +2360,9 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRolesRoute: AuthenticatedAdminRolesRoute,
   AuthenticatedAdminRoomBackgroundsRoute:
     AuthenticatedAdminRoomBackgroundsRoute,
+  AuthenticatedAdminRoomLayoutsRoute: AuthenticatedAdminRoomLayoutsRoute,
+  AuthenticatedAdminRoomLayoutsIdEditRoute: AuthenticatedAdminRoomLayoutsIdEditRoute,
+  AuthenticatedAdminRoomLayoutsIdPreviewRoute: AuthenticatedAdminRoomLayoutsIdPreviewRoute,
   AuthenticatedAdminRoomFramesRoute: AuthenticatedAdminRoomFramesRoute,
   AuthenticatedAdminRoomFramesPreviewRoute:
     AuthenticatedAdminRoomFramesPreviewRoute,
