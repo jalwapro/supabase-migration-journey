@@ -2,7 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Monitor } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { LayoutElement, LayoutJSON } from "@/lib/room-layouts";
+import type { LayoutElement, LayoutJSON, RoomType } from "@/lib/room-layouts";
+import { RoomLayoutPublishButton } from "@/components/admin/RoomLayoutPublishButton";
 
 export const Route = createFileRoute("/_authenticated/admin/room-layouts/$id/preview")({
   component: LayoutPreviewPage,
@@ -16,7 +17,7 @@ function LayoutPreviewPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("room_layouts").select("*").eq("id", id).single();
       if (error) throw error;
-      return data as { name: string; type: string; layout_json: LayoutJSON };
+      return data as { id: string; name: string; type: RoomType; layout_json: LayoutJSON };
     },
   });
 
@@ -36,7 +37,10 @@ function LayoutPreviewPage() {
             <h1 className="text-2xl font-bold">{layout.name}</h1>
             <p className="text-white/50 capitalize">{layout.type} layout preview</p>
           </div>
-          <Monitor className="h-6 w-6 text-white/50" />
+          <div className="flex items-center gap-3">
+            <Monitor className="h-6 w-6 text-white/50" />
+            <RoomLayoutPublishButton layoutId={layout.id} roomType={layout.type} layout={json} onPublished={() => queryClientInvalidate()} />
+          </div>
         </div>
         <div className="flex justify-center overflow-auto p-8 bg-white/[0.03] rounded-2xl border border-white/10">
           <div className="relative overflow-hidden rounded-xl border border-white/20 shadow-2xl" style={{ width: json.canvas.width, height: json.canvas.height, background }}>
@@ -46,6 +50,10 @@ function LayoutPreviewPage() {
       </div>
     </div>
   );
+}
+
+function queryClientInvalidate() {
+  if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('jalwa:room-layout-published'));
 }
 
 function PreviewElement({ element }: { element: LayoutElement }) {
