@@ -48,6 +48,7 @@ export function PublishedAppConfig() {
     return () => { cancelled = true; window.removeEventListener('popstate', onRoute); void supabase.removeChannel(channel); };
   }, []);
 
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) return null;
   const pageConfig = config.pages[page];
   if (!pageConfig?.enabled || pageConfig.components.length === 0) return null;
 
