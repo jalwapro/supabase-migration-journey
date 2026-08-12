@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { loadPublishedRoomLayout } from '@/lib/published-room-layout';
 import type { LayoutJSON, RoomType } from '@/lib/room-layouts';
 
@@ -15,8 +15,7 @@ export function RoomLayoutRuntime({ roomType, children, className = '' }: Props)
     return () => { active = false; window.removeEventListener('jalwa:room-layout-published', onPublished); };
   }, [roomType]);
 
-  const visibleElements = new Set((layout?.elements ?? []).filter((e) => e.visible !== false).map((e) => e.id));
-  const style = layout ? { '--room-layout-width': `${layout.canvas.width}px`, '--room-layout-height': `${layout.canvas.height}px` } as React.CSSProperties : undefined;
+  const style = layout ? { '--room-layout-width': `${layout.canvas.width}px`, '--room-layout-height': `${layout.canvas.height}px` } as CSSProperties : undefined;
 
   return <div className={`relative min-h-full w-full ${className}`} style={style} data-room-layout={roomType} data-layout-loaded={Boolean(layout)}>
     {children}
