@@ -1,10 +1,10 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { PublishedAppConfig } from "@/components/PublishedAppConfig";
 
 function AuthedShell() {
-  return <Outlet />;
+  return <><Outlet /><PublishedAppConfig /></>;
 }
-
 
 async function waitForStoredSession() {
   for (const delay of [0, 150, 350, 700, 1200]) {
@@ -18,12 +18,7 @@ async function waitForStoredSession() {
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    // Use getSession() — reads from localStorage instantly and lets the SDK
-    // handle silent token refresh. getUser() makes a network call on every
-    // navigation; on flaky mobile networks it returns null and boots the
-    // user back to /auth even though the session is perfectly valid.
     const session = await waitForStoredSession();
-
     if (!session?.user) {
       throw redirect({ to: "/auth", search: { redirect: location.href } });
     }
