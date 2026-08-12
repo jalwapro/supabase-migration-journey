@@ -104,7 +104,7 @@ function RoomLayoutsPage() {
   };
 
   const handleCreate = (type: RoomType) => {
-    navigate({ to: `/admin/room-layouts/new`, search: { type } });
+    navigate({ to: `/admin/room-layouts/new/edit`, search: { type } });
   };
 
   return (
