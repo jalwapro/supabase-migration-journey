@@ -15,9 +15,22 @@ export async function loadHomeSectionSettings(): Promise<HomeSectionSetting[]> {
   const config = await loadPublishedAppCustomization();
   const remote = (config.pages.home?.components ?? []).find((item) => item.type === 'home-sections')?.props?.sections;
   if (!Array.isArray(remote)) return DEFAULT_HOME_SECTIONS;
-  const byId = new Map(remote.map((value) => [String((value as Record<string, unknown>).id), value as Record<string, unknown>]));
-  return DEFAULT_HOME_SECTIONS.map((base) => ({
-    ...base,
-    ...(byId.get(base.id) ?? {}),
-  })).sort((a, b) => a.order - b.order);
+  const byId = new Map<string, Record<string, unknown>>();
+  for (const value of remote) {
+    if (!value || typeof value !== 'object') continue;
+    const record = value as Record<string, unknown>;
+    if (typeof record.id === 'string') byId.set(record.id, record);
+  }
+  return DEFAULT_HOME_SECTIONS.map((base) => {
+    const remoteValue = byId.get(base.id);
+    return {
+      ...base,
+      ...(remoteValue ?? {}),
+      id: base.id,
+      visible: remoteValue?.visible !== false,
+      title: typeof remoteValue?.title === 'string' ? remoteValue.title : base.title,
+      order: typeof remoteValue?.order === 'number' ? remoteValue.order : base.order,
+      layout: remoteValue?.layout === 'grid' || remoteValue?.layout === 'slider' || remoteValue?.layout === 'list' ? remoteValue.layout : base.layout,
+    };
+  }).sort((a, b) => a.order - b.order);
 }
