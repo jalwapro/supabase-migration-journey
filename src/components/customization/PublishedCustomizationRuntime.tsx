@@ -19,7 +19,11 @@ export function PublishedCustomizationRuntime() {
 
   useEffect(() => {
     let cancelled = false;
-    const pageKey = PAGE_KEYS[pathname] ?? (pathname.startsWith('/room/') ? 'voice-room' : pathname.startsWith('/profile/') || pathname.startsWith('/u/') ? 'profile' : null);
+    const pageKey = PAGE_KEYS[pathname]
+      ?? (pathname.startsWith('/room/') ? 'voice-room'
+      : pathname.startsWith('/profile/') || pathname.startsWith('/u/') ? 'profile'
+      : pathname.startsWith('/pk/') ? 'pk-battle'
+      : null);
     if (!pageKey) { setConfig(null); return; }
     const load = async () => {
       const { data: page } = await supabase.from('app_customization_pages').select('id').eq('page_key', pageKey).maybeSingle();
@@ -33,31 +37,53 @@ export function PublishedCustomizationRuntime() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const previous: Record<string, string> = {};
+    const previousRoot: Record<string, string> = {};
     const theme = config?.theme ?? {};
     const mappings: Record<string, string> = { primary: '--primary', background: '--background', card: '--card', text: '--foreground', muted: '--muted-foreground', radius: '--radius', fontFamily: '--font-customization' };
-    Object.entries(mappings).forEach(([key, cssVar]) => { const value = toCssValue(theme[key]); if (!value) return; previous[cssVar] = root.style.getPropertyValue(cssVar); root.style.setProperty(cssVar, value); });
-    const title = toCssValue(config?.settings?.title);
-    if (title) { previous['--customization-page-title'] = root.style.getPropertyValue('--customization-page-title'); root.style.setProperty('--customization-page-title', title); }
+    Object.entries(mappings).forEach(([key, cssVar]) => {
+      const value = toCssValue(theme[key]); if (!value) return;
+      previousRoot[cssVar] = root.style.getPropertyValue(cssVar);
+      root.style.setProperty(cssVar, value);
+    });
 
-    const applied: Array<{ el: HTMLElement; styles: Record<string, string> }> = [];
+    const previousElements: Array<{ el: HTMLElement; property: string; value: string }> = [];
     (config?.elements ?? []).forEach((rule) => {
       if (!rule.selector) return;
       try {
         document.querySelectorAll(rule.selector).forEach((node) => {
           const el = node as HTMLElement;
-          const styles = rule.styles ?? {};
-          Object.entries(styles).forEach(([key, value]) => el.style.setProperty(key, value));
-          if (rule.visible === false) el.style.setProperty('display', 'none');
-          if (rule.visible === true) el.style.removeProperty('display');
-          if (typeof rule.text === 'string' && el.children.length === 0) el.textContent = rule.text;
-          applied.push({ el, styles });
+          Object.entries(rule.styles ?? {}).forEach(([property, value]) => {
+            if (typeof value !== 'string') return;
+            previousElements.push({ el, property, value: el.style.getPropertyValue(property) });
+            el.style.setProperty(property, value);
+          });
+          if (rule.visible === false) {
+            previousElements.push({ el, property: 'display', value: el.style.getPropertyValue('display') });
+            el.style.setProperty('display', 'none');
+          } else if (rule.visible === true) {
+            previousElements.push({ el, property: 'display', value: el.style.getPropertyValue('display') });
+            el.style.removeProperty('display');
+          }
+          if (typeof rule.text === 'string' && el.children.length === 0) {
+            previousElements.push({ el, property: '__textContent__', value: el.textContent ?? '' });
+            el.textContent = rule.text;
+          }
         });
       } catch { /* invalid selector in an old config cannot break the app */ }
     });
+
+    const title = toCssValue(config?.settings?.title);
+    const previousTitle = document.title;
+    if (title) document.title = title;
+
     return () => {
-      Object.entries(previous).forEach(([key, value]) => root.style.setProperty(key, value));
-      applied.forEach(({ el, styles }) => Object.keys(styles).forEach((key) => el.style.removeProperty(key)));
+      Object.entries(previousRoot).forEach(([key, value]) => root.style.setProperty(key, value));
+      previousElements.reverse().forEach(({ el, property, value }) => {
+        if (property === '__textContent__') el.textContent = value;
+        else if (value) el.style.setProperty(property, value);
+        else el.style.removeProperty(property);
+      });
+      document.title = previousTitle;
     };
   }, [config]);
 
