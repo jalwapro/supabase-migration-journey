@@ -2186,10 +2186,11 @@ function RoomPage() {
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-          {/* Room header - matching reference image */}
-          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)]">
-            <div className="glow-4d grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
+        {/* Header - matching reference image exactly */}
+        <div className="flex items-center justify-between gap-3 mb-3">
+          {/* Left: Room avatar + name + ID */}
+          <div className="flex items-center gap-2">
+            <div className="glow-4d grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
               {r.host?.avatar ? (
                 <img
                   src={r.host.avatar}
@@ -2199,44 +2200,36 @@ function RoomPage() {
               ) : (
                 <UserIcon className="h-5 w-5 text-white/80" />
               )}
-              {hostAfk && (
-                <span
-                  aria-label="Host is away"
-                  title="Host is away"
-                  className="pointer-events-none absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-amber-300/70 bg-black/70 text-[11px] shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse"
-                >
-                  ☕
-                </span>
-              )}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
-                  {r.title}
-                </span>
-                {!isHost && (
-                  <FollowLoveChip
-                    isFollowing={!!followsHost.data}
-                    onFollow={() => void followHost()}
-                    onLove={() => void sendLove()}
-                    cooling={loveCooling}
-                    blink={loveBlink}
-                  />
-                )}
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-black text-white">
+                {r.title}
               </div>
-              <div className="flex items-center gap-2">
-                <div className="truncate text-[10px] font-semibold text-white/60">
-                  ID:{roomCode}
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-semibold text-white/60">
-                  <Users className="h-3 w-3" />
-                  <span>{Math.max(r.viewer_count, members.length)}</span>
-                </div>
+              <div className="text-[10px] font-semibold text-white/60">
+                ID: {roomCode}
               </div>
             </div>
           </div>
-          {/* Action icons - matching image */}
-          <div className="flex items-start gap-2">
+          {/* Right: Icons */}
+          <div className="flex items-center gap-2">
+            <HeaderIcon
+              onClick={async () => {
+                const reason = window.prompt("Report this room?");
+                if (reason && reason.trim().length >= 3) {
+                  const { error } = await supabase.rpc("submit_user_report", {
+                    _reported_user: room.data?.host_id ?? null,
+                    _room_id: roomId,
+                    _reason: reason.trim(),
+                    _details: null,
+                  });
+                  if (error) toast.error(error.message);
+                  else toast.success("Report submitted");
+                }
+              }}
+              label="Report"
+            >
+              <Flag className="h-4 w-4" />
+            </HeaderIcon>
             <HeaderIcon
               onClick={() => setSeatsSheetOpen(true)}
               label="Settings"
@@ -2260,49 +2253,12 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Rank bar + members row - matching image */}
-        <div className="mt-2 flex items-center justify-between gap-2">
-          <button
-            onClick={() => void navigate({ to: "/rank" })}
-            className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 px-2 py-1 backdrop-blur"
-            aria-label="Open leaderboard"
-          >
-            <Trophy className="h-4 w-4 text-[color:var(--gold)]" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Ranking</span>
-            {topGifters.length === 0 ? (
-              <span className="text-[10px] font-semibold text-white/50">No ranking yet</span>
-            ) : (
-              <div className="flex items-center -space-x-2">
-                {topGifters.slice(0, 3).map((g, i) => (
-                  <div key={g.user_id} className="relative">
-                    <img
-                      src={g.avatar || `https://api.dicebear.com/9.x/thumbs/svg?seed=${g.user_id}`}
-                      alt={g.username ?? "gifter"}
-                      className={`h-6 w-6 rounded-full border-2 object-cover ${
-                        i === 0
-                          ? "border-[color:var(--gold)]"
-                          : i === 1
-                            ? "border-slate-300"
-                            : "border-amber-700"
-                      }`}
-                    />
-                    <span
-                      className={`absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-black text-black ${
-                        i === 0 ? "bg-[color:var(--gold)]" : i === 1 ? "bg-slate-300" : "bg-amber-600 text-white"
-                      }`}
-                    >
-                      {i + 1}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {topGifters[0] && (
-              <span className="ml-1 truncate text-[10px] font-bold text-white/80">
-                {(topGifters[0].total_coins / 1000).toFixed(1)}k 💎
-              </span>
-            )}
-          </button>
+        {/* Ranking bar - matching reference image */}
+        <div className="flex items-center gap-2 mb-3">
+          <Trophy className="h-5 w-5 text-[color:var(--gold)]" />
+          <span className="text-[12px] font-semibold text-white/80">
+            {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
+          </span>
         </div>
           {!isHost && (
             <button
@@ -2684,7 +2640,7 @@ function RoomPage() {
 
 
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-          <div className="p-0">
+          <div className="p-0 pointer-events-auto">
             {(() => {
               const sc = Math.max(4, r.seat_count);
               // Dynamic layout based on seat count to match reference:
@@ -2713,7 +2669,7 @@ function RoomPage() {
               }
               return (
                 <div
-                  className="grid gap-x-2 gap-y-3"
+                  className="grid gap-3 pointer-events-auto"
                   style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                 >
                   {Array.from({ length: sc }).map((_, i) => {
@@ -2770,13 +2726,13 @@ function RoomPage() {
 
       {/* ─── Live comments (directly under the seats) ───────────── */}
       {!isVideo && (
-        <div className="relative z-10 mx-auto mt-1 w-full max-w-md px-3">
+        <div className="relative z-10 mx-auto mt-4 w-full max-w-md px-3">
           {/* Chat tabs - matching reference */}
-          <div className="flex items-center gap-2 mb-2 border-b border-white/10 pb-2">
-            <button className="text-[11px] font-bold text-white">All</button>
-            <button className="text-[11px] font-semibold text-white/40">Chat</button>
+          <div className="flex items-center gap-4 mb-2">
+            <button className="text-[12px] font-bold text-white">All</button>
+            <button className="text-[12px] font-semibold text-white/40">Chat</button>
           </div>
-          <div className="max-h-28 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
+          <div className="max-h-24 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
             {messages.length === 0 && <EmptyChat />}
             {messages
               .filter((m) => m.kind !== "emoji")
@@ -2801,13 +2757,13 @@ function RoomPage() {
       )}
 
       {/* ─── Enters-the-room banner (animated, all room types) ── */}
-      <div className="pointer-events-none absolute inset-x-0 top-[190px] z-30 mx-auto w-full max-w-md px-3">
+      <div className="pointer-events-none absolute inset-x-0 top-[140px] z-30 mx-auto w-full max-w-md px-3">
         <EnterRoomBanner latestEnter={latestEnter} />
       </div>
 
       {/* ─── User entry prompt (matching image) ── */}
       {latestEnter && (
-        <div className="pointer-events-none absolute inset-x-0 top-[220px] z-30 mx-auto w-full max-w-md px-3">
+        <div className="pointer-events-none absolute inset-x-0 top-[170px] z-30 mx-auto w-full max-w-md px-3">
           <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 backdrop-blur-md">
             <Mic className="h-4 w-4 text-white/60" />
             <span className="text-[11px] font-semibold text-white/80">
@@ -3170,9 +3126,10 @@ function RoomPage() {
             <button
               onClick={() => setVideoSettingsOpen(true)}
               aria-label="More"
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
+              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
             >
-              <Grid3x3 className="h-4 w-4" />
+              <Grid3x3 className="h-5 w-5" />
+              <span className="text-[10px] font-semibold">More</span>
             </button>
 
 
