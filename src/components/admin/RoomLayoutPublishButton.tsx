@@ -7,11 +7,10 @@ type Props = {
   layoutId: string;
   roomType: RoomType;
   layout: LayoutJSON;
-  userId?: string;
   onPublished?: () => void;
 };
 
-export function RoomLayoutPublishButton({ layoutId, roomType, layout, userId, onPublished }: Props) {
+export function RoomLayoutPublishButton({ layoutId, roomType, layout, onPublished }: Props) {
   const [pending, setPending] = useState(false);
   const [published, setPublished] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +21,7 @@ export function RoomLayoutPublishButton({ layoutId, roomType, layout, userId, on
     setPublished(false);
     setError(null);
     try {
-      await publishRoomLayout({ layoutId, roomType, layout, userId });
+      await publishRoomLayout(layoutId, layout, roomType);
       setPublished(true);
       onPublished?.();
     } catch (err) {
@@ -34,12 +33,7 @@ export function RoomLayoutPublishButton({ layoutId, roomType, layout, userId, on
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <button
-        type="button"
-        onClick={publish}
-        disabled={pending}
-        className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50"
-      >
+      <button type="button" onClick={publish} disabled={pending} className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50">
         {pending ? <Loader2 className="h-5 w-5 animate-spin" /> : published ? <CheckCircle2 className="h-5 w-5" /> : <Rocket className="h-5 w-5" />}
         {pending ? 'Publishing...' : published ? 'Published' : 'Publish Live'}
       </button>
