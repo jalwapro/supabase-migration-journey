@@ -2260,6 +2260,7 @@ function RoomPage() {
             {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
           </span>
         </div>
+        <div className="flex items-center gap-2">
           {!isHost && (
             <button
               onClick={() => void joinFamily()}
