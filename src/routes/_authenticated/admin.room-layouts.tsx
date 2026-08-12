@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { DEFAULT_VOICE_LAYOUT, DEFAULT_VIDEO_LAYOUT, DEFAULT_PK_LAYOUT } from "@/lib/room-layouts";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -23,7 +24,7 @@ function RoomLayoutsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch layouts
-  const { data: layouts, isLoading } = useQuery({
+  const { data: layouts, isLoading, error: layoutsError } = useQuery({
     queryKey: ['room_layouts', selectedType, selectedStatus, searchQuery],
     queryFn: async () => {
       let query = supabase
@@ -43,7 +44,25 @@ function RoomLayoutsPage() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data as RoomLayout[];
+
+      // A fresh installation may have the layout tables but no rows yet.
+      // Seed the three editable system layouts once so the Studio never opens
+      // to a misleading "No layouts found" screen.
+      if ((!data || data.length === 0) && selectedType === 'all' && selectedStatus === 'all' && !searchQuery && user?.id) {
+        const seeds = [
+          { name: 'Jalwa Voice — 20 Seats', type: 'voice', description: 'Default editable 20-seat voice room layout.', layout_json: DEFAULT_VOICE_LAYOUT },
+          { name: 'Jalwa Video — 4 Participants', type: 'video', description: 'Default editable video room layout.', layout_json: DEFAULT_VIDEO_LAYOUT },
+          { name: 'Jalwa PK Battle', type: 'pk', description: 'Default editable PK battle layout.', layout_json: DEFAULT_PK_LAYOUT },
+        ];
+        const { data: seeded, error: seedError } = await supabase
+          .from('room_layouts')
+          .insert(seeds.map((item) => ({ ...item, status: 'draft', version: 1, is_default: false, created_by: user.id })))
+          .select('*');
+        if (seedError) throw seedError;
+        return (seeded ?? []) as RoomLayout[];
+      }
+
+      return (data ?? []) as RoomLayout[];
     },
   });
 
@@ -181,6 +200,11 @@ function RoomLayoutsPage() {
         {/* Layouts Grid */}
         {isLoading ? (
           <div className="text-center py-12 text-white/60">Loading layouts...</div>
+        ) : layoutsError ? (
+          <div className="text-center py-12">
+            <p className="text-red-400 font-semibold mb-2">Could not load room layouts.</p>
+            <p className="text-white/50 text-sm">{layoutsError instanceof Error ? layoutsError.message : 'Check Supabase migration/RLS permissions.'}</p>
+          </div>
         ) : layouts && layouts.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {layouts.map((layout) => (
