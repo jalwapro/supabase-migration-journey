@@ -2186,11 +2186,10 @@ function RoomPage() {
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        {/* Header - matching reference image exactly */}
-        <div className="flex items-center justify-between gap-3 mb-3">
-          {/* Left: Room avatar + name + ID */}
-          <div className="flex items-center gap-2">
-            <div className="glow-4d grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          {/* Host chip */}
+          <div className="flex min-w-0 items-center gap-2 rounded-2xl border border-violet-300/35 bg-white/10 py-1.5 pl-1.5 pr-3 backdrop-blur-md shadow-[inset_0_0_22px_rgba(255,255,255,0.06)]">
+            <div className="glow-4d grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
               {r.host?.avatar ? (
                 <img
                   src={r.host.avatar}
@@ -2200,49 +2199,54 @@ function RoomPage() {
               ) : (
                 <UserIcon className="h-5 w-5 text-white/80" />
               )}
+              {hostAfk && (
+                <span
+                  aria-label="Host is away"
+                  title="Host is away"
+                  className="pointer-events-none absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full border border-amber-300/70 bg-black/70 text-[11px] shadow-[0_0_10px_rgba(251,191,36,0.6)] animate-pulse"
+                >
+                  ☕
+                </span>
+              )}
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-[14px] font-black text-white">
-                {r.title}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate text-[13px] font-black leading-tight sm:text-sm">
+                  {r.title}
+                </span>
+                {!isHost && (
+                  <FollowLoveChip
+                    isFollowing={!!followsHost.data}
+                    onFollow={() => void followHost()}
+                    onLove={() => void sendLove()}
+                    cooling={loveCooling}
+                    blink={loveBlink}
+                  />
+                )}
               </div>
-              <div className="text-[10px] font-semibold text-white/60">
-                ID: {roomCode}
+              <div className="truncate text-[10px] font-semibold text-white/60">
+                ID:{roomCode}
               </div>
             </div>
           </div>
-          {/* Right: Icons */}
-          <div className="flex items-center gap-2">
+          {/* Action icons */}
+          <div className="flex items-start gap-2">
             <HeaderIcon
               onClick={async () => {
-                const reason = window.prompt("Report this room?");
-                if (reason && reason.trim().length >= 3) {
-                  const { error } = await supabase.rpc("submit_user_report", {
-                    _reported_user: room.data?.host_id ?? null,
-                    _room_id: roomId,
-                    _reason: reason.trim(),
-                    _details: null,
-                  });
-                  if (error) toast.error(error.message);
-                  else toast.success("Report submitted");
-                }
+                const reason = window.prompt("Report this room? (e.g. harassment, spam, nudity)");
+                if (!reason || reason.trim().length < 3) return;
+                const { error } = await supabase.rpc("submit_user_report", {
+                  _reported_user: room.data?.host_id ?? null,
+                  _room_id: roomId,
+                  _reason: reason.trim(),
+                  _details: null,
+                });
+                if (error) toast.error(error.message);
+                else toast.success("Report submitted");
               }}
               label="Report"
             >
               <Flag className="h-4 w-4" />
-            </HeaderIcon>
-            <HeaderIcon
-              onClick={() => setSeatsSheetOpen(true)}
-              label="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </HeaderIcon>
-            <HeaderIcon
-              onClick={() => {
-                toast.success("Room bookmarked");
-              }}
-              label="Bookmark"
-            >
-              <Armchair className="h-4 w-4" />
             </HeaderIcon>
             <HeaderIcon onClick={share} label="Share">
               <Share2 className="h-4 w-4" />
@@ -2253,14 +2257,48 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Ranking bar - matching reference image */}
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="h-5 w-5 text-[color:var(--gold)]" />
-          <span className="text-[12px] font-semibold text-white/80">
-            {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+        {/* Rank bar + members row */}
+        <div className="mt-2 flex items-center justify-between gap-2">
+          <button
+            onClick={() => void navigate({ to: "/rank" })}
+            className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-[color:var(--gold)]/40 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 px-2 py-1 backdrop-blur"
+            aria-label="Open leaderboard"
+          >
+            <span className="text-[10px] font-black uppercase tracking-wider text-[color:var(--gold)]">Top</span>
+            {topGifters.length === 0 ? (
+              <span className="text-[10px] font-semibold text-white/50">No gifters yet</span>
+            ) : (
+              <div className="flex items-center -space-x-2">
+                {topGifters.slice(0, 3).map((g, i) => (
+                  <div key={g.user_id} className="relative">
+                    <img
+                      src={g.avatar || `https://api.dicebear.com/9.x/thumbs/svg?seed=${g.user_id}`}
+                      alt={g.username ?? "gifter"}
+                      className={`h-6 w-6 rounded-full border-2 object-cover ${
+                        i === 0
+                          ? "border-[color:var(--gold)]"
+                          : i === 1
+                            ? "border-slate-300"
+                            : "border-amber-700"
+                      }`}
+                    />
+                    <span
+                      className={`absolute -bottom-1 -right-1 flex h-3 w-3 items-center justify-center rounded-full text-[8px] font-black text-black ${
+                        i === 0 ? "bg-[color:var(--gold)]" : i === 1 ? "bg-slate-300" : "bg-amber-600 text-white"
+                      }`}
+                    >
+                      {i + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {topGifters[0] && (
+              <span className="ml-1 truncate text-[10px] font-bold text-white/80">
+                {(topGifters[0].total_coins / 1000).toFixed(1)}k 💎
+              </span>
+            )}
+          </button>
           {!isHost && (
             <button
               onClick={() => void joinFamily()}
@@ -2641,36 +2679,13 @@ function RoomPage() {
 
 
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-          <div className="p-0 pointer-events-auto">
+          <div className="p-0">
             {(() => {
               const sc = Math.max(4, r.seat_count);
-              // Dynamic layout based on seat count to match reference:
-              // 4 seats: 2x2
-              // 8 seats: 4x2
-              // 12 seats: 4x3
-              // 16 seats: 4x4
-              // 20 seats: 5x4
-              let cols: number;
-              let rows: number;
-              if (sc === 4) {
-                cols = 2;
-                rows = 2;
-              } else if (sc === 8) {
-                cols = 4;
-                rows = 2;
-              } else if (sc === 12) {
-                cols = 4;
-                rows = 3;
-              } else if (sc === 16) {
-                cols = 4;
-                rows = 4;
-              } else { // 20 seats or more
-                cols = 5;
-                rows = 4;
-              }
+              const cols = sc <= 8 ? 4 : 5;
               return (
                 <div
-                  className="grid gap-3 pointer-events-auto"
+                  className="grid gap-x-2 gap-y-3"
                   style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                 >
                   {Array.from({ length: sc }).map((_, i) => {
@@ -2727,13 +2742,8 @@ function RoomPage() {
 
       {/* ─── Live comments (directly under the seats) ───────────── */}
       {!isVideo && (
-        <div className="relative z-10 mx-auto mt-4 w-full max-w-md px-3">
-          {/* Chat tabs - matching reference */}
-          <div className="flex items-center gap-4 mb-2">
-            <button className="text-[12px] font-bold text-white">All</button>
-            <button className="text-[12px] font-semibold text-white/40">Chat</button>
-          </div>
-          <div className="max-h-24 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
+        <div className="relative z-10 mx-auto mt-1 w-full max-w-md px-3">
+          <div className="max-h-28 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
             {messages.length === 0 && <EmptyChat />}
             {messages
               .filter((m) => m.kind !== "emoji")
@@ -2758,21 +2768,9 @@ function RoomPage() {
       )}
 
       {/* ─── Enters-the-room banner (animated, all room types) ── */}
-      <div className="pointer-events-none absolute inset-x-0 top-[140px] z-30 mx-auto w-full max-w-md px-3">
+      <div className="pointer-events-none absolute inset-x-0 top-[190px] z-30 mx-auto w-full max-w-md px-3">
         <EnterRoomBanner latestEnter={latestEnter} />
       </div>
-
-      {/* ─── User entry prompt (matching image) ── */}
-      {latestEnter && (
-        <div className="pointer-events-none absolute inset-x-0 top-[170px] z-30 mx-auto w-full max-w-md px-3">
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/60 px-3 py-1.5 backdrop-blur-md">
-            <Mic className="h-4 w-4 text-white/60" />
-            <span className="text-[11px] font-semibold text-white/80">
-              {latestEnter.enterer_username ?? "Someone"} enters the room
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       {!isVideo ? (
@@ -3089,7 +3087,7 @@ function RoomPage() {
                 <Smile className="h-3.5 w-3.5" />
               </span>
               <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
-                {text.trim() ? text : "Type a message..."}
+                {text.trim() ? text : "Say hi…"}
               </span>
               <span
                 aria-label="Send"
@@ -3109,28 +3107,11 @@ function RoomPage() {
               <span className="text-[10px] font-semibold">Gift</span>
             </button>
             <button
-              onClick={() => setGamesSheetOpen(true)}
-              aria-label="Games"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
-            >
-              <Gamepad2 className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Games</span>
-            </button>
-            <button
-              onClick={() => setInviteOpen(true)}
-              aria-label="Messages"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
-            >
-              <Inbox className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Msg</span>
-            </button>
-            <button
               onClick={() => setVideoSettingsOpen(true)}
               aria-label="More"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-md"
             >
-              <Grid3x3 className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">More</span>
+              <MoreHorizontal className="h-4 w-4" />
             </button>
 
 
@@ -4752,19 +4733,25 @@ function Seat({
   const hostAwayFromSeat = isHostSeat && !member;
   const seatNo = index + 1;
 
-  // Simple palette matching reference
+  // Neon Core Prime palette
   const ringHue = isHostSeat
     ? "#ffd166"
     : hostAwayFromSeat
       ? "#ef4444"
       : "#bf00ff";
   const activeRing = !!member || isHostSeat;
+  const outerRingCls = activeRing
+    ? `border-2 shadow-[0_0_12px_${ringHue},inset_0_0_8px_${ringHue}]`
+    : "border-2 opacity-70 shadow-[0_0_10px_rgba(191,0,255,0.55)]";
+  const innerRingCls = activeRing
+    ? "border-2 shadow-[inset_0_0_10px_currentColor]"
+    : "border-2 opacity-40";
 
   return (
     <div
       data-seat-index={index}
       data-user-dp={member?.user_id ?? ""}
-      className={`relative flex flex-col items-center gap-1.5 ${
+      className={`relative flex flex-col items-center gap-1 transition-shadow duration-300 ${
         glowing ? "drop-shadow-[0_0_18px_rgba(255,209,102,0.75)] animate-pulse" : ""
       }`}
     >
@@ -4779,17 +4766,54 @@ function Seat({
         className="relative aspect-square w-full"
         aria-label={member ? `Manage seat No.${seatNo}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked No.${seatNo}` : `Take No.${seatNo}`}
       >
-        {/* Simple circular border - matching reference */}
+        {/* Outer neon ring */}
         <div
-          className={`pointer-events-none absolute inset-0 rounded-full border-2 ${
-            activeRing
-              ? "border-purple-500 shadow-[0_0_16px_rgba(168,85,247,0.6)]"
-              : "border-white/20 opacity-60"
-          }`}
+          className={`pointer-events-none absolute inset-0 rounded-full ${outerRingCls}`}
+          style={{ borderColor: ringHue, color: ringHue }}
+        />
+        {/* Gold accent ring */}
+        <div
+          className="pointer-events-none absolute inset-[3px] rounded-full border opacity-60"
+          style={{ borderColor: "#ffd700" }}
+        />
+        {/* Inner neon ring */}
+        <div
+          className={`pointer-events-none absolute inset-[6px] rounded-full ${innerRingCls}`}
+          style={{ borderColor: ringHue, color: ringHue }}
         />
 
-        {/* Inner disc (avatar / content) - matching reference */}
-        <div className="absolute inset-[15%] overflow-hidden rounded-full bg-black/50">
+        {/* Speaking glow + pulse bubble */}
+        {speaking && !hostAwayFromSeat && (
+          <>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-14%] z-0 rounded-full animate-ping"
+              style={{ background: `radial-gradient(circle, ${ringHue}55 0%, transparent 70%)` }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-[-6%] z-0 rounded-full border-2 animate-pulse"
+              style={{ borderColor: `${ringHue}cc`, boxShadow: `0 0 22px ${ringHue}aa` }}
+            />
+          </>
+        )}
+
+        {/* Halftone dot texture for empty state */}
+        {!member && !hostAwayFromSeat && !locked && (
+          <div
+            className="pointer-events-none absolute inset-[8px] rounded-full opacity-15"
+            style={{
+              backgroundImage: `radial-gradient(${ringHue} 1px, transparent 1px)`,
+              backgroundSize: "4px 4px",
+            }}
+          />
+        )}
+
+        {/* Inner disc (avatar / content) */}
+        <div className="absolute inset-[10%] overflow-hidden rounded-full">
+          {isHostSeat && !displayAvatar && cover && !hostAwayFromSeat && (
+            <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+          )}
           {displayAvatar && !remote?.videoTrack && (
             <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
@@ -4797,9 +4821,42 @@ function Seat({
           {!displayAvatar && !remote?.videoTrack && !hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center">
               {locked ? (
-                <span className="text-xl">🔒</span>
+                <span className="text-lg">🔒</span>
+              ) : isHostSeat ? (
+                <img
+                  src={HOST_THRONE_URL}
+                  alt=""
+                  draggable={false}
+                  className="h-[110%] w-[110%] object-contain drop-shadow-[0_2px_8px_rgba(255,215,0,0.55)]"
+                />
               ) : (
-                <UserIcon className="h-5 w-5 text-white/40" />
+                <div className="relative h-[110%] w-[110%]">
+                  <img
+                    src={HOST_THRONE_URL}
+                    alt=""
+                    draggable={false}
+                    className="h-full w-full object-contain drop-shadow-[0_2px_8px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
+                    style={{ filter: "grayscale(0.4) brightness(0.95)" }}
+                  />
+                  {/* Theme-tinted overlay: empty seats adopt the user's shop theme colors */}
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0"
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      mixBlendMode: "color",
+                      opacity: 0.9,
+                      WebkitMaskImage: `url(${HOST_THRONE_URL})`,
+                      maskImage: `url(${HOST_THRONE_URL})`,
+                      WebkitMaskRepeat: "no-repeat",
+                      maskRepeat: "no-repeat",
+                      WebkitMaskPosition: "center",
+                      maskPosition: "center",
+                      WebkitMaskSize: "contain",
+                      maskSize: "contain",
+                    }}
+                  />
+                </div>
               )}
             </div>
           )}
@@ -4830,41 +4887,61 @@ function Seat({
         {/* (badge moved below DP) */}
 
 
-        {/* Seat number badge - matching reference (top-left) */}
-        <span className="absolute -top-1 -left-1 grid h-4 w-4 place-items-center rounded-full border border-white/30 bg-black/80 text-[8px] font-bold text-white">
-          {seatNo}
-        </span>
-
-        {/* Heart/like count - matching reference (bottom-right) */}
-        <span className="absolute -bottom-1 right-1 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[7px] font-bold text-white/80 backdrop-blur">
-          <Heart className="h-1.5 w-1.5 text-rose-400" />
-          {likeCount}
-        </span>
-
-        {/* Mic status - matching reference */}
         {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
-          <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full bg-black/70">
-            <MicOff className="h-1.5 w-1.5 text-[color:var(--destructive)]" />
+          <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70">
+            <MicOff className="h-2 w-2 text-[color:var(--destructive)]" />
           </span>
         )}
-
-        {/* Host crown - matching reference */}
-        {isHostSeat && (
-          <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-[10px] leading-none shadow-[0_0_10px_rgba(255,215,0,0.6)]">
+        {member?.is_moderator && !isHostSeat && (
+          <span
+            title="Moderator"
+            className="absolute -top-0.5 -right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full bg-sky-500 ring-2 ring-black shadow-[0_0_8px_rgba(56,189,248,0.9)]"
+          />
+        )}
+        {likeCount > 0 && (
+          <span className="absolute -bottom-0.5 left-0.5 z-20 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[8px] font-bold text-white/80 backdrop-blur">
+            <Heart className="h-2 w-2 text-[color:var(--destructive)]" />
+            {likeCount}
+          </span>
+        )}
+        {isKing && (
+          <span
+            title="Top gifter"
+            className="pointer-events-none absolute -top-2 -right-2 z-30 grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-amber-400 to-orange-500 text-sm leading-none shadow-[0_0_14px_rgba(255,200,60,0.95)] ring-2 ring-black animate-bounce"
+          >
             👑
           </span>
         )}
       </button>
-
-      {/* Username below seat - matching reference */}
-      {member && displayName && (
-        <span className="max-w-[60px] truncate text-[10px] font-semibold text-white">
-          {displayName}
+      {!member && (hostAwayFromSeat || locked) && (
+        <span className="text-[9px] font-medium leading-tight text-white/60">
+          {hostAwayFromSeat ? "Tap to return" : "Locked"}
         </span>
       )}
-      {!member && (
-        <span className="text-[10px] text-white/40">Empty</span>
-      )}
+      {/* Bottom hex badge: seat number, or gift points on host seat when host is seated */}
+      <div
+        className="pointer-events-none -mt-1 flex h-5 min-w-[26px] items-center justify-center px-1"
+        style={{ filter: activeRing ? `drop-shadow(0 0 4px ${ringHue})` : "none" }}
+      >
+        <svg viewBox="0 0 100 115" preserveAspectRatio="none" className="absolute h-5 w-full">
+          <polygon
+            points="50 5, 95 30, 95 85, 50 110, 5 85, 5 30"
+            fill={activeRing ? "#1a0033" : "#05000a"}
+            stroke={ringHue}
+            strokeOpacity={activeRing ? 1 : 0.6}
+            strokeWidth={6}
+          />
+        </svg>
+        <span className={`relative px-1 text-[9px] font-bold leading-none ${activeRing ? "text-white" : "text-white/70"}`}>
+          {member || (isHostSeat && member)
+            ? formatGiftPoints(giftPoints ?? 0)
+            : `No.${seatNo}`}
+        </span>
+
+
+      </div>
+
+
     </div>
   );
 }
