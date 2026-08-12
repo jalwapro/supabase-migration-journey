@@ -3,15 +3,11 @@ import { DEFAULT_PK_LAYOUT, DEFAULT_VIDEO_LAYOUT, DEFAULT_VOICE_LAYOUT, type Lay
 
 const FALLBACKS: Record<RoomType, LayoutJSON> = { voice: DEFAULT_VOICE_LAYOUT, video: DEFAULT_VIDEO_LAYOUT, pk: DEFAULT_PK_LAYOUT };
 
-export async function loadPublishedRoomLayout(roomType: RoomType): Promise<LayoutJSON> {
-  const { data, error } = await supabase
-    .from('room_layouts')
-    .select('layout_json')
-    .eq('type', roomType)
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error || !data?.layout_json || typeof data.layout_json !== 'object') return FALLBACKS[roomType];
-  return data.layout_json as LayoutJSON;
+export async function loadPublishedRoomLayout(roomId: string, roomType: RoomType): Promise<LayoutJSON> {
+  if (!roomId) return FALLBACKS[roomType];
+  const { data, error } = await supabase.rpc('get_room_layout', { p_room_id: roomId, p_type: roomType });
+  if (error || !data || typeof data !== 'object') return FALLBACKS[roomType];
+  const layout = data as LayoutJSON;
+  if (!layout.canvas || !Array.isArray(layout.elements)) return FALLBACKS[roomType];
+  return layout;
 }
