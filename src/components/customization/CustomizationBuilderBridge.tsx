@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 function selectorFor(el: Element) {
   const parts: string[] = [];
   let node: Element | null = el;
-  while (node && node.nodeType === 1 && parts.length < 5) {
+  while (node && node.nodeType === 1 && parts.length < 8) {
     let part = node.tagName.toLowerCase();
     if (node.id) part += `#${CSS.escape(node.id)}`;
     else {
@@ -28,7 +28,7 @@ export function CustomizationBuilderBridge() {
     const describe = (el: HTMLElement) => {
       const r = el.getBoundingClientRect();
       const cs = getComputedStyle(el);
-      return { selector: selectorFor(el), tag: el.tagName.toLowerCase(), text: (el.textContent ?? '').trim().slice(0, 500), rect: { x: r.x, y: r.y, width: r.width, height: r.height }, styles: { color: cs.color, backgroundColor: cs.backgroundColor, fontSize: cs.fontSize, fontWeight: cs.fontWeight, borderRadius: cs.borderRadius, padding: cs.padding, margin: cs.margin, opacity: cs.opacity } };
+      return { selector: selectorFor(el), tag: el.tagName.toLowerCase(), text: (el.children.length === 0 ? el.textContent : '').trim().slice(0, 500), rect: { x: r.x, y: r.y, width: r.width, height: r.height }, styles: { color: cs.color, backgroundColor: cs.backgroundColor, fontSize: cs.fontSize, fontWeight: cs.fontWeight, borderRadius: cs.borderRadius, padding: cs.padding, margin: cs.margin, opacity: cs.opacity, width: cs.width, height: cs.height, position: cs.position, top: cs.top, right: cs.right, bottom: cs.bottom, left: cs.left, transform: cs.transform, display: cs.display, gap: cs.gap } };
     };
 
     const move = (e: MouseEvent) => {
@@ -46,12 +46,20 @@ export function CustomizationBuilderBridge() {
     const message = (e: MessageEvent) => {
       if (e.source !== window.parent) return;
       const data = e.data;
+      if (data?.type === 'jalwa:customization:apply-batch' && Array.isArray(data.rules)) {
+        data.rules.forEach((rule: any) => applyRule(rule));
+        return;
+      }
       if (data?.type !== 'jalwa:customization:apply' || !data.selector) return;
+      applyRule(data);
+    };
+    const applyRule = (data: any) => {
       try {
         document.querySelectorAll(data.selector).forEach((node) => {
           const el = node as HTMLElement;
           Object.entries(data.styles ?? {}).forEach(([key, value]) => { if (typeof value === 'string') el.style.setProperty(key, value); });
           if (typeof data.text === 'string' && el.children.length === 0) el.textContent = data.text;
+          if (typeof data.visible === 'boolean') el.style.setProperty('display', data.visible ? '' : 'none');
         });
       } catch { /* invalid selector is ignored inside builder */ }
     };
