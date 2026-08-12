@@ -1,6 +1,6 @@
 -- ADMIN CUSTOMIZATION ONLY
--- This migration adds configuration storage for the Admin Panel visual builder.
--- It does NOT alter or connect to any user-facing application route/component/business table.
+-- Configuration storage for the Admin Panel visual builder.
+-- No user-facing route, component, business-logic table, or live renderer is modified by this phase.
 
 CREATE TABLE IF NOT EXISTS public.app_customization_sections (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -83,48 +83,26 @@ CREATE TABLE IF NOT EXISTS public.app_customization_published (
   notes TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_app_customization_sections_page_order
-  ON public.app_customization_sections(page_id, sort_order);
-CREATE INDEX IF NOT EXISTS idx_app_customization_components_page_order
-  ON public.app_customization_components(page_id, sort_order);
-CREATE INDEX IF NOT EXISTS idx_app_customization_components_section_order
-  ON public.app_customization_components(section_id, sort_order);
-CREATE INDEX IF NOT EXISTS idx_app_customization_navigation_page
-  ON public.app_customization_navigation(page_id);
-CREATE INDEX IF NOT EXISTS idx_app_customization_layouts_page
-  ON public.app_customization_layouts(page_id);
-CREATE INDEX IF NOT EXISTS idx_app_customization_drafts_page_active
-  ON public.app_customization_drafts(page_id, is_active, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_app_customization_sections_page_order ON public.app_customization_sections(page_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_app_customization_components_page_order ON public.app_customization_components(page_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_app_customization_components_section_order ON public.app_customization_components(section_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_app_customization_navigation_page ON public.app_customization_navigation(page_id);
+CREATE INDEX IF NOT EXISTS idx_app_customization_layouts_page ON public.app_customization_layouts(page_id);
+CREATE INDEX IF NOT EXISTS idx_app_customization_drafts_page_active ON public.app_customization_drafts(page_id, is_active, updated_at DESC);
 
 CREATE OR REPLACE FUNCTION public.update_app_customization_workspace_updated_at()
-RETURNS TRIGGER LANGUAGE plpgsql AS $$
-BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
-$$;
+RETURNS TRIGGER LANGUAGE plpgsql AS $$ BEGIN NEW.updated_at = NOW(); RETURN NEW; END; $$;
 
 DROP TRIGGER IF EXISTS update_app_customization_sections_updated_at ON public.app_customization_sections;
-CREATE TRIGGER update_app_customization_sections_updated_at
-BEFORE UPDATE ON public.app_customization_sections FOR EACH ROW
-EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
-
+CREATE TRIGGER update_app_customization_sections_updated_at BEFORE UPDATE ON public.app_customization_sections FOR EACH ROW EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
 DROP TRIGGER IF EXISTS update_app_customization_components_updated_at ON public.app_customization_components;
-CREATE TRIGGER update_app_customization_components_updated_at
-BEFORE UPDATE ON public.app_customization_components FOR EACH ROW
-EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
-
+CREATE TRIGGER update_app_customization_components_updated_at BEFORE UPDATE ON public.app_customization_components FOR EACH ROW EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
 DROP TRIGGER IF EXISTS update_app_customization_navigation_updated_at ON public.app_customization_navigation;
-CREATE TRIGGER update_app_customization_navigation_updated_at
-BEFORE UPDATE ON public.app_customization_navigation FOR EACH ROW
-EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
-
+CREATE TRIGGER update_app_customization_navigation_updated_at BEFORE UPDATE ON public.app_customization_navigation FOR EACH ROW EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
 DROP TRIGGER IF EXISTS update_app_customization_layouts_updated_at ON public.app_customization_layouts;
-CREATE TRIGGER update_app_customization_layouts_updated_at
-BEFORE UPDATE ON public.app_customization_layouts FOR EACH ROW
-EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
-
+CREATE TRIGGER update_app_customization_layouts_updated_at BEFORE UPDATE ON public.app_customization_layouts FOR EACH ROW EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
 DROP TRIGGER IF EXISTS update_app_customization_drafts_updated_at ON public.app_customization_drafts;
-CREATE TRIGGER update_app_customization_drafts_updated_at
-BEFORE UPDATE ON public.app_customization_drafts FOR EACH ROW
-EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
+CREATE TRIGGER update_app_customization_drafts_updated_at BEFORE UPDATE ON public.app_customization_drafts FOR EACH ROW EXECUTE FUNCTION public.update_app_customization_workspace_updated_at();
 
 ALTER TABLE public.app_customization_sections ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.app_customization_components ENABLE ROW LEVEL SECURITY;
@@ -141,27 +119,34 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.app_customization_drafts TO authe
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.app_customization_published TO authenticated;
 
 DROP POLICY IF EXISTS "Customization sections admin only" ON public.app_customization_sections;
-CREATE POLICY "Customization sections admin only" ON public.app_customization_sections
-FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
-
+CREATE POLICY "Customization sections admin only" ON public.app_customization_sections FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
 DROP POLICY IF EXISTS "Customization components admin only" ON public.app_customization_components;
-CREATE POLICY "Customization components admin only" ON public.app_customization_components
-FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
-
+CREATE POLICY "Customization components admin only" ON public.app_customization_components FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
 DROP POLICY IF EXISTS "Customization navigation admin only" ON public.app_customization_navigation;
-CREATE POLICY "Customization navigation admin only" ON public.app_customization_navigation
-FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
-
+CREATE POLICY "Customization navigation admin only" ON public.app_customization_navigation FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
 DROP POLICY IF EXISTS "Customization layouts admin only" ON public.app_customization_layouts;
-CREATE POLICY "Customization layouts admin only" ON public.app_customization_layouts
-FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
-
+CREATE POLICY "Customization layouts admin only" ON public.app_customization_layouts FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
 DROP POLICY IF EXISTS "Customization drafts admin only" ON public.app_customization_drafts;
-CREATE POLICY "Customization drafts admin only" ON public.app_customization_drafts
-FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
-
+CREATE POLICY "Customization drafts admin only" ON public.app_customization_drafts FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
 DROP POLICY IF EXISTS "Customization published admin only" ON public.app_customization_published;
-CREATE POLICY "Customization published admin only" ON public.app_customization_published
-FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
+CREATE POLICY "Customization published admin only" ON public.app_customization_published FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
+
+-- Tighten the original customization tables as well: this phase is Admin Panel only.
+DROP POLICY IF EXISTS "App customization pages read" ON public.app_customization_pages;
+CREATE POLICY "App customization pages admin read" ON public.app_customization_pages FOR SELECT TO authenticated USING (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization pages admin write" ON public.app_customization_pages;
+CREATE POLICY "App customization pages admin write" ON public.app_customization_pages FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization versions read" ON public.app_customization_versions;
+CREATE POLICY "App customization versions admin read" ON public.app_customization_versions FOR SELECT TO authenticated USING (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization versions admin write" ON public.app_customization_versions;
+CREATE POLICY "App customization versions admin write" ON public.app_customization_versions FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization assets read" ON public.app_customization_assets;
+CREATE POLICY "App customization assets admin read" ON public.app_customization_assets FOR SELECT TO authenticated USING (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization assets admin write" ON public.app_customization_assets;
+CREATE POLICY "App customization assets admin write" ON public.app_customization_assets FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization themes read" ON public.app_customization_themes;
+CREATE POLICY "App customization themes admin read" ON public.app_customization_themes FOR SELECT TO authenticated USING (public.room_layout_admin());
+DROP POLICY IF EXISTS "App customization themes admin write" ON public.app_customization_themes;
+CREATE POLICY "App customization themes admin write" ON public.app_customization_themes FOR ALL TO authenticated USING (public.room_layout_admin()) WITH CHECK (public.room_layout_admin());
 
 NOTIFY pgrst, 'reload schema';
