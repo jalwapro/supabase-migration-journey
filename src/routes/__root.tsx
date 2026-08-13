@@ -30,6 +30,7 @@ import { InstallPermissionGate } from "../components/InstallPermissionGate";
 import { NotificationPopup } from "../components/NotificationPopup";
 import { useGlobalRealtime } from "../hooks/useGlobalRealtime";
 import { PublishedCustomizationRuntime } from "../components/customization/PublishedCustomizationRuntime";
+import { isStudioPreview } from "../lib/studio-preview";
 
 function NotFoundComponent() {
   return (
@@ -109,6 +110,7 @@ function SplashGate() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   useEffect(() => {
+    if (isStudioPreview()) return;
     if (typeof window === "undefined") return;
     touchActive(); const interval = window.setInterval(touchActive, 30_000);
     const onHide = () => touchActive(); const onVisibility = () => touchActive();
@@ -116,6 +118,7 @@ function SplashGate() {
     return () => { window.clearInterval(interval); window.removeEventListener("pagehide", onHide); window.removeEventListener("beforeunload", onHide); document.removeEventListener("visibilitychange", onVisibility); };
   }, []);
   useEffect(() => {
+    if (isStudioPreview()) return;
     if (typeof window === "undefined") return;
     if (pathname === "/splash") { splashShownThisLoad = true; return; }
     if (splashShownThisLoad) return; splashShownThisLoad = true;
@@ -123,13 +126,14 @@ function SplashGate() {
   }, [pathname, navigate]);
   return null;
 }
-function GlobalRealtimeBridge() { useGlobalRealtime(); return <NotificationPopup />; }
+function GlobalRealtimeBridge() { if (isStudioPreview()) return null; useGlobalRealtime(); return <NotificationPopup />; }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useWakeLock();
+  const preview = isStudioPreview();
   const [toastTheme, setToastTheme] = useState<"light" | "dark">(() => { if (typeof document === "undefined") return "dark"; return document.documentElement.classList.contains("light") ? "light" : "dark"; });
-  useEffect(() => { void import("../lib/native").then((m) => m.initNativeShell()); }, []);
+  useEffect(() => { if (preview) return; void import("../lib/native").then((m) => m.initNativeShell()); }, [preview]);
   useEffect(() => { const onChange = (e: Event) => { const d = (e as CustomEvent<"light" | "dark">).detail; if (d === "light" || d === "dark") setToastTheme(d); }; window.addEventListener("jalwa:theme-mode", onChange); return () => window.removeEventListener("jalwa:theme-mode", onChange); }, []);
   return (
     <QueryClientProvider client={queryClient}>
@@ -137,7 +141,7 @@ function RootComponent() {
         <ThemeBackground />
         <ThemeChrome />
         <SplashGate />
-        <InstallPermissionGate />
+        {!preview && <InstallPermissionGate />}
         <GlobalRealtimeBridge />
         <PublishedCustomizationRuntime />
         <div className="relative z-10" suppressHydrationWarning><Outlet /></div>
