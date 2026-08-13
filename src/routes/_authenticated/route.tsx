@@ -7,7 +7,7 @@ function AuthedShell() {
 }
 
 async function waitForStoredSession() {
-  if (isStudioPreview()) return { user: STUDIO_PREVIEW_USER } as Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"];
+  if (isStudioPreview()) return { user: STUDIO_PREVIEW_USER } as any;
   for (const delay of [0, 150, 350, 700, 1200]) {
     if (delay) await new Promise((r) => setTimeout(r, delay));
     const { data } = await supabase.auth.getSession();
