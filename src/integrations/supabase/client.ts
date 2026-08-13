@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
+import { isStudioPreview } from "@/lib/studio-preview";
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
@@ -10,7 +11,6 @@ const COOKIE_CHUNK_SIZE = 3000;
 const COOKIE_CHUNK_LIMIT = 8;
 const memoryAuthStorage = new Map<string, string>();
 function getLegacyStorageKey() { try { if (!url) return null; const projectRef = new URL(url).hostname.split(".")[0]; return projectRef ? `sb-${projectRef}-auth-token` : null; } catch { return null; } }
-const legacyStorageKey = getLegacyStorageKey();
 function cookiePrefix(storageKey: string) { return `ja_${storageKey.replace(/[^a-zA-Z0-9_-]/g, "_")}`; }
 function getCookie(name: string) { if (typeof document === "undefined") return null; try { const encodedName = `${encodeURIComponent(name)}=`; const part = document.cookie.split("; ").find((row) => row.startsWith(encodedName)); return part ? decodeURIComponent(part.slice(encodedName.length)) : null; } catch { return null; } }
 function setCookie(name: string, value: string, maxAge = COOKIE_MAX_AGE) { if (typeof document === "undefined") return; try { const secure = window.location.protocol === "https:" ? "; Secure" : ""; document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`; } catch {} }
@@ -29,7 +29,6 @@ const resilientAuthStorage = { async getItem(storageKey: string) { if (typeof wi
 if (!url || !key) console.error("[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. Check .env");
 const realSupabase = createClient(url ?? "", key ?? "", { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storageKey: AUTH_STORAGE_KEY, storage: resilientAuthStorage } });
 
-const isStudioPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("adminPreview") === "1" && new URLSearchParams(window.location.search).get("previewIdentity") === "neutral";
 const MOCK_USER_ID = "00000000-0000-4000-8000-000000000001";
 const MOCK_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=256&h=256&fit=crop";
 
