@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { LiveCustomizationStudio } from './admin.app-customization-live';
+import LiveCustomizationStudio from './admin.app-customization-live';
 
 export const Route = createFileRoute('/_authenticated/admin/app-customization')({ component: AppCustomization });
 
