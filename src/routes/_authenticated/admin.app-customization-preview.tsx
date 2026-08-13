@@ -10,8 +10,6 @@ type Device = 'mobile' | 'tablet' | 'desktop';
 type Selected = { selector: string; tag: string; text: string; styles: Record<string, string>; rect: { width: number; height: number } };
 type Rule = { selector: string; styles: Record<string, string>; text?: string; visible?: boolean };
 
-// These are real application routes. The query flags put the existing frontend into an isolated,
-// design-only preview. No admin/user-specific identity is intended to be used as the design model.
 const pages = [
   ['home', '/', 'Home'], ['discover', '/discover', 'Discover'], ['search', '/search', 'Search'], ['live', '/live', 'Live'],
   ['rooms', '/rooms', 'Rooms'], ['room-details', '/room-details', 'Room Details'], ['profile', '/profile', 'Profile'],
@@ -91,7 +89,7 @@ function ExistingAppPreview() {
         <section className="overflow-auto p-4 md:p-8">
           <div className="mb-2 flex items-center justify-between text-[10px] text-zinc-400"><span><Eye className="mr-1 inline h-3 w-3" />REAL EXISTING APP — DESIGN MODE</span><span>{selectedPage[2]} • {width}px</span></div>
           <div className="mx-auto overflow-hidden rounded-[28px] border border-zinc-700 bg-black shadow-2xl" style={{ width, maxWidth: '100%', minHeight: device === 'desktop' ? 760 : 780 }}>
-            <iframe ref={iframeRef} key={`${src}-${reloadKey}`} title={`Editable ${selectedPage[2]} app preview`} src={src} className="h-[780px] w-full border-0 bg-black" style={{ display: 'block' }} />
+            <iframe ref={iframeRef} key={`${src}-${reloadKey}`} title={`Editable ${selectedPage[2]} app preview`} src={src} sandbox="allow-scripts allow-forms allow-popups allow-modals" className="h-[780px] w-full border-0 bg-black" style={{ display: 'block' }} />
           </div>
         </section>
         <aside className="overflow-y-auto border-l border-white/10 bg-background p-4">
