@@ -4,11 +4,19 @@ import type { Session, User } from "@supabase/supabase-js";
  * Hard boundary for the App Customization Studio iframe.
  * Admin authentication is intentionally separate from the identity rendered by
  * the real app components inside the Studio preview.
+ *
+ * The iframe check is deliberate: route redirects must never be able to drop
+ * the preview identity and accidentally fall back to the authenticated admin.
  */
 export const isStudioPreview = (): boolean => {
   if (typeof window === "undefined") return false;
   const params = new URLSearchParams(window.location.search);
-  return params.get("adminPreview") === "1" && params.get("previewIdentity") === "neutral";
+  const explicitPreview =
+    params.get("adminPreview") === "1" &&
+    params.get("previewIdentity") === "neutral";
+  const designIframe =
+    window.parent !== window && params.get("customizationMode") === "design";
+  return explicitPreview || designIframe;
 };
 
 export const STUDIO_PREVIEW_USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -64,7 +72,5 @@ export const STUDIO_PREVIEW_PROFILE = {
   last_seen: "2026-01-01T00:00:00.000Z",
 };
 
-/**
- * Used by preview-only fetch guards. Production APIs are never a fallback.
- */
-export const STUDIO_PREVIEW_QUERY_PARAM = "adminPreview=1&previewIdentity=neutral";
+/** Used by preview-only fetch guards. Production APIs are never a fallback. */
+export const STUDIO_PREVIEW_QUERY_PARAM = "adminPreview=1&customizationMode=design&previewIdentity=neutral";
