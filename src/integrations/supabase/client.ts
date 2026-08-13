@@ -49,29 +49,20 @@ function studioRows(table: string): any[] {
   if (["transactions", "wallet_transactions", "recharge_history", "withdrawals", "gift_history"].includes(table)) return Array.from({ length: 5 }, (_, i) => ({ id: `txn-${i + 1}`, user_id: MOCK_USER_ID, amount: (i + 1) * 500, coins: (i + 1) * 1000, diamonds: (i + 1) * 500, status: "completed", type: i % 2 ? "recharge" : "demo", created_at: now }));
   return [];
 }
+function createStudioQuery(table: string) { let rows = studioRows(table); const query: any = { select: () => query, eq: (column: string, value: any) => { rows = rows.filter((r) => r?.[column] === value || r?.[column]?.id === value); return query; }, neq: (column: string, value: any) => { rows = rows.filter((r) => r?.[column] !== value); return query; }, in: (column: string, values: any[]) => { rows = rows.filter((r) => values.includes(r?.[column])); return query; }, ilike: () => query, like: () => query, or: () => query, and: () => query, order: () => query, limit: (n: number) => { rows = rows.slice(0, n); return query; }, range: (a: number, b: number) => { rows = rows.slice(a, b + 1); return query; }, insert: () => query, update: () => query, upsert: () => query, delete: () => query, single: async () => ({ data: rows[0] ?? null, error: null }), maybeSingle: async () => ({ data: rows[0] ?? null, error: null }), then: (resolve: (value: any) => any) => Promise.resolve({ data: rows, error: null, count: rows.length }).then(resolve), catch: (reject: (reason: any) => any) => Promise.resolve({ data: rows, error: null }).catch(reject) }; return query; }
+const studioUser = { id: MOCK_USER_ID, aud: "authenticated", role: "authenticated", email: "studio-preview@jalwa.local", app_metadata: {}, user_metadata: { username: "Demo User" }, created_at: new Date().toISOString() };
+const studioAuth = { getSession: async () => ({ data: { session: { access_token: "studio-preview", refresh_token: "studio-preview", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, token_type: "bearer", user: studioUser } }, error: null }), getUser: async () => ({ data: { user: studioUser }, error: null }), onAuthStateChange: (callback: any) => { queueMicrotask(() => callback("INITIAL_SESSION", null)); return { data: { subscription: { unsubscribe: () => {} } } }; }, signOut: async () => ({ error: null }) };
 
-function createStudioQuery(table: string) {
-  let rows = studioRows(table);
-  const query: any = {
-    select: () => query,
-    eq: (column: string, value: any) => { rows = rows.filter((r) => r?.[column] === value || r?.[column]?.id === value); return query; },
-    neq: (column: string, value: any) => { rows = rows.filter((r) => r?.[column] !== value); return query; },
-    in: (column: string, values: any[]) => { rows = rows.filter((r) => values.includes(r?.[column])); return query; },
-    ilike: () => query, like: () => query, or: () => query, and: () => query, order: () => query,
-    limit: (n: number) => { rows = rows.slice(0, n); return query; }, range: (a: number, b: number) => { rows = rows.slice(a, b + 1); return query; },
-    insert: () => query, update: () => query, upsert: () => query, delete: () => query,
-    single: async () => ({ data: rows[0] ?? null, error: null }), maybeSingle: async () => ({ data: rows[0] ?? null, error: null }),
-    then: (resolve: (value: any) => any) => Promise.resolve({ data: rows, error: null, count: rows.length }).then(resolve),
-    catch: (reject: (reason: any) => any) => Promise.resolve({ data: rows, error: null }).catch(reject),
+if (isStudioPreview && typeof window !== "undefined") {
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const href = typeof input === "string" ? input : input instanceof URL ? input.toString() : input.url;
+    const sameOriginApi = href.startsWith(window.location.origin) && (href.includes("/api/") || href.includes("/functions/"));
+    const supabaseApi = !!url && href.startsWith(url);
+    if (sameOriginApi || supabaseApi) return new Response(JSON.stringify({ data: [], error: null, mock: true }), { status: 200, headers: { "content-type": "application/json" } });
+    return nativeFetch(input, init);
   };
-  return query;
 }
 
-const studioAuth = {
-  getSession: async () => ({ data: { session: { access_token: "studio-preview", refresh_token: "studio-preview", expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, token_type: "bearer", user: { id: MOCK_USER_ID, aud: "authenticated", role: "authenticated", email: "studio-preview@jalwa.local", app_metadata: {}, user_metadata: { username: "Demo User" }, created_at: new Date().toISOString() } } }, error: null }),
-  getUser: async () => ({ data: { user: { id: MOCK_USER_ID, aud: "authenticated", role: "authenticated", email: "studio-preview@jalwa.local", app_metadata: {}, user_metadata: { username: "Demo User" }, created_at: new Date().toISOString() } }, error: null }),
-  onAuthStateChange: (callback: any) => { queueMicrotask(() => callback("INITIAL_SESSION", null)); return { data: { subscription: { unsubscribe: () => {} } } }; },
-  signOut: async () => ({ error: null }),
-};
 const studioProxy = new Proxy(realSupabase as any, { get(target, property) { if (property === "from") return (table: string) => createStudioQuery(table); if (property === "auth") return studioAuth; if (property === "rpc") return async () => ({ data: null, error: null }); if (property === "channel") return () => ({ on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }), subscribe: () => ({ unsubscribe: () => {} }), unsubscribe: async () => "ok" }); if (property === "removeChannel") return async () => "ok"; if (property === "removeAllChannels") return async () => "ok"; if (property === "storage") return { from: () => ({ upload: async () => ({ data: null, error: null }), remove: async () => ({ data: null, error: null }), getPublicUrl: (path: string) => ({ data: { publicUrl: path } }), list: async () => ({ data: [], error: null }) }) }; return target[property as keyof typeof target]; } });
 export const supabase: SupabaseClient = (isStudioPreview ? studioProxy : realSupabase) as SupabaseClient;
