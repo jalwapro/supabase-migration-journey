@@ -1,536 +1,150 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
-
-import {
-  ArrowLeft, Loader2, CheckCircle2, Smartphone, Building2,
-  CreditCard, Wallet, Sparkles, Crown, Gem, Flame, Hourglass, Copy,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, Copy, Image as ImageIcon, Loader2, Smartphone, Upload, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import jalwaCoin from "@/assets/jalwa-coin.png.asset.json";
 
-const COIN_URL_ABS = `https://cloud-to-soul.lovable.app${jalwaCoin.url}`;
-const CoinIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
-  <img
-    src={jalwaCoin.url}
-    alt="Jalwa coin"
-    onError={(e) => {
-      const img = e.currentTarget;
-      if (img.src !== COIN_URL_ABS) img.src = COIN_URL_ABS;
-    }}
-    className={`${className} drop-shadow-[0_0_6px_rgba(255,200,60,0.6)]`}
-  />
-);
+export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
 
-export const Route = createFileRoute("/_authenticated/recharge")({
-  component: RechargePage,
-});
-
+type Method = "easypaisa" | "jazzcash";
 type Tier = "starter" | "popular" | "vip" | "whale";
-type Method = "jazzcash" | "easypaisa" | "bank" | "card" | "paypal";
+type Pkg = { id: string; coins: number; bonus_coins: number; price_pkr: number; label: string | null; badge: string | null; tier: Tier };
 
-type Pkg = {
-  id: string;
-  coins: number;
-  bonus_coins: number;
-  price_pkr: number;
-  label: string | null;
-  badge: string | null;
-  tier: Tier;
-};
-
-type InitiateResp = {
-  order_id: string;
-  otp_code: string;
-  expires_at: string;
-  amount_pkr: number;
-  coins_total: number;
-};
-
-type Step = "select" | "details" | "otp" | "success";
-
-const TIERS: { key: Tier; label: string; icon: typeof Sparkles; color: string }[] = [
-  { key: "starter", label: "Starter", icon: Sparkles, color: "from-sky-400 to-cyan-500" },
-  { key: "popular", label: "Popular", icon: Flame, color: "from-pink-500 to-rose-500" },
-  { key: "vip",     label: "VIP",     icon: Crown, color: "from-amber-400 to-yellow-500" },
-  { key: "whale",   label: "Whale",   icon: Gem,   color: "from-fuchsia-500 to-violet-600" },
+const tiers: { key: Tier; label: string }[] = [
+  { key: "starter", label: "Starter" }, { key: "popular", label: "Popular" },
+  { key: "vip", label: "VIP" }, { key: "whale", label: "Whale" },
 ];
-
-const METHODS: {
-  key: Method; label: string; icon: typeof Smartphone; sub: string; placeholder: string;
-}[] = [
-  { key: "jazzcash",  label: "JazzCash",  icon: Smartphone, sub: "Mobile Wallet",   placeholder: "03XX-XXXXXXX" },
-  { key: "easypaisa", label: "EasyPaisa", icon: Smartphone, sub: "Mobile Wallet",   placeholder: "03XX-XXXXXXX" },
-  { key: "bank",      label: "Bank",      icon: Building2,  sub: "Direct Transfer", placeholder: "Account / IBAN" },
-  { key: "card",      label: "Card",      icon: CreditCard, sub: "Debit / Credit",  placeholder: "Card number" },
-  { key: "paypal",    label: "PayPal",    icon: Wallet,     sub: "International",   placeholder: "PayPal email" },
-];
+const coinSrc = jalwaCoin.url;
+const Coin = ({ className = "h-5 w-5" }: { className?: string }) => <img src={coinSrc} alt="Jalwa coin" className={className} />;
 
 function RechargePage() {
-  
   const navigate = useNavigate();
   const qc = useQueryClient();
-
   const [tier, setTier] = useState<Tier>("popular");
   const [selectedPkg, setSelectedPkg] = useState<Pkg | null>(null);
-  const [method, setMethod] = useState<Method>("jazzcash");
-  const [accountRef, setAccountRef] = useState("");
-  const [step, setStep] = useState<Step>("select");
-  const [order, setOrder] = useState<InitiateResp | null>(null);
-  const [otp, setOtp] = useState("");
-  const [countdown, setCountdown] = useState(0);
-  const [creditedCoins, setCreditedCoins] = useState(0);
+  const [method, setMethod] = useState<Method>("easypaisa");
+  const [senderAccount, setSenderAccount] = useState("");
+  const [txnReference, setTxnReference] = useState("");
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [submitted, setSubmitted] = useState(false);
 
-  // Deposit destinations set by admin
-  const paymentAccounts = useQuery({
+  const accounts = useQuery({
     queryKey: ["app_kv", "payments"],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("app_kv")
-        .select("value")
-        .eq("key", "payments")
-        .maybeSingle();
+      const { data, error } = await supabase.from("app_kv").select("value").eq("key", "payments").maybeSingle();
+      if (error) throw error;
       return (data?.value ?? {}) as Record<string, string>;
     },
   });
 
-
   const packages = useQuery({
     queryKey: ["coin_packages_v2"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("coin_packages")
-        .select("id,coins,bonus_coins,price_pkr,label,badge,tier")
-        .eq("active", true)
-        .order("sort_order");
+      const { data, error } = await supabase.from("coin_packages").select("id,coins,bonus_coins,price_pkr,label,badge,tier").eq("active", true).order("sort_order");
       if (error) throw error;
       return (data ?? []) as Pkg[];
     },
   });
+  const tierPackages = useMemo(() => (packages.data ?? []).filter(p => p.tier === tier), [packages.data, tier]);
+  const qrUrl = method === "easypaisa" ? accounts.data?.easypaisaQrUrl : accounts.data?.jazzcashQrUrl;
+  const tillId = method === "easypaisa" ? accounts.data?.easypaisaTillId : accounts.data?.jazzcashTillId;
+  const title = method === "easypaisa" ? accounts.data?.easypaisaTitle : accounts.data?.jazzcashTitle;
 
-  const tierPackages = useMemo(
-    () => (packages.data ?? []).filter((p) => p.tier === tier),
-    [packages.data, tier],
-  );
-
-  // OTP countdown
-  useEffect(() => {
-    if (step !== "otp" || !order) return;
-    const tick = () => {
-      const left = Math.max(0, Math.floor((new Date(order.expires_at).getTime() - Date.now()) / 1000));
-      setCountdown(left);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [step, order]);
-
-  const initiate = useMutation({
+  const submit = useMutation({
     mutationFn: async () => {
       if (!selectedPkg) throw new Error("Choose a package");
-      if (!accountRef || accountRef.trim().length < 4) throw new Error("Enter your account details");
-      const { data, error } = await supabase.rpc("recharge_initiate", {
+      if (!senderAccount.trim()) throw new Error("Enter your sending account number");
+      if (!txnReference.trim()) throw new Error("Enter the transaction ID");
+      if (!proofFile) throw new Error("Upload your payment screenshot");
+      if (!qrUrl) throw new Error(`${method === "easypaisa" ? "Easypaisa" : "JazzCash"} QR is not configured by admin yet`);
+
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) throw new Error("Please login again");
+      const safeName = proofFile.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${uid}/${crypto.randomUUID()}-${safeName}`;
+      const upload = await supabase.storage.from("recharge-proofs").upload(path, proofFile, { upsert: false, contentType: proofFile.type });
+      if (upload.error) throw upload.error;
+      const { data: publicData } = supabase.storage.from("recharge-proofs").getPublicUrl(path);
+      const { data, error } = await supabase.rpc("create_manual_recharge", {
         _package_id: selectedPkg.id,
         _method: method,
-        _account_ref: accountRef.trim(),
+        _sender_account: senderAccount.trim(),
+        _txn_reference: txnReference.trim(),
+        _proof_url: publicData.publicUrl,
       });
       if (error) throw error;
-      const row = (Array.isArray(data) ? data[0] : data) as InitiateResp;
-      if (!row) throw new Error("Failed to create order");
-      return row;
+      return data;
     },
-    onSuccess: (row) => {
-      setOrder(row);
-      setOtp("");
-      setStep("otp");
-      toast.success("OTP sent to your account");
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const verify = useMutation({
-    mutationFn: async () => {
-      if (!order) throw new Error("No order");
-      if (otp.length !== 6) throw new Error("Enter 6-digit OTP");
-      const { data, error } = await supabase.rpc("recharge_verify_otp", {
-        _order_id: order.order_id,
-        _otp: otp,
-      });
-      if (error) throw error;
-      const row = (Array.isArray(data) ? data[0] : data) as {
-        success: boolean; coins_credited: number; new_balance: number; message: string;
-      };
-      if (!row?.success) throw new Error(row?.message || "Verification failed");
-      return row;
-    },
-    onSuccess: (row) => {
-      setCreditedCoins(row.coins_credited);
-      setStep("success");
-      toast.success(row.message || "Submitted for admin approval");
+    onSuccess: () => {
+      setSubmitted(true);
+      toast.success("Payment submitted for verification");
       qc.invalidateQueries({ queryKey: ["profile"] });
-      qc.invalidateQueries({ queryKey: ["me"] });
-      qc.invalidateQueries({ queryKey: ["wallet_transactions"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
   const reset = () => {
-    setSelectedPkg(null);
-    setAccountRef("");
-    setOtp("");
-    setOrder(null);
-    setStep("select");
+    setSelectedPkg(null); setSenderAccount(""); setTxnReference(""); setProofFile(null); setSubmitted(false);
   };
 
-  const activeMethod = METHODS.find((m) => m.key === method)!;
+  return <>
+    <AppShell title="Recharge Coins" subtitle="Manual QR payment">
+      <div className="space-y-5 px-4 pt-4 pb-8">
+        {submitted ? <Success onReset={reset} onWallet={() => navigate({ to: "/wallet" })} /> : <>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {tiers.map(t => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}
+          </div>
 
-  return (
-    <>
-      <AppShell
-        title="Recharge Coins"
-        subtitle={step === "otp" ? "Enter OTP to confirm" : "Instant top-up"}
-        right={
-          <button
-            onClick={() => (step === "select" ? navigate({ to: "/wallet" }) : reset())}
-            aria-label="Back"
-            className="grid h-9 w-9 place-items-center rounded-full bg-card/60"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-        }
-      >
-        <div className="space-y-5 px-4 pt-4 pb-8">
-          {/* STEP: package select */}
-          {step === "select" && (
-            <>
-              {/* Tier tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-                {TIERS.map((t) => {
-                  const Icon = t.icon;
-                  const active = tier === t.key;
-                  return (
-                    <button
-                      key={t.key}
-                      onClick={() => { setTier(t.key); setSelectedPkg(null); }}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-4 py-2 text-xs font-black uppercase tracking-wider transition ${
-                        active
-                          ? `bg-gradient-to-r ${t.color} text-white shadow-lg`
-                          : "bg-card/60 text-muted-foreground"
-                      }`}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {t.label}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            {tierPackages.map(p => {
+              const active = selectedPkg?.id === p.id;
+              return <button key={p.id} onClick={() => setSelectedPkg(p)} className={`relative rounded-2xl border p-4 text-left ${active ? "border-primary bg-primary/10 ring-2 ring-primary/30" : "border-border bg-card/60"}`}>
+                {p.badge && <span className="absolute right-2 top-2 rounded-full bg-primary px-2 py-0.5 text-[9px] font-black text-primary-foreground">{p.badge}</span>}
+                <div className="flex items-center gap-2"><Coin className="h-5 w-5" /><b className="text-lg">{(p.coins + p.bonus_coins).toLocaleString()}</b></div>
+                {p.bonus_coins > 0 && <p className="text-[10px] font-bold text-emerald-400">+{p.bonus_coins.toLocaleString()} bonus</p>}
+                <p className="mt-2 text-sm font-black">Rs {Number(p.price_pkr).toLocaleString()}</p>
+                {p.label && <p className="text-[10px] text-muted-foreground">{p.label}</p>}
+              </button>;
+            })}
+          </div>
 
-              {/* Packages */}
-              {packages.isLoading && (
-                <div className="py-10 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" /></div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                {tierPackages.map((p) => {
-                  const active = selectedPkg?.id === p.id;
-                  const total = p.coins + p.bonus_coins;
-                  const bonusPct = p.coins > 0 ? Math.round((p.bonus_coins / p.coins) * 100) : 0;
-                  return (
-                    <button
-                      key={p.id}
-                      onClick={() => setSelectedPkg(p)}
-                      className={`relative overflow-hidden rounded-2xl border p-4 text-left transition ${
-                        active
-                          ? "border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--gold)]/20 to-primary/10 ring-2 ring-[color:var(--gold)]/50"
-                          : "border-border bg-card/60"
-                      }`}
-                    >
-                      {p.badge && (
-                        <span className="absolute -top-1 -right-1 rounded-bl-xl rounded-tr-2xl bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-[9px] font-black uppercase text-white">
-                          {p.badge}
-                        </span>
-                      )}
-                      <div className="flex items-center gap-1.5">
-                        <CoinIcon className="h-4 w-4 text-[color:var(--gold)]" />
-                        <span className="text-lg font-black">{total.toLocaleString()}</span>
-                      </div>
-                      {p.bonus_coins > 0 && (
-                        <p className="text-[10px] font-bold text-emerald-400">
-                          +{bonusPct}% BONUS
-                        </p>
-                      )}
-                      <p className="mt-2 text-sm font-black text-[color:var(--gold)]">
-                        Rs {p.price_pkr.toLocaleString()}
-                      </p>
-                      {p.label && <p className="text-[10px] text-muted-foreground">{p.label}</p>}
-                    </button>
-                  );
-                })}
-              </div>
+          {selectedPkg && <>
+            <div className="rounded-2xl bg-card/60 p-4"><p className="text-xs text-muted-foreground">You pay</p><p className="text-2xl font-black">Rs {Number(selectedPkg.price_pkr).toLocaleString()}</p><p className="text-sm font-bold text-emerald-400">Receive {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()} coins</p></div>
 
-              <button
-                disabled={!selectedPkg}
-                onClick={() => setStep("details")}
-                className="w-full rounded-full bg-gradient-to-r from-pink-500 to-violet-600 py-3.5 text-sm font-black uppercase tracking-widest text-white shadow-lg disabled:opacity-40"
-              >
-                Continue
-              </button>
-            </>
-          )}
-
-          {/* STEP: method + account details */}
-          {step === "details" && selectedPkg && (
-            <>
-              {/* Summary card */}
-              <div className="rounded-2xl bg-gradient-to-br from-[color:var(--gold)]/20 to-primary/10 p-4">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">You will receive</p>
-                <div className="mt-1 flex items-center gap-2">
-                  <CoinIcon className="h-6 w-6 text-[color:var(--gold)]" />
-                  <span className="text-2xl font-black">
-                    {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()}
-                  </span>
-                  {selectedPkg.bonus_coins > 0 && (
-                    <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-black text-emerald-400">
-                      +{selectedPkg.bonus_coins.toLocaleString()} bonus
-                    </span>
-                  )}
-                </div>
-                <p className="mt-2 text-lg font-black text-[color:var(--gold)]">
-                  Rs {selectedPkg.price_pkr.toLocaleString()}
-                </p>
-              </div>
-
-              {/* Method picker */}
-              <section>
-                <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Payment method
-                </h2>
-                <div className="grid grid-cols-2 gap-2">
-                  {METHODS.map((m) => {
-                    const Icon = m.icon;
-                    const active = method === m.key;
-                    return (
-                      <button
-                        key={m.key}
-                        onClick={() => setMethod(m.key)}
-                        className={`flex items-center gap-2 rounded-xl border p-3 text-left transition ${
-                          active
-                            ? "border-[color:var(--primary)] bg-primary/10"
-                            : "border-border bg-card/60"
-                        }`}
-                      >
-                        <div className={`grid h-9 w-9 place-items-center rounded-lg ${
-                          active ? "bg-primary/30" : "bg-card"
-                        }`}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-bold">{m.label}</p>
-                          <p className="truncate text-[10px] text-muted-foreground">{m.sub}</p>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-
-              {/* Deposit destination (admin-configured) */}
-              <DepositBox method={method} accounts={paymentAccounts.data ?? {}} />
-
-              {/* Account input */}
-              <section>
-                <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Your {activeMethod.label} account
-                </h2>
-                <input
-                  value={accountRef}
-                  onChange={(e) => setAccountRef(e.target.value)}
-                  placeholder={activeMethod.placeholder}
-                  className="w-full rounded-xl border border-border bg-input px-4 py-3 text-base font-semibold outline-none focus:border-primary"
-                />
-                <p className="mt-2 text-[11px] text-muted-foreground">
-                  After you transfer the amount above, enter your sending account here. Support will confirm the payment.
-                </p>
-              </section>
-
-              <button
-                disabled={initiate.isPending || !accountRef}
-                onClick={() => initiate.mutate()}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-pink-500 to-violet-600 py-3.5 text-sm font-black uppercase tracking-widest text-white shadow-lg disabled:opacity-40"
-              >
-                {initiate.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Send OTP · Rs {selectedPkg.price_pkr.toLocaleString()}
-              </button>
-            </>
-          )}
-
-          {/* STEP: OTP */}
-          {step === "otp" && order && (
-            <>
-              <div className="rounded-2xl bg-card/60 p-5 text-center">
-                <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary/20">
-                  <Smartphone className="h-7 w-7 text-primary" />
-                </div>
-                <p className="mt-3 text-sm font-bold">Verify {activeMethod.label} payment</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  6-digit OTP sent to <span className="font-bold text-foreground">{accountRef}</span>
-                </p>
-                <p className="mt-1 text-xs">
-                  Amount: <span className="font-black text-[color:var(--gold)]">Rs {Number(order.amount_pkr).toLocaleString()}</span>
-                </p>
-              </div>
-
-              {/* Demo OTP hint */}
-              <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-center">
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400">Demo Mode</p>
-                <p className="mt-1 text-xs">Your OTP is:</p>
-                <p className="mt-0.5 text-2xl font-black tracking-[0.4em] text-amber-300">{order.otp_code}</p>
-              </div>
-
-              <input
-                inputMode="numeric"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="••••••"
-                className="w-full rounded-xl border border-border bg-input px-4 py-4 text-center text-3xl font-black tracking-[0.5em] outline-none focus:border-primary"
-              />
-
-              <p className="text-center text-xs text-muted-foreground">
-                {countdown > 0
-                  ? `Expires in ${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, "0")}`
-                  : "OTP expired — go back and retry"}
-              </p>
-
-              <button
-                disabled={verify.isPending || otp.length !== 6 || countdown === 0}
-                onClick={() => verify.mutate()}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 py-3.5 text-sm font-black uppercase tracking-widest text-white shadow-lg disabled:opacity-40"
-              >
-                {verify.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
-                Confirm & Credit Coins
-              </button>
-
-              <button
-                onClick={reset}
-                className="w-full text-center text-xs text-muted-foreground underline"
-              >
-                Cancel & start over
-              </button>
-            </>
-          )}
-
-          {/* STEP: success */}
-          {step === "success" && (
-            <div className="space-y-4 py-6 text-center">
-              <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-amber-500/20">
-                <Hourglass className="h-10 w-10 text-amber-400" />
-              </div>
-              <div>
-                <p className="text-lg font-black">Waiting for approval</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  OTP verify ho gaya. Admin approve karega to coins wallet mein aa jayenge (usually few minutes).
-                </p>
-              </div>
-              <div className="mx-auto inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)]/30 to-[color:var(--gold)]/10 px-6 py-3">
-                <CoinIcon className="h-6 w-6 text-[color:var(--gold)]" />
-                <span className="text-2xl font-black">+{(selectedPkg ? selectedPkg.coins + selectedPkg.bonus_coins : creditedCoins).toLocaleString()}</span>
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={reset}
-                  className="flex-1 rounded-full border border-border bg-card/60 py-3 text-xs font-black uppercase tracking-widest"
-                >
-                  Recharge Again
-                </button>
-                <button
-                  onClick={() => navigate({ to: "/wallet" })}
-                  className="flex-1 rounded-full bg-gradient-to-r from-pink-500 to-violet-600 py-3 text-xs font-black uppercase tracking-widest text-white"
-                >
-                  Go to Wallet
-                </button>
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              {(["easypaisa", "jazzcash"] as Method[]).map(m => <button key={m} onClick={() => setMethod(m)} className={`rounded-xl border p-3 text-sm font-black capitalize ${method === m ? "border-primary bg-primary/10" : "border-border bg-card/60"}`}><Smartphone className="mx-auto mb-1 h-5 w-5" />{m}</button>)}
             </div>
-          )}
-        </div>
-      </AppShell>
-      <BottomNav />
-    </>
-  );
+
+            <div className="rounded-2xl border border-border bg-card/60 p-4">
+              <div className="mb-3 flex items-center gap-2"><WalletCards className="h-5 w-5" /><b>{method === "easypaisa" ? "Easypaisa" : "JazzCash"} payment</b></div>
+              {qrUrl ? <img src={qrUrl} alt={`${method} payment QR`} className="mx-auto mb-4 max-h-72 w-full rounded-xl bg-white object-contain p-3" /> : <div className="rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground"><ImageIcon className="mx-auto mb-2 h-7 w-7" />Admin has not configured the {method} QR yet.</div>}
+              {tillId && <Info label="Till / Merchant ID" value={tillId} />}
+              {title && <Info label="Account title" value={title} />}
+              <p className="mt-3 text-xs text-muted-foreground">Pay the exact amount <b className="text-foreground">Rs {Number(selectedPkg.price_pkr).toLocaleString()}</b>, then submit your transaction details below.</p>
+            </div>
+
+            <input value={senderAccount} onChange={e => setSenderAccount(e.target.value)} placeholder="Your Easypaisa/JazzCash number" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
+            <input value={txnReference} onChange={e => setTxnReference(e.target.value)} placeholder="Transaction ID / TID" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
+            <label className="block rounded-xl border border-dashed border-border bg-card/40 p-4 cursor-pointer"><div className="flex items-center gap-2 text-sm font-bold"><Upload className="h-4 w-4" />{proofFile ? proofFile.name : "Upload payment screenshot"}</div><input type="file" accept="image/*" className="hidden" onChange={e => setProofFile(e.target.files?.[0] ?? null)} /></label>
+            <p className="text-[11px] text-muted-foreground">Your payment stays pending until an admin verifies it. Coins are not credited automatically.</p>
+            <button disabled={submit.isPending || !proofFile || !senderAccount || !txnReference} onClick={() => submit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{submit.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Submit Payment</button>
+          </>}
+        </>}
+      </div>
+    </AppShell>
+    <BottomNav />
+  </>;
 }
 
-function DepositBox({ method, accounts }: { method: Method; accounts: Record<string, string> }) {
-  const copy = (v: string) => {
-    navigator.clipboard.writeText(v);
-    toast.success("Copied");
-  };
-  const Row = ({ label, value }: { label: string; value?: string }) =>
-    value ? (
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-input/60 px-3 py-2 text-xs">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="truncate font-bold">{value}</p>
-        </div>
-        <button type="button" onClick={() => copy(value)} className="grid h-8 w-8 place-items-center rounded-lg bg-card">
-          <Copy className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    ) : null;
+function Info({ label, value }: { label: string; value: string }) {
+  return <div className="mb-2 flex items-center justify-between gap-2 rounded-xl border border-border bg-input/60 px-3 py-2"><div><p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p><p className="text-xs font-bold">{value}</p></div><button type="button" onClick={() => { navigator.clipboard.writeText(value); toast.success("Copied"); }} className="rounded-lg bg-card p-2"><Copy className="h-3.5 w-3.5" /></button></div>;
+}
 
-  let title = "Deposit to";
-  let rows: React.ReactNode = null;
-
-  if (method === "easypaisa") {
-    title = "Send payment to our Easypaisa";
-    const hasMerchant = !!accounts.easypaisaMerchantId;
-    rows = (
-      <>
-        {hasMerchant && (
-          <>
-            <Row label="Merchant ID" value={accounts.easypaisaMerchantId} />
-            <Row label="Store ID" value={accounts.easypaisaStoreId} />
-            <Row label="Account title" value={accounts.easypaisaAccountTitle} />
-            <Row label="IBAN" value={accounts.easypaisaIban} />
-          </>
-        )}
-        <Row label={hasMerchant ? "Also accepted (personal)" : "Easypaisa number"} value={accounts.easypaisa} />
-      </>
-    );
-  } else if (method === "jazzcash") {
-    title = "Send payment to our JazzCash";
-    rows = <Row label="JazzCash number" value={accounts.jazzcash} />;
-  } else if (method === "bank") {
-    title = "Bank transfer to";
-    rows = (
-      <>
-        <Row label="Bank" value={accounts.bankName} />
-        <Row label="Account title" value={accounts.bankTitle} />
-        <Row label="Account #" value={accounts.bankAccount} />
-      </>
-    );
-  } else if (method === "card") {
-    return (
-      <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs">
-        Card payments are handled manually — chat with support in the app after selecting your amount.
-      </div>
-    );
-  } else if (method === "paypal") {
-    title = "PayPal";
-    rows = <Row label="Send to" value={accounts.paypal ?? accounts.crypto} />;
-  }
-
-  const anything = !!(rows && (rows as { props?: { children?: unknown } }).props);
-  if (!anything && method !== "easypaisa" && method !== "bank" && method !== "jazzcash") return null;
-
-  return (
-    <section>
-      <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">{title}</h2>
-      <div className="space-y-2">{rows}</div>
-      <p className="mt-2 text-[11px] text-muted-foreground">
-        Transfer the exact amount, then submit your details below. Coins are credited after admin verifies the payment.
-      </p>
-    </section>
-  );
+function Success({ onReset, onWallet }: { onReset: () => void; onWallet: () => void }) {
+  return <div className="space-y-5 py-8 text-center"><div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-500/20"><CheckCircle2 className="h-10 w-10 text-emerald-400" /></div><div><p className="text-xl font-black">Payment Submitted</p><p className="mt-2 text-sm text-muted-foreground">Your payment is pending admin verification. Coins will be added only after approval.</p></div><div className="flex gap-2"><button onClick={onReset} className="flex-1 rounded-full border border-border py-3 text-xs font-black">Recharge Again</button><button onClick={onWallet} className="flex-1 rounded-full bg-primary py-3 text-xs font-black text-primary-foreground">Wallet</button></div></div>;
 }
