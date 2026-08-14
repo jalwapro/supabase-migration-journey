@@ -1,17 +1,22 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { Route as LiveCustomizationRoute } from './admin.app-customization-live';
-
-const LiveCustomizationStudio = LiveCustomizationRoute.options.component!;
+import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authenticated/admin/app-customization')({ component: AppCustomization });
 
-function AppCustomization(){
-  return <div className="space-y-3">
-    <div className="flex flex-wrap gap-2 rounded-xl border bg-background p-2">
-      <Link to="/admin/app-customization" className="rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground">Visual Editor</Link>
-      <Link to="/admin/app-customization-assets" className="rounded-lg border px-3 py-2 text-xs">Assets</Link>
-      <Link to="/admin/app-customization-navigation" className="rounded-lg border px-3 py-2 text-xs">Navigation</Link>
+function AppCustomization() {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border bg-background p-5">
+        <h1 className="text-xl font-bold">Customization Studio</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Reset complete. We will rebuild the User App visual editor one step at a time.
+        </p>
+      </div>
+      <div className="rounded-xl border bg-background p-5">
+        <p className="font-semibold">Step 1 — Home</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          No theme editor, iframe editor, or automatic layout changes are active yet.
+        </p>
+      </div>
     </div>
-    <LiveCustomizationStudio />
-  </div>
+  );
 }
