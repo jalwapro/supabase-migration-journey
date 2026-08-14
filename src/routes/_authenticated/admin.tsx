@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -14,15 +14,10 @@ const SENSITIVE_ADMIN_PATHS = [
   "/admin/connection",
 ];
 
-function requiresTwoFA() {
-  if (typeof window === "undefined") return false;
-  const path = window.location.pathname.replace(/\/$/, "");
-  return SENSITIVE_ADMIN_PATHS.some((item) => path === item || path.startsWith(`${item}/`));
-}
-
 function AdminLayout() {
   const { isAdmin, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && !isAdmin) {
@@ -35,7 +30,9 @@ function AdminLayout() {
     return <div className="grid min-h-screen place-items-center text-muted-foreground"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
 
-  const sensitive = requiresTwoFA();
+  const path = location.pathname.replace(/\/$/, "");
+  const sensitive = SENSITIVE_ADMIN_PATHS.some((item) => path === item || path.startsWith(`${item}/`));
+
   return (
     <AdminShell>
       {sensitive ? (
