@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/jazzcash/ipn",
+      "destination": "https://vfuiqjxgyptjqhbmzigk.supabase.co/functions/v1/jazzcash-ipn"
+    }
+  ]
+}
