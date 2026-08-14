@@ -9,12 +9,6 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  isStudioPreview,
-  STUDIO_PREVIEW_SESSION,
-  STUDIO_PREVIEW_USER,
-  STUDIO_PREVIEW_PROFILE,
-} from "@/lib/studio-preview";
 
 export type Profile = {
   id: string;
@@ -93,11 +87,10 @@ async function loadRoles(userId: string): Promise<AppRole[]> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const preview = isStudioPreview();
-  const [session, setSession] = useState<Session | null>(preview ? STUDIO_PREVIEW_SESSION : null);
-  const [profile, setProfile] = useState<Profile | null>(preview ? (STUDIO_PREVIEW_PROFILE as Profile) : null);
-  const [roles, setRoles] = useState<AppRole[]>(preview ? ["user"] : []);
-  const [loading, setLoading] = useState(!preview);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [roles, setRoles] = useState<AppRole[]>([]);
+  const [loading, setLoading] = useState(true);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const hydrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydrateTokenRef = useRef(0);
@@ -106,20 +99,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
   const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
   const isAdmin =
-    !preview && (
-      roles.includes("admin") ||
-      roles.includes("super_admin") ||
-      (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false)
-    );
+    roles.includes("admin") ||
+    roles.includes("super_admin") ||
+    (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
-    if (isStudioPreview()) {
-      setSession(STUDIO_PREVIEW_SESSION);
-      setProfile(STUDIO_PREVIEW_PROFILE as Profile);
-      setRoles(["user"]);
-      setLoading(false);
-      return;
-    }
     setSession(nextSession);
     if (hydrateTimerRef.current) {
       clearTimeout(hydrateTimerRef.current);
@@ -159,14 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadInitialSession = useCallback(async () => {
-    if (isStudioPreview()) {
-      initialSessionLoadedRef.current = true;
-      setSession(STUDIO_PREVIEW_SESSION);
-      setProfile(STUDIO_PREVIEW_PROFILE as Profile);
-      setRoles(["user"]);
-      setLoading(false);
-      return;
-    }
     let nextSession: Session | null = null;
     for (const delay of [0, 150, 350, 700, 1200]) {
       if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
@@ -178,18 +154,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("[useAuth] initial session", error);
       }
     }
+
     initialSessionLoadedRef.current = true;
     await hydrate(nextSession);
     setLoading(false);
   }, [hydrate]);
 
   const refresh = useCallback(async () => {
-    if (isStudioPreview()) {
-      setSession(STUDIO_PREVIEW_SESSION);
-      setProfile(STUDIO_PREVIEW_PROFILE as Profile);
-      setRoles(["user"]);
-      return;
-    }
     if (!user) return;
     const [p, r] = await Promise.all([loadProfile(user.id), loadRoles(user.id)]);
     setProfile(p);
@@ -197,7 +168,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const signOut = useCallback(async () => {
-    if (isStudioPreview()) return;
     try {
       await supabase.auth.signOut();
     } catch (e) {
@@ -206,28 +176,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
-    if (typeof window !== "undefined") window.location.replace("/auth");
+    if (typeof window !== "undefined") {
+      window.location.replace("/auth");
+    }
   }, []);
 
   useEffect(() => {
-    if (isStudioPreview()) {
-      setSession(STUDIO_PREVIEW_SESSION);
-      setProfile(STUDIO_PREVIEW_PROFILE as Profile);
-      setRoles(["user"]);
-      setLoading(false);
-      return;
-    }
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       if (event === "INITIAL_SESSION" && !s && !initialSessionLoadedRef.current) return;
       void hydrate(s);
       if (event !== "SIGNED_OUT") setLoading(false);
     });
     void loadInitialSession();
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      sub.subscription.unsubscribe();
+    };
   }, [hydrate, loadInitialSession]);
 
   useEffect(() => {
-    if (isStudioPreview() || !user) {
+    if (!user) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
       return;
@@ -248,7 +215,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tick();
     heartbeatRef.current = setInterval(tick, 15_000);
     const onFocus = () => tick();
-    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tick();
+    };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -260,7 +229,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, roles, isAdmin, loading, refresh, signOut }}>
+    <AuthContext.Provider
+      value={{ session, user, profile, roles, isAdmin, loading, refresh, signOut }}
+    >
       {children}
     </AuthContext.Provider>
   );
