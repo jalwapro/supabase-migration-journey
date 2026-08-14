@@ -19,8 +19,6 @@ import { useWakeLock } from "../hooks/useWakeLock";
 import { InstallPermissionGate } from "../components/InstallPermissionGate";
 import { NotificationPopup } from "../components/NotificationPopup";
 import { useGlobalRealtime } from "../hooks/useGlobalRealtime";
-import { PublishedCustomizationRuntime } from "../components/customization/PublishedCustomizationRuntime";
-import { isStudioPreview } from "../lib/studio-preview";
 
 function NotFoundComponent() {
   return <div className="flex min-h-screen items-center justify-center bg-background px-4"><div className="max-w-md text-center"><h1 className="text-7xl font-bold text-gradient">404</h1><h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2><p className="mt-2 text-sm text-muted-foreground">The page you're looking for doesn't exist or has been moved.</p><div className="mt-6"><Link to="/" className="glow-4d inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:opacity-90">Go home</Link></div></div></div>;
@@ -52,16 +50,16 @@ function readLastActive(): number { try { const v = localStorage.getItem(SPLASH_
 function touchActive() { try { localStorage.setItem(SPLASH_TS_KEY, String(Date.now())); } catch {} }
 function SplashGate() {
   const navigate = useNavigate(); const pathname = useRouterState({ select: (s) => s.location.pathname });
-  useEffect(() => { if (isStudioPreview()) return; if (typeof window === "undefined") return; touchActive(); const interval = window.setInterval(touchActive, 30_000); const onHide = () => touchActive(); const onVisibility = () => touchActive(); window.addEventListener("pagehide", onHide); window.addEventListener("beforeunload", onHide); document.addEventListener("visibilitychange", onVisibility); return () => { window.clearInterval(interval); window.removeEventListener("pagehide", onHide); window.removeEventListener("beforeunload", onHide); document.removeEventListener("visibilitychange", onVisibility); }; }, []);
-  useEffect(() => { if (isStudioPreview()) return; if (typeof window === "undefined") return; if (pathname === "/splash") { splashShownThisLoad = true; return; } if (splashShownThisLoad) return; splashShownThisLoad = true; const last = readLastActive(); if (last === 0 || Date.now() - last > SPLASH_GAP_MS) navigate({ to: "/splash", replace: true }); touchActive(); }, [pathname, navigate]);
+  useEffect(() => { if (typeof window === "undefined") return; touchActive(); const interval = window.setInterval(touchActive, 30_000); const onHide = () => touchActive(); const onVisibility = () => touchActive(); window.addEventListener("pagehide", onHide); window.addEventListener("beforeunload", onHide); document.addEventListener("visibilitychange", onVisibility); return () => { window.clearInterval(interval); window.removeEventListener("pagehide", onHide); window.removeEventListener("beforeunload", onHide); document.removeEventListener("visibilitychange", onVisibility); }; }, []);
+  useEffect(() => { if (typeof window === "undefined") return; if (pathname === "/splash") { splashShownThisLoad = true; return; } if (splashShownThisLoad) return; splashShownThisLoad = true; const last = readLastActive(); if (last === 0 || Date.now() - last > SPLASH_GAP_MS) navigate({ to: "/splash", replace: true }); touchActive(); }, [pathname, navigate]);
   return null;
 }
 function GlobalRealtimeBridge() { useGlobalRealtime(); return <NotificationPopup />; }
 
 function RootComponent() {
-  const { queryClient } = Route.useRouteContext(); useWakeLock(); const preview = isStudioPreview();
+  const { queryClient } = Route.useRouteContext(); useWakeLock();
   const [toastTheme, setToastTheme] = useState<"light" | "dark">(() => { if (typeof document === "undefined") return "dark"; return document.documentElement.classList.contains("light") ? "light" : "dark"; });
-  useEffect(() => { if (preview) return; void import("../lib/native").then((m) => m.initNativeShell()); }, [preview]);
+  useEffect(() => { void import("../lib/native").then((m) => m.initNativeShell()); }, []);
   useEffect(() => { const onChange = (e: Event) => { const d = (e as CustomEvent<"light" | "dark">).detail; if (d === "light" || d === "dark") setToastTheme(d); }; window.addEventListener("jalwa:theme-mode", onChange); return () => window.removeEventListener("jalwa:theme-mode", onChange); }, []);
-  return <QueryClientProvider client={queryClient}><AuthProvider><ThemeBackground /><ThemeChrome /><SplashGate />{!preview && <InstallPermissionGate />}{!preview && <GlobalRealtimeBridge />}<PublishedCustomizationRuntime /><div className="relative z-10" suppressHydrationWarning><Outlet /></div><Toaster position="top-center" theme={toastTheme} richColors /></AuthProvider></QueryClientProvider>;
+  return <QueryClientProvider client={queryClient}><AuthProvider><ThemeBackground /><ThemeChrome /><SplashGate /><InstallPermissionGate /><GlobalRealtimeBridge /><div className="relative z-10" suppressHydrationWarning><Outlet /></div><Toaster position="top-center" theme={toastTheme} richColors /></AuthProvider></QueryClientProvider>;
 }
