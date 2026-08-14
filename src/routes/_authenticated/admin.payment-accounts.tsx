@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { AlertCircle, Loader2, Save, ShieldCheck, Upload } from "lucide-react";
+import { AlertCircle, Loader2, LockKeyhole, Save, ShieldCheck, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { uploadFileAtPath } from "@/lib/uploads";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Route = createFileRoute("/_authenticated/admin/payment-accounts")({ component: PaymentAccounts });
 
@@ -14,11 +15,73 @@ const DEFAULT_JAZZCASH_QR = "/payment-qr/jazzcash-merchant-qr.svg";
 const DEFAULT_JAZZCASH_TILL = "984021661";
 const DEFAULT_JAZZCASH_TITLE = "JALWA PRO";
 const DEFAULT_JAZZCASH_IPN = "https://jalwa.pro/api/jazzcash/ipn";
+const PAYMENT_VERIFIED_EMAIL = "mr3324333770@gmail.com";
+const PAYMENT_VERIFICATION_KEY = "jalwa.payment-accounts.google-verified-at";
+const PAYMENT_VERIFICATION_TTL_MS = 15 * 60 * 1000;
 
 function PaymentAccounts() {
   const qc = useQueryClient();
+  const { user, loading: authLoading } = useAuth();
+  const [googleVerified, setGoogleVerified] = useState(false);
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+
+  const authorizedEmail = user?.email?.toLowerCase() === PAYMENT_VERIFIED_EMAIL;
+  const googleProvider =
+    user?.app_metadata?.provider === "google" ||
+    (Array.isArray(user?.app_metadata?.providers) && user.app_metadata.providers.includes("google"));
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const returnedFromGoogle = params.get("google_payment_verification") === "1";
+
+    if (returnedFromGoogle) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      if (authorizedEmail && googleProvider) {
+        sessionStorage.setItem(PAYMENT_VERIFICATION_KEY, String(Date.now()));
+        setGoogleVerified(true);
+        setVerificationError(null);
+      } else {
+        sessionStorage.removeItem(PAYMENT_VERIFICATION_KEY);
+        setGoogleVerified(false);
+        setVerificationError(
+          authorizedEmail
+            ? "Google verification was not completed. Please try again."
+            : "Access denied. Only the authorized Google account can open Payment Accounts.",
+        );
+      }
+      return;
+    }
+
+    const verifiedAt = Number(sessionStorage.getItem(PAYMENT_VERIFICATION_KEY) || 0);
+    const fresh = verifiedAt > 0 && Date.now() - verifiedAt < PAYMENT_VERIFICATION_TTL_MS;
+    setGoogleVerified(Boolean(authorizedEmail && googleProvider && fresh));
+    if (!authorizedEmail) {
+      sessionStorage.removeItem(PAYMENT_VERIFICATION_KEY);
+      setVerificationError("Access denied. Only the authorized Google account can open Payment Accounts.");
+    } else if (!fresh || !googleProvider) {
+      setVerificationError(null);
+    }
+  }, [authLoading, authorizedEmail, googleProvider]);
+
+  const verifyWithGoogle = async () => {
+    setVerificationError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/admin/payment-accounts?google_payment_verification=1`,
+        queryParams: {
+          prompt: "login",
+        },
+      },
+    });
+    if (error) setVerificationError(error.message);
+  };
+
   const setting = useQuery({
     queryKey: ["app_kv", "payments"],
+    enabled: googleVerified,
     queryFn: async () => {
       const { data, error } = await supabase.from("app_kv").select("key,value").eq("key", "payments").maybeSingle();
       if (error) throw error;
@@ -44,6 +107,7 @@ function PaymentAccounts() {
   }, [setting.data]);
 
   const uploadQr = async (file: File, method: "easypaisa" | "jazzcash") => {
+    if (!googleVerified) return;
     if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) {
       toast.error("QR must be PNG, JPG or WEBP.");
       return;
@@ -67,6 +131,7 @@ function PaymentAccounts() {
 
   const save = useMutation({
     mutationFn: async () => {
+      if (!googleVerified) throw new Error("Google verification is required before saving payment settings.");
       const { error } = await supabase.from("app_kv").upsert({ key: "payments", value: values });
       if (error) throw error;
     },
@@ -76,6 +141,40 @@ function PaymentAccounts() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
+  if (authLoading || (!googleVerified && authorizedEmail && verificationError === null && !user)) {
+    return <div className="flex min-h-[300px] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
+  }
+
+  if (!googleVerified) {
+    return (
+      <div>
+        <AdminPageHeader title="Payment Accounts" subtitle="Google verification required for payment configuration" />
+        <div className="mx-auto mt-8 max-w-xl rounded-3xl border border-border bg-card/80 p-8 text-center shadow-xl backdrop-blur">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+            <LockKeyhole className="h-7 w-7" />
+          </div>
+          <h2 className="mt-5 text-xl font-black">Payment Accounts are protected</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Continue with Google using <b>{PAYMENT_VERIFIED_EMAIL}</b>. Google will handle the account's own 2-Step Verification challenge when required.
+          </p>
+          {verificationError && (
+            <div className="mt-5 rounded-2xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+              <AlertCircle className="mr-2 inline h-4 w-4" />{verificationError}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => void verifyWithGoogle()}
+            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-bold text-primary-foreground hover:opacity-90"
+          >
+            <GoogleIcon className="h-4 w-4" /> Verify with Google
+          </button>
+          <p className="mt-4 text-[11px] text-muted-foreground">Only this Google account is allowed. Other admin pages are not affected.</p>
+        </div>
+      </div>
+    );
+  }
 
   if (setting.isLoading) {
     return <div className="flex min-h-[300px] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-primary" /></div>;
@@ -162,5 +261,16 @@ function PaymentAccounts() {
         </section>
       </div>
     </div>
+  );
+}
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <path
+        fill="#EA4335"
+        d="M12 10.2v3.9h5.5c-.24 1.4-1.66 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.9 3.5 14.7 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.1 0-.6-.1-1.1-.2-1.6H12z"
+      />
+    </svg>
   );
 }
