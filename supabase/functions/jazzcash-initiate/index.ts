@@ -11,13 +11,7 @@ function json(data: unknown, status = 200) {
 }
 
 async function hmacSha256Hex(message: string, secret: string) {
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
   return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("").toUpperCase();
 }
@@ -29,6 +23,18 @@ function makeSecureHash(payload: Record<string, string>, salt: string) {
     .map(([, value]) => `&${value}`)
     .join("");
   return hmacSha256Hex(`${salt}${values}`, salt);
+}
+
+async function loadAdminConfig() {
+  const baseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+  if (!baseUrl || !serviceKey) return {} as Record<string, unknown>;
+  const res = await fetch(`${baseUrl}/rest/v1/app_kv?select=value&key=eq.payments`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+  });
+  if (!res.ok) return {} as Record<string, unknown>;
+  const rows = await res.json();
+  return (rows?.[0]?.value ?? {}) as Record<string, unknown>;
 }
 
 Deno.serve(async (req: Request) => {
@@ -46,16 +52,26 @@ Deno.serve(async (req: Request) => {
 
     if (!Number.isFinite(amountPkr) || amountPkr <= 0) return json({ ok: false, error: "Invalid amount" }, 400);
     if (!/^03\d{9}$/.test(mobileNumber)) return json({ ok: false, error: "Invalid JazzCash mobile number" }, 400);
-    if (!/^\d{6}$/.test(cnicLast6)) return json({ ok: false, error: "Last 6 digits of CNIC are required" }, 400);
     if (!/^[A-Za-z0-9_-]{6,40}$/.test(transactionRef)) return json({ ok: false, error: "Invalid transaction reference" }, 400);
 
-    const apiUrl = Deno.env.get("JAZZCASH_API_URL")?.trim();
-    const merchantId = Deno.env.get("JAZZCASH_MERCHANT_ID")?.trim();
-    const password = Deno.env.get("JAZZCASH_PASSWORD")?.trim();
-    const integritySalt = Deno.env.get("JAZZCASH_INTEGRITY_SALT")?.trim();
+    const admin = await loadAdminConfig();
+    if (!Boolean(admin.jazzcashApiEnabled)) {
+      return json({ ok: false, error: "JazzCash automatic gateway is disabled in Admin → Payment Accounts" }, 409);
+    }
+
+    const apiUrl = String(admin.jazzcashApiUrl || Deno.env.get("JAZZCASH_API_URL") || "").trim();
+    const merchantId = String(admin.jazzcashMerchantId || Deno.env.get("JAZZCASH_MERCHANT_ID") || "").trim();
+    const password = Deno.env.get("JAZZCASH_PASSWORD")?.trim() || "";
+    const integritySalt = Deno.env.get("JAZZCASH_INTEGRITY_SALT")?.trim() || "";
 
     if (!apiUrl || !merchantId || !password || !integritySalt) {
-      return json({ ok: false, error: "JazzCash API is not configured on the backend yet" }, 503);
+      return json({ ok: false, error: "JazzCash automatic gateway is not fully configured. Add API URL and Merchant ID in Admin, and keep Password/Integrity Salt in backend secrets." }, 503);
+    }
+
+    // The documented JazzCash Mobile Account REST APIs require pp_CNIC.
+    // We do not fake or bypass a gateway-required field.
+    if (!/^\d{6}$/.test(cnicLast6)) {
+      return json({ ok: false, error: "The configured JazzCash Mobile Account API requires the customer's last 6 CNIC digits." }, 400);
     }
 
     const now = new Date();
@@ -71,18 +87,16 @@ Deno.serve(async (req: Request) => {
       pp_MerchantID: merchantId,
       pp_SubMerchantID: "",
       pp_Password: password,
-      pp_BankID: "TBANK",
-      pp_ProductID: "RETL",
       pp_TxnRefNo: transactionRef,
+      pp_MobileNumber: mobileNumber,
+      pp_CNIC: cnicLast6,
       pp_Amount: String(Math.round(amountPkr * 100)),
+      pp_DiscountedAmount: "",
       pp_TxnCurrency: "PKR",
       pp_TxnDateTime: txnDateTime,
       pp_BillReference: billReference || transactionRef,
       pp_Description: description,
       pp_TxnExpiryDateTime: txnExpiry,
-      pp_ReturnURL: "https://jalwa.pro/api/jazzcash/ipn",
-      pp_MobileNumber: mobileNumber,
-      pp_CNIC: cnicLast6,
       pp_SecureHash: "",
       ppmpf_1: "JALWA",
       ppmpf_2: transactionRef,
@@ -95,7 +109,7 @@ Deno.serve(async (req: Request) => {
 
     const upstream = await fetch(apiUrl, {
       method: "POST",
-      headers: { "Accept": "application/json", "Content-Type": "application/json" },
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
