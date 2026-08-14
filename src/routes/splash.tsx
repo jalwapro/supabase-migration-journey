@@ -38,6 +38,15 @@ function Splash() {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const embeddedPreview = typeof window !== "undefined" && window.self !== window.top;
+
+  // The customization studio embeds the real app in an iframe. Never leave
+  // that iframe on the splash screen; jump directly to the real Home UI.
+  useEffect(() => {
+    if (!embeddedPreview) return;
+    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
+    window.location.replace("/?adminPreview=1&customizationMode=design&previewIdentity=neutral");
+  }, [embeddedPreview]);
 
   const cfg = useQuery({
     queryKey: ["splash_cfg"],
@@ -62,7 +71,6 @@ function Splash() {
     retry: false,
   });
 
-
   const videoUrl = cfg.data?.splash_video ?? null;
   const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
   const [videoStarted, setVideoStarted] = useState(false);
@@ -75,25 +83,25 @@ function Splash() {
   // If settings fetch hangs on a slow/offline network, don't trap the user on
   // the black splash screen. Move into the app and let auth hydrate normally.
   useEffect(() => {
-    if (!cfg.isLoading) return;
+    if (embeddedPreview || !cfg.isLoading) return;
     const t = window.setTimeout(finishVideo, 3500);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfg.isLoading]);
+  }, [cfg.isLoading, embeddedPreview]);
 
   // Start-watchdog: if the video hasn't begun playing within 10s (bad network
   // / broken file), give up and move on. Once it starts, let it play through
   // to its natural end — no total-duration cap.
   useEffect(() => {
-    if (!videoUrl || videoStarted) return;
+    if (embeddedPreview || !videoUrl || videoStarted) return;
     const t = window.setTimeout(finishVideo, 10000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoUrl, videoStarted]);
+  }, [videoUrl, videoStarted, embeddedPreview]);
 
   // Fallback progress bar (used when no video)
   useEffect(() => {
-    if (videoUrl) return;
+    if (embeddedPreview || videoUrl) return;
     const start = Date.now();
     let raf = 0;
     const tick = () => {
@@ -107,7 +115,11 @@ function Splash() {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [navigate, duration, videoUrl]);
+  }, [navigate, duration, videoUrl, embeddedPreview]);
+
+  if (embeddedPreview) {
+    return <main className="min-h-[100dvh] bg-background" aria-label="Loading app preview" />;
+  }
 
   if (videoUrl) {
     return (
@@ -164,7 +176,6 @@ function Splash() {
   }
 
   return (
-
     <main
       className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-6"
       style={{
