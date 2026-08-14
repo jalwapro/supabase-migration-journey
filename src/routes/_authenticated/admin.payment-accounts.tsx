@@ -9,6 +9,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/admin/payment-accounts")({ component: PaymentAccounts });
 
 type Setting = { key: string; value: Record<string, string> };
+const EASYPaisa_QR = "https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=00020101021128760032EpGdjILBmzzJ3USyc3wuXjD1SPLJ6fgN0108TMICFBPK0224PK92TMFB00000000129737895204539953035865802PK5909Jalwa%20pro6009Islamabad62530006OPS2.0030713951560506OPS2.007099992872990805Other64370002EN0114MUHAMMAD%20IHSAN0209Islamabad63040B31";
+
 const FIELDS = [
   { name: "jazzcash", label: "JazzCash number" },
   { name: "easypaisa", label: "Easypaisa personal number" },
@@ -35,7 +37,14 @@ function PaymentAccounts() {
     },
   });
   const [values, setValues] = useState<Record<string, string>>({});
-  const [qr, setQr] = useState({ easypaisaQrUrl: "", easypaisaTillId: "", easypaisaTitle: "", jazzcashQrUrl: "", jazzcashTillId: "", jazzcashTitle: "" });
+  const [qr, setQr] = useState({
+    easypaisaQrUrl: EASYPaisa_QR,
+    easypaisaTillId: "",
+    easypaisaTitle: "",
+    jazzcashQrUrl: "",
+    jazzcashTillId: "",
+    jazzcashTitle: "",
+  });
   const current = { ...(setting.data?.value ?? {}), ...values, ...qr };
   const save = useMutation({
     mutationFn: async () => {
@@ -51,9 +60,12 @@ function PaymentAccounts() {
       <div className="space-y-5">
         <div className="glass max-w-2xl rounded-2xl p-5">
           <h2 className="mb-1 text-base font-black">Easypaisa Manual QR</h2>
-          <p className="mb-4 text-xs text-muted-foreground">Upload your QR image somewhere public and paste its image URL below. Users will submit their transaction reference for admin verification.</p>
+          <p className="mb-4 text-xs text-muted-foreground">Your supplied Easypaisa merchant QR is preloaded. Save it to make it the active payment QR.</p>
           <div className="space-y-3">
-            <label className="block text-xs">QR Code Image URL<input value={qr.easypaisaQrUrl} onChange={(e) => setQr(v => ({ ...v, easypaisaQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="https://.../easypaisa-qr.png" /></label>
+            <div className="rounded-2xl border border-border bg-white p-4">
+              <img src={qr.easypaisaQrUrl || EASYPaisa_QR} alt="Jalwa Pro Easypaisa QR" className="mx-auto block h-72 w-72 max-w-full object-contain" />
+            </div>
+            <label className="block text-xs">QR Code Image URL<input value={qr.easypaisaQrUrl} onChange={(e) => setQr(v => ({ ...v, easypaisaQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
             <label className="block text-xs">Till ID<input value={qr.easypaisaTillId} onChange={(e) => setQr(v => ({ ...v, easypaisaTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="MR-14442" /></label>
             <label className="block text-xs">Account Title<input value={qr.easypaisaTitle} onChange={(e) => setQr(v => ({ ...v, easypaisaTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="Jalwa Pro" /></label>
           </div>
