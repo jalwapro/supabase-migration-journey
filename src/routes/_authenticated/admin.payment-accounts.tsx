@@ -9,10 +9,11 @@ import { uploadFileAtPath } from "@/lib/uploads";
 
 export const Route = createFileRoute("/_authenticated/admin/payment-accounts")({ component: PaymentAccounts });
 
-type Payments = Record<string, string>;
+type Payments = Record<string, string | boolean>;
 const DEFAULT_JAZZCASH_QR = "/payment-qr/jazzcash-merchant-qr.svg";
 const DEFAULT_JAZZCASH_TILL = "984021661";
 const DEFAULT_JAZZCASH_TITLE = "JALWA PRO";
+const DEFAULT_JAZZCASH_IPN = "https://jalwa.pro/api/jazzcash/ipn";
 
 function PaymentAccounts() {
   const qc = useQueryClient();
@@ -35,6 +36,9 @@ function PaymentAccounts() {
         jazzcashQrUrl: setting.data.jazzcashQrUrl || DEFAULT_JAZZCASH_QR,
         jazzcashTillId: setting.data.jazzcashTillId || DEFAULT_JAZZCASH_TILL,
         jazzcashTitle: setting.data.jazzcashTitle || DEFAULT_JAZZCASH_TITLE,
+        jazzcashIpnUrl: setting.data.jazzcashIpnUrl || DEFAULT_JAZZCASH_IPN,
+        jazzcashApiEnabled: setting.data.jazzcashApiEnabled ?? false,
+        jazzcashApiMode: setting.data.jazzcashApiMode || "Mobile Account",
       });
     }
   }, [setting.data]);
@@ -80,7 +84,7 @@ function PaymentAccounts() {
   if (setting.isError) {
     return (
       <div>
-        <AdminPageHeader title="Payment Accounts" subtitle="Manual deposit destinations and QR payment configuration" />
+        <AdminPageHeader title="Payment Accounts" subtitle="Manual deposit destinations and automatic payment gateway configuration" />
         <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-5 text-sm">
           <AlertCircle className="mr-2 inline h-5 w-5" />
           Unable to load payment settings. {setting.error instanceof Error ? setting.error.message : "Please try again."}
@@ -89,12 +93,13 @@ function PaymentAccounts() {
     );
   }
 
-  const easypaisaQrUrl = values.easypaisaQrUrl || "";
-  const jazzcashQrUrl = values.jazzcashQrUrl || DEFAULT_JAZZCASH_QR;
+  const easypaisaQrUrl = String(values.easypaisaQrUrl || "");
+  const jazzcashQrUrl = String(values.jazzcashQrUrl || DEFAULT_JAZZCASH_QR);
+  const apiEnabled = Boolean(values.jazzcashApiEnabled);
 
   return (
     <div>
-      <AdminPageHeader title="Payment Accounts" subtitle="Manual deposit destinations and QR payment configuration" />
+      <AdminPageHeader title="Payment Accounts" subtitle="Manual QR deposits and automatic gateway configuration" />
       <div className="space-y-5">
         <section className="glass max-w-2xl rounded-2xl p-5">
           <h2 className="text-base font-black">Easypaisa Manual QR</h2>
@@ -107,8 +112,8 @@ function PaymentAccounts() {
               <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f, "easypaisa"); e.currentTarget.value = ""; }} />
             </label>
             <label className="block text-xs">QR Code Image URL<input value={easypaisaQrUrl} onChange={(e) => setValues((v) => ({ ...v, easypaisaQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="https://..." /></label>
-            <label className="block text-xs">Merchant Till ID<input value={values.easypaisaTillId ?? "MR-14442"} onChange={(e) => setValues((v) => ({ ...v, easypaisaTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
-            <label className="block text-xs">Account Title<input value={values.easypaisaTitle ?? "Jalwa Pro"} onChange={(e) => setValues((v) => ({ ...v, easypaisaTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">Merchant Till ID<input value={String(values.easypaisaTillId ?? "MR-14442")} onChange={(e) => setValues((v) => ({ ...v, easypaisaTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">Account Title<input value={String(values.easypaisaTitle ?? "Jalwa Pro")} onChange={(e) => setValues((v) => ({ ...v, easypaisaTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
           </div>
         </section>
 
@@ -123,13 +128,34 @@ function PaymentAccounts() {
               <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f, "jazzcash"); e.currentTarget.value = ""; }} />
             </label>
             <label className="block text-xs">JazzCash QR URL<input value={jazzcashQrUrl} onChange={(e) => setValues((v) => ({ ...v, jazzcashQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
-            <label className="block text-xs">JazzCash Till / Merchant ID<input value={values.jazzcashTillId ?? DEFAULT_JAZZCASH_TILL} onChange={(e) => setValues((v) => ({ ...v, jazzcashTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
-            <label className="block text-xs">Account Title<input value={values.jazzcashTitle ?? DEFAULT_JAZZCASH_TITLE} onChange={(e) => setValues((v) => ({ ...v, jazzcashTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">JazzCash Till / Merchant ID<input value={String(values.jazzcashTillId ?? DEFAULT_JAZZCASH_TILL)} onChange={(e) => setValues((v) => ({ ...v, jazzcashTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">Account Title<input value={String(values.jazzcashTitle ?? DEFAULT_JAZZCASH_TITLE)} onChange={(e) => setValues((v) => ({ ...v, jazzcashTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
           </div>
         </section>
 
         <section className="glass max-w-2xl rounded-2xl p-5">
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-400" />Manual payments require admin verification before coins are credited.</div>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-black">JazzCash Automatic API</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Configure the real Mobile Account gateway. Secrets are never stored in this admin form.</p>
+            </div>
+            <button type="button" onClick={() => setValues((v) => ({ ...v, jazzcashApiEnabled: !Boolean(v.jazzcashApiEnabled) }))} className={`rounded-full px-4 py-2 text-xs font-bold ${apiEnabled ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              {apiEnabled ? "Enabled" : "Disabled"}
+            </button>
+          </div>
+          <div className="mt-4 space-y-4">
+            <label className="block text-xs">API Mode<input value={String(values.jazzcashApiMode || "Mobile Account")} onChange={(e) => setValues((v) => ({ ...v, jazzcashApiMode: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="Mobile Account" /></label>
+            <label className="block text-xs">Payment API URL<input value={String(values.jazzcashApiUrl || "")} onChange={(e) => setValues((v) => ({ ...v, jazzcashApiUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="https://..." /></label>
+            <label className="block text-xs">Merchant ID<input value={String(values.jazzcashMerchantId || "")} onChange={(e) => setValues((v) => ({ ...v, jazzcashMerchantId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="JazzCash Merchant ID" /></label>
+            <label className="block text-xs">Merchant MSISDN<input value={String(values.jazzcashMerchantMsisdn || "")} onChange={(e) => setValues((v) => ({ ...v, jazzcashMerchantMsisdn: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="923xxxxxxxxx" /></label>
+            <label className="block text-xs">IPN / Return URL<input value={String(values.jazzcashIpnUrl || DEFAULT_JAZZCASH_IPN)} onChange={(e) => setValues((v) => ({ ...v, jazzcashIpnUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-muted-foreground"><ShieldCheck className="mr-2 inline h-4 w-4 text-amber-400" />Merchant password and Integrity/SecureHash Salt must remain backend-only Supabase secrets. Add them in the Supabase Edge Function secrets; they are intentionally not exposed in the admin/browser.</div>
+            <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs">Backend secret names: <b>JAZZCASH_API_URL</b>, <b>JAZZCASH_MERCHANT_ID</b>, <b>JAZZCASH_PASSWORD</b>, <b>JAZZCASH_INTEGRITY_SALT</b>.</div>
+          </div>
+        </section>
+
+        <section className="glass max-w-2xl rounded-2xl p-5">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs"><ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-400" />Manual QR payments require admin verification before coins are credited. Automatic payments require verified JazzCash success/IPN before coins are credited.</div>
           <button onClick={() => save.mutate()} disabled={save.isPending || uploading} className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-primary py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-60">
             {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Payment Accounts
           </button>
