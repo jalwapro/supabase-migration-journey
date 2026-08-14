@@ -10,6 +10,9 @@ import { uploadFileAtPath } from "@/lib/uploads";
 export const Route = createFileRoute("/_authenticated/admin/payment-accounts")({ component: PaymentAccounts });
 
 type Payments = Record<string, string>;
+const DEFAULT_JAZZCASH_QR = "/payment-qr/jazzcash-merchant-qr.svg";
+const DEFAULT_JAZZCASH_TILL = "984021661";
+const DEFAULT_JAZZCASH_TITLE = "JALWA PRO";
 
 function PaymentAccounts() {
   const qc = useQueryClient();
@@ -26,10 +29,17 @@ function PaymentAccounts() {
   const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
-    if (setting.data) setValues(setting.data);
+    if (setting.data) {
+      setValues({
+        ...setting.data,
+        jazzcashQrUrl: setting.data.jazzcashQrUrl || DEFAULT_JAZZCASH_QR,
+        jazzcashTillId: setting.data.jazzcashTillId || DEFAULT_JAZZCASH_TILL,
+        jazzcashTitle: setting.data.jazzcashTitle || DEFAULT_JAZZCASH_TITLE,
+      });
+    }
   }, [setting.data]);
 
-  const uploadQr = async (file: File) => {
+  const uploadQr = async (file: File, method: "easypaisa" | "jazzcash") => {
     if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) {
       toast.error("QR must be PNG, JPG or WEBP.");
       return;
@@ -41,9 +51,9 @@ function PaymentAccounts() {
     setUploading(true);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "png";
-      const url = await uploadFileAtPath("payment-qr", `easypaisa/merchant-qr.${ext}`, file);
-      setValues((v) => ({ ...v, easypaisaQrUrl: url }));
-      toast.success("Easypaisa QR uploaded to Cloudflare R2");
+      const url = await uploadFileAtPath("payment-qr", `${method}/merchant-qr.${ext}`, file);
+      setValues((v) => ({ ...v, [`${method}QrUrl`]: url }));
+      toast.success(`${method === "easypaisa" ? "Easypaisa" : "JazzCash"} QR uploaded to Cloudflare R2`);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "QR upload failed");
     } finally {
@@ -79,7 +89,8 @@ function PaymentAccounts() {
     );
   }
 
-  const qrUrl = values.easypaisaQrUrl || "";
+  const easypaisaQrUrl = values.easypaisaQrUrl || "";
+  const jazzcashQrUrl = values.jazzcashQrUrl || DEFAULT_JAZZCASH_QR;
 
   return (
     <div>
@@ -89,13 +100,13 @@ function PaymentAccounts() {
           <h2 className="text-base font-black">Easypaisa Manual QR</h2>
           <p className="mt-1 text-xs text-muted-foreground">Upload the merchant QR to Cloudflare R2. Users will see this QR during manual recharge.</p>
           <div className="mt-4 space-y-4">
-            {qrUrl && <div className="rounded-2xl border border-border bg-white p-4"><img src={qrUrl} alt="Easypaisa merchant QR" className="mx-auto h-72 w-72 max-w-full object-contain" /></div>}
+            {easypaisaQrUrl && <div className="rounded-2xl border border-border bg-white p-4"><img src={easypaisaQrUrl} alt="Easypaisa merchant QR" className="mx-auto h-72 w-72 max-w-full object-contain" /></div>}
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               {uploading ? "Uploading…" : "Upload Easypaisa QR"}
-              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f); e.currentTarget.value = ""; }} />
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f, "easypaisa"); e.currentTarget.value = ""; }} />
             </label>
-            <label className="block text-xs">QR Code Image URL<input value={qrUrl} onChange={(e) => setValues((v) => ({ ...v, easypaisaQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="https://..." /></label>
+            <label className="block text-xs">QR Code Image URL<input value={easypaisaQrUrl} onChange={(e) => setValues((v) => ({ ...v, easypaisaQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="https://..." /></label>
             <label className="block text-xs">Merchant Till ID<input value={values.easypaisaTillId ?? "MR-14442"} onChange={(e) => setValues((v) => ({ ...v, easypaisaTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
             <label className="block text-xs">Account Title<input value={values.easypaisaTitle ?? "Jalwa Pro"} onChange={(e) => setValues((v) => ({ ...v, easypaisaTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
           </div>
@@ -103,17 +114,17 @@ function PaymentAccounts() {
 
         <section className="glass max-w-2xl rounded-2xl p-5">
           <h2 className="text-base font-black">JazzCash Manual QR</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Optional JazzCash QR configuration.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Jalwa Pro JazzCash merchant QR. Upload a replacement to Cloudflare R2 if needed.</p>
           <div className="mt-4 space-y-4">
-            {values.jazzcashQrUrl && <div className="rounded-2xl border border-border bg-white p-4"><img src={values.jazzcashQrUrl} alt="JazzCash merchant QR" className="mx-auto h-72 w-72 max-w-full object-contain" /></div>}
+            <div className="rounded-2xl border border-border bg-white p-4"><img src={jazzcashQrUrl} alt="JazzCash merchant QR" className="mx-auto h-72 w-72 max-w-full object-contain" /></div>
             <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-              Upload JazzCash QR
-              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={async (e) => { const f = e.target.files?.[0]; e.currentTarget.value = ""; if (!f) return; if (!/^image\/(png|jpe?g|webp)$/.test(f.type) || f.size > 5 * 1024 * 1024) { toast.error("Use PNG/JPG/WEBP up to 5MB."); return; } setUploading(true); try { const ext = f.name.split(".").pop()?.toLowerCase() || "png"; const url = await uploadFileAtPath("payment-qr", `jazzcash/merchant-qr.${ext}`, f); setValues((v) => ({ ...v, jazzcashQrUrl: url })); toast.success("JazzCash QR uploaded to Cloudflare R2"); } catch (err) { toast.error(err instanceof Error ? err.message : "Upload failed"); } finally { setUploading(false); } }} />
+              Upload JazzCash QR to R2
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadQr(f, "jazzcash"); e.currentTarget.value = ""; }} />
             </label>
-            <label className="block text-xs">JazzCash QR URL<input value={values.jazzcashQrUrl ?? ""} onChange={(e) => setValues((v) => ({ ...v, jazzcashQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
-            <label className="block text-xs">JazzCash Till / Merchant ID<input value={values.jazzcashTillId ?? ""} onChange={(e) => setValues((v) => ({ ...v, jazzcashTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
-            <label className="block text-xs">Account Title<input value={values.jazzcashTitle ?? ""} onChange={(e) => setValues((v) => ({ ...v, jazzcashTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">JazzCash QR URL<input value={jazzcashQrUrl} onChange={(e) => setValues((v) => ({ ...v, jazzcashQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">JazzCash Till / Merchant ID<input value={values.jazzcashTillId ?? DEFAULT_JAZZCASH_TILL} onChange={(e) => setValues((v) => ({ ...v, jazzcashTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+            <label className="block text-xs">Account Title<input value={values.jazzcashTitle ?? DEFAULT_JAZZCASH_TITLE} onChange={(e) => setValues((v) => ({ ...v, jazzcashTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
           </div>
         </section>
 
