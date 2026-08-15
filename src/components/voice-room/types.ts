@@ -58,7 +58,7 @@ export interface GiftItem {
 export const MOCK_HOST: HostInfo = {
   id: "host-1",
   name: "ALI KING",
-  avatarUrl: "https://api.dicebear.com/9.x/adventurer/svg?seed=AliKing&backgroundColor=b6e3f4",
+  avatarUrl: "https://api.dicebear.com/9.x/personas/svg?seed=AliKingHost&backgroundColor=1a0b2e,2d0b4d",
   popularity: 12500,
   mic: "speaking",
   verified: true,
@@ -68,10 +68,6 @@ const NAMES = [
   "Sana", "Zara", "Bilal", "Hina", "Usman", "Ayesha", "Hamza", "Mahnoor",
   "Fahad", "Iqra", "Talha", "Areeba", "Danish", "Sarah", "Kamran", "Noor",
 ];
-
-function seededAvatar(seed: string) {
-  return `https://api.dicebear.com/9.x/adventurer/svg?seed=${encodeURIComponent(seed)}`;
-}
 
 const MIC_CYCLE: MicState[] = ["on", "off", "muted", "speaking"];
 
@@ -88,7 +84,7 @@ export function buildMockSeats(): RoomSeat[] {
         user: {
           id: `user-${i}`,
           name,
-          avatarUrl: seededAvatar(name + i),
+          avatarUrl: `https://api.dicebear.com/9.x/personas/svg?seed=${encodeURIComponent(name + i)}&backgroundColor=1a0b2e,2d0b4d`,
           popularity: Math.floor(Math.random() * 900) + 10,
           mic: MIC_CYCLE[i % MIC_CYCLE.length],
           online: true,
@@ -109,11 +105,17 @@ export const MOCK_ANNOUNCEMENTS: AnnouncementItem[] = [
 ];
 
 export const MOCK_MESSAGES: ChatMessage[] = [
-  { id: "m1", kind: "system", body: "Welcome to Love Is Life 💖" },
-  { id: "m2", kind: "user", userName: "Sana", userColor: "text-pink-400", body: "hiii everyone 👋" },
-  { id: "m3", kind: "user", userName: "Bilal", userColor: "text-violet-400", body: "great vibes tonight 🔥" },
-  { id: "m4", kind: "gift", userName: "Zara", body: "sent a gift", giftName: "Rose", giftIcon: "🌹" },
-  { id: "m5", kind: "announcement", body: "User King is now Host 👑" },
+  {
+    id: "m0",
+    kind: "system",
+    body:
+      "Guiding and reminding visitors: cover, content and comments containing vulgarity or politics will be punished. Beware of fraud. Room announcement: WELCOME EVERYONE",
+  },
+  { id: "m1", kind: "system", body: "ALI KING enters the room" },
+  { id: "m2", kind: "system", body: "Completed magic quests to get energy rewards" },
+  { id: "m3", kind: "user", userName: "Sana", userColor: "text-pink-400", body: "hiii everyone 👋" },
+  { id: "m4", kind: "user", userName: "Bilal", userColor: "text-violet-400", body: "great vibes tonight 🔥" },
+  { id: "m5", kind: "gift", userName: "Zara", body: "sent a gift", giftName: "Rose", giftIcon: "🌹" },
 ];
 
 export const MOCK_GIFTS: GiftItem[] = [
@@ -129,6 +131,27 @@ export const MOCK_GIFTS: GiftItem[] = [
   { id: "g10", name: "Kiss", icon: "💋", price: 15, category: "romantic" },
   { id: "g11", name: "Candy", icon: "🍬", price: 5, category: "popular" },
   { id: "g12", name: "Cake", icon: "🎂", price: 200, category: "popular" },
+];
+
+export interface EventBanner {
+  id: string;
+  title: string;
+  imageUrl: string;
+  badge?: string;
+}
+
+export const MOCK_EVENT_BANNERS: EventBanner[] = [
+  {
+    id: "e1",
+    title: "Century Wedding",
+    imageUrl: "https://api.dicebear.com/9.x/personas/svg?seed=WeddingCouple&backgroundColor=2d0b4d,4a0e4e",
+    badge: "NEW",
+  },
+  {
+    id: "e2",
+    title: "Rose Festival x2 Rewards",
+    imageUrl: "https://api.dicebear.com/9.x/personas/svg?seed=RoseFestival&backgroundColor=5c0a18,2d0b4d",
+  },
 ];
 
 export function formatCount(n: number): string {

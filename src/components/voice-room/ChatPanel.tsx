@@ -49,7 +49,10 @@ export function ChatPanel({ messages, onSend }: ChatPanelProps) {
   };
 
   return (
-    <div className="flex flex-1 flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-2.5">
+    <div
+      className="flex flex-1 flex-col rounded-2xl border border-violet-400/30 bg-gradient-to-b from-white/[0.03] to-transparent p-2.5"
+      style={{ boxShadow: "0 0 12px -8px rgba(139,92,246,0.5)" }}
+    >
       <div className="mb-2 flex items-center gap-4 border-b border-white/10 pb-2">
         {(["all", "chat"] as const).map((t) => (
           <button
@@ -61,7 +64,7 @@ export function ChatPanel({ messages, onSend }: ChatPanelProps) {
             )}
           >
             {t}
-            {tab === t && <span className="mt-1 block h-0.5 rounded-full bg-fuchsia-400" />}
+            {tab === t && <span className="mt-1 block h-0.5 rounded-full bg-fuchsia-400 shadow-[0_0_6px_1px_rgba(232,60,220,0.8)]" />}
           </button>
         ))}
       </div>

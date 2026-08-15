@@ -12,6 +12,7 @@ import {
   MOCK_HOST,
   MOCK_ANNOUNCEMENTS,
   MOCK_MESSAGES,
+  MOCK_EVENT_BANNERS,
   buildMockSeats,
   type RoomSeat,
   type ChatMessage,
@@ -70,7 +71,7 @@ export function VoiceRoomScreen() {
               user: {
                 id: ME_ID,
                 name: "You",
-                avatarUrl: "https://api.dicebear.com/9.x/adventurer/svg?seed=You",
+                avatarUrl: "https://api.dicebear.com/9.x/personas/svg?seed=You&backgroundColor=1a0b2e",
                 popularity: 0,
                 mic: "on",
                 online: true,
@@ -151,6 +152,7 @@ export function VoiceRoomScreen() {
         onExit={() => toast("Exiting room…")}
         onRanking={() => toast("Opening ranking…")}
         onOnline={() => toast("128 users online")}
+        onHome={() => toast("Home")}
       />
 
       <div className="mt-2 flex flex-1 flex-col gap-3 px-2.5 pb-4 sm:px-3 lg:flex-row lg:items-start">
@@ -169,7 +171,7 @@ export function VoiceRoomScreen() {
 
           <div className="flex flex-col gap-3 lg:hidden">
             <ChatPanel messages={messages} onSend={handleSendMessage} />
-            <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} />
+            <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} />
           </div>
 
           <div className="hidden lg:block">
@@ -178,7 +180,7 @@ export function VoiceRoomScreen() {
         </div>
 
         <div className="hidden w-72 shrink-0 lg:block">
-          <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} />
+          <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} />
         </div>
       </div>
 
@@ -189,7 +191,7 @@ export function VoiceRoomScreen() {
         onGame={() => toast("Opening games…")}
         onMic={() => setMicOn((v) => !v)}
         onChat={() => toast("Chat focused")}
-        onMore={() => toast("More options")}
+        onProfile={() => toast("Opening profile…")}
       />
 
       <VoiceRoomGiftSheet
