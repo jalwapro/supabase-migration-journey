@@ -11,6 +11,7 @@ import { Outlet, Link, createRootRouteWithContext, useRouter, useRouterState, us
 import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
+import "../voice-room-reference.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
