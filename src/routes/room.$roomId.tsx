@@ -2186,32 +2186,31 @@ function RoomPage() {
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        {/* Header - matching reference image exactly */}
-        <div className="flex items-center justify-between gap-3 mb-3">
+        {/* Header — neon voice-room redesign */}
+        <div className="flex items-center gap-2 rounded-2xl border border-fuchsia-400/20 bg-gradient-to-r from-fuchsia-950/30 via-violet-950/20 to-black/30 p-2 backdrop-blur-sm mb-2.5">
           {/* Left: Room avatar + name + ID */}
-          <div className="flex items-center gap-2">
-            <div className="glow-4d grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-tr from-[color:var(--primary)] to-[color:var(--secondary)] ring-2 ring-white/20 relative">
-              {r.host?.avatar ? (
-                <img
-                  src={r.host.avatar}
-                  alt=""
-                  className={`h-full w-full object-cover ${hostAfk ? "opacity-60 grayscale" : ""}`}
-                />
-              ) : (
-                <UserIcon className="h-5 w-5 text-white/80" />
-              )}
+          <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-tr from-fuchsia-500 to-violet-600 ring-2 ring-fuchsia-400/50 shadow-[0_0_14px_-2px_rgba(232,60,220,0.6)] relative">
+            {r.host?.avatar ? (
+              <img
+                src={r.host.avatar}
+                alt=""
+                className={`h-full w-full object-cover ${hostAfk ? "opacity-60 grayscale" : ""}`}
+              />
+            ) : (
+              <UserIcon className="h-5 w-5 text-white/80" />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1">
+              <span className="truncate text-[14px] font-black text-white">{r.title}</span>
+              <Heart className="h-3 w-3 shrink-0 fill-pink-500 text-pink-500" />
             </div>
-            <div className="min-w-0">
-              <div className="truncate text-[14px] font-black text-white">
-                {r.title}
-              </div>
-              <div className="text-[10px] font-semibold text-white/60">
-                ID: {roomCode}
-              </div>
+            <div className="text-[10px] font-semibold text-white/50">
+              ID: {roomCode}
             </div>
           </div>
           {/* Right: Icons */}
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5">
             <HeaderIcon
               onClick={async () => {
                 const reason = window.prompt("Report this room?");
@@ -2253,31 +2252,31 @@ function RoomPage() {
           </div>
         </div>
 
-        {/* Ranking bar - matching reference image */}
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="h-5 w-5 text-[color:var(--gold)]" />
-          <span className="text-[12px] font-semibold text-white/80">
-            {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
-          </span>
-        </div>
+        {/* Ranking + online row */}
         <div className="flex items-center gap-2">
+          <div className="flex flex-1 items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-200">
+            <Trophy className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">
+              {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
+            </span>
+          </div>
           {!isHost && (
             <button
               onClick={() => void joinFamily()}
               disabled={!!familyMember.data}
-              className="rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
+              className="shrink-0 rounded-full border border-[color:var(--gold)]/60 bg-gradient-to-r from-[color:var(--gold)]/25 via-amber-400/15 to-[color:var(--gold)]/25 px-2.5 py-1.5 text-[10px] font-black tracking-wider text-[color:var(--gold)] shadow-lg shadow-[color:var(--gold)]/25 disabled:opacity-60"
               aria-label="Join premium family"
             >
-              👑 PREMIUM
+              👑
             </button>
           )}
           <button
             onClick={openViewersSheet}
-            className="flex items-center gap-2 rounded-full border border-violet-300/30 bg-white/10 px-2.5 py-1.5 backdrop-blur"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/80"
             aria-label="View viewers"
           >
-            <Users className="h-4 w-4 text-white/80" />
-            <span className="text-[12px] font-black">{Math.max(r.viewer_count, members.length)}</span>
+            <Users className="h-3.5 w-3.5" />
+            {Math.max(r.viewer_count, members.length)}
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           </button>
         </div>
@@ -2641,7 +2640,10 @@ function RoomPage() {
 
 
         <div className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2">
-          <div className="p-0 pointer-events-auto">
+          <div
+            className="relative rounded-3xl border border-fuchsia-400/15 bg-gradient-to-b from-fuchsia-950/15 via-violet-950/10 to-transparent p-2.5 pointer-events-auto"
+            style={{ boxShadow: "inset 0 0 40px -20px rgba(232,60,220,0.35)" }}
+          >
             {(() => {
               const sc = Math.max(4, r.seat_count);
               // Dynamic layout based on seat count to match reference:
@@ -2728,9 +2730,12 @@ function RoomPage() {
       {/* ─── Live comments (directly under the seats) ───────────── */}
       {!isVideo && (
         <div className="relative z-10 mx-auto mt-4 w-full max-w-md px-3">
-          {/* Chat tabs - matching reference */}
-          <div className="flex items-center gap-4 mb-2">
-            <button className="text-[12px] font-bold text-white">All</button>
+          {/* Chat tabs — neon underline */}
+          <div className="flex items-center gap-4 mb-2 border-b border-white/10 pb-1.5">
+            <button className="relative text-[12px] font-bold text-white">
+              All
+              <span className="absolute -bottom-1.5 left-0 h-0.5 w-full rounded-full bg-fuchsia-400" />
+            </button>
             <button className="text-[12px] font-semibold text-white/40">Chat</button>
           </div>
           <div className="max-h-24 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
@@ -2781,9 +2786,9 @@ function RoomPage() {
             <div className="flex w-[20%] min-h-0 flex-col gap-2">
               <button
                 onClick={() => openMilestoneSheet()}
-                className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-[color:var(--secondary)]/30 bg-gradient-to-b from-[#1a0b2e] to-[#2d0b4d] px-2.5 pt-2.5 pb-2 shadow-2xl"
+                className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-fuchsia-400/25 bg-gradient-to-b from-fuchsia-950/40 via-violet-950/30 to-black/50 px-2.5 pt-2.5 pb-2 shadow-[0_0_24px_-8px_rgba(232,60,220,0.5)]"
               >
-                <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-[color:var(--primary)]/20 blur-[40px]" />
+                <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-[40px]" />
                 <div className="z-10 flex w-full items-center justify-end">
                   {isRanked && (
                     <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1.5 py-0.5">
@@ -3054,10 +3059,12 @@ function RoomPage() {
                 onClick={() => void toggleMuteWithSync()}
                 aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
                 title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
-                className={`grid h-9 w-9 shrink-0 place-items-center rounded-full border backdrop-blur-md ${
+                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 backdrop-blur-md transition-colors ${
                   agora.micBlocked
                     ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
-                    : "border-white/15 bg-black/50 text-white"
+                    : agora.muted
+                      ? "border-white/15 bg-black/50 text-white/60"
+                      : "border-fuchsia-400 bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white shadow-[0_0_16px_-2px_rgba(232,60,220,0.8)]"
                 }`}
               >
                 {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -4751,13 +4758,6 @@ function Seat({
   // Host seat (index 0) turns red + locked when the host is NOT sitting on it.
   const hostAwayFromSeat = isHostSeat && !member;
   const seatNo = index + 1;
-
-  // Simple palette matching reference
-  const ringHue = isHostSeat
-    ? "#ffd166"
-    : hostAwayFromSeat
-      ? "#ef4444"
-      : "#bf00ff";
   const activeRing = !!member || isHostSeat;
 
   return (
@@ -4779,17 +4779,26 @@ function Seat({
         className="relative aspect-square w-full"
         aria-label={member ? `Manage seat No.${seatNo}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked No.${seatNo}` : `Take No.${seatNo}`}
       >
-        {/* Simple circular border - matching reference */}
+        {/* Speaking pulse ring — neon */}
+        {speaking && (
+          <span className="pointer-events-none absolute -inset-1.5 rounded-full bg-fuchsia-500/30 animate-ping" />
+        )}
+
+        {/* Neon circular border */}
         <div
-          className={`pointer-events-none absolute inset-0 rounded-full border-2 ${
-            activeRing
-              ? "border-purple-500 shadow-[0_0_16px_rgba(168,85,247,0.6)]"
-              : "border-white/20 opacity-60"
+          className={`pointer-events-none absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
+            isHostSeat
+              ? "border-amber-400 shadow-[0_0_20px_-2px_rgba(251,191,36,0.7)]"
+              : speaking
+                ? "border-fuchsia-400 shadow-[0_0_18px_-2px_rgba(232,60,220,0.75)]"
+                : activeRing
+                  ? "border-fuchsia-500/70 shadow-[0_0_14px_-2px_rgba(191,0,255,0.5)]"
+                  : "border-dashed border-white/15 opacity-70"
           }`}
         />
 
-        {/* Inner disc (avatar / content) - matching reference */}
-        <div className="absolute inset-[15%] overflow-hidden rounded-full bg-black/50">
+        {/* Inner disc (avatar / content) */}
+        <div className="absolute inset-[15%] overflow-hidden rounded-full bg-gradient-to-b from-white/10 to-black/60">
           {displayAvatar && !remote?.videoTrack && (
             <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
           )}
@@ -4799,7 +4808,7 @@ function Seat({
               {locked ? (
                 <span className="text-xl">🔒</span>
               ) : (
-                <UserIcon className="h-5 w-5 text-white/40" />
+                <Plus className="h-5 w-5 text-white/40" />
               )}
             </div>
           )}
@@ -4827,28 +4836,33 @@ function Seat({
           </div>
         )}
 
-        {/* (badge moved below DP) */}
-
-
-        {/* Seat number badge - matching reference (top-left) */}
+        {/* Seat number badge (top-left) */}
         <span className="absolute -top-1 -left-1 grid h-4 w-4 place-items-center rounded-full border border-white/30 bg-black/80 text-[8px] font-bold text-white">
           {seatNo}
         </span>
 
-        {/* Heart/like count - matching reference (bottom-right) */}
+        {/* Heart/like count (bottom-right) */}
         <span className="absolute -bottom-1 right-1 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[7px] font-bold text-white/80 backdrop-blur">
-          <Heart className="h-1.5 w-1.5 text-rose-400" />
+          <Heart className="h-1.5 w-1.5 fill-rose-400 text-rose-400" />
           {likeCount}
         </span>
 
-        {/* Mic status - matching reference */}
-        {effectiveMuted && (member || (isHostSeat && displayAvatar)) && (
-          <span className="absolute bottom-0.5 right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full bg-black/70">
-            <MicOff className="h-1.5 w-1.5 text-[color:var(--destructive)]" />
+        {/* Mic status */}
+        {member || (isHostSeat && displayAvatar) ? (
+          <span
+            className={`absolute bottom-0.5 right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full ${
+              effectiveMuted ? "bg-red-500" : "bg-emerald-500"
+            }`}
+          >
+            {effectiveMuted ? (
+              <MicOff className="h-1.5 w-1.5 text-white" />
+            ) : (
+              <Mic className="h-1.5 w-1.5 text-white" />
+            )}
           </span>
-        )}
+        ) : null}
 
-        {/* Host crown - matching reference */}
+        {/* Host crown */}
         {isHostSeat && (
           <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-[10px] leading-none shadow-[0_0_10px_rgba(255,215,0,0.6)]">
             👑
@@ -4856,14 +4870,14 @@ function Seat({
         )}
       </button>
 
-      {/* Username below seat - matching reference */}
+      {/* Username below seat */}
       {member && displayName && (
         <span className="max-w-[60px] truncate text-[10px] font-semibold text-white">
           {displayName}
         </span>
       )}
       {!member && (
-        <span className="text-[10px] text-white/40">Empty</span>
+        <span className="text-[10px] text-white/35">No.{seatNo}</span>
       )}
     </div>
   );
