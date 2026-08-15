@@ -11,27 +11,38 @@ const STATUS_COLOR: Record<Status, string> = {
   disabled: "bg-white/30",
 };
 
+/*
+ * This file only provides the small diagnostics mount plus a scoped visual layer.
+ * The actual room functionality remains in src/routes/room.$roomId.tsx.
+ * The previous version forced a very tall 6x6 stage and a 300px+ host card,
+ * which caused the desktop/mobile room to overflow and produced the distorted
+ * screenshot. This version keeps the reference composition but scales the
+ * complete stage to the available viewport.
+ */
 const VOICE_ROOM_REFERENCE_CSS = `
-/* Jalwa voice-room reference layout: black glass + neon purple/pink, 20 seats around a hero host. */
+/* Room shell */
 body:has([data-jalwa-voice-room-redesign]) {
-  background: #020005 !important;
-  overflow: hidden !important;
+  background: #020006 !important;
 }
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col {
-  background: #020005 !important;
+  background: radial-gradient(circle at 50% 35%, rgba(91,20,130,.18), transparent 42%), #020006 !important;
   color: #fff !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   scrollbar-width: none;
-  padding-bottom: 12px !important;
+  padding-bottom: 8px !important;
 }
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col::-webkit-scrollbar { display:none; }
+
+/* Remove the old full-screen decorative background so the UI reads like the supplied reference. */
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > img,
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.absolute.inset-0.bg-black,
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.absolute.blur-\[120px\],
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.absolute.blur-\[100px\] { display:none !important; }
+body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.absolute.blur-\\[120px\\],
+body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.absolute.blur-\\[100px\\] {
+  display: none !important;
+}
 
-/* Diagnostics pill is retained for debugging but visually hidden in the production room. */
+/* Keep diagnostics itself invisible in production. */
 body:has([data-jalwa-voice-room-redesign]) [data-jalwa-voice-room-redesign] {
   opacity: 0 !important;
   width: 1px !important;
@@ -40,70 +51,58 @@ body:has([data-jalwa-voice-room-redesign]) [data-jalwa-voice-room-redesign] {
   pointer-events: none !important;
 }
 
-/* Shared centered canvas. */
+/* Responsive centered room canvas. */
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > .max-w-md {
+  width: min(820px, calc(100vw - 16px)) !important;
   max-width: 820px !important;
 }
 
-/* Header */
+/* Header stays compact. */
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 {
-  width: min(820px, calc(100% - 24px)) !important;
-  padding: 14px 0 8px !important;
+  width: min(820px, calc(100vw - 16px)) !important;
+  padding: 8px 0 4px !important;
 }
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 > div.flex.items-center.justify-between {
-  min-height: 72px !important;
-  padding: 8px 14px !important;
-  border: 1px solid rgba(188, 65, 255, .42) !important;
-  border-radius: 24px !important;
-  background: linear-gradient(120deg, rgba(11,4,21,.94), rgba(23,4,39,.82)) !important;
-  box-shadow: 0 0 30px rgba(176, 45, 255, .10), inset 0 0 25px rgba(255,0,225,.04) !important;
-}
-body:has([data-jalwa-voice-room-redesign]) .glow-4d {
-  box-shadow: 0 0 18px rgba(214, 66, 255, .35) !important;
+  min-height: 58px !important;
+  padding: 6px 10px !important;
+  border: 1px solid rgba(188,65,255,.40) !important;
+  border-radius: 18px !important;
+  background: linear-gradient(120deg, rgba(7,2,14,.94), rgba(25,4,39,.86)) !important;
+  box-shadow: inset 0 0 22px rgba(190,55,255,.05), 0 0 18px rgba(175,45,255,.08) !important;
 }
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 .h-12.w-12 {
-  border-radius: 16px !important;
-  box-shadow: 0 0 18px rgba(190, 50, 255, .35) !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 13px !important;
 }
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 .text-\[14px\] {
-  font-size: 20px !important;
-}
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 .text-\[10px\] {
-  font-size: 12px !important;
-}
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 .flex.items-center.gap-2:last-child {
-  gap: 10px !important;
-}
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col .grid.h-9.w-9,
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col .grid.h-8.w-8 {
-  border-color: rgba(184, 65, 255, .48) !important;
-  background: rgba(7, 3, 14, .86) !important;
+body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 .text-\\[14px\\] {
+  font-size: 16px !important;
 }
 
-/* Ranking / online row */
+/* Ranking and online controls. */
 body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 > div.flex.items-center.gap-2.mb-3 {
-  margin: 8px 0 8px !important;
-  padding: 9px 16px !important;
+  margin: 4px 0 5px !important;
+  padding: 6px 11px !important;
+  min-width: 0 !important;
   width: fit-content !important;
-  min-width: 230px !important;
-  border: 1px solid rgba(190, 50, 255, .48) !important;
-  border-radius: 16px !important;
-  background: rgba(12, 4, 24, .85) !important;
-}
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2 > div.flex.items-center.gap-2.mb-3 + div.flex.items-center {
-  justify-content: flex-end !important;
+  border: 1px solid rgba(190,50,255,.42) !important;
+  border-radius: 13px !important;
+  background: rgba(8,2,16,.80) !important;
 }
 
-/* Voice stage */
+/* Main 20-position stage. 6 columns x 6 rows gives the reference shape while
+   allowing the host to stay compact on small screens. */
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] {
   display: grid !important;
   grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-  grid-template-rows: repeat(6, minmax(78px, 1fr)) !important;
-  gap: 10px !important;
-  width: min(820px, calc(100vw - 24px)) !important;
+  grid-template-rows: repeat(6, minmax(42px, 1fr)) !important;
+  gap: clamp(4px, 1vw, 8px) !important;
+  width: min(820px, calc(100vw - 16px)) !important;
   max-width: 820px !important;
-  margin: 4px auto 0 !important;
-  padding: 4px !important;
+  height: clamp(330px, 45vh, 430px) !important;
+  margin: 2px auto 0 !important;
+  padding: 2px !important;
+  box-sizing: border-box !important;
 }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div {
   min-width: 0 !important;
@@ -115,60 +114,58 @@ body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > di
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div > button {
   width: 100% !important;
   height: 100% !important;
-  min-height: 88px !important;
-  border-radius: 16px !important;
-  border: 1px solid rgba(148, 58, 255, .72) !important;
-  background: radial-gradient(circle at 50% 15%, rgba(129, 40, 255, .18), rgba(2,0,8,.96) 66%) !important;
-  box-shadow: inset 0 0 20px rgba(149, 44, 255, .08), 0 0 12px rgba(165, 48, 255, .08) !important;
+  min-height: 0 !important;
+  border-radius: clamp(10px, 1.8vw, 16px) !important;
+  border: 1px solid rgba(148,58,255,.70) !important;
+  background: radial-gradient(circle at 50% 15%, rgba(129,40,255,.16), rgba(2,0,8,.96) 66%) !important;
+  box-shadow: inset 0 0 16px rgba(149,44,255,.07), 0 0 10px rgba(165,48,255,.07) !important;
+  overflow: hidden !important;
 }
 
-/* Host seat: center hero card, visually much larger than regular seats. */
+/* Host is compact and centered rather than taking over the viewport. */
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) {
   grid-column: 3 / span 2 !important;
   grid-row: 2 / span 3 !important;
   z-index: 5 !important;
 }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) > button {
-  min-height: 300px !important;
-  border-radius: 28px !important;
-  border: 2px solid rgba(193, 62, 255, .92) !important;
-  background: radial-gradient(circle at 50% 35%, rgba(255, 0, 224, .24), transparent 45%), linear-gradient(145deg, rgba(31, 8, 51, .98), rgba(2,0,8,.98)) !important;
-  box-shadow: 0 0 28px rgba(185, 46, 255, .42), inset 0 0 38px rgba(215, 38, 255, .13) !important;
+  min-height: 0 !important;
+  border-radius: clamp(18px, 3vw, 28px) !important;
+  border: 2px solid rgba(193,62,255,.90) !important;
+  background: radial-gradient(circle at 50% 35%, rgba(255,0,224,.22), transparent 45%), linear-gradient(145deg, rgba(31,8,51,.98), rgba(2,0,8,.98)) !important;
+  box-shadow: 0 0 22px rgba(185,46,255,.32), inset 0 0 28px rgba(215,38,255,.10) !important;
 }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) > button::before {
   content: "HOST";
   position: absolute;
-  top: 9px;
+  top: 7px;
   left: 50%;
   transform: translateX(-50%);
-  padding: 3px 20px;
+  padding: 2px 13px;
   border-radius: 999px;
-  border: 1px solid rgba(241, 94, 255, .72);
+  border: 1px solid rgba(241,94,255,.68);
   background: rgba(10,0,20,.82);
   color: #fff;
-  font-size: 12px;
+  font-size: clamp(8px, 1.8vw, 12px);
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   z-index: 20;
 }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) img {
-  width: 145px !important;
-  height: 145px !important;
-  max-width: 48% !important;
+  width: clamp(62px, 12vw, 120px) !important;
+  height: clamp(62px, 12vw, 120px) !important;
+  max-width: 58% !important;
   object-fit: cover !important;
-  border-radius: 28px !important;
-  border: 2px solid rgba(236, 72, 255, .68) !important;
-  box-shadow: 0 0 24px rgba(217, 70, 239, .45) !important;
+  border-radius: 20px !important;
+  border: 2px solid rgba(236,72,255,.62) !important;
+  box-shadow: 0 0 20px rgba(217,70,239,.35) !important;
 }
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) .text-\[11px\] {
-  font-size: 15px !important;
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) .text-\\[11px\\] {
+  font-size: clamp(10px, 2.2vw, 15px) !important;
   font-weight: 900 !important;
 }
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) .text-\[10px\] {
-  font-size: 13px !important;
-}
 
-/* Seat positions around host: 1..20 exactly like the supplied reference. */
+/* 19 seats around the host. */
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(2) { grid-column: 1; grid-row: 2; }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(3) { grid-column: 1; grid-row: 3; }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(4) { grid-column: 1; grid-row: 4; }
@@ -189,104 +186,66 @@ body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > di
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(19) { grid-column: 2; grid-row: 5; }
 body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(20) { grid-column: 2; grid-row: 4; }
 
-/* Hide the old inline empty-seat spacing and make seat cards look like reference. */
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] .relative.flex.flex-col.items-center.gap-1\.5 {
+/* Seat content stays compact. */
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] .relative.flex.flex-col.items-center.gap-1\\.5 {
   gap: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
 }
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] .relative.flex.flex-col.items-center.gap-1\.5 > button {
-  border-radius: 16px !important;
-  border-color: rgba(147, 51, 234, .72) !important;
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] .relative.flex.flex-col.items-center.gap-1\\.5 > button {
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: clamp(10px, 1.8vw, 16px) !important;
+  border-color: rgba(147,51,234,.70) !important;
   background: linear-gradient(145deg, rgba(9,3,18,.96), rgba(2,0,8,.98)) !important;
-  box-shadow: inset 0 0 16px rgba(168, 85, 247, .07), 0 0 12px rgba(168, 85, 247, .08) !important;
+  box-shadow: inset 0 0 14px rgba(168,85,247,.06), 0 0 8px rgba(168,85,247,.06) !important;
 }
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] .relative.flex.flex-col.items-center.gap-1\.5 > button img {
-  border-radius: 12px !important;
-}
-
-/* Host controls immediately under the stage. */
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] + div,
-body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] ~ div .grid.h-9.w-9 {
-  border-color: rgba(188, 60, 255, .55) !important;
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] .relative.flex.flex-col.items-center.gap-1\\.5 > button img {
+  border-radius: 10px !important;
+  max-width: 68% !important;
+  max-height: 68% !important;
+  object-fit: cover !important;
 }
 
-/* Announcement/chat region. */
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.mt-4.w-full.max-w-md.px-3 {
-  width: min(820px, calc(100% - 24px)) !important;
-  margin-top: 8px !important;
-  padding: 0 !important;
+/* Controls directly beneath the stage. */
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] + div {
+  margin-top: 2px !important;
+  min-height: 54px !important;
 }
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.mt-2.flex.w-full.max-w-md.min-h-0.flex-1.flex-col.px-2 {
-  width: min(820px, calc(100% - 24px)) !important;
-  max-width: 820px !important;
-  flex: none !important;
-  min-height: 330px !important;
-  margin: 10px auto 0 !important;
-  padding: 0 !important;
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.65fr) minmax(230px, .75fr) !important;
-  gap: 12px !important;
-}
-/* Existing chat transcript inside this section */
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.mt-2.flex.w-full.max-w-md.min-h-0.flex-1.flex-col.px-2 > div > div:first-child {
-  width: 100% !important;
-  min-height: 330px !important;
-  border: 1px solid rgba(153, 48, 255, .42) !important;
-  border-radius: 22px !important;
-  background: rgba(3,0,10,.82) !important;
-  box-shadow: inset 0 0 30px rgba(153, 48, 255, .04) !important;
-  padding: 12px !important;
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] ~ div .grid.h-9.w-9,
+body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] ~ div .grid.h-10.w-10 {
+  border-color: rgba(188,60,255,.55) !important;
+  background: rgba(8,2,16,.82) !important;
 }
 
-/* Popularity widget becomes the compact right-side panel from the reference. */
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.mt-2.flex.w-full.max-w-md.min-h-0.flex-1.flex-col.px-2 > div > div:first-child + div {
-  width: 100% !important;
-  min-height: 330px !important;
-}
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col .h-\[300px\] {
-  height: 112px !important;
-  min-height: 112px !important;
-  border-radius: 18px !important;
-}
-
-/* Footer/composer dock: dark glass pill with neon controls. */
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.shrink-0.px-3.pt-2 {
-  width: min(820px, calc(100% - 24px)) !important;
-  max-width: 820px !important;
-  padding: 8px 0 calc(env(safe-area-inset-bottom) + 12px) !important;
-  margin-top: 8px !important;
-}
-body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.shrink-0.px-3.pt-2 > div.flex.items-center.gap-1\.5 {
-  min-height: 64px !important;
-  padding: 8px 12px !important;
-  border: 1px solid rgba(178, 51, 255, .45) !important;
-  border-radius: 22px !important;
-  background: rgba(5,1,12,.92) !important;
-  box-shadow: 0 0 24px rgba(172, 44, 255, .12), inset 0 0 18px rgba(172, 44, 255, .04) !important;
-}
+/* Chat/side cards retain their existing behavior but use the reference glass style. */
 body:has([data-jalwa-voice-room-redesign]) input,
 body:has([data-jalwa-voice-room-redesign]) textarea {
-  background: rgba(4,1,10,.88) !important;
-  border-color: rgba(177, 57, 255, .36) !important;
+  background: rgba(7,2,15,.88) !important;
+  border-color: rgba(168,85,247,.36) !important;
+}
+body:has([data-jalwa-voice-room-redesign]) button {
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Make the supplied 20-seat design responsive without collapsing the stage. */
-@media (max-width: 760px) {
+@media (max-width: 700px) {
+  body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > .max-w-md,
+  body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.w-full.max-w-md.px-3.pb-2,
   body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] {
-    width: calc(100vw - 12px) !important;
-    gap: 5px !important;
-    grid-template-rows: repeat(6, minmax(56px, 1fr)) !important;
+    width: calc(100vw - 10px) !important;
+  }
+  body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] {
+    height: clamp(300px, 43vh, 360px) !important;
+    gap: 4px !important;
   }
   body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div:nth-child(1) > button {
-    min-height: 220px !important;
-    border-radius: 20px !important;
+    border-radius: 18px !important;
   }
-  body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] > div > button {
-    min-height: 62px !important;
-    border-radius: 11px !important;
-  }
-  body:has([data-jalwa-voice-room-redesign]) > div.fixed.inset-0.flex.flex-col > div.relative.z-10.mx-auto.mt-2.flex.w-full.max-w-md.min-h-0.flex-1.flex-col.px-2 {
-    grid-template-columns: 1fr !important;
-    min-height: 0 !important;
+}
+
+@media (min-width: 1000px) {
+  body:has([data-jalwa-voice-room-redesign]) [style*="grid-template-columns"] {
+    height: 430px !important;
   }
 }
 `;
