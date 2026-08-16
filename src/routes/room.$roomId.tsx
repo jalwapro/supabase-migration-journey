@@ -33,6 +33,7 @@ import {
   Settings,
   Music,
   Flame,
+  Rocket,
   Plus,
   Minus,
   Crown,
@@ -2186,10 +2187,13 @@ function RoomPage() {
         className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
         style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
       >
-        {/* Header — neon voice-room redesign */}
-        <div className="flex items-center gap-2 rounded-2xl border border-fuchsia-400/20 bg-gradient-to-r from-fuchsia-950/30 via-violet-950/20 to-black/30 p-2 backdrop-blur-sm mb-2.5">
+        {/* Header — hi-fi neon voice-room redesign */}
+        <div
+          className="flex items-center gap-2 rounded-2xl border border-fuchsia-400/50 bg-gradient-to-r from-[#170a26] via-[#1c0a2e] to-[#170a26] p-2 backdrop-blur-sm mb-2.5"
+          style={{ boxShadow: "0 0 18px -6px rgba(232,60,220,0.5), inset 0 0 16px -10px rgba(56,189,248,0.4)" }}
+        >
           {/* Left: Room avatar + name + ID */}
-          <div className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-2xl bg-gradient-to-tr from-fuchsia-500 to-violet-600 ring-2 ring-fuchsia-400/50 shadow-[0_0_14px_-2px_rgba(232,60,220,0.6)] relative">
+          <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-2xl border border-fuchsia-300/60 bg-gradient-to-tr from-fuchsia-500 to-violet-700 ring-2 ring-fuchsia-400/50 shadow-[0_0_14px_-2px_rgba(232,60,220,0.85)] relative">
             {r.host?.avatar ? (
               <img
                 src={r.host.avatar}
@@ -2203,12 +2207,34 @@ function RoomPage() {
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1">
               <span className="truncate text-[14px] font-black text-white">{r.title}</span>
-              <Heart className="h-3 w-3 shrink-0 fill-pink-500 text-pink-500" />
+              <svg viewBox="0 0 20 20" className="h-3.5 w-3.5 shrink-0 fill-violet-400">
+                <path d="M10 0l2.2 1.6 2.7-.4 1 2.5 2.5 1-.4 2.7L20 10l-1.6 2.2.4 2.7-2.5 1-1 2.5-2.7-.4L10 20l-2.2-1.6-2.7.4-1-2.5-2.5-1 .4-2.7L0 10l1.6-2.2-.4-2.7 2.5-1 1-2.5 2.7.4z" />
+                <path d="M8.5 13.7 5 10.2l1.4-1.4 2.1 2.1 4.6-4.6 1.4 1.4z" fill="#170a26" />
+              </svg>
             </div>
             <div className="text-[10px] font-semibold text-white/50">
               ID: {roomCode}
             </div>
           </div>
+
+          {/* Decorative winged heart, like reference */}
+          <svg viewBox="0 0 120 60" className="hidden h-6 w-12 shrink-0 opacity-90 sm:block" aria-hidden>
+            <path
+              d="M60 44c-16-10-26-18-26-28 0-7 5-12 12-12 6 0 10 3 14 8 4-5 8-8 14-8 7 0 12 5 12 12 0 10-10 18-26 28z"
+              fill="none"
+              stroke="url(#roomHeaderHeartGrad)"
+              strokeWidth="2.5"
+            />
+            <path d="M26 20C14 16 4 18 0 24c6 2 14 2 20 0" fill="none" stroke="#38bdf8" strokeWidth="1.5" opacity="0.8" />
+            <path d="M94 20c12-4 22-2 26 4-6 2-14 2-20 0" fill="none" stroke="#e83cdc" strokeWidth="1.5" opacity="0.8" />
+            <defs>
+              <linearGradient id="roomHeaderHeartGrad" x1="0" x2="1">
+                <stop offset="0%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#e83cdc" />
+              </linearGradient>
+            </defs>
+          </svg>
+
           {/* Right: Icons */}
           <div className="flex shrink-0 items-center gap-1.5">
             <HeaderIcon
@@ -2254,7 +2280,7 @@ function RoomPage() {
 
         {/* Ranking + online row */}
         <div className="flex items-center gap-2">
-          <div className="flex flex-1 items-center gap-1.5 rounded-full border border-amber-400/25 bg-amber-500/10 px-3 py-1.5 text-xs font-semibold text-amber-200">
+          <div className="flex flex-1 items-center gap-1.5 rounded-full border border-amber-400/40 bg-gradient-to-r from-amber-500/15 to-transparent px-3 py-1.5 text-xs font-semibold text-amber-200 shadow-[0_0_10px_-4px_rgba(251,191,36,0.6)]">
             <Trophy className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">
               {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
@@ -2272,12 +2298,12 @@ function RoomPage() {
           )}
           <button
             onClick={openViewersSheet}
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold text-white/80"
+            className="flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/[0.06] px-3 py-1.5 text-xs font-semibold text-white/80"
             aria-label="View viewers"
           >
             <Users className="h-3.5 w-3.5" />
             {Math.max(r.viewer_count, members.length)}
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.9)]" />
           </button>
         </div>
       </div>
@@ -2789,7 +2815,8 @@ function RoomPage() {
                 className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-fuchsia-400/25 bg-gradient-to-b from-fuchsia-950/40 via-violet-950/30 to-black/50 px-2.5 pt-2.5 pb-2 shadow-[0_0_24px_-8px_rgba(232,60,220,0.5)]"
               >
                 <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-[40px]" />
-                <div className="z-10 flex w-full items-center justify-end">
+                <div className="z-10 flex w-full items-center justify-between">
+                  <Rocket className="h-3.5 w-3.5 text-fuchsia-300" />
                   {isRanked && (
                     <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1.5 py-0.5">
                       <span className="text-[8px] font-extrabold uppercase tracking-tight text-emerald-300">
@@ -2797,6 +2824,7 @@ function RoomPage() {
                       </span>
                     </div>
                   )}
+                  <Flame className="h-3.5 w-3.5 text-orange-400" />
                 </div>
                 <div className="z-10 mt-1 text-center">
                   <span
@@ -3059,12 +3087,13 @@ function RoomPage() {
                 onClick={() => void toggleMuteWithSync()}
                 aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
                 title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
-                className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 backdrop-blur-md transition-colors ${
+                style={{ clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" }}
+                className={`grid h-11 w-11 shrink-0 place-items-center border-2 backdrop-blur-md transition-colors ${
                   agora.micBlocked
                     ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
                     : agora.muted
                       ? "border-white/15 bg-black/50 text-white/60"
-                      : "border-fuchsia-400 bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white shadow-[0_0_16px_-2px_rgba(232,60,220,0.8)]"
+                      : "border-fuchsia-400 bg-gradient-to-br from-fuchsia-500 to-violet-700 text-white shadow-[0_0_18px_-2px_rgba(232,60,220,0.9)]"
                 }`}
               >
                 {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
