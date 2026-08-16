@@ -1,0 +1,50 @@
+name: Wire Jalwa private chat into VoiceRoom
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fix-jalwa-voice-room-wire.yml
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: github.event.head_commit.message == 'Wire Jalwa private chat into VoiceRoom'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch existing VoiceRoom
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/room.$roomId.tsx')
+          s = p.read_text()
+
+          a = 'import { ProfileSpotlight } from "@/components/room/ProfileSpotlight";'
+          if 'import { JalwaPrivateChat }' not in s:
+              assert s.count(a) == 1
+              s = s.replace(a, a + '\nimport { JalwaPrivateChat } from "@/components/room/JalwaPrivateChat";', 1)
+
+          a = '  const [chatComposerOpen, setChatComposerOpen] = useState(false);'
+          if 'const [privateChatOpen, setPrivateChatOpen]' not in s:
+              assert s.count(a) == 1
+              s = s.replace(a, a + '\n  const [privateChatOpen, setPrivateChatOpen] = useState(false);', 1)
+
+          a = '                onClick={() => setChatComposerOpen(true)}\n                aria-label="Chat"'
+          assert s.count(a) == 1
+          s = s.replace(a, '                onClick={() => setPrivateChatOpen(true)}\n                aria-label="Chat"', 1)
+
+          a = '      {/* ─── Chat composer popup — fixed to the viewport bottom so it sits'
+          assert s.count(a) == 1
+          s = s.replace(a, '      <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />\n\n' + a, 1)
+          p.write_text(s)
+          PY
+
+          rm -f .github/workflows/fix-jalwa-voice-room-wire.yml .github/workflows/install-jalwa-voice-room-ui.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Jalwa private chat to VoiceRoom"
+          git push
