@@ -85,6 +85,7 @@ import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
 import { ProfileSpotlight } from "@/components/room/ProfileSpotlight";
+import { JalwaPrivateChat } from "@/components/room/JalwaPrivateChat";
 
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
@@ -232,6 +233,7 @@ function RoomPage() {
 
   const [text, setText] = useState("");
   const [chatComposerOpen, setChatComposerOpen] = useState(false);
+  const [privateChatOpen, setPrivateChatOpen] = useState(false);
 
   // Freeze the whole page in place while the composer is open — otherwise
   // mobile browsers auto-scroll the nearest scrollable ancestor to keep the
@@ -3295,7 +3297,7 @@ function RoomPage() {
 
             <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-black/45 px-2 py-1.5 backdrop-blur-md">
               <button
-                onClick={() => setChatComposerOpen(true)}
+                onClick={() => setPrivateChatOpen(true)}
                 aria-label="Chat"
                 className="flex flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
               >
@@ -3315,6 +3317,8 @@ function RoomPage() {
           </div>
         </div>
       )}
+
+      <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 
       {/* ─── Chat composer popup — fixed to the viewport bottom so it sits
           above the keyboard instead of the whole room scrolling/resizing. ── */}
