@@ -2677,7 +2677,7 @@ function RoomPage() {
               // 8 seats: 4x2
               // 12 seats: 4x3
               // 16 seats: 4x4
-              // 20 seats: 5x4
+              // 20 seats: host-centered flanking layout (matches wireframe)
               let cols: number;
               let rows: number;
               if (sc === 4) {
@@ -2692,60 +2692,93 @@ function RoomPage() {
               } else if (sc === 16) {
                 cols = 4;
                 rows = 4;
-              } else { // 20 seats or more
+              } else { // 20 seats
                 cols = 5;
                 rows = 4;
               }
+
+              const renderSeatEl = (i: number) => {
+                const m = seatsByIndex.get(i);
+                const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
+                const isHostSeat = i === 0;
+                const fallbackHost =
+                  isHostSeat && !m
+                    ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
+                    : null;
+                return (
+                  <Seat
+                    key={i}
+                    index={i}
+                    member={m}
+                    remote={remote}
+                    isHostSeat={isHostSeat}
+                    cover={r.cover_url}
+                    fallbackUser={fallbackHost}
+                    onClaim={() => takeSeat(i)}
+                    likeCount={seatLikes[i] ?? 0}
+                    onLike={() => onSeatTap(i)}
+                    giftPoints={giftPoints[m?.user_id ?? (isHostSeat ? r.host_id : "")] ?? 0}
+                    recentlyGifted={!!recentGiftUsers[m?.user_id ?? (isHostSeat ? r.host_id : "")]}
+                    glowing={!!glowSeats[i]}
+                    locked={lockedSeats.includes(i)}
+                    isKing={!!(m && kingUserId === m.user_id)}
+                    onEmptyManage={
+                      isHost || isModerator
+                        ? () => setManageEmptySeat(i)
+                        : undefined
+                    }
+                    currentUserId={user?.id}
+                    localMuted={agora.muted}
+                    isSpeaking={m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false}
+                    onOpenGifters={
+                      m
+                        ? () =>
+                            setGifterListReceiver({
+                              id: m.user_id,
+                              name: m.user?.username ?? (isHostSeat ? (r.host?.username ?? "Host") : `Seat ${i + 1}`),
+                            })
+                        : undefined
+                    }
+                  />
+                );
+              };
+
+              if (sc === 20) {
+                // Host-centered flanking layout: seats 1-8 left, host center,
+                // seats 9-16 right, seats 17-19 as a bottom row — mirrors the
+                // wireframe's structure while keeping host as seat index 0.
+                const left = [1, 2, 3, 4, 5, 6, 7, 8];
+                const right = [9, 10, 11, 12, 13, 14, 15, 16];
+                const bottom = [17, 18, 19];
+                return (
+                  <div className="flex w-full min-w-0 flex-col gap-2.5">
+                    <div className="flex w-full min-w-0 items-stretch gap-2">
+                      <div className="grid min-w-0 flex-[2] grid-cols-2 content-start gap-2">
+                        {left.map(renderSeatEl)}
+                      </div>
+                      <div className="flex min-w-0 flex-[2.6] flex-col items-center justify-center gap-1.5">
+                        <span className="rounded-full border border-fuchsia-300/60 bg-black/60 px-3 py-0.5 text-[10px] font-bold uppercase tracking-[3px] text-fuchsia-200 shadow-[0_0_10px_-2px_rgba(232,60,220,0.8)]">
+                          Host
+                        </span>
+                        <div className="w-full">{renderSeatEl(0)}</div>
+                      </div>
+                      <div className="grid min-w-0 flex-[2] grid-cols-2 content-start gap-2">
+                        {right.map(renderSeatEl)}
+                      </div>
+                    </div>
+                    <div className="grid w-full min-w-0 grid-cols-3 gap-2">
+                      {bottom.map(renderSeatEl)}
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div
                   className="grid gap-3 pointer-events-auto"
                   style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
                 >
-                  {Array.from({ length: sc }).map((_, i) => {
-                    const m = seatsByIndex.get(i);
-                    const remote = m ? agora.remotes.get(uidFromUuid(m.user_id)) : undefined;
-                    const isHostSeat = i === 0;
-                    const fallbackHost =
-                      isHostSeat && !m
-                        ? { username: r.host?.username ?? null, avatar: r.host?.avatar ?? null, frame: r.host?.frame ?? null, vip_level: r.host?.vip_level ?? null }
-                        : null;
-                    return (
-                      <Seat
-                        key={i}
-                        index={i}
-                        member={m}
-                        remote={remote}
-                        isHostSeat={isHostSeat}
-                        cover={r.cover_url}
-                        fallbackUser={fallbackHost}
-                        onClaim={() => takeSeat(i)}
-                        likeCount={seatLikes[i] ?? 0}
-                        onLike={() => onSeatTap(i)}
-                        giftPoints={giftPoints[m?.user_id ?? (isHostSeat ? r.host_id : "")] ?? 0}
-                        recentlyGifted={!!recentGiftUsers[m?.user_id ?? (isHostSeat ? r.host_id : "")]}
-                        glowing={!!glowSeats[i]}
-                        locked={lockedSeats.includes(i)}
-                        isKing={!!(m && kingUserId === m.user_id)}
-                        onEmptyManage={
-                          isHost || isModerator
-                            ? () => setManageEmptySeat(i)
-                            : undefined
-                        }
-                        currentUserId={user?.id}
-                        localMuted={agora.muted}
-                        isSpeaking={m ? agora.speakingUids.has(uidFromUuid(m.user_id)) : false}
-                        onOpenGifters={
-                          m
-                            ? () =>
-                                setGifterListReceiver({
-                                  id: m.user_id,
-                                  name: m.user?.username ?? (isHostSeat ? (r.host?.username ?? "Host") : `Seat ${i + 1}`),
-                                })
-                            : undefined
-                        }
-                      />
-                    );
-                  })}
+                  {Array.from({ length: sc }).map((_, i) => renderSeatEl(i))}
                 </div>
               );
             })()}
