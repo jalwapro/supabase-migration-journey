@@ -105,21 +105,21 @@ export function SeatsGrid({ seats, onSeatTap, center }: SeatsGridProps) {
   const bottom = seats.slice(16, 20);
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-stretch gap-1.5 sm:gap-2">
-        <div className="grid flex-[2] grid-cols-2 content-start gap-1.5 sm:gap-2">
+    <div className="flex w-full min-w-0 flex-col gap-2">
+      <div className="flex w-full min-w-0 items-stretch gap-1.5 sm:gap-2">
+        <div className="grid min-w-0 flex-[2] grid-cols-2 content-start gap-1.5 sm:gap-2">
           {left.map((s) => (
             <Seat key={s.seatNumber} seat={s} onTap={onSeatTap} />
           ))}
         </div>
-        <div className="flex-[2.6]">{center}</div>
-        <div className="grid flex-[2] grid-cols-2 content-start gap-1.5 sm:gap-2">
+        <div className="min-w-0 flex-[2.6]">{center}</div>
+        <div className="grid min-w-0 flex-[2] grid-cols-2 content-start gap-1.5 sm:gap-2">
           {right.map((s) => (
             <Seat key={s.seatNumber} seat={s} onTap={onSeatTap} />
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
+      <div className="grid w-full min-w-0 grid-cols-4 gap-1.5 sm:gap-2">
         {bottom.map((s) => (
           <Seat key={s.seatNumber} seat={s} onTap={onSeatTap} />
         ))}

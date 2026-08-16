@@ -137,7 +137,7 @@ export function VoiceRoomScreen() {
   return (
     <div
       data-adaptive="neon"
-      className="relative flex min-h-screen w-full flex-col bg-[#08050c] text-white"
+      className="relative flex min-h-dvh w-full min-w-0 max-w-full flex-col overflow-x-hidden bg-[#08050c] text-white"
       style={{
         backgroundImage:
           "radial-gradient(60% 40% at 50% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(50% 30% at 100% 30%, rgba(232,60,220,0.12), transparent)",
@@ -155,8 +155,8 @@ export function VoiceRoomScreen() {
         onHome={() => toast("Home")}
       />
 
-      <div className="mt-2 flex flex-1 flex-col gap-3 px-2.5 pb-4 sm:px-3 lg:flex-row lg:items-start">
-        <div className="flex flex-1 flex-col gap-3">
+      <div className="mt-2 flex w-full min-w-0 flex-1 flex-col gap-3 px-2.5 pb-4 sm:px-3 lg:flex-row lg:items-start">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           <SeatsGrid seats={seats} onSeatTap={handleSeatTap} center={<HostCard host={host} onTap={() => openGiftsFor(host.name)} />} />
 
           <VoiceControls
@@ -169,17 +169,17 @@ export function VoiceRoomScreen() {
 
           <AnnouncementTicker items={announcements} />
 
-          <div className="flex flex-col gap-3 lg:hidden">
+          <div className="flex min-w-0 flex-col gap-3 lg:hidden">
             <ChatPanel messages={messages} onSend={handleSendMessage} />
             <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} />
           </div>
 
-          <div className="hidden lg:block">
+          <div className="hidden min-w-0 lg:block">
             <ChatPanel messages={messages} onSend={handleSendMessage} />
           </div>
         </div>
 
-        <div className="hidden w-72 shrink-0 lg:block">
+        <div className="hidden w-72 min-w-0 shrink-0 lg:block">
           <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} />
         </div>
       </div>
