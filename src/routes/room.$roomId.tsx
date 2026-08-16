@@ -45,9 +45,8 @@ import {
   VolumeX,
   RefreshCcw,
   MoreHorizontal,
+  MessageCircle,
   Grid3x3,
-  Inbox,
-  Armchair,
   Sparkles,
   FlipHorizontal,
   Swords,
@@ -2255,20 +2254,6 @@ function RoomPage() {
             >
               <Flag className="h-4 w-4" />
             </HeaderIcon>
-            <HeaderIcon
-              onClick={() => setSeatsSheetOpen(true)}
-              label="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </HeaderIcon>
-            <HeaderIcon
-              onClick={() => {
-                toast.success("Room bookmarked");
-              }}
-              label="Bookmark"
-            >
-              <Armchair className="h-4 w-4" />
-            </HeaderIcon>
             <HeaderIcon onClick={share} label="Share">
               <Share2 className="h-4 w-4" />
             </HeaderIcon>
@@ -2285,6 +2270,7 @@ function RoomPage() {
             <span className="truncate">
               {topGifters.length === 0 ? "No ranking yet" : `${topGifters[0].username || "Top"} (${(topGifters[0].total_coins / 1000).toFixed(1)}k 💎)`}
             </span>
+            <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-amber-200/70" />
           </div>
           {!isHost && (
             <button
@@ -2298,12 +2284,19 @@ function RoomPage() {
           )}
           <button
             onClick={openViewersSheet}
-            className="flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-400/30 bg-cyan-500/[0.06] px-3 py-1.5 text-xs font-semibold text-white/80"
+            className="flex shrink-0 items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/[0.06] px-3 py-1 text-white/80"
             aria-label="View viewers"
           >
-            <Users className="h-3.5 w-3.5" />
-            {Math.max(r.viewer_count, members.length)}
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.9)]" />
+            <Users className="h-4 w-4 shrink-0 text-cyan-200" />
+            <span className="flex flex-col items-center leading-none">
+              <span className="flex items-center gap-1 text-[12px] font-black text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.9)]" />
+                {Math.max(r.viewer_count, members.length)}
+              </span>
+              <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[1px] text-white/45">
+                Online
+              </span>
+            </span>
           </button>
         </div>
       </div>
@@ -2747,26 +2740,118 @@ function RoomPage() {
                 // Host-centered flanking layout: seats 1-8 left, host center,
                 // seats 9-16 right, seats 17-19 as a bottom row — mirrors the
                 // wireframe's structure while keeping host as seat index 0.
+                // Sketch layout: 8 seats left (2x4), big HOST card center with
+                // waveform + Speaker / Mic / Mute All row, 8 seats right (2x4),
+                // and a 4-across bottom row.
                 const left = [1, 2, 3, 4, 5, 6, 7, 8];
                 const right = [9, 10, 11, 12, 13, 14, 15, 16];
-                const bottom = [17, 18, 19];
+                const bottom = [17, 18, 19, 20].filter((i) => i < sc);
+                const hostSpeaking = (() => {
+                  const hm = seatsByIndex.get(0);
+                  return hm ? agora.speakingUids.has(uidFromUuid(hm.user_id)) : false;
+                })();
                 return (
                   <div className="flex w-full min-w-0 flex-col gap-2.5">
-                    <div className="flex w-full min-w-0 items-stretch gap-2">
+                    <div className="flex w-full min-w-0 items-start gap-2">
                       <div className="grid min-w-0 flex-[2] grid-cols-2 content-start gap-2">
                         {left.map(renderSeatEl)}
                       </div>
-                      <div className="flex min-w-0 flex-[2.6] flex-col items-center justify-center gap-1.5">
+
+                      <div className="flex min-w-0 flex-[2.6] flex-col items-center gap-2">
                         <span className="rounded-full border border-fuchsia-300/60 bg-black/60 px-3 py-0.5 text-[10px] font-bold uppercase tracking-[3px] text-fuchsia-200 shadow-[0_0_10px_-2px_rgba(232,60,220,0.8)]">
                           Host
                         </span>
                         <div className="w-full">{renderSeatEl(0)}</div>
+
+                        {/* Voice waveform under the host card */}
+                        <div className="flex h-6 w-full items-center justify-center gap-[2px] px-1">
+                          {Array.from({ length: 26 }).map((_, i) => {
+                            const base = 20 + Math.abs(Math.sin(i * 1.7)) * 80;
+                            return (
+                              <span
+                                key={i}
+                                className={`w-[2px] rounded-full ${
+                                  hostSpeaking
+                                    ? "bg-gradient-to-t from-fuchsia-500 to-cyan-300 animate-pulse"
+                                    : "bg-white/20"
+                                }`}
+                                style={{
+                                  height: `${hostSpeaking ? base : Math.max(12, base * 0.35)}%`,
+                                  animationDelay: `${i * 45}ms`,
+                                }}
+                              />
+                            );
+                          })}
+                        </div>
+
+                        {/* Speaker · Mic · Mute All — mirrors the sketch */}
+                        <div className="flex w-full items-end justify-center gap-3 pb-1">
+                          <button
+                            type="button"
+                            onClick={() => agora.speakerMuted && agora.toggleSpeaker()}
+                            aria-label="Speaker on"
+                            style={{ clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" }}
+                            className={`flex h-10 w-10 shrink-0 flex-col items-center justify-center border-2 backdrop-blur-md active:scale-95 ${
+                              agora.speakerMuted
+                                ? "border-white/15 bg-black/50 text-white/50"
+                                : "border-cyan-300/70 bg-cyan-500/20 text-cyan-100"
+                            }`}
+                          >
+                            <Volume2 className="h-4 w-4" />
+                          </button>
+
+                          <div className="flex flex-col items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => void toggleMuteWithSync()}
+                              aria-label={agora.muted ? "Unmute mic" : "Mute mic"}
+                              style={{ clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" }}
+                              className={`grid h-14 w-14 place-items-center border-2 backdrop-blur-md transition-colors active:scale-95 ${
+                                agora.micBlocked
+                                  ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
+                                  : agora.muted
+                                    ? "border-white/15 bg-black/50 text-white/60"
+                                    : "border-fuchsia-400 bg-gradient-to-br from-fuchsia-500 to-violet-700 text-white shadow-[0_0_22px_-2px_rgba(232,60,220,0.9)]"
+                              }`}
+                            >
+                              {agora.micBlocked || agora.muted ? (
+                                <MicOff className="h-6 w-6" />
+                              ) : (
+                                <Mic className="h-6 w-6" />
+                              )}
+                            </button>
+                            <span className="flex items-center gap-1 text-[9px] font-bold uppercase tracking-[1px] text-white/60">
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  agora.muted || agora.micBlocked ? "bg-white/30" : "bg-emerald-400"
+                                }`}
+                              />
+                              {agora.muted || agora.micBlocked ? "Mic Off" : "Mic On"}
+                            </span>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => !agora.speakerMuted && agora.toggleSpeaker()}
+                            aria-label="Mute all"
+                            style={{ clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" }}
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 backdrop-blur-md active:scale-95 ${
+                              agora.speakerMuted
+                                ? "border-rose-400/70 bg-rose-500/25 text-rose-100"
+                                : "border-white/15 bg-black/50 text-white/50"
+                            }`}
+                          >
+                            <VolumeX className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
+
                       <div className="grid min-w-0 flex-[2] grid-cols-2 content-start gap-2">
                         {right.map(renderSeatEl)}
                       </div>
                     </div>
-                    <div className="grid w-full min-w-0 grid-cols-3 gap-2">
+
+                    <div className="grid w-full min-w-0 grid-cols-4 gap-2">
                       {bottom.map(renderSeatEl)}
                     </div>
                   </div>
@@ -2786,37 +2871,28 @@ function RoomPage() {
         </div>
       )}
 
-      {/* ─── Live comments (directly under the seats) ───────────── */}
+      {/* ─── Announcement ticker (sketch: room events marquee) ──── */}
       {!isVideo && (
-        <div className="relative z-10 mx-auto mt-4 w-full max-w-md px-3">
-          {/* Chat tabs — neon underline */}
-          <div className="flex items-center gap-4 mb-2 border-b border-white/10 pb-1.5">
-            <button className="relative text-[12px] font-bold text-white">
-              All
-              <span className="absolute -bottom-1.5 left-0 h-0.5 w-full rounded-full bg-fuchsia-400" />
-            </button>
-            <button className="text-[12px] font-semibold text-white/40">Chat</button>
-          </div>
-          <div className="max-h-24 space-y-1 overflow-y-auto pr-1 scrollbar-hide">
-            {messages.length === 0 && <EmptyChat />}
-            {messages
-              .filter((m) => m.kind !== "emoji")
-              .slice(-6)
-              .map((m) => (
-                <ChatLine
-                  key={m.id}
-                  m={m}
-                  isMe={!!(user?.id && m.user_id === user.id)}
-                  myName={profile?.username ?? null}
-                  onReply={(msg) => {
-                    setReplyTo(msg);
-                    setChatComposerOpen(true);
-                  }}
-                  onRetry={(msg) => void send(msg)}
-                />
-
-              ))}
-            <div ref={chatEndRef} />
+        <div className="relative z-10 mx-auto mt-2 w-full max-w-md px-3">
+          <div className="flex items-center gap-2 overflow-hidden rounded-xl border border-white/10 bg-black/45 px-2.5 py-1.5 backdrop-blur-md">
+            <Radio className="h-4 w-4 shrink-0 text-fuchsia-300" />
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <div className="flex items-center gap-4 whitespace-nowrap text-[11px] font-semibold text-white/75">
+                {(() => {
+                  const items: string[] = [];
+                  if (latestEnter?.enterer_username) items.push(`${latestEnter.enterer_username} entered the room`);
+                  if (topGifters[0]?.username) items.push(`${topGifters[0].username} is top gifter 💎`);
+                  if (r.host?.username) items.push(`${r.host.username} is now Host 👑`);
+                  if (items.length === 0) items.push("Welcome to the room — be kind, have fun ✨");
+                  return items.map((t, i) => (
+                    <span key={i} className="flex items-center gap-3">
+                      <span className="truncate">{t}</span>
+                      {i < items.length - 1 && <span className="text-white/20">|</span>}
+                    </span>
+                  ));
+                })()}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -2840,75 +2916,122 @@ function RoomPage() {
 
       {/* ─── Chat + right widgets ───────────────────────────────── */}
       {!isVideo ? (
-        <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 flex-col px-2">
-          <div className="flex min-h-0 flex-1 justify-end gap-2">
-            <div className="flex w-[20%] min-h-0 flex-col gap-2">
-              <button
-                onClick={() => openMilestoneSheet()}
-                className="relative flex h-[300px] w-full flex-col items-stretch overflow-hidden rounded-[28px] border border-fuchsia-400/25 bg-gradient-to-b from-fuchsia-950/40 via-violet-950/30 to-black/50 px-2.5 pt-2.5 pb-2 shadow-[0_0_24px_-8px_rgba(232,60,220,0.5)]"
-              >
-                <div className="pointer-events-none absolute -right-10 -top-10 h-24 w-24 rounded-full bg-fuchsia-500/20 blur-[40px]" />
-                <div className="z-10 flex w-full items-center justify-between">
-                  <Rocket className="h-3.5 w-3.5 text-fuchsia-300" />
-                  {isRanked && (
-                    <div className="rounded-full border border-emerald-400/50 bg-emerald-500/20 px-1.5 py-0.5">
-                      <span className="text-[8px] font-extrabold uppercase tracking-tight text-emerald-300">
-                        Ranked
-                      </span>
-                    </div>
-                  )}
-                  <Flame className="h-3.5 w-3.5 text-orange-400" />
-                </div>
-                <div className="z-10 mt-1 text-center">
-                  <span
-                    className="text-3xl font-extrabold leading-none tabular-nums"
-                    style={{
-                      color: isRanked
-                        ? "#34d399"
-                        : `hsl(${Math.round((popularityPct / 100) * 120)} 90% 55%)`,
-                    }}
-                  >
-                    {popularityPct}%
-                  </span>
-                </div>
-                <div className="z-10 mt-2 mb-2 flex w-full flex-1 min-h-0 flex-col-reverse gap-[3px] px-3">
-                  {Array.from({ length: 12 }).map((_, i) => {
-                    const filledCount = Math.round((popularityPct / 100) * 12);
-                    const isFilled = i < filledCount;
-                    const rungPct = ((i + 1) / 12) * 100;
-                    const hue = isRanked ? 140 : Math.round((rungPct / 100) * 120);
-                    return (
-                      <div
-                        key={i}
-                        className="w-full flex-1 rounded-[3px]"
-                        style={{
-                          background: isFilled
-                            ? `linear-gradient(90deg, hsl(${hue} 95% 50%), hsl(${Math.min(hue + 20, 140)} 90% 60%))`
-                            : `linear-gradient(90deg, hsl(${hue} 70% 45% / 0.18), hsl(${Math.min(hue + 20, 140)} 70% 55% / 0.18))`,
-                          boxShadow: isFilled ? `0 0 8px hsl(${hue} 95% 55% / 0.5)` : undefined,
-                          border: isFilled ? undefined : `1px solid hsl(${hue} 70% 50% / 0.22)`,
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-                {isHost && isRanked && !r.milestone_awarded_at ? (
-                  <div className="z-10 flex w-full flex-col items-center justify-center rounded-xl bg-[color:var(--gold)] px-2 py-1.5 text-[color:#1a0b2e] shadow-[0_6px_16px_-4px_color-mix(in_oklab,var(--gold)_40%,transparent)]">
-                    <span className="text-[10px] font-extrabold uppercase leading-none tracking-tight">
-                      Award Milestone
-                    </span>
-                  </div>
-                ) : r.milestone_awarded_at ? (
-                  <div className="z-10 w-full rounded-xl border border-[color:var(--gold)]/40 bg-[color:var(--gold)]/10 py-1.5 text-center text-[9px] font-bold text-[color:var(--gold)]">
-                    Milestone awarded ✓
-                  </div>
-                ) : (
-                  <div className="z-10 w-full rounded-xl border border-white/10 bg-white/5 py-1.5 text-center text-[9px] font-semibold text-white/70">
-                    🏆 Top Gifters
-                  </div>
-                )}
-                <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-1 bg-[color:var(--secondary)]/10" />
+        <div className="relative z-10 mx-auto mt-2 flex w-full max-w-md min-h-0 flex-1 gap-2 px-3 pb-1">
+          {/* Chat card — All / Chat tabs + composer (sketch left panel) */}
+          <div className="flex min-h-0 flex-[1.9] flex-col overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md">
+            <div className="flex items-center gap-1 border-b border-white/10 px-2 pt-1.5">
+              <button className="relative rounded-t-lg px-3 py-1.5 text-[12px] font-bold text-white">
+                All
+                <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-fuchsia-400" />
               </button>
+              <button className="px-3 py-1.5 text-[12px] font-semibold text-white/40">Chat</button>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-1 overflow-y-auto px-2 py-2 scrollbar-hide">
+              {messages.length === 0 && <EmptyChat />}
+              {messages
+                .filter((m) => m.kind !== "emoji")
+                .slice(-40)
+                .map((m) => (
+                  <ChatLine
+                    key={m.id}
+                    m={m}
+                    isMe={!!(user?.id && m.user_id === user.id)}
+                    myName={profile?.username ?? null}
+                    onReply={(msg) => {
+                      setReplyTo(msg);
+                      setChatComposerOpen(true);
+                    }}
+                    onRetry={(msg) => void send(msg)}
+                  />
+                ))}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Composer row inside the chat card */}
+            <div className="flex items-center gap-2 border-t border-white/10 px-2 py-2">
+              <button
+                type="button"
+                onClick={() => setChatComposerOpen(true)}
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-left"
+              >
+                <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
+                  {text.trim() ? text : "Say something..."}
+                </span>
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!iAmOnSeat) {
+                      toast.error("Take a seat to react");
+                      return;
+                    }
+                    openEmojiSheet();
+                  }}
+                  className={`grid h-6 w-6 shrink-0 place-items-center rounded-full bg-white/10 text-white ${
+                    iAmOnSeat ? "" : "opacity-50"
+                  }`}
+                >
+                  <Smile className="h-3.5 w-3.5" />
+                </span>
+              </button>
+              <button
+                onClick={() => setChatComposerOpen(true)}
+                aria-label="Send message"
+                className="glow-4d grid h-9 w-9 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)]"
+              >
+                <Send className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right widget column (sketch: popularity, events, announcement) */}
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
+            <button
+              onClick={() => openMilestoneSheet()}
+              className="relative overflow-hidden rounded-2xl border border-fuchsia-400/25 bg-gradient-to-br from-fuchsia-950/40 via-violet-950/30 to-black/50 px-2.5 py-2 text-left shadow-[0_0_24px_-10px_rgba(232,60,220,0.6)]"
+            >
+              <div className="flex items-center gap-1.5">
+                <Rocket className="h-3.5 w-3.5 shrink-0 text-fuchsia-300" />
+                <span className="truncate text-[11px] font-bold text-white">Room Popularity</span>
+              </div>
+              <div className="mt-2 flex items-center gap-1.5">
+                <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${popularityPct}%`,
+                      background: isRanked
+                        ? "linear-gradient(90deg,#34d399,#a7f3d0)"
+                        : `linear-gradient(90deg, hsl(${Math.round((popularityPct / 100) * 120)} 95% 50%), hsl(${Math.min(Math.round((popularityPct / 100) * 120) + 25, 140)} 90% 62%))`,
+                    }}
+                  />
+                </div>
+                <span className="shrink-0 text-[10px] font-black tabular-nums text-white/80">
+                  {popularityPct}%
+                </span>
+              </div>
+            </button>
+
+            <div className="rounded-2xl border border-white/10 bg-black/40 px-2.5 py-2 backdrop-blur-md">
+              <div className="flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-300" />
+                <span className="truncate text-[11px] font-bold text-white">
+                  {isRanked ? "Ranked event live" : "No active events"}
+                </span>
+              </div>
+              <p className="mt-1 text-[10px] font-semibold text-white/40">
+                {isRanked ? "Keep gifting to climb" : "Check back later"}
+              </p>
+            </div>
+
+            <div className="min-h-0 flex-1 rounded-2xl border border-white/10 bg-black/40 px-2.5 py-2 backdrop-blur-md">
+              <div className="flex items-center gap-1.5">
+                <Radio className="h-3.5 w-3.5 shrink-0 text-cyan-300" />
+                <span className="truncate text-[11px] font-bold text-white">Room Announcement</span>
+              </div>
+              <p className="mt-1 line-clamp-3 text-[10px] font-semibold text-white/40">
+                {r.title ? `Welcome to ${r.title}` : "No announcement yet"}
+              </p>
             </div>
           </div>
         </div>
@@ -3114,95 +3237,81 @@ function RoomPage() {
           className="relative z-10 mx-auto w-full max-w-md shrink-0 px-3 pt-2"
           style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 10px)" }}
         >
-          <div className="flex items-center gap-1.5">
+          {/* Footer dock — sketch: Home · Gifts · Game | MIC | Chat · More */}
+          <div className="flex items-end gap-2">
+            <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-black/45 px-2 py-1.5 backdrop-blur-md">
+              <button
+                onClick={() => void navigate({ to: "/" })}
+                aria-label="Home"
+                className="flex flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+              >
+                <Home className="h-5 w-5" />
+                <span className="text-[10px] font-semibold">Home</span>
+              </button>
+              <button
+                onClick={() => setGiftOpen(true)}
+                aria-label="Send gift"
+                className="flex flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+              >
+                <Gift className="h-5 w-5" />
+                <span className="text-[10px] font-semibold">Gifts</span>
+              </button>
+              <button
+                onClick={() => setGamesSheetOpen(true)}
+                aria-label="Games"
+                className="flex flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+              >
+                <Gamepad2 className="h-5 w-5" />
+                <span className="text-[10px] font-semibold">Game</span>
+              </button>
+            </div>
+
             {shouldPublish ? (
               <button
                 onClick={() => void toggleMuteWithSync()}
                 aria-label={agora.micBlocked ? "Enable mic" : agora.muted ? "Unmute mic" : "Mute mic"}
                 title={agora.micBlocked ? agora.micError ?? "Mic blocked — tap to retry" : undefined}
                 style={{ clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" }}
-                className={`grid h-11 w-11 shrink-0 place-items-center border-2 backdrop-blur-md transition-colors ${
+                className={`grid h-14 w-14 shrink-0 place-items-center border-2 backdrop-blur-md transition-colors active:scale-95 ${
                   agora.micBlocked
                     ? "border-[color:var(--destructive)]/60 bg-[color:var(--destructive)]/25 text-white animate-pulse"
                     : agora.muted
                       ? "border-white/15 bg-black/50 text-white/60"
-                      : "border-fuchsia-400 bg-gradient-to-br from-fuchsia-500 to-violet-700 text-white shadow-[0_0_18px_-2px_rgba(232,60,220,0.9)]"
+                      : "border-fuchsia-400 bg-gradient-to-br from-fuchsia-500 to-violet-700 text-white shadow-[0_0_20px_-2px_rgba(232,60,220,0.9)]"
                 }`}
               >
-                {agora.micBlocked || agora.muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                {agora.micBlocked || agora.muted ? <MicOff className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
               </button>
-            ) : null}
-
-
-
-
-            <button
-              type="button"
-              onClick={() => setChatComposerOpen(true)}
-              className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-white/10 bg-black/50 pl-2.5 pr-1 py-1 backdrop-blur-md text-left"
-            >
-              <span
-                aria-label="Emoji reactions"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!iAmOnSeat) {
-                    toast.error("Take a seat to react");
-                    return;
-                  }
-                  openEmojiSheet();
-                }}
-                className={`grid h-6 w-6 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)]/60 to-[color:var(--secondary)]/60 text-white ${
-                  iAmOnSeat ? "" : "opacity-50"
-                }`}
+            ) : (
+              <button
+                onClick={() => void raiseHand()}
+                aria-label="Raise hand"
+                style={{ clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" }}
+                className="grid h-14 w-14 shrink-0 place-items-center border-2 border-violet-400/70 bg-black/50 text-lg backdrop-blur-md active:scale-95"
               >
-                <Smile className="h-3.5 w-3.5" />
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
-                {text.trim() ? text : "Type a message..."}
-              </span>
-              <span
-                aria-label="Send"
-                className="glow-4d grid h-7 w-7 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)]"
+                ✋
+              </button>
+            )}
+
+            <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-black/45 px-2 py-1.5 backdrop-blur-md">
+              <button
+                onClick={() => setChatComposerOpen(true)}
+                aria-label="Chat"
+                className="flex flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
               >
-                <Send className="h-3.5 w-3.5" />
-              </span>
-            </button>
-
-            <GiftAudioControl className="shrink-0" />
-            <button
-              onClick={() => setGiftOpen(true)}
-              aria-label="Send gift"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
-            >
-              <Gift className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Gift</span>
-            </button>
-            <button
-              onClick={() => setGamesSheetOpen(true)}
-              aria-label="Games"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
-            >
-              <Gamepad2 className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Games</span>
-            </button>
-            <button
-              onClick={() => setInviteOpen(true)}
-              aria-label="Messages"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
-            >
-              <Inbox className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">Msg</span>
-            </button>
-            <button
-              onClick={() => setVideoSettingsOpen(true)}
-              aria-label="More"
-              className="flex shrink-0 flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
-            >
-              <Grid3x3 className="h-5 w-5" />
-              <span className="text-[10px] font-semibold">More</span>
-            </button>
-
-
+                <MessageCircle className="h-5 w-5" />
+                <span className="text-[10px] font-semibold">Chat</span>
+              </button>
+              <GiftAudioControl className="shrink-0" />
+              <button
+                onClick={() => setVideoSettingsOpen(true)}
+                aria-label="More"
+                className="flex flex-col items-center gap-0.5 px-1 text-white/80 active:scale-95"
+              >
+                <Grid3x3 className="h-5 w-5" />
+                <span className="text-[10px] font-semibold">More</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
