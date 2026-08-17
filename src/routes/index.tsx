@@ -8,6 +8,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { MiniGamesFloatingButton } from "@/components/MiniGamesFloatingButton";
+import { SupportFloatingButton } from "@/components/SupportFloatingButton";
 import { formatCompact } from "@/lib/utils";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
@@ -683,6 +684,7 @@ function Home() {
       <BottomNav />
       <DailySpinPopup />
       <MiniGamesFloatingButton />
+      <SupportFloatingButton />
 
       <Dialog open={friendsOpen} onOpenChange={setFriendsOpen}>
         <DialogContent className="max-w-sm">
