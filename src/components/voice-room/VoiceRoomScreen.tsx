@@ -137,62 +137,74 @@ export function VoiceRoomScreen() {
   return (
     <div
       data-adaptive="neon"
+      data-live-component="voice.room"
+      data-live-component-instance="0"
       className="relative flex min-h-dvh w-full min-w-0 max-w-full flex-col overflow-x-hidden bg-[#08050c] text-white"
       style={{
         backgroundImage:
           "radial-gradient(60% 40% at 50% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(50% 30% at 100% 30%, rgba(232,60,220,0.12), transparent)",
       }}
     >
-      <RoomHeader
-        roomName="Love Is Life"
-        roomId="10069110"
-        onlineCount={128}
-        onReport={() => toast("Report submitted")}
-        onShare={() => toast("Share link copied")}
-        onExit={() => toast("Exiting room…")}
-        onRanking={() => toast("Opening ranking…")}
-        onOnline={() => toast("128 users online")}
-        onHome={() => toast("Home")}
-      />
+      <div data-live-component="voice.header" data-live-component-instance="0">
+        <RoomHeader
+          roomName="Love Is Life"
+          roomId="10069110"
+          onlineCount={128}
+          onReport={() => toast("Report submitted")}
+          onShare={() => toast("Share link copied")}
+          onExit={() => toast("Exiting room…")}
+          onRanking={() => toast("Opening ranking…")}
+          onOnline={() => toast("128 users online")}
+          onHome={() => toast("Home")}
+        />
+      </div>
 
-      <div className="mt-2 flex w-full min-w-0 flex-1 flex-col gap-3 px-2.5 pb-4 sm:px-3 lg:flex-row lg:items-start">
+      <div className="mt-2 flex w-full min-w-0 flex-1 flex-col gap-3 px-2.5 pb-4 sm:px-3 lg:flex-row lg:items-start" data-live-component="voice.content" data-live-component-instance="0">
         <div className="flex min-w-0 flex-1 flex-col gap-3">
-          <SeatsGrid seats={seats} onSeatTap={handleSeatTap} center={<HostCard host={host} onTap={() => openGiftsFor(host.name)} />} />
+          <div data-live-component="voice.seat-area" data-live-component-instance="0">
+            <SeatsGrid seats={seats} onSeatTap={handleSeatTap} center={<div data-live-component="voice.host" data-live-component-instance="0"><HostCard host={host} onTap={() => openGiftsFor(host.name)} /></div>} />
+          </div>
 
-          <VoiceControls
-            micOn={micOn}
-            speakerOn={speakerOn}
-            onToggleMic={() => setMicOn((v) => !v)}
-            onToggleSpeaker={() => setSpeakerOn((v) => !v)}
-            onMuteAll={() => toast("All seats muted")}
-          />
+          <div data-live-component="voice.controls" data-live-component-instance="0">
+            <VoiceControls
+              micOn={micOn}
+              speakerOn={speakerOn}
+              onToggleMic={() => setMicOn((v) => !v)}
+              onToggleSpeaker={() => setSpeakerOn((v) => !v)}
+              onMuteAll={() => toast("All seats muted")}
+            />
+          </div>
 
-          <AnnouncementTicker items={announcements} />
+          <div data-live-component="voice.announcement" data-live-component-instance="0">
+            <AnnouncementTicker items={announcements} />
+          </div>
 
           <div className="flex min-w-0 flex-col gap-3 lg:hidden">
-            <ChatPanel messages={messages} onSend={handleSendMessage} />
-            <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} />
+            <div data-live-component="voice.chat" data-live-component-instance="0"><ChatPanel messages={messages} onSend={handleSendMessage} /></div>
+            <div data-live-component="voice.side-panels" data-live-component-instance="0"><SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} /></div>
           </div>
 
           <div className="hidden min-w-0 lg:block">
-            <ChatPanel messages={messages} onSend={handleSendMessage} />
+            <div data-live-component="voice.chat" data-live-component-instance="0"><ChatPanel messages={messages} onSend={handleSendMessage} /></div>
           </div>
         </div>
 
         <div className="hidden w-72 min-w-0 shrink-0 lg:block">
-          <SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} />
+          <div data-live-component="voice.side-panels" data-live-component-instance="0"><SidePanels popularityPct={popularityPct} announcement={roomAnnouncement} banners={MOCK_EVENT_BANNERS} /></div>
         </div>
       </div>
 
-      <BottomNav
-        micOn={micOn}
-        onHome={() => toast("Home")}
-        onGifts={() => openGiftsFor(host.name)}
-        onGame={() => toast("Opening games…")}
-        onMic={() => setMicOn((v) => !v)}
-        onChat={() => toast("Chat focused")}
-        onProfile={() => toast("Opening profile…")}
-      />
+      <div data-live-component="voice.bottom-nav" data-live-component-instance="0">
+        <BottomNav
+          micOn={micOn}
+          onHome={() => toast("Home")}
+          onGifts={() => openGiftsFor(host.name)}
+          onGame={() => toast("Opening games…")}
+          onMic={() => setMicOn((v) => !v)}
+          onChat={() => toast("Chat focused")}
+          onProfile={() => toast("Opening profile…")}
+        />
+      </div>
 
       <VoiceRoomGiftSheet
         open={giftOpen}
