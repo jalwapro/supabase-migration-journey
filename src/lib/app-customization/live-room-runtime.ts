@@ -1,10 +1,12 @@
-import type { AppPageConfig } from "./schema";
+import type { AppComponentNode, AppPageConfig, ComponentStyle } from "./schema";
+import { flattenLiveRoomRegistry, type LiveRoomKind } from "./live-room-registry";
 
 type LiveKind = "voice-room" | "video-room" | "pk-battle";
 
 const selectors: Record<string, string[]> = {
-  "room-header": ["header", "[data-room-header]", "[class*='room-header']"],
-  "room-chat": ["[data-room-chat]", "textarea", "input[placeholder*='message' i]", "input[placeholder*='chat' i]"],
+  "room-header": ["[data-room-header]", "header", "[class*='room-header']"],
+  "room-info": ["[data-room-info]", "[class*='room-info']", "[class*='roomInfo']"],
+  "room-chat": ["[data-room-chat]", "[class*='room-chat']", "textarea", "input[placeholder*='message' i]", "input[placeholder*='chat' i]"],
   "room-gifts": ["[data-gift-notification]", "[class*='gift-notification']", "[class*='gift-animation']"],
   "room-announcement": ["[data-room-announcement]", "[class*='announcement']"],
   "room-controls": ["[data-room-controls]", "[class*='room-controls']"],
@@ -13,7 +15,7 @@ const selectors: Record<string, string[]> = {
   waveform: ["[data-waveform]", "canvas[class*='wave']", "[class*='waveform']"],
   "mic-control": ["button[aria-label*='microphone' i]", "button[aria-label*='mic' i]", "button[title*='microphone' i]", "button[title*='mic' i]"],
   "mute-all": ["button[aria-label*='mute all' i]", "button[title*='mute all' i]"],
-  "video-tile": ["video", "[data-video-tile]", "[class*='video-tile']", "[class*='participant-video']"],
+  "video-tile": ["[data-video-tile]", "video", "[class*='video-tile']", "[class*='participant-video']"],
   "video-grid": ["[data-video-grid]", "[class*='video-grid']"],
   "camera-control": ["button[aria-label*='camera' i]", "button[title*='camera' i]"],
   "active-speaker": ["[data-active-speaker]", "[class*='active-speaker']"],
@@ -24,6 +26,7 @@ const selectors: Record<string, string[]> = {
   "pk-timer": ["[data-pk-timer]", "[class*='pk-timer']", "[class*='battle-timer']"],
   "pk-progress": ["[data-pk-progress]", "[class*='pk-progress']", "[class*='battle-progress']"],
   "winner-overlay": ["[data-winner-overlay]", "[class*='winner-overlay']"],
+  "bottom-navigation": ["[data-bottom-nav]", "nav[aria-label*='bottom' i]", "[class*='bottom-nav']"],
 };
 
 function isRoomPath(pathname: string) { return pathname.includes("/room/") || pathname.includes("/pk/") || pathname.includes("/voice-room") || pathname.includes("/video-room"); }
@@ -31,35 +34,90 @@ function unique(elements: Element[]) { return Array.from(new Set(elements)); }
 function findElements(type: string) {
   const result: Element[] = [];
   for (const selector of selectors[type] ?? []) {
-    try { result.push(...Array.from(document.querySelectorAll(selector))); } catch { /* invalid selector is ignored safely */ }
+    try { result.push(...Array.from(document.querySelectorAll(selector))); } catch { /* safe fallback */ }
   }
   return unique(result);
 }
+function applyStyle(target: HTMLElement, style: ComponentStyle | undefined) {
+  if (!style) return;
+  const { spacing, shadows, gradient, ...css } = style as Record<string, unknown>;
+  for (const [key, value] of Object.entries(css)) {
+    if (value === undefined || value === null || key === "x" || key === "y") continue;
+    try { (target.style as unknown as Record<string, string | number>)[key] = value as string | number; } catch { /* invalid style ignored */ }
+  }
+  if (spacing && typeof spacing === "object") {
+    const box = spacing as Record<string, unknown>;
+    target.style.marginTop = box.top == null ? "" : String(box.top);
+    target.style.marginRight = box.right == null ? "" : String(box.right);
+    target.style.marginBottom = box.bottom == null ? "" : String(box.bottom);
+    target.style.marginLeft = box.left == null ? "" : String(box.left);
+  }
+  if (shadows?.length && !style.boxShadow) target.style.boxShadow = shadows.map((shadow) => `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread ?? 0}px ${shadow.color}`).join(", ");
+  if (gradient?.stops?.length && !style.background) {
+    const angle = gradient.angle ?? 180;
+    target.style.background = `${gradient.type}-gradient(${angle}deg, ${gradient.stops.map((stop) => `${stop.color} ${stop.position}%`).join(", ")})`;
+  }
+}
+
+function applyNode(target: Element, node: AppComponentNode) {
+  if (!(target instanceof HTMLElement)) return;
+  target.setAttribute("data-jalwa-live-node", node.id);
+  target.setAttribute("data-jalwa-live-component", String(node.props?.componentType ?? ""));
+  target.setAttribute("data-jalwa-live-component-id", String(node.props?.componentId ?? ""));
+  target.toggleAttribute("data-jalwa-live-hidden", node.visible === false);
+  if (node.visible === false) target.style.display = "none";
+  else applyStyle(target, node.style);
+}
+
+function componentKind(pathname: string): LiveKind { return pathname.includes("/pk/") ? "pk-battle" : pathname.includes("video") ? "video-room" : "voice-room"; }
+function registryKind(kind: LiveKind): LiveRoomKind { return kind === "voice-room" ? "voice" : kind === "video-room" ? "video" : "pk"; }
 
 export function bindLiveRoomComponents(pathname: string, config?: AppPageConfig) {
   if (typeof document === "undefined" || !isRoomPath(pathname)) return () => undefined;
-  const kind: LiveKind = pathname.includes("/pk/") ? "pk-battle" : pathname.includes("video") ? "video-room" : "voice-room";
+  const kind = componentKind(pathname);
   const root = document.querySelector("main") ?? document.body;
   root.setAttribute("data-jalwa-live-room", kind);
-  const tagged: Element[] = [];
-  const counters = new Map<string, number>();
-  for (const node of config?.sections ?? []) {
-    const type = String(node.props?.componentType ?? "");
-    if (!type || (node.props?.roomType && node.props.roomType !== kind)) continue;
-    const matches = findElements(type);
-    const index = counters.get(type) ?? 0;
-    const target = matches[index] ?? matches[0];
-    counters.set(type, index + 1);
-    if (!target) continue;
-    target.setAttribute("data-jalwa-live-component", type);
-    target.setAttribute("data-jalwa-live-node", node.id);
-    tagged.push(target);
-  }
+  const registry = new Map(flattenLiveRoomRegistry(registryKind(kind)).slice(1).map((item) => [item.id, item]));
+  const studioPreview = new URLSearchParams(window.location.search).get("studioPreview") === "1";
+  const bound = new WeakMap<Element, string>();
+  const listeners = new Map<Element, EventListener>();
+  let stopped = false;
 
-  const observer = new MutationObserver(() => {
-    if (tagged.length === 0) return;
-    for (const element of tagged) element.setAttribute("data-jalwa-live-bound", "true");
-  });
+  const bind = () => {
+    if (stopped) return;
+    const nodes = (config?.sections ?? []).filter((node) => node.props?.roomType === kind);
+    const counters = new Map<string, number>();
+    for (const node of nodes) {
+      const componentId = String(node.props?.componentId ?? "");
+      const component = registry.get(componentId);
+      const type = String(node.props?.componentType ?? component?.runtimeType ?? component?.type ?? "");
+      if (!type) continue;
+      const matches = findElements(type);
+      const index = Number(node.props?.instanceIndex ?? counters.get(componentId) ?? 0);
+      counters.set(componentId, index + 1);
+      const target = matches[index] ?? matches[0];
+      if (!target) continue;
+      applyNode(target, node);
+      if (studioPreview && bound.get(target) !== node.id) {
+        const click: EventListener = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          window.parent.postMessage({ type: "jalwa-live-select", nodeId: node.id, componentId }, "*");
+        };
+        target.addEventListener("click", click, true);
+        bound.set(target, node.id);
+        listeners.set(target, click);
+      }
+    }
+  };
+
+  bind();
+  const observer = new MutationObserver(() => bind());
   observer.observe(root, { childList: true, subtree: true });
-  return () => observer.disconnect();
+  return () => {
+    stopped = true;
+    observer.disconnect();
+    listeners.forEach((listener, target) => target.removeEventListener("click", listener, true));
+    listeners.clear();
+  };
 }
