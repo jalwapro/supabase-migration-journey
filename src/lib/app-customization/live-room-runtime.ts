@@ -81,11 +81,12 @@ export function bindLiveRoomComponents(pathname: string, config?: AppPageConfig)
   const studioPreview = new URLSearchParams(window.location.search).get("studioPreview") === "1";
   const bound = new WeakMap<Element, string>();
   const listeners = new Map<Element, EventListener>();
+  let currentConfig = config;
   let stopped = false;
 
   const bind = () => {
     if (stopped) return;
-    const nodes = (config?.sections ?? []).filter((node) => node.props?.roomType === kind);
+    const nodes = (currentConfig?.sections ?? []).filter((node) => node.props?.roomType === kind);
     const counters = new Map<string, number>();
     for (const node of nodes) {
       const componentId = String(node.props?.componentId ?? "");
@@ -111,12 +112,20 @@ export function bindLiveRoomComponents(pathname: string, config?: AppPageConfig)
     }
   };
 
+  const studioMessage = (event: MessageEvent) => {
+    if (!studioPreview || event.data?.type !== "jalwa-live-studio-config" || !event.data.config) return;
+    currentConfig = event.data.config as AppPageConfig;
+    bind();
+  };
+  if (studioPreview) window.addEventListener("message", studioMessage);
+
   bind();
   const observer = new MutationObserver(() => bind());
   observer.observe(root, { childList: true, subtree: true });
   return () => {
     stopped = true;
     observer.disconnect();
+    if (studioPreview) window.removeEventListener("message", studioMessage);
     listeners.forEach((listener, target) => target.removeEventListener("click", listener, true));
     listeners.clear();
   };
