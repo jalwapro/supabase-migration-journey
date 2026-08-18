@@ -1,39 +1,32 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Trophy, Plus, MessageCircle, User } from "lucide-react";
-import { type ComponentType } from "react";
+import { Home, Trophy, Plus, MessageCircle, User, Compass, Radio, Wallet, Gift, Search, Bell, Settings, Users, Sparkles, CircleHelp } from "lucide-react";
+import { type ComponentType, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { DEFAULT_NAVIGATION, loadPublishedNavigation } from "@/lib/app-customization/navigation-runtime";
+import type { NavigationItemConfig } from "@/lib/app-customization/navigation-manager";
 
-type Tab = {
-  to: string;
-  label: string;
-  Icon: ComponentType<{ className?: string }>;
-  primary?: boolean;
+type IconComponent = ComponentType<{ className?: string }>;
+
+const ICONS: Record<string, IconComponent> = {
+  Home, Trophy, Plus, MessageCircle, User, Compass, Radio, Wallet, Gift, Search, Bell, Settings, Users, Sparkles, CircleHelp,
 };
 
-const TABS: Tab[] = [
-  { to: "/", label: "Home", Icon: Home },
-  { to: "/rank", label: "Rank", Icon: Trophy },
-  { to: "/create-room", label: "", Icon: Plus, primary: true },
-  { to: "/messages", label: "Chat", Icon: MessageCircle },
-  { to: "/me", label: "Me", Icon: User },
-];
+function getIcon(name?: string, active = false): IconComponent {
+  if (active && name) return ICONS[name] ?? ICONS["Home"];
+  return name ? ICONS[name] ?? ICONS["Home"] : ICONS["Home"];
+}
 
 function useUnreadDm() {
   const { user } = useAuth();
   const uid = user?.id ?? null;
-
-
-
-  const query = useQuery({
+  return useQuery({
     queryKey: ["dm", "unread-badge", uid],
     enabled: !!uid,
     queryFn: async () => {
       if (!uid) return 0;
-      // NOTE: no `deleted_at` filter — if the column is missing in some
-      // deployments the whole query 400s and the badge silently stays 0.
       const { count, error } = await supabase
         .from("direct_messages")
         .select("id", { count: "exact", head: true })
@@ -49,18 +42,37 @@ function useUnreadDm() {
     refetchInterval: 30_000,
     staleTime: 5_000,
   });
-
-  // Realtime for the unread badge is delivered by the app-wide
-  // `useGlobalRealtime()` bridge (dm-received channel invalidates
-  // `["dm-unread", ...]`). No per-nav channel needed (C6 dedupe).
-
-
-  return query;
 }
 
+/**
+ * Production navigation runtime.
+ *
+ * The original hard-coded navigation remains the safe fallback. When Admin
+ * Studio publishes a navigation configuration for the home page, this
+ * component consumes it without changing the underlying routes/actions.
+ */
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { data: unread = 0 } = useUnreadDm();
+  const [tabs, setTabs] = useState<NavigationItemConfig[]>(DEFAULT_NAVIGATION);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadPublishedNavigation().then((items) => {
+      if (!cancelled) setTabs(items.length ? items : DEFAULT_NAVIGATION);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const reload = () => void loadPublishedNavigation().then((items) => setTabs(items.length ? items : DEFAULT_NAVIGATION));
+    window.addEventListener("focus", reload);
+    window.addEventListener("jalwa:app-studio-published", reload);
+    return () => {
+      window.removeEventListener("focus", reload);
+      window.removeEventListener("jalwa:app-studio-published", reload);
+    };
+  }, []);
 
   return (
     <nav
@@ -69,33 +81,38 @@ export function BottomNav() {
       aria-label="Primary"
     >
       <ul className="mx-auto grid max-w-md grid-cols-5 items-end px-2 pt-1.5 pb-1.5">
-        {TABS.map(({ to, label, Icon, primary }) => {
-          const active =
-            to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
+        {tabs.slice(0, 5).map((item) => {
+          const to = item.route ?? "/";
+          const active = to === "/" ? pathname === "/" : pathname === to || pathname.startsWith(`${to}/`);
+          const primary = item.action?.type === "primary" || item.id === "create-room";
+          const Icon = getIcon(active ? (item.activeIcon ?? item.icon) : item.icon, active);
+          const showBadge = to === "/messages" && unread > 0;
+          const iconSize = item.iconSize ?? (primary ? 24 : 20);
+          const labelSize = item.labelSize ?? 10;
+
           if (primary) {
             return (
-              <li key={to} className="flex justify-center">
+              <li key={item.id} className="flex justify-center">
                 <Link
                   to={to}
-                  aria-label={label}
+                  aria-label={item.label || item.id}
                   className="grid h-14 w-14 -translate-y-3 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground shadow-[0_10px_30px_-10px_color-mix(in_oklab,var(--primary)_60%,transparent)] active:scale-95 transition"
                 >
-                  <Icon className="h-6 w-6" />
+                  <Icon style={{ width: iconSize, height: iconSize }} />
                 </Link>
               </li>
             );
           }
-          const showBadge = to === "/messages" && unread > 0;
+
           return (
-            <li key={to}>
+            <li key={item.id}>
               <Link
                 to={to}
-                className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] font-medium transition-colors ${
-                  active ? "text-[color:var(--primary)]" : "text-muted-foreground"
-                }`}
+                className="flex flex-col items-center gap-0.5 rounded-xl py-1.5 font-medium transition-colors"
+                style={{ color: active ? (item.activeColor ?? "var(--primary)") : (item.color ?? "var(--muted-foreground)") }}
               >
                 <span className="relative">
-                  <Icon className="h-5 w-5" />
+                  <Icon style={{ width: iconSize, height: iconSize }} />
                   {showBadge && (
                     <span
                       aria-label={`${unread} unread`}
@@ -105,7 +122,7 @@ export function BottomNav() {
                     </span>
                   )}
                 </span>
-                <span>{label}</span>
+                <span style={{ fontSize: labelSize }}>{item.label}</span>
               </Link>
             </li>
           );
