@@ -1,246 +1,111 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePageConfig, type AppPageConfig, type AppPageKey, type ComponentStyle, type StudioRuntimeOverride } from "@/lib/app-customization/schema";
+import { snapPosition, snapSize } from "@/lib/app-customization/studio-snap";
 import { toast } from "sonner";
 
-const EDITABLE_PROPERTIES = ["background", "color", "fontSize", "fontWeight", "borderRadius", "padding", "margin", "opacity", "display", "width", "height", "translate"] as const;
-type EditableProperty = typeof EDITABLE_PROPERTIES[number];
-type SelectedElement = { selector: string; tag: string; text: string; style: ComponentStyle };
-type Interaction = { mode: "drag" | "resize"; startX: number; startY: number; startWidth: number; startHeight: number; startTranslateX: number; startTranslateY: number };
+const EDITABLE = ["background", "color", "fontSize", "fontWeight", "borderRadius", "padding", "margin", "opacity", "display", "width", "height", "translate"] as const;
+type EditableProperty = typeof EDITABLE[number];
+type Interaction = { mode: "drag" | "resize"; startX: number; startY: number; startWidth: number; startHeight: number; startTx: number; startTy: number };
+type Selected = { selector: string; tag: string; text: string };
 
-function pageFromPath(pathname: string): AppPageKey | null {
-  if (pathname === "/") return "home";
-  if (pathname === "/rooms") return "rooms";
-  if (pathname === "/wallet") return "wallet";
-  if (pathname === "/messages") return "messages";
-  if (pathname === "/rank") return "ranking";
-  if (pathname === "/gifts") return "gifts";
-  if (pathname === "/notifications") return "notifications";
-  if (pathname === "/settings") return "settings";
-  if (pathname === "/me" || pathname.startsWith("/profile/")) return "profile";
-  if (pathname === "/recharge") return "recharge";
-  if (pathname === "/recharge-history") return "recharge-history";
-  if (pathname === "/withdraw") return "withdraw";
-  if (pathname === "/gallery") return "gallery";
-  if (pathname === "/visitors") return "visitors";
-  if (pathname === "/games") return "games";
-  if (pathname === "/privacy") return "privacy";
-  if (pathname.startsWith("/room/")) return "voice-room";
-  if (pathname.startsWith("/pk/")) return "pk-battle";
-  return null;
+function pageFromPath(path: string): AppPageKey | null {
+  if (path === "/") return "home"; if (path === "/rooms") return "rooms"; if (path === "/wallet") return "wallet"; if (path === "/messages") return "messages"; if (path === "/rank") return "ranking"; if (path === "/gifts") return "gifts"; if (path === "/notifications") return "notifications"; if (path === "/settings") return "settings"; if (path === "/me" || path.startsWith("/profile/")) return "profile"; if (path === "/recharge") return "recharge"; if (path === "/recharge-history") return "recharge-history"; if (path === "/withdraw") return "withdraw"; if (path === "/gallery") return "gallery"; if (path === "/visitors") return "visitors"; if (path === "/games") return "games"; if (path === "/privacy") return "privacy"; if (path.startsWith("/room/")) return "voice-room"; if (path.startsWith("/pk/")) return "pk-battle"; return null;
 }
 
-function selectorFor(element: Element): string {
-  const html = element as HTMLElement;
+function selectorFor(el: Element) {
+  const html = el as HTMLElement;
   if (html.id) return `#${CSS.escape(html.id)}`;
-  const parts: string[] = [];
-  let current: Element | null = element;
-  while (current && current !== document.body && current.parentElement) {
-    const parent = current.parentElement;
-    const siblings = Array.from(parent.children).filter((child) => child.tagName === current!.tagName);
-    const index = siblings.indexOf(current) + 1;
-    parts.unshift(`${current.tagName.toLowerCase()}:nth-of-type(${index})`);
-    if (parent.id) { parts.unshift(`#${CSS.escape(parent.id)}`); break; }
-    current = parent;
+  const parts: string[] = []; let cur: Element | null = el;
+  while (cur && cur !== document.body && cur.parentElement) {
+    const parent = cur.parentElement; const siblings = Array.from(parent.children).filter((x) => x.tagName === cur!.tagName); const index = siblings.indexOf(cur) + 1;
+    parts.unshift(`${cur.tagName.toLowerCase()}:nth-of-type(${index})`); if (parent.id) { parts.unshift(`#${CSS.escape(parent.id)}`); break; } cur = parent;
   }
   return parts.join(" > ") || "body";
 }
 
-function computedStyleOf(element: Element): ComponentStyle {
-  const style = window.getComputedStyle(element);
-  const translate = style.translate && style.translate !== "none" ? style.translate : "0px 0px";
-  return { background: style.backgroundColor, color: style.color, fontSize: style.fontSize, fontWeight: style.fontWeight, borderRadius: style.borderRadius, padding: style.padding, margin: style.margin, opacity: Number(style.opacity), display: style.display, width: style.width, height: style.height, translate };
-}
-
-function parseTranslate(value: unknown): [number, number] {
-  if (typeof value !== "string") return [0, 0];
-  const nums = value.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
-  return [nums[0] ?? 0, nums[1] ?? 0];
-}
-
-function applyOverride(override: StudioRuntimeOverride) {
-  let nodes: NodeListOf<Element>;
-  try { nodes = document.querySelectorAll(override.selector); } catch { return; }
-  nodes.forEach((node) => {
-    const element = node as HTMLElement;
-    for (const [key, value] of Object.entries(override.style ?? {})) {
-      if (!EDITABLE_PROPERTIES.includes(key as EditableProperty)) continue;
-      const cssKey = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
-      if (value === undefined || value === null || value === "") element.style.removeProperty(cssKey);
-      else element.style.setProperty(cssKey, String(value), "important");
-    }
-    if (override.visible === false) element.style.setProperty("display", "none", "important");
-  });
-}
-
+function parseTranslate(value: unknown): [number, number] { const n = typeof value === "string" ? value.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [] : []; return [n[0] ?? 0, n[1] ?? 0]; }
+function computedStyle(el: Element): ComponentStyle { const s = getComputedStyle(el); return { background: s.backgroundColor, color: s.color, fontSize: s.fontSize, fontWeight: s.fontWeight, borderRadius: s.borderRadius, padding: s.padding, margin: s.margin, opacity: Number(s.opacity), display: s.display, width: s.width, height: s.height, translate: s.translate && s.translate !== "none" ? s.translate : "0px 0px" }; }
+function applyOverride(o: StudioRuntimeOverride) { let nodes: NodeListOf<Element>; try { nodes = document.querySelectorAll(o.selector); } catch { return; } nodes.forEach((node) => { const el = node as HTMLElement; for (const [key, value] of Object.entries(o.style ?? {})) { if (!EDITABLE.includes(key as EditableProperty)) continue; const css = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`); if (value == null || value === "") el.style.removeProperty(css); else el.style.setProperty(css, String(value), "important"); } if (o.visible === false) el.style.setProperty("display", "none", "important"); }); }
 function applyAll(config: AppPageConfig) { (config.runtimeOverrides ?? []).forEach(applyOverride); }
 
 export function StudioPreviewEditor() {
   const page = useMemo(() => pageFromPath(window.location.pathname), []);
   const [config, setConfig] = useState<AppPageConfig | null>(null);
-  const [selected, setSelected] = useState<SelectedElement | null>(null);
+  const [selected, setSelected] = useState<Selected | null>(null);
   const [draft, setDraft] = useState<ComponentStyle>({});
+  const [interaction, setInteraction] = useState<Interaction | null>(null);
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [interaction, setInteraction] = useState<Interaction | null>(null);
-  const [handlePosition, setHandlePosition] = useState({ left: -100, top: -100 });
+  const [grid, setGrid] = useState(8);
+  const [snapOn, setSnapOn] = useState(true);
+  const [guides, setGuides] = useState(true);
+  const [handle, setHandle] = useState({ left: -100, top: -100 });
   const selectedRef = useRef<HTMLElement | null>(null);
+  const history = useRef<ComponentStyle[]>([]);
+  const redo = useRef<ComponentStyle[]>([]);
 
-  const loadConfig = useCallback(async () => {
+  const load = useCallback(async () => {
     if (!page) return;
-    const { data: pageRow } = await supabase.from("app_customization_pages").select("id").eq("page_key", page).eq("is_enabled", true).maybeSingle();
-    if (!pageRow) return;
-    const { data: draftRow } = await supabase.from("app_customization_versions").select("config").eq("page_id", pageRow.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
-    const next = normalizePageConfig(draftRow?.config, page);
-    setConfig(next);
-    applyAll(next);
+    const { data: p } = await supabase.from("app_customization_pages").select("id").eq("page_key", page).eq("is_enabled", true).maybeSingle();
+    if (!p) return;
+    const { data } = await supabase.from("app_customization_versions").select("config").eq("page_id", p.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
+    const next = normalizePageConfig(data?.config, page); setConfig(next); applyAll(next);
   }, [page]);
+  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (!config) return; applyAll(config); const observer = new MutationObserver(() => applyAll(config)); observer.observe(document.body, { childList: true, subtree: true }); return () => observer.disconnect(); }, [config]);
 
-  useEffect(() => { void loadConfig(); }, [loadConfig]);
-  useEffect(() => {
-    if (!config) return;
-    applyAll(config);
-    const observer = new MutationObserver(() => applyAll(config));
-    observer.observe(document.body, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [config]);
-
-  const refreshHandle = useCallback(() => {
-    const node = selectedRef.current;
-    if (!node || !selected) return setHandlePosition({ left: -100, top: -100 });
-    const rect = node.getBoundingClientRect();
-    setHandlePosition({ left: Math.max(4, rect.right - 6), top: Math.max(4, rect.bottom - 6) });
-  }, [selected]);
-
+  const refreshHandle = useCallback(() => { const el = selectedRef.current; if (!el) return setHandle({ left: -100, top: -100 }); const r = el.getBoundingClientRect(); setHandle({ left: Math.max(4, r.right - 6), top: Math.max(4, r.bottom - 6) }); }, []);
   useEffect(() => { refreshHandle(); window.addEventListener("resize", refreshHandle); window.addEventListener("scroll", refreshHandle, true); return () => { window.removeEventListener("resize", refreshHandle); window.removeEventListener("scroll", refreshHandle, true); }; }, [refreshHandle, draft]);
 
   useEffect(() => {
-    const onClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (!target || target.closest("[data-studio-editor-ui]") || !document.body.contains(target)) return;
-      if (["HTML", "BODY", "SCRIPT", "STYLE", "LINK", "IFRAME"].includes(target.tagName)) return;
-      event.preventDefault(); event.stopPropagation();
-      const selector = selectorFor(target);
-      selectedRef.current = target;
-      const current = (config?.runtimeOverrides ?? []).find((item) => item.selector === selector);
-      const style = current?.style ?? computedStyleOf(target);
-      setSelected({ selector, tag: target.tagName.toLowerCase(), text: (target.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 90), style });
-      setDraft(style);
-      requestAnimationFrame(refreshHandle);
-    };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    const click = (event: MouseEvent) => { const target = event.target as HTMLElement | null; if (!target || target.closest("[data-studio-editor-ui]") || ["HTML", "BODY", "SCRIPT", "STYLE", "LINK", "IFRAME"].includes(target.tagName)) return; event.preventDefault(); event.stopPropagation(); const selector = selectorFor(target); selectedRef.current = target; const existing = (config?.runtimeOverrides ?? []).find((x) => x.selector === selector); setSelected({ selector, tag: target.tagName.toLowerCase(), text: (target.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 90) }); setDraft(existing?.style ?? computedStyle(target)); history.current = []; redo.current = []; requestAnimationFrame(refreshHandle); };
+    document.addEventListener("click", click, true); return () => document.removeEventListener("click", click, true);
   }, [config, refreshHandle]);
 
+  const setStyle = useCallback((key: EditableProperty, value: string, record = true) => { setDraft((prev) => { if (record) { history.current.push(prev); if (history.current.length > 100) history.current.shift(); redo.current = []; } return { ...prev, [key]: value }; }); }, []);
+  const undo = () => { const prev = history.current.pop(); if (!prev) return; setDraft((cur) => { redo.current.push(cur); return prev; }); };
+  const redoNow = () => { const next = redo.current.pop(); if (!next) return; setDraft((cur) => { history.current.push(cur); return next; }); };
+
   useEffect(() => {
-    const onPointerMove = (event: PointerEvent) => {
-      if (!interaction || !selectedRef.current) return;
-      const dx = event.clientX - interaction.startX;
-      const dy = event.clientY - interaction.startY;
-      if (interaction.mode === "drag") {
-        setStyleDirect("translate", `${Math.round(interaction.startTranslateX + dx)}px ${Math.round(interaction.startTranslateY + dy)}px`);
-      } else {
-        setStyleDirect("width", `${Math.max(24, Math.round(interaction.startWidth + dx))}px`);
-        setStyleDirect("height", `${Math.max(24, Math.round(interaction.startHeight + dy))}px`);
-      }
+    const move = (e: PointerEvent) => { const d = interaction; const el = selectedRef.current; if (!d || !el) return; const dx = e.clientX - d.startX, dy = e.clientY - d.startY; const rect = el.getBoundingClientRect();
+      if (d.mode === "drag") {
+        const parent = el.parentElement?.getBoundingClientRect(); const viewport = { width: parent?.width ?? window.innerWidth, height: parent?.height ?? window.innerHeight };
+        const rawX = d.startTx + dx, rawY = d.startTy + dy; const result = snapPosition({ left: 0, top: 0, width: rect.width, height: rect.height }, rawX, rawY, { grid, threshold: Math.max(4, grid * 0.75), viewport, snapToViewport: snapOn, snapToCenter: snapOn });
+        setStyle("translate", `${result.x}px ${result.y}px`, false); setGuides(result.guides.length > 0);
+      } else { const size = snapSize(d.startWidth + dx, d.startHeight + dy, { grid, minWidth: 24, minHeight: 24 }); setStyle("width", `${size.width}px`, false); setStyle("height", `${size.height}px`, false); }
     };
-    const onPointerUp = () => setInteraction(null);
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", onPointerUp);
-    return () => { window.removeEventListener("pointermove", onPointerMove); window.removeEventListener("pointerup", onPointerUp); };
-  }, [interaction]);
+    const up = () => setInteraction(null); window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
+  }, [interaction, grid, snapOn, setStyle]);
 
-  useEffect(() => {
-    if (!selected) return;
-    const node = selectedRef.current;
-    if (!node) return;
-    for (const [key, value] of Object.entries(draft)) {
-      if (!EDITABLE_PROPERTIES.includes(key as EditableProperty)) continue;
-      const cssKey = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
-      if (value === undefined || value === null || value === "") node.style.removeProperty(cssKey);
-      else node.style.setProperty(cssKey, String(value), "important");
-    }
-    refreshHandle();
-  }, [draft, selected, refreshHandle]);
+  useEffect(() => { if (!selectedRef.current) return; for (const [key, value] of Object.entries(draft)) { if (!EDITABLE.includes(key as EditableProperty)) continue; const css = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`); if (value == null || value === "") selectedRef.current.style.removeProperty(css); else selectedRef.current.style.setProperty(css, String(value), "important"); } refreshHandle(); }, [draft, refreshHandle]);
 
-  const setStyleDirect = (key: EditableProperty, value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
-  const setStyle = (key: EditableProperty, value: string) => setStyleDirect(key, value);
+  useEffect(() => { const key = (e: KeyboardEvent) => { if (!(e.ctrlKey || e.metaKey)) return; if (e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); undo(); } else if ((e.key.toLowerCase() === "z" && e.shiftKey) || e.key.toLowerCase() === "y") { e.preventDefault(); redoNow(); } else if (e.key.toLowerCase() === "s") { e.preventDefault(); void saveDraft(); } }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); });
 
-  const startDrag = (event: React.PointerEvent) => {
-    if (!selectedRef.current || !selected) return;
-    event.preventDefault(); event.stopPropagation();
-    const [tx, ty] = parseTranslate(draft.translate);
-    setInteraction({ mode: "drag", startX: event.clientX, startY: event.clientY, startWidth: selectedRef.current.getBoundingClientRect().width, startHeight: selectedRef.current.getBoundingClientRect().height, startTranslateX: tx, startTranslateY: ty });
-  };
-  const startResize = (event: React.PointerEvent) => {
-    if (!selectedRef.current || !selected) return;
-    event.preventDefault(); event.stopPropagation();
-    const rect = selectedRef.current.getBoundingClientRect();
-    const [tx, ty] = parseTranslate(draft.translate);
-    setInteraction({ mode: "resize", startX: event.clientX, startY: event.clientY, startWidth: rect.width, startHeight: rect.height, startTranslateX: tx, startTranslateY: ty });
-  };
+  const startDrag = (e: React.PointerEvent) => { if (!selectedRef.current) return; e.preventDefault(); e.stopPropagation(); const [tx, ty] = parseTranslate(draft.translate); history.current.push(draft); setInteraction({ mode: "drag", startX: e.clientX, startY: e.clientY, startWidth: selectedRef.current.getBoundingClientRect().width, startHeight: selectedRef.current.getBoundingClientRect().height, startTx: tx, startTy: ty }); };
+  const startResize = (e: React.PointerEvent) => { if (!selectedRef.current) return; e.preventDefault(); e.stopPropagation(); const r = selectedRef.current.getBoundingClientRect(); history.current.push(draft); setInteraction({ mode: "resize", startX: e.clientX, startY: e.clientY, startWidth: r.width, startHeight: r.height, startTx: 0, startTy: 0 }); };
 
-  const buildConfig = () => {
-    if (!selected || !config) return config;
-    const existing = config.runtimeOverrides ?? [];
-    const override: StudioRuntimeOverride = { id: existing.find((item) => item.selector === selected.selector)?.id ?? `dom-${Date.now()}`, selector: selected.selector, style: draft, visible: true };
-    return { ...config, runtimeOverrides: [...existing.filter((item) => item.selector !== selected.selector), override] };
-  };
-
-  async function saveDraft() {
-    if (!page || !config) return;
-    const next = buildConfig(); setSaving(true);
-    const { data: pageRow, error: pageError } = await supabase.from("app_customization_pages").select("id,name").eq("page_key", page).maybeSingle();
-    if (pageError || !pageRow) { toast.error(pageError?.message ?? "Page not found"); setSaving(false); return; }
-    const { data: draftRow } = await supabase.from("app_customization_versions").select("id").eq("page_id", pageRow.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
-    const result = draftRow?.id ? await supabase.from("app_customization_versions").update({ config: next }).eq("id", draftRow.id) : await supabase.from("app_customization_versions").insert({ page_id: pageRow.id, version: 1, status: "draft", config: next });
-    setSaving(false); if (result.error) toast.error(result.error.message); else { setConfig(next); toast.success("Draft saved"); }
-  }
-
-  async function publish() {
-    if (!page || !config) return;
-    const next = buildConfig(); setSaving(true);
-    const { data: pageRow, error: pageError } = await supabase.from("app_customization_pages").select("id,name").eq("page_key", page).maybeSingle();
-    if (pageError || !pageRow) { toast.error(pageError?.message ?? "Page not found"); setSaving(false); return; }
-    const { data: latest, error: latestError } = await supabase.from("app_customization_versions").select("version").eq("page_id", pageRow.id).order("version", { ascending: false }).limit(1).maybeSingle();
-    if (latestError) { toast.error(latestError.message); setSaving(false); return; }
-    const version = (latest?.version ?? 0) + 1;
-    const { data: publishedVersion, error: versionError } = await supabase.from("app_customization_versions").insert({ page_id: pageRow.id, version, status: "published", config: next, published_at: new Date().toISOString() }).select("id").single();
-    if (versionError || !publishedVersion) { toast.error(versionError?.message ?? "Publish failed"); setSaving(false); return; }
-    await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", pageRow.id).eq("is_current", true);
-    const { error: pubError } = await supabase.from("app_customization_published").insert({ page_id: pageRow.id, version_id: publishedVersion.id, config: next, version, published_at: new Date().toISOString(), is_current: true });
-    setSaving(false); if (pubError) toast.error(pubError.message); else { setConfig(next); toast.success(`${pageRow.name} published`); }
-  }
-
-  function removeOverride() {
-    if (!selected || !config) return;
-    const next = { ...config, runtimeOverrides: (config.runtimeOverrides ?? []).filter((item) => item.selector !== selected.selector) };
-    setConfig(next);
-    if (selectedRef.current) { for (const key of EDITABLE_PROPERTIES) selectedRef.current.style.removeProperty(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)); }
-    setDraft(computedStyleOf(selectedRef.current ?? document.body));
-  }
+  const buildConfig = () => { if (!config || !selected) return config; const existing = config.runtimeOverrides ?? []; const override: StudioRuntimeOverride = { id: existing.find((x) => x.selector === selected.selector)?.id ?? `dom-${Date.now()}`, selector: selected.selector, style: draft, visible: true }; return { ...config, runtimeOverrides: [...existing.filter((x) => x.selector !== selected.selector), override] }; };
+  async function saveDraft() { if (!page || !config) return; setSaving(true); const next = buildConfig(); const { data: p, error: pe } = await supabase.from("app_customization_pages").select("id").eq("page_key", page).maybeSingle(); if (pe || !p) { toast.error(pe?.message ?? "Page not found"); setSaving(false); return; } const { data: d } = await supabase.from("app_customization_versions").select("id").eq("page_id", p.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle(); const result = d?.id ? await supabase.from("app_customization_versions").update({ config: next }).eq("id", d.id) : await supabase.from("app_customization_versions").insert({ page_id: p.id, version: 1, status: "draft", config: next }); setSaving(false); if (result.error) toast.error(result.error.message); else { setConfig(next); toast.success("Draft saved"); } }
+  async function publish() { if (!page || !config) return; setSaving(true); const next = buildConfig(); const { data: p, error: pe } = await supabase.from("app_customization_pages").select("id,name").eq("page_key", page).maybeSingle(); if (pe || !p) { toast.error(pe?.message ?? "Page not found"); setSaving(false); return; } const { data: latest } = await supabase.from("app_customization_versions").select("version").eq("page_id", p.id).order("version", { ascending: false }).limit(1).maybeSingle(); const version = (latest?.version ?? 0) + 1; const { data: pv, error: ve } = await supabase.from("app_customization_versions").insert({ page_id: p.id, version, status: "published", config: next, published_at: new Date().toISOString() }).select("id").single(); if (ve || !pv) { toast.error(ve?.message ?? "Publish failed"); setSaving(false); return; } await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", p.id).eq("is_current", true); const { error } = await supabase.from("app_customization_published").insert({ page_id: p.id, version_id: pv.id, config: next, version, published_at: new Date().toISOString(), is_current: true }); setSaving(false); if (error) toast.error(error.message); else { setConfig(next); toast.success(`${p.name} published`); } }
+  function reset() { if (!selected || !config) return; const next = { ...config, runtimeOverrides: (config.runtimeOverrides ?? []).filter((x) => x.selector !== selected.selector) }; setConfig(next); setDraft(computedStyle(selectedRef.current ?? document.body)); }
 
   if (!page) return null;
-  const dragging = interaction?.mode === "drag";
-  return (
-    <>
-      {selected && <div data-studio-editor-ui onPointerDown={startDrag} className="fixed z-[2147483645] cursor-move border-2 border-primary/80 bg-primary/5" style={{ left: Math.max(0, handlePosition.left - 9999), top: Math.max(0, handlePosition.top - 9999), width: 1, height: 1, pointerEvents: "none" }} />}
-      {selected && <div data-studio-editor-ui onPointerDown={startResize} className="fixed z-[2147483647] h-3 w-3 cursor-nwse-resize rounded-sm border border-white bg-primary shadow-lg" style={{ left: handlePosition.left, top: handlePosition.top, touchAction: "none" }} />}
-      <div data-studio-editor-ui className={`fixed right-3 top-3 z-[2147483647] w-[330px] rounded-2xl border border-white/15 bg-black/90 p-3 text-white shadow-2xl backdrop-blur-xl ${dragging ? "ring-2 ring-primary/40" : ""}`}>
-        <div className="flex items-center justify-between gap-2"><div><div className="text-xs font-bold">Jalwa App Studio</div><div className="text-[10px] text-white/50">Real page editor · {page}</div></div><button data-studio-editor-ui className="rounded-md bg-white/10 px-2 py-1 text-[10px]" onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Open" : "Hide"}</button></div>
-        {!collapsed && <>
-          <div className="mt-2 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] text-white/65">Drag the selected element directly. Use the corner handle to resize. Changes stay in draft until Publish.</div>
-          {selected ? <>
-            <div className="mt-3 rounded-lg bg-white/5 p-2"><div className="font-mono text-[10px] text-cyan-300">{selected.tag}</div><div className="mt-1 truncate text-[10px] text-white/60">{selected.text || selected.selector}</div></div>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {(["width","height","translate","background","color","fontSize","fontWeight","borderRadius","padding","margin","opacity"] as EditableProperty[]).map((key) => <label key={key} className="text-[9px] text-white/55"><span className="mb-1 block">{key}</span><input data-studio-editor-ui className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white outline-none" value={String(draft[key] ?? "")} onChange={(e) => setStyle(key, e.target.value)} /></label>)}
-            </div>
-            <div className="mt-3 grid grid-cols-3 gap-2"><button data-studio-editor-ui onClick={() => setStyle("translate", "0px 0px")} className="rounded-lg bg-white/10 px-2 py-2 text-[10px]">Reset Position</button><button data-studio-editor-ui onClick={() => setStyle("width", "auto")} className="rounded-lg bg-white/10 px-2 py-2 text-[10px]">Auto Width</button><button data-studio-editor-ui onClick={() => setStyle("height", "auto")} className="rounded-lg bg-white/10 px-2 py-2 text-[10px]">Auto Height</button></div>
-            <div className="mt-3 flex gap-2"><button data-studio-editor-ui onClick={() => void saveDraft()} disabled={saving} className="flex-1 rounded-lg bg-white/10 px-2 py-2 text-[10px] disabled:opacity-50">{saving ? "Saving…" : "Save Draft"}</button><button data-studio-editor-ui onClick={() => void publish()} disabled={saving} className="flex-1 rounded-lg bg-primary px-2 py-2 text-[10px] disabled:opacity-50">Publish</button></div>
-            <button data-studio-editor-ui onClick={removeOverride} className="mt-2 w-full rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-200">Reset selected element</button>
-          </> : <div className="mt-3 rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-[10px] text-white/45">Select an element on the real page to begin editing.</div>}
-        </>}
-      </div>
-    </>
-  );
+  return <>
+    {selected && <div data-studio-editor-ui onPointerDown={startResize} className="fixed z-[2147483647] h-3 w-3 cursor-nwse-resize rounded-sm border border-white bg-primary shadow-lg" style={{ left: handle.left, top: handle.top, touchAction: "none" }} />}
+    {selected && <div data-studio-editor-ui onPointerDown={startDrag} className="fixed z-[2147483646] -mt-7 rounded-md bg-primary px-2 py-1 text-[9px] text-white shadow-lg" style={{ left: Math.max(4, handle.left - 28), top: handle.top, cursor: "move", touchAction: "none" }}>MOVE</div>}
+    <div data-studio-editor-ui className="fixed right-3 top-3 z-[2147483647] w-[350px] rounded-2xl border border-white/15 bg-black/90 p-3 text-white shadow-2xl backdrop-blur-xl">
+      <div className="flex items-center justify-between"><div><div className="text-xs font-bold">Jalwa App Studio</div><div className="text-[10px] text-white/50">Real page editor · {page}</div></div><button data-studio-editor-ui className="rounded bg-white/10 px-2 py-1 text-[10px]" onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Open" : "Hide"}</button></div>
+      {!collapsed && <>
+        <div className="mt-2 grid grid-cols-3 gap-1"><button data-studio-editor-ui className={`rounded px-2 py-1.5 text-[9px] ${snapOn ? "bg-primary" : "bg-white/10"}`} onClick={() => setSnapOn((v) => !v)}>Snap {snapOn ? "ON" : "OFF"}</button><button data-studio-editor-ui className={`rounded px-2 py-1.5 text-[9px] ${guides ? "bg-primary" : "bg-white/10"}`} onClick={() => setGuides((v) => !v)}>Guides {guides ? "ON" : "OFF"}</button><select data-studio-editor-ui value={grid} onChange={(e) => setGrid(Number(e.target.value))} className="rounded bg-white/10 px-1 text-[9px]"><option value="4">4px Grid</option><option value="8">8px Grid</option><option value="10">10px Grid</option><option value="16">16px Grid</option></select></div>
+        <div className="mt-2 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] text-white/65">Drag selected elements with MOVE. Resize with the corner handle. Position and size snap to grid, viewport edges and center. Changes stay in draft until Publish.</div>
+        {selected ? <>
+          <div className="mt-3 rounded-lg bg-white/5 p-2"><div className="font-mono text-[10px] text-cyan-300">{selected.tag}</div><div className="truncate text-[10px] text-white/60">{selected.text || selected.selector}</div></div>
+          <div className="mt-2 grid grid-cols-2 gap-2">{(["width","height","translate","background","color","fontSize","fontWeight","borderRadius","padding","margin","opacity"] as EditableProperty[]).map((key) => <label key={key} className="text-[9px] text-white/55"><span className="mb-1 block">{key}</span><input data-studio-editor-ui className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white outline-none" value={String(draft[key] ?? "")} onChange={(e) => setStyle(key, e.target.value)} /></label>)}</div>
+          <div className="mt-3 grid grid-cols-4 gap-1"><button data-studio-editor-ui onClick={undo} className="rounded bg-white/10 px-2 py-1.5 text-[9px]">Undo</button><button data-studio-editor-ui onClick={redoNow} className="rounded bg-white/10 px-2 py-1.5 text-[9px]">Redo</button><button data-studio-editor-ui onClick={() => setStyle("translate", "0px 0px")} className="rounded bg-white/10 px-2 py-1.5 text-[9px]">Center</button><button data-studio-editor-ui onClick={reset} className="rounded bg-white/10 px-2 py-1.5 text-[9px]">Reset</button></div>
+          <div className="mt-3 flex gap-2"><button data-studio-editor-ui disabled={saving} onClick={() => void saveDraft()} className="flex-1 rounded-lg bg-white/10 px-2 py-2 text-[10px]">{saving ? "Saving…" : "Save Draft"}</button><button data-studio-editor-ui disabled={saving} onClick={() => void publish()} className="flex-1 rounded-lg bg-primary px-2 py-2 text-[10px]">Publish</button></div>
+        </> : <div className="mt-3 rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-[10px] text-white/45">Select an element on the real page to begin editing.</div>}
+      </>}
+    </div>
+  </>;
 }
