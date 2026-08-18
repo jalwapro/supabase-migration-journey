@@ -1,8 +1,8 @@
 import { buildDetectedScreen, type DetectedComponent, type DetectedScreen } from "./auto-detection";
 
 const routeFiles = import.meta.glob("/src/routes/**/*.{tsx,ts}", { eager: true, query: "?raw", import: "default" }) as Record<string, string>;
-
 const EXCLUDED = new Set(["route.tsx", "__root.tsx"]);
+
 const toRoute = (file: string) => {
   const relative = file.replace(/^\/src\/routes\//, "").replace(/\.(tsx|ts)$/, "");
   if (relative.startsWith("api/")) return null;
@@ -16,13 +16,14 @@ const toRoute = (file: string) => {
 };
 
 const labelize = (value: string) => value.replace(/^[-_]+|[-_]+$/g, "").replace(/[-_]+/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/\b\w/g, (c) => c.toUpperCase()) || "Screen";
+
 const importedNames = (source: string) => {
   const names = new Set<string>();
-  for (const match of source.matchAll(/import\\s+([^;]+?)\\s+from\\s+[\"']@\\/components\\/[^\"']+[\"']/g)) {
+  for (const match of source.matchAll(/import\s+([^;]+?)\s+from\s+["']@\/components\/[^"']+["']/g)) {
     const clause = match[1].trim();
-    const named = clause.match(/\\{([^}]+)\\}/)?.[1];
-    if (named) named.split(",").forEach((x) => names.add(x.trim().split(/\\s+as\\s+/)[0]));
-    const def = clause.match(/^([A-Za-z_$][\\w$]*)/);
+    const named = clause.match(/\{([^}]+)\}/)?.[1];
+    if (named) named.split(",").forEach((x) => names.add(x.trim().split(/\s+as\s+/)[0]));
+    const def = clause.match(/^([A-Za-z_$][\w$]*)/);
     if (def) names.add(def[1]);
   }
   return names;
@@ -56,8 +57,8 @@ const componentType = (name: string) => {
 
 function actionsFor(source: string, name: string) {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const around = source.match(new RegExp(`<${escaped}\\b[\\s\\S]{0,1200}?</${escaped}>`))?.[0] || source.match(new RegExp(`<${escaped}\\b[^>]*>`))?.[0] || "";
-  const to = around.match(/(?:to|href)=\{?[\"']([^\"']+)[\"']/)?.[1];
+  const around = source.match(new RegExp(`<${escaped}\b[\s\S]{0,1200}?</${escaped}>`))?.[0] || source.match(new RegExp(`<${escaped}\b[^>]*>`))?.[0] || "";
+  const to = around.match(/(?:to|href)=\{?["']([^"']+)["']/)?.[1];
   if (to) return { kind: "navigation" as const, target: to, name: `Navigate to ${to}` };
   if (/onClick|onPress|onSubmit/.test(around)) return { kind: "click" as const, name: "Existing handler" };
   return undefined;
@@ -72,14 +73,14 @@ export function detectExistingApp(): DetectedScreen[] {
     const imports = importedNames(source);
     const components: Array<Omit<DetectedComponent, "id" | "route">> = [];
     const seen = new Set<string>();
-    for (const match of source.matchAll(/<([A-Z][A-Za-z0-9_.]*)\\b/g)) {
+    for (const match of source.matchAll(/<([A-Z][A-Za-z0-9_.]*)\b/g)) {
       const name = match[1].split(".").pop() || match[1];
       if (!imports.has(name) || seen.has(name)) continue;
       seen.add(name);
       components.push({ name: labelize(name), type: componentType(name), source: file.replace(/^\//, ""), editable: true, action: actionsFor(source, name) });
     }
     for (const tag of ["button", "input", "img", "a"]) {
-      const count = [...source.matchAll(new RegExp(`<${tag}\\b`, "g"))].length;
+      const count = [...source.matchAll(new RegExp(`<${tag}\b`, "g"))].length;
       if (count) components.push({ name: tag === "button" ? "Native Buttons" : labelize(tag), type: tag === "button" ? "button" : tag === "input" ? "input" : tag === "img" ? "image" : "custom", source: file.replace(/^\//, ""), editable: true });
     }
     const unique = components.filter((component, index, list) => list.findIndex((x) => x.name === component.name && x.source === component.source) === index);
