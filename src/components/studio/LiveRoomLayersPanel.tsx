@@ -1,0 +1,15 @@
+import { ChevronDown, ChevronRight, Eye, EyeOff, Lock, Unlock } from "lucide-react";
+import { useMemo, useState } from "react";
+import { flattenLiveRoomRegistry, getLiveRoomRegistry, type LiveRoomComponent, type LiveRoomKind } from "@/lib/app-customization/live-room-registry";
+
+type Props={kind:LiveRoomKind;selectedId?:string|null;hiddenIds?:Set<string>;lockedIds?:Set<string>;onSelect:(id:string)=>void;onVisibilityChange?:(id:string,visible:boolean)=>void;onLockChange?:(id:string,locked:boolean)=>void};
+function Branch({node,selectedId,hiddenIds,lockedIds,onSelect,onVisibilityChange,onLockChange,depth=0}:{node:LiveRoomComponent;selectedId?:string|null;hiddenIds:Set<string>;lockedIds:Set<string>;onSelect:(id:string)=>void;onVisibilityChange?:(id:string,visible:boolean)=>void;onLockChange?:(id:string,locked:boolean)=>void;depth?:number}){
+ const[open,setOpen]=useState(depth<1);const hasChildren=Boolean(node.children?.length);const hidden=hiddenIds.has(node.id),locked=lockedIds.has(node.id);
+ return <div><div className={`group flex items-center gap-1 rounded-md px-2 py-1.5 text-xs ${selectedId===node.id?"bg-primary/10 text-primary":"hover:bg-muted"}`} style={{paddingLeft:8+depth*14}}>
+ {hasChildren?<button aria-label={open?"Collapse":"Expand"} onClick={()=>setOpen(v=>!v)}>{open?<ChevronDown className="h-3.5 w-3.5"/>:<ChevronRight className="h-3.5 w-3.5"/>}</button>:<span className="w-3.5"/>}
+ <button className="min-w-0 flex-1 truncate text-left" onClick={()=>onSelect(node.id)}>{node.label}</button><span className="hidden text-[9px] text-muted-foreground group-hover:inline">{node.runtimeType??node.type}</span>
+ <button title={hidden?"Show":"Hide"} onClick={()=>onVisibilityChange?.(node.id,!hidden)}>{hidden?<EyeOff className="h-3.5 w-3.5"/>:<Eye className="h-3.5 w-3.5"/>}</button><button title={locked?"Unlock":"Lock"} onClick={()=>onLockChange?.(node.id,!locked)}>{locked?<Lock className="h-3.5 w-3.5"/>:<Unlock className="h-3.5 w-3.5"/>}</button></div>
+ {open&&node.children?.map(child=><Branch key={child.id} node={child} selectedId={selectedId} hiddenIds={hiddenIds} lockedIds={lockedIds} onSelect={onSelect} onVisibilityChange={onVisibilityChange} onLockChange={onLockChange} depth={depth+1}/>)}
+ </div>;
+}
+export function LiveRoomLayersPanel({kind,selectedId=null,hiddenIds=new Set(),lockedIds=new Set(),onSelect,onVisibilityChange,onLockChange}:Props){const root=useMemo(()=>getLiveRoomRegistry(kind),[kind]);const total=useMemo(()=>flattenLiveRoomRegistry(kind).length,[kind]);return <div className="space-y-1"><div className="mb-2 flex items-center justify-between"><div><div className="text-xs font-semibold">{root.label}</div><div className="text-[10px] text-muted-foreground">{total} real registry layers</div></div><span className="rounded bg-muted px-1.5 py-0.5 text-[9px] uppercase">{kind}</span></div><Branch node={root} selectedId={selectedId} hiddenIds={hiddenIds} lockedIds={lockedIds} onSelect={onSelect} onVisibilityChange={onVisibilityChange} onLockChange={onLockChange}/></div>}
