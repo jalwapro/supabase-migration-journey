@@ -36,17 +36,20 @@ function ensureRegistryNodes(config: AppPageConfig, kind: LiveRoomKind, state: L
   const next = cloneConfig(config);
   const start = next.sections.length;
   const missing: LiveRoomComponent[] = [];
+  const plannedCounts = new Map<string, number>();
   for (const component of registry) {
+    const current = next.sections.filter((node) => node.props?.roomType === kind && node.props?.componentId === component.id).length;
+    plannedCounts.set(component.id, current);
     if (component.repeatable) {
       const desired = kind === "voice-room" && component.id === "voice.seat-area" ? 12 : kind === "video-room" && component.id === "video.participants" ? 6 : 1;
-      const current = next.sections.filter((node) => node.props?.roomType === kind && node.props?.componentId === component.id).length;
       for (let i = current; i < desired; i++) missing.push({ ...component });
     } else if (!existingIds.has(component.id)) missing.push(component);
   }
   if (!missing.length) return config;
   next.sections = [...next.sections, ...missing.map((component, index) => {
+    const instanceIndex = plannedCounts.get(component.id) ?? 0;
+    plannedCounts.set(component.id, instanceIndex + 1);
     const node = makeNode(component, kind, state, start + index);
-    const instanceIndex = next.sections.filter((item) => item.props?.roomType === kind && item.props?.componentId === component.id).length;
     return { ...node, props: { ...node.props, instanceIndex } };
   })];
   return next;
