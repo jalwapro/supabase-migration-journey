@@ -26,7 +26,7 @@ export const LIVE_ROOM_REGISTRY: Record<LiveRoomKind, LiveRoomComponent> = {
       { id: "voice.activity", type: "activity", runtimeType: "room-announcement", label: "Activity / Announcements", source: "AnnouncementTicker", editable: [...commonEditable, "typography", "content"] },
       { id: "voice.chat", type: "chat", runtimeType: "room-chat", label: "Chat", source: "ChatPanel", editable: [...commonEditable, "typography", "content", "input"] },
       { id: "voice.gifts", type: "gift-sheet", runtimeType: "room-gifts", label: "Gift Sheet", source: "GiftSheet", editable: [...commonEditable, "typography", "content", "interaction"] },
-      { id: "voice.seat-actions", type: "bottom-sheet", runtimeType: "room-controls", label: "Seat Action Sheet", source: "SeatActionSheet", editable: [...commonEditable, "typography", "content", "animation"] },
+      { id: "voice.seat-actions", type: "bottom-sheet", runtimeType: "bottom-sheet", label: "Seat Action Sheet", source: "SeatActionSheet", editable: [...commonEditable, "typography", "content", "animation"] },
       { id: "voice.bottom-nav", type: "navigation", runtimeType: "bottom-navigation", label: "Bottom Navigation", source: "BottomNav", editable: [...commonEditable, "typography", "icon", "content", "interaction"] },
     ],
   },
