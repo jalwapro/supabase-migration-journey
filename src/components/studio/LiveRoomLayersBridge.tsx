@@ -5,36 +5,35 @@ import type { LiveRoomKind } from "@/lib/app-customization/live-room-registry";
 
 export function LiveRoomLayersBridge({ kind, config, onChange, iframeRef }: { kind: LiveRoomKind; config: AppPageConfig; onChange: (config: AppPageConfig) => void; iframeRef: React.RefObject<HTMLIFrameElement | null> }) {
   const nodes = useMemo(() => config.sections.filter((n) => n.props?.roomType === kind), [config.sections, kind]);
-  const hiddenIds = useMemo(() => new Set(nodes.filter((n) => n.visible === false).map((n) => String(n.id))), [nodes]);
-  const lockedIds = useMemo(() => new Set(nodes.filter((n) => n.locked).map((n) => String(n.id))), [nodes]);
+  const hiddenIds = useMemo(() => new Set(nodes.filter((n) => n.visible === false).map((n) => String(n.props?.componentId))), [nodes]);
+  const lockedIds = useMemo(() => new Set(nodes.filter((n) => n.locked).map((n) => String(n.props?.componentId))), [nodes]);
 
-  const focus = useCallback((nodeId: string) => {
-    const node = config.sections.find((n) => n.id === nodeId);
-    if (!node) return;
+  const focus = useCallback((componentId: string) => {
+    const node = nodes.find((n) => String(n.props?.componentId) === componentId);
     iframeRef.current?.contentWindow?.postMessage({
       type: "jalwa-live-focus",
-      nodeId,
-      componentId: String(node.props?.componentId ?? ""),
-      instanceIndex: Number(node.props?.instanceIndex ?? 0),
-      stableKey: `${String(node.props?.componentId ?? "")}:${Number(node.props?.instanceIndex ?? 0)}`,
+      componentId,
+      nodeId: node?.id,
+      instanceIndex: Number(node?.props?.instanceIndex ?? 0),
+      stableKey: `${componentId}:${Number(node?.props?.instanceIndex ?? 0)}`,
       roomType: kind,
-      roomState: String(node.props?.roomState ?? "normal"),
+      roomState: String(node?.props?.roomState ?? "normal"),
     }, "*");
-  }, [config.sections, iframeRef, kind]);
+  }, [nodes, iframeRef, kind]);
 
-  const patchNode = useCallback((nodeId: string, patch: { visible?: boolean; locked?: boolean }) => {
+  const patchComponent = useCallback((componentId: string, patch: { visible?: boolean; locked?: boolean }) => {
     const next = structuredClone(config);
-    next.sections = next.sections.map((node) => node.id === nodeId ? { ...node, ...patch } : node);
+    next.sections = next.sections.map((node) => node.props?.roomType === kind && node.props?.componentId === componentId ? { ...node, ...patch } : node);
     onChange(next);
-    focus(nodeId);
-  }, [config, onChange, focus]);
+    focus(componentId);
+  }, [config, kind, onChange, focus]);
 
   return <LiveRoomLayersPanel
     kind={kind}
     hiddenIds={hiddenIds}
     lockedIds={lockedIds}
     onSelect={focus}
-    onVisibilityChange={(id, visible) => patchNode(id, { visible })}
-    onLockChange={(id, locked) => patchNode(id, { locked })}
+    onVisibilityChange={(id, visible) => patchComponent(id, { visible })}
+    onLockChange={(id, locked) => patchComponent(id, { locked })}
   />;
 }
