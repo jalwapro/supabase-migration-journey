@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { ExistingAppDetectionPanel } from "@/components/studio/ExistingAppDetectionPanel";
 import { DEFAULT_APP_CONFIG, normalizePageConfig, type AppComponentNode, type AppPageConfig, type AppPageKey, type ComponentType, type DeviceKind } from "@/lib/app-customization/schema";
 import { Monitor, Smartphone, Tablet, Undo2, Redo2, Save, Upload, Box, Palette, Trash2, Lock, Unlock, Search, Eye, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -9,7 +10,6 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/admin/app-customization")({ component: AppCustomizationStudio });
 
 type PageRow = { id: string; page_key: AppPageKey; name: string; description: string | null; route_pattern: string | null; sort_order: number };
-
 type CatalogItem = { type: ComponentType; label: string; group: string };
 const COMPONENTS: CatalogItem[] = [
   ["container","Container","Basic"],["heading","Heading","Basic"],["text","Text","Basic"],["image","Image","Basic"],["button","Button","Basic"],["card","Card","Basic"],["banner","Banner","Basic"],["carousel","Carousel","Basic"],["grid","Grid","Basic"],["tabs","Tabs","Basic"],["avatar","Avatar","Basic"],["progress","Progress","Basic"],["counter","Counter","Basic"],
@@ -18,14 +18,8 @@ const COMPONENTS: CatalogItem[] = [
   ["follow-button","Follow Button","Actions"],["live-button","Go Live Button","Actions"],["create-room-button","Create Room Button","Actions"],["pk-battle-button","PK Battle Button","Actions"],["recharge-packages","Recharge Packages","Commerce"],["gift-card","Gift Card","Commerce"],["room-seat-layout","Room Seat Layout","Room"],
 ].map(([type,label,group]) => ({ type: type as ComponentType, label, group }));
 
-// Only pages backed by real user-facing routes are shown. Metadata-only entries are hidden.
-const REAL_APP_PAGE_KEYS = new Set<AppPageKey>([
-  "home","rooms","voice-room","video-room","pk-battle","profile","wallet","messages","ranking","gifts","notifications","settings","my-rooms","recharge","recharge-history","withdraw","gallery","visitors","games","privacy",
-]);
-
-const STATIC_PREVIEW_ROUTES: Partial<Record<AppPageKey, string>> = {
-  home: "/", rooms: "/rooms", "my-rooms": "/my-rooms", wallet: "/wallet", recharge: "/recharge", "recharge-history": "/recharge-history", withdraw: "/withdraw", gifts: "/gifts", ranking: "/rank", messages: "/messages", notifications: "/notifications", profile: "/me", gallery: "/gallery", visitors: "/visitors", games: "/games", privacy: "/privacy", settings: "/settings",
-};
+const REAL_APP_PAGE_KEYS = new Set<AppPageKey>(["home","rooms","voice-room","video-room","pk-battle","profile","wallet","messages","ranking","gifts","notifications","settings","my-rooms","recharge","recharge-history","withdraw","gallery","visitors","games","privacy"]);
+const STATIC_PREVIEW_ROUTES: Partial<Record<AppPageKey, string>> = { home: "/", rooms: "/rooms", "my-rooms": "/my-rooms", wallet: "/wallet", recharge: "/recharge", "recharge-history": "/recharge-history", withdraw: "/withdraw", gifts: "/gifts", ranking: "/rank", messages: "/messages", notifications: "/notifications", profile: "/me", gallery: "/gallery", visitors: "/visitors", games: "/games", privacy: "/privacy", settings: "/settings" };
 
 function newNode(type: ComponentType, index: number): AppComponentNode {
   const label = COMPONENTS.find((x) => x.type === type)?.label ?? type;
@@ -49,33 +43,9 @@ function AppCustomizationStudio() {
   const catalog = useMemo(() => COMPONENTS.filter((x) => x.label.toLowerCase().includes(search.toLowerCase())), [search]);
   const currentPage = useMemo(() => pages.find((x) => x.page_key === pageKey) ?? null, [pages, pageKey]);
 
-  useEffect(() => {
-    void (async () => {
-      const { data, error } = await supabase.from("app_customization_pages").select("id,page_key,name,description,route_pattern,sort_order").eq("is_enabled", true).order("sort_order");
-      if (error) { toast.error(error.message); setLoading(false); return; }
-      const rows = ((data ?? []) as PageRow[]).filter((x) => REAL_APP_PAGE_KEYS.has(x.page_key));
-      setPages(rows);
-      if (!rows.some((x) => x.page_key === pageKey) && rows[0]) setPageKey(rows[0].page_key);
-      setLoading(false);
-    })();
-  }, []);
-
-  useEffect(() => {
-    void (async () => {
-      const { data } = await supabase.from("rooms").select("id").limit(1).maybeSingle();
-      if (data?.id) setPreviewRoomId(data.id);
-    })();
-  }, []);
-
-  useEffect(() => {
-    const page = pages.find((x) => x.page_key === pageKey);
-    if (!page) return;
-    void (async () => {
-      const { data, error } = await supabase.from("app_customization_versions").select("config").eq("page_id", page.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
-      if (error) { toast.error(error.message); return; }
-      setConfig(normalizePageConfig(data?.config, pageKey)); setSelectedId(null); setHistory([]); setFuture([]);
-    })();
-  }, [pageKey, pages]);
+  useEffect(() => { void (async () => { const { data, error } = await supabase.from("app_customization_pages").select("id,page_key,name,description,route_pattern,sort_order").eq("is_enabled", true).order("sort_order"); if (error) { toast.error(error.message); setLoading(false); return; } const rows = ((data ?? []) as PageRow[]).filter((x) => REAL_APP_PAGE_KEYS.has(x.page_key)); setPages(rows); if (!rows.some((x) => x.page_key === pageKey) && rows[0]) setPageKey(rows[0].page_key); setLoading(false); })(); }, []);
+  useEffect(() => { void (async () => { const { data } = await supabase.from("rooms").select("id").limit(1).maybeSingle(); if (data?.id) setPreviewRoomId(data.id); })(); }, []);
+  useEffect(() => { const page = pages.find((x) => x.page_key === pageKey); if (!page) return; void (async () => { const { data, error } = await supabase.from("app_customization_versions").select("config").eq("page_id", page.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle(); if (error) { toast.error(error.message); return; } setConfig(normalizePageConfig(data?.config, pageKey)); setSelectedId(null); setHistory([]); setFuture([]); })(); }, [pageKey, pages]);
 
   function commit(next: AppPageConfig) { setHistory((h) => [...h.slice(-39), config]); setFuture([]); setConfig(next); }
   function add(type: ComponentType) { const node = newNode(type, config.sections.length); commit({ ...config, sections: [...config.sections, node] }); setSelectedId(node.id); }
@@ -84,54 +54,16 @@ function AppCustomizationStudio() {
   function undo() { const prev = history.at(-1); if (!prev) return; setHistory((h) => h.slice(0,-1)); setFuture((f) => [config, ...f]); setConfig(prev); }
   function redo() { const next = future[0]; if (!next) return; setFuture((f) => f.slice(1)); setHistory((h) => [...h, config]); setConfig(next); }
 
-  async function saveDraft(showToast = true) {
-    const page = pages.find((x) => x.page_key === pageKey); if (!page) return false;
-    setSaving(true);
-    const { data: draft, error: findError } = await supabase.from("app_customization_versions").select("id,version").eq("page_id", page.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
-    if (findError) { toast.error(findError.message); setSaving(false); return false; }
-    let error;
-    if (draft?.id) ({ error } = await supabase.from("app_customization_versions").update({ config }).eq("id", draft.id));
-    else ({ error } = await supabase.from("app_customization_versions").insert({ page_id: page.id, version: 1, status: "draft", config }));
-    setSaving(false);
-    if (error) { toast.error(error.message); return false; }
-    if (showToast) toast.success(`${page.name} draft saved`);
-    return true;
-  }
-
-  async function publish() {
-    const page = pages.find((x) => x.page_key === pageKey); if (!page) return;
-    if (!(await saveDraft(false))) return;
-    setSaving(true);
-    const { data: latest, error: latestError } = await supabase.from("app_customization_versions").select("version").eq("page_id", page.id).order("version", { ascending: false }).limit(1).maybeSingle();
-    if (latestError) { toast.error(latestError.message); setSaving(false); return; }
-    const version = (latest?.version ?? 0) + 1;
-    const { data: publishedVersion, error: versionError } = await supabase.from("app_customization_versions").insert({ page_id: page.id, version, status: "published", config, published_at: new Date().toISOString() }).select("id").single();
-    if (versionError || !publishedVersion) { toast.error(versionError?.message ?? "Publish failed"); setSaving(false); return; }
-    const { error: clearError } = await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", page.id).eq("is_current", true);
-    if (clearError) { toast.error(clearError.message); setSaving(false); return; }
-    const { error: pubError } = await supabase.from("app_customization_published").insert({ page_id: page.id, version_id: publishedVersion.id, config, version, published_at: new Date().toISOString(), is_current: true });
-    setSaving(false);
-    if (pubError) toast.error(pubError.message); else toast.success(`${page.name} published successfully`);
-  }
-
-  function previewRoute(): string | null {
-    if (pageKey === "voice-room" || pageKey === "video-room") return previewRoomId ? `/room/${previewRoomId}` : null;
-    if (pageKey === "pk-battle") return previewRoomId ? `/pk/${previewRoomId}` : null;
-    return STATIC_PREVIEW_ROUTES[pageKey] ?? currentPage?.route_pattern ?? null;
-  }
-
+  async function saveDraft(showToast = true) { const page = pages.find((x) => x.page_key === pageKey); if (!page) return false; setSaving(true); const { data: draft, error: findError } = await supabase.from("app_customization_versions").select("id,version").eq("page_id", page.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle(); if (findError) { toast.error(findError.message); setSaving(false); return false; } let error; if (draft?.id) ({ error } = await supabase.from("app_customization_versions").update({ config }).eq("id", draft.id)); else ({ error } = await supabase.from("app_customization_versions").insert({ page_id: page.id, version: 1, status: "draft", config })); setSaving(false); if (error) { toast.error(error.message); return false; } if (showToast) toast.success(`${page.name} draft saved`); return true; }
+  async function publish() { const page = pages.find((x) => x.page_key === pageKey); if (!page) return; if (!(await saveDraft(false))) return; setSaving(true); const { data: latest, error: latestError } = await supabase.from("app_customization_versions").select("version").eq("page_id", page.id).order("version", { ascending: false }).limit(1).maybeSingle(); if (latestError) { toast.error(latestError.message); setSaving(false); return; } const version = (latest?.version ?? 0) + 1; const { data: publishedVersion, error: versionError } = await supabase.from("app_customization_versions").insert({ page_id: page.id, version, status: "published", config, published_at: new Date().toISOString() }).select("id").single(); if (versionError || !publishedVersion) { toast.error(versionError?.message ?? "Publish failed"); setSaving(false); return; } const { error: clearError } = await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", page.id).eq("is_current", true); if (clearError) { toast.error(clearError.message); setSaving(false); return; } const { error: pubError } = await supabase.from("app_customization_published").insert({ page_id: page.id, version_id: publishedVersion.id, config, version, published_at: new Date().toISOString(), is_current: true }); setSaving(false); if (pubError) toast.error(pubError.message); else toast.success(`${page.name} published successfully`); }
+  function previewRoute(): string | null { if (pageKey === "voice-room" || pageKey === "video-room") return previewRoomId ? `/room/${previewRoomId}` : null; if (pageKey === "pk-battle") return previewRoomId ? `/pk/${previewRoomId}` : null; return STATIC_PREVIEW_ROUTES[pageKey] ?? currentPage?.route_pattern ?? null; }
   if (loading) return <div className="grid min-h-[70vh] place-items-center text-sm text-muted-foreground">Loading App Studio…</div>;
-
-  const route = previewRoute();
-  const previewUrl = route ? `${route}${route.includes("?") ? "&" : "?"}studioPreview=1` : null;
+  const route = previewRoute(); const previewUrl = route ? `${route}${route.includes("?") ? "&" : "?"}studioPreview=1` : null;
 
   return <div className="-m-4 min-h-[calc(100vh-64px)] bg-muted/20 md:-m-6 lg:-m-8">
-    <div className="border-b border-border bg-background px-4 py-3 md:px-6">
-      <AdminPageHeader title="App Studio" subtitle="Edit the real Jalwa app pages. The canvas below shows the actual route layout, not a mock page." right={<div className="flex flex-wrap gap-2"><button className="rounded-lg border p-2 disabled:opacity-40" onClick={undo} disabled={!history.length}><Undo2 className="h-4 w-4" /></button><button className="rounded-lg border p-2 disabled:opacity-40" onClick={redo} disabled={!future.length}><Redo2 className="h-4 w-4" /></button>{previewUrl && <button className="rounded-lg border px-3 py-2 text-sm" onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}><ExternalLink className="mr-1 inline h-4 w-4" />Open page</button>}<button className="rounded-lg border px-3 py-2 text-sm" onClick={() => toast.info("Preview is the real application route shown in the canvas.")}><Eye className="mr-1 inline h-4 w-4" />Preview</button><button className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50" onClick={() => void saveDraft()} disabled={saving}><Save className="mr-1 inline h-4 w-4" />Save Draft</button><button className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50" onClick={() => void publish()} disabled={saving}><Upload className="mr-1 inline h-4 w-4" />Publish</button></div>} />
-      <div className="flex items-center justify-between gap-3"><div className="flex gap-2">{(["mobile","tablet","desktop"] as DeviceKind[]).map((x) => <button key={x} onClick={() => setDevice(x)} className={`rounded-full px-3 py-1.5 text-xs ${device === x ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{x === "mobile" ? <Smartphone className="mr-1 inline h-3.5 w-3.5" /> : x === "tablet" ? <Tablet className="mr-1 inline h-3.5 w-3.5" /> : <Monitor className="mr-1 inline h-3.5 w-3.5" />}{x}</button>)}</div><span className="text-xs text-muted-foreground">{currentPage?.route_pattern ?? ""}</span></div>
-    </div>
-    <div className="grid min-h-[calc(100vh-190px)] grid-cols-1 lg:grid-cols-[260px_minmax(420px,1fr)_300px]">
-      <aside className="border-b border-border bg-background p-3 lg:border-b-0 lg:border-r"><p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Real App Pages</p><div className="space-y-1">{pages.map((p) => <button key={p.page_key} onClick={() => setPageKey(p.page_key)} className={`w-full rounded-lg px-3 py-2 text-left text-sm ${p.page_key === pageKey ? "bg-primary/10 font-semibold text-primary" : "hover:bg-muted"}`}>{p.name}</button>)}</div><div className="mt-5 border-t pt-4"><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add / Edit Components</p><div className="relative mt-2"><Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search components…" className="w-full rounded-lg border bg-background py-2 pl-7 pr-2 text-xs" /></div><div className="mt-2 max-h-[42vh] space-y-1 overflow-y-auto">{catalog.map((x) => <button key={x.type} onClick={() => add(x.type)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs hover:bg-muted"><Box className="h-3.5 w-3.5" />{x.label}<span className="ml-auto text-[9px] text-muted-foreground">{x.group}</span></button>)}</div></div></aside>
+    <div className="border-b border-border bg-background px-4 py-3 md:px-6"><AdminPageHeader title="App Studio" subtitle="Edit the real Jalwa app pages. The canvas below shows the actual route layout, not a mock page." right={<div className="flex flex-wrap gap-2"><button className="rounded-lg border p-2 disabled:opacity-40" onClick={undo} disabled={!history.length}><Undo2 className="h-4 w-4" /></button><button className="rounded-lg border p-2 disabled:opacity-40" onClick={redo} disabled={!future.length}><Redo2 className="h-4 w-4" /></button>{previewUrl && <button className="rounded-lg border px-3 py-2 text-sm" onClick={() => window.open(previewUrl, "_blank", "noopener,noreferrer")}><ExternalLink className="mr-1 inline h-4 w-4" />Open page</button>}<button className="rounded-lg border px-3 py-2 text-sm" onClick={() => toast.info("Preview is the real application route shown in the canvas.")}><Eye className="mr-1 inline h-4 w-4" />Preview</button><button className="rounded-lg border px-3 py-2 text-sm disabled:opacity-50" onClick={() => void saveDraft()} disabled={saving}><Save className="mr-1 inline h-4 w-4" />Save Draft</button><button className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground disabled:opacity-50" onClick={() => void publish()} disabled={saving}><Upload className="mr-1 inline h-4 w-4" />Publish</button></div>} /><div className="flex items-center justify-between gap-3"><div className="flex gap-2">{(["mobile","tablet","desktop"] as DeviceKind[]).map((x) => <button key={x} onClick={() => setDevice(x)} className={`rounded-full px-3 py-1.5 text-xs ${device === x ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{x === "mobile" ? <Smartphone className="mr-1 inline h-3.5 w-3.5" /> : x === "tablet" ? <Tablet className="mr-1 inline h-3.5 w-3.5" /> : <Monitor className="mr-1 inline h-3.5 w-3.5" />}{x}</button>)}</div><span className="text-xs text-muted-foreground">{currentPage?.route_pattern ?? ""}</span></div></div>
+    <div className="grid min-h-[calc(100vh-190px)] grid-cols-1 lg:grid-cols-[280px_minmax(420px,1fr)_300px]">
+      <aside className="border-b border-border bg-background p-3 lg:border-b-0 lg:border-r"><p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Real App Pages</p><div className="space-y-1">{pages.map((p) => <button key={p.page_key} onClick={() => setPageKey(p.page_key)} className={`w-full rounded-lg px-3 py-2 text-left text-sm ${p.page_key === pageKey ? "bg-primary/10 font-semibold text-primary" : "hover:bg-muted"}`}>{p.name}</button>)}</div><div className="mt-5"><ExistingAppDetectionPanel route={route} /></div><div className="mt-5 border-t pt-4"><p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add / Edit Components</p><div className="relative mt-2"><Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search components…" className="w-full rounded-lg border bg-background py-2 pl-7 pr-2 text-xs" /></div><div className="mt-2 max-h-[30vh] space-y-1 overflow-y-auto">{catalog.map((x) => <button key={x.type} onClick={() => add(x.type)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs hover:bg-muted"><Box className="h-3.5 w-3.5" />{x.label}<span className="ml-auto text-[9px] text-muted-foreground">{x.group}</span></button>)}</div></div></aside>
       <section className="overflow-auto bg-muted/30 p-4 md:p-8"><div className="mx-auto" style={{ width: device === "mobile" ? 390 : device === "tablet" ? 768 : "100%", maxWidth: "100%" }}><div className="mb-2 flex justify-between text-[10px] text-muted-foreground"><span>{pageKey}</span><span>{device}</span></div><div className="relative min-h-[720px] overflow-hidden rounded-[28px] border-2 border-dashed border-border bg-background shadow-xl">{previewUrl ? <iframe key={previewUrl} title={`${currentPage?.name ?? pageKey} live preview`} src={previewUrl} className="h-[820px] w-full border-0 bg-background" /> : <div className="grid min-h-[650px] place-items-center p-8 text-center text-muted-foreground"><div><Box className="mx-auto mb-3 h-9 w-9" /><p className="text-sm font-semibold">No preview route available</p><p className="mt-1 text-xs">This page needs a real room before its live layout can be previewed.</p></div></div>}{config.sections.length > 0 && <div className="absolute bottom-3 left-3 rounded-full border bg-background/90 px-3 py-1 text-[10px] shadow">{config.sections.length} Studio override{config.sections.length === 1 ? "" : "s"} saved for this page</div>}</div></div></section>
       <aside className="border-t border-border bg-background p-4 lg:border-l lg:border-t-0"><div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground"><Palette className="h-4 w-4" />Studio Properties</div>{selected ? <PropertyEditor node={selected} onChange={(patch) => updateNode(selected.id, patch)} onDelete={remove} /> : <div className="space-y-3"><div className="rounded-xl border p-4 text-xs text-muted-foreground">Select a Studio override from the saved configuration to edit its text, size, colors, spacing, visibility, and lock state.</div><div className="rounded-xl border p-4 text-xs"><p className="font-semibold">Real page preview</p><p className="mt-1 text-muted-foreground">The center canvas is the actual Jalwa route for the selected page. Existing business logic and page components remain untouched.</p></div></div>}</aside>
     </div>
