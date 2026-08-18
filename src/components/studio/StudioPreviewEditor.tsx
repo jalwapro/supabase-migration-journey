@@ -3,15 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { normalizePageConfig, type AppPageConfig, type AppPageKey, type ComponentStyle, type StudioRuntimeOverride } from "@/lib/app-customization/schema";
 import { toast } from "sonner";
 
-const EDITABLE_PROPERTIES = ["background", "color", "fontSize", "fontWeight", "borderRadius", "padding", "margin", "opacity", "display"] as const;
+const EDITABLE_PROPERTIES = ["background", "color", "fontSize", "fontWeight", "borderRadius", "padding", "margin", "opacity", "display", "width", "height", "translate"] as const;
 type EditableProperty = typeof EDITABLE_PROPERTIES[number];
-
-type SelectedElement = {
-  selector: string;
-  tag: string;
-  text: string;
-  style: ComponentStyle;
-};
+type SelectedElement = { selector: string; tag: string; text: string; style: ComponentStyle };
+type Interaction = { mode: "drag" | "resize"; startX: number; startY: number; startWidth: number; startHeight: number; startTranslateX: number; startTranslateY: number };
 
 function pageFromPath(pathname: string): AppPageKey | null {
   if (pathname === "/") return "home";
@@ -45,10 +40,7 @@ function selectorFor(element: Element): string {
     const siblings = Array.from(parent.children).filter((child) => child.tagName === current!.tagName);
     const index = siblings.indexOf(current) + 1;
     parts.unshift(`${current.tagName.toLowerCase()}:nth-of-type(${index})`);
-    if (parent.id) {
-      parts.unshift(`#${CSS.escape(parent.id)}`);
-      break;
-    }
+    if (parent.id) { parts.unshift(`#${CSS.escape(parent.id)}`); break; }
     current = parent;
   }
   return parts.join(" > ") || "body";
@@ -56,17 +48,14 @@ function selectorFor(element: Element): string {
 
 function computedStyleOf(element: Element): ComponentStyle {
   const style = window.getComputedStyle(element);
-  return {
-    background: style.backgroundColor,
-    color: style.color,
-    fontSize: style.fontSize,
-    fontWeight: style.fontWeight,
-    borderRadius: style.borderRadius,
-    padding: style.padding,
-    margin: style.margin,
-    opacity: Number(style.opacity),
-    display: style.display,
-  };
+  const translate = style.translate && style.translate !== "none" ? style.translate : "0px 0px";
+  return { background: style.backgroundColor, color: style.color, fontSize: style.fontSize, fontWeight: style.fontWeight, borderRadius: style.borderRadius, padding: style.padding, margin: style.margin, opacity: Number(style.opacity), display: style.display, width: style.width, height: style.height, translate };
+}
+
+function parseTranslate(value: unknown): [number, number] {
+  if (typeof value !== "string") return [0, 0];
+  const nums = value.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [];
+  return [nums[0] ?? 0, nums[1] ?? 0];
 }
 
 function applyOverride(override: StudioRuntimeOverride) {
@@ -76,16 +65,15 @@ function applyOverride(override: StudioRuntimeOverride) {
     const element = node as HTMLElement;
     for (const [key, value] of Object.entries(override.style ?? {})) {
       if (!EDITABLE_PROPERTIES.includes(key as EditableProperty)) continue;
-      if (value === undefined || value === null || value === "") element.style.removeProperty(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`));
-      else element.style.setProperty(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`), String(value), "important");
+      const cssKey = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+      if (value === undefined || value === null || value === "") element.style.removeProperty(cssKey);
+      else element.style.setProperty(cssKey, String(value), "important");
     }
     if (override.visible === false) element.style.setProperty("display", "none", "important");
   });
 }
 
-function applyAll(config: AppPageConfig) {
-  (config.runtimeOverrides ?? []).forEach(applyOverride);
-}
+function applyAll(config: AppPageConfig) { (config.runtimeOverrides ?? []).forEach(applyOverride); }
 
 export function StudioPreviewEditor() {
   const page = useMemo(() => pageFromPath(window.location.pathname), []);
@@ -94,6 +82,8 @@ export function StudioPreviewEditor() {
   const [draft, setDraft] = useState<ComponentStyle>({});
   const [saving, setSaving] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [interaction, setInteraction] = useState<Interaction | null>(null);
+  const [handlePosition, setHandlePosition] = useState({ left: -100, top: -100 });
   const selectedRef = useRef<HTMLElement | null>(null);
 
   const loadConfig = useCallback(async () => {
@@ -107,7 +97,6 @@ export function StudioPreviewEditor() {
   }, [page]);
 
   useEffect(() => { void loadConfig(); }, [loadConfig]);
-
   useEffect(() => {
     if (!config) return;
     applyAll(config);
@@ -116,23 +105,50 @@ export function StudioPreviewEditor() {
     return () => observer.disconnect();
   }, [config]);
 
+  const refreshHandle = useCallback(() => {
+    const node = selectedRef.current;
+    if (!node || !selected) return setHandlePosition({ left: -100, top: -100 });
+    const rect = node.getBoundingClientRect();
+    setHandlePosition({ left: Math.max(4, rect.right - 6), top: Math.max(4, rect.bottom - 6) });
+  }, [selected]);
+
+  useEffect(() => { refreshHandle(); window.addEventListener("resize", refreshHandle); window.addEventListener("scroll", refreshHandle, true); return () => { window.removeEventListener("resize", refreshHandle); window.removeEventListener("scroll", refreshHandle, true); }; }, [refreshHandle, draft]);
+
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       if (!target || target.closest("[data-studio-editor-ui]") || !document.body.contains(target)) return;
       if (["HTML", "BODY", "SCRIPT", "STYLE", "LINK", "IFRAME"].includes(target.tagName)) return;
-      event.preventDefault();
-      event.stopPropagation();
+      event.preventDefault(); event.stopPropagation();
       const selector = selectorFor(target);
       selectedRef.current = target;
       const current = (config?.runtimeOverrides ?? []).find((item) => item.selector === selector);
       const style = current?.style ?? computedStyleOf(target);
       setSelected({ selector, tag: target.tagName.toLowerCase(), text: (target.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 90), style });
       setDraft(style);
+      requestAnimationFrame(refreshHandle);
     };
     document.addEventListener("click", onClick, true);
     return () => document.removeEventListener("click", onClick, true);
-  }, [config]);
+  }, [config, refreshHandle]);
+
+  useEffect(() => {
+    const onPointerMove = (event: PointerEvent) => {
+      if (!interaction || !selectedRef.current) return;
+      const dx = event.clientX - interaction.startX;
+      const dy = event.clientY - interaction.startY;
+      if (interaction.mode === "drag") {
+        setStyleDirect("translate", `${Math.round(interaction.startTranslateX + dx)}px ${Math.round(interaction.startTranslateY + dy)}px`);
+      } else {
+        setStyleDirect("width", `${Math.max(24, Math.round(interaction.startWidth + dx))}px`);
+        setStyleDirect("height", `${Math.max(24, Math.round(interaction.startHeight + dy))}px`);
+      }
+    };
+    const onPointerUp = () => setInteraction(null);
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    return () => { window.removeEventListener("pointermove", onPointerMove); window.removeEventListener("pointerup", onPointerUp); };
+  }, [interaction]);
 
   useEffect(() => {
     if (!selected) return;
@@ -144,9 +160,25 @@ export function StudioPreviewEditor() {
       if (value === undefined || value === null || value === "") node.style.removeProperty(cssKey);
       else node.style.setProperty(cssKey, String(value), "important");
     }
-  }, [draft, selected]);
+    refreshHandle();
+  }, [draft, selected, refreshHandle]);
 
-  const setStyle = (key: EditableProperty, value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
+  const setStyleDirect = (key: EditableProperty, value: string) => setDraft((prev) => ({ ...prev, [key]: value }));
+  const setStyle = (key: EditableProperty, value: string) => setStyleDirect(key, value);
+
+  const startDrag = (event: React.PointerEvent) => {
+    if (!selectedRef.current || !selected) return;
+    event.preventDefault(); event.stopPropagation();
+    const [tx, ty] = parseTranslate(draft.translate);
+    setInteraction({ mode: "drag", startX: event.clientX, startY: event.clientY, startWidth: selectedRef.current.getBoundingClientRect().width, startHeight: selectedRef.current.getBoundingClientRect().height, startTranslateX: tx, startTranslateY: ty });
+  };
+  const startResize = (event: React.PointerEvent) => {
+    if (!selectedRef.current || !selected) return;
+    event.preventDefault(); event.stopPropagation();
+    const rect = selectedRef.current.getBoundingClientRect();
+    const [tx, ty] = parseTranslate(draft.translate);
+    setInteraction({ mode: "resize", startX: event.clientX, startY: event.clientY, startWidth: rect.width, startHeight: rect.height, startTranslateX: tx, startTranslateY: ty });
+  };
 
   const buildConfig = () => {
     if (!selected || !config) return config;
@@ -157,22 +189,17 @@ export function StudioPreviewEditor() {
 
   async function saveDraft() {
     if (!page || !config) return;
-    const next = buildConfig();
-    setSaving(true);
+    const next = buildConfig(); setSaving(true);
     const { data: pageRow, error: pageError } = await supabase.from("app_customization_pages").select("id,name").eq("page_key", page).maybeSingle();
     if (pageError || !pageRow) { toast.error(pageError?.message ?? "Page not found"); setSaving(false); return; }
     const { data: draftRow } = await supabase.from("app_customization_versions").select("id").eq("page_id", pageRow.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
-    const result = draftRow?.id
-      ? await supabase.from("app_customization_versions").update({ config: next }).eq("id", draftRow.id)
-      : await supabase.from("app_customization_versions").insert({ page_id: pageRow.id, version: 1, status: "draft", config: next });
-    setSaving(false);
-    if (result.error) toast.error(result.error.message); else { setConfig(next); toast.success("Draft saved"); }
+    const result = draftRow?.id ? await supabase.from("app_customization_versions").update({ config: next }).eq("id", draftRow.id) : await supabase.from("app_customization_versions").insert({ page_id: pageRow.id, version: 1, status: "draft", config: next });
+    setSaving(false); if (result.error) toast.error(result.error.message); else { setConfig(next); toast.success("Draft saved"); }
   }
 
   async function publish() {
     if (!page || !config) return;
-    const next = buildConfig();
-    setSaving(true);
+    const next = buildConfig(); setSaving(true);
     const { data: pageRow, error: pageError } = await supabase.from("app_customization_pages").select("id,name").eq("page_key", page).maybeSingle();
     if (pageError || !pageRow) { toast.error(pageError?.message ?? "Page not found"); setSaving(false); return; }
     const { data: latest, error: latestError } = await supabase.from("app_customization_versions").select("version").eq("page_id", pageRow.id).order("version", { ascending: false }).limit(1).maybeSingle();
@@ -182,42 +209,38 @@ export function StudioPreviewEditor() {
     if (versionError || !publishedVersion) { toast.error(versionError?.message ?? "Publish failed"); setSaving(false); return; }
     await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", pageRow.id).eq("is_current", true);
     const { error: pubError } = await supabase.from("app_customization_published").insert({ page_id: pageRow.id, version_id: publishedVersion.id, config: next, version, published_at: new Date().toISOString(), is_current: true });
-    setSaving(false);
-    if (pubError) toast.error(pubError.message); else { setConfig(next); toast.success(`${pageRow.name} published`); }
+    setSaving(false); if (pubError) toast.error(pubError.message); else { setConfig(next); toast.success(`${pageRow.name} published`); }
   }
 
   function removeOverride() {
     if (!selected || !config) return;
     const next = { ...config, runtimeOverrides: (config.runtimeOverrides ?? []).filter((item) => item.selector !== selected.selector) };
     setConfig(next);
-    if (selectedRef.current) {
-      const element = selectedRef.current;
-      for (const key of EDITABLE_PROPERTIES) element.style.removeProperty(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`));
-    }
+    if (selectedRef.current) { for (const key of EDITABLE_PROPERTIES) selectedRef.current.style.removeProperty(key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)); }
     setDraft(computedStyleOf(selectedRef.current ?? document.body));
   }
 
   if (!page) return null;
-
+  const dragging = interaction?.mode === "drag";
   return (
-    <div data-studio-editor-ui className={`fixed right-3 top-3 z-[2147483647] w-[310px] rounded-2xl border border-white/15 bg-black/90 p-3 text-white shadow-2xl backdrop-blur-xl ${collapsed ? "h-auto" : ""}`}>
-      <div className="flex items-center justify-between gap-2">
-        <div><div className="text-xs font-bold">Jalwa App Studio</div><div className="text-[10px] text-white/50">Live page editor · {page}</div></div>
-        <button data-studio-editor-ui className="rounded-md bg-white/10 px-2 py-1 text-[10px]" onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Open" : "Hide"}</button>
+    <>
+      {selected && <div data-studio-editor-ui onPointerDown={startDrag} className="fixed z-[2147483645] cursor-move border-2 border-primary/80 bg-primary/5" style={{ left: Math.max(0, handlePosition.left - 9999), top: Math.max(0, handlePosition.top - 9999), width: 1, height: 1, pointerEvents: "none" }} />}
+      {selected && <div data-studio-editor-ui onPointerDown={startResize} className="fixed z-[2147483647] h-3 w-3 cursor-nwse-resize rounded-sm border border-white bg-primary shadow-lg" style={{ left: handlePosition.left, top: handlePosition.top, touchAction: "none" }} />}
+      <div data-studio-editor-ui className={`fixed right-3 top-3 z-[2147483647] w-[330px] rounded-2xl border border-white/15 bg-black/90 p-3 text-white shadow-2xl backdrop-blur-xl ${dragging ? "ring-2 ring-primary/40" : ""}`}>
+        <div className="flex items-center justify-between gap-2"><div><div className="text-xs font-bold">Jalwa App Studio</div><div className="text-[10px] text-white/50">Real page editor · {page}</div></div><button data-studio-editor-ui className="rounded-md bg-white/10 px-2 py-1 text-[10px]" onClick={() => setCollapsed((v) => !v)}>{collapsed ? "Open" : "Hide"}</button></div>
+        {!collapsed && <>
+          <div className="mt-2 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] text-white/65">Drag the selected element directly. Use the corner handle to resize. Changes stay in draft until Publish.</div>
+          {selected ? <>
+            <div className="mt-3 rounded-lg bg-white/5 p-2"><div className="font-mono text-[10px] text-cyan-300">{selected.tag}</div><div className="mt-1 truncate text-[10px] text-white/60">{selected.text || selected.selector}</div></div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {(["width","height","translate","background","color","fontSize","fontWeight","borderRadius","padding","margin","opacity"] as EditableProperty[]).map((key) => <label key={key} className="text-[9px] text-white/55"><span className="mb-1 block">{key}</span><input data-studio-editor-ui className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white outline-none" value={String(draft[key] ?? "")} onChange={(e) => setStyle(key, e.target.value)} /></label>)}
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2"><button data-studio-editor-ui onClick={() => setStyle("translate", "0px 0px")} className="rounded-lg bg-white/10 px-2 py-2 text-[10px]">Reset Position</button><button data-studio-editor-ui onClick={() => setStyle("width", "auto")} className="rounded-lg bg-white/10 px-2 py-2 text-[10px]">Auto Width</button><button data-studio-editor-ui onClick={() => setStyle("height", "auto")} className="rounded-lg bg-white/10 px-2 py-2 text-[10px]">Auto Height</button></div>
+            <div className="mt-3 flex gap-2"><button data-studio-editor-ui onClick={() => void saveDraft()} disabled={saving} className="flex-1 rounded-lg bg-white/10 px-2 py-2 text-[10px] disabled:opacity-50">{saving ? "Saving…" : "Save Draft"}</button><button data-studio-editor-ui onClick={() => void publish()} disabled={saving} className="flex-1 rounded-lg bg-primary px-2 py-2 text-[10px] disabled:opacity-50">Publish</button></div>
+            <button data-studio-editor-ui onClick={removeOverride} className="mt-2 w-full rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-200">Reset selected element</button>
+          </> : <div className="mt-3 rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-[10px] text-white/45">Select an element on the real page to begin editing.</div>}
+        </>}
       </div>
-      {!collapsed && <>
-        <div className="mt-2 rounded-lg bg-white/5 px-2 py-1.5 text-[10px] text-white/65">Click any visible page element to edit it. Existing app behavior is not replaced.</div>
-        {selected ? <>
-          <div className="mt-3 rounded-lg bg-white/5 p-2"><div className="font-mono text-[10px] text-cyan-300">{selected.tag}</div><div className="mt-1 truncate text-[10px] text-white/60">{selected.text || selected.selector}</div></div>
-          <div className="mt-2 grid grid-cols-2 gap-2">
-            {(["background","color","fontSize","fontWeight","borderRadius","padding","margin","opacity"] as EditableProperty[]).map((key) => (
-              <label key={key} className="text-[9px] text-white/55"><span className="mb-1 block">{key}</span><input data-studio-editor-ui className="w-full rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] text-white outline-none" value={String(draft[key] ?? "")} onChange={(e) => setStyle(key, e.target.value)} /></label>
-            ))}
-          </div>
-          <div className="mt-3 flex gap-2"><button data-studio-editor-ui onClick={() => void saveDraft()} disabled={saving} className="flex-1 rounded-lg bg-white/10 px-2 py-2 text-[10px] disabled:opacity-50">{saving ? "Saving…" : "Save Draft"}</button><button data-studio-editor-ui onClick={() => void publish()} disabled={saving} className="flex-1 rounded-lg bg-primary px-2 py-2 text-[10px] disabled:opacity-50">Publish</button></div>
-          <button data-studio-editor-ui onClick={removeOverride} className="mt-2 w-full rounded-lg border border-red-400/20 px-2 py-1.5 text-[10px] text-red-200">Reset selected element</button>
-        </> : <div className="mt-3 rounded-lg border border-dashed border-white/10 px-3 py-6 text-center text-[10px] text-white/45">Select an element on the real page to begin editing.</div>}
-      </>}
-    </div>
+    </>
   );
 }
