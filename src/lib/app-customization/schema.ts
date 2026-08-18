@@ -22,6 +22,13 @@ export interface ComponentStyle {
   lineHeight?: string | number; letterSpacing?: string | number;
 }
 
+export interface StudioRuntimeOverride {
+  id: string;
+  selector: string;
+  style: ComponentStyle;
+  visible?: boolean;
+}
+
 export interface AppComponentNode {
   id: string; type: ComponentType; name?: string; visible?: boolean; locked?: boolean;
   props?: Record<string, unknown>; style?: ComponentStyle;
@@ -32,11 +39,12 @@ export interface AppComponentNode {
 export interface AppPageConfig {
   schemaVersion: 1; page: AppPageKey; theme: string; sections: AppComponentNode[];
   navigation?: Record<string, unknown>; responsive?: Partial<Record<DeviceKind, Record<string, unknown>>>;
+  runtimeOverrides?: StudioRuntimeOverride[];
 }
 
 export const DEFAULT_APP_CONFIG: AppPageConfig = {
   schemaVersion: 1, page: "home", theme: "default", sections: [],
-  navigation: {}, responsive: { mobile: {}, tablet: {}, desktop: {} },
+  navigation: {}, responsive: { mobile: {}, tablet: {}, desktop: {} }, runtimeOverrides: [],
 };
 
 const SAFE_TYPES: ComponentType[] = [
@@ -55,11 +63,23 @@ export function normalizePageConfig(raw: unknown, page: AppPageKey): AppPageConf
   const sections = Array.isArray(source.sections)
     ? source.sections.filter((node) => node && typeof node === "object" && isSafeComponentType((node as Record<string, unknown>).type)) as AppComponentNode[]
     : [];
+  const runtimeOverrides = Array.isArray(source.runtimeOverrides)
+    ? source.runtimeOverrides.filter((item) => item && typeof item === "object" && typeof (item as Record<string, unknown>).selector === "string").map((item) => {
+        const value = item as Record<string, unknown>;
+        return {
+          id: typeof value.id === "string" ? value.id : crypto.randomUUID(),
+          selector: String(value.selector),
+          style: value.style && typeof value.style === "object" ? value.style as ComponentStyle : {},
+          visible: value.visible !== false,
+        } satisfies StudioRuntimeOverride;
+      })
+    : [];
   return {
     schemaVersion: 1, page,
     theme: typeof source.theme === "string" ? source.theme : "default",
     sections,
     navigation: source.navigation && typeof source.navigation === "object" ? source.navigation as Record<string, unknown> : {},
     responsive: source.responsive && typeof source.responsive === "object" ? source.responsive as AppPageConfig["responsive"] : { mobile: {}, tablet: {}, desktop: {} },
+    runtimeOverrides,
   };
 }
