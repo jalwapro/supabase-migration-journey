@@ -10,6 +10,7 @@ const selectors: Record<string, string[]> = {
   "room-gifts": ["[data-gift-notification]", "[class*='gift-notification']", "[class*='gift-animation']"],
   "room-announcement": ["[data-room-announcement]", "[class*='announcement']"],
   "room-controls": ["[data-room-controls]", "[class*='room-controls']"],
+  "bottom-sheet": ["[data-bottom-sheet]", "[role='dialog'][data-state]", "[class*='bottom-sheet']"],
   "voice-seat": ["[data-seat]", "[data-seat-id]", "[class*='seat-']", "[class*='seat ']"],
   "host-card": ["[data-host-card]", "[class*='host-card']"],
   waveform: ["[data-waveform]", "canvas[class*='wave']", "[class*='waveform']"],
@@ -40,17 +41,16 @@ function findElements(type: string) {
 }
 function applyStyle(target: HTMLElement, style: ComponentStyle | undefined) {
   if (!style) return;
-  const { spacing, shadows, gradient, ...css } = style as Record<string, unknown>;
+  const { spacing, shadows, gradient, ...css } = style as ComponentStyle;
   for (const [key, value] of Object.entries(css)) {
     if (value === undefined || value === null || key === "x" || key === "y") continue;
     try { (target.style as unknown as Record<string, string | number>)[key] = value as string | number; } catch { /* invalid style ignored */ }
   }
-  if (spacing && typeof spacing === "object") {
-    const box = spacing as Record<string, unknown>;
-    target.style.marginTop = box.top == null ? "" : String(box.top);
-    target.style.marginRight = box.right == null ? "" : String(box.right);
-    target.style.marginBottom = box.bottom == null ? "" : String(box.bottom);
-    target.style.marginLeft = box.left == null ? "" : String(box.left);
+  if (spacing) {
+    target.style.marginTop = spacing.top == null ? "" : String(spacing.top);
+    target.style.marginRight = spacing.right == null ? "" : String(spacing.right);
+    target.style.marginBottom = spacing.bottom == null ? "" : String(spacing.bottom);
+    target.style.marginLeft = spacing.left == null ? "" : String(spacing.left);
   }
   if (shadows?.length && !style.boxShadow) target.style.boxShadow = shadows.map((shadow) => `${shadow.x}px ${shadow.y}px ${shadow.blur}px ${shadow.spread ?? 0}px ${shadow.color}`).join(", ");
   if (gradient?.stops?.length && !style.background) {
