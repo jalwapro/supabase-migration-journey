@@ -2,6 +2,7 @@ export type DeviceKind = "mobile" | "tablet" | "desktop";
 export type AppPageKey =
   | "home" | "rooms" | "voice-room" | "video-room" | "pk-battle" | "profile"
   | "wallet" | "messages" | "ranking" | "gifts" | "notifications" | "settings"
+  | "my-rooms" | "recharge" | "recharge-history" | "withdraw" | "gallery" | "visitors" | "games" | "privacy"
   | "login" | "register" | "splash";
 
 export type ComponentType =
