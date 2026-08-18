@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePageConfig, type AppPageKey, type AppPageConfig } from "./schema";
 import { createProductionRenderer } from "./production-renderer";
+import { bindLiveRoomComponents } from "./live-room-runtime";
 
 type PageRow = { id: string; page_key: AppPageKey; route_pattern: string | null; is_enabled?: boolean };
 
@@ -39,7 +40,9 @@ export async function applyCurrentPublishedConfig(pathname: string) {
   if (!page) return () => undefined;
   const config = await loadPublished(page);
   if (!config) return () => undefined;
-  return createProductionRenderer(config);
+  const cleanupRenderer = createProductionRenderer(config);
+  const cleanupRoomBinding = bindLiveRoomComponents(pathname, config);
+  return () => { cleanupRenderer?.(); cleanupRoomBinding?.(); };
 }
 
 export function clearPublishedRuntimeCache() { cachedPages = null; configCache.clear(); }
