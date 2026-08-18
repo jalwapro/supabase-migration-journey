@@ -61,7 +61,44 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+function isStudioPreview(): boolean {
+  return typeof window !== "undefined" && new URLSearchParams(window.location.search).get("studioPreview") === "1";
+}
+
+function demoProfile(userId: string): Profile {
+  return {
+    id: userId,
+    username: "Jalwa User",
+    full_name: "Jalwa User",
+    avatar: null,
+    frame: null,
+    ring: null,
+    bubble: null,
+    car: null,
+    entrance: null,
+    special_id: null,
+    data_card: null,
+    bio: null,
+    gender: null,
+    country: "Pakistan",
+    coins: 12500,
+    diamonds: 2500,
+    level: 12,
+    xp: 2400,
+    is_vip: false,
+    vip_expiry: null,
+    vip_level: 0,
+    status: "online",
+    theme_id: null,
+    frame_expires_at: null,
+    is_free: false,
+    user_code: "JALWA001",
+    last_seen: new Date().toISOString(),
+  };
+}
+
 async function loadProfile(userId: string): Promise<Profile | null> {
+  if (isStudioPreview()) return demoProfile(userId);
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
@@ -75,6 +112,7 @@ async function loadProfile(userId: string): Promise<Profile | null> {
 }
 
 async function loadRoles(userId: string): Promise<AppRole[]> {
+  if (isStudioPreview()) return ["user"];
   const { data, error } = await supabase
     .from("user_roles")
     .select("role")
@@ -99,9 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
   const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
   const isAdmin =
-    roles.includes("admin") ||
-    roles.includes("super_admin") ||
-    (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false);
+    !isStudioPreview() &&
+    (roles.includes("admin") ||
+      roles.includes("super_admin") ||
+      (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
@@ -121,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token !== hydrateTokenRef.current) return;
       setProfile(p);
       setRoles(r);
-      if (p && !p.country) {
+      if (!isStudioPreview() && p && !p.country) {
         try {
           const res = await fetch("https://ipapi.co/json/");
           if (res.ok) {
@@ -194,7 +233,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [hydrate, loadInitialSession]);
 
   useEffect(() => {
-    if (!user) {
+    if (!user || isStudioPreview()) {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
       heartbeatRef.current = null;
       return;
