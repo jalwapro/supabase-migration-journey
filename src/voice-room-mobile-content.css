@@ -1,0 +1,15 @@
+/* JALWA GLOBAL LIVE — mobile content layer */
+@media (max-width:430px){
+body:has(div[class*="border-fuchsia-400/15"]){--jalwa-content-gap:clamp(6px,1.8vw,9px)}
+body:has(div[class*="border-fuchsia-400/15"]) [class*="rounded-2xl"][style*="0 0 12px"]{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important}
+body:has(div[class*="border-fuchsia-400/15"]) [class*="rounded-2xl"][style*="0 0 12px"] input,body:has(div[class*="border-fuchsia-400/15"]) [class*="rounded-2xl"][style*="0 0 12px"] textarea{min-width:0!important;width:100%!important}
+body:has(div[class*="border-fuchsia-400/15"]) [class*="rounded-2xl"][style*="0 0 12px"] button{touch-action:manipulation}
+body:has(div[class*="border-fuchsia-400/15"]) [class*="rounded-2xl"][style*="0 0 14px"]{min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+body:has(div[class*="border-fuchsia-400/15"]) [class*="rounded-2xl"][style*="0 0 14px"] img{display:block;width:100%!important;max-width:100%!important;aspect-ratio:3/1.15;object-fit:cover!important}
+body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.bottom-nav"]{position:fixed!important;left:50%!important;bottom:0!important;transform:translateX(-50%)!important;width:min(100vw,430px)!important;max-width:430px!important;box-sizing:border-box!important;padding-bottom:max(8px,env(safe-area-inset-bottom))!important;padding-left:max(8px,env(safe-area-inset-left))!important;padding-right:max(8px,env(safe-area-inset-right))!important;z-index:100!important}
+body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.bottom-nav"] button{min-width:44px!important;min-height:44px!important;flex:1 1 0!important}
+body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.bottom-nav"] button:nth-child(4){flex:0 0 clamp(58px,18vw,72px)!important;min-width:clamp(58px,18vw,72px)!important;min-height:clamp(58px,18vw,72px)!important}
+body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.room-content"]{padding-bottom:calc(clamp(68px,19vw,84px) + env(safe-area-inset-bottom))!important}
+}
+@media(max-width:350px){body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.bottom-nav"]{padding-left:4px!important;padding-right:4px!important}body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.bottom-nav"] button{min-width:44px!important;padding-inline:2px!important}}
+@media(prefers-reduced-motion:reduce){body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.bottom-nav"] *{transition:none!important;animation:none!important}}
