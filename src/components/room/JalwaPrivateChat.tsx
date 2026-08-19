@@ -24,10 +24,12 @@ type DM = {
   message: string | null;
   kind: string;
   read_at: string | null;
+  delivered_at: string | null;
+  deleted_at: string | null;
   created_at: string;
 };
 
-const SELECT_COLS = "id,sender_id,recipient_id,message,kind,read_at,created_at";
+const SELECT_COLS = "id,sender_id,recipient_id,message,kind,read_at,delivered_at,deleted_at,created_at";
 
 function timeLabel(iso: string) {
   const d = new Date(iso).getTime();
@@ -85,8 +87,6 @@ export function JalwaPrivateChat({ open, onClose }: { open: boolean; onClose: ()
     void loadInbox();
   }, [user]);
 
-  // Real-time private messages. This stays mounted even when the dialog is closed,
-  // so a new DM can immediately produce a notification and unread badge.
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -101,7 +101,7 @@ export function JalwaPrivateChat({ open, onClose }: { open: boolean; onClose: ()
           void loadInbox();
           const name = sender?.peer_username || "New user";
           if (!open || selectedId !== dm.sender_id) {
-            toast(`New private message from ${name}`, { description: dm.message || preview({ ...(sender ?? {} as InboxRow), last_message: dm.message, last_kind: dm.kind, last_deleted: false, last_created_at: dm.created_at, unread: 1 }) });
+            toast(`New private message from ${name}`, { description: dm.message || "New private message" });
           }
           if (open && selectedId === dm.sender_id) {
             const now = new Date().toISOString();
@@ -183,7 +183,7 @@ export function JalwaPrivateChat({ open, onClose }: { open: boolean; onClose: ()
       <main className="flex min-w-0 flex-1 flex-col bg-white">
         {selected ? <>
           <header className="flex h-[58px] items-center gap-2 border-b border-black/15 px-3 sm:gap-3 sm:px-5"><Avatar name={selected.peer_username ?? "User"} src={selected.peer_avatar}/><div className="min-w-0 flex-1"><div className="truncate text-[13px] font-black sm:text-[15px]">{selected.peer_username ?? "User"}</div><div className="text-[9px] text-black/55 sm:text-[11px]">Private conversation</div></div><button aria-label="Call" className="rounded-full p-2 hover:bg-black/5"><Phone className="h-5 w-5"/></button><button aria-label="More" className="rounded-full p-2 hover:bg-black/5"><MoreHorizontal className="h-5 w-5"/></button></header>
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:space-y-4 sm:px-5 sm:py-5">{messages.filter((m) => !m.deleted_at).map((m) => <div key={m.id} className={`flex ${m.sender_id === user?.id ? "justify-end" : "justify-start"}`}><div className={`max-w-[78%] rounded-2xl border border-black/20 px-3 py-2 text-[11px] leading-relaxed sm:text-[13px] ${m.sender_id === user?.id ? "rounded-br-sm bg-black text-white" : "rounded-bl-sm bg-white text-black"}`}><div>{m.kind === "text" ? m.message : preview({ last_kind: m.kind, last_message: m.message, last_deleted: false, last_created_at: m.created_at, unread: 0, peer_id: "", peer_username: null, peer_avatar: null, peer_user_code: null })}</div><div className={`mt-1 text-right text-[8px] ${m.sender_id === user?.id ? "text-white/60" : "text-black/45"}`}>{timeLabel(m.created_at)}{m.sender_id === user?.id ? "  ✓✓" : ""}</div></div></div>)}</div>
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:space-y-4 sm:px-5 sm:py-5">{messages.filter((m) => !m.deleted_at).map((m) => <div key={m.id} className={`flex ${m.sender_id === user?.id ? "justify-end" : "justify-start"}`}><div className={`max-w-[78%] rounded-2xl border border-black/20 px-3 py-2 text-[11px] leading-relaxed sm:text-[13px] ${m.sender_id === user?.id ? "rounded-br-sm bg-black text-white" : "rounded-bl-sm bg-white text-black"}`}><div>{m.kind === "text" ? m.message : `${m.kind} message`}</div><div className={`mt-1 text-right text-[8px] ${m.sender_id === user?.id ? "text-white/60" : "text-black/45"}`}>{timeLabel(m.created_at)}{m.sender_id === user?.id ? "  ✓✓" : ""}</div></div></div>)}</div>
           <div className="border-t border-black/15 p-2 sm:p-3"><div className="flex items-center gap-2"><div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-black/25 px-3 py-2"><input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} placeholder="Type a private message..." className="min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-black/45 sm:text-[12px]"/><button aria-label="Emoji" className="rounded-full p-1 hover:bg-black/5"><Smile className="h-5 w-5"/></button></div><button onClick={() => void sendMessage()} aria-label="Send" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-black bg-black text-white active:scale-95"><Send className="h-4 w-4" /></button></div></div>
         </> : <div className="grid flex-1 place-items-center p-8 text-center text-sm text-black/50">Your real private messages will appear here.</div>}
       </main>
