@@ -1,0 +1,49 @@
+/* JALWA — mobile component polish layer. Keeps the existing room DOM/logic intact. */
+@media (max-width: 430px) {
+  body:has(div[class*="border-fuchsia-400/15"]) [data-host-card] {
+    gap: clamp(2px, 1vw, 6px) !important;
+    padding: clamp(6px, 2vw, 10px) !important;
+    border-radius: clamp(18px, 6vw, 26px) !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-host-card] > span:not([class*="pointer-events-none"]) {
+    min-width: 0 !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-host-card] img {
+    max-width: 25vw !important;
+    max-height: 25vw !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-waveform] {
+    height: clamp(12px, 5vw, 20px) !important;
+    gap: 1px !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-waveform] > span {
+    width: clamp(1px, .5vw, 2px) !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.audio-controls"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: clamp(12px, 6vw, 24px) !important;
+    padding-inline: clamp(8px, 3vw, 16px) !important;
+    box-sizing: border-box !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.audio-controls"] > button {
+    flex: 0 1 auto !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.audio-controls"] > button:nth-child(2) span:first-child {
+    width: clamp(58px, 18vw, 72px) !important;
+    height: clamp(58px, 18vw, 72px) !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.audio-controls"] > button:nth-child(2) svg {
+    width: clamp(24px, 7vw, 30px) !important;
+    height: clamp(24px, 7vw, 30px) !important;
+  }
+  body:has(div[class*="border-fuchsia-400/15"]) [data-jalwa-live-component="voice.audio-controls"] > button > span:last-child {
+    white-space: nowrap !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(div[class*="border-fuchsia-400/15"]) [data-waveform] > span { animation: none !important; }
+}
