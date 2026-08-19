@@ -13,20 +13,26 @@ function pageFromPath(path: string): AppPageKey | null {
   if (path === "/") return "home"; if (path === "/rooms") return "rooms"; if (path === "/wallet") return "wallet"; if (path === "/messages") return "messages"; if (path === "/rank") return "ranking"; if (path === "/gifts") return "gifts"; if (path === "/notifications") return "notifications"; if (path === "/settings") return "settings"; if (path === "/me" || path.startsWith("/profile/")) return "profile"; if (path === "/recharge") return "recharge"; if (path === "/recharge-history") return "recharge-history"; if (path === "/withdraw") return "withdraw"; if (path === "/gallery") return "gallery"; if (path === "/visitors") return "visitors"; if (path === "/games") return "games"; if (path === "/privacy") return "privacy"; if (path.startsWith("/room/")) return "voice-room"; if (path.startsWith("/pk/")) return "pk-battle"; return null;
 }
 
-function selectorFor(el: Element) {
+function selectorFor(el: Element): string {
   const html = el as HTMLElement;
   if (html.id) return `#${CSS.escape(html.id)}`;
-  const parts: string[] = []; let cur: Element | null = el;
-  while (cur && cur !== document.body && cur.parentElement) {
-    const parent = cur.parentElement; const siblings = Array.from(parent.children).filter((x) => x.tagName === cur!.tagName); const index = siblings.indexOf(cur) + 1;
-    parts.unshift(`${cur.tagName.toLowerCase()}:nth-of-type(${index})`); if (parent.id) { parts.unshift(`#${CSS.escape(parent.id)}`); break; } cur = parent;
+  const parts: string[] = [];
+  let cur: Element | null = el;
+  while (cur && cur !== document.body) {
+    const parent = cur.parentElement;
+    if (!parent || !parent.children) break;
+    const siblings = Array.from(parent.children).filter((child) => child.tagName === cur?.tagName);
+    const index = Math.max(1, siblings.indexOf(cur) + 1);
+    parts.unshift(`${cur.tagName.toLowerCase()}:nth-of-type(${index})`);
+    if (parent.id) { parts.unshift(`#${CSS.escape(parent.id)}`); break; }
+    cur = parent;
   }
   return parts.join(" > ") || "body";
 }
 
 function parseTranslate(value: unknown): [number, number] { const n = typeof value === "string" ? value.match(/-?\d+(?:\.\d+)?/g)?.map(Number) ?? [] : []; return [n[0] ?? 0, n[1] ?? 0]; }
 function computedStyle(el: Element): ComponentStyle { const s = getComputedStyle(el); return { background: s.backgroundColor, color: s.color, fontSize: s.fontSize, fontWeight: s.fontWeight, borderRadius: s.borderRadius, padding: s.padding, margin: s.margin, opacity: Number(s.opacity), display: s.display, width: s.width, height: s.height, translate: s.translate && s.translate !== "none" ? s.translate : "0px 0px" }; }
-function applyOverride(o: StudioRuntimeOverride) { let nodes: NodeListOf<Element>; try { nodes = document.querySelectorAll(o.selector); } catch { return; } nodes.forEach((node) => { const el = node as HTMLElement; for (const [key, value] of Object.entries(o.style ?? {})) { if (!EDITABLE.includes(key as EditableProperty)) continue; const css = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`); if (value == null || value === "") el.style.removeProperty(css); else el.style.setProperty(css, String(value), "important"); } if (o.visible === false) el.style.setProperty("display", "none", "important"); }); }
+function applyOverride(o: StudioRuntimeOverride) { let nodes: NodeListOf<Element>; try { nodes = document.querySelectorAll(o.selector); } catch { return; } nodes.forEach((node) => { if (!(node instanceof HTMLElement)) return; const el = node; for (const [key, value] of Object.entries(o.style ?? {})) { if (!EDITABLE.includes(key as EditableProperty)) continue; const css = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`); if (value == null || value === "") el.style.removeProperty(css); else el.style.setProperty(css, String(value), "important"); } if (o.visible === false) el.style.setProperty("display", "none", "important"); }); }
 function applyAll(config: AppPageConfig) { (config.runtimeOverrides ?? []).forEach(applyOverride); }
 
 export function StudioPreviewEditor() {
@@ -52,14 +58,23 @@ export function StudioPreviewEditor() {
     const { data } = await supabase.from("app_customization_versions").select("config").eq("page_id", p.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle();
     const next = normalizePageConfig(data?.config, page); setConfig(next); applyAll(next);
   }, [page]);
-  useEffect(() => { void load(); }, [load]);
-  useEffect(() => { if (!config) return; applyAll(config); const observer = new MutationObserver(() => applyAll(config)); observer.observe(document.body, { childList: true, subtree: true }); return () => observer.disconnect(); }, [config]);
 
+  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { if (!config || typeof document === "undefined") return; applyAll(config); const observer = new MutationObserver(() => applyAll(config)); observer.observe(document.body, { childList: true, subtree: true }); return () => observer.disconnect(); }, [config]);
   const refreshHandle = useCallback(() => { const el = selectedRef.current; if (!el) return setHandle({ left: -100, top: -100 }); const r = el.getBoundingClientRect(); setHandle({ left: Math.max(4, r.right - 6), top: Math.max(4, r.bottom - 6) }); }, []);
   useEffect(() => { refreshHandle(); window.addEventListener("resize", refreshHandle); window.addEventListener("scroll", refreshHandle, true); return () => { window.removeEventListener("resize", refreshHandle); window.removeEventListener("scroll", refreshHandle, true); }; }, [refreshHandle, draft]);
 
   useEffect(() => {
-    const click = (event: MouseEvent) => { const target = event.target as HTMLElement | null; if (!target || target.closest("[data-studio-editor-ui]") || ["HTML", "BODY", "SCRIPT", "STYLE", "LINK", "IFRAME"].includes(target.tagName)) return; event.preventDefault(); event.stopPropagation(); const selector = selectorFor(target); selectedRef.current = target; const existing = (config?.runtimeOverrides ?? []).find((x) => x.selector === selector); setSelected({ selector, tag: target.tagName.toLowerCase(), text: (target.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 90) }); setDraft(existing?.style ?? computedStyle(target)); history.current = []; redo.current = []; requestAnimationFrame(refreshHandle); };
+    const click = (event: MouseEvent) => {
+      const raw = event.target;
+      if (!(raw instanceof HTMLElement)) return;
+      if (raw.closest("[data-studio-editor-ui]") || ["HTML", "BODY", "SCRIPT", "STYLE", "LINK", "IFRAME"].includes(raw.tagName)) return;
+      event.preventDefault(); event.stopPropagation();
+      const selector = selectorFor(raw); selectedRef.current = raw;
+      const existing = (config?.runtimeOverrides ?? []).find((x) => x.selector === selector);
+      setSelected({ selector, tag: raw.tagName.toLowerCase(), text: (raw.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 90) });
+      setDraft(existing?.style ?? computedStyle(raw)); history.current = []; redo.current = []; requestAnimationFrame(refreshHandle);
+    };
     document.addEventListener("click", click, true); return () => document.removeEventListener("click", click, true);
   }, [config, refreshHandle]);
 
@@ -69,22 +84,17 @@ export function StudioPreviewEditor() {
 
   useEffect(() => {
     const move = (e: PointerEvent) => { const d = interaction; const el = selectedRef.current; if (!d || !el) return; const dx = e.clientX - d.startX, dy = e.clientY - d.startY; const rect = el.getBoundingClientRect();
-      if (d.mode === "drag") {
-        const parent = el.parentElement?.getBoundingClientRect(); const viewport = { width: parent?.width ?? window.innerWidth, height: parent?.height ?? window.innerHeight };
-        const rawX = d.startTx + dx, rawY = d.startTy + dy; const result = snapPosition({ left: 0, top: 0, width: rect.width, height: rect.height }, rawX, rawY, { grid, threshold: Math.max(4, grid * 0.75), viewport, snapToViewport: snapOn, snapToCenter: snapOn });
-        setStyle("translate", `${result.x}px ${result.y}px`, false); setGuides(result.guides.length > 0);
-      } else { const size = snapSize(d.startWidth + dx, d.startHeight + dy, { grid, minWidth: 24, minHeight: 24 }); setStyle("width", `${size.width}px`, false); setStyle("height", `${size.height}px`, false); }
+      if (d.mode === "drag") { const parent = el.parentElement?.getBoundingClientRect(); const viewport = { width: parent?.width ?? window.innerWidth, height: parent?.height ?? window.innerHeight }; const rawX = d.startTx + dx, rawY = d.startTy + dy; const result = snapPosition({ left: 0, top: 0, width: rect.width, height: rect.height }, rawX, rawY, { grid, threshold: Math.max(4, grid * 0.75), viewport, snapToViewport: snapOn, snapToCenter: snapOn }); setStyle("translate", `${result.x}px ${result.y}px`, false); setGuides(result.guides.length > 0); }
+      else { const size = snapSize(d.startWidth + dx, d.startHeight + dy, { grid, minWidth: 24, minHeight: 24 }); setStyle("width", `${size.width}px`, false); setStyle("height", `${size.height}px`, false); }
     };
     const up = () => setInteraction(null); window.addEventListener("pointermove", move); window.addEventListener("pointerup", up); return () => { window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", up); };
   }, [interaction, grid, snapOn, setStyle]);
 
-  useEffect(() => { if (!selectedRef.current) return; for (const [key, value] of Object.entries(draft)) { if (!EDITABLE.includes(key as EditableProperty)) continue; const css = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`); if (value == null || value === "") selectedRef.current.style.removeProperty(css); else selectedRef.current.style.setProperty(css, String(value), "important"); } refreshHandle(); }, [draft, refreshHandle]);
-
+  useEffect(() => { const el = selectedRef.current; if (!el) return; for (const [key, value] of Object.entries(draft)) { if (!EDITABLE.includes(key as EditableProperty)) continue; const css = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`); if (value == null || value === "") el.style.removeProperty(css); else el.style.setProperty(css, String(value), "important"); } refreshHandle(); }, [draft, refreshHandle]);
   useEffect(() => { const key = (e: KeyboardEvent) => { if (!(e.ctrlKey || e.metaKey)) return; if (e.key.toLowerCase() === "z" && !e.shiftKey) { e.preventDefault(); undo(); } else if ((e.key.toLowerCase() === "z" && e.shiftKey) || e.key.toLowerCase() === "y") { e.preventDefault(); redoNow(); } else if (e.key.toLowerCase() === "s") { e.preventDefault(); void saveDraft(); } }; window.addEventListener("keydown", key); return () => window.removeEventListener("keydown", key); });
 
   const startDrag = (e: React.PointerEvent) => { if (!selectedRef.current) return; e.preventDefault(); e.stopPropagation(); const [tx, ty] = parseTranslate(draft.translate); history.current.push(draft); setInteraction({ mode: "drag", startX: e.clientX, startY: e.clientY, startWidth: selectedRef.current.getBoundingClientRect().width, startHeight: selectedRef.current.getBoundingClientRect().height, startTx: tx, startTy: ty }); };
   const startResize = (e: React.PointerEvent) => { if (!selectedRef.current) return; e.preventDefault(); e.stopPropagation(); const r = selectedRef.current.getBoundingClientRect(); history.current.push(draft); setInteraction({ mode: "resize", startX: e.clientX, startY: e.clientY, startWidth: r.width, startHeight: r.height, startTx: 0, startTy: 0 }); };
-
   const buildConfig = () => { if (!config || !selected) return config; const existing = config.runtimeOverrides ?? []; const override: StudioRuntimeOverride = { id: existing.find((x) => x.selector === selected.selector)?.id ?? `dom-${Date.now()}`, selector: selected.selector, style: draft, visible: true }; return { ...config, runtimeOverrides: [...existing.filter((x) => x.selector !== selected.selector), override] }; };
   async function saveDraft() { if (!page || !config) return; setSaving(true); const next = buildConfig(); const { data: p, error: pe } = await supabase.from("app_customization_pages").select("id").eq("page_key", page).maybeSingle(); if (pe || !p) { toast.error(pe?.message ?? "Page not found"); setSaving(false); return; } const { data: d } = await supabase.from("app_customization_versions").select("id").eq("page_id", p.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle(); const result = d?.id ? await supabase.from("app_customization_versions").update({ config: next }).eq("id", d.id) : await supabase.from("app_customization_versions").insert({ page_id: p.id, version: 1, status: "draft", config: next }); setSaving(false); if (result.error) toast.error(result.error.message); else { setConfig(next); toast.success("Draft saved"); } }
   async function publish() { if (!page || !config) return; setSaving(true); const next = buildConfig(); const { data: p, error: pe } = await supabase.from("app_customization_pages").select("id,name").eq("page_key", page).maybeSingle(); if (pe || !p) { toast.error(pe?.message ?? "Page not found"); setSaving(false); return; } const { data: latest } = await supabase.from("app_customization_versions").select("version").eq("page_id", p.id).order("version", { ascending: false }).limit(1).maybeSingle(); const version = (latest?.version ?? 0) + 1; const { data: pv, error: ve } = await supabase.from("app_customization_versions").insert({ page_id: p.id, version, status: "published", config: next, published_at: new Date().toISOString() }).select("id").single(); if (ve || !pv) { toast.error(ve?.message ?? "Publish failed"); setSaving(false); return; } await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", p.id).eq("is_current", true); const { error } = await supabase.from("app_customization_published").insert({ page_id: p.id, version_id: pv.id, config: next, version, published_at: new Date().toISOString(), is_current: true }); setSaving(false); if (error) toast.error(error.message); else { setConfig(next); toast.success(`${p.name} published`); } }
