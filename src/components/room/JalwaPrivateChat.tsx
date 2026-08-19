@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { MoreHorizontal, Phone, Search, Send, Smile, X } from "lucide-react";
+import { MoreHorizontal, Search, Send, Smile, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -62,6 +62,8 @@ export function JalwaPrivateChat({ open, onClose }: { open: boolean; onClose: ()
   const [messages, setMessages] = useState<DM[]>([]);
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [clearBusy, setClearBusy] = useState(false);
 
   const selected = useMemo(() => inbox.find((r) => r.peer_id === selectedId) ?? inbox[0] ?? null, [inbox, selectedId]);
   const filtered = useMemo(() => {
@@ -166,6 +168,28 @@ export function JalwaPrivateChat({ open, onClose }: { open: boolean; onClose: ()
     void loadInbox();
   };
 
+  const clearChat = async () => {
+    if (!user || !selected || clearBusy) return;
+    const name = selected.peer_username ?? "this user";
+    const confirmed = window.confirm(`Clear the complete private chat with ${name}?\n\nThis permanently removes the conversation for both participants and cannot be undone.`);
+    if (!confirmed) return;
+
+    setClearBusy(true);
+    setMenuOpen(false);
+    const { data, error } = await supabase.rpc("clear_dm_conversation", { _peer_id: selected.peer_id });
+    setClearBusy(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setMessages([]);
+    setInbox((current) => current.filter((row) => row.peer_id !== selected.peer_id));
+    setSelectedId(null);
+    toast.success(`${Number(data ?? 0)} message(s) cleared`);
+    void loadInbox();
+  };
+
   if (!open) return null;
 
   return <div className="fixed inset-0 z-[2147482500] bg-black/45 p-3 sm:p-5" onClick={onClose}>
@@ -182,7 +206,7 @@ export function JalwaPrivateChat({ open, onClose }: { open: boolean; onClose: ()
       </aside>
       <main className="flex min-w-0 flex-1 flex-col bg-white">
         {selected ? <>
-          <header className="flex h-[58px] items-center gap-2 border-b border-black/15 px-3 sm:gap-3 sm:px-5"><Avatar name={selected.peer_username ?? "User"} src={selected.peer_avatar}/><div className="min-w-0 flex-1"><div className="truncate text-[13px] font-black sm:text-[15px]">{selected.peer_username ?? "User"}</div><div className="text-[9px] text-black/55 sm:text-[11px]">Private conversation</div></div><button aria-label="Call" className="rounded-full p-2 hover:bg-black/5"><Phone className="h-5 w-5"/></button><button aria-label="More" className="rounded-full p-2 hover:bg-black/5"><MoreHorizontal className="h-5 w-5"/></button></header>
+          <header className="relative flex h-[58px] items-center gap-2 border-b border-black/15 px-3 sm:gap-3 sm:px-5"><Avatar name={selected.peer_username ?? "User"} src={selected.peer_avatar}/><div className="min-w-0 flex-1"><div className="truncate text-[13px] font-black sm:text-[15px]">{selected.peer_username ?? "User"}</div><div className="text-[9px] text-black/55 sm:text-[11px]">Private conversation</div></div><div className="relative"><button onClick={() => setMenuOpen((v) => !v)} aria-label="Chat options" aria-expanded={menuOpen} className="rounded-full p-2 hover:bg-black/5"><MoreHorizontal className="h-5 w-5"/></button>{menuOpen ? <div className="absolute right-0 top-11 z-10 w-44 overflow-hidden rounded-xl border border-black/15 bg-white py-1 shadow-xl"><button disabled={clearBusy} onClick={() => void clearChat()} className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-[12px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"><Trash2 className="h-4 w-4"/>{clearBusy ? "Clearing..." : "Clear Chat"}</button></div> : null}</div></header>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-4 sm:space-y-4 sm:px-5 sm:py-5">{messages.filter((m) => !m.deleted_at).map((m) => <div key={m.id} className={`flex ${m.sender_id === user?.id ? "justify-end" : "justify-start"}`}><div className={`max-w-[78%] rounded-2xl border border-black/20 px-3 py-2 text-[11px] leading-relaxed sm:text-[13px] ${m.sender_id === user?.id ? "rounded-br-sm bg-black text-white" : "rounded-bl-sm bg-white text-black"}`}><div>{m.kind === "text" ? m.message : `${m.kind} message`}</div><div className={`mt-1 text-right text-[8px] ${m.sender_id === user?.id ? "text-white/60" : "text-black/45"}`}>{timeLabel(m.created_at)}{m.sender_id === user?.id ? "  ✓✓" : ""}</div></div></div>)}</div>
           <div className="border-t border-black/15 p-2 sm:p-3"><div className="flex items-center gap-2"><div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-black/25 px-3 py-2"><input value={draft} onChange={(e) => setDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") void sendMessage(); }} placeholder="Type a private message..." className="min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-black/45 sm:text-[12px]"/><button aria-label="Emoji" className="rounded-full p-1 hover:bg-black/5"><Smile className="h-5 w-5"/></button></div><button onClick={() => void sendMessage()} aria-label="Send" className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-black bg-black text-white active:scale-95"><Send className="h-4 w-4" /></button></div></div>
         </> : <div className="grid flex-1 place-items-center p-8 text-center text-sm text-black/50">Your real private messages will appear here.</div>}
