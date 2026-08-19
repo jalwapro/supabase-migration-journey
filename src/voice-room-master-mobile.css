@@ -1,0 +1,241 @@
+/* JALWA GLOBAL LIVE — MASTER MOBILE ROOM OVERRIDE
+ * One responsive composition based on a 390px design canvas.
+ * Presentation only: realtime/Zego/chat/gifts/moderation behavior is untouched.
+ */
+
+:root {
+  --jalwa-design-w: 390;
+  --jalwa-room-scale: clamp(0.82051282, calc(100vw / 390), 1.1025641);
+  --jalwa-safe-top: env(safe-area-inset-top, 0px);
+  --jalwa-safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden !important;
+}
+
+body {
+  min-height: 100dvh;
+  overscroll-behavior-x: none;
+  background: #05030a;
+}
+
+/* Existing room shell: width follows the phone, never creates a second layout. */
+body:has(div[class*="border-fuchsia-400/15"]) .app-frame-outer,
+body:has(div[class*="border-fuchsia-400/15"]) .app-frame,
+body:has(div[class*="border-fuchsia-400/15"]) .relative.z-10 {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) div.max-w-md {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+  padding-top: var(--jalwa-safe-top) !important;
+  padding-bottom: calc(78px + var(--jalwa-safe-bottom)) !important;
+  overflow-x: hidden !important;
+  background:
+    radial-gradient(circle at 50% 10%, rgba(139,92,246,.18), transparent 34%),
+    radial-gradient(circle at 8% 55%, rgba(236,72,153,.07), transparent 30%),
+    linear-gradient(180deg, #08040f 0%, #030208 100%) !important;
+}
+
+/* Keep the room header as one composition. */
+body:has(div[class*="border-fuchsia-400/15"]) header,
+body:has(div[class*="border-fuchsia-400/15"]) [data-room-header] {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+  padding-top: max(4px, var(--jalwa-safe-top)) !important;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) header > *,
+body:has(div[class*="border-fuchsia-400/15"]) [data-room-header] > * {
+  min-width: 0 !important;
+  flex-shrink: 1;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) header button,
+body:has(div[class*="border-fuchsia-400/15"]) [data-room-header] button {
+  min-width: 44px !important;
+  min-height: 44px !important;
+  flex: 0 0 auto !important;
+}
+
+/* MASTER ROOM STAGE — preserve the 5 x 5 visual coordinate system. */
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  margin-inline: auto !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(139,92,246,.19), transparent 38%),
+    radial-gradient(circle at 50% 72%, rgba(34,211,238,.05), transparent 45%),
+    rgba(3,2,8,.86) !important;
+  box-shadow: 0 0 38px rgba(139,92,246,.15), inset 0 0 42px rgba(217,70,239,.07) !important;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  aspect-ratio: 390 / 470 !important;
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-template-rows: repeat(5, minmax(0, 1fr)) !important;
+  gap: clamp(3px, 1.55vw, 7px) !important;
+  padding: clamp(4px, 1.55vw, 7px) !important;
+  box-sizing: border-box !important;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > * {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Host stays centered; 20 seats never become a vertical list. */
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:first-child {
+  grid-column: 3 !important;
+  grid-row: 1 / span 4 !important;
+  z-index: 4 !important;
+  border-radius: clamp(18px, 5vw, 28px) !important;
+  border: 2px solid rgba(236,72,153,.88) !important;
+  background: radial-gradient(circle at 50% 25%, rgba(236,72,153,.22), rgba(7,3,13,.95) 55%, #030207 100%) !important;
+  box-shadow: 0 0 28px rgba(236,72,153,.34), inset 0 0 30px rgba(139,92,246,.18) !important;
+}
+
+/* Seat positions: 8 left + 8 right + 4 bottom = exactly 20. */
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(2) {grid-column:1;grid-row:1}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(3) {grid-column:2;grid-row:1}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(4) {grid-column:1;grid-row:2}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(5) {grid-column:2;grid-row:2}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(6) {grid-column:1;grid-row:3}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(7) {grid-column:2;grid-row:3}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(8) {grid-column:1;grid-row:4}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(9) {grid-column:2;grid-row:4}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(10) {grid-column:4;grid-row:1}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(11) {grid-column:5;grid-row:1}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(12) {grid-column:4;grid-row:2}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(13) {grid-column:5;grid-row:2}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(14) {grid-column:4;grid-row:3}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(15) {grid-column:5;grid-row:3}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(16) {grid-column:4;grid-row:4}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(17) {grid-column:5;grid-row:4}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(18) {grid-column:1;grid-row:5}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(19) {grid-column:2;grid-row:5}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(20) {grid-column:4;grid-row:5}
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:nth-child(21) {grid-column:5;grid-row:5}
+
+/* Seats scale with viewport instead of triggering breakpoint reflow. */
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] > div.grid.gap-3 > *:not(:first-child) {
+  overflow: hidden !important;
+  border-radius: clamp(9px, 3.5vw, 17px) !important;
+  border: 1px solid rgba(168,85,247,.55) !important;
+  background: linear-gradient(180deg, rgba(25,10,43,.9), rgba(3,2,8,.95)) !important;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) div[class*="border-fuchsia-400/15"] img {
+  object-fit: cover !important;
+  max-width: 100% !important;
+}
+
+/* Never let controls wrap into a new row. */
+body:has(div[class*="border-fuchsia-400/15"]) [class*="flex-nowrap"] {
+  flex-wrap: nowrap !important;
+  min-width: 0 !important;
+}
+
+body:has(div[class*="border-fuchsia-400/15"]) button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch target minimum. Visual icons may remain smaller inside the target. */
+body:has(div[class*="border-fuchsia-400/15"]) button[class*="rounded-full"],
+body:has(div[class*="border-fuchsia-400/15"]) [role="button"] {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* Vertical-only chat scrolling; chat cannot widen the room. */
+body:has(div[class*="border-fuchsia-400/15"]) [class*="overflow-y-auto"] {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain;
+}
+
+/* Fixed bottom bar follows the same phone width and safe area. */
+body:has(div[class*="border-fuchsia-400/15"]) nav.fixed,
+body:has(div[class*="border-fuchsia-400/15"]) [class*="fixed"][class*="bottom-0"] {
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  transform: none !important;
+  min-height: 64px !important;
+  padding-bottom: var(--jalwa-safe-bottom) !important;
+  z-index: 100 !important;
+  box-sizing: border-box !important;
+  background: rgba(5,3,12,.94) !important;
+  border-top: 1px solid rgba(139,92,246,.28) !important;
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+/* Center microphone remains dominant without moving the other actions. */
+body:has(div[class*="border-fuchsia-400/15"]) nav.fixed button:nth-child(3),
+body:has(div[class*="border-fuchsia-400/15"]) [class*="fixed"][class*="bottom-0"] button:nth-child(3) {
+  min-width: clamp(54px, 15vw, 64px) !important;
+  min-height: clamp(54px, 15vw, 64px) !important;
+  transform: translateY(clamp(-12px, -2.5vw, -8px));
+  border-radius: 999px !important;
+  box-shadow: 0 0 28px rgba(236,72,153,.45), inset 0 0 16px rgba(139,92,246,.22);
+}
+
+/* Urdu support. */
+body:has(div[class*="border-fuchsia-400/15"]) [dir="rtl"],
+body:has(div[class*="border-fuchsia-400/15"]) .urdu {
+  font-family: "Noto Nastaliq Urdu", "Noto Sans Arabic", sans-serif !important;
+  line-height: 1.8 !important;
+}
+
+/* Compact phones: same composition, never a different layout. */
+@media (max-width: 359px) {
+  body:has(div[class*="border-fuchsia-400/15"]) div.max-w-md {
+    padding-bottom: calc(72px + var(--jalwa-safe-bottom)) !important;
+  }
+}
+
+@media (min-width: 431px) {
+  body:has(div[class*="border-fuchsia-400/15"]) div.max-w-md {
+    max-width: 430px !important;
+    margin-inline: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:has(div[class*="border-fuchsia-400/15"]) *,
+  body:has(div[class*="border-fuchsia-400/15"]) *::before,
+  body:has(div[class*="border-fuchsia-400/15"]) *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
