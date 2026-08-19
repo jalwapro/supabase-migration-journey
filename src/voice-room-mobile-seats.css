@@ -1,0 +1,19 @@
+/* JALWA mobile seat polish: one composition, no reflow. */
+@media (max-width: 430px) {
+  [data-seat-grid] { contain: layout paint; }
+  [data-seat-grid] [data-seat] { min-width:0!important; width:100%!important; box-sizing:border-box!important; min-height:clamp(72px,21vw,96px)!important; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+  [data-seat-grid] [data-seat] img { display:block; width:100%!important; height:100%!important; aspect-ratio:1; object-fit:cover!important; }
+  [data-seat-grid] [data-seat] > span { min-width:0; }
+  [data-seat-grid] [data-seat][aria-label^="Seat"]:active,
+  [data-seat-grid] [data-seat][aria-label^="Join seat"]:active { transform:scale(.96); }
+}
+@media (max-width:350px) {
+  [data-seat-grid] { gap:4px!important; padding-inline:3px!important; }
+  [data-seat-grid] > div:first-child { gap:3px!important; }
+  [data-seat-grid] > div:first-child > div,
+  [data-seat-grid] > div:last-child { gap:3px!important; }
+}
+@media (prefers-reduced-motion:reduce) {
+  [data-seat-grid] [data-seat] { transition:none!important; }
+  [data-seat-grid] [data-seat] .animate-ping { animation:none!important; }
+}
