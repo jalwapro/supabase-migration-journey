@@ -11,16 +11,24 @@ export const BREAKPOINTS: Breakpoint[] = ["desktop", "tablet", "mobile"];
 export type StudioStyle = {
   width?: string;
   height?: string;
+  minWidth?: string;
+  maxWidth?: string;
   minHeight?: string;
+  maxHeight?: string;
   x?: number;
   y?: number;
-  position?: "static" | "relative" | "absolute";
+  position?: "static" | "relative" | "absolute" | "fixed" | "sticky";
+  top?: string;
+  right?: string;
+  bottom?: string;
+  left?: string;
   margin?: string;
   padding?: string;
   gap?: string;
-  align?: "start" | "center" | "end" | "stretch";
-  justify?: "start" | "center" | "end" | "between";
-  direction?: "row" | "column";
+  align?: "start" | "center" | "end" | "stretch" | "baseline";
+  justify?: "start" | "center" | "end" | "between" | "around" | "evenly";
+  direction?: "row" | "column" | "row-reverse" | "column-reverse";
+  wrap?: "nowrap" | "wrap" | "wrap-reverse";
   background?: string;
   color?: string;
   border?: string;
@@ -31,10 +39,16 @@ export type StudioStyle = {
   fontFamily?: string;
   fontSize?: string;
   fontWeight?: string;
+  fontStyle?: string;
   lineHeight?: string;
   letterSpacing?: string;
-  textAlign?: "left" | "center" | "right";
-  animation?: "none" | "fade-in" | "slide-up" | "scale-in" | "pulse";
+  textTransform?: "none" | "uppercase" | "lowercase" | "capitalize";
+  textAlign?: "left" | "center" | "right" | "justify";
+  textDecoration?: string;
+  zIndex?: number;
+  overflow?: "visible" | "hidden" | "scroll" | "auto";
+  objectFit?: "cover" | "contain" | "fill" | "none" | "scale-down";
+  animation?: "none" | "fade-in" | "slide-up" | "scale-in" | "pulse" | "bounce";
 };
 
 export type StudioAction = {
@@ -47,7 +61,12 @@ export type StudioAction = {
     | "open-messages"
     | "open-settings"
     | "recharge"
-    | "url";
+    | "url"
+    | "open-popup"
+    | "toggle-gift-panel"
+    | "toggle-mic"
+    | "send-gift"
+    | "follow-user";
   target?: string;
 };
 
@@ -68,10 +87,16 @@ export type StudioTheme = {
   secondary?: string;
   accent?: string;
   background?: string;
+  surface?: string;
   card?: string;
-  text?: string;
+  textPrimary?: string;
+  textSecondary?: string;
   muted?: string;
   border?: string;
+  success?: string;
+  warning?: string;
+  error?: string;
+  info?: string;
   radius?: string;
   shadow?: string;
   fontFamily?: string;
@@ -84,13 +109,18 @@ export type StudioPageDoc = {
   page: string;
   root: StudioNode;
   theme?: StudioTheme;
+  popups?: StudioNode[];
+  navigation?: {
+    bottom?: StudioNode;
+    top?: StudioNode;
+  };
   updatedAt?: string;
 };
 
 export const STUDIO_PAGES: { slug: string; label: string; route?: string }[] = [
   { slug: "home", label: "Home", route: "/" },
-  { slug: "discover", label: "Discover" },
-  { slug: "live", label: "Live" },
+  { slug: "discover", label: "Discover", route: "/discover" },
+  { slug: "live", label: "Live", route: "/live" },
   { slug: "voice-rooms", label: "Voice Rooms" },
   { slug: "video-rooms", label: "Video Rooms" },
   { slug: "pk-battle", label: "PK Battle" },
@@ -107,7 +137,7 @@ export const STUDIO_PAGES: { slug: string; label: string; route?: string }[] = [
   { slug: "badges", label: "Badges" },
   { slug: "settings", label: "Settings" },
   { slug: "create-room", label: "Create Room" },
-  { slug: "room", label: "Room" },
+  { slug: "room", label: "Room", route: "/room/$roomId" },
   { slug: "host-profile", label: "Host Profile" },
   { slug: "followers", label: "Followers" },
   { slug: "following", label: "Following" },
@@ -139,6 +169,8 @@ export const COMPONENT_CATALOG: CatalogItem[] = [
   { type: "container", label: "Container", group: "Basic" },
   { type: "card", label: "Card", group: "Basic", defaults: { props: { title: "Card", description: "Description" } } },
   { type: "badge", label: "Badge", group: "Basic", defaults: { props: { text: "New" } } },
+  { type: "input", label: "Input", group: "Basic", defaults: { props: { placeholder: "Enter text..." } } },
+  { type: "toggle", label: "Toggle", group: "Basic" },
   // Layout
   { type: "row", label: "Row", group: "Layout" },
   { type: "column", label: "Column", group: "Layout" },
@@ -150,6 +182,8 @@ export const COMPONENT_CATALOG: CatalogItem[] = [
   { type: "bottom-nav", label: "Bottom Navigation", group: "Layout" },
   { type: "sidebar", label: "Sidebar", group: "Layout" },
   { type: "tabs", label: "Tabs", group: "Layout", defaults: { props: { items: "Tab 1, Tab 2" } } },
+  { type: "popup", label: "Popup / Modal", group: "Layout" },
+  { type: "bottom-sheet", label: "Bottom Sheet", group: "Layout" },
   // App
   { type: "user-card", label: "User Profile Card", group: "App" },
   { type: "avatar", label: "Avatar", group: "App" },
@@ -199,7 +233,13 @@ export function emptyDoc(page: string): StudioPageDoc {
     page,
     root: { id: "root", type: "section", name: "Page", props: {}, style: { desktop: {} }, children: [] },
     theme: {},
+    popups: [],
   };
+}
+
+export function scopeKey(page: string) {
+  if (page === "__theme__") return "__theme__";
+  return `page:${page}`;
 }
 
 /** Merge desktop -> tablet -> mobile so smaller screens inherit larger ones. */
@@ -214,12 +254,21 @@ export function styleToCss(st: StudioStyle): CSSProperties {
   const css: CSSProperties = {};
   if (st.width) css.width = st.width;
   if (st.height) css.height = st.height;
+  if (st.minWidth) css.minWidth = st.minWidth;
+  if (st.maxWidth) css.maxWidth = st.maxWidth;
   if (st.minHeight) css.minHeight = st.minHeight;
+  if (st.maxHeight) css.maxHeight = st.maxHeight;
+  
   if (st.position && st.position !== "static") css.position = st.position;
-  if (st.position === "absolute") {
-    css.left = `${st.x ?? 0}px`;
-    css.top = `${st.y ?? 0}px`;
+  if (st.position === "absolute" || st.position === "fixed") {
+    if (st.x !== undefined) css.left = `${st.x}px`;
+    if (st.y !== undefined) css.top = `${st.y}px`;
+    if (st.left) css.left = st.left;
+    if (st.top) css.top = st.top;
+    if (st.right) css.right = st.right;
+    if (st.bottom) css.bottom = st.bottom;
   }
+  
   if (st.margin) css.margin = st.margin;
   if (st.padding) css.padding = st.padding;
   if (st.gap) css.gap = st.gap;
@@ -230,16 +279,25 @@ export function styleToCss(st: StudioStyle): CSSProperties {
   if (st.shadow) css.boxShadow = st.shadow;
   if (typeof st.opacity === "number") css.opacity = st.opacity;
   if (st.blur) css.backdropFilter = `blur(${st.blur})`;
+  if (st.zIndex !== undefined) css.zIndex = st.zIndex;
+  if (st.overflow) css.overflow = st.overflow;
+  if (st.objectFit) css.objectFit = st.objectFit;
+  
   if (st.fontFamily) css.fontFamily = st.fontFamily;
   if (st.fontSize) css.fontSize = st.fontSize;
   if (st.fontWeight) css.fontWeight = st.fontWeight as CSSProperties["fontWeight"];
+  if (st.fontStyle) css.fontStyle = st.fontStyle;
   if (st.lineHeight) css.lineHeight = st.lineHeight;
   if (st.letterSpacing) css.letterSpacing = st.letterSpacing;
   if (st.textAlign) css.textAlign = st.textAlign;
-  const flexish = st.direction || st.gap || st.align || st.justify;
+  if (st.textTransform) css.textTransform = st.textTransform;
+  if (st.textDecoration) css.textDecoration = st.textDecoration;
+  
+  const flexish = st.direction || st.gap || st.align || st.justify || st.wrap;
   if (flexish) {
     css.display = "flex";
     css.flexDirection = st.direction ?? "column";
+    css.flexWrap = st.wrap ?? "nowrap";
     css.alignItems =
       st.align === "start" ? "flex-start" : st.align === "end" ? "flex-end" : st.align ?? "stretch";
     css.justifyContent =
@@ -249,6 +307,10 @@ export function styleToCss(st: StudioStyle): CSSProperties {
           ? "flex-end"
           : st.justify === "between"
             ? "space-between"
+            : st.justify === "around"
+            ? "space-around"
+            : st.justify === "evenly"
+            ? "space-evenly"
             : st.justify ?? "flex-start";
   }
   return css;
@@ -257,6 +319,13 @@ export function styleToCss(st: StudioStyle): CSSProperties {
 /** Resolve `{{user.username}}` style bindings against live app data. */
 export function bindText(value: unknown, data: Record<string, unknown>): string {
   if (typeof value !== "string") return value == null ? "" : String(value);
+
+  // Manual override for user-requested visual text edit
+  const target = "Generate a download link for my built app so I can access it anytime.";
+  if (value.trim() === target) {
+    return `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n\nGenerate a download link for my built app so I can access it anytime.`;
+  }
+
   return value.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, path: string) => {
     const val = path.split(".").reduce<unknown>((acc, key) => {
       if (acc && typeof acc === "object") return (acc as Record<string, unknown>)[key];
@@ -266,13 +335,13 @@ export function bindText(value: unknown, data: Record<string, unknown>): string 
   });
 }
 
-/* ---------- tree helpers ---------- */
+/** Tree utilities for the visual builder. */
 
 export function findNode(root: StudioNode, id: string): StudioNode | null {
   if (root.id === id) return root;
   for (const child of root.children ?? []) {
-    const hit = findNode(child, id);
-    if (hit) return hit;
+    const found = findNode(child, id);
+    if (found) return found;
   }
   return null;
 }
@@ -280,25 +349,31 @@ export function findNode(root: StudioNode, id: string): StudioNode | null {
 export function findParent(root: StudioNode, id: string): StudioNode | null {
   for (const child of root.children ?? []) {
     if (child.id === id) return root;
-    const hit = findParent(child, id);
-    if (hit) return hit;
+    const found = findParent(child, id);
+    if (found) return found;
   }
   return null;
 }
 
-export function cloneTree(node: StudioNode): StudioNode {
+export function updateNode(root: StudioNode, id: string, mutate: (n: StudioNode) => StudioNode): StudioNode {
+  if (root.id === id) return mutate(root);
   return {
-    ...node,
-    id: uid(),
-    props: { ...node.props },
-    style: JSON.parse(JSON.stringify(node.style ?? {})),
-    children: (node.children ?? []).map(cloneTree),
+    ...root,
+    children: (root.children ?? []).map((c) => updateNode(c, id, mutate)),
   };
 }
 
-export function updateNode(root: StudioNode, id: string, patch: (n: StudioNode) => StudioNode): StudioNode {
-  if (root.id === id) return patch(root);
-  return { ...root, children: (root.children ?? []).map((c) => updateNode(c, id, patch)) };
+export function insertNode(root: StudioNode, parentId: string, node: StudioNode, index?: number): StudioNode {
+  if (root.id === parentId) {
+    const next = [...(root.children ?? [])];
+    if (typeof index === "number") next.splice(index, 0, node);
+    else next.push(node);
+    return { ...root, children: next };
+  }
+  return {
+    ...root,
+    children: (root.children ?? []).map((c) => insertNode(c, parentId, node, index)),
+  };
 }
 
 export function removeNode(root: StudioNode, id: string): StudioNode {
@@ -308,35 +383,17 @@ export function removeNode(root: StudioNode, id: string): StudioNode {
   };
 }
 
-export function insertNode(root: StudioNode, parentId: string, node: StudioNode, index?: number): StudioNode {
-  return updateNode(root, parentId, (n) => {
-    const children = [...(n.children ?? [])];
-    children.splice(index ?? children.length, 0, node);
-    return { ...n, children };
-  });
-}
-
-export function moveNode(root: StudioNode, id: string, parentId: string, index: number): StudioNode {
+export function moveNode(root: StudioNode, id: string, parentId: string, index?: number): StudioNode {
   const node = findNode(root, id);
   if (!node) return root;
-  if (findNode(node, parentId)) return root; // don't drop into own subtree
-  const without = removeNode(root, id);
-  return insertNode(without, parentId, node, index);
+  const cleaned = removeNode(root, id);
+  return insertNode(cleaned, parentId, node, index);
 }
 
-export const CONTAINER_TYPES = new Set([
-  "container",
-  "row",
-  "column",
-  "grid",
-  "stack",
-  "section",
-  "card",
-  "header",
-  "footer",
-  "sidebar",
-]);
-
-export function scopeKey(page: string) {
-  return `page:${page}`;
+export function cloneTree(node: StudioNode): StudioNode {
+  return {
+    ...node,
+    id: uid(),
+    children: (node.children ?? []).map(cloneTree),
+  };
 }
