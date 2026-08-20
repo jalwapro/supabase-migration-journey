@@ -3,8 +3,8 @@ import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
 import { RoomHeader } from "./RoomHeader";
 import { HostCard } from "./HostCard";
 import { SeatGrid } from "./SeatGrid";
-import { RoomAdaptiveContainer } from "@/components/room-shared/RoomAdaptiveContainer";
-import { GlassPanel } from "@/components/room-shared/PremiumStyles";
+import { RoomAdaptiveContainer } from "../room-shared/RoomAdaptiveContainer";
+import { GlassPanel } from "../room-shared/PremiumStyles";
 import { MessageSquare, Mic, Gift, Grid, MicOff } from "lucide-react";
 
 interface VoiceRoomScreenProps {
