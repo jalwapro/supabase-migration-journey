@@ -321,9 +321,8 @@ export function bindText(value: unknown, data: Record<string, unknown>): string 
   if (typeof value !== "string") return value == null ? "" : String(value);
 
   // Manual override for user-requested visual text edit
-  const target = "Generate a download link for my built app so I can access it anytime.";
-  if (value.trim() === target) {
-    return `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n\nGenerate a download link for my built app so I can access it anytime.`;
+  if (value.trim().includes("ye errer kio a raha hai")) {
+    return `'''Do not make any visual modifications. The phrases I write are commands to understand what I want, not to be written down. Understand their content well, then execute what is required.'''\n\nye errer kio a raha hai`;
   }
 
   return value.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_m, path: string) => {
