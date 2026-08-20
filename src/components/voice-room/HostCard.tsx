@@ -1,26 +1,19 @@
 import React, { useMemo } from "react";
 import { RoomParticipant } from "@/types/room";
 import { NeonBorder } from "@/components/room-shared/PremiumStyles";
-import { motion } from "framer-motion";
 
 export const HostCard = ({ host }: { host: RoomParticipant }) => {
-  const bars = useMemo(() => Array.from({ length: 24 }).map((_, i) => i), []);
+  const bars = useMemo(() => Array.from({ length: 24 }, (_, i) => i), []);
 
   return (
     <div className="flex flex-col items-center py-6">
       <div className="relative">
-        {/* Crown */}
         <div className="absolute -top-10 left-1/2 z-10 -translate-x-1/2">
-          <motion.div
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="text-4xl drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]"
-          >
+          <div className="animate-pulse text-4xl drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]">
             👑
-          </motion.div>
+          </div>
         </div>
 
-        {/* Avatar with Neon Ring */}
         <div className="relative">
           <NeonBorder color="primary" className="p-1">
             <div className="h-40 w-40 overflow-hidden rounded-full border-4 border-black/40 bg-zinc-900 shadow-2xl">
@@ -34,20 +27,12 @@ export const HostCard = ({ host }: { host: RoomParticipant }) => {
             </div>
           </NeonBorder>
 
-          {/* Audio Visualizer Waveform */}
           <div className="absolute -bottom-4 left-1/2 flex -translate-x-1/2 items-end gap-[2px]">
             {bars.map((i) => (
-              <motion.div
+              <div
                 key={i}
-                className="w-[3px] rounded-full bg-gradient-to-t from-fuchsia-500 to-purple-400"
-                animate={{
-                  height: [8, Math.random() * 30 + 10, 8],
-                }}
-                transition={{
-                  duration: 0.5 + Math.random() * 0.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
+                className="w-[3px] animate-pulse rounded-full bg-gradient-to-t from-fuchsia-500 to-purple-400"
+                style={{ height: `${10 + ((i * 7) % 24)}px`, animationDelay: `${i * 35}ms` }}
               />
             ))}
           </div>
