@@ -2,7 +2,6 @@ import React from "react";
 import { RoomSeat } from "@/types/room";
 import { NeonBorder } from "@/components/room-shared/PremiumStyles";
 import { MicOff, Lock } from "lucide-react";
-import { motion } from "framer-motion";
 
 interface SeatProps {
   seat: RoomSeat;
@@ -31,11 +30,7 @@ export const Seat = ({ seat, onClick }: SeatProps) => {
                 </div>
               )}
               {user.is_speaking && (
-                <motion.div
-                  className="absolute inset-0 rounded-full border-2 border-fuchsia-500"
-                  animate={{ scale: [1, 1.1, 1], opacity: [0.8, 0, 0.8] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                />
+                <div className="absolute inset-0 animate-pulse rounded-full border-2 border-fuchsia-500" />
               )}
             </div>
           </NeonBorder>
@@ -48,7 +43,7 @@ export const Seat = ({ seat, onClick }: SeatProps) => {
             )}
           </div>
         )}
-        
+
         {user && (
           <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-fuchsia-600 to-purple-600 px-1.5 py-0.5 text-[8px] font-black uppercase ring-1 ring-white/20">
             Lv.{user.level}
@@ -56,7 +51,7 @@ export const Seat = ({ seat, onClick }: SeatProps) => {
         )}
       </div>
       <span className="max-w-[64px] truncate text-[10px] font-medium text-white/70">
-        {user ? user.username : (is_locked ? "Locked" : `Seat ${index + 1}`)}
+        {user ? user.username : is_locked ? "Locked" : `Seat ${index + 1}`}
       </span>
     </div>
   );
@@ -70,21 +65,20 @@ interface SeatGridProps {
 
 export const SeatGrid = ({ seats, onSeatTap, onJoinSeat }: SeatGridProps) => {
   return (
-    <div className="grid grid-cols-4 gap-y-6 gap-x-2 px-4 pb-8">
+    <div className="grid grid-cols-4 gap-x-2 gap-y-6 px-4 pb-8">
       {seats.map((seat) => (
-        <Seat 
-          key={seat.index} 
-          seat={seat} 
+        <Seat
+          key={seat.index}
+          seat={seat}
           onClick={() => {
             if (seat.user) {
               onSeatTap?.(seat.index);
             } else {
               onJoinSeat?.(seat.index);
             }
-          }} 
+          }}
         />
       ))}
     </div>
   );
 };
-
