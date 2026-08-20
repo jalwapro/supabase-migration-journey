@@ -1,0 +1,82 @@
+name: Voice Room Runtime Fix
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, 'voice-room runtime wiring fixer') && !contains(github.event.head_commit.message, 'voice room runtime fix') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Patch voice room route wiring
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/room.$roomId.tsx')
+          s = p.read_text()
+
+          old = '''    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
+      const seatIndex = i + 1;
+      const m = members.find(mem => mem.seat_index === seatIndex);
+      const isLocked = lockedSeats.includes(seatIndex);'''
+          new = '''    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
+      // Seat indexes are zero-based throughout room_members/RPC/realtime.
+      // Keep the UI index identical to the database index so taps, locks,
+      // requests and speaking state target the same seat.
+      const seatIndex = i;
+      const m = members.find(mem => mem.seat_index === seatIndex);
+      const isLocked = lockedSeats.includes(seatIndex);'''
+          if old not in s:
+              raise SystemExit('seat mapping block not found')
+          s = s.replace(old, new, 1)
+
+          old = '''<VoiceRoomScreen 
+room={mappedRoomState}
+onOpenChat={() => setChatComposerOpen(true)}
+onOpenGift={() => setGiftOpen(true)}
+onOpenMore={() => setVideoSettingsOpen(true)}
+onToggleMic={() => void toggleMuteWithSync()}
+onSeatTap={(idx) => void onSeatTap(idx)}
+onJoinSeat={(idx) => void takeSeat(idx)}
+isHost={isHost}
+mySeatIndex={mySeatIndex}
+viewerCount={mappedRoomState.viewer_count}
+/>'''
+          new = '''<VoiceRoomScreen
+room={mappedRoomState}
+onOpenChat={() => setChatComposerOpen(true)}
+onOpenGift={() => setGiftOpen(true)}
+onOpenMore={() => setSeatsSheetOpen(true)}
+onToggleMic={() => void toggleMuteWithSync()}
+onSeatTap={(idx) => void onSeatTap(idx)}
+onJoinSeat={(idx) => void takeSeat(idx)}
+onExit={() => leaveRoom()}
+onShare={() => share()}
+onOnline={() => openViewersSheet()}
+onRanking={() => openViewersSheet()}
+isHost={isHost}
+mySeatIndex={mySeatIndex}
+viewerCount={mappedRoomState.viewer_count}
+isMicMuted={agora.muted}
+/>'''
+          if old not in s:
+              raise SystemExit('VoiceRoomScreen wiring block not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s)
+          PY
+
+      - name: Commit runtime fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/routes/room.$roomId.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "fix voice room runtime wiring"
+          git push
