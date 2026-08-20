@@ -80,11 +80,9 @@ type SearchUser = {
   user_code: string | null;
 };
 
-type TabKey = "video" | "voice" | "pk";
-const TABS: { key: TabKey; label: string; Icon: typeof Video }[] = [
-  { key: "video", label: "Video", Icon: Video },
-  { key: "voice", label: "Voice", Icon: Mic },
-  { key: "pk", label: "PK Battle", Icon: Swords },
+type TabKey = "voice";
+const TABS: { key: TabKey; label: string; Icon: typeof Mic }[] = [
+  { key: "voice", label: "Voice Room", Icon: Mic },
 ];
 
 // Empty by default — banners come from admin panel only (no mock imagery).
@@ -95,7 +93,7 @@ function Home() {
   const unread = useUnreadCount();
   const unreadCount = user ? (unread.data ?? 0) : 0;
   const navigate = useNavigate();
-  const [tab, setTab] = useState<TabKey>("video");
+  const [tab, setTab] = useState<TabKey>("voice");
   const [q, setQ] = useState("");
   const [friendsOpen, setFriendsOpen] = useState(false);
   const [bannerIdx, setBannerIdx] = useState(0);
@@ -597,10 +595,10 @@ function Home() {
 
           {/* Tabs with sliding indicator */}
           <section className="mt-4 px-4">
-            <div className="relative grid grid-cols-3 gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur">
+            <div className="relative grid grid-cols-1 gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur">
               <span
                 aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_80%,transparent)] transition-transform duration-300"
+                className="absolute inset-y-1 left-1 w-[calc(100%-0.5rem)] rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_80%,transparent)] transition-transform duration-300"
                 style={{ transform: `translateX(${tabIndex * 100}%)` }}
               />
               {TABS.map(({ key, label, Icon }) => {
