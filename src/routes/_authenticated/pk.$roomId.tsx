@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useZegoRoom as useAgoraRoom } from "@/hooks/useZegoRoom";
 import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
+import { PKScreen } from "@/components/voice-room/PKScreen";
 
 function uidFromUuid(uuid: string): number {
   let h = 0;
@@ -609,650 +610,107 @@ function PkMatchPage() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-gradient-to-b from-[#0a0416] via-[#0d0620] to-black text-white">
-      {/* Header — same as Video Room */}
-      <div
-        className="relative z-10 mx-auto w-full max-w-md px-3 pb-2"
-        style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}
-      >
+      <div className="relative z-10 mx-auto w-full max-w-md px-3 pb-2" style={{ paddingTop: "calc(env(safe-area-inset-top) + 10px)" }}>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setExitConfirmOpen(true)}
-            aria-label="Exit room"
-            className="group relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-rose-400/50 bg-gradient-to-br from-rose-500/30 via-rose-600/20 to-black/60 text-white shadow-[0_0_16px_-2px_rgba(244,63,94,0.6)] backdrop-blur-md active:scale-90"
-          >
-            <DoorOpen className="h-5 w-5 text-rose-200 transition-transform group-active:-translate-x-0.5" />
-            <span className="pointer-events-none absolute -bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-[1.5px] text-rose-200/90">
-              Exit
-            </span>
+          <button onClick={() => setExitConfirmOpen(true)} className="group relative grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-rose-400/50 bg-gradient-to-br from-rose-500/30 via-rose-600/20 to-black/60 text-white shadow-[0_0_16px_-2px_rgba(244,63,94,0.6)] backdrop-blur-md active:scale-90">
+            <DoorOpen className="h-5 w-5 text-rose-200" />
           </button>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 leading-tight">
-              <span className="truncate text-[15px] font-black text-white">
-                {room?.title ?? "Live Room"}
-              </span>
-              <Zap className="h-4 w-4 shrink-0 text-[color:var(--gold)]" />
+              <span className="truncate text-[15px] font-black text-white">{room?.title || "PK Room"}</span>
             </div>
-            <div className="mt-0.5 flex items-center gap-2.5 text-[10px] font-semibold text-white/60">
-              <span>Room ID: {roomId.slice(0, 6)}</span>
-            </div>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {!isHost && !followQ.data ? (
-              <button
-                onClick={toggleFollow}
-                aria-label="Follow host"
-                title="Follow"
-                className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white shadow-[0_0_12px_-2px_color-mix(in_oklab,var(--primary)_65%,transparent)] transition active:scale-90"
-              >
-                <Plus className="h-4 w-4" strokeWidth={3} />
-              </button>
-            ) : null}
-            <button
-              type="button"
-              onClick={shareRoom}
-              aria-label="Share"
-              className="grid h-8 w-8 place-items-center rounded-full border border-white/15 bg-black/45 text-white/80 backdrop-blur-md active:scale-95"
-            >
-              <Share2 className="h-4 w-4" />
-            </button>
-            <div className="flex items-center gap-1.5 rounded-full border border-white/15 bg-black/45 px-2 py-1 backdrop-blur-md">
-              <Users className="h-3 w-3 text-white/70" />
-              <span className="text-[11px] font-black text-white">
-                {room?.viewer_count ?? 0}
-              </span>
+            <div className="flex items-center gap-2 text-[11px] text-white/50 font-bold">
+               <Users className="h-3 w-3" /> {room?.viewer_count || 0}
             </div>
           </div>
         </div>
       </div>
 
-
-      {/* Incoming challenge banner */}
-      {incoming && (
-        <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-[color:var(--gold)]/50 bg-gradient-to-r from-amber-500/15 to-fuchsia-500/10 p-3">
-          {incoming.from?.avatar ? (
-            <img src={incoming.from.avatar} className="h-11 w-11 rounded-full object-cover ring-2 ring-[color:var(--gold)]/60" alt="" />
-          ) : (
-            <div className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-sm font-bold uppercase text-white/80 ring-2 ring-[color:var(--gold)]/60">
-              {(incoming.from?.username ?? "?").charAt(0)}
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[13px] font-bold">
-              {incoming.from?.username ?? "A host"} challenged you
-            </div>
-            <div className="text-[11px] text-white/60">
-              {Math.round(incoming.duration_sec / 60)} min PK
-              {incoming.stake_coins ? ` • ${incoming.stake_coins} coins stake` : ""}
-            </div>
+      <div className="mx-3 mt-4 flex items-stretch">
+        <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl rounded-r-none border border-sky-500/60 bg-gradient-to-b from-[#0d1d3f]/40 to-[#060f25]/60 p-2">
+          <span className="rounded-md bg-sky-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">You</span>
+          <div className="mt-2 aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40 ring-1 ring-white/10">
+            {room?.host?.avatar ? <img src={room.host.avatar} className="h-full w-full object-cover" alt="" /> : <div className="grid h-full w-full place-items-center text-4xl font-black text-white/50">{(room?.host?.username || "?")[0]}</div>}
+            <div id="pk-video-local" className="absolute inset-0 z-10" />
           </div>
-          <button
-            onClick={() => respondInvite(false)}
-            className="rounded-full border border-white/20 px-3 py-1.5 text-[11px] font-bold text-white/80"
-          >
-            Decline
-          </button>
-          <button
-            onClick={() => respondInvite(true)}
-            className="rounded-full bg-gradient-to-r from-sky-500 to-fuchsia-500 px-3 py-1.5 text-[11px] font-black text-white"
-          >
-            Accept
-          </button>
+          <div className="mt-2 truncate text-center text-[13px] font-bold text-sky-400">{room?.host?.username || "Host"}</div>
         </div>
-      )}
 
-
-      {/* VS panels */}
-      <div className="relative mx-3 mt-3 grid grid-cols-2 items-stretch gap-0">
-        {/* Host side — always the room host */}
-        <HostPanel
-          label={isHost ? "YOU" : "HOST"}
-          username={room?.host?.username ?? "Host"}
-          avatar={room?.host?.avatar ?? null}
-          coins={hostSideScore}
-          accentClass="border-[color:var(--primary)]/60 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 rounded-r-none border-r-0"
-          crown
-          videoTrack={
-            isHost
-              ? (agora.localVideoTrack ?? null)
-              : (room?.host_id ? agora.remotes.get(uidFromUuid(room.host_id))?.videoTrack ?? null : null)
-          }
-          mirror={isHost}
-          micOn={
-            isHost
-              ? (!agora.muted && !!agora.localAudioPublished.current)
-              : (room?.host_id ? !!agora.remotes.get(uidFromUuid(room.host_id))?.hasAudio : undefined)
-          }
-          camOn={
-            isHost
-              ? !!agora.videoOn
-              : (room?.host_id ? !!agora.remotes.get(uidFromUuid(room.host_id))?.hasVideo : undefined)
-          }
-        />
-
-
-
-        {/* VS badge overlay */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
-          <div className="relative grid h-14 w-14 place-items-center rounded-full border border-[color:var(--destructive)]/60 bg-black/70 shadow-[0_0_24px_rgba(255,45,135,0.5)]">
-            <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(255,45,135,0.35),transparent_60%)]" />
-            <div className="relative flex items-baseline text-[26px] font-black tracking-tighter">
-              <span className="bg-gradient-to-b from-sky-300 to-blue-600 bg-clip-text text-transparent">V</span>
-              <span className="bg-gradient-to-b from-pink-400 to-fuchsia-600 bg-clip-text text-transparent">S</span>
-            </div>
+        <div className="z-10 -mx-3 flex w-16 flex-col items-center justify-center gap-3 self-center">
+          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-amber-400 to-rose-600 shadow-[0_0_15px_rgba(244,63,94,0.5)] outline outline-2 outline-black">
+            <span className="text-[13px] font-black italic text-white">VS</span>
           </div>
-          {endsInSec != null && (
-            <div className="mt-1 flex w-full flex-col items-center rounded-lg border border-white/10 bg-black/70 px-2 py-1">
-              <span className="text-[8px] uppercase tracking-wider text-white/50">Ends in</span>
-              <span className="text-[12px] font-black tabular-nums">{fmt(endsInSec)}</span>
-            </div>
-          )}
-          {isHost && match?.status !== "active" && (
-            <button
-              onClick={() => openStartFlow()}
-              disabled={starting}
-              className="pointer-events-auto mt-3 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 via-rose-500 to-fuchsia-600 text-3xl shadow-[0_8px_30px_-4px_rgba(244,63,94,0.8)] ring-2 ring-white/30 transition active:scale-90 disabled:opacity-60 animate-pulse"
-              title="Send challenge"
-              aria-label="Send match challenge"
-            >
-              🥊
-            </button>
-          )}
-
+          {match?.status === "active" && <div className="flex flex-col items-center rounded-lg bg-black/60 px-2 py-1 text-[11px] font-black text-white outline outline-1 outline-white/10"><Timer className="mb-0.5 h-3 w-3 text-rose-400" />{fmt(endsInSec ?? 0)}</div>}
         </div>
 
-
-
-        {/* Opponent side */}
-        {opponent || match ? (
-
-          <HostPanel
-            label="OPPONENT"
-            username={opponent?.host?.username ?? opponentQ.data?.username ?? "Opponent"}
-            avatar={opponent?.host?.avatar ?? opponentQ.data?.avatar ?? null}
-            coins={oppSideScore}
-            accentClass="border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 rounded-l-none"
-            videoTrack={
-              opponentHostId ? agora.remotes.get(uidFromUuid(opponentHostId))?.videoTrack ?? null : null
-            }
-            micOn={opponentHostId ? !!agora.remotes.get(uidFromUuid(opponentHostId))?.hasAudio : undefined}
-            camOn={opponentHostId ? !!agora.remotes.get(uidFromUuid(opponentHostId))?.hasVideo : undefined}
-          />
-        ) : !isHost ? (
-          <div className="relative flex select-none flex-col items-center justify-center overflow-hidden rounded-2xl rounded-l-none border border-white/10 bg-gradient-to-b from-[#25060f]/60 to-[#0d0620]/60 p-4 text-center">
-            <span className="mb-2 rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white/70">
-              Waiting
-            </span>
-            <div className="grid aspect-[9/14] w-full place-items-center rounded-xl bg-black/40 text-white/50">
-              <div className="flex flex-col items-center gap-1 px-2">
-                <Swords className="h-6 w-6" />
-                <span className="text-[11px]">Match not started yet</span>
-              </div>
+        {match?.status === "active" ? (
+          <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl rounded-l-none border border-rose-500/60 bg-gradient-to-b from-[#3f0d3f]/40 to-[#250625]/60 p-2">
+            <span className="rounded-md bg-rose-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">Opponent</span>
+            <div className="mt-2 aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40 ring-1 ring-white/10">
+              {opponentQ.data?.avatar ? <img src={opponentQ.data.avatar} className="h-full w-full object-cover" alt="" /> : <div className="grid h-full w-full place-items-center text-4xl font-black text-white/50">{(opponentQ.data?.username || "?")[0]}</div>}
+              <div id="pk-video-remote" className="absolute inset-0 z-10" />
             </div>
-            <div className="mt-2 text-[10px] uppercase tracking-wider text-white/40">
-              Enjoy the show & send gifts
-            </div>
+            <div className="mt-2 truncate text-center text-[13px] font-bold text-rose-400">{opponentQ.data?.username || "Opponent"}</div>
           </div>
-        ) : (() => {
-          const list = hostsQ.data ?? [];
-          const rnd = list.length ? list[randomIdx % list.length] : null;
-          const nextOpponent = () => {
-            if (list.length > 1) setRandomIdx((i) => (i + 1) % list.length);
-          };
-          let touchStartY = 0;
-          return (
-            <div
-              onClick={() => { if (rnd && isHost) openStartFlow(rnd); }}
-              onWheel={(e) => { if (e.deltaY > 10) nextOpponent(); }}
-              onTouchStart={(e) => { touchStartY = e.touches[0]?.clientY ?? 0; }}
-              onTouchEnd={(e) => {
-                const endY = e.changedTouches[0]?.clientY ?? 0;
-                if (touchStartY - endY > 40) nextOpponent();
-              }}
-              className="relative flex cursor-pointer select-none flex-col items-stretch overflow-hidden rounded-2xl rounded-l-none border border-[color:var(--destructive)]/60 bg-gradient-to-b from-[#3f0d1d]/40 to-[#25060f]/60 p-2 transition active:scale-[0.98]"
-            >
-              <span className="mx-auto rounded-md bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                {rnd ? "Random Opponent" : "Opponent"}
-              </span>
-              <div className="mt-2 aspect-[9/14] w-full overflow-hidden rounded-xl bg-black/40">
-                {rnd?.host?.avatar ? (
-                  <img src={rnd.host.avatar} className="h-full w-full object-cover" alt={rnd.host?.username ?? "opponent"} />
-                ) : (
-                  <div className="grid h-full w-full place-items-center text-center text-white/50">
-                    {hostsQ.isLoading ? (
-                      <span className="text-[11px]">Finding live hosts…</span>
-                    ) : rnd ? (
-                      <span className="text-4xl font-black uppercase">{(rnd.host?.username ?? "?").charAt(0)}</span>
-                    ) : (
-                      <div className="flex flex-col items-center gap-1 px-2">
-                        <Users className="h-6 w-6" />
-                        <span className="text-[11px]">No live hosts right now</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="mt-2 truncate text-center text-[13px] font-bold">
-                {rnd?.host?.username ?? "—"}
-              </div>
-              {rnd && (
-                <div className="mt-1 text-center text-[9.5px] uppercase tracking-wider text-white/40">
-                  Tap to match • Swipe up for next
-                </div>
-              )}
-            </div>
-          );
-
-        })()}
-
-
-      </div>
-
-      {/* PK MODE removed — shown as popup on Start PK Battle */}
-
-
-      {/* Stake (Entry) moved into the Start PK Battle popup */}
-
-
-
-      {/* Winner banner */}
-      <div className="mx-3 mt-3 flex items-center gap-3 rounded-2xl border border-white/5 bg-gradient-to-r from-[#1a0625]/70 to-[#0d0620]/70 px-3 py-2.5">
-        <div className="grid h-9 w-9 place-items-center rounded-lg bg-[color:var(--destructive)]/20">
-          <Gift className="h-5 w-5 text-[color:var(--destructive)]" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="text-[12.5px] font-bold">Winner will get the stakes + gifts</div>
-          <div className="text-[11px] text-white/50">Be respectful and enjoy the PK!</div>
-        </div>
-        <Trophy className="h-6 w-6 text-[color:var(--gold)]" />
-      </div>
-
-      {/* Gloves match button moved between VS panels above */}
-
-      {match?.status === "active" && (
-        <div className="mx-3 mt-3 flex items-center justify-center gap-2 rounded-2xl border border-[color:var(--primary)]/40 bg-gradient-to-r from-sky-500/20 via-fuchsia-500/20 to-pink-500/20 py-3 text-[13px] font-bold uppercase tracking-wider text-white">
-          <Zap className="h-4 w-4" /> PK Live
-        </div>
-      )}
-
-
-
-
-
-
-      {/* Live score bar when match active */}
-      {match?.status === "active" && (
-        <section className="mx-3 mt-3 rounded-2xl border border-white/10 bg-black/50 p-3">
-          <div className="mb-1.5 flex items-center justify-between text-[12px] font-bold">
-            <span className="text-sky-300">{hostSideScore.toLocaleString()}</span>
-            <span className="text-white/40">LIVE</span>
-            <span className="text-pink-300">{oppSideScore.toLocaleString()}</span>
-          </div>
-          <div className="relative h-2.5 overflow-hidden rounded-full bg-white/10">
-            <div
-              className="absolute inset-y-0 left-0 bg-gradient-to-r from-sky-400 to-blue-500"
-              style={{ width: `${hostPct}%` }}
-            />
-            <div
-              className="absolute inset-y-0 right-0 bg-gradient-to-l from-pink-400 to-fuchsia-500"
-              style={{ width: `${100 - hostPct}%` }}
-            />
-          </div>
-        </section>
-      )}
-
-      {/* Chat */}
-      <section className="mx-3 mt-4 flex-1 rounded-2xl border border-white/5 bg-white/[0.02] p-3">
-        <div className="mb-2">
-          <h2 className="text-[13px] font-bold">
-            <span className="border-b-2 border-[color:var(--primary)] pb-1">Chat</span>
-          </h2>
-        </div>
-        <div className="max-h-[220px] space-y-2 overflow-y-auto pr-1">
-          {(chatQ.data ?? []).map((m: any) => (
-            <div key={m.id} className="flex items-start gap-2 text-[12px]">
-              {m.profiles?.avatar ? (
-                <img src={m.profiles.avatar} className="mt-0.5 h-6 w-6 rounded-full object-cover" alt="" />
-              ) : (
-                <div className="mt-0.5 grid h-6 w-6 place-items-center rounded-full bg-white/10 text-[10px] font-bold uppercase text-white/70">
-                  {(m.profiles?.username ?? "?").charAt(0)}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <span className="mr-1 font-semibold text-white/80">{m.profiles?.username ?? "user"}</span>
-                <span className="rounded-lg bg-white/5 px-2 py-1 text-white/90">{m.body}</span>
-              </div>
-              <span className="whitespace-nowrap text-[10px] text-white/40">
-                {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-              </span>
-            </div>
-          ))}
-          {(!chatQ.data || chatQ.data.length === 0) && (
-            <div className="py-6 text-center text-[11px] text-white/40">No messages yet — say hi 👋</div>
-          )}
-        </div>
-      </section>
-
-      {/* Composer — sticky above bottom action bar */}
-      <div className="sticky bottom-[64px] z-20 mx-3 mt-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
-        <input
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }}
-          placeholder="Type a message..."
-          className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40"
-        />
-        <button className="text-white/60"><Smile className="h-5 w-5" /></button>
-        <button
-          onClick={sendMessage}
-          className="grid h-8 w-8 place-items-center rounded-full bg-[color:var(--primary)] text-white"
-        >
-          <Send className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Bottom action bar — PK-tuned */}
-      <div className="sticky bottom-0 z-30 mt-2 grid grid-cols-[repeat(4,1fr)_auto] items-center gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
-        <ActionBtn
-          icon={isHost ? (agora.muted ? MicOff : Mic) : Mic}
-          label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"}
-          active={isHost && !agora.muted && !!agora.localAudioPublished.current}
-          danger={isHost && agora.muted}
-          onClick={() => void togglePkMic()}
-        />
-        <ActionBtn
-          icon={isHost ? (agora.videoOn ? Video : VideoOff) : Video}
-          label={isHost ? (agora.videoOn ? "Cam On" : "Cam Off") : "Cam"}
-          active={isHost && !!agora.videoOn}
-          danger={isHost && !agora.videoOn}
-          onClick={() => void togglePkCamera()}
-        />
-        <ActionBtn
-          icon={agora.speakerMuted ? VolumeX : Volume2}
-          label={agora.speakerMuted ? "Muted" : "Sound"}
-          active={!agora.speakerMuted}
-          danger={agora.speakerMuted}
-          onClick={() => agora.toggleSpeaker()}
-        />
-        <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
-        {isHost && match?.status === "active" ? (
-          <button
-            onClick={async () => {
-              await supabase.rpc("pk_end_match", { _match_id: match.id });
-              matchQ.refetch(); roomQ.refetch();
-              toast.success("PK ended");
-            }}
-            className="flex items-center gap-1.5 rounded-full border border-rose-400/60 bg-gradient-to-r from-rose-500 to-rose-600 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_0_18px_-2px_rgba(244,63,94,0.6)] active:scale-95"
-          >
-            <Swords className="h-4 w-4" /> End PK
-          </button>
-        ) : isHost ? (
-          <button
-            onClick={() => openStartFlow()}
-            disabled={starting}
-            className="flex items-center gap-1.5 rounded-full border border-amber-300/50 bg-gradient-to-r from-amber-400 via-rose-500 to-fuchsia-600 px-3.5 py-2 text-[12px] font-black text-white shadow-[0_0_18px_-2px_rgba(244,63,94,0.6)] active:scale-95 disabled:opacity-60"
-          >
-            <Swords className="h-4 w-4" /> Start PK
-          </button>
         ) : (
-          <button
-            onClick={() => setRulesOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-2 text-[12px] font-bold text-white/85 active:scale-95"
-          >
-            <MoreHorizontal className="h-4 w-4" /> Rules
-          </button>
+          <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-2xl rounded-l-none border border-white/10 bg-white/5 p-2">
+            <span className="text-[10px] text-white/40">Waiting for Opponent</span>
+          </div>
         )}
       </div>
 
+      {match?.status === "active" && (
+        <div className="mx-3 mt-4">
+          <PKScreen match={match} score={{ score_a: hostSideScore, score_b: oppSideScore }} host={room?.host} opponent={opponentQ.data} endsInSec={endsInSec} isHost={isHost} />
+        </div>
+      )}
 
-      {/* Opponent Picker Sheet */}
-      {pickerOpen && (
-        <Sheet
-          onClose={() => { setPickerOpen(false); setPickerMode("choice"); }}
-          title={pickerMode === "choice" ? "Select Opponent" : pickerMode === "random" ? "Random Opponent" : "Pick a Host"}
-        >
-          {pickerMode === "choice" && (
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  const list = hostsQ.data ?? [];
-                  setRandomIdx(list.length ? Math.floor(Math.random() * list.length) : 0);
-                  setPickerMode("random");
-                }}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-[color:var(--primary)]/50 bg-gradient-to-b from-[#3a0d3f]/40 to-[#1a0625]/60 p-5 active:scale-95"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--primary)]/25">
-                  <Shuffle className="h-6 w-6 text-[color:var(--primary)]" />
-                </div>
-                <span className="text-[14px] font-bold">Random Find</span>
-                <span className="text-[11px] text-white/50">Match with a random host</span>
-              </button>
-              <button
-                onClick={() => setPickerMode("pick")}
-                className="flex flex-col items-center gap-2 rounded-2xl border border-[color:var(--secondary)]/50 bg-gradient-to-b from-[#1a0b2e]/60 to-[#0d0620]/60 p-5 active:scale-95"
-              >
-                <div className="grid h-12 w-12 place-items-center rounded-full bg-[color:var(--secondary)]/25">
-                  <Users className="h-6 w-6 text-[color:var(--secondary)]" />
-                </div>
-                <span className="text-[14px] font-bold">Pick Host</span>
-                <span className="text-[11px] text-white/50">Browse & choose yourself</span>
-              </button>
-            </div>
-          )}
-
-          {pickerMode === "random" && (() => {
-            const list = hostsQ.data ?? [];
-            const h = list[randomIdx];
-            if (!list.length) {
-              return <div className="py-10 text-center text-[12px] text-white/40">No live opponents right now</div>;
-            }
-            return (
-              <div className="flex flex-col items-center gap-3">
-                <div className="relative">
-                  {h.host?.avatar ? (
-                    <img src={h.host.avatar} className="h-28 w-28 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/60" alt="" />
-                  ) : (
-                    <div className="grid h-28 w-28 place-items-center rounded-2xl bg-white/10 text-3xl font-black uppercase text-white/70 ring-2 ring-[color:var(--primary)]/60">
-                      {(h.host?.username ?? "?").charAt(0)}
-                    </div>
-                  )}
-                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-[color:var(--destructive)] px-2 py-0.5 text-[10px] font-bold uppercase">Live</span>
-                </div>
-                <div className="mt-2 text-center">
-                  <div className="text-[15px] font-bold">{h.host?.username ?? "Host"}</div>
-                  <div className="mt-0.5 flex items-center justify-center gap-1 text-[11px] text-white/50">
-                    <Users className="h-3 w-3" /> {h.viewer_count ?? 0} viewers
-                  </div>
-                </div>
-                <div className="mt-2 grid w-full grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      const next = list.length ? (randomIdx + 1 + Math.floor(Math.random() * Math.max(1, list.length - 1))) % list.length : 0;
-                      setRandomIdx(next);
-                    }}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] py-2.5 text-[13px] font-semibold text-white/80 active:scale-95"
-                  >
-                    <SkipForward className="h-4 w-4" /> Next
-                  </button>
-                  <button
-                    onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); setModeSheetOpen(true); }}
-                    className="flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-fuchsia-500 py-2.5 text-[13px] font-bold text-white active:scale-95"
-                  >
-                    <Check className="h-4 w-4" /> Match
-                  </button>
-                </div>
-                <button
-                  onClick={() => setPickerMode("choice")}
-                  className="mt-1 text-[11px] text-white/40 underline"
-                >
-                  Back
-                </button>
+      <section className="mx-3 mt-4 flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 space-y-2 overflow-y-auto pr-1">
+          {(chatQ.data ?? []).map((m: any) => (
+            <div key={m.id} className="flex items-start gap-2 text-[12px]">
+              <div className="min-w-0 flex-1">
+                <span className="mr-1 font-black text-sky-400">{m.profiles?.username ?? "user"}:</span>
+                <span className="text-white/90">{m.body}</span>
               </div>
-            );
-          })()}
-
-          {pickerMode === "pick" && (
-            <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-              {(hostsQ.data ?? []).map((h) => (
-                <button
-                  key={h.id}
-                  onClick={() => { setOpponent(h); setPickerOpen(false); setPickerMode("choice"); setModeSheetOpen(true); }}
-                  className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2 hover:bg-white/[0.06]"
-                >
-                  {h.host?.avatar ? (
-                    <img src={h.host.avatar} className="h-10 w-10 rounded-full object-cover" alt="" />
-                  ) : (
-                    <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-[13px] font-bold uppercase text-white/70">
-                      {(h.host?.username ?? "?").charAt(0)}
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1 text-left">
-                    <div className="truncate text-[13px] font-bold">{h.host?.username ?? "Host"}</div>
-                    <div className="truncate text-[11px] text-white/50">{h.title ?? "Live"}</div>
-                  </div>
-                  <span className="flex items-center gap-1 text-[11px] text-white/60">
-                    <Users className="h-3 w-3" /> {h.viewer_count ?? 0}
-                  </span>
-                </button>
-              ))}
-              {hostsQ.data && hostsQ.data.length === 0 && (
-                <div className="py-10 text-center text-[12px] text-white/40">No live opponents right now</div>
-              )}
-              <button
-                onClick={() => setPickerMode("choice")}
-                className="mt-1 w-full text-center text-[11px] text-white/40 underline"
-              >
-                Back
-              </button>
             </div>
-          )}
-        </Sheet>
-      )}
+          ))}
+        </div>
+      </section>
 
-      {/* PK Mode Picker Sheet */}
-      {modeSheetOpen && (
-        <Sheet onClose={() => setModeSheetOpen(false)} title="Select PK Mode">
-          {/* Stake entry — pick or type coins to stake */}
-          <div className="mb-4">
-            <h3 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-white/60">
-              Stake (Entry) • Balance {(profile?.coins ?? 0).toLocaleString()}
-            </h3>
-            <div className="grid grid-cols-5 gap-1.5">
-              {STAKES.map((s) => {
-                const active = !customOpen && stake === s;
-                return (
-                  <button
-                    key={s}
-                    onClick={() => { setCustomOpen(false); setStake(s); }}
-                    className={`rounded-lg border px-1 py-2 text-[12px] font-bold transition ${
-                      active
-                        ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 text-[color:var(--gold)]"
-                        : "border-white/15 bg-white/5 text-white/80"
-                    }`}
-                  >
-                    {s >= 1000 ? `${s / 1000}k` : s}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => setCustomOpen((v) => !v)}
-                className={`rounded-lg border px-1 py-2 text-[12px] font-bold transition ${
-                  customOpen
-                    ? "border-[color:var(--gold)] bg-[color:var(--gold)]/15 text-[color:var(--gold)]"
-                    : "border-white/15 bg-white/5 text-white/80"
-                }`}
-              >
-                Custom
-              </button>
-            </div>
-            {customOpen && (
-              <input
-                type="number"
-                inputMode="numeric"
-                placeholder="Enter coins"
-                value={customStake}
-                onChange={(e) => setCustomStake(e.target.value)}
-                className="mt-2 w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-[13px] text-white placeholder:text-white/30 focus:border-[color:var(--gold)] focus:outline-none"
-              />
-            )}
-            <p className="mt-1.5 text-[10.5px] text-white/50">
-              Stake: <span className="font-bold text-[color:var(--gold)]">{effectiveStake.toLocaleString()}</span> coins • Winner takes the pot
-            </p>
-          </div>
+      <div className="mx-3 my-3 flex items-center gap-2 rounded-2xl border border-white/10 bg-black/70 px-3 py-2 backdrop-blur">
+        <input value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") sendMessage(); }} placeholder="Type a message..." className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-white/40" />
+        <button onClick={sendMessage} className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white"><Send className="h-4 w-4" /></button>
+      </div>
 
-          <div className="grid grid-cols-3 gap-2">
-            {(Object.keys(MODE_META) as PkMode[]).map((k) => {
-              const meta = MODE_META[k];
-              const Icon = meta.icon;
-              return (
-                <button
-                  key={k}
-                  onClick={() => void startBattle(k)}
-                  disabled={starting}
-                  className={`relative flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-b ${meta.accent} p-3 text-center transition active:scale-95 disabled:opacity-60`}
-                >
-                  <Icon className="h-7 w-7 text-white" />
-                  <span className="text-[13px] font-bold">{meta.label}</span>
-                  <span className="text-[11px] text-white/70">{meta.minutes} Minutes</span>
-                  <span className="text-[10px] text-white/50">{meta.sub}</span>
-                </button>
-              );
-            })}
-          </div>
-          <p className="mt-3 text-center text-[11px] text-white/50">
-            Time select karte hi match {opponent?.host?.username ?? "opponent"} ko challenge chala jayega.
-          </p>
-        </Sheet>
-
-      )}
-
-      {/* Rules Sheet */}
-      {rulesOpen && (
-        <Sheet onClose={() => setRulesOpen(false)} title="PK Rules">
-          <ul className="space-y-3 text-[13px] text-white/80">
-            <li className="flex gap-2"><Swords className="mt-0.5 h-4 w-4 text-[color:var(--gold)]" /> Both hosts fight for gift coins during a timed round.</li>
-            <li className="flex gap-2"><Trophy className="mt-0.5 h-4 w-4 text-[color:var(--gold)]" /> The host with more gift coins wins the round and takes the stake pool.</li>
-            <li className="flex gap-2"><Shield className="mt-0.5 h-4 w-4 text-[color:var(--gold)]" /> Bad words / harassment result in an immediate loss and ban.</li>
-            <li className="flex gap-2"><Timer className="mt-0.5 h-4 w-4 text-[color:var(--gold)]" /> Round length is set by mode: Quick 3m, Normal 5m, Challenge 10m.</li>
-          </ul>
-        </Sheet>
-      )}
+      <div className="grid grid-cols-4 gap-2 border-t border-white/5 bg-black/70 px-3 py-2 backdrop-blur">
+        <ActionBtn icon={isHost ? (agora.muted ? MicOff : Mic) : Mic} label={isHost ? (agora.muted ? "Unmute" : "Mute") : "Mic"} active={isHost && !agora.muted} danger={isHost && agora.muted} onClick={() => void togglePkMic()} />
+        <ActionBtn icon={isHost ? (agora.videoOn ? Video : VideoOff) : Video} label={isHost ? (agora.videoOn ? "Cam On" : "Cam Off") : "Cam"} active={isHost && !!agora.videoOn} danger={isHost && !agora.videoOn} onClick={() => void togglePkCamera()} />
+        <ActionBtn icon={Gift} label="Gift" onClick={() => navigate({ to: "/room/$roomId", params: { roomId } })} />
+        {isHost ? (
+          <button onClick={() => match?.status === "active" ? void supabase.rpc("pk_end_match", { _match_id: match.id }).then(() => { matchQ.refetch(); roomQ.refetch(); }) : openStartFlow()} className="flex items-center justify-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-rose-600 text-[12px] font-black text-white px-2 py-2">
+            <Swords className="h-4 w-4" /> {match?.status === "active" ? "End PK" : "Start PK"}
+          </button>
+        ) : (
+          <ActionBtn icon={MoreHorizontal} label="Rules" onClick={() => setRulesOpen(true)} />
+        )}
+      </div>
 
       <AlertDialog open={exitConfirmOpen} onOpenChange={setExitConfirmOpen}>
-        <AlertDialogContent className="border-violet-400/30 bg-gradient-to-b from-[#1a0b2e] to-[#050505] text-white">
+        <AlertDialogContent className="border-white/10 bg-[#1a0625] text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">
-              {isHost ? "Close the PK room?" : "Leave the PK room?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-white/70">
-              {isHost
-                ? "Yeh PK room band ho jayega aur active match end ho jayega. Sure?"
-                : "Kya aap is PK room say bahar jana chahtay hain?"}
-            </AlertDialogDescription>
+            <AlertDialogTitle>Exit Room?</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/60">Battle progress might be lost.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="border-white/20 bg-transparent text-white hover:bg-white/10">
-              Nahi
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                void doExit();
-              }}
-              className="bg-gradient-to-r from-pink-500 to-violet-600 text-white hover:opacity-90"
-            >
-              {isHost ? "Haan, band karo" : "Haan, exit"}
-            </AlertDialogAction>
+            <AlertDialogCancel className="border-white/10 bg-white/5 text-white">Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={doExit} className="bg-rose-600 text-white">Exit</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {exiting && (
-        <div className="pointer-events-none fixed inset-0 z-[9999] bg-black/90 backdrop-blur-md animate-in fade-in duration-500" />
-      )}
     </div>
   );
 }
-
 function ActionBtn({ icon: Icon, label, onClick, active, danger }: { icon: any; label: string; onClick?: () => void; active?: boolean; danger?: boolean }) {
   const tone = danger
     ? "text-rose-300"
