@@ -83,6 +83,7 @@ import { AppleOfFortune } from "@/components/room/casino/games/AppleOfFortune";
 import { SpinWin } from "@/components/room/casino/games/SpinWin";
 import { VampireCurse } from "@/components/room/casino/games/VampireCurse";
 import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";
+import { HostRoomMoreSheet } from "@/components/room/HostRoomMoreSheet";
 import { InviteSheet } from "@/components/room/InviteSheet";
 import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
@@ -408,6 +409,7 @@ function RoomPage() {
     viewersSheetOpenRef.current = false;
     setViewersSheetOpen(false);
   }, []);
+  const [hostMoreOpen, setHostMoreOpen] = useState(false);
   const [pendingInvite, setPendingInvite] = useState<{
     id: string;
     from_name: string | null;
@@ -2147,7 +2149,7 @@ announcement={null}
 onOpenChat={() => setChatComposerOpen(true)}
 onOpenPrivateChat={() => setPrivateChatOpen(true)}
 onOpenGift={() => setGiftOpen(true)}
-onOpenMore={() => setVideoSettingsOpen(true)}
+onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}
 onToggleMic={() => void toggleMuteWithSync()}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
@@ -2175,6 +2177,8 @@ onOpenGames={() => setGamesSheetOpen(true)}
 <div className="pointer-events-none absolute inset-x-0 top-[140px] z-30 mx-auto w-full max-w-md px-3">
 <EnterRoomBanner latestEnter={latestEnter} />
 </div>
+
+<HostRoomMoreSheet open={hostMoreOpen} onClose={() => setHostMoreOpen(false)} seatCount={r.seat_count} maxSeats={20} onSeats={async (next) => { if (!isHost) return; const occupied=members.filter((m)=>m.seat_index!=null).length; if(next<occupied){toast.error(`Cannot reduce seats below ${occupied} occupied seats`);return;} const {error}=await supabase.from("live_rooms").update({seat_count:next}).eq("id",roomId).eq("host_id",user?.id??""); if(error){toast.error(error.message);return;} setHostMoreOpen(false); await room.refetch(); }} onMusic={() => {setHostMoreOpen(false);setMusicOpen(true)}} onSettings={() => {setHostMoreOpen(false);setVideoSettingsOpen(true)}} onInvite={() => {setHostMoreOpen(false);setInviteOpen(true)}} onRanking={() => {setHostMoreOpen(false);void navigate({to:"/rank"})}} />
 
 <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 
