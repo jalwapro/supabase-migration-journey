@@ -1,0 +1,90 @@
+name: Voice Room Real Controls
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  wire:
+    if: ${{ !contains(github.event.head_commit.message, '[skip-real-room-controls]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wire host controls into the existing voice room
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('src/routes/room.$roomId.tsx')
+          s = p.read_text(encoding='utf-8')
+
+          if 'HostRoomMoreSheet' not in s:
+              s = s.replace('import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";', 'import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";\nimport { HostRoomMoreSheet } from "@/components/room/HostRoomMoreSheet";')
+
+          if 'const [hostMoreOpen, setHostMoreOpen]' not in s:
+              anchor = 'const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);'
+              s = s.replace(anchor, anchor + '\n  const [hostMoreOpen, setHostMoreOpen] = useState(false);', 1)
+
+          if 'async function updateRoomSeatCount' not in s:
+              anchor = '  function share() {\n    setInviteOpen(true);\n  }'
+              fn = '''  async function updateRoomSeatCount(next: number) {
+    if (!user || !isHost) return;
+    const current = Number(r?.seat_count ?? 0);
+    const occupied = members.filter((m) => m.seat_index != null).length;
+    const safe = Math.max(occupied, Math.min(20, Math.floor(Number(next) || current)));
+    if (safe === current) return;
+    const { error } = await supabase
+      .from("live_rooms")
+      .update({ seat_count: safe })
+      .eq("id", roomId)
+      .eq("host_id", user.id);
+    if (error) {
+      toast.error(`Seats update failed: ${error.message}`);
+      return;
+    }
+    await room.refetch();
+    toast.success(`Room now has ${safe} voice seats`);
+  }
+
+'''
+              s = s.replace(anchor, fn + anchor, 1)
+
+          # Host More must open the real host-controls sheet. Viewers keep the existing More/settings action.
+          s = s.replace('onOpenMore={() => setVideoSettingsOpen(true)}', 'onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}', 1)
+
+          # Add the real host sheet immediately before the provider closes. It uses the existing music/settings/invite/ranking actions.
+          if '<HostRoomMoreSheet' not in s:
+              marker = '</CamPipelineProvider>'
+              mount = '''<HostRoomMoreSheet
+  open={hostMoreOpen && isHost}
+  onClose={() => setHostMoreOpen(false)}
+  seatCount={Number(r.seat_count ?? 0)}
+  onSeats={updateRoomSeatCount}
+  onMusic={() => { setHostMoreOpen(false); setMusicOpen(true); }}
+  onSettings={() => { setHostMoreOpen(false); setVideoSettingsOpen(true); }}
+  onInvite={() => { setHostMoreOpen(false); setInviteOpen(true); }}
+  onRanking={() => { setHostMoreOpen(false); void openMilestoneSheet(); }}
+/>
+'''
+              s = s.replace(marker, mount + marker, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- 'src/routes/room.$roomId.tsx' 'src/components/room/HostRoomMoreSheet.tsx'
+          if git diff --cached --quiet; then echo 'No changes'; exit 0; fi
+          git commit -m 'wire real host room controls [skip-real-room-controls]'
+          git push
+
+      - name: Build verification
+        run: |
+          test -f src/components/room/HostRoomMoreSheet.tsx
+          grep -q 'updateRoomSeatCount' 'src/routes/room.$roomId.tsx'
+          grep -q 'HostRoomMoreSheet' 'src/routes/room.$roomId.tsx'
