@@ -9,11 +9,9 @@ import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
 
 const OCTAGON = { clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" } as const;
-const CAPACITIES = new Set([4, 8, 12, 16, 20]);
-const normalizeCapacity = (value: unknown) => {
-  const n = Math.floor(Number(value));
-  return CAPACITIES.has(n) ? n : 20;
-};
+const MIN_CAPACITY = 4;
+const MAX_CAPACITY = 20;
+const normalizeCapacity = (value: unknown) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(value)) || MAX_CAPACITY));
 
 interface VoiceRoomScreenProps {
   room: RoomState;
@@ -51,9 +49,6 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
   const canSpeak = isHost || mySeatIndex !== null;
 
-  // The route normally passes room.seat_count. This fallback keeps the reusable
-  // room component authoritative even when embedded elsewhere, and the UPDATE
-  // subscription makes host layout changes visible to every connected client.
   useEffect(() => {
     if (seatCount != null) {
       setLiveSeatCount(normalizeCapacity(seatCount));
@@ -83,7 +78,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const openRoomChat = () => onOpenChat();
   const openSeat = () => {
     if (mySeatIndex !== null) { onSeatTap(mySeatIndex); return; }
-    const nextSeat = room.seats.find((seat) => seat.index >= 1 && seat.index <= effectiveSeatCount && !seat.user && !seat.is_locked);
+    const nextSeat = room.seats.find((seat) => seat.index >= 2 && seat.index <= effectiveSeatCount && !seat.user && !seat.is_locked);
     if (!nextSeat) return;
     onJoinSeat(nextSeat.index);
   };
@@ -91,7 +86,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   return <main className="relative z-50 pointer-events-auto touch-manipulation overscroll-none mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-none flex-col overflow-hidden overscroll-none bg-background text-foreground shadow-2xl">
     <div className="pointer-events-none absolute inset-0" />
     <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
-    <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overflow-x-hidden pb-2">
+    <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden pb-2">
       <SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} micOn={micOn} onToggleMic={onToggleMic} onSeatTap={onSeatTap} onJoinSeat={onJoinSeat} onHostTap={onHostTap} />
       <div className="mx-2.5 flex shrink-0 items-center gap-2 overflow-hidden rounded-full border border-[color:var(--primary)]/40 bg-[color:var(--card)]/85 py-1.5 pl-1 pr-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--primary)] text-[11px] text-primary-foreground">📣</span><p className="min-w-0 flex-1 truncate text-xs text-foreground/70">{announcement || `Welcome to ${room.title} — be kind, have fun ✨`}</p><Rocket className="h-4 w-4 shrink-0 text-[color:var(--secondary)]" /></div>
       <div className="flex min-h-[170px] shrink-0 gap-2 overflow-hidden px-2.5">
