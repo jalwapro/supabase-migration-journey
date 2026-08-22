@@ -28,7 +28,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const openGames = () => { setGamesOpen(true); onOpenGames(); };
   const openMore = () => { setMoreOpen(true); onOpenMore(); };
 
-  return <main className="relative z-50 pointer-events-auto touch-manipulation overscroll-none mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-none sm:max-w-[480px] flex-col overflow-hidden overscroll-none bg-[#08050c] text-white shadow-2xl">
+  return <main className="relative z-50 pointer-events-auto touch-manipulation overscroll-none mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-none flex-col overflow-hidden overscroll-none bg-[#08050c] text-white shadow-2xl">
     <div className="pointer-events-none absolute inset-0" />
     <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
     <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pb-2">

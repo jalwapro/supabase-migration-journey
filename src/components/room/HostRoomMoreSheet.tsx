@@ -5,7 +5,7 @@ export function HostRoomMoreSheet({
   onClose,
   seatCount,
   minSeats = 2,
-  maxSeats = 12,
+  maxSeats = 20,
   onSeats,
   onMusic,
   onSettings,
