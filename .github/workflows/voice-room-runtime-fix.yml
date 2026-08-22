@@ -9,74 +9,42 @@ permissions:
 
 jobs:
   fix:
-    if: ${{ !contains(github.event.head_commit.message, 'voice-room runtime wiring fixer') && !contains(github.event.head_commit.message, 'voice room runtime fix') }}
+    if: ${{ !contains(github.event.head_commit.message, 'voice room route hook-order fix') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Patch voice room route wiring
+      - name: Fix hook order and host-only seat mapping
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('src/routes/room.$roomId.tsx')
           s = p.read_text()
-
+          s = s.replace('const mappedRoomState: RoomState = useMemo(() => {', 'const mappedRoomState: RoomState = (() => {', 1)
           old = '''    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
       const seatIndex = i + 1;
       const m = members.find(mem => mem.seat_index === seatIndex);
       const isLocked = lockedSeats.includes(seatIndex);'''
           new = '''    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
-      // Seat indexes are zero-based throughout room_members/RPC/realtime.
-      // Keep the UI index identical to the database index so taps, locks,
-      // requests and speaking state target the same seat.
-      const seatIndex = i;
-      const m = members.find(mem => mem.seat_index === seatIndex);
+      const seatIndex = i + 1;
+      // The host belongs only to the dedicated HostCard. Never mirror the
+      // host into a normal audience seat, even if legacy data has seat 0/1.
+      const m = members.find(mem => mem.user_id !== r.host_id && mem.seat_index === seatIndex);
       const isLocked = lockedSeats.includes(seatIndex);'''
           if old not in s:
-              raise SystemExit('seat mapping block not found')
+              raise SystemExit('room seat mapping block not found')
           s = s.replace(old, new, 1)
-
-          old = '''<VoiceRoomScreen 
-room={mappedRoomState}
-onOpenChat={() => setChatComposerOpen(true)}
-onOpenGift={() => setGiftOpen(true)}
-onOpenMore={() => setVideoSettingsOpen(true)}
-onToggleMic={() => void toggleMuteWithSync()}
-onSeatTap={(idx) => void onSeatTap(idx)}
-onJoinSeat={(idx) => void takeSeat(idx)}
-isHost={isHost}
-mySeatIndex={mySeatIndex}
-viewerCount={mappedRoomState.viewer_count}
-/>'''
-          new = '''<VoiceRoomScreen
-room={mappedRoomState}
-onOpenChat={() => setChatComposerOpen(true)}
-onOpenGift={() => setGiftOpen(true)}
-onOpenMore={() => setSeatsSheetOpen(true)}
-onToggleMic={() => void toggleMuteWithSync()}
-onSeatTap={(idx) => void onSeatTap(idx)}
-onJoinSeat={(idx) => void takeSeat(idx)}
-onExit={() => leaveRoom()}
-onShare={() => share()}
-onOnline={() => openViewersSheet()}
-onRanking={() => openViewersSheet()}
-isHost={isHost}
-mySeatIndex={mySeatIndex}
-viewerCount={mappedRoomState.viewer_count}
-isMicMuted={agora.muted}
-/>'''
-          if old not in s:
-              raise SystemExit('VoiceRoomScreen wiring block not found')
-          s = s.replace(old, new, 1)
-
+          old_end = '  }, [r, members, agora.speakingUids, agora.muted, giftPoints, lockedSeats]);\nreturn ('
+          new_end = '  })();\nreturn ('
+          if old_end not in s:
+              raise SystemExit('hook dependency terminator not found')
+          s = s.replace(old_end, new_end, 1)
           p.write_text(s)
           PY
-
-      - name: Commit runtime fix
+      - name: Commit route fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/routes/room.$roomId.tsx
           git diff --cached --quiet && exit 0
-          git commit -m "fix voice room runtime wiring"
+          git commit -m "fix voice room route hook-order fix"
           git push
