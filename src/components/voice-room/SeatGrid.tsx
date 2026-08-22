@@ -3,10 +3,11 @@ import { cn } from "@/lib/utils";
 import type { RoomSeat, RoomParticipant } from "@/types/room";
 import { HostCard } from "./HostCard";
 
-const CAPACITIES = [4, 8, 12, 16, 20] as const;
+const MIN_CAPACITY = 4;
+const MAX_CAPACITY = 20;
 const OCTAGON = { clipPath: "polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%)" } as const;
 const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
-const normalizeCapacity = (value?: number) => CAPACITIES.includes(Math.floor(Number(value ?? 20)) as (typeof CAPACITIES)[number]) ? Math.floor(Number(value ?? 20)) : 20;
+const normalizeCapacity = (value?: number) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(value ?? MAX_CAPACITY)) || MAX_CAPACITY));
 
 export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void }) {
   const { user, is_locked, index } = seat;
@@ -17,13 +18,11 @@ export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void })
 
 function EmbeddedVoiceControls({ micOn, onToggleMic }: { micOn: boolean; onToggleMic: () => void }) { return <div className="flex w-full items-center justify-center pt-1"><button type="button" onClick={onToggleMic} className="flex flex-col items-center gap-1 touch-manipulation" aria-label="Toggle microphone"><span style={OCTAGON} className={cn("flex h-11 w-11 items-center justify-center border-2", micOn ? "border-[color:var(--primary)] bg-[color:var(--primary)]/30" : "border-white/20 bg-white/[0.06]")}>{micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5 text-white/50" />}</span><span className="text-[9px] font-semibold text-white/70">Mic {micOn ? "On" : "Off"}</span></button></div>; }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; seatCount?: number; host: RoomParticipant; micOn: boolean; onToggleMic: () => void; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; host: RoomParticipant; micOn: boolean; onToggleMic: () => void; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
 
-/** One reusable grid. Seat 1 is always the host; there is no separate host area. */
+/** One reusable grid. Seat 1 is always the host; host chooses any capacity from 4 through 20. */
 export function SeatGrid({ seats, seatCount, host, micOn, onToggleMic, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
-  // The visual room contract is 1..capacity with the host permanently occupying #1.
-  // Participant seat records are rendered only in slots 2..capacity.
   const byIndex = new Map(seats.filter((seat) => seat.index >= 2 && seat.index <= capacity).map((seat) => [seat.index, seat]));
   const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset) => {
     const index = offset + 2;
