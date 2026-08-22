@@ -2134,15 +2134,41 @@ style={roomStyle}
 
 <VoiceRoomScreen 
 room={mappedRoomState}
+roomCode={roomCode}
+onlineCount={Math.max(r.viewer_count, members.length)}
+micOn={!agora.muted}
+isHost={isHost}
+mySeatIndex={mySeatIndex}
+popularityPct={popularityPct}
+topGifterName={topGifters[0]?.username ?? null}
+topGifterCoins={topGifters[0]?.total_coins ?? 0}
+announcement={null}
 onOpenChat={() => setChatComposerOpen(true)}
+onOpenPrivateChat={() => setPrivateChatOpen(true)}
 onOpenGift={() => setGiftOpen(true)}
 onOpenMore={() => setVideoSettingsOpen(true)}
 onToggleMic={() => void toggleMuteWithSync()}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
-isHost={isHost}
-mySeatIndex={mySeatIndex}
-viewerCount={mappedRoomState.viewer_count}
+onHostTap={() => void onSeatTap(0)}
+onReport={async () => {
+  const reason = window.prompt("Report this room?");
+  if (reason && reason.trim().length >= 3) {
+    const { error } = await supabase.rpc("submit_user_report", {
+      _reported_user: room.data?.host_id ?? null,
+      _room_id: roomId,
+      _reason: reason.trim(),
+      _details: null,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Report submitted");
+  }
+}}
+onShare={share}
+onExit={leaveRoom}
+onHome={() => void navigate({ to: "/" })}
+onRanking={() => void navigate({ to: "/rank" })}
+onOpenGames={() => setGamesSheetOpen(true)}
 />
 
 <div className="pointer-events-none absolute inset-x-0 top-[140px] z-30 mx-auto w-full max-w-md px-3">
