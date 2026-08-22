@@ -1,0 +1,30 @@
+name: Voice Room Props Fix
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, '[skip-room-props-fix]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add roomId prop to VoiceRoomScreen
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/routes/room.$roomId.tsx')
+          s = p.read_text()
+          needle = '<VoiceRoomScreen \nroom={mappedRoomState}'
+          if needle in s and 'roomId={roomId}' not in s[s.index(needle):s.index(needle)+120]:
+              s = s.replace(needle, '<VoiceRoomScreen \nroom={mappedRoomState}\nroomId={roomId}', 1)
+          p.write_text(s)
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- 'src/routes/room.$roomId.tsx'
+          git diff --cached --quiet && exit 0
+          git commit -m 'fix voice room screen roomId prop [skip-room-props-fix]'
+          git push
