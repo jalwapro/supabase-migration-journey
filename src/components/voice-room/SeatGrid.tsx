@@ -17,13 +17,24 @@ export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void })
 
 function EmbeddedVoiceControls({ micOn, onToggleMic }: { micOn: boolean; onToggleMic: () => void }) { return <div className="flex w-full items-center justify-center pt-1"><button type="button" onClick={onToggleMic} className="flex flex-col items-center gap-1 touch-manipulation" aria-label="Toggle microphone"><span style={OCTAGON} className={cn("flex h-11 w-11 items-center justify-center border-2", micOn ? "border-[color:var(--primary)] bg-[color:var(--primary)]/30" : "border-white/20 bg-white/[0.06]")}>{micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5 text-white/50" />}</span><span className="text-[9px] font-semibold text-white/70">Mic {micOn ? "On" : "Off"}</span></button></div>; }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; seatCount?: number; host: RoomParticipant; micOn: boolean; onToggleMic: () => void; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; host: RoomParticipant; micOn: boolean; onToggleMic: () => void; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
 
-/** Reusable layout engine: dedicated host + exactly 4/8/12/16/20 participant seats. */
+/** One reusable grid. Seat 1 is always the host; there is no separate host area. */
 export function SeatGrid({ seats, seatCount, host, micOn, onToggleMic, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
-  const byIndex = new Map(seats.filter((seat) => seat.index >= 1 && seat.index <= capacity).map((seat) => [seat.index, seat]));
-  const visible = Array.from({ length: capacity }, (_, offset) => byIndex.get(offset + 1) ?? ({ index: offset + 1, user: null, is_locked: false } as RoomSeat));
+  // The visual room contract is 1..capacity with the host permanently occupying #1.
+  // Participant seat records are rendered only in slots 2..capacity.
+  const byIndex = new Map(seats.filter((seat) => seat.index >= 2 && seat.index <= capacity).map((seat) => [seat.index, seat]));
+  const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset) => {
+    const index = offset + 2;
+    return byIndex.get(index) ?? ({ index, user: null, is_locked: false } as RoomSeat);
+  });
   const handleTap = (seat: RoomSeat) => { if (seat.user) onSeatTap?.(seat.index); else if (!seat.is_locked) onJoinSeat?.(seat.index); };
-  return <section className={cn("flex w-full min-w-0 flex-col px-2.5", capacity >= 16 ? "gap-1.5" : "gap-2")} data-seat-capacity={capacity}><div className="mx-auto w-full max-w-[220px] shrink-0"><HostCard host={host} onTap={onHostTap} /></div><div className="grid w-full min-w-0 grid-cols-4 gap-1.5 sm:gap-2">{visible.map((seat) => <Seat key={seat.index} seat={seat} onClick={() => handleTap(seat)} />)}</div><EmbeddedVoiceControls micOn={micOn} onToggleMic={onToggleMic} /></section>;
+  return <section className={cn("flex w-full min-w-0 flex-col px-2.5", capacity >= 16 ? "gap-1.5" : "gap-2")} data-seat-capacity={capacity}>
+    <div className="grid w-full min-w-0 grid-cols-4 gap-1.5 sm:gap-2">
+      <div className="relative col-span-1 row-span-2 min-h-[158px] min-w-0"><span className="absolute left-1.5 top-1 z-20 grid h-5 w-5 place-items-center rounded-full bg-black/70 text-[10px] font-black text-white">1</span><HostCard host={host} onTap={onHostTap} /></div>
+      {participantSlots.map((seat) => <Seat key={seat.index} seat={seat} onClick={() => handleTap(seat)} />)}
+    </div>
+    <EmbeddedVoiceControls micOn={micOn} onToggleMic={onToggleMic} />
+  </section>;
 }
