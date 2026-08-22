@@ -44,7 +44,7 @@ export const VoiceRoomScreen = ({
   const canSpeak = isHost || mySeatIndex !== null;
 
   return (
-    <main className="relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none bg-[#08050c] text-white shadow-2xl">
+    <main className="relative z-50 pointer-events-auto touch-manipulation mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none bg-[#08050c] text-white shadow-2xl">
       <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "radial-gradient(60% 40% at 50% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(50% 30% at 100% 30%, rgba(232,60,220,0.12), transparent)" }} />
 
       <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />

@@ -2076,7 +2076,7 @@ function RoomPage() {
   };
 
   // Map current room and members state to the new VoiceRoomScreen types
-  const mappedRoomState: RoomState = useMemo(() => {
+  const mappedRoomState: RoomState = (() => {
     const hostMember = members.find(m => m.user_id === r.host_id);
     const hostParticipant: RoomParticipant = {
       id: r.host_id,
@@ -2092,7 +2092,7 @@ function RoomPage() {
 
     const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
       const seatIndex = i + 1;
-      const m = members.find(mem => mem.seat_index === seatIndex);
+      const m = members.find(mem => mem.user_id !== r.host_id && mem.seat_index === seatIndex);
       const isLocked = lockedSeats.includes(seatIndex);
       
       return {
@@ -2122,12 +2122,12 @@ function RoomPage() {
       seats: roomSeats,
       pk: null
     };
-  }, [r, members, agora.speakingUids, agora.muted, giftPoints, lockedSeats]);
+  })();
 return (
 <CamPipelineProvider>
 <PipelineBridge bridgeRef={pipelineBridgeRef} />
 <div
-className="fixed inset-0 flex flex-col overflow-hidden text-white bg-black"
+className="fixed inset-0 z-40 flex flex-col overflow-hidden text-white bg-black pointer-events-auto touch-manipulation"
 style={roomStyle}
 >
 <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
