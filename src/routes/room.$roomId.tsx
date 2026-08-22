@@ -2134,6 +2134,7 @@ style={roomStyle}
 
 <VoiceRoomScreen 
 room={mappedRoomState}
+roomId={roomId}
 roomCode={roomCode}
 onlineCount={Math.max(r.viewer_count, members.length)}
 micOn={!agora.muted}
