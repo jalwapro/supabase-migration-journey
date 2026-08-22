@@ -1,11 +1,11 @@
-import { Music, Settings, Users, Lock, Unlock, UserPlus, Trophy, X, Minus, Plus } from "lucide-react";
+import { Music, Settings, Users, Lock, UserPlus, Trophy, X, LayoutGrid } from "lucide-react";
+
+const ROOM_LAYOUTS = [4, 8, 12, 16, 20] as const;
 
 export function HostRoomMoreSheet({
   open,
   onClose,
   seatCount,
-  minSeats = 2,
-  maxSeats = 20,
   onSeats,
   onMusic,
   onSettings,
@@ -24,10 +24,7 @@ export function HostRoomMoreSheet({
   onRanking: () => void;
 }) {
   if (!open) return null;
-  const changeSeats = (delta: number) => {
-    const next = Math.max(minSeats, Math.min(maxSeats, seatCount + delta));
-    if (next !== seatCount) void onSeats(next);
-  };
+  const selected = ROOM_LAYOUTS.includes(seatCount as (typeof ROOM_LAYOUTS)[number]) ? seatCount : 20;
   return (
     <>
       <button type="button" aria-label="Close host controls" className="fixed inset-0 z-[90] bg-black/60" onClick={onClose} />
@@ -35,9 +32,11 @@ export function HostRoomMoreSheet({
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/20" />
         <div className="mb-4 flex items-center justify-between"><div><h2 className="text-lg font-extrabold">Host Controls</h2><p className="text-[11px] text-white/50">Manage your live voice room</p></div><button type="button" onClick={onClose} className="grid h-9 w-9 place-items-center rounded-full bg-white/10"><X className="h-4 w-4" /></button></div>
         <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-          <div className="mb-2 flex items-center justify-between"><div className="flex items-center gap-2"><Users className="h-4 w-4 text-fuchsia-400" /><span className="text-sm font-bold">Voice seats</span></div><span className="text-xs text-white/50">{seatCount} seats</span></div>
-          <div className="flex items-center justify-between gap-3"><button type="button" disabled={seatCount <= minSeats} onClick={() => changeSeats(-1)} className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/10 disabled:opacity-30"><Minus className="h-5 w-5" /></button><div className="text-2xl font-black">{seatCount}</div><button type="button" disabled={seatCount >= maxSeats} onClick={() => changeSeats(1)} className="grid h-11 w-11 place-items-center rounded-xl border border-white/10 bg-white/10 disabled:opacity-30"><Plus className="h-5 w-5" /></button></div>
-          <p className="mt-2 text-[10px] text-white/40">Changes are saved to the live room and reflected in the seat grid.</p>
+          <div className="mb-2 flex items-center gap-2"><LayoutGrid className="h-4 w-4 text-fuchsia-400" /><span className="text-sm font-bold">Room Layout</span></div>
+          <div className="grid grid-cols-5 gap-1.5">
+            {ROOM_LAYOUTS.map((count) => <button key={count} type="button" onClick={() => { if (count !== selected) void onSeats(count); }} className={`rounded-xl border px-1 py-2 text-xs font-black transition active:scale-95 ${count === selected ? "border-fuchsia-400 bg-fuchsia-500/20 text-fuchsia-100" : "border-white/10 bg-white/[0.05] text-white/65"}`}>{count}</button>)}
+          </div>
+          <p className="mt-2 text-[10px] text-white/40">Host is always Seat 1. Select exactly 4, 8, 12, 16 or 20 total room seats.</p>
         </div>
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={onMusic} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3 text-left"><Music className="h-5 w-5 text-fuchsia-400" /><span><b className="block text-xs">Music</b><small className="text-[10px] text-white/45">Host music player</small></span></button>
