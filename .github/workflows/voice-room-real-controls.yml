@@ -27,8 +27,7 @@ jobs:
               s = s.replace('import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";', 'import { HostMusicPlayer } from "@/components/room/HostMusicPlayer";\nimport { HostRoomMoreSheet } from "@/components/room/HostRoomMoreSheet";')
 
           if 'const [hostMoreOpen, setHostMoreOpen]' not in s:
-              anchor = 'const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);'
-              s = s.replace(anchor, anchor + '\n  const [hostMoreOpen, setHostMoreOpen] = useState(false);', 1)
+              s = s.replace('const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);', 'const [videoSettingsOpen, setVideoSettingsOpen] = useState(false);\n  const [hostMoreOpen, setHostMoreOpen] = useState(false);', 1)
 
           if 'async function updateRoomSeatCount' not in s:
               anchor = '  function share() {\n    setInviteOpen(true);\n  }'
@@ -38,15 +37,8 @@ jobs:
     const occupied = members.filter((m) => m.seat_index != null).length;
     const safe = Math.max(occupied, Math.min(20, Math.floor(Number(next) || current)));
     if (safe === current) return;
-    const { error } = await supabase
-      .from("live_rooms")
-      .update({ seat_count: safe })
-      .eq("id", roomId)
-      .eq("host_id", user.id);
-    if (error) {
-      toast.error(`Seats update failed: ${error.message}`);
-      return;
-    }
+    const { error } = await supabase.from("live_rooms").update({ seat_count: safe }).eq("id", roomId).eq("host_id", user.id);
+    if (error) { toast.error(`Seats update failed: ${error.message}`); return; }
     await room.refetch();
     toast.success(`Room now has ${safe} voice seats`);
   }
@@ -54,10 +46,12 @@ jobs:
 '''
               s = s.replace(anchor, fn + anchor, 1)
 
-          # Host More must open the real host-controls sheet. Viewers keep the existing More/settings action.
-          s = s.replace('onOpenMore={() => setVideoSettingsOpen(true)}', 'onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}', 1)
+          # Replace the actual More prop regardless of whether it is an inline callback or a named callback.
+          s, n = re.subn(r'onOpenMore=\{[^}]*setVideoSettingsOpen\(true\)[^}]*\}', 'onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}', s, count=1)
+          if n == 0:
+              # If the current implementation passes a named callback, make that callback host-aware.
+              s = s.replace('onOpenMore={openMore}', 'onOpenMore={() => { if (isHost) setHostMoreOpen(true); else openMore(); }}', 1)
 
-          # Add the real host sheet immediately before the provider closes. It uses the existing music/settings/invite/ranking actions.
           if '<HostRoomMoreSheet' not in s:
               marker = '</CamPipelineProvider>'
               mount = '''<HostRoomMoreSheet
@@ -71,19 +65,18 @@ jobs:
   onRanking={() => { setHostMoreOpen(false); void openMilestoneSheet(); }}
 />
 '''
+              if marker not in s: raise SystemExit('CamPipelineProvider closing marker not found')
               s = s.replace(marker, mount + marker, 1)
 
           p.write_text(s, encoding='utf-8')
           PY
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -- 'src/routes/room.$roomId.tsx' 'src/components/room/HostRoomMoreSheet.tsx'
           if git diff --cached --quiet; then echo 'No changes'; exit 0; fi
           git commit -m 'wire real host room controls [skip-real-room-controls]'
           git push
-
-      - name: Build verification
+      - name: Verify wiring
         run: |
           test -f src/components/room/HostRoomMoreSheet.tsx
           grep -q 'updateRoomSeatCount' 'src/routes/room.$roomId.tsx'
