@@ -1,0 +1,98 @@
+name: Voice Room Production Hardening
+
+on:
+  workflow_run:
+    workflows: ["Voice Room Host Controls"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Apply production Voice Room hardening
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          # SeatGrid: remove duplicate prop declaration and never send a locked
+          # empty seat through the join-seat action.
+          p = Path('src/components/voice-room/SeatGrid.tsx')
+          s = p.read_text()
+          s = s.replace('seatCount?: number; seatCount?: number;', 'seatCount?: number;')
+          s = s.replace(
+              'const handleTap = (seat: RoomSeat) => seat.user ? onSeatTap?.(seat.index) : onJoinSeat?.(seat.index);',
+              'const handleTap = (seat: RoomSeat) => { if (!seat.user && seat.is_locked) return; if (seat.user) onSeatTap?.(seat.index); else onJoinSeat?.(seat.index); };'
+          )
+          p.write_text(s)
+
+          # Mobile-first room: do not constrain the live room to a 480px
+          # desktop-style shell. It must occupy the actual device viewport.
+          p = Path('src/components/voice-room/VoiceRoomScreen.tsx')
+          s = p.read_text()
+          s = s.replace('max-w-none sm:max-w-[480px]', 'max-w-none')
+          p.write_text(s)
+
+          # Host capacity control: only the real server-side RPC may change
+          # capacity. This replaces the old client-side live_rooms UPDATE.
+          p = Path('src/routes/room.$roomId.tsx')
+          s = p.read_text()
+          old = '''const {error}=await supabase.from("live_rooms").update({seat_count:next}).eq("id",roomId).eq("host_id",user?.id??""); if(error){toast.error(error.message);return;}'''
+          new = '''const {error}=await supabase.rpc("update_voice_room_seat_count",{_room_id:roomId,_seat_count:next}); if(error){toast.error(error.message);return;}'''
+          s = s.replace(old, new)
+          p.write_text(s)
+
+          # Supported layouts are exactly 4/8/12/16/20.
+          p = Path('src/components/room/HostRoomMoreSheet.tsx')
+          s = p.read_text().replace('maxSeats = 12', 'maxSeats = 20')
+          p.write_text(s)
+          PY
+
+      - name: Reject obvious fake Voice Room implementation patterns
+        shell: bash
+        run: |
+          ! grep -RInE 'setTimeout\([^\n]*(gift|coin|seat|mic|speaker|score)' src/components/voice-room src/components/room 2>/dev/null
+          ! grep -RInE 'Math\.random\(' src/components/voice-room src/components/room 2>/dev/null
+
+      - name: Verify secure seat RPC is referenced
+        run: grep -RIn 'update_voice_room_seat_count' db/migrations src/routes/room.\$roomId.tsx
+
+      - name: Verify critical real integrations remain present
+        shell: bash
+        run: |
+          test -f src/hooks/useZegoRoom.ts
+          test -f src/components/GiftSheet.tsx
+          test -f src/components/room/GiftAnimationPlayer.tsx
+          test -f src/components/room/HostMusicPlayer.tsx
+          test -f src/components/room/RoomGamesSheet.tsx
+          test -f src/components/voice-room/SeatGrid.tsx
+          test -f src/components/voice-room/RoomHeader.tsx
+
+      - name: Build when a package manager lockfile exists
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci && npm run build; elif [ -f yarn.lock ]; then corepack enable && yarn install --frozen-lockfile && yarn build; else echo 'No lockfile; Builder Build Check remains the authoritative build.'; fi
+
+      - name: Commit hardening
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/components/voice-room/SeatGrid.tsx src/components/voice-room/VoiceRoomScreen.tsx src/routes/room.\$roomId.tsx src/components/room/HostRoomMoreSheet.tsx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'production harden real voice room [skip-host-controls]'
+          git push origin main
