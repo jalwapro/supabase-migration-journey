@@ -35,196 +35,47 @@ interface VoiceRoomScreenProps {
 }
 
 export const VoiceRoomScreen = ({
-  room,
-  roomCode,
-  onlineCount,
-  micOn,
-  isHost,
-  mySeatIndex,
-  popularityPct,
-  topGifterName,
-  topGifterCoins,
-  announcement,
-  onOpenChat,
-  onOpenPrivateChat,
-  onOpenGift,
-  onOpenMore,
-  onToggleMic,
-  onSeatTap,
-  onJoinSeat,
-  onHostTap,
-  onReport,
-  onShare,
-  onExit,
-  onHome,
-  onRanking,
-  onOpenGames,
+  room, roomCode, onlineCount, micOn, isHost, mySeatIndex, popularityPct,
+  topGifterName, topGifterCoins, announcement, onOpenChat, onOpenPrivateChat,
+  onOpenGift, onOpenMore, onToggleMic, onSeatTap, onJoinSeat, onHostTap,
+  onReport, onShare, onExit, onHome, onRanking, onOpenGames,
 }: VoiceRoomScreenProps) => {
-  const [draft, setDraft] = useState("");
+  const [draft] = useState("");
   const canSpeak = isHost || mySeatIndex !== null;
 
   return (
-    <main className="relative mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-[#08050c] text-white shadow-2xl md:max-h-[100dvh]">
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          backgroundImage:
-            "radial-gradient(60% 40% at 50% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(50% 30% at 100% 30%, rgba(232,60,220,0.12), transparent)",
-        }}
-      />
+    <main className="relative mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden overscroll-none bg-[#08050c] text-white shadow-2xl">
+      <div className="pointer-events-none absolute inset-0" style={{ backgroundImage: "radial-gradient(60% 40% at 50% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(50% 30% at 100% 30%, rgba(232,60,220,0.12), transparent)" }} />
 
-      <RoomHeader
-        room={room}
-        roomCode={roomCode}
-        onlineCount={onlineCount}
-        topGifterName={topGifterName}
-        topGifterCoins={topGifterCoins}
-        onReport={onReport}
-        onShare={onShare}
-        onExit={onExit}
-        onHome={onHome}
-        onRanking={onRanking}
-      />
+      <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
 
-      <div className="mt-2 flex flex-1 flex-col gap-2.5 overflow-y-auto pb-2 scrollbar-hide">
-        <SeatGrid
-          seats={room.seats}
-          host={room.host}
-          micOn={micOn}
-          onToggleMic={onToggleMic}
-          onSeatTap={onSeatTap}
-          onJoinSeat={onJoinSeat}
-          onHostTap={onHostTap}
-        />
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-hidden pb-2">
+        <SeatGrid seats={room.seats} host={room.host} micOn={micOn} onToggleMic={onToggleMic} onSeatTap={onSeatTap} onJoinSeat={onJoinSeat} onHostTap={onHostTap} />
 
-        {/* Announcement ticker */}
-        <div
-          className="relative mx-2.5 flex items-center gap-2 overflow-hidden rounded-full border border-fuchsia-400/40 bg-gradient-to-r from-[#170a26] via-[#1c0a2e] to-[#170a26] py-1.5 pl-1 pr-3 sm:mx-3"
-          style={{ boxShadow: "0 0 14px -6px rgba(232,60,220,0.5)" }}
-        >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[11px] shadow-[0_0_8px_-1px_rgba(232,60,220,0.8)]">
-            📣
-          </span>
-          <p className="min-w-0 flex-1 truncate text-xs text-white/70">
-            {announcement || `Welcome to ${room.title} — be kind, have fun ✨`}
-          </p>
+        <div className="mx-2.5 flex shrink-0 items-center gap-2 overflow-hidden rounded-full border border-fuchsia-400/40 bg-gradient-to-r from-[#170a26] via-[#1c0a2e] to-[#170a26] py-1.5 pl-1 pr-3">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[11px]">📣</span>
+          <p className="min-w-0 flex-1 truncate text-xs text-white/70">{announcement || `Welcome to ${room.title} — be kind, have fun ✨`}</p>
           <Rocket className="h-4 w-4 shrink-0 text-fuchsia-300" />
         </div>
 
-        {/* Chat + right widgets */}
-        <div className="flex min-h-0 flex-1 gap-2 px-2.5 sm:px-3">
+        <div className="flex min-h-0 flex-1 gap-2 overflow-hidden px-2.5">
           <div className="flex min-h-0 flex-[1.9] flex-col overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-b from-white/[0.03] to-transparent">
-            <div className="flex items-center gap-4 border-b border-white/10 px-2.5 pt-2">
-              <button className="relative pb-1.5 text-[12px] font-bold text-white">
-                All
-                <span className="absolute -bottom-px left-0 h-0.5 w-full rounded-full bg-fuchsia-400" />
-              </button>
-              <button className="pb-1.5 text-[12px] font-semibold text-white/40">Chat</button>
-            </div>
-            <div className="flex flex-1 flex-col items-center justify-center gap-1.5 px-3 py-4 text-center text-white/35">
-              <MessageCircle className="h-7 w-7" />
-              <p className="text-xs font-medium">No messages yet</p>
-              <p className="text-[10px]">Start the conversation</p>
-            </div>
-            <div className="flex items-center gap-2 border-t border-white/10 px-2 py-2">
-              <button
-                onClick={onOpenChat}
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-left"
-              >
-                <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
-                  {draft.trim() ? draft : "Say something..."}
-                </span>
-                <Smile className="h-3.5 w-3.5 shrink-0 text-white/50" />
-              </button>
-              <button
-                onClick={onOpenChat}
-                aria-label="Send message"
-                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            <div className="flex items-center gap-4 border-b border-white/10 px-2.5 pt-2"><button onClick={onOpenChat} className="relative pb-1.5 text-[12px] font-bold text-white">All<span className="absolute -bottom-px left-0 h-0.5 w-full rounded-full bg-fuchsia-400" /></button><button onClick={onOpenChat} className="pb-1.5 text-[12px] font-semibold text-white/60">Chat</button></div>
+            <button onClick={onOpenChat} className="flex flex-1 flex-col items-center justify-center gap-1.5 px-3 py-4 text-center text-white/35"><MessageCircle className="h-7 w-7" /><p className="text-xs font-medium">No messages yet</p><p className="text-[10px]">Start the conversation</p></button>
+            <div className="flex items-center gap-2 border-t border-white/10 px-2 py-2"><button onClick={onOpenChat} className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-left"><span className="min-w-0 flex-1 truncate text-[12px] text-white/40">{draft.trim() ? draft : "Say something..."}</span><Smile className="h-3.5 w-3.5 shrink-0 text-white/50" /></button><button onClick={onOpenChat} aria-label="Send message" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white"><Send className="h-3.5 w-3.5" /></button></div>
           </div>
-
-          <div className="flex min-h-0 flex-1 flex-col gap-2">
-            <div
-              className="rounded-2xl border border-fuchsia-400/40 bg-gradient-to-b from-[#1a0a2e] to-[#0d0616] p-2.5"
-              style={{ boxShadow: "0 0 14px -6px rgba(232,60,220,0.5)" }}
-            >
-              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/90">
-                <Rocket className="h-3.5 w-3.5 text-fuchsia-400" />
-                Popularity
-              </div>
-              <div className="rounded-full border border-fuchsia-400/30 bg-black/40 px-2 py-1 text-center text-[10px] font-black text-fuchsia-200">
-                {popularityPct}%
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-violet-400/25 bg-white/[0.03] p-2.5">
-              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/85">
-                <Calendar className="h-3.5 w-3.5 text-violet-400" />
-                Events
-              </div>
-              <p className="text-[10px] text-white/45">No active events</p>
-              <p className="text-[10px] text-white/30">Check back later</p>
-            </div>
-
-            <div className="min-h-0 flex-1 rounded-2xl border border-amber-400/25 bg-white/[0.03] p-2.5">
-              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/85">
-                <Megaphone className="h-3.5 w-3.5 text-amber-400" />
-                Announcement
-              </div>
-              <p className="line-clamp-2 text-[10px] text-white/45">{announcement || "No announcement yet"}</p>
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
+            <button onClick={onRanking} className="shrink-0 rounded-2xl border border-fuchsia-400/40 bg-gradient-to-b from-[#1a0a2e] to-[#0d0616] p-2.5 text-left"><div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/90"><Rocket className="h-3.5 w-3.5 text-fuchsia-400" />Popularity</div><div className="rounded-full border border-fuchsia-400/30 bg-black/40 px-2 py-1 text-center text-[10px] font-black text-fuchsia-200">{popularityPct}%</div></button>
+            <div className="shrink-0 rounded-2xl border border-violet-400/25 bg-white/[0.03] p-2.5"><div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/85"><Calendar className="h-3.5 w-3.5 text-violet-400" />Events</div><p className="text-[10px] text-white/45">No active events</p></div>
+            <div className="min-h-0 flex-1 overflow-hidden rounded-2xl border border-amber-400/25 bg-white/[0.03] p-2.5"><div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/85"><Megaphone className="h-3.5 w-3.5 text-amber-400" />Announcement</div><p className="line-clamp-2 text-[10px] text-white/45">{announcement || "No announcement yet"}</p></div>
           </div>
         </div>
       </div>
 
-      {/* Bottom nav dock */}
-      <div className="sticky bottom-0 z-20 flex items-end gap-2 border-t border-fuchsia-400/20 bg-black/80 px-2.5 py-2 backdrop-blur-md sm:px-3">
-        <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-white/[0.03] px-1 py-1.5">
-          <button onClick={onHome} aria-label="Home" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
-            <Home className="h-5 w-5" />
-            <span className="text-[9px] font-semibold">Home</span>
-          </button>
-          <button onClick={onOpenGift} aria-label="Gifts" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
-            <Gift className="h-5 w-5" />
-            <span className="text-[9px] font-semibold">Gifts</span>
-          </button>
-          <button onClick={onOpenGames} aria-label="Games" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
-            <Gamepad2 className="h-5 w-5" />
-            <span className="text-[9px] font-semibold">Game</span>
-          </button>
-        </div>
-
-        {canSpeak ? (
-          <button
-            onClick={onToggleMic}
-            aria-label="Toggle microphone"
-            style={OCTAGON}
-            className={cn(
-              "flex h-14 w-14 shrink-0 items-center justify-center border-2 transition-colors active:scale-90",
-              micOn
-                ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-500 to-violet-700 shadow-[0_0_22px_-2px_rgba(232,60,220,0.9)]"
-                : "border-white/20 bg-white/10",
-            )}
-          >
-            {micOn ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/60" />}
-          </button>
-        ) : (
-          <div className="h-14 w-14 shrink-0" />
-        )}
-
-        <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-white/[0.03] px-1 py-1.5">
-          <button onClick={onOpenPrivateChat} aria-label="Chat" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
-            <MessageCircle className="h-5 w-5" />
-            <span className="text-[9px] font-semibold">Chat</span>
-          </button>
-          <button onClick={onOpenMore} aria-label="Profile" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
-            <User className="h-5 w-5" />
-            <span className="text-[9px] font-semibold">Profile</span>
-          </button>
-        </div>
+      <div className="relative z-20 flex shrink-0 items-end gap-2 border-t border-fuchsia-400/20 bg-black/90 px-2.5 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] backdrop-blur-md">
+        <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-white/[0.03] px-1 py-1.5"><button onClick={onHome} className="flex flex-col items-center gap-0.5 px-1 text-white/70"><Home className="h-5 w-5" /><span className="text-[9px] font-semibold">Home</span></button><button onClick={onOpenGift} className="flex flex-col items-center gap-0.5 px-1 text-white/70"><Gift className="h-5 w-5" /><span className="text-[9px] font-semibold">Gifts</span></button><button onClick={onOpenGames} className="flex flex-col items-center gap-0.5 px-1 text-white/70"><Gamepad2 className="h-5 w-5" /><span className="text-[9px] font-semibold">Game</span></button></div>
+        {canSpeak ? <button onClick={onToggleMic} aria-label="Toggle microphone" style={OCTAGON} className={cn("flex h-14 w-14 shrink-0 items-center justify-center border-2 active:scale-90", micOn ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-500 to-violet-700 shadow-[0_0_22px_-2px_rgba(232,60,220,0.9)]" : "border-white/20 bg-white/10")}>{micOn ? <Mic className="h-6 w-6" /> : <MicOff className="h-6 w-6 text-white/60" />}</button> : <div className="h-14 w-14 shrink-0" />}
+        <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-white/[0.03] px-1 py-1.5"><button onClick={onOpenPrivateChat} className="flex flex-col items-center gap-0.5 px-1 text-white/70"><MessageCircle className="h-5 w-5" /><span className="text-[9px] font-semibold">Chat</span></button><button onClick={onOpenMore} className="flex flex-col items-center gap-0.5 px-1 text-white/70"><User className="h-5 w-5" /><span className="text-[9px] font-semibold">Profile</span></button></div>
       </div>
     </main>
   );
