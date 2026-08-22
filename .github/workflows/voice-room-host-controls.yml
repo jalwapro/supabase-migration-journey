@@ -14,8 +14,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
+      - name: Install dependencies when lockfile exists
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci; elif [ -f yarn.lock ]; then corepack enable && yarn install --frozen-lockfile; else echo 'No lockfile; skipping dependency install because Builder Build Check handles builds.'; fi
       - name: Apply host More controls
         run: |
           python - <<'PY'
@@ -33,7 +35,10 @@ jobs:
             s=s.replace(marker,sheet+marker,1)
           p.write_text(s)
           PY
-      - run: npm run build
+      - name: Build verification when dependencies are available
+        shell: bash
+        run: |
+          if [ -f package-lock.json ] || [ -f yarn.lock ]; then npm run build; else echo 'Build covered by Builder Build Check; host-controls workflow performs source wiring only.'; fi
       - name: Commit
         run: |
           git config user.name github-actions[bot]
