@@ -16,7 +16,7 @@ export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void })
 
 function EmbeddedVoiceControls({ micOn, onToggleMic }: { micOn: boolean; onToggleMic: () => void }) { return <div className="flex w-full items-center justify-center pt-1"><button type="button" onClick={onToggleMic} className="flex flex-col items-center gap-1 touch-manipulation" aria-label="Toggle microphone"><span style={OCTAGON} className={cn("flex h-[52px] w-[52px] items-center justify-center border-[3px]", micOn ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-500 to-violet-700 shadow-[0_0_20px_-2px_rgba(232,60,220,0.9)]" : "border-white/20 bg-white/[0.06]")}>{micOn ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5 text-white/50" />}</span><span className="text-[9px] font-semibold text-white/70">Mic {micOn ? "On" : "Off"}</span></button></div>; }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; host: RoomParticipant; micOn: boolean; onToggleMic: () => void; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; host: RoomParticipant; micOn: boolean; onToggleMic: () => void; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
 export function SeatGrid({ seats, seatCount, host, micOn, onToggleMic, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = Math.max(2, Math.min(20, Math.floor(Number(seatCount ?? 20))));
   const byIndex = new Map(seats.filter(s => s.index >= 1 && s.index <= capacity).map(s => [s.index, s]));
