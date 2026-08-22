@@ -3,48 +3,64 @@ name: Voice Room Runtime Fix
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   fix:
-    if: ${{ !contains(github.event.head_commit.message, 'voice room route hook-order fix') }}
+    if: ${{ !contains(github.event.head_commit.message, '[skip-voice-room-fix]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Fix hook order and host-only seat mapping
+      - name: Remove conditional hook causing React error 310
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p = Path('src/routes/room.$roomId.tsx')
           s = p.read_text()
-          s = s.replace('const mappedRoomState: RoomState = useMemo(() => {', 'const mappedRoomState: RoomState = (() => {', 1)
-          old = '''    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
-      const seatIndex = i + 1;
-      const m = members.find(mem => mem.seat_index === seatIndex);
-      const isLocked = lockedSeats.includes(seatIndex);'''
-          new = '''    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
-      const seatIndex = i + 1;
-      // The host belongs only to the dedicated HostCard. Never mirror the
-      // host into a normal audience seat, even if legacy data has seat 0/1.
-      const m = members.find(mem => mem.user_id !== r.host_id && mem.seat_index === seatIndex);
-      const isLocked = lockedSeats.includes(seatIndex);'''
-          if old not in s:
-              raise SystemExit('room seat mapping block not found')
-          s = s.replace(old, new, 1)
+          original = s
+          # Error #310 was caused by useMemo being called only after loading/error
+          # early returns. This mapping is a pure calculation, not a hook.
+          s, n1 = re.subn(
+              r'const mappedRoomState: RoomState = useMemo\(\(\) => \{',
+              'const mappedRoomState: RoomState = (() => {',
+              s,
+              count=1,
+          )
+          if n1 != 1:
+              raise SystemExit('mappedRoomState useMemo declaration not found')
+          # Replace the exact memo terminator nearest the return block.
           old_end = '  }, [r, members, agora.speakingUids, agora.muted, giftPoints, lockedSeats]);\nreturn ('
-          new_end = '  })();\nreturn ('
-          if old_end not in s:
-              raise SystemExit('hook dependency terminator not found')
-          s = s.replace(old_end, new_end, 1)
+          if old_end in s:
+              s = s.replace(old_end, '  })();\nreturn (', 1)
+          else:
+              # tolerate whitespace changes
+              s, n2 = re.subn(
+                  r'\s*\},\s*\[r,\s*members,\s*agora\.speakingUids,\s*agora\.muted,\s*giftPoints,\s*lockedSeats\]\);\s*\n\s*return \(',
+                  '\n  })();\nreturn (',
+                  s,
+                  count=1,
+              )
+              if n2 != 1:
+                  raise SystemExit('mappedRoomState useMemo terminator not found')
+          # Host must render only in the HostCard, never in a normal seat.
+          s = s.replace(
+              'const m = members.find(mem => mem.seat_index === seatIndex);',
+              'const m = members.find(mem => mem.user_id !== r.host_id && mem.seat_index === seatIndex);',
+              1,
+          )
+          if s == original:
+              raise SystemExit('no voice-room changes made')
           p.write_text(s)
           PY
-      - name: Commit route fix
+      - name: Commit fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add src/routes/room.$roomId.tsx
           git diff --cached --quiet && exit 0
-          git commit -m "fix voice room route hook-order fix"
+          git commit -m "fix voice room React 310 hook order [skip-voice-room-fix]"
           git push
