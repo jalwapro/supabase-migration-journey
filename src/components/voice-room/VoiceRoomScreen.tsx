@@ -1,103 +1,231 @@
-import React from "react";
-import { RoomState } from "@/types/room";
+import { useState } from "react";
+import { Rocket, Calendar, Megaphone, Home, Gift, Gamepad2, MessageCircle, User, Mic, MicOff, Smile, Send } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { RoomState } from "@/types/room";
+import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
-import { RoomAdaptiveContainer } from "../room-shared/RoomAdaptiveContainer";
-import { MessageSquare, Mic, Gift, MoreHorizontal, Users, Share2, X, Trophy, MicOff } from "lucide-react";
+
+const OCTAGON = { clipPath: "polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%)" } as const;
 
 interface VoiceRoomScreenProps {
   room: RoomState;
+  roomCode: string;
+  onlineCount: number;
+  micOn: boolean;
+  isHost: boolean;
+  mySeatIndex: number | null;
+  popularityPct: number;
+  topGifterName?: string | null;
+  topGifterCoins?: number;
+  announcement?: string | null;
   onOpenChat: () => void;
+  onOpenPrivateChat: () => void;
   onOpenGift: () => void;
   onOpenMore: () => void;
   onToggleMic: () => void;
   onSeatTap: (index: number) => void;
   onJoinSeat: (index: number) => void;
-  onExit?: () => void;
-  onShare?: () => void;
-  onOnline?: () => void;
-  onRanking?: () => void;
-  isHost: boolean;
-  mySeatIndex: number | null;
-  viewerCount: number;
-  isMicMuted?: boolean;
+  onHostTap?: () => void;
+  onReport: () => void;
+  onShare: () => void;
+  onExit: () => void;
+  onHome: () => void;
+  onRanking: () => void;
+  onOpenGames: () => void;
 }
 
 export const VoiceRoomScreen = ({
   room,
+  roomCode,
+  onlineCount,
+  micOn,
+  isHost,
+  mySeatIndex,
+  popularityPct,
+  topGifterName,
+  topGifterCoins,
+  announcement,
   onOpenChat,
+  onOpenPrivateChat,
   onOpenGift,
   onOpenMore,
   onToggleMic,
   onSeatTap,
   onJoinSeat,
-  onExit,
+  onHostTap,
+  onReport,
   onShare,
-  onOnline,
+  onExit,
+  onHome,
   onRanking,
-  isHost,
-  mySeatIndex,
-  viewerCount,
-  isMicMuted = true,
+  onOpenGames,
 }: VoiceRoomScreenProps) => {
-  const isSeated = mySeatIndex !== null;
-  const canUseMic = isHost || isSeated;
-  const occupied = room.seats.filter((seat) => !!seat.user).length;
+  const [draft, setDraft] = useState("");
+  const canSpeak = isHost || mySeatIndex !== null;
 
   return (
-    <RoomAdaptiveContainer>
-      <div className="relative flex h-full min-h-0 flex-col overflow-hidden bg-[radial-gradient(circle_at_50%_10%,rgba(168,85,247,0.20),transparent_38%),linear-gradient(180deg,#160523_0%,#07030d_48%,#020205_100%)] text-white">
-        <header className="relative z-20 shrink-0 px-3 pt-[max(10px,env(safe-area-inset-top))]">
-          <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-black/30 px-2.5 py-2 backdrop-blur-xl">
-            <button type="button" onClick={onExit} aria-label="Close room" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/10 text-white active:scale-95">
-              <X className="h-5 w-5" />
-            </button>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-black">{room.title}</div>
-              <div className="mt-0.5 flex items-center gap-2 text-[10px] text-white/50"><span>LIVE</span><span>•</span><span>ID {room.id.slice(0, 8)}</span></div>
-            </div>
-            <button type="button" onClick={onOnline} aria-label="View online users" className="flex h-9 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 text-[11px] font-bold active:scale-95">
-              <Users className="h-4 w-4" />{viewerCount}
-            </button>
-            <button type="button" onClick={onShare} aria-label="Share room" className="grid h-9 w-9 place-items-center rounded-full bg-white/10 active:scale-95"><Share2 className="h-4 w-4" /></button>
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <button type="button" onClick={onRanking} className="flex min-w-0 flex-1 items-center gap-1.5 rounded-full border border-amber-300/20 bg-amber-400/10 px-3 py-1.5 text-[10px] font-bold text-amber-100 active:scale-[0.99]">
-              <Trophy className="h-3.5 w-3.5 shrink-0" /><span className="truncate">Room ranking • {occupied} on stage</span>
-            </button>
-            <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-200">Voice</div>
-          </div>
-        </header>
+    <main className="relative mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-[#08050c] text-white shadow-2xl md:max-h-[100dvh]">
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage:
+            "radial-gradient(60% 40% at 50% 0%, rgba(139,92,246,0.18), transparent), radial-gradient(50% 30% at 100% 30%, rgba(232,60,220,0.12), transparent)",
+        }}
+      />
 
-        <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-28 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="mx-2 mb-3 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2.5 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="relative grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full border border-fuchsia-300/40 bg-gradient-to-br from-fuchsia-500/30 to-violet-700/30">
-                {room.host.avatar ? <img src={room.host.avatar} alt={room.host.username} className="h-full w-full object-cover" /> : <span className="text-base font-black">{room.host.username.slice(0, 1).toUpperCase()}</span>}
-                {room.host.is_speaking && <span className="pointer-events-none absolute inset-[-2px] animate-pulse rounded-full border-2 border-fuchsia-400" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5"><span className="truncate text-sm font-black">{room.host.username}</span><span className="rounded-full bg-amber-400/15 px-1.5 py-0.5 text-[8px] font-black text-amber-200">HOST</span></div>
-                <div className="mt-1 text-[10px] text-white/45">{room.host.is_muted ? "Muted" : "Speaking enabled"}</div>
-              </div>
-            </div>
-          </div>
-          <div className="px-1"><SeatGrid seats={room.seats} onSeatTap={onSeatTap} onJoinSeat={onJoinSeat} /></div>
-        </main>
+      <RoomHeader
+        room={room}
+        roomCode={roomCode}
+        onlineCount={onlineCount}
+        topGifterName={topGifterName}
+        topGifterCoins={topGifterCoins}
+        onReport={onReport}
+        onShare={onShare}
+        onExit={onExit}
+        onHome={onHome}
+        onRanking={onRanking}
+      />
 
-        <footer className="absolute inset-x-0 bottom-0 z-30 px-3 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
-          <div className="rounded-[24px] border border-white/10 bg-black/60 p-2.5 shadow-2xl backdrop-blur-2xl">
-            <div className="flex items-center gap-2">
-              <button type="button" onClick={onOpenChat} aria-label="Open room chat" className="flex h-12 min-w-0 flex-1 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 text-left active:scale-[0.98]"><MessageSquare className="h-5 w-5 shrink-0 text-white/60" /><span className="truncate text-xs font-bold text-white/45">Say something...</span></button>
-              <button type="button" onClick={onToggleMic} disabled={!canUseMic} aria-label={canUseMic ? (isMicMuted ? "Turn microphone on" : "Mute microphone") : "Take a seat to use microphone"} className={`grid h-12 w-12 shrink-0 place-items-center rounded-full border active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${!isMicMuted ? "border-emerald-300/50 bg-emerald-400/15 text-emerald-200" : "border-white/10 bg-white/10 text-white"}`}>
-                {isMicMuted ? <MicOff className="h-5 w-5" /> : <Mic className="h-5 w-5" />}
+      <div className="mt-2 flex flex-1 flex-col gap-2.5 overflow-y-auto pb-2 scrollbar-hide">
+        <SeatGrid
+          seats={room.seats}
+          host={room.host}
+          micOn={micOn}
+          onToggleMic={onToggleMic}
+          onSeatTap={onSeatTap}
+          onJoinSeat={onJoinSeat}
+          onHostTap={onHostTap}
+        />
+
+        {/* Announcement ticker */}
+        <div
+          className="relative mx-2.5 flex items-center gap-2 overflow-hidden rounded-full border border-fuchsia-400/40 bg-gradient-to-r from-[#170a26] via-[#1c0a2e] to-[#170a26] py-1.5 pl-1 pr-3 sm:mx-3"
+          style={{ boxShadow: "0 0 14px -6px rgba(232,60,220,0.5)" }}
+        >
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-[11px] shadow-[0_0_8px_-1px_rgba(232,60,220,0.8)]">
+            📣
+          </span>
+          <p className="min-w-0 flex-1 truncate text-xs text-white/70">
+            {announcement || `Welcome to ${room.title} — be kind, have fun ✨`}
+          </p>
+          <Rocket className="h-4 w-4 shrink-0 text-fuchsia-300" />
+        </div>
+
+        {/* Chat + right widgets */}
+        <div className="flex min-h-0 flex-1 gap-2 px-2.5 sm:px-3">
+          <div className="flex min-h-0 flex-[1.9] flex-col overflow-hidden rounded-2xl border border-violet-400/30 bg-gradient-to-b from-white/[0.03] to-transparent">
+            <div className="flex items-center gap-4 border-b border-white/10 px-2.5 pt-2">
+              <button className="relative pb-1.5 text-[12px] font-bold text-white">
+                All
+                <span className="absolute -bottom-px left-0 h-0.5 w-full rounded-full bg-fuchsia-400" />
               </button>
-              <button type="button" onClick={onOpenMore} aria-label="Open room controls" className="grid h-12 w-12 shrink-0 place-items-center rounded-full border border-white/10 bg-white/10 text-white active:scale-95"><MoreHorizontal className="h-5 w-5" /></button>
-              <button type="button" onClick={onOpenGift} aria-label="Send gift" className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-700 text-white shadow-[0_0_20px_rgba(217,70,239,0.35)] active:scale-95"><Gift className="h-5 w-5" /></button>
+              <button className="pb-1.5 text-[12px] font-semibold text-white/40">Chat</button>
             </div>
-            {!canUseMic && <div className="pt-1 text-center text-[9px] font-medium text-white/35">Take a seat before enabling your microphone</div>}
+            <div className="flex flex-1 flex-col items-center justify-center gap-1.5 px-3 py-4 text-center text-white/35">
+              <MessageCircle className="h-7 w-7" />
+              <p className="text-xs font-medium">No messages yet</p>
+              <p className="text-[10px]">Start the conversation</p>
+            </div>
+            <div className="flex items-center gap-2 border-t border-white/10 px-2 py-2">
+              <button
+                onClick={onOpenChat}
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-full border border-white/10 bg-black/50 px-3 py-1.5 text-left"
+              >
+                <span className="min-w-0 flex-1 truncate text-[12px] text-white/40">
+                  {draft.trim() ? draft : "Say something..."}
+                </span>
+                <Smile className="h-3.5 w-3.5 shrink-0 text-white/50" />
+              </button>
+              <button
+                onClick={onOpenChat}
+                aria-label="Send message"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-gradient-to-br from-fuchsia-500 to-violet-600 text-white"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
-        </footer>
+
+          <div className="flex min-h-0 flex-1 flex-col gap-2">
+            <div
+              className="rounded-2xl border border-fuchsia-400/40 bg-gradient-to-b from-[#1a0a2e] to-[#0d0616] p-2.5"
+              style={{ boxShadow: "0 0 14px -6px rgba(232,60,220,0.5)" }}
+            >
+              <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/90">
+                <Rocket className="h-3.5 w-3.5 text-fuchsia-400" />
+                Popularity
+              </div>
+              <div className="rounded-full border border-fuchsia-400/30 bg-black/40 px-2 py-1 text-center text-[10px] font-black text-fuchsia-200">
+                {popularityPct}%
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-violet-400/25 bg-white/[0.03] p-2.5">
+              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/85">
+                <Calendar className="h-3.5 w-3.5 text-violet-400" />
+                Events
+              </div>
+              <p className="text-[10px] text-white/45">No active events</p>
+              <p className="text-[10px] text-white/30">Check back later</p>
+            </div>
+
+            <div className="min-h-0 flex-1 rounded-2xl border border-amber-400/25 bg-white/[0.03] p-2.5">
+              <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold text-white/85">
+                <Megaphone className="h-3.5 w-3.5 text-amber-400" />
+                Announcement
+              </div>
+              <p className="line-clamp-2 text-[10px] text-white/45">{announcement || "No announcement yet"}</p>
+            </div>
+          </div>
+        </div>
       </div>
-    </RoomAdaptiveContainer>
+
+      {/* Bottom nav dock */}
+      <div className="sticky bottom-0 z-20 flex items-end gap-2 border-t border-fuchsia-400/20 bg-black/80 px-2.5 py-2 backdrop-blur-md sm:px-3">
+        <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-white/[0.03] px-1 py-1.5">
+          <button onClick={onHome} aria-label="Home" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
+            <Home className="h-5 w-5" />
+            <span className="text-[9px] font-semibold">Home</span>
+          </button>
+          <button onClick={onOpenGift} aria-label="Gifts" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
+            <Gift className="h-5 w-5" />
+            <span className="text-[9px] font-semibold">Gifts</span>
+          </button>
+          <button onClick={onOpenGames} aria-label="Games" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
+            <Gamepad2 className="h-5 w-5" />
+            <span className="text-[9px] font-semibold">Game</span>
+          </button>
+        </div>
+
+        {canSpeak ? (
+          <button
+            onClick={onToggleMic}
+            aria-label="Toggle microphone"
+            style={OCTAGON}
+            className={cn(
+              "flex h-14 w-14 shrink-0 items-center justify-center border-2 transition-colors active:scale-90",
+              micOn
+                ? "border-fuchsia-400 bg-gradient-to-b from-fuchsia-500 to-violet-700 shadow-[0_0_22px_-2px_rgba(232,60,220,0.9)]"
+                : "border-white/20 bg-white/10",
+            )}
+          >
+            {micOn ? <Mic className="h-6 w-6 text-white" /> : <MicOff className="h-6 w-6 text-white/60" />}
+          </button>
+        ) : (
+          <div className="h-14 w-14 shrink-0" />
+        )}
+
+        <div className="flex flex-1 items-center justify-around rounded-2xl border border-white/10 bg-white/[0.03] px-1 py-1.5">
+          <button onClick={onOpenPrivateChat} aria-label="Chat" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
+            <MessageCircle className="h-5 w-5" />
+            <span className="text-[9px] font-semibold">Chat</span>
+          </button>
+          <button onClick={onOpenMore} aria-label="Profile" className="flex flex-col items-center gap-0.5 px-1 text-white/70 active:scale-95">
+            <User className="h-5 w-5" />
+            <span className="text-[9px] font-semibold">Profile</span>
+          </button>
+        </div>
+      </div>
+    </main>
   );
 };
