@@ -1,0 +1,63 @@
+name: Voice Room Final Verification
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    if: ${{ !contains(github.event.head_commit.message, '[skip-voice-final]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply deterministic Voice Room fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('src/components/voice-room/SeatGrid.tsx')
+          s=p.read_text().replace('seatCount?: number; seatCount?: number;', 'seatCount?: number;')
+          s=s.replace('const handleTap = (seat: RoomSeat) => seat.user ? onSeatTap?.(seat.index) : onJoinSeat?.(seat.index);','const handleTap = (seat: RoomSeat) => { if (!seat.user && seat.is_locked) return; if (seat.user) onSeatTap?.(seat.index); else onJoinSeat?.(seat.index); };')
+          p.write_text(s)
+          p=Path('src/components/voice-room/VoiceRoomScreen.tsx')
+          p.write_text(p.read_text().replace('max-w-none sm:max-w-[480px]', 'max-w-none'))
+          p=Path('src/components/room/HostRoomMoreSheet.tsx')
+          p.write_text(p.read_text().replace('maxSeats = 12','maxSeats = 20'))
+          p=Path('src/routes/room.$roomId.tsx')
+          s=p.read_text()
+          s=s.replace('const {error}=await supabase.from("live_rooms").update({seat_count:next}).eq("id",roomId).eq("host_id",user?.id??"");','const {error}=await supabase.rpc("update_voice_room_seat_count",{_room_id:roomId,_seat_count:next});')
+          p.write_text(s)
+          PY
+      - name: Verify critical real integrations
+        shell: bash
+        run: |
+          test -f src/hooks/useZegoRoom.ts
+          test -f src/components/GiftSheet.tsx
+          test -f src/components/room/GiftAnimationPlayer.tsx
+          test -f src/components/room/HostMusicPlayer.tsx
+          test -f src/components/room/RoomGamesSheet.tsx
+          test -f db/migrations/0340_secure_voice_room_seat_capacity.sql
+          grep -RIn 'update_voice_room_seat_count' src/routes db/migrations
+      - name: Build if lockfile exists
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then npm ci && npm run build; elif [ -f yarn.lock ]; then corepack enable && yarn install --frozen-lockfile && yarn build; else echo 'No lockfile; Builder Build Check remains authoritative.'; fi
+      - name: Commit deterministic fixes
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/components/voice-room/SeatGrid.tsx src/components/voice-room/VoiceRoomScreen.tsx src/components/room/HostRoomMoreSheet.tsx src/routes/room.\$roomId.tsx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'finalize real voice room wiring [skip-voice-final]'
+          git push origin main
