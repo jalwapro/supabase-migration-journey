@@ -39,11 +39,12 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return; }
     if (file.size > 15 * 1024 * 1024) { toast.error("Room image must be 15MB or smaller"); return; }
     try {
-      // R2 user-scoped namespace: room-covers/<host-user-id>/<room-id>/<uuid>.<ext>
-      // The R2 signing endpoint already authorizes unknown namespaces only when
-      // their second path segment is the authenticated user's id.
+      // Cloudflare R2: room-covers/<host-user-id>/<room-id>/<uuid>.<ext>
       const result = await uploadToUserFolder("room-covers", file, user.id, room.id);
-      const { error } = await supabase.from("live_rooms").update({ cover_url: result.url }).eq("id", room.id).eq("host_id", user.id);
+      const { error } = await supabase.rpc("update_room_cover", {
+        _room_id: room.id,
+        _cover_url: result.url,
+      });
       if (error) throw error;
       setRoomDp(result.url);
       toast.success("Room DP updated");
