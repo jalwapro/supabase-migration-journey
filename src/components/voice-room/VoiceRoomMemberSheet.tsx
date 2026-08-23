@@ -15,14 +15,20 @@ export function VoiceRoomMemberSheet({
   roomId,
   member,
   canModerate,
+  isHost = false,
   onClose,
   onKicked,
+  onOpenProfile,
+  onOpenMessage,
 }: {
   roomId: string;
   member: VoiceRoomMemberProfile | null;
   canModerate: boolean;
+  isHost?: boolean;
   onClose: () => void;
   onKicked?: (userId: string) => void;
+  onOpenProfile?: (user: VoiceRoomMemberProfile) => void;
+  onOpenMessage?: (userId: string) => void;
 }) {
   const [busy, setBusy] = useState(false);
   if (!member) return null;
@@ -46,28 +52,12 @@ export function VoiceRoomMemberSheet({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center"
-      onClick={onClose}
-      role="presentation"
-    >
-      <section
-        className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-[#0d0616] p-4 text-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Room member profile"
-      >
+    <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center" onClick={onClose} role="presentation">
+      <section className="w-full max-w-sm overflow-hidden rounded-3xl border border-white/15 bg-[#0d0616] p-4 text-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
         <div className="flex items-center gap-3">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[color:var(--primary)] bg-white/5">
-            {member.avatar ? (
-              <img src={member.avatar} alt={member.username ?? "User"} className="h-full w-full object-cover" />
-            ) : (
-              <div className="grid h-full w-full place-items-center text-xl font-black">
-                {(member.username ?? "U").slice(0, 1).toUpperCase()}
-              </div>
-            )}
+            {member.avatar ? <img src={member.avatar} alt={member.username ?? "User"} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black">{(member.username ?? "U").slice(0, 1).toUpperCase()}</div>}
           </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-base font-black">{member.username ?? "User"}</div>
@@ -78,25 +68,17 @@ export function VoiceRoomMemberSheet({
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="text-[9px] uppercase tracking-wider text-white/40">Gift Score</div>
-            <div className="mt-1 text-sm font-black">{Number(member.gift_score ?? 0).toLocaleString()}</div>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="text-[9px] uppercase tracking-wider text-white/40">Microphone</div>
-            <div className="mt-1 text-sm font-black">{member.is_muted ? "Muted" : "On"}</div>
-          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Gift Score</div><div className="mt-1 text-sm font-black">{Number(member.gift_score ?? 0).toLocaleString()}</div></div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Microphone</div><div className="mt-1 text-sm font-black">{member.is_muted ? "Muted" : "On"}</div></div>
         </div>
 
-        {canModerate && (
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => void kick()}
-            className="mt-3 flex h-11 w-full items-center justify-center rounded-2xl bg-red-500/90 text-sm font-black text-white disabled:opacity-50"
-          >
-            {busy ? "Removing…" : "Remove / Kick from Room"}
-          </button>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => onOpenProfile?.(member)} className="h-11 rounded-2xl bg-white/10 text-sm font-black">User Profile</button>
+          <button type="button" onClick={() => onOpenMessage?.(member.id)} className="h-11 rounded-2xl bg-[color:var(--primary)] text-sm font-black text-white">Private Message</button>
+        </div>
+
+        {(canModerate || isHost) && (
+          <button type="button" disabled={busy} onClick={() => void kick()} className="mt-2 flex h-11 w-full items-center justify-center rounded-2xl bg-red-500/90 text-sm font-black text-white disabled:opacity-50">{busy ? "Removing…" : "Host Control · Remove / Kick"}</button>
         )}
       </section>
     </div>
