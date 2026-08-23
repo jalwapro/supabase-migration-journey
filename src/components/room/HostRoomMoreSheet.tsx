@@ -1,4 +1,4 @@
-import { Music, Settings, Users, Lock, UserPlus, Trophy, X, LayoutGrid, Minus, Plus, Pencil, ImagePlus } from "lucide-react";
+import { Music, Settings, Users, Lock, UserPlus, Trophy, X, LayoutGrid, Minus, Plus } from "lucide-react";
 
 const MIN_SEATS = 4;
 const MAX_SEATS = 20;
