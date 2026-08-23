@@ -1,4 +1,4 @@
-import { Flag, Share2, Power, Trophy, Users, ChevronRight, Pencil, ImagePlus } from "lucide-react";
+import { Flag, Share2, Power, Trophy, Users, ChevronRight, Pencil, ImagePlus, Minimize2, LogOut } from "lucide-react";
 import type { RoomState } from "@/types/room";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const isHost = isHostProp || user?.id === room.host.id;
   const [roomTitle, setRoomTitle] = useState(room.title);
   const [roomDp, setRoomDp] = useState<string | null>(room.host.avatar);
+  const [exitMenuOpen, setExitMenuOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => setRoomTitle(room.title), [room.title]);
   useEffect(() => setRoomDp(room.host.avatar), [room.host.avatar]);
@@ -46,6 +47,18 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     toast.success("Room DP updated");
   };
 
+  const openExitMenu = () => setExitMenuOpen(true);
+  const minimizeRoom = () => {
+    setExitMenuOpen(false);
+    // Keep the room/session alive. onHome only changes the visible route;
+    // the parent room lifecycle remains mounted by the app's room flow.
+    onHome();
+  };
+  const exitRoom = () => {
+    setExitMenuOpen(false);
+    onExit();
+  };
+
   return <header className="relative z-[60] flex shrink-0 flex-col px-2 pt-[calc(.2rem+env(safe-area-inset-top))] sm:px-2.5" style={{ pointerEvents: "auto", backgroundColor: "var(--primary)" }}>
     <div className="relative z-[61] flex min-h-[56px] items-center gap-1.5">
       <div role="button" tabIndex={0} onClick={hostProfileClick} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") hostProfileClick(); }} className="relative z-[62] flex min-w-0 flex-1 items-center gap-2 rounded-[18px] border-2 border-[color:var(--secondary)]/75 bg-[color:var(--secondary)]/25 p-2 text-left shadow-[0_1px_10px_rgba(0,0,0,.35)] active:opacity-85" aria-label={`Open ${hostName} profile`}>
@@ -56,11 +69,17 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ""; if (f) void saveRoomDp(f); }} />
       {!isHost && <button type="button" onClick={tap(onReport)} className={actionClass} aria-label="Report room"><Flag className="h-4 w-4" /></button>}
       <button type="button" onClick={tap(onShare)} className={actionClass} aria-label="Share room"><Share2 className="h-4 w-4" /></button>
-      <button type="button" onClick={tap(onExit)} className={actionClass} aria-label="Exit room"><Power className="h-4 w-4" /></button>
+      <button type="button" onClick={tap(openExitMenu)} className={actionClass} aria-label="Room exit options" aria-expanded={exitMenuOpen}><Power className="h-4 w-4" /></button>
     </div>
     <div className="relative z-[61] mt-0 flex min-h-[30px] items-center gap-1.5 border-b-2 border-[color:var(--secondary)]/80">
       <button type="button" onClick={tap(onRanking)} className="relative z-[62] flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-[11px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)] active:opacity-80"><Trophy className="h-4 w-4 shrink-0 text-[color:var(--secondary)]"/><span className="truncate">{topGifterName ? `${topGifterName} · ${((topGifterCoins ?? 0) / 1000).toFixed(1)}k` : "No ranking yet"}</span><ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-white/90"/></button>
       <div className="flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--secondary)]/80 bg-[color:var(--secondary)]/25 px-2 py-1 text-[10px] text-white shadow-[0_1px_6px_rgba(0,0,0,.35)]"><Users className="h-3.5 w-3.5"/><span>{onlineCount}</span></div>
     </div>
+    {exitMenuOpen && <div className="fixed inset-0 z-[2147483000]" onClick={() => setExitMenuOpen(false)} aria-hidden="true">
+      <div className="absolute right-2 top-[calc(58px+env(safe-area-inset-top))] w-[190px] overflow-hidden rounded-2xl border border-white/30 bg-black/90 p-1.5 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()} role="menu" aria-label="Room options">
+        <button type="button" onClick={tap(minimizeRoom)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-white hover:bg-white/10" role="menuitem"><Minimize2 className="h-4 w-4 text-white/80"/><span>Minimize Room</span></button>
+        <button type="button" onClick={tap(exitRoom)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10" role="menuitem"><LogOut className="h-4 w-4"/><span>Exit Room</span></button>
+      </div>
+    </div>}
   </header>;
 }
