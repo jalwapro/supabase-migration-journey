@@ -14,6 +14,7 @@ DECLARE
   _eff record;
   _prof record;
   _row public.room_entrances;
+  _has_effect boolean := false;
 BEGIN
   IF _uid IS NULL THEN RAISE EXCEPTION 'AUTH_REQUIRED'; END IF;
 
@@ -34,6 +35,7 @@ BEGIN
    WHERE u.user_id = _uid AND u.is_equipped = true AND e.is_active = true
      AND (u.expires_at IS NULL OR u.expires_at > now())
    LIMIT 1;
+  _has_effect := FOUND;
 
   SELECT username, avatar AS avatar_url, vip_level, country INTO _prof
     FROM public.profiles WHERE id = _uid;
@@ -43,13 +45,13 @@ BEGIN
      sound_url, duration_ms, username, avatar_url, vip_level, country)
   VALUES
     (_room_id, _uid,
-     CASE WHEN FOUND THEN _eff.id ELSE NULL END,
-     CASE WHEN FOUND THEN _eff.key ELSE NULL END,
-     CASE WHEN FOUND THEN _eff.media_url ELSE NULL END,
-     CASE WHEN FOUND THEN _eff.media_type ELSE NULL END,
-     CASE WHEN FOUND THEN _eff.chromakey ELSE NULL END,
-     CASE WHEN FOUND THEN _eff.sound_url ELSE NULL END,
-     CASE WHEN FOUND THEN _eff.duration_ms ELSE 2400 END,
+     CASE WHEN _has_effect THEN _eff.id ELSE NULL END,
+     CASE WHEN _has_effect THEN _eff.key ELSE NULL END,
+     CASE WHEN _has_effect THEN _eff.media_url ELSE NULL END,
+     CASE WHEN _has_effect THEN _eff.media_type ELSE NULL END,
+     CASE WHEN _has_effect THEN _eff.chromakey ELSE NULL END,
+     CASE WHEN _has_effect THEN _eff.sound_url ELSE NULL END,
+     CASE WHEN _has_effect THEN _eff.duration_ms ELSE 2400 END,
      _prof.username, _prof.avatar_url, COALESCE(_prof.vip_level, 0), _prof.country)
   RETURNING * INTO _row;
 
