@@ -8,6 +8,7 @@ import { SeatGrid } from "./SeatGrid";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
+import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMemberSheet";
 
 const MIN_CAPACITY = 4;
 const MAX_CAPACITY = 20;
@@ -30,6 +31,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const [gamesOpen, setGamesOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [emojiTargetSeat, setEmojiTargetSeat] = useState<number | null>(null);
+  const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
   const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
   const [roomMessages, setRoomMessages] = useState<RoomChatMessage[]>(messages);
@@ -96,12 +98,25 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const firstOccupiedSeat = room.seats.find(s => !!s.user)?.index ?? null;
   const activeEmojiTarget = emojiTargetSeat ?? firstOccupiedSeat;
 
+  const openMemberProfile = (seatIndex: number) => {
+    const seat = room.seats.find(s => s.index === seatIndex);
+    if (!seat?.user) return;
+    setSelectedMember({
+      id: seat.user.id,
+      username: seat.user.username,
+      avatar: seat.user.avatar,
+      level: seat.user.level,
+      gift_score: seat.user.gift_score,
+      is_muted: seat.user.is_muted,
+    });
+  };
+
   return <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
     {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
     <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
       <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking}/>
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="relative min-h-0 flex-1 overflow-hidden bg-transparent pt-1"><SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={(i) => { setEmojiTargetSeat(i); setEmojiOpen(true); onSeatTap(i); }} onJoinSeat={onJoinSeat} onHostTap={onHostTap}/></div>
+        <div className="relative min-h-0 flex-1 overflow-hidden bg-transparent pt-1"><SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={openMemberProfile} onJoinSeat={onJoinSeat} onHostTap={onHostTap}/></div>
         <section className="grid h-[clamp(160px,27dvh,220px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(80px,.7fr)] gap-1.5 px-2 py-1.5">
           <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-transparent">
             <div className="flex h-8 shrink-0 items-end gap-5 border-b border-white/45 px-2.5"><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass,"relative pb-1.5 text-xs font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]")}>All<span className="absolute bottom-0 left-0 h-0.5 w-6 rounded-full bg-[color:var(--primary)]"/></button><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass,"pb-1.5 text-xs font-medium text-white/80 drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]")}>Chat</button></div>
@@ -114,5 +129,6 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     </div>
     <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]"><button type="button" onClick={tap(onToggleMic)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white shadow-[0_1px_8px_rgba(0,0,0,.25)]")} aria-label={micOn?"Mute microphone":"Unmute microphone"}>{micOn?<Mic className="h-4.5 w-4.5"/>:<MicOff className="h-4.5 w-4.5"/>}</button><button type="button" onClick={tap(onToggleSpeaker)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white shadow-[0_1px_8px_rgba(0,0,0,.25)]")} aria-label={speakerMuted?"Unmute speaker":"Mute speaker"}>{speakerMuted?<VolumeX className="h-4.5 w-4.5"/>:<Volume2 className="h-4.5 w-4.5"/>}</button><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white shadow-[0_1px_8px_rgba(0,0,0,.25)]")} aria-label="Open chat"><Smile className="h-4.5 w-4.5"/></button><button type="button" onClick={tap(openGifts)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white bg-white/20 text-white shadow-[0_1px_10px_rgba(0,0,0,.3)]")}><Gift className="h-5.5 w-5.5"/></button><button type="button" onClick={tap(openGames)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white shadow-[0_1px_8px_rgba(0,0,0,.25)]")}><Gamepad2 className="h-4.5 w-4.5"/></button><button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white shadow-[0_1px_8px_rgba(0,0,0,.25)]")}><Mail className="h-4.5 w-4.5"/></button><button type="button" onClick={tap(onOpenMore)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white shadow-[0_1px_8px_rgba(0,0,0,.25)]")}><Grid2X2 className="h-4.5 w-4.5"/></button></nav>
     <GiftSheet open={giftOpen} onClose={()=>setGiftOpen(false)} roomId={roomId} receivers={receivers}/><RoomGamesSheet open={gamesOpen} onClose={()=>setGamesOpen(false)} onOpenNative={slug=>{setGamesOpen(false);onOpenGames();window.dispatchEvent(new CustomEvent("jalwa:open-game",{detail:{slug,roomId}}))}}/><ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} onPick={e=>{if(activeEmojiTarget!=null) onSendEmoji?.(e);setEmojiOpen(false)}}/>
+    <VoiceRoomMemberSheet roomId={roomId} member={selectedMember} canModerate={isHost} onClose={() => setSelectedMember(null)} />
   </main>;
 };
