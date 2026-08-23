@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mic, MicOff, Plus, Heart, Lock, Check, X } from "lucide-react";
+import { Mic, MicOff, Heart, Lock, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoomSeat, RoomParticipant } from "@/types/room";
 import { HostCard } from "./HostCard";
@@ -13,7 +13,7 @@ const normalizeCapacity = (value?: number) => Math.min(MAX_CAPACITY, Math.max(MI
 const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
 type SeatRequest = { id: string; from_user: string; seat_index: number | null; created_at: string; username: string; avatar: string | null };
 
-function EmptySeatArt({ locked }: { locked: boolean }) { return <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-[#d7b33d] bg-[#24130f] shadow-[inset_0_0_18px_rgba(0,0,0,.55)]"><img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain" draggable={false} />{!locked && <span className="absolute right-[8%] top-[8%] grid h-3.5 w-3.5 place-items-center rounded-full bg-[color:var(--primary)] text-white shadow"><Plus className="h-2.5 w-2.5" /></span>}{locked && <Lock className="absolute h-3.5 w-3.5 text-white/90 drop-shadow" />}</span>; }
+function EmptySeatArt({ locked }: { locked: boolean }) { return <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-[#d7b33d] bg-[#24130f] shadow-[inset_0_0_18px_rgba(0,0,0,.55)]"><img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain" draggable={false} />{locked && <Lock className="absolute h-3.5 w-3.5 text-white/90 drop-shadow" />}</span>; }
 
 export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void }) {
   const { user, is_locked, index } = seat;
@@ -22,7 +22,7 @@ export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void })
   return <button type="button" onClick={onClick} className="group relative flex min-w-0 flex-col items-center gap-0 touch-manipulation active:scale-95" aria-label={`Seat ${index}, ${user.username}`}><span className={cn("relative aspect-square w-[78%] max-w-[68px] rounded-full border-2 p-[2px]", speaking ? "border-[color:var(--primary)] shadow-[0_0_16px_rgba(232,60,220,.7)]" : "border-[#c9a42f] shadow-[0_2px_10px_rgba(201,164,47,.24)]")}><span className="relative block h-full w-full overflow-hidden rounded-full bg-background">{user.avatar ? <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" draggable={false} /> : <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain" draggable={false} />}{speaking && <span className="absolute inset-1 rounded-full border-2 border-white/80 animate-pulse" />}</span><span className={cn("absolute bottom-0 right-0 grid h-4 w-4 place-items-center rounded-full border border-black/50 text-white", muted ? "bg-red-500" : "bg-emerald-500")}>{muted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}</span></span><span className="max-w-full truncate px-0.5 text-[9px] font-semibold leading-tight text-foreground">{user.username}</span><span className="flex min-w-8 items-center justify-center gap-0.5 rounded-full bg-white/10 px-1 py-px text-[8px] text-foreground/70"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(user.gift_score)}</span></button>;
 }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; host: RoomParticipant; roomId?: string; isHost?: boolean; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; host: RoomParticipant; roomId?: string; isHost?: boolean; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
 
 export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
