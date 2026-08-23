@@ -18,6 +18,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const tap = (handler: () => void) => (event: React.MouseEvent<HTMLButtonElement>) => { event.preventDefault(); event.stopPropagation(); handler(); };
   const hostName = room.host.username || "Host";
   const actionClass = "relative z-[62] grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/80 bg-[color:var(--secondary)]/30 text-white shadow-[0_1px_8px_rgba(0,0,0,.35)] touch-manipulation active:scale-95";
+  const hostProfileClick = () => onHostTap ? onHostTap() : onHome();
 
   const saveRoomTitle = async () => {
     if (!isHost || !user?.id) return;
@@ -36,10 +37,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
     const path = `room-covers/${room.id}-${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("room-assets").upload(path, file, { upsert: true, contentType: file.type });
-    if (uploadError) {
-      toast.error(uploadError.message || "Unable to upload room image");
-      return;
-    }
+    if (uploadError) { toast.error(uploadError.message || "Unable to upload room image"); return; }
     const { data: publicData } = supabase.storage.from("room-assets").getPublicUrl(path);
     const url = publicData.publicUrl;
     const { error } = await supabase.from("live_rooms").update({ cover_url: url }).eq("id", room.id).eq("host_id", user.id);
@@ -50,11 +48,11 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
 
   return <header className="relative z-[60] flex shrink-0 flex-col px-2 pt-[calc(.2rem+env(safe-area-inset-top))] sm:px-2.5" style={{ pointerEvents: "auto", backgroundColor: "var(--primary)" }}>
     <div className="relative z-[61] flex min-h-[56px] items-center gap-1.5">
-      <button type="button" onClick={onHostTap ? tap(onHostTap) : tap(onHome)} className="relative z-[62] flex min-w-0 flex-1 items-center gap-2 rounded-[18px] border-2 border-[color:var(--secondary)]/75 bg-[color:var(--secondary)]/25 p-2 text-left shadow-[0_1px_10px_rgba(0,0,0,.35)] active:opacity-85" aria-label={`Open ${hostName} profile`}>
+      <div role="button" tabIndex={0} onClick={hostProfileClick} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") hostProfileClick(); }} className="relative z-[62] flex min-w-0 flex-1 items-center gap-2 rounded-[18px] border-2 border-[color:var(--secondary)]/75 bg-[color:var(--secondary)]/25 p-2 text-left shadow-[0_1px_10px_rgba(0,0,0,.35)] active:opacity-85" aria-label={`Open ${hostName} profile`}>
         {roomDp ? <img src={roomDp} alt="" className="h-11 w-11 shrink-0 rounded-[12px] border-2 border-[color:var(--secondary)] object-cover shadow-[0_1px_8px_rgba(0,0,0,.45)]" /> : <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] border-2 border-[color:var(--secondary)] bg-black/15 text-sm font-black">{hostName.charAt(0).toUpperCase()}</div>}
         <div className="min-w-0 flex-1"><div className="flex items-center gap-1.5"><div className="truncate text-[14px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.95)]">{roomTitle}</div>{isHost && <button type="button" aria-label="Change room name" onClick={tap(saveRoomTitle)} className="grid h-6 w-6 shrink-0 place-items-center rounded-full border border-[color:var(--secondary)]/80 bg-black/15 text-white"><Pencil className="h-3 w-3" /></button>}</div><div className="mt-1 flex items-center gap-1.5 text-[10px] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]"><span className="inline-grid h-4 w-4 place-items-center rounded-full border border-[color:var(--secondary)] bg-[color:var(--secondary)]/70 text-[9px] text-white">◆</span><span className="truncate">ID:{roomCode}</span></div></div>
         {isHost && <button type="button" aria-label="Change room DP" onClick={tap(() => fileRef.current?.click())} className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[color:var(--secondary)]/80 bg-black/15 text-white"><ImagePlus className="h-3.5 w-3.5" /></button>}
-      </button>
+      </div>
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.currentTarget.value = ""; if (f) void saveRoomDp(f); }} />
       {!isHost && <button type="button" onClick={tap(onReport)} className={actionClass} aria-label="Report room"><Flag className="h-4 w-4" /></button>}
       <button type="button" onClick={tap(onShare)} className={actionClass} aria-label="Share room"><Share2 className="h-4 w-4" /></button>
