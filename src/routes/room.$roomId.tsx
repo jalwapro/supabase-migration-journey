@@ -89,6 +89,7 @@ import { CamPipelineProvider, useCamPipeline } from "@/hooks/useCamPipeline";
 import { CamStudio } from "@/components/room/CamStudio";
 import { ProfileSpotlight } from "@/components/room/ProfileSpotlight";
 import { JalwaPrivateChat } from "@/components/room/JalwaPrivateChat";
+import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 
 import defaultBgAsset from "@/assets/jalwa-default-bg.png.asset.json";
 import {
@@ -390,6 +391,7 @@ function RoomPage() {
     gift_count: 0,
   });
   const [emojiSheetOpen, setEmojiSheetOpen] = useState(false);
+  const [chatEmojiSheetOpen, setChatEmojiSheetOpen] = useState(false);
   const [viewersSheetOpen, setViewersSheetOpen] = useState(false);
   const emojiSheetOpenRef = useRef(false);
   const viewersSheetOpenRef = useRef(false);
@@ -2092,7 +2094,7 @@ function RoomPage() {
       gift_score: giftPoints[r.host_id] ?? 0
     };
 
-    const roomSeats: RoomSeat[] = Array.from({ length: 20 }, (_, i) => {
+    const roomSeats: RoomSeat[] = Array.from({ length: Math.max(0, r.seat_count - 1) }, (_, i) => {
       const seatIndex = i + 1;
       const m = members.find(mem => mem.user_id !== r.host_id && mem.seat_index === seatIndex);
       const isLocked = lockedSeats.includes(seatIndex);
@@ -2139,7 +2141,9 @@ room={mappedRoomState}
 roomId={roomId}
 roomCode={roomCode}
 onlineCount={Math.max(r.viewer_count, members.length)}
+seatCount={r.seat_count}
 micOn={!agora.muted}
+speakerMuted={agora.speakerMuted}
 isHost={isHost}
 mySeatIndex={mySeatIndex}
 popularityPct={popularityPct}
@@ -2151,6 +2155,7 @@ onOpenPrivateChat={() => setPrivateChatOpen(true)}
 onOpenGift={() => setGiftOpen(true)}
 onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}
 onToggleMic={() => void toggleMuteWithSync()}
+onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
 onHostTap={() => void onSeatTap(0)}
@@ -2244,7 +2249,7 @@ void send();
 }}
 />
 <button
-onClick={() => openEmojiSheet()}
+onClick={() => setChatEmojiSheetOpen(true)}
 className="absolute bottom-2 right-2 rounded-full p-1 text-white/40 hover:text-white"
 >
 <Smile className="h-5 w-5" />
@@ -2262,6 +2267,13 @@ className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-t
 </div>
 </div>
 )}
+<ChatEmojiSheet
+open={chatEmojiSheetOpen}
+onClose={() => setChatEmojiSheetOpen(false)}
+onPick={(emoji: ChatEmoji) => {
+  setText((previous) => `${previous}${previous ? " " : ""}${emoji.emoji}`);
+}}
+/>
 </div>
 </CamPipelineProvider>
 );
