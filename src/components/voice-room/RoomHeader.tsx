@@ -1,9 +1,12 @@
 import { Flag, Share2, Power, Trophy, Users, ChevronRight } from "lucide-react";
 import type { RoomState } from "@/types/room";
+import { useAuth } from "@/hooks/useAuth";
 
 interface RoomHeaderProps { room: RoomState; roomCode: string; onlineCount: number; topGifterName?: string | null; topGifterCoins?: number; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; isHost?: boolean; }
 
-export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost = false }: RoomHeaderProps) {
+export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost: isHostProp = false }: RoomHeaderProps) {
+  const { user } = useAuth();
+  const isHost = isHostProp || user?.id === room.host.id;
   const tap = (handler: () => void) => (event: React.MouseEvent<HTMLButtonElement>) => { event.preventDefault(); event.stopPropagation(); handler(); };
   const hostName = room.host.username || "Host";
   const actionClass = "relative z-[62] grid h-9 w-9 shrink-0 place-items-center rounded-full border border-[color:var(--primary)]/70 bg-[color:var(--primary)]/12 text-white shadow-[0_1px_8px_rgba(0,0,0,.3)] touch-manipulation active:scale-95";
