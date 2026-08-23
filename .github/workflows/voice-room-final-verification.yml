@@ -25,9 +25,9 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
 
-          # Keep the existing seat/layout fixes and wire the real room controls
-          # into the existing ZEGO hook instead of creating mock handlers.
+          # Seat/layout safety.
           p=Path('src/components/voice-room/SeatGrid.tsx')
           s=p.read_text()
           s=s.replace('seatCount?: number; seatCount?: number;', 'seatCount?: number;')
@@ -38,36 +38,30 @@ jobs:
           s=p.read_text().replace('maxSeats = 12','maxSeats = 20')
           p.write_text(s)
 
-          # VoiceRoomScreen: preserve the five main navigation buttons, but add
-          # real mic/speaker/music controls and wire the existing emoji picker.
+          # Wire the existing emoji picker to the existing server-side sendEmoji
+          # path, and expose real ZEGO mic/speaker/music controls in the room.
           p=Path('src/components/voice-room/VoiceRoomScreen.tsx')
           s=p.read_text()
           s=s.replace('import { Rocket,Gift,Gamepad2,MessageCircle,Smile,Send,Mail,Grid2X2,ChevronRight } from "lucide-react";', 'import { Rocket,Gift,Gamepad2,MessageCircle,Smile,Send,Mail,Grid2X2,ChevronRight,Mic,MicOff,Volume2,VolumeX,Music } from "lucide-react";')
           s=s.replace('import { GiftSheet,type GiftReceiver }', 'import type { ChatEmoji } from "@/components/chat/ChatEmojiSheet"; import { GiftSheet,type GiftReceiver }')
           s=s.replace('onToggleMic:()=>void;', 'onToggleMic:()=>void; speakerMuted?:boolean; onToggleSpeaker?:()=>void; onOpenMusic?:()=>void; onSendEmoji?:(emoji:ChatEmoji)=>void; canPlayMusic?:boolean;')
-          s=s.replace('const[giftOpen,setGiftOpen]=useState(false),[gamesOpen,setGamesOpen]=useState(false),[emojiOpen,setEmojiOpen]=useState(false),[liveSeatCount,setLiveSeatCount]', 'const[giftOpen,setGiftOpen]=useState(false),[gamesOpen,setGamesOpen]=useState(false),[emojiOpen,setEmojiOpen]=useState(false),[emojiTargetSeat,setEmojiTargetSeat]=useState<number|null>(null),[liveSeatCount,setLiveSeatCount]')
+          s=s.replace('[emojiOpen,setEmojiOpen]=useState(false),[liveSeatCount', '[emojiOpen,setEmojiOpen]=useState(false),[emojiTargetSeat,setEmojiTargetSeat]=useState<number|null>(null),[liveSeatCount')
           s=s.replace('const visibleMessages=[...roomMessages].filter(m=>m.kind!=="emoji").slice(-8);', 'const visibleMessages=[...roomMessages].filter(m=>m.kind!=="emoji").slice(-8); const firstOccupiedSeat=room.seats.find(s=>!!s.user)?.index ?? null; const activeEmojiTarget=emojiTargetSeat ?? firstOccupiedSeat;')
           s=s.replace('onSeatTap={onSeatTap}', 'onSeatTap={(i)=>{setEmojiTargetSeat(i);onSeatTap(i)}}')
           s=s.replace('<nav className="relative z-20 flex h-[clamp(52px,7dvh,62px)]', '<div className="relative z-20 flex h-9 shrink-0 items-center justify-center gap-2 border-t border-white/5 bg-background/90 px-2">{isHost||mySeatIndex!=null?<><button type="button" onClick={tap(onToggleMic)} aria-label={micOn?"Mute microphone":"Unmute microphone"} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]")}>{micOn?<Mic className="h-3.5 w-3.5"/>:<MicOff className="h-3.5 w-3.5 text-red-300"/>}</button><button type="button" onClick={tap(()=>onToggleSpeaker?.())} aria-label={speakerMuted?"Unmute speaker":"Mute speaker"} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]")}>{speakerMuted?<VolumeX className="h-3.5 w-3.5 text-red-300"/>:<Volume2 className="h-3.5 w-3.5"/>}</button><button type="button" onClick={tap(()=>onOpenMusic?.())} aria-label="Open room music" className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]")}><Music className="h-3.5 w-3.5"/></button></>:null}</div><nav className="relative z-20 flex h-[clamp(52px,7dvh,62px)]')
-          s=s.replace('<ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} roomId={roomId} onPick={()=>setEmojiOpen(false)}/>', '<ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} onPick={(e)=>{if(activeEmojiTarget!=null) onSendEmoji?.(e); else window.dispatchEvent(new CustomEvent("jalwa:emoji-no-seat")); setEmojiOpen(false)}}/>')
+          s=s.replace('<ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} roomId={roomId} onPick={()=>setEmojiOpen(false)}/>', '<ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} onPick={(e)=>{if(activeEmojiTarget!=null) onSendEmoji?.(e); setEmojiOpen(false)}}/>')
           p.write_text(s)
 
-          # Route: connect the UI to the already-existing ZEGO speaker/music
-          # functions and the existing server-backed sendEmoji() implementation.
+          # Route: use the already-existing ZEGO hook methods; no fake state.
           p=Path('src/routes/room.$roomId.tsx')
           s=p.read_text()
-          needle='micOn={!agora.muted}\n'
-          if needle in s and 'speakerMuted={agora.speakerMuted}' not in s:
-              s=s.replace(needle, needle+'speakerMuted={agora.speakerMuted}\n')
-          needle='onToggleMic={() => void toggleMuteWithSync()}\n'
-          if needle in s and 'onToggleSpeaker={() => void agora.toggleSpeaker()}' not in s:
-              s=s.replace(needle, needle+'onToggleSpeaker={() => void agora.toggleSpeaker()}\nonOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }}\ncanPlayMusic={isHost || mySeatIndex != null}\nonSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}\n')
-          # Mount the existing real HostMusicPlayer so its controller calls the
-          # existing ZEGO music transport. It is intentionally shared for host
-          # and seated speakers; listeners cannot open it from the controls.
-          marker='onOpenGames={() => setGamesSheetOpen(true)}\n/>\n'
-          if marker in s and '<HostMusicPlayer open={musicOpen}' not in s:
-              s=s.replace(marker, marker+'<HostMusicPlayer open={musicOpen} onClose={() => setMusicOpen(false)} controller={{ musicPlaying: agora.musicPlaying, musicTitle: agora.musicTitle, playMusicFile: agora.playMusicFile, pauseMusic: agora.pauseMusic, resumeMusic: agora.resumeMusic, stopMusic: agora.stopMusic, setMusicVolume: agora.setMusicVolume }} />\n')
+          if 'speakerMuted={agora.speakerMuted}' not in s:
+              s=s.replace('micOn={!agora.muted}', 'micOn={!agora.muted} speakerMuted={agora.speakerMuted}')
+          if 'onToggleSpeaker={() => void agora.toggleSpeaker()}' not in s:
+              s=s.replace('onToggleMic={() => void toggleMuteWithSync()}', 'onToggleMic={() => void toggleMuteWithSync()} onToggleSpeaker={() => void agora.toggleSpeaker()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}')
+          if '<HostMusicPlayer open={musicOpen}' not in s:
+              controller='<HostMusicPlayer open={musicOpen} onClose={() => setMusicOpen(false)} controller={{ musicPlaying: agora.musicPlaying, musicTitle: agora.musicTitle, playMusicFile: agora.playMusicFile, pauseMusic: agora.pauseMusic, resumeMusic: agora.resumeMusic, stopMusic: agora.stopMusic, setMusicVolume: agora.setMusicVolume }} />'
+              s=re.sub(r'(onOpenGames=\{\(\) => setGamesSheetOpen\(true\)\}\s*/>)', r'\1\n'+controller, s, count=1)
           p.write_text(s)
           PY
       - name: Verify critical real integrations
@@ -82,6 +76,8 @@ jobs:
           grep -RIn 'update_voice_room_seat_count' src/routes db/migrations
           grep -n 'speakerMuted={agora.speakerMuted}' src/routes/room.\$roomId.tsx
           grep -n 'onToggleSpeaker={() => void agora.toggleSpeaker()}' src/routes/room.\$roomId.tsx
+          grep -n 'onSendEmoji={(e)' src/routes/room.\$roomId.tsx
+          grep -n '<HostMusicPlayer open={musicOpen}' src/routes/room.\$roomId.tsx
       - name: Build if lockfile exists
         shell: bash
         run: |
