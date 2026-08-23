@@ -39,7 +39,7 @@ export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void })
   </button>;
 }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; host: RoomParticipant; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; seatCount?: number; host: RoomParticipant; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
 
 /** Master voice-room layout: one five-column seat grid; Host is always visual Seat 1. */
 export function SeatGrid({ seats, seatCount, host, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
