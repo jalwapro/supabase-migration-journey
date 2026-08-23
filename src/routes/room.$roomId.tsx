@@ -2154,7 +2154,7 @@ onOpenChat={() => setChatComposerOpen(true)}
 onOpenPrivateChat={() => setPrivateChatOpen(true)}
 onOpenGift={() => setGiftOpen(true)}
 onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}
-onToggleMic={() => void toggleMuteWithSync()}
+onToggleMic={() => void toggleMuteWithSync()} onToggleSpeaker={() => void agora.toggleSpeaker()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
@@ -2178,6 +2178,7 @@ onHome={() => void navigate({ to: "/" })}
 onRanking={() => void navigate({ to: "/rank" })}
 onOpenGames={() => setGamesSheetOpen(true)}
 />
+<HostMusicPlayer open={musicOpen} onClose={() => setMusicOpen(false)} controller={{ musicPlaying: agora.musicPlaying, musicTitle: agora.musicTitle, playMusicFile: agora.playMusicFile, pauseMusic: agora.pauseMusic, resumeMusic: agora.resumeMusic, stopMusic: agora.stopMusic, setMusicVolume: agora.setMusicVolume }} />
 
 <div className="pointer-events-none absolute inset-x-0 top-[140px] z-30 mx-auto w-full max-w-md px-3">
 <EnterRoomBanner latestEnter={latestEnter} />
