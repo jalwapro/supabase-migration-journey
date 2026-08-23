@@ -74,7 +74,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     if (nextSeat) onJoinSeat(nextSeat.index);
   };
 
-  return <main className="relative z-50 pointer-events-auto touch-manipulation mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-none flex-col overflow-hidden bg-[#07162d] text-foreground shadow-2xl">
+  return <main className="relative z-50 pointer-events-auto touch-manipulation overscroll-none mx-auto flex h-[100dvh] min-h-[100dvh] w-full max-w-none flex-col overflow-hidden bg-[#07162d] text-foreground shadow-2xl">
     <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_26%,rgba(34,74,132,.36),transparent_32%),linear-gradient(180deg,#0a1932_0%,#081a37_48%,#07142a_100%)]" />
     <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden">
       <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
