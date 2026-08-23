@@ -3,24 +3,30 @@ import { BuiltinEntranceView } from "@/lib/entrance/builtin";
 import type { RoomEntranceEvent } from "@/lib/entrance/registry";
 import { shouldSkipHeavyEffects } from "@/lib/entrance/registry";
 
-/**
- * Full-screen entrance overlay. Sits above room UI but never blocks pointer
- * events on chat/mic (the Zego audio stream keeps running underneath).
- */
+/** Full-screen entrance overlay. */
 export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; onDone: () => void }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const doneRef = useRef(false);
+  const onDoneRef = useRef(onDone);
   const [visible, setVisible] = useState(true);
-  // Video entrances run ~5s; allow them the full clip length.
+  onDoneRef.current = onDone;
+
   const duration = Math.min(Math.max(event.duration_ms ?? 2500, 1200), 6000);
 
+  const finish = () => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    onDoneRef.current();
+  };
 
   useEffect(() => {
-    // Respect prefers-reduced-motion and slow networks by shortening
+    doneRef.current = false;
+    setVisible(true);
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const skipHeavy = shouldSkipHeavyEffects();
     const total = reduce || skipHeavy ? 900 : duration;
-    const t1 = setTimeout(() => setVisible(false), total - 250);
-    const t2 = setTimeout(onDone, total);
+    const t1 = window.setTimeout(() => setVisible(false), Math.max(0, total - 250));
+    const t2 = window.setTimeout(finish, total);
     if (event.sound_url) {
       try {
         const a = new Audio(event.sound_url);
@@ -30,77 +36,52 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       } catch { /* ignore */ }
     }
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
       audioRef.current?.pause();
       audioRef.current = null;
     };
-  }, [event.id, duration, onDone, event.sound_url]);
+    // onDone intentionally comes from a ref so parent rerenders cannot restart the entrance timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event.id, duration, event.sound_url]);
 
   const mediaType = event.media_type ?? "svg";
   const url = event.media_url ?? "";
   const isVideo = mediaType === "mp4" || mediaType === "webm";
-  // Only the equipped shop effect should be visible. When the user has no
-  // effect we fall back to a slim entrance bar (no big avatar / name card).
   const hasEffect = url.length > 0;
 
   return (
     <div
-      className={`pointer-events-none fixed inset-0 z-[999] flex items-center justify-center transition-opacity duration-300 ${
-        visible ? "opacity-100" : "opacity-0"
-      }`}
+      className={`pointer-events-none fixed inset-0 z-[999] flex items-center justify-center transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
       aria-hidden
     >
-      {/* Light vignette only while a full effect plays */}
       {hasEffect && <div className="absolute inset-0 bg-black/35" />}
 
-      {/* Animation layer */}
       <div className="absolute inset-0 mx-auto max-w-[480px]">
-
         {url.startsWith("builtin:") ? (
           <BuiltinEntranceView mediaUrl={url} />
         ) : isVideo ? (
-          <EntranceVideoLayer url={url} chromakey={event.chromakey ?? "green"} />
+          <EntranceVideoLayer url={url} chromakey={event.chromakey ?? "green"} onEnded={finish} />
         ) : (
           <img
             src={url}
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
-            style={{
-              filter:
-                event.chromakey === "green" || event.chromakey === "luma" || event.chromakey === "black"
-                  ? "url(#entrance-green-key)"
-                  : undefined,
-            }}
+            style={{ filter: event.chromakey === "green" || event.chromakey === "luma" || event.chromakey === "black" ? "url(#entrance-green-key)" : undefined }}
           />
         )}
         <EntranceChromakeyFilters />
       </div>
 
-
-      {/* No avatar / name card over the effect video. Users without an equipped
-          effect just get a slim entrance bar. */}
-      {!hasEffect && (
-        <div className="relative z-10 mx-auto w-full max-w-[480px] px-4">
-          <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)]/90 via-[#f5d271]/90 to-[color:var(--gold)]/90 px-4 py-1.5 shadow-2xl">
-            <span className="text-[11px] font-black uppercase tracking-widest text-black">
-              {event.username ?? "Guest"}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-widest text-black/70">
-              entered
-            </span>
-          </div>
+      {/* Always show the entrance bar so the host/user identity remains visible even when a video effect is playing. */}
+      <div className="relative z-10 mx-auto w-full max-w-[480px] px-4">
+        <div className="mx-auto flex w-fit items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--gold)]/90 via-[#f5d271]/90 to-[color:var(--gold)]/90 px-4 py-1.5 shadow-2xl">
+          <span className="text-[11px] font-black uppercase tracking-widest text-black">{event.username ?? "Guest"}</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-black/70">entered</span>
         </div>
-      )}
+      </div>
 
-
-      <style>{`
-        @keyframes entrance-scale {
-          0% { transform: scale(0.4); opacity: 0; }
-          60% { transform: scale(1.1); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-      `}</style>
+      <style>{`@keyframes entrance-scale { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }`}</style>
     </div>
   );
 }
@@ -109,26 +90,14 @@ function EntranceChromakeyFilters() {
   return (
     <svg aria-hidden width="0" height="0" style={{ position: "absolute" }}>
       <defs>
-        <filter id="entrance-green-key" colorInterpolationFilters="sRGB">
-          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0 0.08" />
-          <feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer>
-        </filter>
-        <filter id="entrance-luma-key" colorInterpolationFilters="sRGB">
-          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.2126 0.7152 0.0722 0 0" />
-          <feComponentTransfer><feFuncA type="linear" slope="5.2" intercept="-0.48" /></feComponentTransfer>
-        </filter>
+        <filter id="entrance-green-key" colorInterpolationFilters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  1 -1.35 1 0.08" /><feComponentTransfer><feFuncA type="linear" slope="3.8" intercept="-0.08" /></feComponentTransfer></filter>
+        <filter id="entrance-luma-key" colorInterpolationFilters="sRGB"><feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.2126 0.7152 0.0722 0 0" /><feComponentTransfer><feFuncA type="linear" slope="5.2" intercept="-0.48" /></feComponentTransfer></filter>
       </defs>
     </svg>
   );
 }
 
-/**
- * Video entrance layer. Admin chromakey metadata is often wrong for a clip, and
- * keying a full-scene video erases it entirely — which reads as "the entrance
- * never played". So we sample the first frame's border pixels and only key when
- * the clip really has a green/black backdrop.
- */
-function EntranceVideoLayer({ url, chromakey }: { url: string; chromakey: string }) {
+function EntranceVideoLayer({ url, chromakey, onEnded }: { url: string; chromakey: string; onEnded: () => void }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [detected, setDetected] = useState<"green" | "luma" | "none" | null>(null);
   const [failed, setFailed] = useState(false);
@@ -186,7 +155,8 @@ function EntranceVideoLayer({ url, chromakey }: { url: string; chromakey: string
         detect();
         void ref.current?.play().catch(() => undefined);
       }}
-      onError={() => setFailed(true)}
+      onEnded={onEnded}
+      onError={() => { setFailed(true); onEnded(); }}
       className="absolute inset-0 h-full w-full object-cover"
       style={{ filter: shouldKey ? "url(#entrance-green-key)" : undefined }}
     />
