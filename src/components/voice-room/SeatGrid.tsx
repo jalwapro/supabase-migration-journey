@@ -39,7 +39,7 @@ export function Seat({ seat, onClick }: { seat: RoomSeat; onClick: () => void })
   </button>;
 }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; host: RoomParticipant; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; seatCount?: number; seatCount?: number; host: RoomParticipant; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
 
 /** Master voice-room layout: one five-column seat grid; Host is always visual Seat 1. */
 export function SeatGrid({ seats, seatCount, host, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
@@ -50,8 +50,8 @@ export function SeatGrid({ seats, seatCount, host, onSeatTap, onJoinSeat, onHost
     return byIndex.get(index) ?? { index, user: null, is_locked: false, is_requested: false };
   });
   const handleTap = (seat: RoomSeat) => { if (seat.user) onSeatTap?.(seat.index); else if (!seat.is_locked) onJoinSeat?.(seat.index); };
-  return <section className="flex h-full w-full min-w-0 items-end overflow-hidden px-2 pb-0 pt-0" data-seat-capacity={capacity}>
-    <div className="grid w-full grid-cols-5 content-end gap-x-1 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
+  return <section className="flex h-full w-full min-w-0 items-start overflow-hidden px-2 pb-0 pt-0" data-seat-capacity={capacity}>
+    <div className="grid w-full grid-cols-5 content-start gap-x-1 gap-y-1 sm:gap-x-2 sm:gap-y-1.5">
       <div className="relative flex min-w-0 flex-col items-center gap-0">
         <span className="relative aspect-square w-[78%] max-w-[68px] rounded-full border-2 p-[2px] shadow-[0_2px_10px_rgba(201,164,47,.32)]"><HostCard host={host} onTap={onHostTap} /></span>
         <span className="text-[9px] font-bold leading-tight tracking-tight text-foreground">No.1</span>
