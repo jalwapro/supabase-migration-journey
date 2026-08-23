@@ -10,6 +10,8 @@ import { toast } from "sonner";
 
 interface RoomHeaderProps { room: RoomState; roomCode: string; onlineCount: number; topGifterName?: string | null; topGifterCoins?: number; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; isHost?: boolean; }
 
+type RoomMemberPreview = { id: string; username: string; avatar: string | null; level: number; host?: boolean };
+
 export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost: isHostProp = false }: RoomHeaderProps) {
   const { user } = useAuth();
   const isHost = isHostProp || user?.id === room.host.id;
@@ -18,6 +20,9 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const [roomDp, setRoomDp] = useState<string | null>(room.host.avatar);
   const [exitMenuOpen, setExitMenuOpen] = useState(false);
   const [hostExitConfirmOpen, setHostExitConfirmOpen] = useState(false);
+  const [membersOpen, setMembersOpen] = useState(false);
+  const [members, setMembers] = useState<RoomMemberPreview[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [exiting, setExiting] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => setRoomTitle(room.title), [room.title]);
@@ -26,6 +31,29 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const hostName = room.host.username || "Host";
   const actionClass = "relative z-[62] grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/80 bg-[color:var(--secondary)]/30 text-white shadow-[0_1px_8px_rgba(0,0,0,.35)] touch-manipulation active:scale-95";
   const hostProfileClick = () => onHostTap ? onHostTap() : onHome();
+
+  const loadMembers = async () => {
+    setMembersLoading(true);
+    try {
+      const ids = new Set<string>();
+      const seeded: RoomMemberPreview[] = [];
+      if (room.host.id) { ids.add(room.host.id); seeded.push({ id: room.host.id, username: room.host.username || "Host", avatar: room.host.avatar, level: room.host.vip_level ?? 0, host: true }); }
+      room.seats.forEach((seat) => { if (seat.user?.id && !ids.has(seat.user.id)) { ids.add(seat.user.id); seeded.push({ id: seat.user.id, username: seat.user.username || "User", avatar: seat.user.avatar, level: seat.user.vip_level ?? 0 }); } });
+
+      const { data } = await supabase.from("room_members").select("user_id").eq("room_id", room.id).limit(100);
+      const memberIds = (data ?? []).map((row: { user_id: string }) => row.user_id).filter(Boolean);
+      memberIds.forEach(id => ids.add(id));
+      const missingIds = memberIds.filter(id => !seeded.some(m => m.id === id));
+      if (missingIds.length) {
+        const { data: profiles } = await supabase.from("profiles").select("id,username,avatar,vip_level").in("id", missingIds).limit(100);
+        (profiles ?? []).forEach((p: { id: string; username: string | null; avatar: string | null; vip_level?: number | null }) => seeded.push({ id: p.id, username: p.username || "User", avatar: p.avatar, level: p.vip_level ?? 0 }));
+      }
+      setMembers(seeded);
+    } catch (error) {
+      toast.error(`Unable to load room members: ${(error as Error).message || "Unknown error"}`);
+    } finally { setMembersLoading(false); }
+  };
+  const openMembers = () => { setMembersOpen(true); void loadMembers(); };
 
   const saveRoomTitle = async () => {
     if (!isHost || !user?.id) return;
@@ -43,16 +71,11 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     if (file.size > 15 * 1024 * 1024) { toast.error("Room image must be 15MB or smaller"); return; }
     try {
       const result = await uploadToUserFolder("room-covers", file, user.id, room.id);
-      const { error } = await supabase.rpc("update_room_cover", {
-        _room_id: room.id,
-        _cover_url: result.url,
-      });
+      const { error } = await supabase.rpc("update_room_cover", { _room_id: room.id, _cover_url: result.url });
       if (error) throw error;
       setRoomDp(result.url);
       toast.success("Room DP updated");
-    } catch (e) {
-      toast.error(`Unable to upload room DP: ${(e as Error).message || "Cloud storage error"}`);
-    }
+    } catch (e) { toast.error(`Unable to upload room DP: ${(e as Error).message || "Cloud storage error"}`); }
   };
 
   const openExitMenu = () => setExitMenuOpen(true);
@@ -62,21 +85,11 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     setExiting(true);
     try {
       if (user?.id) {
-        if (isHost) {
-          const { error } = await supabase.rpc("end_room", { _room_id: room.id });
-          if (error) throw error;
-        } else {
-          const { error } = await supabase.from("room_members").delete().eq("room_id", room.id).eq("user_id", user.id);
-          if (error) throw error;
-        }
+        if (isHost) { const { error } = await supabase.rpc("end_room", { _room_id: room.id }); if (error) throw error; }
+        else { const { error } = await supabase.from("room_members").delete().eq("room_id", room.id).eq("user_id", user.id); if (error) throw error; }
       }
-      setHostExitConfirmOpen(false);
-      setExitMenuOpen(false);
-      window.location.assign("/");
-    } catch (e) {
-      setExiting(false);
-      toast.error(`Couldn't exit room: ${(e as Error).message || "Unknown error"}`);
-    }
+      setHostExitConfirmOpen(false); setExitMenuOpen(false); window.location.assign("/");
+    } catch (e) { setExiting(false); toast.error(`Couldn't exit room: ${(e as Error).message || "Unknown error"}`); }
   };
   const exitRoom = () => { setExitMenuOpen(false); if (isHost) { setHostExitConfirmOpen(true); return; } void performExit(); };
   const confirmHostExit = () => { void performExit(); };
@@ -95,8 +108,9 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     </div>
     <div className="relative z-[61] mt-0 flex min-h-[30px] items-center gap-1.5 border-b-2 border-[color:var(--secondary)]/80">
       <button type="button" onClick={tap(onRanking)} className="relative z-[62] flex min-w-0 flex-1 items-center gap-1.5 px-1.5 py-1 text-[11px] font-semibold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)] active:opacity-80"><Trophy className="h-4 w-4 shrink-0 text-[color:var(--secondary)]"/><span className="truncate">{topGifterName ? `${topGifterName} · ${((topGifterCoins ?? 0) / 1000).toFixed(1)}k` : "No ranking yet"}</span><ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-white/90"/></button>
-      <div className="flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--secondary)]/80 bg-[color:var(--secondary)]/25 px-2 py-1 text-[10px] text-white shadow-[0_1px_6px_rgba(0,0,0,.35)]"><Users className="h-3.5 w-3.5"/><span>{onlineCount}</span></div>
+      <button type="button" onClick={tap(openMembers)} className="relative z-[62] flex shrink-0 items-center gap-1 rounded-full border border-[color:var(--secondary)]/80 bg-[color:var(--secondary)]/25 px-2 py-1 text-[10px] text-white shadow-[0_1px_6px_rgba(0,0,0,.35)] touch-manipulation active:scale-95" aria-label={`Open ${onlineCount} room members`} aria-expanded={membersOpen}><Users className="h-3.5 w-3.5"/><span>{onlineCount}</span></button>
     </div>
+    {membersOpen && <div className="fixed inset-0 z-[2147482990]" role="dialog" aria-modal="true" aria-label="Room members"><button type="button" className="absolute inset-0 h-full w-full bg-black/45 backdrop-blur-[1px]" aria-label="Close room members" onClick={() => setMembersOpen(false)} /><div className="absolute left-1/2 top-[calc(96px+env(safe-area-inset-top))] w-[calc(100%-24px)] max-w-[420px] -translate-x-1/2 overflow-hidden rounded-3xl border border-white/20 bg-black/90 text-white shadow-2xl backdrop-blur-xl"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><div><div className="text-sm font-black">Room Members</div><div className="text-[10px] text-white/55">{onlineCount} online</div></div><button type="button" onClick={() => setMembersOpen(false)} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/10"><X className="h-4 w-4" /></button></div><div className="max-h-[55dvh] overflow-y-auto p-2">{membersLoading ? <div className="px-3 py-8 text-center text-xs text-white/60">Loading members…</div> : members.length === 0 ? <div className="px-3 py-8 text-center text-xs text-white/60">No member details available yet.</div> : members.map(member => <button key={member.id} type="button" onClick={tap(() => member.host ? (setMembersOpen(false), hostProfileClick()) : undefined)} className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left hover:bg-white/10 active:bg-white/10"><div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10">{member.avatar ? <img src={member.avatar} alt="" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xs font-black">{member.username.charAt(0).toUpperCase()}</div>}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-1.5"><span className="truncate text-xs font-bold">{member.username}</span>{member.host && <span className="rounded-full bg-[color:var(--primary)] px-1.5 py-0.5 text-[7px] font-black">HOST</span>}</div><div className="mt-0.5 text-[9px] text-white/50">Level {member.level}</div></div><span className="h-2 w-2 rounded-full bg-emerald-400" /></button>)}</div></div></div>}
     {exitMenuOpen && <div className="fixed inset-0 z-[2147483000]" role="presentation"><button type="button" aria-label="Close room options" className="absolute inset-0 h-full w-full cursor-default bg-transparent" onClick={() => setExitMenuOpen(false)} tabIndex={-1} /><div className="absolute right-2 top-[calc(58px+env(safe-area-inset-top))] w-[190px] overflow-hidden rounded-2xl border border-white/30 bg-black/90 p-1.5 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()} role="menu" aria-label="Room options"><button type="button" onClick={tap(minimizeRoom)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-white hover:bg-white/10" role="menuitem"><Minimize2 className="h-4 w-4 text-white/80"/><span>Minimize Room</span></button><button type="button" onClick={tap(exitRoom)} disabled={exiting} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50" role="menuitem"><LogOut className="h-4 w-4"/><span>{exiting ? "Exiting…" : "Exit Room"}</span></button></div></div>}
     {hostExitConfirmOpen && <div className="fixed inset-0 z-[2147483001] flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="host-exit-title" onClick={() => !exiting && setHostExitConfirmOpen(false)}><div className="w-full max-w-sm rounded-3xl border border-white/20 bg-black/95 p-5 text-white shadow-2xl" onClick={e => e.stopPropagation()}><div className="mb-4 flex items-start justify-between gap-3"><div><h2 id="host-exit-title" className="text-lg font-black">Exit Room?</h2><p className="mt-1 text-sm leading-5 text-white/65">Are you sure you want to exit this room?</p></div><button type="button" aria-label="Close" disabled={exiting} onClick={() => setHostExitConfirmOpen(false)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70 disabled:opacity-40"><X className="h-4 w-4"/></button></div><div className="flex gap-2"><button type="button" disabled={exiting} onClick={() => setHostExitConfirmOpen(false)} className="flex-1 rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white disabled:opacity-40">No</button><button type="button" disabled={exiting} onClick={confirmHostExit} className="flex-1 rounded-2xl bg-red-500 py-3 text-sm font-black text-white disabled:opacity-50">{exiting ? "Exiting…" : "Yes, Exit Room"}</button></div></div></div>}
     {currentEntrance ? <EntrancePlayer event={currentEntrance} onDone={finishEntrance} /> : null}
