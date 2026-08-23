@@ -55,13 +55,13 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           <SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} onSeatTap={onSeatTap} onJoinSeat={onJoinSeat} onHostTap={onHostTap} />
         </div>
 
-        <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "mx-2 flex h-[clamp(38px,6dvh,52px)] shrink-0 items-center gap-2 overflow-hidden border-y border-fuchsia-400/35 bg-gradient-to-r from-[#541642]/95 via-[#402048]/95 to-[#20254b]/95 px-2.5 text-left shadow-[inset_0_1px_rgba(255,255,255,.08)]")}>
-          <span className="grid h-8 w-8 shrink-0 place-items-center overflow-hidden rounded-full border border-[#c78b6a] bg-[#26142d]">{room.host.avatar ? <img src={room.host.avatar} alt="" className="h-full w-full object-cover" /> : "👑"}</span>
-          <span className="min-w-0 flex-1 truncate text-[12px] font-medium tracking-wide text-white/90"><b>{room.host.username || "Host"}</b> enters the room</span>
+        <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "mx-2 flex h-[clamp(36px,5.5dvh,48px)] shrink-0 items-center gap-2 overflow-hidden border-y border-fuchsia-400/35 bg-gradient-to-r from-[#541642]/95 via-[#402048]/95 to-[#20254b]/95 px-2.5 text-left shadow-[inset_0_1px_rgba(255,255,255,.08)]")}>
+          <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-[#c78b6a] bg-[#26142d]">{room.host.avatar ? <img src={room.host.avatar} alt="" className="h-full w-full object-cover" /> : "👑"}</span>
+          <span className="min-w-0 flex-1 truncate text-[11px] font-medium tracking-wide text-white/90"><b>{room.host.username || "Host"}</b> enters the room</span>
           <ChevronRight className="h-4 w-4 shrink-0 text-white/50" />
         </button>
 
-        <section className="grid h-[clamp(124px,21dvh,178px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(82px,.7fr)] gap-1.5 px-2 py-1.5">
+        <section className="grid h-[clamp(120px,20dvh,172px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(80px,.7fr)] gap-1.5 px-2 py-1.5">
           <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/10 bg-[#0b1a33]/90 shadow-[inset_0_0_30px_rgba(0,0,0,.12)]">
             <div className="flex h-8 shrink-0 items-end gap-5 border-b border-white/10 px-2.5"><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "relative pb-1.5 text-xs font-semibold text-white")}>All<span className="absolute bottom-0 left-0 h-0.5 w-6 rounded-full bg-emerald-400" /></button><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "pb-1.5 text-xs font-medium text-white/55")}>Chat</button></div>
             <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "flex min-h-0 flex-1 items-start overflow-hidden px-2.5 py-1.5 text-left")}><p className="line-clamp-3 rounded-xl border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-[11px] leading-snug text-cyan-100/85">{announcement || "Welcome everyone. Please keep the room friendly and respectful."}</p></button>
@@ -75,12 +75,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       </div>
     </div>
 
-    <nav className="relative z-20 flex h-[clamp(60px,9dvh,76px)] shrink-0 items-center justify-around border-t border-cyan-300/15 bg-[#0a1730]/98 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(0,0,0,.24)]">
-      <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="Chat"><MessageCircle className="h-5 w-5" /></button>
-      <button type="button" onClick={tap(openGifts)} className={cn(buttonClass, "grid h-12 w-12 place-items-center rounded-full border-2 border-amber-300 bg-gradient-to-br from-amber-400 to-orange-600 text-white shadow-[0_0_18px_rgba(245,158,11,.35)]")} aria-label="Gifts"><Gift className="h-6 w-6" /></button>
-      <button type="button" onClick={tap(openGames)} className={cn(buttonClass, "grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="Game"><Gamepad2 className="h-5 w-5" /></button>
-      <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="Messages"><Mail className="h-5 w-5" /></button>
-      <button type="button" onClick={tap(onOpenMore)} className={cn(buttonClass, "grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="More"><Grid2X2 className="h-5 w-5" /></button>
+    <nav className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-cyan-300/15 bg-[#0a1730]/98 px-1 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_28px_rgba(0,0,0,.24)]">
+      <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="Chat"><MessageCircle className="h-4.5 w-4.5" /></button>
+      <button type="button" onClick={tap(openGifts)} className={cn(buttonClass, "grid h-11 w-11 place-items-center rounded-full border-2 border-amber-300 bg-gradient-to-br from-amber-400 to-orange-600 text-white shadow-[0_0_18px_rgba(245,158,11,.35)]")} aria-label="Gifts"><Gift className="h-5.5 w-5.5" /></button>
+      <button type="button" onClick={tap(openGames)} className={cn(buttonClass, "grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="Game"><Gamepad2 className="h-4.5 w-4.5" /></button>
+      <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="Messages"><Mail className="h-4.5 w-4.5" /></button>
+      <button type="button" onClick={tap(onOpenMore)} className={cn(buttonClass, "grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-white/[.04] text-white/80")} aria-label="More"><Grid2X2 className="h-4.5 w-4.5" /></button>
     </nav>
 
     <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />
