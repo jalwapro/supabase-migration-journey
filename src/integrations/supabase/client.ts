@@ -30,9 +30,7 @@ function getCookie(name: string) {
   if (typeof document === "undefined") return null;
   try {
     const encodedName = `${encodeURIComponent(name)}=`;
-    const part = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith(encodedName));
+    const part = document.cookie.split("; ").find((row) => row.startsWith(encodedName));
     if (!part) return null;
     return decodeURIComponent(part.slice(encodedName.length));
   } catch {
@@ -44,9 +42,7 @@ function setCookie(name: string, value: string, maxAge = COOKIE_MAX_AGE) {
   if (typeof document === "undefined") return;
   try {
     const secure = window.location.protocol === "https:" ? "; Secure" : "";
-    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
-      value,
-    )}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax${secure}`;
   } catch {
     /* cookie fallback unavailable */
   }
@@ -75,19 +71,16 @@ function setCookieAuthItem(storageKey: string, value: string) {
   const prefix = cookiePrefix(storageKey);
   removeCookie(prefix);
   for (let i = 0; i < COOKIE_CHUNK_LIMIT; i += 1) removeCookie(`${prefix}_${i}`);
-
   const chunks = Math.ceil(value.length / COOKIE_CHUNK_SIZE);
   if (chunks <= 1) {
     removeCookie(`${prefix}_chunks`);
     setCookie(prefix, value);
     return;
   }
-
   if (chunks > COOKIE_CHUNK_LIMIT) {
     removeCookie(`${prefix}_chunks`);
     return;
   }
-
   setCookie(`${prefix}_chunks`, String(chunks));
   for (let i = 0; i < chunks; i += 1) {
     setCookie(`${prefix}_${i}`, value.slice(i * COOKIE_CHUNK_SIZE, (i + 1) * COOKIE_CHUNK_SIZE));
@@ -125,8 +118,8 @@ function removeLocalAuthItem(storageKey: string) {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(storageKey);
-  } catch (error) {
-    console.warn("[supabase] local auth storage remove failed", error);
+  } catch {
+    /* storage unavailable */
   }
 }
 
@@ -170,22 +163,10 @@ async function removeNativeAuthItem(storageKey: string) {
 const resilientAuthStorage = {
   async getItem(storageKey: string) {
     if (typeof window === "undefined") return null;
-    const candidates = [
-      getLocalAuthItem(storageKey),
-      await getNativeAuthItem(storageKey),
-      getCookieAuthItem(storageKey),
-    ];
-
-    // Earlier builds used Supabase's default key. Keep reading it so users
-    // are not asked to sign in again after the app switched to jalwa-auth.
+    const candidates = [getLocalAuthItem(storageKey), await getNativeAuthItem(storageKey), getCookieAuthItem(storageKey)];
     if (storageKey === AUTH_STORAGE_KEY && legacyStorageKey) {
-      candidates.push(
-        getLocalAuthItem(legacyStorageKey),
-        await getNativeAuthItem(legacyStorageKey),
-        getCookieAuthItem(legacyStorageKey),
-      );
+      candidates.push(getLocalAuthItem(legacyStorageKey), await getNativeAuthItem(legacyStorageKey), getCookieAuthItem(legacyStorageKey));
     }
-
     const value = candidates.find(Boolean) ?? null;
     if (value) {
       setLocalAuthItem(storageKey, value);
@@ -224,14 +205,10 @@ const resilientAuthStorage = {
 };
 
 if (!url || !key) {
-  // Fail loud in dev so misconfig is obvious.
-  // eslint-disable-next-line no-console
-  console.error(
-    "[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. Check .env",
-  );
+  console.error("[supabase] Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY. Check .env");
 }
 
-export const supabase: SupabaseClient = createClient(url ?? "", key ?? "", {
+const supabaseClient = createClient(url ?? "", key ?? "", {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -240,3 +217,21 @@ export const supabase: SupabaseClient = createClient(url ?? "", key ?? "", {
     storage: resilientAuthStorage,
   },
 });
+
+// React 18 StrictMode and fast room remounts can briefly leave an old
+// Realtime channel with the same topic in SUBSCRIBED state. Supabase then
+// rejects a later `.on("postgres_changes", ...)` registration with:
+// "cannot add postgres_changes callbacks ... after subscribe()".
+// Keep the normal topic when it is free; if it is already occupied, create a
+// unique topic so the new callback is always registered BEFORE subscribe().
+const originalChannel = supabaseClient.channel.bind(supabaseClient);
+(supabaseClient as SupabaseClient & { channel: typeof supabaseClient.channel }).channel = ((name: string, opts?: Parameters<typeof supabaseClient.channel>[1]) => {
+  const existing = supabaseClient.getChannels().find((channel) => channel.topic === `realtime:${name}`);
+  if (!existing) return originalChannel(name, opts);
+  const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return originalChannel(`${name}-${suffix}`, opts);
+}) as typeof supabaseClient.channel;
+
+export const supabase = supabaseClient;
