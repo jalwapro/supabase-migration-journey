@@ -55,16 +55,18 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           <SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} onSeatTap={onSeatTap} onJoinSeat={onJoinSeat} onHostTap={onHostTap} />
         </div>
 
-        <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "mx-2 flex h-[clamp(36px,5.5dvh,48px)] shrink-0 items-center gap-2 overflow-hidden border-y border-fuchsia-400/35 bg-gradient-to-r from-[#541642]/95 via-[#402048]/95 to-[#20254b]/95 px-2.5 text-left shadow-[inset_0_1px_rgba(255,255,255,.08)]")}>
+        {/* Entrance bar is locked immediately below the seat area and never floats over seats. */}
+        <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "mx-2 flex h-[clamp(34px,5dvh,44px)] shrink-0 items-center gap-2 overflow-hidden border-y border-fuchsia-400/35 bg-gradient-to-r from-[#541642]/95 via-[#402048]/95 to-[#20254b]/95 px-2.5 text-left shadow-[inset_0_1px_rgba(255,255,255,.08)]")}>
           <span className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-full border border-[#c78b6a] bg-[#26142d]">{room.host.avatar ? <img src={room.host.avatar} alt="" className="h-full w-full object-cover" /> : "👑"}</span>
           <span className="min-w-0 flex-1 truncate text-[11px] font-medium tracking-wide text-white/90"><b>{room.host.username || "Host"}</b> enters the room</span>
           <ChevronRight className="h-4 w-4 shrink-0 text-white/50" />
         </button>
 
-        <section className="grid h-[clamp(120px,20dvh,172px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(80px,.7fr)] gap-1.5 px-2 py-1.5">
+        {/* Chat/activity area gets a little more height while the whole screen remains fixed. */}
+        <section className="grid h-[clamp(134px,22dvh,186px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(80px,.7fr)] gap-1.5 px-2 py-1.5">
           <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/10 bg-[#0b1a33]/90 shadow-[inset_0_0_30px_rgba(0,0,0,.12)]">
             <div className="flex h-8 shrink-0 items-end gap-5 border-b border-white/10 px-2.5"><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "relative pb-1.5 text-xs font-semibold text-white")}>All<span className="absolute bottom-0 left-0 h-0.5 w-6 rounded-full bg-emerald-400" /></button><button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "pb-1.5 text-xs font-medium text-white/55")}>Chat</button></div>
-            <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "flex min-h-0 flex-1 items-start overflow-hidden px-2.5 py-1.5 text-left")}><p className="line-clamp-3 rounded-xl border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-[11px] leading-snug text-cyan-100/85">{announcement || "Welcome everyone. Please keep the room friendly and respectful."}</p></button>
+            <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "flex min-h-0 flex-1 items-start overflow-hidden px-2.5 py-1.5 text-left")}><p className="line-clamp-4 rounded-xl border border-white/10 bg-white/[.025] px-2.5 py-1.5 text-[11px] leading-snug text-cyan-100/85">{announcement || "Welcome everyone. Please keep the room friendly and respectful."}</p></button>
             <button type="button" onClick={tap(onOpenChat)} className={cn(buttonClass, "mx-1.5 mb-1.5 flex h-8 shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[.035] px-2.5 text-left")}><span className="min-w-0 flex-1 truncate text-xs text-cyan-100/65">Say something...</span><Smile className="h-3.5 w-3.5 shrink-0 text-white/50" /><Send className="h-3.5 w-3.5 shrink-0 text-[color:var(--primary)]" /></button>
           </div>
           <div className="flex min-w-0 flex-col justify-center gap-1.5">
