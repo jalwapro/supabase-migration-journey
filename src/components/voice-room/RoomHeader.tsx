@@ -14,6 +14,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const [roomDp, setRoomDp] = useState<string | null>(room.host.avatar);
   const [exitMenuOpen, setExitMenuOpen] = useState(false);
   const [hostExitConfirmOpen, setHostExitConfirmOpen] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => setRoomTitle(room.title), [room.title]);
   useEffect(() => setRoomDp(room.host.avatar), [room.host.avatar]);
@@ -37,7 +38,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     if (!file.type.startsWith("image/")) { toast.error("Please select an image"); return; }
     if (file.size > 5 * 1024 * 1024) { toast.error("Room image must be 5MB or smaller"); return; }
     const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `room-covers/${room.id}-${Date.now()}.${ext}`;
+    const path = `room-covers/${room.id}/${Date.now()}.${ext}`;
     const { error: uploadError } = await supabase.storage.from("room-assets").upload(path, file, { upsert: true, contentType: file.type });
     if (uploadError) { toast.error(uploadError.message || "Unable to upload room image"); return; }
     const { data: publicData } = supabase.storage.from("room-assets").getPublicUrl(path);
@@ -53,18 +54,46 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     setExitMenuOpen(false);
     onHome();
   };
+
+  // Header exit is a final action. It must not call the route's legacy
+  // `leaveRoom()` confirmation again (that created a second dialog and
+  // never reached the server-side end_room/delete membership operation).
+  const performExit = async () => {
+    if (exiting) return;
+    setExiting(true);
+    try {
+      if (user?.id) {
+        if (isHost) {
+          const { error } = await supabase.rpc("end_room", { _room_id: room.id });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase
+            .from("room_members")
+            .delete()
+            .eq("room_id", room.id)
+            .eq("user_id", user.id);
+          if (error) throw error;
+        }
+      }
+      setHostExitConfirmOpen(false);
+      setExitMenuOpen(false);
+      // Let React/Zego unmount immediately after the authoritative DB action.
+      window.location.assign("/");
+    } catch (e) {
+      setExiting(false);
+      toast.error(`Couldn't exit room: ${(e as Error).message || "Unknown error"}`);
+    }
+  };
+
   const exitRoom = () => {
     setExitMenuOpen(false);
     if (isHost) {
       setHostExitConfirmOpen(true);
       return;
     }
-    onExit();
+    void performExit();
   };
-  const confirmHostExit = () => {
-    setHostExitConfirmOpen(false);
-    onExit();
-  };
+  const confirmHostExit = () => { void performExit(); };
 
   return <header className="relative z-[60] flex shrink-0 flex-col px-2 pt-[calc(.2rem+env(safe-area-inset-top))] sm:px-2.5" style={{ pointerEvents: "auto", backgroundColor: "var(--primary)" }}>
     <div className="relative z-[61] flex min-h-[56px] items-center gap-1.5">
@@ -86,18 +115,18 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       <button type="button" aria-label="Close room options" className="absolute inset-0 h-full w-full cursor-default bg-transparent" onClick={() => setExitMenuOpen(false)} tabIndex={-1} />
       <div className="absolute right-2 top-[calc(58px+env(safe-area-inset-top))] w-[190px] overflow-hidden rounded-2xl border border-white/30 bg-black/90 p-1.5 shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()} role="menu" aria-label="Room options">
         <button type="button" onClick={tap(minimizeRoom)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-white hover:bg-white/10" role="menuitem"><Minimize2 className="h-4 w-4 text-white/80"/><span>Minimize Room</span></button>
-        <button type="button" onClick={tap(exitRoom)} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10" role="menuitem"><LogOut className="h-4 w-4"/><span>Exit Room</span></button>
+        <button type="button" onClick={tap(exitRoom)} disabled={exiting} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50" role="menuitem"><LogOut className="h-4 w-4"/><span>{exiting ? "Exiting…" : "Exit Room"}</span></button>
       </div>
     </div>}
-    {hostExitConfirmOpen && <div className="fixed inset-0 z-[2147483001] flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="host-exit-title" onClick={() => setHostExitConfirmOpen(false)}>
+    {hostExitConfirmOpen && <div className="fixed inset-0 z-[2147483001] flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="host-exit-title" onClick={() => !exiting && setHostExitConfirmOpen(false)}>
       <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-black/95 p-5 text-white shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="mb-4 flex items-start justify-between gap-3">
           <div><h2 id="host-exit-title" className="text-lg font-black">Exit Room?</h2><p className="mt-1 text-sm leading-5 text-white/65">Are you sure you want to exit this room?</p></div>
-          <button type="button" aria-label="Close" onClick={() => setHostExitConfirmOpen(false)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70"><X className="h-4 w-4"/></button>
+          <button type="button" aria-label="Close" disabled={exiting} onClick={() => setHostExitConfirmOpen(false)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70 disabled:opacity-40"><X className="h-4 w-4"/></button>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={() => setHostExitConfirmOpen(false)} className="flex-1 rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white">No</button>
-          <button type="button" onClick={confirmHostExit} className="flex-1 rounded-2xl bg-red-500 py-3 text-sm font-black text-white">Yes, Exit Room</button>
+          <button type="button" disabled={exiting} onClick={() => setHostExitConfirmOpen(false)} className="flex-1 rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white disabled:opacity-40">No</button>
+          <button type="button" disabled={exiting} onClick={confirmHostExit} className="flex-1 rounded-2xl bg-red-500 py-3 text-sm font-black text-white disabled:opacity-50">{exiting ? "Exiting…" : "Yes, Exit Room"}</button>
         </div>
       </div>
     </div>}
