@@ -109,7 +109,13 @@ export function GlobalMinimizedVoiceRoom() {
     };
   }, []);
 
-  if (!user || !room) return null;
+  const currentPath = typeof window === 'undefined' ? '' : window.location.pathname;
+  const normalizedRoomRoute = room?.roomRoute?.split('?')[0];
+  const isViewingActiveRoom = !!normalizedRoomRoute && currentPath === normalizedRoomRoute;
+
+  // The global control exists only while the room is minimized/recoverable.
+  // Never render it on the full active Voice Room screen.
+  if (!user || !room || isViewingActiveRoom || (activeRoom && !activeRoom.isMinimized)) return null;
 
   const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     dragging.current = true;
