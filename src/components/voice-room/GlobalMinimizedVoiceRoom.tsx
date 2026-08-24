@@ -18,6 +18,8 @@ type RecoverableRoom = {
   grace_period_until: string | null;
 };
 
+type SeatPresence = { seat_index: number | null; profile: { avatar: string | null } | null };
+
 export function GlobalMinimizedVoiceRoom() {
   const { user } = useAuth();
   const { activeRoom, restoreRoom, clearRoom, updateRoom } = useVoiceRoomSession();
@@ -64,6 +66,25 @@ export function GlobalMinimizedVoiceRoom() {
     microphoneMuted: false,
   } : null);
 
+  const seatPresence = useQuery({
+    enabled: !!user?.id && !!room?.roomId,
+    queryKey: ['global-room-seat-presence', room?.roomId, user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('room_members')
+        .select('seat_index,profile:profiles!room_members_user_id_fkey(avatar)')
+        .eq('room_id', room!.roomId)
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return (data as unknown as SeatPresence | null) ?? null;
+    },
+    refetchInterval: 5_000,
+    staleTime: 2_000,
+  });
+
+  const seatedAvatar = seatPresence.data?.seat_index != null ? seatPresence.data.profile?.avatar : null;
+
   useEffect(() => {
     const onMove = (event: PointerEvent) => {
       if (!dragging.current) return;
@@ -88,14 +109,6 @@ export function GlobalMinimizedVoiceRoom() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!room || !recovery.data) return;
-    if (recovery.data.status !== 'host_disconnected') return;
-    if (recovery.data.grace_period_until && new Date(recovery.data.grace_period_until).getTime() <= Date.now()) {
-      void qc.invalidateQueries({ queryKey: ['global-room-recovery', user?.id] });
-    }
-  }, [room, recovery.data, qc, user?.id]);
-
   if (!user || !room) return null;
 
   const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -113,10 +126,7 @@ export function GlobalMinimizedVoiceRoom() {
     }
     if (recovery.data?.status === 'host_disconnected') {
       const { error } = await supabase.rpc('reclaim_room', { _room_id: recovery.data.id });
-      if (error) {
-        toast.error(error.message);
-        return;
-      }
+      if (error) { toast.error(error.message); return; }
       await qc.invalidateQueries({ queryKey: ['global-room-recovery', user.id] });
     }
     restoreRoom();
@@ -125,13 +135,9 @@ export function GlobalMinimizedVoiceRoom() {
   };
 
   const endRoom = async () => {
-    const roomId = room.roomId;
     if (!confirm('End this room now?')) return;
-    const { error } = await supabase.rpc('end_room', { _room_id: roomId });
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    const { error } = await supabase.rpc('end_room', { _room_id: room.roomId });
+    if (error) { toast.error(error.message); return; }
     clearRoom();
     setOpen(false);
     await qc.invalidateQueries({ queryKey: ['global-room-recovery', user.id] });
@@ -157,18 +163,13 @@ export function GlobalMinimizedVoiceRoom() {
   };
 
   return (
-    <div
-      className="pointer-events-none fixed z-[90] touch-none"
-      style={{ left: position.x, top: position.y }}
-      role="region"
-      aria-label="Active Voice Room control"
-    >
+    <div className="pointer-events-none fixed z-[90] touch-none" style={{ left: position.x, top: position.y }} role="region" aria-label="Active Voice Room control">
       <div className="pointer-events-auto relative">
         {open && (
           <div className="absolute bottom-[76px] left-1/2 w-56 -translate-x-1/2 overflow-hidden rounded-2xl border border-white/10 bg-black/90 p-2 shadow-2xl backdrop-blur-xl">
             <div className="flex items-center gap-2 border-b border-white/10 px-2 pb-2">
               <div className="h-9 w-9 shrink-0 overflow-hidden rounded-full bg-white/10">
-                {room.roomAvatar ? <img src={room.roomAvatar} alt="" className="h-full w-full object-cover" /> : <Radio className="m-2 h-5 w-5 text-white/70" />}
+                {seatedAvatar ? <img src={seatedAvatar} alt="" className="h-full w-full object-cover" /> : <Radio className="m-2 h-5 w-5 text-white/70" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-xs font-bold text-white">{room.roomName || 'Voice Room'}</p>
@@ -188,29 +189,14 @@ export function GlobalMinimizedVoiceRoom() {
                 <VolumeX className="h-4 w-4" /> Leave
               </button>
             </div>
-            <button type="button" onClick={enterRoom} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-2.5 text-xs font-black text-white">
-              <LogIn className="h-4 w-4" /> Is Room Mein Jayein
-            </button>
-            {room.userRole === 'host' && (
-              <button type="button" onClick={endRoom} className="mt-1.5 w-full rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-[10px] font-bold text-rose-200">
-                End Room
-              </button>
-            )}
+            <button type="button" onClick={enterRoom} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-2.5 text-xs font-black text-white"><LogIn className="h-4 w-4" /> Is Room Mein Jayein</button>
+            {room.userRole === 'host' && <button type="button" onClick={endRoom} className="mt-1.5 w-full rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-[10px] font-bold text-rose-200">End Room</button>}
           </div>
         )}
-
         <div onPointerDown={startDrag} className="cursor-move select-none">
-          <button
-            type="button"
-            onClick={() => {
-              if (moved.current) { moved.current = false; return; }
-              setOpen(v => !v);
-            }}
-            aria-label="Open Voice Room controls"
-            className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-full border-2 border-[color:var(--gold)] bg-black/70 shadow-[0_10px_30px_-6px_rgba(0,0,0,.7)] backdrop-blur active:scale-95"
-          >
+          <button type="button" onClick={() => { if (moved.current) { moved.current = false; return; } setOpen(v => !v); }} aria-label="Open Voice Room controls" className="relative grid h-16 w-16 place-items-center overflow-hidden rounded-full border-2 border-[color:var(--gold)] bg-black/70 shadow-[0_10px_30px_-6px_rgba(0,0,0,.7)] backdrop-blur active:scale-95">
             <span className="absolute inset-0 bg-gradient-to-br from-[color:var(--gold)]/35 via-[color:var(--primary)]/35 to-[color:var(--secondary)]/35" />
-            {room.roomAvatar ? <img src={room.roomAvatar} alt="" className="relative h-12 w-12 rounded-full object-cover" /> : <Radio className="relative h-6 w-6 text-white" />}
+            {seatedAvatar ? <img src={seatedAvatar} alt="" className="relative h-12 w-12 rounded-full object-cover" draggable={false} /> : <Radio className="relative h-6 w-6 text-white" />}
             <span className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-black bg-emerald-400" />
             <span className="absolute bottom-1 rounded-full bg-black/70 px-1 text-[7px] font-black text-white">{room.microphoneMuted ? '🔇' : 'LIVE'}</span>
           </button>
