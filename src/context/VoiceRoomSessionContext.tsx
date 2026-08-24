@@ -1,11 +1,12 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 
 type ActiveVoiceRoom = {
   roomId: string;
   roomName?: string | null;
   roomAvatar?: string | null;
   roomRoute: string;
+  userId: string;
   userRole?: string | null;
   isMinimized: boolean;
   connectionState?: string | null;
@@ -28,28 +29,45 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
   const [activeRoom, setActiveRoom] = useState<ActiveVoiceRoom | null>(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as ActiveVoiceRoom;
+      return parsed?.roomId && parsed?.userId ? parsed : null;
     } catch {
       return null;
     }
   });
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       setActiveRoom(null);
-      localStorage.removeItem(STORAGE_KEY);
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
       return;
     }
-    if (activeRoom) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRoom));
-    else localStorage.removeItem(STORAGE_KEY);
-  }, [activeRoom, user]);
+    if (activeRoom && activeRoom.userId !== user.id) {
+      setActiveRoom(null);
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      return;
+    }
+    try {
+      if (activeRoom) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRoom));
+      else localStorage.removeItem(STORAGE_KEY);
+    } catch {}
+  }, [activeRoom, user?.id]);
 
   const minimizeRoom = useCallback((room: Omit<ActiveVoiceRoom, 'isMinimized'>) => {
+    if (!user?.id || room.userId !== user.id) return;
     setActiveRoom({ ...room, isMinimized: true });
+  }, [user?.id]);
+
+  const restoreRoom = useCallback(() => {
+    setActiveRoom(r => r ? { ...r, isMinimized: false } : r);
   }, []);
-  const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
+
   const clearRoom = useCallback(() => setActiveRoom(null), []);
-  const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => setActiveRoom(r => r ? { ...r, ...patch } : r), []);
+
+  const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
+    setActiveRoom(r => r ? { ...r, ...patch } : r);
+  }, []);
 
   const value = useMemo(() => ({ activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom }), [activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom]);
   return <VoiceRoomSessionContext.Provider value={value}>{children}</VoiceRoomSessionContext.Provider>;
