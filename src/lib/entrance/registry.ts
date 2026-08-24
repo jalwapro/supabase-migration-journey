@@ -41,6 +41,7 @@ export type RoomEntranceEvent = {
   chromakey: string | null;
   sound_url: string | null;
   duration_ms: number | null;
+  render_config?: unknown;
   username: string | null;
   avatar_url: string | null;
   vip_level: number | null;
@@ -48,7 +49,6 @@ export type RoomEntranceEvent = {
   created_at: string;
 };
 
-// Best-effort preload (image thumbnails, mp4 first byte range)
 export function preloadEntrance(url: string | null | undefined) {
   if (!url || url.startsWith("builtin:")) return;
   const t = document.createElement(url.endsWith(".mp4") || url.endsWith(".webm") ? "video" : "img");
@@ -58,7 +58,6 @@ export function preloadEntrance(url: string | null | undefined) {
   setTimeout(() => t.remove(), 8000);
 }
 
-/** Very rough network gate — skips heavy effects on 2G / slow-2g. */
 export function shouldSkipHeavyEffects(): boolean {
   const conn = (navigator as any)?.connection;
   const t = conn?.effectiveType as string | undefined;
