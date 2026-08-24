@@ -183,20 +183,26 @@ export function GlobalMinimizedVoiceRoom() {
               </div>
               <button type="button" onClick={() => setOpen(false)} className="rounded-full p-1 text-white/60" aria-label="Close room controls"><X className="h-4 w-4" /></button>
             </div>
-            <div className="mt-2 grid grid-cols-3 gap-1.5">
-              <button type="button" onClick={toggleMic} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white">
-                {room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                {room.microphoneMuted ? 'Unmute' : 'Mute'}
-              </button>
-              <button type="button" onClick={toggleSpeaker} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white">
-                <Volume2 className="h-4 w-4" /> Speaker
-              </button>
-              <button type="button" onClick={leaveRoom} className="flex flex-col items-center gap-1 rounded-xl bg-rose-500/15 p-2 text-[9px] font-bold text-rose-200">
-                <VolumeX className="h-4 w-4" /> Leave
-              </button>
-            </div>
-            <button type="button" onClick={enterRoom} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-2.5 text-xs font-black text-white"><LogIn className="h-4 w-4" /> Is Room Mein Jayein</button>
-            {room.userRole === 'host' && <button type="button" onClick={endRoom} className="mt-1.5 w-full rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2 text-[10px] font-bold text-rose-200">End Room</button>}
+            {room.userRole === 'host' ? (
+              <>
+                <div className="mt-2 grid grid-cols-2 gap-1.5">
+                  <button type="button" onClick={toggleMic} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white">{room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}{room.microphoneMuted ? 'Unmute Me' : 'Mute Me'}</button>
+                  <button type="button" onClick={toggleSpeaker} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white"><Volume2 className="h-4 w-4" />Speaker</button>
+                  <button type="button" onClick={enterRoom} className="flex items-center justify-center gap-1.5 rounded-xl bg-[color:var(--primary)]/20 p-2.5 text-[10px] font-bold text-white"><LogIn className="h-4 w-4" />Manage Room</button>
+                  <button type="button" onClick={leaveRoom} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white"><X className="h-4 w-4" />Leave</button>
+                </div>
+                <button type="button" onClick={endRoom} className="mt-2 w-full rounded-xl border border-rose-400/30 bg-rose-500/10 px-3 py-2.5 text-[10px] font-black text-rose-200">End Room for Everyone</button>
+              </>
+            ) : (
+              <>
+                <div className="mt-2 grid grid-cols-3 gap-1.5">
+                  <button type="button" onClick={toggleMic} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white">{room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}{room.microphoneMuted ? 'Unmute' : 'Mute'}</button>
+                  <button type="button" onClick={toggleSpeaker} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white"><Volume2 className="h-4 w-4" />Speaker</button>
+                  <button type="button" onClick={leaveRoom} className="flex flex-col items-center gap-1 rounded-xl bg-rose-500/15 p-2 text-[9px] font-bold text-rose-200"><VolumeX className="h-4 w-4" />Leave</button>
+                </div>
+                <button type="button" onClick={enterRoom} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-3 py-2.5 text-xs font-black text-white"><LogIn className="h-4 w-4" />Is Room Mein Jayein</button>
+              </>
+            )}
           </div>
         )}
         <div onPointerDown={startDrag} className="cursor-move select-none">
