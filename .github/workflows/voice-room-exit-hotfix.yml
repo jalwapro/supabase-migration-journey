@@ -1,0 +1,51 @@
+name: voice-room-exit-hotfix
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/voice-room-exit-hotfix.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch host exit and end-room actions
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('src/components/voice-room/RoomHeader.tsx')
+          s = p.read_text()
+          s = s.replace('const [hostExitConfirmOpen, setHostExitConfirmOpen] = useState(false);', 'const [hostExitConfirmOpen, setHostExitConfirmOpen] = useState(false);\n  const [hostEndConfirmOpen, setHostEndConfirmOpen] = useState(false);')
+          old = '''  const performExit = async () => {\n    if (exiting) return;\n    setExiting(true);\n    try { if (user?.id) { if (isHost) { const { error } = await supabase.rpc("end_room", { _room_id: room.id }); if (error) throw error; } else { const { error } = await supabase.from("room_members").delete().eq("room_id", room.id).eq("user_id", user.id); if (error) throw error; } } setHostExitConfirmOpen(false); setExitMenuOpen(false); window.location.assign("/"); }\n    catch (e) { setExiting(false); toast.error(`Couldn't exit room: ${(e as Error).message || "Unknown error"}`); }\n  };\n  const exitRoom = () => { setExitMenuOpen(false); if (isHost) { setHostExitConfirmOpen(true); return; } void performExit(); };\n  const confirmHostExit = () => { void performExit(); };'''
+          new = '''  const performExit = async () => {\n    if (exiting) return;\n    setExiting(true);\n    try {\n      if (user?.id) {\n        if (isHost) {\n          const { error } = await supabase.rpc("leave_room_as_host", { _room_id: room.id, _end_now: false });\n          if (error) throw error;\n        } else {\n          const { error } = await supabase.from("room_members").delete().eq("room_id", room.id).eq("user_id", user.id);\n          if (error) throw error;\n        }\n      }\n      setHostExitConfirmOpen(false);\n      setExitMenuOpen(false);\n      window.location.assign("/");\n    } catch (e) {\n      setExiting(false);\n      toast.error(`Couldn't exit room: ${(e as Error).message || "Unknown error"}`);\n    }\n  };\n  const performEndRoom = async () => {\n    if (exiting) return;\n    setExiting(true);\n    try {\n      const { error } = await supabase.rpc("leave_room_as_host", { _room_id: room.id, _end_now: true });\n      if (error) throw error;\n      setHostEndConfirmOpen(false);\n      setHostExitConfirmOpen(false);\n      setExitMenuOpen(false);\n      window.location.assign("/");\n    } catch (e) {\n      setExiting(false);\n      toast.error(`Couldn't end room: ${(e as Error).message || "Unknown error"}`);\n    }\n  };\n  const exitRoom = () => { setExitMenuOpen(false); if (isHost) { setHostExitConfirmOpen(true); return; } void performExit(); };\n  const endRoom = () => { setExitMenuOpen(false); setHostEndConfirmOpen(true); };\n  const confirmHostExit = () => { void performExit(); };\n  const confirmHostEnd = () => { void performEndRoom(); };'''
+          if old not in s:
+            raise SystemExit('expected exit block not found')
+          s = s.replace(old, new, 1)
+          old_menu = '''<button type="button" onClick={tap(exitRoom)} disabled={exiting} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50" role="menuitem"><LogOut className="h-4 w-4"/><span>{exiting ? "Exiting…" : "Exit Room"}</span></button>'''
+          new_menu = '''<button type="button" onClick={tap(exitRoom)} disabled={exiting} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-300 hover:bg-red-500/10 disabled:opacity-50" role="menuitem"><LogOut className="h-4 w-4"/><span>{exiting ? "Exiting…" : "Exit Room"}</span></button>{isHost && <button type="button" onClick={tap(endRoom)} disabled={exiting} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50" role="menuitem"><Power className="h-4 w-4"/><span>{exiting ? "Ending…" : "End Room"}</span></button>}'''
+          if old_menu not in s:
+            raise SystemExit('expected exit menu button not found')
+          s = s.replace(old_menu, new_menu, 1)
+          marker = '''    {hostExitConfirmOpen && <div className="fixed inset-0 z-[2147483001]'''
+          end_modal = '''    {hostEndConfirmOpen && <div className="fixed inset-0 z-[2147483002] flex items-center justify-center bg-black/70 px-5 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="host-end-title" onClick={() => !exiting && setHostEndConfirmOpen(false)}><div className="w-full max-w-sm rounded-3xl border border-red-500/30 bg-black/95 p-5 text-white shadow-2xl" onClick={e => e.stopPropagation()}><div className="mb-4 flex items-start justify-between gap-3"><div><h2 id="host-end-title" className="text-lg font-black">End Room?</h2><p className="mt-1 text-sm leading-5 text-white/65">End this room for everyone. This action cannot be undone.</p></div><button type="button" aria-label="Close" disabled={exiting} onClick={() => setHostEndConfirmOpen(false)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/70 disabled:opacity-40"><X className="h-4 w-4" /></button></div><div className="flex gap-2"><button type="button" disabled={exiting} onClick={() => setHostEndConfirmOpen(false)} className="flex-1 rounded-2xl border border-white/15 bg-white/5 py-3 text-sm font-bold text-white disabled:opacity-40">Cancel</button><button type="button" disabled={exiting} onClick={confirmHostEnd} className="flex-1 rounded-2xl bg-red-600 py-3 text-sm font-black text-white disabled:opacity-50">{exiting ? "Ending…" : "Yes, End Room"}</button></div></div></div>}\n'''
+          if marker not in s:
+            raise SystemExit('expected host exit modal marker not found')
+          s = s.replace(marker, end_modal + marker, 1)
+          p.write_text(s)
+      - name: Verify patch
+        run: |
+          grep -n 'leave_room_as_host' src/components/voice-room/RoomHeader.tsx
+          grep -n 'End Room' src/components/voice-room/RoomHeader.tsx
+      - name: Commit patch and remove one-shot workflow
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/components/voice-room/RoomHeader.tsx
+          git rm .github/workflows/voice-room-exit-hotfix.yml
+          git commit -m 'feat: complete production voice room host and user system'
+          git push origin main
