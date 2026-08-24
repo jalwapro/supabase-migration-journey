@@ -9,34 +9,97 @@ const clampY = (value: number) => Math.max(72, Math.min(window.innerHeight - 92,
 export function GlobalMinimizedVoiceRoom() {
   const { activeRoom, restoreRoom } = useVoiceRoomSession();
   const navigate = useNavigate();
-  const [y, setY] = useState(() => { try { const value = Number(localStorage.getItem(POSITION_KEY)); return Number.isFinite(value) ? clampY(value) : 0; } catch { return 0; } });
+  const [y, setY] = useState(() => {
+    try {
+      const value = Number(localStorage.getItem(POSITION_KEY));
+      return Number.isFinite(value) ? clampY(value) : Math.max(72, window.innerHeight - 170);
+    } catch {
+      return 150;
+    }
+  });
   const dragging = useRef(false);
   const moved = useRef(false);
   const offset = useRef(0);
 
   useEffect(() => {
-    if (!y) setY(Math.max(72, window.innerHeight - 190));
-    const onMove = (event: PointerEvent) => { if (!dragging.current) return; moved.current = true; const next = clampY(event.clientY - offset.current); setY(next); try { localStorage.setItem(POSITION_KEY, String(next)); } catch {} };
-    const onUp = () => { dragging.current = false; document.body.style.userSelect = ''; };
+    const onMove = (event: PointerEvent) => {
+      if (!dragging.current) return;
+      moved.current = true;
+      const next = clampY(event.clientY - offset.current);
+      setY(next);
+      try { localStorage.setItem(POSITION_KEY, String(next)); } catch {}
+    };
+    const onUp = () => {
+      dragging.current = false;
+      document.body.style.userSelect = '';
+    };
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
-    return () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp); };
-  }, [y]);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+  }, []);
 
   if (!activeRoom?.isMinimized) return null;
 
-  const startDrag = (event: React.PointerEvent<HTMLDivElement>) => { dragging.current = true; moved.current = false; offset.current = event.clientY - y; event.currentTarget.setPointerCapture?.(event.pointerId); document.body.style.userSelect = 'none'; };
-  const returnToRoom = () => { if (moved.current) { moved.current = false; return; } restoreRoom(); navigate({ to: activeRoom.roomRoute as never }); };
+  const startDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    dragging.current = true;
+    moved.current = false;
+    offset.current = event.clientY - y;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    document.body.style.userSelect = 'none';
+  };
+
+  const returnToRoom = () => {
+    if (moved.current) {
+      moved.current = false;
+      return;
+    }
+    restoreRoom();
+    navigate({ to: activeRoom.roomRoute as never });
+  };
 
   return (
-    <div className="fixed left-1/2 z-[80] w-[calc(100%-24px)] max-w-md -translate-x-1/2 touch-none" style={{ top: y }} role="region" aria-label="Active minimized Voice Room">
-      <div className="flex items-center gap-2 overflow-hidden rounded-2xl border border-fuchsia-300/25 bg-[#120b1c]/95 p-2.5 shadow-[0_14px_45px_rgba(0,0,0,.5)] backdrop-blur-xl">
-        <div onPointerDown={startDrag} className="grid h-11 w-6 shrink-0 cursor-grab place-items-center text-white/45 active:cursor-grabbing" aria-label="Drag Voice Room button up or down"><MoveVertical className="h-4 w-4" /></div>
-        <button type="button" onClick={returnToRoom} aria-label="Return to active Voice Room" className="flex min-w-0 flex-1 items-center gap-3 text-left active:scale-[.99]">
-          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-fuchsia-300/30 bg-white/10">{activeRoom.roomAvatar ? <img src={activeRoom.roomAvatar} alt="" className="h-full w-full object-cover" /> : <Radio className="absolute inset-0 m-auto h-5 w-5 text-fuchsia-200" />}<span className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-[#120b1c] bg-emerald-400" /></div>
-          <div className="min-w-0 flex-1"><div className="truncate text-sm font-bold text-white">{activeRoom.roomName || 'Voice Room'}</div><div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/60"><span className="font-black text-emerald-300">LIVE</span>{activeRoom.microphoneMuted ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}<span>Voice Room active</span></div></div>
-          <span className="shrink-0 rounded-full bg-fuchsia-500 px-3 py-2 text-[11px] font-black text-white shadow-lg">Is Room Mein Jayein</span>
+    <div
+      className="pointer-events-none fixed inset-x-0 z-[80] mx-auto flex max-w-md justify-end px-4 touch-none"
+      style={{ top: y }}
+      role="region"
+      aria-label="Active minimized Voice Room"
+    >
+      <div className="pointer-events-auto flex flex-col items-center gap-0.5">
+        <div
+          onPointerDown={startDrag}
+          className="cursor-grab rounded-full px-2 py-0.5 text-white/35 active:cursor-grabbing"
+          aria-label="Drag Voice Room button up or down"
+        >
+          <MoveVertical className="h-3 w-3" />
+        </div>
+        <button
+          type="button"
+          onClick={returnToRoom}
+          aria-label={`Return to ${activeRoom.roomName || 'Voice Room'}`}
+          className="relative grid h-16 w-16 place-items-center rounded-full border-2 border-[color:var(--gold)] bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-primary-foreground shadow-[0_10px_30px_-6px_color-mix(in_oklab,var(--gold)_60%,transparent)] transition-transform active:scale-95"
+        >
+          <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-[color:var(--gold)]/25" />
+          <span className="relative flex flex-col items-center leading-none">
+            <span className="relative mb-0.5 grid h-8 w-8 place-items-center overflow-hidden rounded-full border border-white/60 bg-black/20">
+              {activeRoom.roomAvatar ? (
+                <img src={activeRoom.roomAvatar} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <Radio className="h-4 w-4" />
+              )}
+              <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full border border-white bg-emerald-400" />
+            </span>
+            <span className="flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wider">
+              {activeRoom.microphoneMuted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
+              Room
+            </span>
+          </span>
         </button>
+        <span className="max-w-20 truncate rounded-full bg-black/55 px-1.5 py-0.5 text-[7px] font-bold text-white/90 backdrop-blur-sm">
+          {activeRoom.roomName || 'Voice Room'}
+        </span>
       </div>
     </div>
   );
