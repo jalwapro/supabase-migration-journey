@@ -9,7 +9,10 @@ type Friend = {
   id: string;
   username: string | null;
   avatar: string | null;
+  last_seen: string | null;
 };
+
+const ONLINE_WINDOW_MS = 5 * 60 * 1000;
 
 export function InviteSheet({
   open,
@@ -28,10 +31,10 @@ export function InviteSheet({
   const [sending, setSending] = useState<string | null>(null);
 
   const friends = useQuery({
-    queryKey: ["invite-friends", user?.id],
+    queryKey: ["invite-online-friends", user?.id],
     enabled: !!user && open,
+    refetchInterval: 30_000,
     queryFn: async (): Promise<Friend[]> => {
-      // People I follow — treat as "friends in app"
       const { data: rows, error } = await supabase
         .from("follows")
         .select("following_id, created_at")
@@ -39,14 +42,23 @@ export function InviteSheet({
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;
+
       const ids = (rows ?? []).map((r: any) => r.following_id as string);
       if (ids.length === 0) return [];
+
       const { data: profs, error: pErr } = await supabase
         .from("profiles")
-        .select("id, username, avatar")
-        .in("id", ids);
+        .select("id, username, avatar, last_seen")
+        .in("id", ids)
+        .order("last_seen", { ascending: false, nullsFirst: false });
       if (pErr) throw pErr;
-      return (profs ?? []) as Friend[];
+
+      const cutoff = Date.now() - ONLINE_WINDOW_MS;
+      return ((profs ?? []) as Friend[]).filter((friend) => {
+        if (!friend.last_seen) return false;
+        const seenAt = Date.parse(friend.last_seen);
+        return Number.isFinite(seenAt) && seenAt >= cutoff;
+      });
     },
   });
 
@@ -55,24 +67,14 @@ export function InviteSheet({
   async function sendInvite(friendId: string) {
     if (!user) return;
     setSending(friendId);
-    // Try both column names to tolerate schema drift
-    let error = (
-      await supabase.from("direct_messages").insert({
-        sender_id: user.id,
-        recipient_id: friendId,
-        kind: "text",
-        message,
-      } as any)
-    ).error;
-    if (error && /recipient_id|column/i.test(error.message)) {
-      error = (
-        await supabase.from("direct_messages").insert({
-          sender_id: user.id,
-          receiver_id: friendId,
-          text: message,
-        } as any)
-      ).error;
-    }
+
+    const { error } = await supabase.from("direct_messages").insert({
+      sender_id: user.id,
+      recipient_id: friendId,
+      kind: "text",
+      text: message,
+    } as any);
+
     setSending(null);
     if (error) {
       if (/row-level|policy|are_friends/i.test(error.message)) {
@@ -82,8 +84,9 @@ export function InviteSheet({
       }
       return;
     }
+
     setSent((s) => new Set(s).add(friendId));
-    toast.success("Invite sent");
+    toast.success("Invite sent — private message aur notification bhej di gayi");
   }
 
   function shareWhatsApp() {
@@ -123,61 +126,37 @@ export function InviteSheet({
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div className="flex items-center gap-2">
             <Users className="h-4 w-4 text-[color:var(--primary)]" />
-            <p className="text-sm font-bold">Invite Friends</p>
+            <p className="text-sm font-bold">Invite Online Friends</p>
           </div>
-          <button
-            onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full bg-card"
-            aria-label="Close"
-          >
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-card" aria-label="Close">
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Quick actions */}
         <div className="grid grid-cols-2 gap-2 px-4 pt-3">
-          <button
-            onClick={shareWhatsApp}
-            className="flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-3 py-3 text-sm font-bold text-white"
-          >
+          <button onClick={shareWhatsApp} className="flex items-center justify-center gap-2 rounded-2xl bg-[#25D366] px-3 py-3 text-sm font-bold text-white">
             <MessageCircle className="h-4 w-4" />
             WhatsApp
           </button>
-          <button
-            onClick={copyLink}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card/60 px-3 py-3 text-sm font-bold"
-          >
+          <button onClick={copyLink} className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card/60 px-3 py-3 text-sm font-bold">
             Copy link
           </button>
         </div>
 
-        {/* Search */}
         <div className="px-4 pt-3">
           <div className="flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-2">
             <Search className="h-4 w-4 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search friends…"
-              className="flex-1 bg-transparent text-sm outline-none"
-            />
+            <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search online friends…" className="flex-1 bg-transparent text-sm outline-none" />
           </div>
         </div>
 
-        {/* Friends list */}
         <div className="max-h-[55vh] overflow-y-auto px-4 py-3">
-          <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">
-            App friends
-          </p>
+          <p className="mb-2 text-[10px] uppercase tracking-widest text-muted-foreground">Online friends</p>
           {friends.isLoading ? (
-            <div className="grid h-32 place-items-center">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
+            <div className="grid h-32 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
           ) : list.length === 0 ? (
             <p className="py-10 text-center text-xs text-muted-foreground">
-              {query
-                ? "Koi match nahi mila"
-                : "Abhi tak koi friend nahi. Kisi ko follow karo."}
+              {query ? "Koi online friend match nahi mila" : "Abhi koi friend online nahi hai."}
             </p>
           ) : (
             <div className="space-y-2">
@@ -185,44 +164,14 @@ export function InviteSheet({
                 const done = sent.has(f.id);
                 const busy = sending === f.id;
                 return (
-                  <div
-                    key={f.id}
-                    className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5"
-                  >
-                    <div className="grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xs font-black">
-                      {f.avatar ? (
-                        <img
-                          src={f.avatar}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        (f.username ?? "?").slice(0, 1).toUpperCase()
-                      )}
+                  <div key={f.id} className="flex items-center gap-3 rounded-2xl border border-border bg-card/60 p-2.5">
+                    <div className="relative grid h-10 w-10 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-xs font-black">
+                      {f.avatar ? <img src={f.avatar} alt="" className="h-full w-full object-cover" /> : (f.username ?? "?").slice(0, 1).toUpperCase()}
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-emerald-500" aria-label="Online" />
                     </div>
-                    <p className="min-w-0 flex-1 truncate text-sm font-bold">
-                      {f.username ?? "user"}
-                    </p>
-                    <button
-                      disabled={busy || done}
-                      onClick={() => sendInvite(f.id)}
-                      className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold ${
-                        done
-                          ? "bg-emerald-500/20 text-emerald-400"
-                          : "bg-[color:var(--primary)] text-white disabled:opacity-60"
-                      }`}
-                    >
-                      {busy ? (
-                        <Loader2 className="h-3 w-3 animate-spin" />
-                      ) : done ? (
-                        <>
-                          <Check className="h-3 w-3" /> Sent
-                        </>
-                      ) : (
-                        <>
-                          <Send className="h-3 w-3" /> Invite
-                        </>
-                      )}
+                    <p className="min-w-0 flex-1 truncate text-sm font-bold">{f.username ?? "user"}</p>
+                    <button disabled={busy || done} onClick={() => sendInvite(f.id)} className={`flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-bold ${done ? "bg-emerald-500/20 text-emerald-400" : "bg-[color:var(--primary)] text-white disabled:opacity-60"}`}>
+                      {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : done ? <><Check className="h-3 w-3" /> Sent</> : <><Send className="h-3 w-3" /> Invite</>}
                     </button>
                   </div>
                 );
