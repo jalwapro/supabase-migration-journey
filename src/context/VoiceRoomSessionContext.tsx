@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 type ActiveVoiceRoom = {
   roomId: string;
@@ -12,69 +13,19 @@ type ActiveVoiceRoom = {
   connectionState?: string | null;
   microphoneMuted?: boolean;
 };
-
-type VoiceRoomSessionContextValue = {
-  activeRoom: ActiveVoiceRoom | null;
-  minimizeRoom: (room: Omit<ActiveVoiceRoom, 'isMinimized'>) => void;
-  restoreRoom: () => void;
-  clearRoom: () => void;
-  updateRoom: (patch: Partial<ActiveVoiceRoom>) => void;
-};
-
+type VoiceRoomSessionContextValue = { activeRoom: ActiveVoiceRoom | null; minimizeRoom: (room: Omit<ActiveVoiceRoom, 'isMinimized'>) => void; restoreRoom: () => void; clearRoom: () => void; updateRoom: (patch: Partial<ActiveVoiceRoom>) => void; };
 const STORAGE_KEY = 'jalwa:active-voice-room';
 const VoiceRoomSessionContext = createContext<VoiceRoomSessionContextValue | null>(null);
-
 export function VoiceRoomSessionProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [activeRoom, setActiveRoom] = useState<ActiveVoiceRoom | null>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as ActiveVoiceRoom;
-      return parsed?.roomId && parsed?.userId ? parsed : null;
-    } catch {
-      return null;
-    }
-  });
-
-  useEffect(() => {
-    if (!user?.id) {
-      setActiveRoom(null);
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      return;
-    }
-    if (activeRoom && activeRoom.userId !== user.id) {
-      setActiveRoom(null);
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      return;
-    }
-    try {
-      if (activeRoom) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRoom));
-      else localStorage.removeItem(STORAGE_KEY);
-    } catch {}
-  }, [activeRoom, user?.id]);
-
-  const minimizeRoom = useCallback((room: Omit<ActiveVoiceRoom, 'isMinimized'>) => {
-    if (!user?.id || room.userId !== user.id) return;
-    setActiveRoom({ ...room, isMinimized: true });
-  }, [user?.id]);
-
-  const restoreRoom = useCallback(() => {
-    setActiveRoom(r => r ? { ...r, isMinimized: false } : r);
-  }, []);
-
+  const [activeRoom, setActiveRoom] = useState<ActiveVoiceRoom | null>(() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return null; const parsed = JSON.parse(raw) as ActiveVoiceRoom; return parsed?.roomId && parsed?.userId ? parsed : null; } catch { return null; } });
+  useEffect(() => { if (!user?.id) { setActiveRoom(null); try { localStorage.removeItem(STORAGE_KEY); } catch {} return; } if (activeRoom && activeRoom.userId !== user.id) { setActiveRoom(null); try { localStorage.removeItem(STORAGE_KEY); } catch {} return; } try { if (activeRoom) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRoom)); else localStorage.removeItem(STORAGE_KEY); } catch {} }, [activeRoom, user?.id]);
+  const minimizeRoom = useCallback((room: Omit<ActiveVoiceRoom, 'isMinimized'>) => { if (!user?.id || room.userId !== user.id) return; setActiveRoom({ ...room, isMinimized: true }); }, [user?.id]);
+  const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
   const clearRoom = useCallback(() => setActiveRoom(null), []);
-
-  const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => {
-    setActiveRoom(r => r ? { ...r, ...patch } : r);
-  }, []);
-
+  const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => setActiveRoom(r => r ? { ...r, ...patch } : r), []);
+  useEffect(() => { if (!user?.id) return; const onClick = async (event: MouseEvent) => { const target = event.target as HTMLElement | null; const button = target?.closest('button'); if (!button || !/Minimize Room/i.test(button.textContent || '')) return; const match = window.location.pathname.match(/^\/room\/([^/?#]+)/); if (!match) return; const roomId = decodeURIComponent(match[1]); const { data } = await supabase.from('live_rooms').select('id,title,host_id,cover_url,status').eq('id', roomId).maybeSingle(); if (!data?.id || data.status === 'ended') return; minimizeRoom({ roomId: data.id, roomName: data.title, roomAvatar: data.cover_url, roomRoute: `/room/${encodeURIComponent(data.id)}`, userId: user.id, userRole: data.host_id === user.id ? 'host' : 'user', connectionState: 'connected', microphoneMuted: false }); }; document.addEventListener('click', onClick, true); return () => document.removeEventListener('click', onClick, true); }, [user?.id, minimizeRoom]);
   const value = useMemo(() => ({ activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom }), [activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom]);
   return <VoiceRoomSessionContext.Provider value={value}>{children}</VoiceRoomSessionContext.Provider>;
 }
-
-export function useVoiceRoomSession() {
-  const context = useContext(VoiceRoomSessionContext);
-  if (!context) throw new Error('useVoiceRoomSession must be used inside VoiceRoomSessionProvider');
-  return context;
-}
+export function useVoiceRoomSession() { const context = useContext(VoiceRoomSessionContext); if (!context) throw new Error('useVoiceRoomSession must be used inside VoiceRoomSessionProvider'); return context; }
