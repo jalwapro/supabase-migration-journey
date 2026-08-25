@@ -3,79 +3,18 @@ name: Jalwa Voice-First Hardening
 on:
   push:
     branches: [main]
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  voice-first:
-    if: ${{ !contains(github.event.head_commit.message, '[voice-first]') }}
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 1
-      - name: Apply voice-first launch gates
-        shell: python
-        run: |
-          from pathlib import Path
-          import re
-
-          index = Path('src/routes/index.tsx')
-          s = index.read_text()
-          original = s
-
-          if 'LAUNCH_FEATURES' not in s:
-              s = s.replace('import { formatCompact } from "@/lib/utils";\n', 'import { formatCompact } from "@/lib/utils";\nimport { LAUNCH_FEATURES } from "@/config/launchFeatures";\n')
-          s = s.replace('  Video,\n', '')
-          s = s.replace('  Swords,\n', '')
-          s = s.replace('  Flame,\n', '')
-          s = s.replace('  room_type: "voice" | "video";\n', '  room_type: "voice";\n')
-          s = s.replace('  pk_battle: boolean | null;\n', '')
-          s = s.replace('      if (tab === "pk") sel = sel.eq("pk_battle", true);\n      else sel = sel.eq("room_type", tab);', '      sel = sel.eq("room_type", "voice");')
-          s = s.replace('  const TypeIcon = room.room_type === "video" ? Video : Mic;', '  const TypeIcon = Mic;')
-          s = re.sub(r'\n\s*\{room\.pk_battle && \(\n.*?\n\s*\)\}\n', '\n', s, flags=re.S)
-          s = s.replace('  const label =\n    tab === "pk" ? "PK battles" : tab === "video" ? "video rooms" : "voice rooms";', '  const label = "voice rooms";')
-          s = s.replace('text: "Join me on Jalwa Live — live rooms, PK battles, and more."', 'text: "Join me on Jalwa Live — voice rooms, gifts, and more."')
-          if 'LAUNCH_FEATURES.voiceRooms' not in s:
-              s = s.replace('function Home() {', 'function Home() {\n  if (!LAUNCH_FEATURES.voiceRooms) return null;')
-
-          if s == original:
-              raise SystemExit('index.tsx was not changed; aborting')
-          index.write_text(s)
-
-          room = Path('src/routes/room.$roomId.tsx')
-          r = room.read_text()
-          ro = r
-          if 'from "@/config/launchFeatures"' not in r:
-              r = r.replace('import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";\n', 'import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";\nimport { LAUNCH_FEATURES } from "@/config/launchFeatures";\n')
-          old = '''    const isPk = !!(data && (data.pk_battle || (data.room_type === "video" && data.seat_count === 2)));
-    if (isPk) {
-      throw redirect({ to: "/pk/$roomId", params: { roomId: params.roomId }, replace: true });
-    }'''
-          new = '''    const isPk = !!(data && (data.pk_battle || (data.room_type === "video" && data.seat_count === 2)));
-    if (data?.room_type === "video" && !LAUNCH_FEATURES.videoRooms) {
-      throw redirect({ to: "/", replace: true });
-    }
-    if (data?.pk_battle && !LAUNCH_FEATURES.pkBattle) {
-      throw redirect({ to: "/", replace: true });
-    }
-    if (isPk) {
-      throw redirect({ to: "/pk/$roomId", params: { roomId: params.roomId }, replace: true });
-    }'''
-          if old not in r:
-              raise SystemExit('room route guard pattern not found; aborting')
-          r = r.replace(old, new)
-          room.write_text(r)
-
-          if r == ro:
-              raise SystemExit('room route was not changed; aborting')
-      - name: Commit voice-first changes
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routes/index.tsx src/routes/room.\$roomId.tsx
-          git diff --cached --quiet && exit 0
-          git commit -m "[voice-first] hide video and PK at launch"
-          git push
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Verify voice-first build
+        run: npm run build
