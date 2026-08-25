@@ -64,6 +64,10 @@ const giftSheetReplacements = [
     '          _quantity: safeQuantity,',
   ],
   [
+    '          _quantity: quantity,',
+    '          _quantity: safeQuantity,',
+  ],
+  [
     '        quantity,\n        coins: price(gift) * quantity,',
     '        quantity: safeQuantity,\n        coins: price(gift) * safeQuantity,',
   ],
