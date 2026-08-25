@@ -3,52 +3,17 @@ name: Voice Room Apply
 on:
   push:
     branches: [main]
-
-permissions:
-  contents: write
+  workflow_dispatch:
 
 jobs:
-  apply:
-    if: ${{ !contains(github.event.head_commit.message, '[skip-voice-apply]') }}
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
         with:
-          ref: main
-          fetch-depth: 0
-      - name: Apply real Voice Room wiring
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import re
-
-          p = Path('src/components/voice-room/VoiceRoomScreen.tsx')
-          s = p.read_text()
-          s = s.replace('import { Rocket,Gift,Gamepad2,MessageCircle,Smile,Send,Mail,Grid2X2,ChevronRight } from "lucide-react";', 'import { Rocket,Gift,Gamepad2,MessageCircle,Smile,Send,Mail,Grid2X2,ChevronRight,Mic,MicOff,Volume2,VolumeX,Music } from "lucide-react";')
-          s = s.replace('import { GiftSheet,type GiftReceiver }', 'import type { ChatEmoji } from "@/components/chat/ChatEmojiSheet"; import { GiftSheet,type GiftReceiver }')
-          s = s.replace('onToggleMic:()=>void;', 'onToggleMic:()=>void; speakerMuted?:boolean; onToggleSpeaker?:()=>void; onOpenMusic?:()=>void; onSendEmoji?:(emoji:ChatEmoji)=>void; canPlayMusic?:boolean;')
-          s = s.replace('[emojiOpen,setEmojiOpen]=useState(false),[liveSeatCount', '[emojiOpen,setEmojiOpen]=useState(false),[emojiTargetSeat,setEmojiTargetSeat]=useState<number|null>(null),[liveSeatCount')
-          s = s.replace('const visibleMessages=[...roomMessages].filter(m=>m.kind!=="emoji").slice(-8);', 'const visibleMessages=[...roomMessages].filter(m=>m.kind!=="emoji").slice(-8); const firstOccupiedSeat=room.seats.find(s=>!!s.user)?.index ?? null; const activeEmojiTarget=emojiTargetSeat ?? firstOccupiedSeat;')
-          s = s.replace('onSeatTap={onSeatTap}', 'onSeatTap={(i)=>{setEmojiTargetSeat(i);onSeatTap(i)}}')
-          s = s.replace('<nav className="relative z-20 flex h-[clamp(52px,7dvh,62px)]', '<div className="relative z-20 flex h-9 shrink-0 items-center justify-center gap-2 border-t border-white/5 bg-background/90 px-2">{isHost||mySeatIndex!=null?<><button type="button" onClick={tap(onToggleMic)} aria-label={micOn?"Mute microphone":"Unmute microphone"} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]")}>{micOn?<Mic className="h-3.5 w-3.5"/>:<MicOff className="h-3.5 w-3.5 text-red-300"/>}</button><button type="button" onClick={tap(()=>onToggleSpeaker?.())} aria-label={speakerMuted?"Unmute speaker":"Mute speaker"} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]")}>{speakerMuted?<VolumeX className="h-3.5 w-3.5 text-red-300"/>:<Volume2 className="h-3.5 w-3.5"/>}</button><button type="button" onClick={tap(()=>onOpenMusic?.())} aria-label="Open room music" className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]")}><Music className="h-3.5 w-3.5"/></button></>:null}</div><nav className="relative z-20 flex h-[clamp(52px,7dvh,62px)]')
-          s = s.replace('<ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} roomId={roomId} onPick={()=>setEmojiOpen(false)}/>', '<ChatEmojiSheet open={emojiOpen} onClose={()=>setEmojiOpen(false)} onPick={(e)=>{if(activeEmojiTarget!=null) onSendEmoji?.(e); setEmojiOpen(false)}}/>')
-          p.write_text(s)
-
-          p = Path('src/routes/room.$roomId.tsx')
-          s = p.read_text()
-          s = s.replace('micOn={!agora.muted}', 'micOn={!agora.muted} speakerMuted={agora.speakerMuted}', 1) if 'speakerMuted={agora.speakerMuted}' not in s else s
-          s = s.replace('onToggleMic={() => void toggleMuteWithSync()}', 'onToggleMic={() => void toggleMuteWithSync()} onToggleSpeaker={() => void agora.toggleSpeaker()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}', 1) if 'onToggleSpeaker={() => void agora.toggleSpeaker()}' not in s else s
-          if '<HostMusicPlayer open={musicOpen}' not in s:
-              component = '<HostMusicPlayer open={musicOpen} onClose={() => setMusicOpen(false)} controller={{ musicPlaying: agora.musicPlaying, musicTitle: agora.musicTitle, playMusicFile: agora.playMusicFile, pauseMusic: agora.pauseMusic, resumeMusic: agora.resumeMusic, stopMusic: agora.stopMusic, setMusicVolume: agora.setMusicVolume }} />'
-              s = re.sub(r'(onOpenGames=\{\(\) => setGamesSheetOpen\(true\)\}\s*/>)', r'\1\n' + component, s, count=1)
-          p.write_text(s)
-
-          Path('VOICE_ROOM_APPLY_MARKER.md').write_text('Voice Room wiring workflow applied on push.\n')
-          PY
-      - name: Commit applied changes
-        run: |
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add src/components/voice-room/VoiceRoomScreen.tsx src/routes/room.\$roomId.tsx VOICE_ROOM_APPLY_MARKER.md
-          git commit -m 'apply real Voice Room mic speaker music emoji wiring [skip-voice-apply]'
-          git push origin main
+          bun-version: 1.3.14
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Verify Voice Room build
+        run: bun run build
