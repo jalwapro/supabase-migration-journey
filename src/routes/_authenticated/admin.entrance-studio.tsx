@@ -1,7 +1,7 @@
 /**
- * Room Entrance Studio — same rendering engine as the Gift Studio, applied to
- * `entrance_effects.render_config`. The config is snapshotted onto every
- * room_entrances row so all viewers see the identical framing.
+ * Room Entrance Studio — visual editor plus real render/publish pipeline.
+ * Studio settings are saved as render_config; Publish Render bakes those
+ * settings into a permanent R2 video and stores its URL on the effect.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import RenderStudio, { type StudioItem } from "@/components/admin/RenderStudio";
+import EntrancePublishPanel, { type EntrancePublishItem } from "@/components/admin/EntrancePublishPanel";
 import { resolvePlayableGiftUrl } from "@/lib/giftMedia";
 
 export const Route = createFileRoute("/_authenticated/admin/entrance-studio")({
@@ -20,7 +21,10 @@ type EffectRow = {
   name: string;
   category: string | null;
   media_url: string | null;
+  media_type?: string | null;
+  duration_ms?: number | null;
   render_config: unknown;
+  published_render_url?: string | null;
 };
 
 function EntranceStudio() {
@@ -31,7 +35,7 @@ function EntranceStudio() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("entrance_effects")
-        .select("id,name,category,media_url,render_config")
+        .select("id,name,category,media_url,media_type,duration_ms,render_config,published_render_url")
         .order("sort_order");
       if (error) throw error;
       return (data ?? []) as unknown as EffectRow[];
@@ -39,14 +43,27 @@ function EntranceStudio() {
   });
 
   const items: StudioItem[] = useMemo(
-    () =>
-      effects.map((e) => ({
-        id: e.id,
-        name: e.name,
-        category: e.category,
-        clipUrl: resolvePlayableGiftUrl(e.media_url),
-        render_config: e.render_config,
-      })),
+    () => effects.map((e) => ({
+      id: e.id,
+      name: e.name,
+      category: e.category,
+      clipUrl: resolvePlayableGiftUrl(e.media_url),
+      clipType: e.media_type,
+      render_config: e.render_config,
+    })),
+    [effects],
+  );
+
+  const publishItems: EntrancePublishItem[] = useMemo(
+    () => effects.map((e) => ({
+      id: e.id,
+      name: e.name,
+      mediaUrl: resolvePlayableGiftUrl(e.media_url),
+      mediaType: e.media_type,
+      durationMs: e.duration_ms,
+      renderConfig: e.render_config,
+      publishedRenderUrl: e.published_render_url,
+    })),
     [effects],
   );
 
@@ -64,6 +81,7 @@ function EntranceStudio() {
           qc.invalidateQueries({ queryKey: ["admin", "entrance-studio", "effects"] });
         }}
       />
+      <EntrancePublishPanel items={publishItems} />
     </div>
   );
 }
