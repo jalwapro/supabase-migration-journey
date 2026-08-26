@@ -5,7 +5,40 @@ import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
 import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
-import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
+import { SafeGiftAnimationPlayer } from "@/components/room/SafeGiftAnimationPlayer";
+
+type GiftPlayerProps = { roomId: string };
+type GiftPlayerComponent = (props: GiftPlayerProps) => JSX.Element | null;
+
+/**
+ * Load the full GiftAnimationPlayer only after the room itself has rendered.
+ * If a production chunk has a module-initialisation/TDZ failure, the room stays
+ * alive and the crash-safe player consumes the same gift_sends realtime events.
+ */
+function CrashSafeGiftPlayer({ roomId }: GiftPlayerProps) {
+  const [Player, setPlayer] = useState<GiftPlayerComponent | null>(null);
+  const [broken, setBroken] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    import("@/components/room/GiftAnimationPlayer")
+      .then(mod => {
+        if (!alive) return;
+        const component = mod.GiftAnimationPlayer as GiftPlayerComponent | undefined;
+        if (component) setPlayer(() => component);
+        else setBroken(true);
+      })
+      .catch(error => {
+        console.error("[Jalwa] GiftAnimationPlayer failed to initialize; using safe player", error);
+        if (alive) setBroken(true);
+      });
+    return () => { alive = false; };
+  }, []);
+
+  if (Player) return <Player roomId={roomId} />;
+  if (broken) return <SafeGiftAnimationPlayer roomId={roomId} />;
+  return null;
+}
 
 const MIN_CAPACITY = 4;
 const MAX_CAPACITY = 20;
@@ -150,7 +183,7 @@ export const VoiceRoomScreen = ({
           onHome={onHome}
           onRanking={onRanking}
         />
-        <GiftAnimationPlayer roomId={roomId} />
+        <CrashSafeGiftPlayer roomId={roomId} />
         <div className="relative min-h-0 flex-1 overflow-hidden">
           <SeatGrid
             seats={room.seats}
