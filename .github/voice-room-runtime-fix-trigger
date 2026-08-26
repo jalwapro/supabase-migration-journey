@@ -1,2 +1,1 @@
-Voice Room backup verification trigger — 2026-08-27T00:41+05:00
-Backup ZIP inspected; current main retained as base. Trigger production build verification after restore/merge audit.
+trigger route hook-order repair
