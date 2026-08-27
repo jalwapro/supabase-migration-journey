@@ -5,12 +5,6 @@ import { shouldSkipHeavyEffects } from "@/lib/entrance/registry";
 import GiftGLVideo from "@/components/room/GiftGLVideo";
 import { normalizeRenderConfig, OBJECT_FIT, renderConfigToStyle } from "@/lib/giftRender";
 
-/**
- * Room entrance renderer.
- * Entrance Studio is the source of truth. For video entrances the overlay stays
- * fully hidden until the first real video frame is ready, so no thumbnail or
- * poster frame is flashed before playback.
- */
 export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; onDone: () => void }) {
   const doneRef = useRef(false);
   const onDoneRef = useRef(onDone);
@@ -37,29 +31,21 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
     doneRef.current = false;
     setVisible(false);
     setVideoReady(!isDirectVideo);
-
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const heavyLimited = shouldSkipHeavyEffects() && hasVideo;
     const delay = reduce ? 0 : Math.max(0, config.delayMs);
     const playback = reduce ? 1100 : heavyLimited ? Math.min(configuredEnd, 2200) : configuredEnd;
     const total = Math.max(300, delay + playback + (reduce ? 0 : Math.max(0, config.holdMs)));
-
-    // Non-video entrances can become visible after their configured delay.
-    // Video entrances wait for GiftGLVideo.onReady so a thumbnail/poster cannot flash.
     const showTimer = isDirectVideo ? null : window.setTimeout(() => setVisible(true), delay);
     const doneTimer = window.setTimeout(finish, total);
-
     if (event.sound_url && hasVideo) {
       try {
         const audio = new Audio(event.sound_url);
         audio.volume = 0.7;
         audioRef.current = audio;
-        audioTimerRef.current = window.setTimeout(() => {
-          if (!doneRef.current) void audio.play().catch(() => undefined);
-        }, delay);
+        audioTimerRef.current = window.setTimeout(() => { if (!doneRef.current) void audio.play().catch(() => undefined); }, delay);
       } catch {}
     }
-
     return () => {
       if (showTimer !== null) window.clearTimeout(showTimer);
       window.clearTimeout(doneTimer);
@@ -72,13 +58,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
   }, [event.id, event.sound_url, hasVideo, isDirectVideo, config.delayMs, config.holdMs, config.endMs, configuredEnd]);
 
   const mediaStyle = useMemo(() => renderConfigToStyle(config), [config]);
-  const videoStyle = useMemo<React.CSSProperties>(() => ({
-    width: "100%",
-    height: "100%",
-    objectFit: OBJECT_FIT[config.fit],
-    display: "block",
-  }), [config.fit]);
-
+  const videoStyle = useMemo<React.CSSProperties>(() => ({ width: "100%", height: "100%", objectFit: OBJECT_FIT[config.fit], display: "block" }), [config.fit]);
   const revealVideo = () => {
     if (!isDirectVideo || doneRef.current) return;
     setVideoReady(true);
@@ -89,14 +69,13 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
     <>
       {hasVideo && event.media_url ? (
         <div
-          className={`pointer-events-none fixed inset-x-0 top-[58px] bottom-[62px] z-[998] flex justify-center overflow-hidden transition-opacity duration-150 ${visible && (!isDirectVideo || videoReady) ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none fixed inset-x-0 top-[58px] bottom-[62px] z-[998] flex justify-center overflow-hidden ${visible && (!isDirectVideo || videoReady) ? "opacity-100" : "opacity-0"}`}
+          style={{ visibility: visible && (!isDirectVideo || videoReady) ? "visible" : "hidden" }}
           aria-hidden
         >
           <div className="relative h-full w-full max-w-[480px] overflow-hidden">
             {event.media_url.startsWith("builtin:") ? (
-              <div className="absolute inset-0" style={{ opacity: config.opacity / 100 }}>
-                <BuiltinEntranceView mediaUrl={event.media_url} />
-              </div>
+              <div className="absolute inset-0" style={{ opacity: config.opacity / 100 }}><BuiltinEntranceView mediaUrl={event.media_url} /></div>
             ) : isDirectVideo ? (
               <div className="absolute inset-0" style={mediaStyle}>
                 <GiftGLVideo
@@ -116,9 +95,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
                 />
               </div>
             ) : (
-              <div className="absolute inset-0" style={mediaStyle}>
-                <img src={event.media_url} alt="" className="h-full w-full" style={videoStyle} />
-              </div>
+              <div className="absolute inset-0" style={mediaStyle}><img src={event.media_url} alt="" className="h-full w-full" style={videoStyle} /></div>
             )}
           </div>
         </div>
