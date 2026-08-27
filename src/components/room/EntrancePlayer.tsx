@@ -29,8 +29,6 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
 
   useEffect(() => {
     doneRef.current = false;
-    // The entrance banner must be visible independently of video/WebGL readiness.
-    // This prevents a slow/failed media pipeline from hiding the user's entrance event.
     setVisible(true);
     setVideoReady(!isDirectVideo);
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -40,12 +38,18 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
     const total = Math.max(300, delay + playback + (reduce ? 0 : Math.max(0, config.holdMs)));
     const showTimer = !isDirectVideo && delay > 0 ? window.setTimeout(() => setVisible(true), delay) : null;
     const doneTimer = window.setTimeout(finish, total);
-    if (event.sound_url && hasVideo) {
+
+    // MP4/WebM can carry their own audio. Use sound_url only for non-video media
+    // so the entrance audio is never doubled.
+    if (event.sound_url && hasVideo && !isDirectVideo) {
       try {
         const audio = new Audio(event.sound_url);
-        audio.volume = 0.7;
+        audio.preload = "auto";
+        audio.volume = 1;
         audioRef.current = audio;
-        audioTimerRef.current = window.setTimeout(() => { if (!doneRef.current) void audio.play().catch(() => undefined); }, delay);
+        audioTimerRef.current = window.setTimeout(() => {
+          if (!doneRef.current) void audio.play().catch(() => undefined);
+        }, delay);
       } catch {}
     }
     return () => {
@@ -84,8 +88,8 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
                   key={`${event.id}-${config.delayMs}-${config.endMs ?? "auto"}`}
                   src={event.media_url}
                   config={config}
-                  muted
-                  volume={0}
+                  muted={false}
+                  volume={1}
                   loop={config.loop}
                   playbackKey={event.id}
                   className="h-full w-full"
