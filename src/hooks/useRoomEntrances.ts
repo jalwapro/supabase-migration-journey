@@ -3,77 +3,86 @@ import { supabase } from "@/integrations/supabase/client";
 import type { RoomEntranceEvent } from "@/lib/entrance/registry";
 
 /**
- * Subscribes to room_entrances realtime for a specific room and returns a
- * single-slot playback queue. Only one entrance renders at a time; extras
- * are dropped after 30s. Also fires the entrance for the local user once on
- * mount (via fire_room_entrance RPC).
+ * Realtime room entrance stream with a FIFO playback queue.
+ * The realtime subscription is established before firing the local entrance,
+ * so every connected client can receive the INSERT and the joining client can
+ * still play it immediately from the RPC response without duplicating it.
  */
 export function useRoomEntrances(roomId: string | null | undefined, localUserId: string | null | undefined) {
   const [current, setCurrent] = useState<RoomEntranceEvent | null>(null);
   const queueRef = useRef<RoomEntranceEvent[]>([]);
   const seenRef = useRef<Set<string>>(new Set());
+  const mountedRef = useRef(true);
 
-  // Fire the local user's entrance. The RPC returns the inserted row so we can
-  // play it locally right away — the realtime INSERT usually lands before the
-  // channel finishes subscribing, so the joining user never saw their own effect.
   useEffect(() => {
-    if (!roomId || !localUserId) return;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!roomId) return;
+
     let cancelled = false;
-    void (async () => {
-      const { data } = await supabase.rpc("fire_room_entrance", { _room_id: roomId });
-      if (cancelled) return;
-      const row = (data as { event?: RoomEntranceEvent } | null)?.event;
-      if (!row?.id || seenRef.current.has(row.id)) return;
-      const age = Date.now() - new Date(row.created_at).getTime();
-      if (age > 20000) return;
+    let entranceFired = false;
+
+    const enqueue = (row: RoomEntranceEvent | null | undefined) => {
+      if (cancelled || !mountedRef.current || !row?.id) return;
+      if (seenRef.current.has(row.id)) return;
+      const created = new Date(row.created_at).getTime();
+      const age = Number.isFinite(created) ? Date.now() - created : 0;
+      if (age > 30000) return;
       seenRef.current.add(row.id);
       queueRef.current.push(row);
       pump();
-    })();
-    return () => {
-      cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, localUserId]);
 
+    const fireLocalEntrance = async () => {
+      if (entranceFired || !localUserId || cancelled) return;
+      entranceFired = true;
+      const { data } = await supabase.rpc("fire_room_entrance", { _room_id: roomId });
+      if (cancelled) return;
+      const row = (data as { event?: RoomEntranceEvent } | null)?.event;
+      enqueue(row);
+    };
 
-  // Subscribe to realtime
-  useEffect(() => {
-    if (!roomId) return;
     const channel = supabase
       .channel(`room-entrances-${roomId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "room_entrances", filter: `room_id=eq.${roomId}` },
-        (payload) => {
-          const row = payload.new as RoomEntranceEvent;
-          if (!row?.id || seenRef.current.has(row.id)) return;
-          seenRef.current.add(row.id);
-          // Skip stale events (>15s old)
-          const age = Date.now() - new Date(row.created_at).getTime();
-          if (age > 15000) return;
-          queueRef.current.push(row);
-          pump();
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "room_entrances",
+          filter: `room_id=eq.${roomId}`,
         },
+        (payload) => enqueue(payload.new as RoomEntranceEvent),
       )
-      .subscribe();
+      .subscribe((status) => {
+        // Do not fire the local entrance until this client is actually
+        // subscribed. This removes the race where the RPC INSERT happened
+        // before the postgres_changes listener existed.
+        if (status === "SUBSCRIBED") void fireLocalEntrance();
+      });
+
     return () => {
+      cancelled = true;
       supabase.removeChannel(channel);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
 
-  function pump() {
-    setCurrent((existing) => {
-      if (existing) return existing;
-      return queueRef.current.shift() ?? null;
-    });
-  }
+    function pump() {
+      if (cancelled || !mountedRef.current) return;
+      setCurrent((existing) => existing ?? queueRef.current.shift() ?? null);
+    }
+  }, [roomId, localUserId]);
 
-  function done() {
+  const done = () => {
     setCurrent(null);
-    setTimeout(pump, 150);
-  }
+    window.setTimeout(() => {
+      setCurrent((existing) => existing ?? queueRef.current.shift() ?? null);
+    }, 150);
+  };
 
   return { current, done };
 }
