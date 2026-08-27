@@ -29,14 +29,16 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
 
   useEffect(() => {
     doneRef.current = false;
-    setVisible(false);
+    // The entrance banner must be visible independently of video/WebGL readiness.
+    // This prevents a slow/failed media pipeline from hiding the user's entrance event.
+    setVisible(true);
     setVideoReady(!isDirectVideo);
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const heavyLimited = shouldSkipHeavyEffects() && hasVideo;
     const delay = reduce ? 0 : Math.max(0, config.delayMs);
     const playback = reduce ? 1100 : heavyLimited ? Math.min(configuredEnd, 2200) : configuredEnd;
     const total = Math.max(300, delay + playback + (reduce ? 0 : Math.max(0, config.holdMs)));
-    const showTimer = isDirectVideo ? null : window.setTimeout(() => setVisible(true), delay);
+    const showTimer = !isDirectVideo && delay > 0 ? window.setTimeout(() => setVisible(true), delay) : null;
     const doneTimer = window.setTimeout(finish, total);
     if (event.sound_url && hasVideo) {
       try {
@@ -69,8 +71,8 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
     <>
       {hasVideo && event.media_url ? (
         <div
-          className={`pointer-events-none fixed inset-x-0 top-[58px] bottom-[62px] z-[998] flex justify-center overflow-hidden ${visible && (!isDirectVideo || videoReady) ? "opacity-100" : "opacity-0"}`}
-          style={{ visibility: visible && (!isDirectVideo || videoReady) ? "visible" : "hidden" }}
+          className={`pointer-events-none fixed inset-x-0 top-[58px] bottom-[62px] z-[998] flex justify-center overflow-hidden ${visible ? "opacity-100" : "opacity-0"}`}
+          style={{ visibility: visible ? "visible" : "hidden" }}
           aria-hidden
         >
           <div className="relative h-full w-full max-w-[480px] overflow-hidden">
@@ -91,7 +93,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
                   objectFit={OBJECT_FIT[config.fit]}
                   onReady={revealVideo}
                   onEnded={config.loop ? undefined : finish}
-                  onError={finish}
+                  onError={() => { setVideoReady(true); setVisible(true); }}
                 />
               </div>
             ) : (
@@ -102,7 +104,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       ) : null}
 
       <div
-        className={`pointer-events-none fixed left-0 right-0 z-[999] flex justify-center px-2 transition-all duration-[900ms] ease-out ${visible && (!isDirectVideo || videoReady) ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}`}
+        className={`pointer-events-none fixed left-0 right-0 z-[999] flex justify-center px-2 transition-all duration-[900ms] ease-out ${visible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}`}
         style={hasVideo ? { top: "8px" } : { bottom: "calc(clamp(52px, 7dvh, 62px) + clamp(160px, 27dvh, 220px) + 8px)" }}
         aria-hidden
       >
