@@ -7,24 +7,24 @@ import { normalizeRenderConfig, OBJECT_FIT, renderConfigToStyle } from "@/lib/gi
 
 /**
  * Room entrance renderer.
- *
- * Entrance Studio is the source of truth: the effect media is loaded from the
- * equipped entrance effect and its render_config snapshot is applied here.
- * This keeps frame/position/fit/chroma/colour-grade/timing identical for all
- * viewers in the room.
+ * Entrance Studio is the source of truth. For video entrances the overlay stays
+ * fully hidden until the first real video frame is ready, so no thumbnail or
+ * poster frame is flashed before playback.
  */
 export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; onDone: () => void }) {
   const doneRef = useRef(false);
   const onDoneRef = useRef(onDone);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioTimerRef = useRef<number | null>(null);
   const [visible, setVisible] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   onDoneRef.current = onDone;
 
   const config = useMemo(() => normalizeRenderConfig(event.render_config), [event.render_config]);
+  const isDirectVideo = !!event.media_url && (event.media_type === "mp4" || event.media_type === "webm");
   const hasVideo = !!event.media_url && !!event.media_type && ["mp4", "webm", "lottie", "svga", "svg"].includes(event.media_type);
   const baseDuration = Math.min(Math.max(event.duration_ms ?? 2400, 1800), 6500);
   const configuredEnd = config.endMs == null ? baseDuration : Math.max(300, Math.min(config.endMs, 12000));
-  const totalDuration = Math.max(300, config.delayMs + configuredEnd + Math.max(0, config.holdMs));
   const level = Math.max(0, Number(event.vip_level ?? 0));
   const tier = level >= 100 ? "LEGEND" : level >= 50 ? "DIAMOND" : level >= 25 ? "PLATINUM" : level >= 10 ? "GOLD" : "VIP";
   const finish = () => {
@@ -36,13 +36,17 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
   useEffect(() => {
     doneRef.current = false;
     setVisible(false);
+    setVideoReady(!isDirectVideo);
+
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const heavyLimited = shouldSkipHeavyEffects() && hasVideo;
     const delay = reduce ? 0 : Math.max(0, config.delayMs);
     const playback = reduce ? 1100 : heavyLimited ? Math.min(configuredEnd, 2200) : configuredEnd;
     const total = Math.max(300, delay + playback + (reduce ? 0 : Math.max(0, config.holdMs)));
 
-    const showTimer = window.setTimeout(() => setVisible(true), delay);
+    // Non-video entrances can become visible after their configured delay.
+    // Video entrances wait for GiftGLVideo.onReady so a thumbnail/poster cannot flash.
+    const showTimer = isDirectVideo ? null : window.setTimeout(() => setVisible(true), delay);
     const doneTimer = window.setTimeout(finish, total);
 
     if (event.sound_url && hasVideo) {
@@ -50,19 +54,22 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
         const audio = new Audio(event.sound_url);
         audio.volume = 0.7;
         audioRef.current = audio;
-        const audioTimer = window.setTimeout(() => void audio.play().catch(() => undefined), delay);
-        (audio as HTMLAudioElement & { __jalwaTimer?: number }).__jalwaTimer = audioTimer;
+        audioTimerRef.current = window.setTimeout(() => {
+          if (!doneRef.current) void audio.play().catch(() => undefined);
+        }, delay);
       } catch {}
     }
 
     return () => {
-      window.clearTimeout(showTimer);
+      if (showTimer !== null) window.clearTimeout(showTimer);
       window.clearTimeout(doneTimer);
+      if (audioTimerRef.current !== null) window.clearTimeout(audioTimerRef.current);
+      audioTimerRef.current = null;
       audioRef.current?.pause();
       audioRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event.id, event.sound_url, hasVideo, config.delayMs, config.holdMs, config.endMs, configuredEnd]);
+  }, [event.id, event.sound_url, hasVideo, isDirectVideo, config.delayMs, config.holdMs, config.endMs, configuredEnd]);
 
   const mediaStyle = useMemo(() => renderConfigToStyle(config), [config]);
   const videoStyle = useMemo<React.CSSProperties>(() => ({
@@ -72,11 +79,17 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
     display: "block",
   }), [config.fit]);
 
+  const revealVideo = () => {
+    if (!isDirectVideo || doneRef.current) return;
+    setVideoReady(true);
+    setVisible(true);
+  };
+
   return (
     <>
       {hasVideo && event.media_url ? (
         <div
-          className={`pointer-events-none fixed inset-x-0 top-[58px] bottom-[62px] z-[998] flex justify-center overflow-hidden transition-opacity duration-300 ${visible ? "opacity-100" : "opacity-0"}`}
+          className={`pointer-events-none fixed inset-x-0 top-[58px] bottom-[62px] z-[998] flex justify-center overflow-hidden transition-opacity duration-150 ${visible && (!isDirectVideo || videoReady) ? "opacity-100" : "opacity-0"}`}
           aria-hidden
         >
           <div className="relative h-full w-full max-w-[480px] overflow-hidden">
@@ -84,7 +97,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
               <div className="absolute inset-0" style={{ opacity: config.opacity / 100 }}>
                 <BuiltinEntranceView mediaUrl={event.media_url} />
               </div>
-            ) : event.media_type === "mp4" || event.media_type === "webm" ? (
+            ) : isDirectVideo ? (
               <div className="absolute inset-0" style={mediaStyle}>
                 <GiftGLVideo
                   key={`${event.id}-${config.delayMs}-${config.endMs ?? "auto"}`}
@@ -97,6 +110,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
                   className="h-full w-full"
                   style={videoStyle}
                   objectFit={OBJECT_FIT[config.fit]}
+                  onReady={revealVideo}
                   onEnded={config.loop ? undefined : finish}
                   onError={finish}
                 />
@@ -111,7 +125,7 @@ export function EntrancePlayer({ event, onDone }: { event: RoomEntranceEvent; on
       ) : null}
 
       <div
-        className={`pointer-events-none fixed left-0 right-0 z-[999] flex justify-center px-2 transition-all duration-[900ms] ease-out ${visible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}`}
+        className={`pointer-events-none fixed left-0 right-0 z-[999] flex justify-center px-2 transition-all duration-[900ms] ease-out ${visible && (!isDirectVideo || videoReady) ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"}`}
         style={hasVideo ? { top: "8px" } : { bottom: "calc(clamp(52px, 7dvh, 62px) + clamp(160px, 27dvh, 220px) + 8px)" }}
         aria-hidden
       >
