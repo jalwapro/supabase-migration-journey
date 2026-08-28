@@ -108,6 +108,9 @@ begin
     if _seat_index < 1 or _seat_index > coalesce(r_seats, 8) then
       raise exception 'invalid voice seat number';
     end if;
+    if me = r_host and _seat_index <> 1 then
+      raise exception 'Host must remain on Seat 1';
+    end if;
     if _seat_index = 1 and me <> r_host then
       raise exception 'Seat 1 is reserved for the host';
     end if;
@@ -175,16 +178,6 @@ begin
         raise exception 'Host approval required — raise hand first';
       end if;
     end if;
-  end if;
-
-  if r_type = 'voice' and me = r_host then
-    update public.room_members
-       set seat_index = null, seated_at = null
-     where room_id = _room_id and seat_index = 1 and user_id = me;
-  elsif r_type = 'video' and me = r_host and _seat_index <> 0 then
-    update public.room_members
-       set seat_index = null, seated_at = null
-     where room_id = _room_id and seat_index = 0 and user_id = me;
   end if;
 
   insert into public.room_members (room_id, user_id, seat_index, seated_at)
