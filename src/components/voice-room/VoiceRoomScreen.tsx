@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Rocket, Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Rocket, Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -10,6 +10,7 @@ import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMemberSheet";
+import { ModeratorControls } from "./ModeratorControls";
 
 const MIN_CAPACITY = 4, MAX_CAPACITY = 20;
 const normalizeCapacity = (v: unknown) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(v)) || MAX_CAPACITY));
@@ -18,8 +19,25 @@ type RoomChatMessage = { id: string; user_id: string | null; text: string | null
 interface VoiceRoomScreenProps { room: RoomState; roomId: string; seatCount?: number; roomCode: string; onlineCount: number; micOn: boolean; isHost: boolean; mySeatIndex: number | null; popularityPct: number; topGifterName?: string | null; topGifterCoins?: number; announcement?: string | null; messages?: RoomChatMessage[]; onOpenChat: () => void; onOpenPrivateChat: () => void; onOpenGift: () => void; onOpenMore: () => void; onToggleMic: () => void; speakerMuted: boolean; onToggleSpeaker: () => void; onOpenMusic?: () => void; onSendEmoji?: (emoji: ChatEmoji) => void; canPlayMusic?: boolean; onSeatTap: (i: number) => void; onJoinSeat: (i: number) => void; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; onOpenGames: () => void }
 
 export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount, micOn, speakerMuted, isHost, mySeatIndex, popularityPct, topGifterName, topGifterCoins, announcement, messages = [], onOpenChat, onOpenGift, onOpenMore, onToggleMic, onToggleSpeaker, onSendEmoji, onSeatTap, onJoinSeat, onHostTap, onReport, onShare, onExit, onHome, onRanking, onOpenGames }: VoiceRoomScreenProps) => {
-  const [giftOpen, setGiftOpen] = useState(false), [gamesOpen, setGamesOpen] = useState(false), [emojiOpen, setEmojiOpen] = useState(false), [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null), [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount)), [hostTheme, setHostTheme] = useState<HostTheme | null>(null), [roomMessages, setRoomMessages] = useState<RoomChatMessage[]>(messages), [draft, setDraft] = useState(""), [sending, setSending] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false), [gamesOpen, setGamesOpen] = useState(false), [emojiOpen, setEmojiOpen] = useState(false), [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null), [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount)), [hostTheme, setHostTheme] = useState<HostTheme | null>(null), [roomMessages, setRoomMessages] = useState<RoomChatMessage[]>(messages), [draft, setDraft] = useState(""), [sending, setSending] = useState(false), [isModerator, setIsModerator] = useState(false), [moderatorControlsOpen, setModeratorControlsOpen] = useState(false);
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
+
+  useEffect(() => {
+    let active = true;
+    const syncRole = async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) { if (active) setIsModerator(false); return; }
+      const { data } = await supabase.from("room_members").select("is_moderator").eq("room_id", roomId).eq("user_id", auth.user.id).maybeSingle();
+      if (active) setIsModerator(!isHost && !!data?.is_moderator);
+    };
+    void syncRole();
+    const channel = supabase.channel(`voice-role-${roomId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, () => void syncRole())
+      .subscribe();
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [roomId, isHost]);
+
+  useEffect(() => { if (!isModerator) setModeratorControlsOpen(false); }, [isModerator]);
   useEffect(() => { if (!messages.length) return; setRoomMessages(prev => { const map = new Map(prev.map(m => [m.id, m])); messages.forEach(m => map.set(m.id, m)); return Array.from(map.values()).slice(-50); }); }, [messages]);
   useEffect(() => { let active = true; const channel = supabase.channel(`voice-chat-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => { const row = p.new as RoomChatMessage; if (active && row.kind !== "emoji") setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev.filter(m => !(m.pending && m.text === row.text)), row].slice(-50)); }).on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => { const row = p.new as RoomChatMessage; if (active && row.kind !== "emoji") setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev.map(m => m.id === row.id ? { ...m, ...row, pending: false, failed: false } : m) : [...prev, row].slice(-50)); }).on("postgres_changes", { event: "DELETE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => { const row = p.old as { id: string }; if (active) setRoomMessages(prev => prev.filter(m => m.id !== row.id)); }); void channel.subscribe(); return () => { active = false; void supabase.removeChannel(channel); }; }, [roomId]);
   useEffect(() => { let active = true; void supabase.from("room_messages").select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").eq("room_id", roomId).neq("kind", "emoji").order("created_at", { ascending: true }).limit(50).then(({ data }) => { if (active && data) setRoomMessages(data as RoomChatMessage[]); }); return () => { active = false; }; }, [roomId]);
@@ -33,6 +51,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const openGifts = () => { setGiftOpen(true); onOpenGift(); };
   const openGames = () => { setGamesOpen(true); onOpenGames(); };
   const openAnimatedEmojis = (e?: React.SyntheticEvent) => { e?.preventDefault(); e?.stopPropagation(); setEmojiOpen(true); };
+  const openMoreForRole = () => { if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
   const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-8);
   const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
@@ -53,10 +72,11 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         </section>
       </div>
     </div>
-    <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]"><button type="button" onClick={tap(onToggleMic)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}</button><button type="button" onClick={tap(onToggleSpeaker)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={speakerMuted ? "Unmute speaker" : "Mute speaker"}>{speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button><button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"relative z-30 grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-5 w-5" /></button><button type="button" onClick={tap(openGifts)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white bg-white/20 text-white")} aria-label="Gifts"><Gift className="h-5 w-5" /></button><button type="button" onClick={tap(openGames)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games"><Gamepad2 className="h-4 w-4" /></button><button type="button" onClick={tap(onOpenMore)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="More"><Grid2X2 className="h-4 w-4" /></button></nav>
+    <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]"><button type="button" onClick={tap(onToggleMic)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}</button><button type="button" onClick={tap(onToggleSpeaker)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={speakerMuted ? "Unmute speaker" : "Mute speaker"}>{speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}</button><button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"relative z-30 grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-5 w-5" /></button><button type="button" onClick={tap(openGifts)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white bg-white/20 text-white")} aria-label="Gifts"><Gift className="h-5 w-5" /></button><button type="button" onClick={tap(openGames)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games"><Gamepad2 className="h-4 w-4" /></button><button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={isModerator ? "Moderator Controls" : "More"}>{isModerator ? <Shield className="h-4 w-4" /> : <Grid2X2 className="h-4 w-4" />}</button></nav>
     {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
     {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} />}
     {emojiOpen && <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={e => { onSendEmoji?.(e); setEmojiOpen(false); }} />}
     {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
+    {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
   </main>;
 };
