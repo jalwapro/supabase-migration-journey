@@ -38,9 +38,11 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   useEffect(() => {
     if (!roomId) return;
     let active = true;
+    let authUserId = "";
     const loadPermissions = async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (!active || !auth.user) return;
+      authUserId = auth.user.id;
       if (auth.user.id === host.id || isHost) {
         setIsModerator(false);
         setModeratorCanManageSeats(true);
@@ -58,20 +60,15 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     void loadPermissions();
     const channel = supabase.channel(`seat-permissions-${roomId}-${host.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, (payload) => {
-        void loadPermissions();
-        if (payload.new && typeof payload.new === "object" && "is_moderator" in payload.new) {
-          const newValue = (payload.new as { user_id?: string; is_moderator?: boolean }).user_id === authUserIdPlaceholder ? Boolean((payload.new as { is_moderator?: boolean }).is_moderator) : null;
-          if (newValue !== null) setIsModerator(newValue);
-        }
+        const row = payload.new as { user_id?: string; is_moderator?: boolean };
+        if (row.user_id === authUserId) setIsModerator(row.is_moderator === true);
+        else void loadPermissions();
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` }, (payload) => {
         const value = (payload.new as { moderator_can_manage_seats?: boolean } | null)?.moderator_can_manage_seats;
         if (typeof value === "boolean") setModeratorCanManageSeats(value);
       })
       .subscribe();
-    let authUserId = "";
-    const resolveAuthId = async () => { const { data } = await supabase.auth.getUser(); authUserId = data.user?.id ?? ""; };
-    void resolveAuthId();
     return () => { active = false; void supabase.removeChannel(channel); };
   }, [roomId, host.id, isHost]);
 
