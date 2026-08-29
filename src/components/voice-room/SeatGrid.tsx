@@ -32,23 +32,50 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [requests, setRequests] = useState<SeatRequest[]>([]);
   const [busyRequest, setBusyRequest] = useState<string | null>(null);
   const [isModerator, setIsModerator] = useState(false);
+  const [moderatorCanManageSeats, setModeratorCanManageSeats] = useState(false);
   const [lockBusy, setLockBusy] = useState<number | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
     let active = true;
-    const loadRole = async () => {
+    const loadPermissions = async () => {
       const { data: auth } = await supabase.auth.getUser();
       if (!active || !auth.user) return;
-      if (auth.user.id === host.id) { setIsModerator(false); return; }
-      const { data } = await supabase.from("room_members").select("is_moderator").eq("room_id", roomId).eq("user_id", auth.user.id).maybeSingle();
-      if (active) setIsModerator(data?.is_moderator === true);
+      if (auth.user.id === host.id || isHost) {
+        setIsModerator(false);
+        setModeratorCanManageSeats(true);
+        return;
+      }
+      const [{ data: member }, { data: room }] = await Promise.all([
+        supabase.from("room_members").select("is_moderator").eq("room_id", roomId).eq("user_id", auth.user.id).maybeSingle(),
+        supabase.from("live_rooms").select("moderator_can_manage_seats").eq("id", roomId).maybeSingle(),
+      ]);
+      if (active) {
+        setIsModerator(member?.is_moderator === true);
+        setModeratorCanManageSeats(room?.moderator_can_manage_seats === true);
+      }
     };
-    void loadRole();
-    return () => { active = false; };
-  }, [roomId, host.id]);
+    void loadPermissions();
+    const channel = supabase.channel(`seat-permissions-${roomId}-${host.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, (payload) => {
+        void loadPermissions();
+        if (payload.new && typeof payload.new === "object" && "is_moderator" in payload.new) {
+          const newValue = (payload.new as { user_id?: string; is_moderator?: boolean }).user_id === authUserIdPlaceholder ? Boolean((payload.new as { is_moderator?: boolean }).is_moderator) : null;
+          if (newValue !== null) setIsModerator(newValue);
+        }
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` }, (payload) => {
+        const value = (payload.new as { moderator_can_manage_seats?: boolean } | null)?.moderator_can_manage_seats;
+        if (typeof value === "boolean") setModeratorCanManageSeats(value);
+      })
+      .subscribe();
+    let authUserId = "";
+    const resolveAuthId = async () => { const { data } = await supabase.auth.getUser(); authUserId = data.user?.id ?? ""; };
+    void resolveAuthId();
+    return () => { active = false; void supabase.removeChannel(channel); };
+  }, [roomId, host.id, isHost]);
 
-  const canManageSeats = isHost || isModerator;
+  const canManageSeats = isHost || (isModerator && moderatorCanManageSeats);
 
   useEffect(() => {
     if (!roomId || !isHost) return;
