@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield, MessageCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -7,7 +7,6 @@ import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
-// Removed RoomGamesSheet as we are using a slider now
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMemberSheet";
 import { ModeratorControls } from "./ModeratorControls";
@@ -21,20 +20,17 @@ type HostTheme = { bg_image: string | null; animation_url: string | null; previe
 type RoomChatMessage = { id: string; user_id: string | null; text: string | null; message?: string | null; kind: string; created_at: string; sender_username?: string | null; sender_avatar?: string | null; user?: { username: string | null; avatar: string | null } | null; pending?: boolean; failed?: boolean };
 type RoomSettings = { is_locked: boolean; chat_enabled: boolean; gifts_enabled: boolean; guest_mic_enabled: boolean };
 
-// Game Slider Data Interface
+// Game Slide Interface & Mock Data
 interface GameSlide {
   id: number;
   imageUrl: string;
   title: string;
-  linkUrl?: string;
 }
 
-// Mock Game Slides Data (Replace with API data)
 const GAME_SLIDES: GameSlide[] = [
   { id: 1, imageUrl: "/images/games/ludo-banner.jpg", title: "Ludo Star" },
   { id: 2, imageUrl: "/images/games/teenpatti-banner.jpg", title: "Teen Patti" },
   { id: 3, imageUrl: "/images/games/rummy-banner.jpg", title: "Rummy Gold" },
-  { id: 4, imageUrl: "/images/games/pokerdhamaal-banner.jpg", title: "Poker Dhamaal" },
 ];
 
 interface VoiceRoomScreenProps {
@@ -69,7 +65,6 @@ interface VoiceRoomScreenProps {
   onExit: () => void;
   onHome: () => void;
   onRanking: () => void;
-  // onOpenGames is replaced by slider interaction
 }
 
 const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true };
@@ -104,7 +99,7 @@ export const VoiceRoomScreen = ({
   onShare,
   onExit,
   onHome,
-  onRanking,
+  onRanking
 }: VoiceRoomScreenProps) => {
   const [giftOpen, setGiftOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -122,34 +117,22 @@ export const VoiceRoomScreen = ({
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
   const [showHostFreePopup, setShowHostFreePopup] = useState(false);
   
-  // NEW: State for Game Image Slider
+  // Game Slider State
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // NEW: Game Slider Auto-play and logic
+  // Game Slider Auto-play Interval
   useEffect(() => {
-      const slideInterval = setInterval(() => {
-          setCurrentSlideIndex((prevIndex) => 
-              prevIndex === GAME_SLIDES.length - 1 ? 0 : prevIndex + 1
-          );
-      }, 5000); // Change slide every 5 seconds
-      return () => clearInterval(slideInterval);
+    const slideInterval = setInterval(() => {
+      setCurrentSlideIndex((prevIndex) => 
+        prevIndex === GAME_SLIDES.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 5000);
+    return () => clearInterval(slideInterval);
   }, []);
 
-  const nextSlide = () => {
-      setCurrentSlideIndex((prevIndex) => 
-          prevIndex === GAME_SLIDES.length - 1 ? 0 : prevIndex + 1
-      );
-  };
-
-  const prevSlide = () => {
-      setCurrentSlideIndex((prevIndex) => 
-          prevIndex === 0 ? GAME_SLIDES.length - 1 : prevIndex - 1
-      );
-  };
-
-
+  // Trigger auto popup for Host when popularity reaches 100%
   useEffect(() => {
     if (popularityPct >= 100 && isHost) {
       setShowHostFreePopup(true);
@@ -303,4 +286,215 @@ export const VoiceRoomScreen = ({
     const list: GiftReceiver[] = [];
     if (room.host?.id) list.push({ id: room.host.id, username: room.host.username ?? "Host", avatar: room.host.avatar ?? null });
     for (const seat of room.seats) {
-      if (!seat.user?.
+      if (!seat.user?.id || seat.user.id === room.host.id) continue;
+      list.push({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar });
+    }
+    const seen = new Set<string>();
+    return list.filter(u => !seen.has(u.id) && seen.add(u.id));
+  }, [room.host, room.seats]);
+
+  const openGifts = () => { if (!roomSettings.gifts_enabled) return; setGiftOpen(true); onOpenGift(); };
+  const openAnimatedEmojis = (e?: React.SyntheticEvent) => { e?.preventDefault(); e?.stopPropagation(); setEmojiOpen(true); };
+  const openPopularity = () => { setPopularityOpen(true); };
+  const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
+  const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
+  const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
+  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-8);
+  const openMemberProfile = (seatIndex: number) => {
+    const seat = room.seats.find(s => s.index === seatIndex);
+    if (!seat?.user) return;
+    setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted });
+  };
+
+  return (
+    <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
+      {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
+      
+      {/* Auto Popup for Host at 100% to Play Free (0 Coins) Rocket GIF */}
+      {showHostFreePopup && isHost && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in px-4">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-amber-500/50 p-6 shadow-[0_0_35px_rgba(234,179,8,0.4)] text-center">
+            <div className="absolute -top-10 animate-bounce">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 p-1 shadow-xl">
+                <div className="h-full w-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-14 w-14 object-contain" />
+                </div>
+              </div>
+            </div>
+            
+            <h3 className="mt-8 text-lg font-black text-amber-300">Room Popularity 100% Reached!</h3>
+            <p className="mt-2 text-xs text-slate-300">Host! Aapka Jalwa Rocket trigger ho chuka hai. Free (0 Coins) mein play karein!</p>
+            
+            <div className="mt-6 flex gap-3 w-full">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowHostFreePopup(false);
+                  setShowRocketAnimation(true);
+                  setTimeout(() => setShowRocketAnimation(false), 5000);
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 text-white font-bold text-xs shadow-lg active:scale-95 transition-transform"
+              >
+                Play Free (0 Coins) 🚀
+              </button>
+              <button 
+                type="button"
+                onClick={() => setShowHostFreePopup(false)}
+                className="px-4 py-3 rounded-xl bg-white/10 text-slate-300 font-semibold text-xs active:scale-95 transition-transform"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Launch Animation using GIF */}
+      {showRocketAnimation && (
+        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="flex flex-col items-center">
+            <div className="relative animate-bounce">
+              <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 opacity-90 blur-2xl animate-pulse" />
+              <div className="relative grid h-52 w-52 place-items-center p-2">
+                <img 
+                  src="/images/jalwa-1.gif" 
+                  alt="Jalwa Rocket GIF" 
+                  className="h-full w-full object-contain drop-shadow-[0_0_25px_rgba(255,215,0,0.9)] animate-pulse" 
+                />
+              </div>
+            </div>
+            <h2 className="mt-6 text-xl font-black tracking-wider text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">🚀 JALWA ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
+          </div>
+        </div>
+      )}
+
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
+        <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
+        <GiftAnimationPlayer roomId={roomId} />
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="relative min-h-0 flex-1 overflow-hidden bg-transparent pt-1">
+            <SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={openMemberProfile} onJoinSeat={joinSeat} onHostTap={onHostTap} />
+          </div>
+          <section className="grid h-[clamp(160px,27dvh,220px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(80px,.7fr)] gap-1.5 px-2 py-1.5">
+            <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
+              <div className="flex h-8 shrink-0 items-end gap-5 border-b border-white/30 px-2.5">
+                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-1.5 text-xs font-semibold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-6 rounded-full bg-[color:var(--primary)]" /></button>
+                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-1.5 text-xs font-medium text-white/75 disabled:opacity-40")}>Chat</button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-1.5">
+                {visibleMessages.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-center text-white/45">
+                    <div>
+                      <div className="mx-auto mb-1 grid h-7 w-7 place-items-center rounded-full bg-white/10"><Smile className="h-4 w-4" /></div>
+                      <p className="text-[11px] font-medium">{announcement || "No messages yet"}</p>
+                      <p className="text-[10px]">{roomSettings.chat_enabled ? "Start the conversation" : "Chat is disabled by the Host"}</p>
+                    </div>
+                  </div>
+                ) : (
+                  visibleMessages.map(m => {
+                    const avatar = m.user?.avatar || m.sender_avatar;
+                    const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase();
+                    return (
+                      <div key={m.id} className="mb-1 flex min-w-0 items-start gap-1.5 text-xs">
+                        <div className="grid h-5 w-5 shrink-0 overflow-hidden rounded-full bg-white/20 text-[9px] font-bold text-white/80 place-items-center">
+                          {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
+                        </div>
+                        <span className="min-w-0 break-words text-white/90">{m.text || m.message || ""}</span>
+                        {m.pending && <span className="text-[9px] text-slate-400">sending…</span>}
+                        {m.failed && <span className="text-[9px] text-red-400">failed</span>}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+              <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1.5 flex h-10 shrink-0 items-center gap-2 rounded-full border border-white/30 bg-white px-2.5 shadow-lg", !roomSettings.chat_enabled && "opacity-50")}>
+                <input value={draft} onChange={e => setDraft(e.target.value.slice(0, 500))} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} aria-label="Room chat message" disabled={sending || !roomSettings.chat_enabled} className="min-w-0 flex-1 bg-transparent text-xs font-medium text-black outline-none placeholder:text-slate-400" />
+                <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} aria-label="Composer emoji" className="grid h-7 w-7 shrink-0 place-items-center rounded-full text-[color:var(--secondary)] disabled:opacity-40"><Smile className="h-4 w-4" /></button>
+                <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} aria-label="Send message" className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button>
+              </form>
+            </div>
+            
+            {/* Right Column: Bigger Rocket Button + Game Image Slider */}
+            <div className="flex min-w-0 flex-col justify-between gap-1.5">
+              {/* Bigger Animated Rocket Button */}
+              <button 
+                type="button" 
+                onClick={tap(openPopularity)} 
+                className={cn(
+                  buttonClass,
+                  "relative group flex flex-col items-center justify-center min-h-0 flex-1 bg-transparent border-none outline-none p-0.5"
+                )}
+                aria-label="Rocket Popularity"
+              >
+                <div className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
+                
+                <div className="relative h-16 w-16 flex items-center justify-center">
+                  <img 
+                    src="/images/jalwa-1.gif" 
+                    alt="Jalwa Rocket GIF" 
+                    className="h-16 w-16 object-contain drop-shadow-[0_0_12px_rgba(255,215,0,0.9)] animate-bounce" 
+                  />
+                </div>
+
+                <span className="relative z-10 text-[10px] font-black tracking-wider text-amber-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                  {popularityPct}%
+                </span>
+              </button>
+
+              {/* Game Image Slider replacing the Games button */}
+              <div className="relative h-11 w-full shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center">
+                <img 
+                  src={GAME_SLIDES[currentSlideIndex].imageUrl} 
+                  alt={GAME_SLIDES[currentSlideIndex].title} 
+                  className="h-full w-full object-cover rounded-xl transition-all duration-500"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-between px-2 pointer-events-none">
+                  <span className="text-[10px] font-bold text-white drop-shadow truncate">{GAME_SLIDES[currentSlideIndex].title}</span>
+                  <div className="flex gap-1">
+                    {GAME_SLIDES.map((_, idx) => (
+                      <span key={idx} className={cn("h-1.5 w-1.5 rounded-full", idx === currentSlideIndex ? "bg-amber-400" : "bg-white/40")} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      
+      <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]">
+        <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
+          {micOn ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}
+        </button>
+        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
+          <Smile className="h-4 w-4" />
+        </button>
+        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games">
+          <Gamepad2 className="h-4 w-4" />
+        </button>
+        <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Private Chat">
+          <MessageCircle className="h-5 w-5" />
+        </button>
+        <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/60 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
+          <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="grid h-full w-full place-items-center rounded-[14px] bg-black/40 backdrop-blur-sm text-amber-200">
+            <Gift className="h-6 w-6 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
+          </div>
+        </button>
+        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
+          {isHost ? <Shield className="h-4 w-4" /> : isModerator ? <Shield className="h-4 w-4" /> : <Grid2X2 className="h-4 w-4" />}
+        </button>
+      </nav>
+
+      {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
+      {emojiOpen && <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={e => { onSendEmoji?.(e); setEmojiOpen(false); }} />}
+      {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
+      {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
+      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} />}
+      {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
+    </main>
+  );
+};
