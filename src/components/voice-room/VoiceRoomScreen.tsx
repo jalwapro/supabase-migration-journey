@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Rocket, Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield, MessageCircle } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -109,7 +109,7 @@ export const VoiceRoomScreen = ({
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Trigger full-screen rocket play when popularity reaches 100%
+  // Trigger full-screen custom PNG rocket play when popularity reaches 100%
   useEffect(() => {
     if (popularityPct >= 100) {
       setShowRocketAnimation(true);
@@ -292,19 +292,19 @@ export const VoiceRoomScreen = ({
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
       
-      {/* Full Screen Rocket Play Animation when 100% Complete */}
+      {/* Full Screen Custom PNG Rocket Play Animation when 100% Complete */}
       {showRocketAnimation && (
-        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
             <div className="relative animate-bounce">
-              <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 opacity-75 blur-lg animate-pulse" />
-              <div className="relative grid h-32 w-32 place-items-center rounded-3xl bg-gradient-to-tr from-cyan-400 via-purple-600 to-pink-500 p-1 shadow-2xl">
-                <div className="grid h-full w-full place-items-center rounded-[22px] bg-slate-950/80">
-                  <Rocket className="h-16 w-16 text-cyan-300 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-pulse" />
+              <div className="absolute -inset-6 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 opacity-80 blur-xl animate-pulse" />
+              <div className="relative grid h-40 w-40 place-items-center rounded-3xl bg-gradient-to-tr from-amber-400 via-purple-600 to-indigo-900 p-1 shadow-[0_0_30px_rgba(234,179,8,0.6)]">
+                <div className="grid h-full w-full place-items-center rounded-[22px] bg-slate-950/90 overflow-hidden p-2">
+                  <img src="/images/rocket-jalwa.png" alt="Jalwa Rocket" className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] animate-pulse" />
                 </div>
               </div>
             </div>
-            <h2 className="mt-4 text-xl font-black tracking-wider text-white drop-shadow-md">🚀 ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
+            <h2 className="mt-5 text-xl font-black tracking-wider text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">🚀 JALWA ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
           </div>
         </div>
       )}
@@ -355,7 +355,7 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
-            {/* 4D Animated Small Rocket Button */}
+            {/* Custom 4D Animated Small PNG Rocket Popularity Button */}
             <div className="flex min-w-0 flex-col justify-center gap-1.5">
               <button 
                 type="button" 
@@ -369,9 +369,13 @@ export const VoiceRoomScreen = ({
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 
                 <span className="relative flex flex-col items-center">
-                  <div className="relative mb-0.5">
-                    <div className="absolute -inset-1 rounded-full bg-cyan-400 opacity-30 blur-sm animate-pulse" />
-                    <Rocket className="relative h-7 w-7 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-bounce" />
+                  <div className="relative mb-0.5 h-8 w-8 flex items-center justify-center">
+                    <div className="absolute -inset-1 rounded-full bg-amber-400 opacity-40 blur-sm animate-pulse" />
+                    <img 
+                      src="/images/rocket-jalwa.png" 
+                      alt="Rocket" 
+                      className="relative h-7 w-7 object-contain drop-shadow-[0_0_6px_rgba(255,215,0,0.8)] animate-bounce" 
+                    />
                   </div>
                   <span className="text-[9px] font-black tracking-wide text-white/95 drop-shadow">{popularityPct}% Popular</span>
                 </span>
