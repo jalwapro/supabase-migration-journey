@@ -20,18 +20,12 @@ type HostTheme = { bg_image: string | null; animation_url: string | null; previe
 type RoomChatMessage = { id: string; user_id: string | null; text: string | null; message?: string | null; kind: string; created_at: string; sender_username?: string | null; sender_avatar?: string | null; user?: { username: string | null; avatar: string | null } | null; pending?: boolean; failed?: boolean };
 type RoomSettings = { is_locked: boolean; chat_enabled: boolean; gifts_enabled: boolean; guest_mic_enabled: boolean };
 
-// Game Slide Interface & Mock Data
 interface GameSlide {
-  id: number;
-  imageUrl: string;
+  id: string;
+  image_url: string;
   title: string;
+  link_url?: string;
 }
-
-const GAME_SLIDES: GameSlide[] = [
-  { id: 1, imageUrl: "/images/games/ludo-banner.jpg", title: "Ludo Star" },
-  { id: 2, imageUrl: "/images/games/teenpatti-banner.jpg", title: "Teen Patti" },
-  { id: 3, imageUrl: "/images/games/rummy-banner.jpg", title: "Rummy Gold" },
-];
 
 interface VoiceRoomScreenProps {
   room: RoomState;
@@ -117,20 +111,49 @@ export const VoiceRoomScreen = ({
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
   const [showHostFreePopup, setShowHostFreePopup] = useState(false);
   
-  // Game Slider State
+  // Dynamic Game Slides State from Database
+  const [gameSlides, setGameSlides] = useState<GameSlide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
+  // Fetch Slides from Database
+  useEffect(() => {
+    let active = true;
+    const fetchSlides = async () => {
+      const { data, error } = await supabase
+        .from("room_slides")
+        .select("id, title, image_url, link_url")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (active && !error && data && data.length > 0) {
+        setGameSlides(data);
+      } else if (active) {
+        // Fallback default slide if database is empty
+        setGameSlides([{ id: "1", title: "Jalwa Games", image_url: "/images/games/ludo-banner.jpg" }]);
+      }
+    };
+    void fetchSlides();
+    const channel = supabase.channel("room-slides-sync").on("postgres_changes", { event: "*", schema: "public", table: "room_slides" }, () => {
+      void fetchSlides();
+    }).subscribe();
+
+    return () => {
+      active = false;
+      void supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Game Slider Auto-play Interval
   useEffect(() => {
+    if (gameSlides.length <= 1) return;
     const slideInterval = setInterval(() => {
       setCurrentSlideIndex((prevIndex) => 
-        prevIndex === GAME_SLIDES.length - 1 ? 0 : prevIndex + 1
+        prevIndex === gameSlides.length - 1 ? 0 : prevIndex + 1
       );
     }, 5000);
     return () => clearInterval(slideInterval);
-  }, []);
+  }, [gameSlides.length]);
 
   // Trigger auto popup for Host when popularity reaches 100%
   useEffect(() => {
@@ -306,11 +329,12 @@ export const VoiceRoomScreen = ({
     setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted });
   };
 
+  const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
+
   return (
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
       
-      {/* Auto Popup for Host at 100% to Play Free (0 Coins) Rocket GIF */}
       {showHostFreePopup && isHost && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in px-4">
           <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-amber-500/50 p-6 shadow-[0_0_35px_rgba(234,179,8,0.4)] text-center">
@@ -349,7 +373,6 @@ export const VoiceRoomScreen = ({
         </div>
       )}
 
-      {/* Full Screen Launch Animation using GIF */}
       {showRocketAnimation && (
         <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
@@ -414,8 +437,8 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
-            {/* Right Column: Bigger Rocket Button + Game Image Slider */}
-            <div className="flex min-w-0 flex-col justify-between gap-1.5">
+            {/* Right Column: Bigger Rocket Button + Dynamic Game Image Slider (Height: h-32, Width: w-[160px]) */}
+            <div className="flex min-w-0 flex-col justify-between items-end gap-1.5">
               {/* Bigger Animated Rocket Button */}
               <button 
                 type="button" 
@@ -441,20 +464,22 @@ export const VoiceRoomScreen = ({
                 </span>
               </button>
 
-              {/* Game Image Slider replacing the Games button */}
-              <div className="relative h-11 w-full shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center">
-                <img 
-                  src={GAME_SLIDES[currentSlideIndex].imageUrl} 
-                  alt={GAME_SLIDES[currentSlideIndex].title} 
-                  className="h-full w-full object-cover rounded-xl transition-all duration-500"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-between px-2 pointer-events-none">
-                  <span className="text-[10px] font-bold text-white drop-shadow truncate">{GAME_SLIDES[currentSlideIndex].title}</span>
-                  <div className="flex gap-1">
-                    {GAME_SLIDES.map((_, idx) => (
+              {/* Dynamic Game Image Slider */}
+              <div className="relative h-32 w-[160px] shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center shadow-lg">
+                {currentSlide && (
+                  <img 
+                    src={currentSlide.image_url} 
+                    alt={currentSlide.title} 
+                    className="h-full w-full object-cover rounded-xl transition-all duration-500"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/30 flex flex-col justify-between p-1.5 pointer-events-none">
+                  <span className="text-[9px] font-bold text-white drop-shadow truncate">{currentSlide?.title}</span>
+                  <div className="flex justify-center gap-1">
+                    {gameSlides.map((_, idx) => (
                       <span key={idx} className={cn("h-1.5 w-1.5 rounded-full", idx === currentSlideIndex ? "bg-amber-400" : "bg-white/40")} />
                     ))}
                   </div>
