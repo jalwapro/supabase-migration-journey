@@ -109,7 +109,7 @@ export const VoiceRoomScreen = ({
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Trigger full-screen custom PNG rocket play when popularity reaches 100%
+  // Trigger full-screen custom rocket animation when popularity reaches 100%
   useEffect(() => {
     if (popularityPct >= 100) {
       setShowRocketAnimation(true);
@@ -292,14 +292,18 @@ export const VoiceRoomScreen = ({
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
       
-      {/* Full Screen Custom PNG Rocket Play Animation when 100% Complete */}
+      {/* Full Screen Launch Animation when 100% Complete */}
       {showRocketAnimation && (
         <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
             <div className="relative animate-bounce">
               <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 opacity-90 blur-2xl animate-pulse" />
               <div className="relative grid h-52 w-52 place-items-center p-2">
-                <img src="/images/rocket-jalwa.png" alt="Jalwa Rocket" className="h-full w-full object-contain drop-shadow-[0_0_25px_rgba(255,215,0,0.9)] animate-pulse" />
+                <img 
+                  src="/images/rocket-jalwa.png" 
+                  alt="Jalwa Rocket" 
+                  className="h-full w-full object-contain mix-blend-screen filter brightness-125 contrast-125 drop-shadow-[0_0_25px_rgba(255,215,0,0.9)] animate-pulse" 
+                />
               </div>
             </div>
             <h2 className="mt-6 text-xl font-black tracking-wider text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">🚀 JALWA ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
@@ -353,7 +357,7 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
-            {/* Pure Clean 4D Animated PNG Rocket (No Box Background) */}
+            {/* Pure Clean 4D Animated Rocket (Transparent / No Box Background) */}
             <div className="flex min-w-0 flex-col justify-center items-center gap-1">
               <button 
                 type="button" 
@@ -367,12 +371,12 @@ export const VoiceRoomScreen = ({
                 {/* Glow Aura Effect behind rocket */}
                 <div className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
                 
-                {/* Floating Animated PNG Rocket */}
+                {/* Floating Animated Rocket with mix-blend-screen for background removal */}
                 <div className="relative h-12 w-12 flex items-center justify-center">
                   <img 
                     src="/images/rocket-jalwa.png" 
                     alt="Jalwa Rocket" 
-                    className="h-11 w-11 object-contain drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] animate-bounce" 
+                    className="h-11 w-11 object-contain mix-blend-screen filter brightness-125 contrast-125 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] animate-bounce" 
                   />
                 </div>
 
