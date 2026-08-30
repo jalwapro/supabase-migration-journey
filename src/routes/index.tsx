@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,46 +10,161 @@ import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { MiniGamesFloatingButton } from "@/components/MiniGamesFloatingButton";
 import { SupportFloatingButton } from "@/components/SupportFloatingButton";
 import { DiscoverRankings } from "@/components/discover/DiscoverRankings";
-import { formatCompact } from "@/lib/utils";
-
-import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
-import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
-import jalwaFrameViolet from "@/assets/jalwa-frame-violet.png.asset.json";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ShareSheet } from "@/components/ShareSheet";
 import { RoomRecoveryCard } from "@/components/room/RoomRecoveryCard";
-import { Radio, Users, Lock, Video, Mic, Search, Shield, Wallet as WalletIcon, Swords, Flame, UserRound, MessageCircle, Crown, Gift, Trophy, Sparkles, Palette, Rocket, Bell, MoreVertical, LifeBuoy, Share2 } from "lucide-react";
+import { ShareSheet } from "@/components/ShareSheet";
+import { Search, Radio, Users, Bell, MoreVertical } from "lucide-react";
 
 export const Route = createFileRoute("/")({ component: Home });
-type Banner = { id: string; title: string | null; image_url: string; link_url: string | null; expires_at?: string | null };
-type Room = { id: string; title: string; cover_url: string | null; room_type: "voice" | "video"; viewer_count: number; seat_count: number; is_locked: boolean; pk_battle: boolean | null; host_id: string; host: { username: string | null; avatar: string | null } | null; coin_score?: number };
-type LiveUser = { id: string; username: string | null; avatar: string | null; frame: string | null; last_seen: string | null };
+
+type Room = {
+  id: string;
+  title: string;
+  cover_url: string | null;
+  room_type: "voice" | "video";
+  viewer_count: number;
+  seat_count: number;
+  is_locked: boolean;
+  pk_battle: boolean | null;
+  host_id: string;
+  host: { username: string | null; avatar: string | null } | null;
+};
+
+type LiveUser = { id: string; username: string | null; avatar: string | null };
 type SearchUser = { id: string; username: string | null; full_name: string | null; avatar: string | null; user_code: string | null };
-type TabKey = "voice";
-const TABS: { key: TabKey; label: string; Icon: typeof Mic }[] = [{ key: "voice", label: "Voice Room", Icon: Mic }];
-const DEFAULT_BANNERS: Banner[] = [];
 
 function Home() {
-  const { user, profile, isAdmin, loading } = useAuth(); const unread = useUnreadCount(); const unreadCount = user ? (unread.data ?? 0) : 0; const navigate = useNavigate();
-  const [tab, setTab] = useState<TabKey>("voice"); const [q, setQ] = useState(""); const [friendsOpen, setFriendsOpen] = useState(false); const [bannerIdx, setBannerIdx] = useState(0); const [menuOpen, setMenuOpen] = useState(false); const [shareOpen, setShareOpen] = useState(false); const bannerRef = useRef<HTMLDivElement>(null); const query = q.trim(); const [debouncedQuery, setDebouncedQuery] = useState(query);
-  useEffect(() => { const t = setTimeout(() => setDebouncedQuery(query), 300); return () => clearTimeout(t); }, [query]);
-  useEffect(() => { try { if (!sessionStorage.getItem("splash_shown")) navigate({ to: "/splash", replace: true }); } catch {} }, [navigate]);
-  useRealtimeInvalidate("home-live", [{ table: "live_rooms", invalidate: [["home-top-hosts"], ["home-rooms-page"], ["home-live-users"]] }, { table: "follows", invalidate: [["home-mutual-friends-online"]] }, { table: "banners", invalidate: [["banners"]] }]);
-  const friends = useQuery({ queryKey: ["home-mutual-friends-online", user?.id], enabled: !!user?.id && friendsOpen, refetchInterval: friendsOpen ? 15000 : false, refetchOnWindowFocus: true, queryFn: async () => { const uid = user!.id; const [{ data: outRows, error: e1 }, { data: inRows, error: e2 }] = await Promise.all([supabase.from("follows").select("following_id").eq("follower_id", uid), supabase.from("follows").select("follower_id").eq("following_id", uid)]); if (e1) throw e1; if (e2) throw e2; const following = new Set((outRows ?? []).map(r => r.following_id as string)); const followers = new Set((inRows ?? []).map(r => r.follower_id as string)); const mutual = [...following].filter(id => followers.has(id)); if (!mutual.length) return [] as LiveUser[]; const since = new Date(Date.now() - 120000).toISOString(); const { data, error } = await supabase.from("profiles").select("id,username,avatar,frame,last_seen").in("id", mutual).gte("last_seen", since).order("last_seen", { ascending: false }); if (error) throw error; return (data ?? []) as LiveUser[]; } });
-  const banners = useQuery({ queryKey: ["banners"], staleTime: 300000, queryFn: async () => { const nowIso = new Date().toISOString(); const { data, error } = await supabase.from("banners").select("id,title,image_url,link_url,expires_at").eq("active", true).or(`expires_at.is.null,expires_at.gt.${nowIso}`).order("sort_order"); if (error) throw error; return data as Banner[]; } });
-  const liveUsers = useQuery({ queryKey: ["home-live-users"], queryFn: async () => { const since = new Date(Date.now() - 120000).toISOString(); const { data, error } = await supabase.from("profiles").select("id,username,avatar,frame,last_seen").gte("last_seen", since).order("last_seen", { ascending: false }).limit(20); if (error) throw error; return (data ?? []) as LiveUser[]; }, refetchInterval: 60000, staleTime: 30000 });
-  const topHostsQ = useQuery({ queryKey: ["home-top-hosts", tab], queryFn: async () => { let sel = supabase.from("live_rooms").select("id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey(username,avatar)").eq("status", "live").order("viewer_count", { ascending: false }).limit(10); const { data, error } = await (tab === "pk" ? sel.eq("pk_battle", true) : sel.eq("room_type", tab)); if (error) throw error; const list = (data ?? []) as unknown as Room[]; if (!list.length) return list; const ids = list.map(r => r.id); const { data: pop } = await supabase.from("room_popularity").select("room_id,coin_score").in("room_id", ids); const scoreByRoom = new Map<string, number>((pop ?? []).map((p: { room_id: string; coin_score: number | string }) => [p.room_id, Number(p.coin_score ?? 0)])); return list.map(r => ({ ...r, coin_score: scoreByRoom.get(r.id) ?? 0 })).sort((a,b) => (b.coin_score ?? 0) - (a.coin_score ?? 0) || b.viewer_count - a.viewer_count).slice(0,2); }, refetchInterval: 60000, staleTime: 30000 });
-  const topHosts = useMemo(() => { const list = topHostsQ.data ?? []; if (!debouncedQuery) return list; const s = debouncedQuery.toLowerCase(); return list.filter(r => r.title.toLowerCase().includes(s) || (r.host?.username ?? "").toLowerCase().includes(s)); }, [topHostsQ.data, debouncedQuery]);
-  const topIds = useMemo(() => new Set((topHostsQ.data ?? []).map(r => r.id)), [topHostsQ.data]); const PAGE_SIZE = 20;
-  const restRoomsInfinite = useInfiniteQuery({ queryKey: ["home-rooms-page", tab, debouncedQuery], initialPageParam: 0, queryFn: async ({ pageParam }) => { const from = pageParam as number; const to = from + PAGE_SIZE - 1; let sel = supabase.from("live_rooms").select("id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey(username,avatar)").eq("status", "live").order("viewer_count", { ascending: false }).range(from,to); if (tab === "pk") sel = sel.eq("pk_battle", true); else sel = sel.eq("room_type", tab); if (debouncedQuery) sel = sel.ilike("title", `%${debouncedQuery}%`); const { data, error } = await sel; if (error) throw error; return (data ?? []) as unknown as Room[]; }, getNextPageParam: (lastPage, allPages) => lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE, refetchInterval: 60000, staleTime:30000 });
-  const restRooms = useMemo(() => (restRoomsInfinite.data?.pages ?? []).flat().filter(r => !topIds.has(r.id)), [restRoomsInfinite.data, topIds]); const filteredRoomsCount = topHosts.length + restRooms.length; const isRoomsLoading = topHostsQ.isLoading || restRoomsInfinite.isLoading;
-  const userSearch = useQuery({ queryKey: ["home-user-search", debouncedQuery], enabled: debouncedQuery.length >= 2, queryFn: async () => { const safe = debouncedQuery.replace(/[,()%*.\\"']/g, " ").trim(); if (safe.length < 2) return [] as SearchUser[]; const { data, error } = await supabase.from("profiles").select("id,username,full_name,avatar,user_code").or(`username.ilike.%${safe}%,full_name.ilike.%${safe}%,user_code.ilike.%${safe}%`).limit(12); if (error) throw error; return (data ?? []) as SearchUser[]; } });
-  useEffect(() => { const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS; if (list.length < 2) return; const t = setInterval(() => setBannerIdx(i => (i + 1) % list.length), 3000); return () => clearInterval(t); }, [banners.data]); const tabIndex = TABS.findIndex(t => t.key === tab);
-  return (<><div className="min-h-[100dvh] pb-28"><header className="sticky top-0 z-30 border-b border-white/5 bg-background/60 backdrop-blur-2xl" style={{paddingTop:"env(safe-area-inset-top)"}}><div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">{loading ? <span className="relative shrink-0" aria-label="Profile"><span aria-hidden className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"/><span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-background"><img src={jalwaLogo} alt="Jalwa" className="h-full w-full object-cover"/></span></span> : <Link to={user ? "/me" : "/auth"} className="relative shrink-0" aria-label="Profile"><span aria-hidden className="absolute -inset-[3px] rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"/><span className="relative block h-10 w-10 overflow-hidden rounded-full ring-2 ring-background">{profile?.avatar ? <img src={profile.avatar} alt={profile.username ?? "me"} className="h-full w-full object-cover"/> : <img src={jalwaLogo} alt="Jalwa" className="h-full w-full object-cover"/>}</span></span></Link>}
-  <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2"><Search className="h-4 w-4 shrink-0 text-muted-foreground"/><input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search people or rooms" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"/></label><button type="button" onClick={()=>setMenuOpen(true)} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5"><MoreVertical className="h-5 w-5"/></button></div></header>
-  <div className="mx-auto max-w-md"><RoomRecoveryCard/>{query.length>=2 && <section className="px-4 pt-3">{userSearch.data?.map(u=><Link key={u.id} to="/u/$userId" params={{userId:u.id}} className="glass flex items-center gap-3 rounded-2xl p-2.5"><div className="h-10 w-10 overflow-hidden rounded-full bg-card">{u.avatar?<img src={u.avatar} alt="" className="h-full w-full object-cover"/>:<div className="grid h-full w-full place-items-center text-xs font-bold">{(u.username??"?").charAt(0).toUpperCase()}</div>}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{u.full_name??u.username??"User"}</p><p className="truncate text-[11px] text-muted-foreground">{u.username??"user"}{u.user_code?` · ID ${u.user_code}`:""}</p></div></Link>)}</section>}
-  <section className="px-4 pt-3">{(()=>{const list=banners.data?.length?banners.data:DEFAULT_BANNERS;return list.length?<><div className="relative aspect-[11/4] w-full overflow-hidden rounded-3xl border border-white/10 bg-black"><div ref={bannerRef} className="flex h-full w-full transition-transform duration-500 ease-out" style={{transform:`translateX(-${bannerIdx*100}%)`}}>{list.map(b=><a key={b.id} href={b.link_url??"#"} className="relative block h-full w-full shrink-0"><img src={b.image_url} alt={b.title??""} className="h-full w-full object-cover"/><div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"/>{b.title&&<div className="absolute inset-x-4 bottom-3"><p className="text-sm font-bold text-white">{b.title}</p></div>}</a>)}</div></div></>:<div className="relative aspect-[16/8] w-full overflow-hidden rounded-3xl border border-white/10 bg-card p-5"><div className="flex h-full flex-col justify-between"><span className="w-fit rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">Welcome</span><h2 className="text-2xl font-black leading-tight">Go live. Get gifts.<br/><span>Shine bright.</span></h2></div></div>})()}</section>
-  <section className="mt-5"><div className="flex items-center justify-between px-4"><p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Live now</p><span className="text-[10px] font-bold text-[color:var(--gold)]">{liveUsers.data?.length??0} online</span></div><div className="scrollbar-hide mt-2 flex snap-x gap-3 overflow-x-auto px-4 pb-1">{(liveUsers.data??[]).map(u=><Link key={u.id} to="/u/$userId" params={{userId:u.id}} className="flex w-16 shrink-0 snap-start flex-col items-center gap-1"><span className="relative"><span className="absolute -inset-0.5 rounded-full bg-[conic-gradient(from_0deg,var(--gold),var(--primary),var(--secondary),var(--gold))]"/><span className="relative block h-14 w-14 overflow-hidden rounded-full ring-2 ring-background">{u.avatar?<img src={u.avatar} alt="" className="h-full w-full object-cover"/>:<div className="grid h-full w-full place-items-center bg-card text-sm font-bold">{(u.username??"?").charAt(0).toUpperCase()}</div>}</span><span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 rounded-full bg-emerald-500 px-1.5 text-[8px] font-black text-white ring-2 ring-background">LIVE</span></span><span className="w-full truncate text-center text-[10px] text-foreground/80">{u.username??"user"}</span></Link>)}</div></section>
-  <section className="mt-4 px-4"><div className="relative grid grid-cols-1 gap-1 rounded-full border border-white/10 bg-white/5 p-1"><span aria-hidden className="absolute inset-y-1 left-1 w-[calc(100%-0.5rem)] rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)]" style={{transform:`translateX(${tabIndex*100}%)`}}/>{TABS.map(({key,label,Icon})=><button key={key} onClick={()=>setTab(key)} className={`relative z-10 flex items-center justify-center gap-1.5 rounded-full px-2 py-2 text-xs font-bold ${tab===key?"text-primary-foreground":"text-foreground/70"}`}><Icon className="h-3.5 w-3.5"/><span>{label}</span></button>)}</div></section>
-  <section className="mt-4 space-y-5 px-4"><DiscoverRankings/>{isRoomsLoading?<div className="grid grid-cols-2 gap-3">{Array.from({length:6}).map((_,i)=><div key={i} className="aspect-square rounded-3xl bg-white/5"/>)}</div>:filteredRoomsCount>0?<>{topHosts.length>0&&<div><div className="mb-2 flex items-center gap-2"><Crown className="h-4 w-4 text-[color:var(--gold)]"/><h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">Top Hosts</h2></div><div className="grid grid-cols-2 gap-3">{topHosts.map((r,i)=><RoomCard key={r.id} room={r} frameTone={i===0?"gold":"violet"}/>)}</div></div>}{restRooms.length>0&&<div><div className="mb-2 flex items-center gap-2"><Radio className="h-4 w-4 text-[color:var(--primary)]"/><h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">All Live Rooms</h2></div><div className="space-y-2">{restRooms.map(r=><RoomListItem key={r.id} room={r}/>)}</div>{restRoomsInfinite.hasNextPage&&<button onClick={()=>restRoomsInfinite.fetchNextPage()} disabled={restRoomsInfinite.isFetchingNextPage} className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider">{restRoomsInfinite.isFetchingNextPage?"Loading…":"Load more"}</button>}</div>}</>:<EmptyRooms tab={tab}/>}</section></div></div><BottomNav/><DailySpinPopup/><MiniGamesFloatingButton/><SupportFloatingButton/><ShareSheet open={shareOpen} onOpenChange={setShareOpen}/><Dialog open={friendsOpen} onOpenChange={setFriendsOpen}><DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Friends online</DialogTitle></DialogHeader></DialogContent></Dialog><Dialog open={menuOpen} onOpenChange={setMenuOpen}><DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Menu</DialogTitle></DialogHeader></DialogContent></Dialog></>);
+  const { user, profile, loading } = useAuth();
+  const unread = useUnreadCount();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState("");
+  const [shareOpen, setShareOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem("splash_shown")) navigate({ to: "/splash", replace: true });
+    } catch {}
+  }, [navigate]);
+
+  useRealtimeInvalidate("home-live", [
+    { table: "live_rooms", invalidate: [["home-rooms"], ["home-live-users"]] },
+    { table: "banners", invalidate: [["home-banners"]] },
+  ]);
+
+  const liveUsers = useQuery({
+    queryKey: ["home-live-users"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 120000).toISOString();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,username,avatar")
+        .gte("last_seen", since)
+        .order("last_seen", { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return (data ?? []) as LiveUser[];
+    },
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+
+  const rooms = useQuery({
+    queryKey: ["home-rooms"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("live_rooms")
+        .select("id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey(username,avatar)")
+        .eq("status", "live")
+        .order("viewer_count", { ascending: false })
+        .limit(40);
+      if (error) throw error;
+      return (data ?? []) as unknown as Room[];
+    },
+    refetchInterval: 60000,
+    staleTime: 30000,
+  });
+
+  const searchUsers = useQuery({
+    queryKey: ["home-user-search", query.trim()],
+    enabled: query.trim().length >= 2,
+    queryFn: async () => {
+      const safe = query.trim().replace(/[,()%*.\\"']/g, " ").trim();
+      if (safe.length < 2) return [] as SearchUser[];
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id,username,full_name,avatar,user_code")
+        .or(`username.ilike.%${safe}%,full_name.ilike.%${safe}%,user_code.ilike.%${safe}%`)
+        .limit(12);
+      if (error) throw error;
+      return (data ?? []) as SearchUser[];
+    },
+  });
+
+  const filteredRooms = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rooms.data ?? [];
+    return (rooms.data ?? []).filter((room) =>
+      room.title.toLowerCase().includes(q) || (room.host?.username ?? "").toLowerCase().includes(q),
+    );
+  }, [rooms.data, query]);
+
+  return (
+    <>
+      <div className="min-h-[100dvh] pb-28">
+        <header className="sticky top-0 z-30 border-b border-white/5 bg-background/80 backdrop-blur-2xl">
+          <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
+            <Link to={user ? "/me" : "/auth"} aria-label="Profile" className="h-10 w-10 overflow-hidden rounded-full ring-2 ring-background">
+              {profile?.avatar ? <img src={profile.avatar} alt={profile.username ?? "Profile"} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center bg-card text-xs font-bold">J</div>}
+            </Link>
+            <label className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search people or rooms" className="min-w-0 flex-1 bg-transparent text-sm outline-none" />
+            </label>
+            <div className="flex items-center gap-1">
+              <Link to="/notifications" aria-label="Notifications" className="relative grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5">
+                <Bell className="h-5 w-5" />
+                {!!user && (unread.data ?? 0) > 0 && <span className="absolute right-1 top-1 min-w-4 rounded-full bg-destructive px-1 text-center text-[9px] font-bold text-white">{unread.data! > 99 ? "99+" : unread.data}</span>}
+              </Link>
+              <button type="button" onClick={() => setMenuOpen(true)} aria-label="Menu" className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5"><MoreVertical className="h-5 w-5" /></button>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-md">
+          <RoomRecoveryCard />
+
+          {query.trim().length >= 2 && (
+            <section className="px-4 pt-3 space-y-2">
+              {(searchUsers.data ?? []).map((u) => (
+                <Link key={u.id} to="/u/$userId" params={{ userId: u.id }} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5">
+                  <div className="h-10 w-10 overflow-hidden rounded-full bg-card">{u.avatar ? <img src={u.avatar} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-xs font-bold">{(u.username ?? "?").charAt(0).toUpperCase()}</span>}</div>
+                  <div className="min-w-0"><p className="truncate text-sm font-semibold">{u.full_name ?? u.username ?? "User"}</p><p className="truncate text-[11px] text-muted-foreground">{u.username ?? "user"}{u.user_code ? ` · ID ${u.user_code}` : ""}</p></div>
+                </Link>
+              ))}
+            </section>
+          )}
+
+          <section className="mt-5">
+            <div className="flex items-center justify-between px-4"><p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Live now</p><span className="text-[10px] font-bold">{liveUsers.data?.length ?? 0} online</span></div>
+            <div className="mt-2 flex gap-3 overflow-x-auto px-4 pb-1">
+              {(liveUsers.data ?? []).map((u) => <Link key={u.id} to="/u/$userId" params={{ userId: u.id }} className="flex w-16 shrink-0 flex-col items-center gap-1"><span className="h-14 w-14 overflow-hidden rounded-full ring-2 ring-primary/50">{u.avatar ? <img src={u.avatar} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center bg-card text-sm font-bold">{(u.username ?? "?").charAt(0).toUpperCase()}</span>}</span><span className="w-full truncate text-center text-[10px]">{u.username ?? "user"}</span></Link>)}
+            </div>
+          </section>
+
+          <section className="mt-5 px-4"><DiscoverRankings /></section>
+
+          <section className="mt-5 space-y-3 px-4">
+            <div className="flex items-center gap-2"><Radio className="h-4 w-4" /><h2 className="text-xs font-black uppercase tracking-wider">Live Rooms</h2><span className="ml-auto text-[10px] text-muted-foreground">{filteredRooms.length}</span></div>
+            {rooms.isLoading ? <div className="grid grid-cols-2 gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="aspect-square rounded-3xl bg-white/5" />)}</div> : filteredRooms.length ? <div className="space-y-2">{filteredRooms.map((room) => <Link key={room.id} to="/room/$roomId" params={{ roomId: room.id }} className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"><div className="h-16 w-16 overflow-hidden rounded-xl bg-card">{room.cover_url ? <img src={room.cover_url} alt="" className="h-full w-full object-cover" /> : <Radio className="m-5 h-6 w-6" />}</div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{room.title}</p><p className="mt-1 text-[11px] text-muted-foreground">{room.host?.username ?? "Host"} · {room.viewer_count} viewers · {room.seat_count} seats</p></div>{room.is_locked && <span className="text-[10px] font-bold">LOCKED</span>}</Link>)}</div> : <div className="rounded-2xl border border-white/10 p-6 text-center text-sm text-muted-foreground">No live rooms right now.</div>}
+          </section>
+        </main>
+      </div>
+      <BottomNav />
+      <DailySpinPopup />
+      <MiniGamesFloatingButton />
+      <SupportFloatingButton />
+      <ShareSheet open={shareOpen} onOpenChange={setShareOpen} />
+      {menuOpen && <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setMenuOpen(false)}><div className="absolute right-4 top-16 w-48 rounded-2xl border border-white/10 bg-background p-2" onClick={(e) => e.stopPropagation()}><Link to="/settings" className="block rounded-xl p-3 text-sm">Settings</Link><button type="button" className="w-full rounded-xl p-3 text-left text-sm" onClick={() => { setShareOpen(true); setMenuOpen(false); }}>Share</button></div></div>}
+    </>
+  );
 }
