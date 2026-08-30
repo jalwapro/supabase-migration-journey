@@ -7,6 +7,7 @@ import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
+import { RoomGamesSheet } from "@/components/room/RoomGamesSheet"; // Added back RoomGamesSheet import
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMemberSheet";
 import { ModeratorControls } from "./ModeratorControls";
@@ -59,6 +60,8 @@ interface VoiceRoomScreenProps {
   onExit: () => void;
   onHome: () => void;
   onRanking: () => void;
+  onOpenGames?: () => void;
+  onOpenNativeGame?: (slug: string) => void;
 }
 
 const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true };
@@ -93,10 +96,13 @@ export const VoiceRoomScreen = ({
   onShare,
   onExit,
   onHome,
-  onRanking
+  onRanking,
+  onOpenGames,
+  onOpenNativeGame
 }: VoiceRoomScreenProps) => {
   const [giftOpen, setGiftOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [gamesOpen, setGamesOpen] = useState(false); // Games popup state
   const [popularityOpen, setPopularityOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
@@ -129,7 +135,6 @@ export const VoiceRoomScreen = ({
       if (active && !error && data && data.length > 0) {
         setGameSlides(data);
       } else if (active) {
-        // Fallback default slide if database is empty
         setGameSlides([{ id: "1", title: "Jalwa Games", image_url: "/images/games/ludo-banner.jpg" }]);
       }
     };
@@ -318,6 +323,12 @@ export const VoiceRoomScreen = ({
 
   const openGifts = () => { if (!roomSettings.gifts_enabled) return; setGiftOpen(true); onOpenGift(); };
   const openAnimatedEmojis = (e?: React.SyntheticEvent) => { e?.preventDefault(); e?.stopPropagation(); setEmojiOpen(true); };
+  const openGamesModal = (e?: React.SyntheticEvent) => { 
+    e?.preventDefault(); 
+    e?.stopPropagation(); 
+    setGamesOpen(true); 
+    onOpenGames?.(); 
+  };
   const openPopularity = () => { setPopularityOpen(true); };
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
@@ -437,9 +448,7 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
-            {/* Right Column: Bigger Rocket Button + Dynamic Game Image Slider (Height: h-32, Width: w-[160px]) */}
             <div className="flex min-w-0 flex-col justify-between items-end gap-1.5">
-              {/* Bigger Animated Rocket Button */}
               <button 
                 type="button" 
                 onClick={tap(openPopularity)} 
@@ -464,7 +473,6 @@ export const VoiceRoomScreen = ({
                 </span>
               </button>
 
-              {/* Dynamic Game Image Slider */}
               <div className="relative h-32 w-[130px] shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center shadow-lg">
                 {currentSlide && (
                   <img 
@@ -497,7 +505,8 @@ export const VoiceRoomScreen = ({
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
           <Smile className="h-4 w-4" />
         </button>
-        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games">
+        {/* FIXED: Now opens RoomGamesSheet instead of emojis */}
+        <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
           <Gamepad2 className="h-4 w-4" />
         </button>
         <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Private Chat">
@@ -516,6 +525,7 @@ export const VoiceRoomScreen = ({
 
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
       {emojiOpen && <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={e => { onSendEmoji?.(e); setEmojiOpen(false); }} />}
+      {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={(slug) => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
       {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
       {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
       {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} />}
