@@ -19,7 +19,7 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
   const queueRef = useRef<GiftRow[]>([]);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const seenOrderRef = useRef<string[]>([]);
-  const recentLocalRef = useRef<Array<{ giftId: string | null; quantity: number; at: number }>>([]);
+  const recentLocalRef = useRef<Array<{ giftName: string; quantity: number; at: number }>>([]);
   const { current: currentEntrance, done: doneEntrance } = useRoomEntrances(roomId, localUserId);
 
   const finishActive = useCallback(() => {
@@ -55,10 +55,11 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       if (!alive) return;
       const row = payload.new as GiftRow;
       if (!row?.id) return;
-      // A successful local send already rendered optimistically. Ignore its Realtime echo.
+      // The sender renders the successful local send immediately. Ignore the Realtime echo;
+      // this also collapses send-to-all (one DB row per receiver) into one visual animation.
       if (row.sender_id && localUserId && row.sender_id === localUserId) {
         const now = Date.now();
-        const match = recentLocalRef.current.find(x => x.giftId === (row.gift_id ?? null) && x.quantity === numberValue(row.quantity, 1) && now - x.at < 10000);
+        const match = recentLocalRef.current.find(x => x.giftName === (row.gift_name ?? "") && x.quantity === numberValue(row.quantity, 1) && now - x.at < 10000);
         if (match) return;
       }
       enqueueGift(row);
@@ -71,14 +72,15 @@ export function GiftAnimationPlayer({ roomId }: { roomId: string }) {
       const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
       if (!isLocal && targets.length && localUserId && !targets.includes(localUserId)) return;
       const quantity = numberValue(d.quantity, 1);
-      recentLocalRef.current.push({ giftId: typeof d.giftId === "string" ? d.giftId : null, quantity, at: Date.now() });
-      recentLocalRef.current = recentLocalRef.current.filter(x => Date.now() - x.at < 10000).slice(-20);
+      const giftName = typeof d.giftName === "string" ? d.giftName : "Gift";
+      recentLocalRef.current.push({ giftName, quantity, at: Date.now() });
+      recentLocalRef.current = recentLocalRef.current.filter(x => Date.now() - x.at < 10000).slice(-30);
       enqueueGift({
         id: typeof d.key === "string" ? d.key : `local-${Date.now()}`,
         room_id: roomId,
         sender_id: localUserId,
         gift_id: typeof d.giftId === "string" ? d.giftId : null,
-        gift_name: typeof d.giftName === "string" ? d.giftName : "Gift",
+        gift_name: giftName,
         gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁",
         gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null,
         gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null,
