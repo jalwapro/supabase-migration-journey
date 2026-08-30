@@ -105,8 +105,20 @@ export const VoiceRoomScreen = ({
   const [moderatorControlsOpen, setModeratorControlsOpen] = useState(false);
   const [hostSettingsOpen, setHostSettingsOpen] = useState(false);
   const [roomSettings, setRoomSettings] = useState<RoomSettings>(DEFAULT_ROOM_SETTINGS);
+  const [showRocketAnimation, setShowRocketAnimation] = useState(false);
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
+
+  // Trigger full-screen rocket play when popularity reaches 100%
+  useEffect(() => {
+    if (popularityPct >= 100) {
+      setShowRocketAnimation(true);
+      const timer = setTimeout(() => {
+        setShowRocketAnimation(false);
+      }, 5000); // Play animation for 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [popularityPct]);
 
   useEffect(() => {
     let active = true;
@@ -279,6 +291,24 @@ export const VoiceRoomScreen = ({
   return (
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
+      
+      {/* Full Screen Rocket Play Animation when 100% Complete */}
+      {showRocketAnimation && (
+        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="flex flex-col items-center">
+            <div className="relative animate-bounce">
+              <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-500 opacity-75 blur-lg animate-pulse" />
+              <div className="relative grid h-32 w-32 place-items-center rounded-3xl bg-gradient-to-tr from-cyan-400 via-purple-600 to-pink-500 p-1 shadow-2xl">
+                <div className="grid h-full w-full place-items-center rounded-[22px] bg-slate-950/80">
+                  <Rocket className="h-16 w-16 text-cyan-300 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)] animate-pulse" />
+                </div>
+              </div>
+            </div>
+            <h2 className="mt-4 text-xl font-black tracking-wider text-white drop-shadow-md">🚀 ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
+          </div>
+        </div>
+      )}
+
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
         <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
         <GiftAnimationPlayer roomId={roomId} />
@@ -324,15 +354,34 @@ export const VoiceRoomScreen = ({
                 <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} aria-label="Send message" className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" /></button>
               </form>
             </div>
+            
+            {/* 4D Animated Small Rocket Button */}
             <div className="flex min-w-0 flex-col justify-center gap-1.5">
-              <button type="button" onClick={tap(openPopularity)} className={cn(buttonClass,"grid min-h-0 flex-1 place-items-center rounded-xl border border-white/45 bg-white/10 p-1.5")}>
-                <span className="flex flex-col items-center"><Rocket className="h-7 w-7 text-[color:var(--secondary)]" /><span className="mt-0.5 text-[9px] font-bold text-white/90">{popularityPct}% Popular</span></span>
+              <button 
+                type="button" 
+                onClick={tap(openPopularity)} 
+                className={cn(
+                  buttonClass,
+                  "relative group grid min-h-0 flex-1 place-items-center rounded-xl border border-white/45 bg-gradient-to-br from-indigo-900/40 via-purple-900/40 to-pink-900/40 p-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-md overflow-hidden"
+                )}
+              >
+                {/* 4D Glow / Shimmer Aura Background */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                
+                <span className="relative flex flex-col items-center">
+                  <div className="relative mb-0.5">
+                    <div className="absolute -inset-1 rounded-full bg-cyan-400 opacity-30 blur-sm animate-pulse" />
+                    <Rocket className="relative h-7 w-7 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] animate-bounce" />
+                  </div>
+                  <span className="text-[9px] font-black tracking-wide text-white/95 drop-shadow">{popularityPct}% Popular</span>
+                </span>
               </button>
               <button type="button" onClick={tap(openGames)} className={cn(buttonClass,"h-10 shrink-0 rounded-xl border border-white/45 bg-white/10 px-1 text-[10px] font-black text-white")}>Games</button>
             </div>
           </section>
         </div>
       </div>
+      
       <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
           {micOn ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}
