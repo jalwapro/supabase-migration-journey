@@ -60,13 +60,13 @@ const getRankColor = (rank: PopularityData["current_rank"]) => {
 };
 
 const CircularProgressRing = ({ progress, colorClass }: { progress: number; colorClass: string }) => {
-  const radius = 50;
+  const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
   return (
-    <svg className="h-40 w-40 -rotate-90 transform" viewBox="0 0 120 120">
-      <circle className="text-white/5" strokeWidth="10" stroke="currentColor" fill="transparent" r={radius} cx="60" cy="60" />
-      <circle className={`${colorClass} transition-all duration-1000 ease-out`} strokeWidth="12" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx="60" cy="60" style={{ filter: "drop-shadow(0 0 8px currentColor)" }} />
+    <svg className="h-32 w-32 -rotate-90 transform" viewBox="0 0 100 100">
+      <circle className="text-white/5" strokeWidth="8" stroke="currentColor" fill="transparent" r={radius} cx="50" cy="50" />
+      <circle className={`${colorClass} transition-all duration-1000 ease-out`} strokeWidth="10" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx="50" cy="50" style={{ filter: "drop-shadow(0 0 6px currentColor)" }} />
     </svg>
   );
 };
@@ -161,61 +161,101 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
 
   return (
     <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in" onClick={onClose}>
-      <section className="w-full max-w-md rounded-t-[32px] border-t border-white/15 bg-[#100719]/95 p-5 text-white shadow-2xl backdrop-blur-xl transition-transform animate-slide-up pb-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20" />
-        <header className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[color:var(--primary)]/25"><Rocket className="h-5 w-5 text-[color:var(--secondary)]" /></div>
-            <div><h2 className="text-sm font-black">Host Popularity</h2><p className="text-[10px] text-white/45">{hostName ? `${hostName}'s Vibes Power` : "Cumulative host profile progress"}</p></div>
+      <section className="w-full max-w-sm rounded-t-[28px] border-t border-white/10 bg-gradient-to-b from-[#140b20] to-[#0a0410] p-4 text-white shadow-2xl backdrop-blur-2xl transition-transform animate-slide-up pb-6 max-h-[85vh] overflow-y-auto scrollbar-none" onClick={e => e.stopPropagation()}>
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+        
+        <header className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/20 border border-purple-500/30">
+              <Rocket className="h-4 w-4 text-purple-400" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold tracking-wide">Host Popularity</h2>
+              <p className="text-[10px] text-white/50">{hostName ? `${hostName}'s Stats` : "Profile progress"}</p>
+            </div>
           </div>
-          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-white/10" aria-label="Close popularity"><X className="h-4 w-4" /></button>
+          <button type="button" onClick={onClose} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Close popularity">
+            <X className="h-3.5 w-3.5" />
+          </button>
         </header>
 
-        <div className="relative mb-4 rounded-2xl border border-white/10 bg-white/5 p-5">
-          <div className="flex flex-col items-center gap-3">
-            <div className="relative flex h-36 w-36 items-center justify-center">
-              <div className="absolute inset-0 flex items-center justify-center"><CircularProgressRing progress={vibePercentage} colorClass={rankColorClass} /></div>
-              <div className="grid h-24 w-24 place-items-center rounded-full border-4 border-white/10 bg-white/5 shadow-lg"><Rocket className="h-8 w-8 text-white/30" /></div>
+        {/* Hero Score Box */}
+        <div className="relative mb-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 shadow-inner">
+          <div className="flex items-center justify-around">
+            <div className="relative flex h-28 w-28 items-center justify-center">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <CircularProgressRing progress={vibePercentage} colorClass={rankColorClass} />
+              </div>
+              <div className="grid h-20 w-20 place-items-center rounded-full border border-white/15 bg-black/30 shadow-md">
+                <Rocket className="h-6 w-6 text-white/40" />
+              </div>
             </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold tracking-wider text-white/50">VIBES SCORE</p>
-              <p className={`mt-0.5 text-4xl font-black ${rankColorClass}`}>{vibeScore.toLocaleString()}</p>
-              <p className="mt-1 text-xs font-semibold text-white/80">⭐ Level {Math.floor(vibeScore / 1000) + 1} · <span className={rankColorClass}>{data.current_rank}</span></p>
+            <div className="text-left flex flex-col justify-center">
+              <span className="text-[9px] font-bold tracking-wider text-white/40 uppercase">Vibes Score</span>
+              <span className={`text-2xl font-black ${rankColorClass}`}>{vibeScore.toLocaleString()}</span>
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white/80 border border-white/10">
+                ⭐ Lvl {Math.floor(vibeScore / 1000) + 1} · <span className={rankColorClass}>{data.current_rank}</span>
+              </span>
             </div>
           </div>
-          <div className="mt-5">
-            <div className="flex items-center justify-between text-[10px] text-white/60"><span className="font-medium uppercase tracking-wider">VIBES METER</span><span className="font-bold">{vibePercentage.toFixed(1)}%</span></div>
-            <div className="mt-2 h-3 w-full overflow-hidden rounded-full bg-white/10 p-0.5"><div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${vibePercentage}%`, background: "linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%)" }} /></div>
-            <p className="mt-2 text-center text-[9px] text-white/40">({vibeScore.toLocaleString()} / {vibeTarget.toLocaleString()} Points to next tier)</p>
+          
+          <div className="mt-3.5 pt-3 border-t border-white/5">
+            <div className="flex items-center justify-between text-[10px] text-white/60 mb-1">
+              <span className="font-medium tracking-wide">Vibes Meter</span>
+              <span className="font-bold">{vibePercentage.toFixed(1)}%</span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-white/10 p-0.5">
+              <div className="h-full rounded-full transition-all duration-1000 ease-out" style={{ width: `${vibePercentage}%`, background: "linear-gradient(90deg, #F59E0B 0%, #FCD34D 100%)" }} />
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2">
-          <StatItem icon={<Clock3 className="h-3.5 w-3.5" />} label="Total Live" value={formatHours(data.total_live_seconds)} />
-          <StatItem icon={<Flame className="h-3.5 w-3.5 text-amber-400" />} label="Live Streak" value={`${data.streak_days} Days`} />
-          <StatItem icon={<Users className="h-3.5 w-3.5" />} label="Followers" value={data.weekly_followers.toLocaleString()} />
-          <StatItem icon={<Gift className="h-3.5 w-3.5 text-pink-400" />} label="Gifts Power" value={data.gifts_power.toLocaleString()} />
-          <StatItem icon={<Clock3 className="h-3.5 w-3.5" />} label="Today Live" value={formatHours(data.today_live_seconds)} />
-          <StatItem icon={<Clock3 className="h-3.5 w-3.5" />} label="This Week" value={formatHours(data.week_live_seconds)} />
+        {/* Compact Grid Stats */}
+        <div className="grid grid-cols-3 gap-1.5 mb-2">
+          <StatItem icon={<Clock3 className="h-3 w-3 text-blue-400" />} label="Total Live" value={formatHours(data.total_live_seconds)} />
+          <StatItem icon={<Flame className="h-3 w-3 text-amber-400" />} label="Streak" value={`${data.streak_days}d`} />
+          <StatItem icon={<Users className="h-3 w-3 text-indigo-400" />} label="Followers" value={data.weekly_followers.toLocaleString()} />
+          <StatItem icon={<Gift className="h-3 w-3 text-pink-400" />} label="Gifts" value={data.gifts_power.toLocaleString()} />
+          <StatItem icon={<Clock3 className="h-3 w-3 text-cyan-400" />} label="Today" value={formatHours(data.today_live_seconds)} />
+          <StatItem icon={<Clock3 className="h-3 w-3 text-teal-400" />} label="This Week" value={formatHours(data.week_live_seconds)} />
         </div>
 
-        <div className="mt-2 rounded-2xl border border-white/10 bg-white/5 p-3">
-          <div className="mb-1.5 flex items-center justify-between text-white/60"><div className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-emerald-400" /><span className="text-[10px] font-bold uppercase tracking-wider">Daily Task Progress</span></div><span className="text-[10px] font-bold">{data.tasks_completed}/{data.task_target}</span></div>
-          <div className="h-2 w-full overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${taskProgress}%` }} /></div>
-          <div className="mt-2 flex justify-between text-[9px] text-white/40"><span>{remaining.toLocaleString()} remaining</span><span>Bonus: {data.host_bonus.toLocaleString()}</span></div>
+        {/* Daily Tasks Progress */}
+        <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-[10px] font-bold tracking-wide text-white/80">Daily Tasks</span>
+            </div>
+            <span className="text-[10px] font-bold text-emerald-400">{data.tasks_completed}/{data.task_target}</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${taskProgress}%` }} />
+          </div>
         </div>
 
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <StatItem icon={<Gift className="h-3.5 w-3.5 text-pink-400" />} label="Host Bonus" value={data.host_bonus.toLocaleString()} />
-          <StatItem icon={<Rocket className="h-3.5 w-3.5 text-amber-400" />} label="Commission" value={data.host_commission.toLocaleString()} />
+        {/* Financial / Earnings Breakdown */}
+        <div className="grid grid-cols-2 gap-1.5">
+          <StatItem icon={<Gift className="h-3 w-3 text-pink-400" />} label="Host Bonus" value={data.host_bonus.toLocaleString()} />
+          <StatItem icon={<Rocket className="h-3 w-3 text-amber-400" />} label="Commission" value={data.host_commission.toLocaleString()} />
         </div>
 
-        <p className="mt-3 text-center text-[9px] text-white/45">{loading ? "Loading real host data…" : error ? error : "Cumulative host data is linked to the host profile."}</p>
+        <p className="mt-3 text-center text-[9px] text-white/40">
+          {loading ? "Syncing data…" : error ? error : "Live cumulative stream metrics"}
+        </p>
       </section>
     </div>
   );
 }
 
 function StatItem({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/5 p-2.5 text-center"><div className="mb-1 flex items-center justify-center gap-1 text-white/60">{icon}<span className="text-[9px] font-semibold">{label}</span></div><div className="text-xs font-black truncate">{value}</div></div>;
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.03] p-2 text-center flex flex-col justify-center">
+      <div className="mb-0.5 flex items-center justify-center gap-1 text-white/50">
+        {icon}
+        <span className="text-[9px] font-medium">{label}</span>
+      </div>
+      <div className="text-xs font-bold tracking-tight text-white truncate">{value}</div>
+    </div>
+  );
 }
