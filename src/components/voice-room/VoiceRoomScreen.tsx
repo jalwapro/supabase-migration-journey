@@ -294,17 +294,15 @@ export const VoiceRoomScreen = ({
       
       {/* Full Screen Custom PNG Rocket Play Animation when 100% Complete */}
       {showRocketAnimation && (
-        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/70 backdrop-blur-md animate-fade-in">
+        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
             <div className="relative animate-bounce">
-              <div className="absolute -inset-6 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 opacity-80 blur-xl animate-pulse" />
-              <div className="relative grid h-40 w-40 place-items-center rounded-3xl bg-gradient-to-tr from-amber-400 via-purple-600 to-indigo-900 p-1 shadow-[0_0_30px_rgba(234,179,8,0.6)]">
-                <div className="grid h-full w-full place-items-center rounded-[22px] bg-slate-950/90 overflow-hidden p-2">
-                  <img src="/images/rocket-jalwa.png" alt="Jalwa Rocket" className="h-full w-full object-contain drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] animate-pulse" />
-                </div>
+              <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 opacity-90 blur-2xl animate-pulse" />
+              <div className="relative grid h-52 w-52 place-items-center p-2">
+                <img src="/images/rocket-jalwa.png" alt="Jalwa Rocket" className="h-full w-full object-contain drop-shadow-[0_0_25px_rgba(255,215,0,0.9)] animate-pulse" />
               </div>
             </div>
-            <h2 className="mt-5 text-xl font-black tracking-wider text-amber-300 drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]">🚀 JALWA ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
+            <h2 className="mt-6 text-xl font-black tracking-wider text-amber-300 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">🚀 JALWA ROCKET LAUNCHED! 100% POPULAR! 🚀</h2>
           </div>
         </div>
       )}
@@ -355,32 +353,35 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
-            {/* Custom 4D Animated Small PNG Rocket Popularity Button */}
-            <div className="flex min-w-0 flex-col justify-center gap-1.5">
+            {/* Pure Clean 4D Animated PNG Rocket (No Box Background) */}
+            <div className="flex min-w-0 flex-col justify-center items-center gap-1">
               <button 
                 type="button" 
                 onClick={tap(openPopularity)} 
                 className={cn(
                   buttonClass,
-                  "relative group grid min-h-0 flex-1 place-items-center rounded-xl border border-white/45 bg-gradient-to-br from-indigo-900/40 via-purple-900/40 to-pink-900/40 p-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] backdrop-blur-md overflow-hidden"
+                  "relative group flex flex-col items-center justify-center min-h-0 flex-1 bg-transparent border-none outline-none p-1"
                 )}
+                aria-label="Rocket Popularity"
               >
-                {/* 4D Glow / Shimmer Aura Background */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                {/* Glow Aura Effect behind rocket */}
+                <div className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
                 
-                <span className="relative flex flex-col items-center">
-                  <div className="relative mb-0.5 h-8 w-8 flex items-center justify-center">
-                    <div className="absolute -inset-1 rounded-full bg-amber-400 opacity-40 blur-sm animate-pulse" />
-                    <img 
-                      src="/images/rocket-jalwa.png" 
-                      alt="Rocket" 
-                      className="relative h-7 w-7 object-contain drop-shadow-[0_0_6px_rgba(255,215,0,0.8)] animate-bounce" 
-                    />
-                  </div>
-                  <span className="text-[9px] font-black tracking-wide text-white/95 drop-shadow">{popularityPct}% Popular</span>
+                {/* Floating Animated PNG Rocket */}
+                <div className="relative h-12 w-12 flex items-center justify-center">
+                  <img 
+                    src="/images/rocket-jalwa.png" 
+                    alt="Jalwa Rocket" 
+                    className="h-11 w-11 object-contain drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] animate-bounce" 
+                  />
+                </div>
+
+                {/* Percentage Text */}
+                <span className="relative z-10 text-[10px] font-black tracking-wider text-amber-300 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]">
+                  {popularityPct}%
                 </span>
               </button>
-              <button type="button" onClick={tap(openGames)} className={cn(buttonClass,"h-10 shrink-0 rounded-xl border border-white/45 bg-white/10 px-1 text-[10px] font-black text-white")}>Games</button>
+              <button type="button" onClick={tap(openGames)} className={cn(buttonClass,"h-10 w-full shrink-0 rounded-xl border border-white/45 bg-white/10 px-1 text-[10px] font-black text-white")}>Games</button>
             </div>
           </section>
         </div>
