@@ -29,8 +29,6 @@ export function HostPopularitySheet({ roomId, open, onClose, popularityPct, host
 
   useEffect(() => {
     if (!open) return;
-    // Keep the existing popularity percentage as the authoritative UI value.
-    // Commission/bonus are read only when matching columns exist; no fake earnings are created.
     let active = true;
     const load = async () => {
       const base = fallback(popularityPct);
@@ -62,8 +60,17 @@ export function HostPopularitySheet({ roomId, open, onClose, popularityPct, host
   const remaining = Math.max(0, data.target - data.completed);
 
   return (
-    <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-black/60 p-3 backdrop-blur-sm" onClick={onClose}>
-      <section className="w-full max-w-sm rounded-3xl border border-white/15 bg-[#100719]/95 p-4 text-white shadow-2xl backdrop-blur-xl" onClick={e => e.stopPropagation()}>
+    <div 
+      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 backdrop-blur-sm transition-opacity animate-fade-in" 
+      onClick={onClose}
+    >
+      <section 
+        className="w-full max-w-md rounded-t-[32px] border-t border-white/15 bg-[#100719]/95 p-5 text-white shadow-2xl backdrop-blur-xl transition-transform animate-slide-up pb-8" 
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Bottom Sheet Handle Bar */}
+        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-white/20" />
+
         <header className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[color:var(--primary)]/25">
@@ -97,10 +104,10 @@ export function HostPopularitySheet({ roomId, open, onClose, popularityPct, host
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <Stat icon={<CheckCircle2 />} label="Task Completed" value={`${data.completed}/${data.target}`} />
-          <Stat icon={<Rocket />} label="Remaining" value={String(remaining)} />
-          <Stat icon={<Gift />} label="Host Bonus" value={data.bonus ? `${data.bonus}` : "—"} />
-          <Stat icon={<Trophy />} label="Commission" value={data.commission ? `${data.commission}` : "—"} />
+          <Stat icon={<CheckCircle2 className="h-4 w-4" />} label="Task Completed" value={`${data.completed}/${data.target}`} />
+          <Stat icon={<Rocket className="h-4 w-4" />} label="Remaining" value={String(remaining)} />
+          <Stat icon={<Gift className="h-4 w-4" />} label="Host Bonus" value={data.bonus ? `${data.bonus}` : "—"} />
+          <Stat icon={<Trophy className="h-4 w-4" />} label="Commission" value={data.commission ? `${data.commission}` : "—"} />
         </div>
 
         <p className="mt-3 rounded-2xl bg-white/5 px-3 py-2 text-[9px] leading-4 text-white/45">
