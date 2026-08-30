@@ -106,19 +106,18 @@ export const VoiceRoomScreen = ({
   const [hostSettingsOpen, setHostSettingsOpen] = useState(false);
   const [roomSettings, setRoomSettings] = useState<RoomSettings>(DEFAULT_ROOM_SETTINGS);
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
+  
+  // New State for Host Auto Popup when 100% is reached
+  const [showHostFreePopup, setShowHostFreePopup] = useState(false);
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Trigger full-screen custom rocket animation when popularity reaches 100%
+  // Trigger auto popup for Host when popularity reaches 100%
   useEffect(() => {
-    if (popularityPct >= 100) {
-      setShowRocketAnimation(true);
-      const timer = setTimeout(() => {
-        setShowRocketAnimation(false);
-      }, 5000); // Play animation for 5 seconds
-      return () => clearTimeout(timer);
+    if (popularityPct >= 100 && isHost) {
+      setShowHostFreePopup(true);
     }
-  }, [popularityPct]);
+  }, [popularityPct, isHost]);
 
   useEffect(() => {
     let active = true;
@@ -171,10 +170,10 @@ export const VoiceRoomScreen = ({
     let active = true;
     const channel = supabase.channel(`voice-chat-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => {
       const row = p.new as RoomChatMessage;
-      if (active && row.kind !== "emoji") setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev.filter(m => !(m.pending && m.text === row.text)), row].slice(-50));
+      if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev.filter(m => !(m.pending && m.text === row.text)), row].slice(-50));
     }).on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => {
       const row = p.new as RoomChatMessage;
-      if (active && row.kind !== "emoji") setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev.map(m => m.id === row.id ? { ...m, ...row, pending: false, failed: false } : m) : [...prev, row].slice(-50));
+      if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev.map(m => m.id === row.id ? { ...m, ...row, pending: false, failed: false } : m) : [...prev, row].slice(-50));
     }).on("postgres_changes", { event: "DELETE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => {
       const row = p.old as { id: string };
       if (active) setRoomMessages(prev => prev.filter(m => m.id !== row.id));
@@ -187,7 +186,7 @@ export const VoiceRoomScreen = ({
 
   useEffect(() => {
     let active = true;
-    void supabase.from("room_messages").select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").eq("room_id", roomId).neq("kind", "emoji").order("created_at", { ascending: true }).limit(50).then(({ data }) => {
+    void supabase.from("room_messages").select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").eq("room_id", roomId).order("created_at", { ascending: true }).limit(50).then(({ data }) => {
       if (active && data) setRoomMessages(data as RoomChatMessage[]);
     });
     return () => {
@@ -292,7 +291,46 @@ export const VoiceRoomScreen = ({
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
       
-      {/* Full Screen Launch Animation when 100% Complete */}
+      {/* Auto Popup for Host at 100% to Play Free (0 Coins) Rocket */}
+      {showHostFreePopup && isHost && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in px-4">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-amber-500/50 p-6 shadow-[0_0_35px_rgba(234,179,8,0.4)] text-center">
+            <div className="absolute -top-10 animate-bounce">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 p-1 shadow-xl">
+                <div className="h-full w-full rounded-full bg-black flex items-center justify-center">
+                  <img src="/images/rocket-jalwa.png" alt="Rocket" className="h-12 w-12 object-contain mix-blend-screen" />
+                </div>
+              </div>
+            </div>
+            
+            <h3 className="mt-8 text-lg font-black text-amber-300">Room Popularity 100% Reached!</h3>
+            <p className="mt-2 text-xs text-slate-300">Host! Aapka Jalwa Rocket trigger ho chuka hai. Free (0 Coins) mein play karein!</p>
+            
+            <div className="mt-6 flex gap-3 w-full">
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowHostFreePopup(false);
+                  setShowRocketAnimation(true);
+                  setTimeout(() => setShowRocketAnimation(false), 5000);
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 text-white font-bold text-xs shadow-lg active:scale-95 transition-transform"
+              >
+                Play Free (0 Coins) 🚀
+              </button>
+              <button 
+                type="button"
+                onClick={() => setShowHostFreePopup(false)}
+                className="px-4 py-3 rounded-xl bg-white/10 text-slate-300 font-semibold text-xs active:scale-95 transition-transform"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Full Screen Launch Animation when Triggered */}
       {showRocketAnimation && (
         <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
