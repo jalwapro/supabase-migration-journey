@@ -106,13 +106,10 @@ export const VoiceRoomScreen = ({
   const [hostSettingsOpen, setHostSettingsOpen] = useState(false);
   const [roomSettings, setRoomSettings] = useState<RoomSettings>(DEFAULT_ROOM_SETTINGS);
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
-  
-  // New State for Host Auto Popup when 100% is reached
   const [showHostFreePopup, setShowHostFreePopup] = useState(false);
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Trigger auto popup for Host when popularity reaches 100%
   useEffect(() => {
     if (popularityPct >= 100 && isHost) {
       setShowHostFreePopup(true);
@@ -291,14 +288,14 @@ export const VoiceRoomScreen = ({
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
       
-      {/* Auto Popup for Host at 100% to Play Free (0 Coins) Rocket */}
+      {/* Auto Popup for Host at 100% to Play Free (0 Coins) Rocket GIF */}
       {showHostFreePopup && isHost && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in px-4">
           <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-amber-500/50 p-6 shadow-[0_0_35px_rgba(234,179,8,0.4)] text-center">
             <div className="absolute -top-10 animate-bounce">
               <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-amber-400 to-purple-600 p-1 shadow-xl">
-                <div className="h-full w-full rounded-full bg-black flex items-center justify-center">
-                  <img src="/images/rocket-jalwa.png" alt="Rocket" className="h-12 w-12 object-contain mix-blend-screen" />
+                <div className="h-full w-full rounded-full bg-black flex items-center justify-center overflow-hidden">
+                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-14 w-14 object-contain" />
                 </div>
               </div>
             </div>
@@ -330,7 +327,7 @@ export const VoiceRoomScreen = ({
         </div>
       )}
 
-      {/* Full Screen Launch Animation when Triggered */}
+      {/* Full Screen Launch Animation using GIF */}
       {showRocketAnimation && (
         <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
@@ -338,9 +335,9 @@ export const VoiceRoomScreen = ({
               <div className="absolute -inset-8 rounded-full bg-gradient-to-r from-amber-400 via-purple-500 to-cyan-400 opacity-90 blur-2xl animate-pulse" />
               <div className="relative grid h-52 w-52 place-items-center p-2">
                 <img 
-                  src="/images/rocket-jalwa.png" 
-                  alt="Jalwa Rocket" 
-                  className="h-full w-full object-contain mix-blend-screen filter brightness-125 contrast-125 drop-shadow-[0_0_25px_rgba(255,215,0,0.9)] animate-pulse" 
+                  src="/images/jalwa-1.gif" 
+                  alt="Jalwa Rocket GIF" 
+                  className="h-full w-full object-contain drop-shadow-[0_0_25px_rgba(255,215,0,0.9)] animate-pulse" 
                 />
               </div>
             </div>
@@ -395,7 +392,7 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
-            {/* Pure Clean 4D Animated Rocket (Transparent / No Box Background) */}
+            {/* Pure Clean Rocket Button using the new GIF */}
             <div className="flex min-w-0 flex-col justify-center items-center gap-1">
               <button 
                 type="button" 
@@ -406,15 +403,15 @@ export const VoiceRoomScreen = ({
                 )}
                 aria-label="Rocket Popularity"
               >
-                {/* Glow Aura Effect behind rocket */}
+                {/* Glow Aura Effect */}
                 <div className="absolute inset-0 rounded-full bg-amber-400/20 blur-md animate-pulse pointer-events-none" />
                 
-                {/* Floating Animated Rocket with mix-blend-screen for background removal */}
+                {/* Floating Animated Rocket GIF */}
                 <div className="relative h-12 w-12 flex items-center justify-center">
                   <img 
-                    src="/images/rocket-jalwa.png" 
-                    alt="Jalwa Rocket" 
-                    className="h-11 w-11 object-contain mix-blend-screen filter brightness-125 contrast-125 drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] animate-bounce" 
+                    src="/images/jalwa-1.gif" 
+                    alt="Jalwa Rocket GIF" 
+                    className="h-11 w-11 object-contain drop-shadow-[0_0_10px_rgba(255,215,0,0.8)] animate-bounce" 
                   />
                 </div>
 
