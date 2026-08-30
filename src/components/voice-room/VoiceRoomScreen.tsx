@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield, MessageCircle } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Volume2, VolumeX, Shield, MessageCircle, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -7,7 +7,7 @@ import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
-import { RoomGamesSheet } from "@/components/room/RoomGamesSheet"; // Added back RoomGamesSheet import
+import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMemberSheet";
 import { ModeratorControls } from "./ModeratorControls";
@@ -50,7 +50,7 @@ interface VoiceRoomScreenProps {
   speakerMuted: boolean;
   onToggleSpeaker: () => void;
   onOpenMusic?: () => void;
-  onSendEmoji?: (emoji: ChatEmoji) => void;
+  onSendEmoji?: (emoji: ChatEmoji, targetSeatIndex?: number | null) => void;
   canPlayMusic?: boolean;
   onSeatTap: (i: number) => void;
   onJoinSeat: (i: number) => void;
@@ -102,7 +102,7 @@ export const VoiceRoomScreen = ({
 }: VoiceRoomScreenProps) => {
   const [giftOpen, setGiftOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
-  const [gamesOpen, setGamesOpen] = useState(false); // Games popup state
+  const [gamesOpen, setGamesOpen] = useState(false);
   const [popularityOpen, setPopularityOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
@@ -117,13 +117,16 @@ export const VoiceRoomScreen = ({
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
   const [showHostFreePopup, setShowHostFreePopup] = useState(false);
   
-  // Dynamic Game Slides State from Database
+  // Target seat selection state for emojis
+  const [selectedTargetSeat, setSelectedTargetSeat] = useState<number | null>(null);
+  const [activeFlyingEmoji, setActiveFlyingEmoji] = useState<{ emojiUrl: string; fromSeat: number; toSeat: number } | null>(null);
+  const [glowingSeatIndex, setGlowingSeatIndex] = useState<number | null>(null);
+  
   const [gameSlides, setGameSlides] = useState<GameSlide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Fetch Slides from Database
   useEffect(() => {
     let active = true;
     const fetchSlides = async () => {
@@ -149,7 +152,6 @@ export const VoiceRoomScreen = ({
     };
   }, []);
 
-  // Game Slider Auto-play Interval
   useEffect(() => {
     if (gameSlides.length <= 1) return;
     const slideInterval = setInterval(() => {
@@ -160,7 +162,6 @@ export const VoiceRoomScreen = ({
     return () => clearInterval(slideInterval);
   }, [gameSlides.length]);
 
-  // Trigger auto popup for Host when popularity reaches 100%
   useEffect(() => {
     if (popularityPct >= 100 && isHost) {
       setShowHostFreePopup(true);
@@ -292,17 +293,6 @@ export const VoiceRoomScreen = ({
     };
   }, [room.host.id]);
 
-  useEffect(() => {
-    if (typeof document === "undefined") return;
-    const p = document.body.style.getPropertyValue("--primary"), s = document.body.style.getPropertyValue("--secondary");
-    if (hostTheme?.primary_color) document.body.style.setProperty("--primary", hostTheme.primary_color);
-    if (hostTheme?.accent_color) document.body.style.setProperty("--secondary", hostTheme.accent_color);
-    return () => {
-      if (p) document.body.style.setProperty("--primary", p); else document.body.style.removeProperty("--primary");
-      if (s) document.body.style.setProperty("--secondary", s); else document.body.style.removeProperty("--secondary");
-    };
-  }, [hostTheme]);
-
   const tap = (h: () => void) => (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -341,6 +331,30 @@ export const VoiceRoomScreen = ({
   };
 
   const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
+
+  // Handle Emoji Pick & Trigger Animation/Glow
+  const handlePickEmoji = (emoji: ChatEmoji) => {
+    const targetSeat = selectedTargetSeat;
+    const senderSeat = mySeatIndex ?? 0;
+
+    // Trigger callback
+    onSendEmoji?.(emoji, targetSeat);
+    setEmojiOpen(false);
+
+    // If a target seat is selected, trigger visual travel and target glow
+    if (targetSeat !== null && targetSeat !== undefined) {
+      setActiveFlyingEmoji({ emojiUrl: emoji.url || "", fromSeat: senderSeat, toSeat: targetSeat });
+      setGlowingSeatIndex(targetSeat);
+
+      setTimeout(() => {
+        setActiveFlyingEmoji(null);
+      }, 1500);
+
+      setTimeout(() => {
+        setGlowingSeatIndex(null);
+      }, 3000);
+    }
+  };
 
   return (
     <main className="relative z-50 mx-auto flex h-[100dvh] min-h-0 w-full max-w-none flex-col overflow-hidden bg-background text-foreground shadow-2xl">
@@ -407,8 +421,30 @@ export const VoiceRoomScreen = ({
         <GiftAnimationPlayer roomId={roomId} />
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="relative min-h-0 flex-1 overflow-hidden bg-transparent pt-1">
-            <SeatGrid seats={room.seats} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={openMemberProfile} onJoinSeat={joinSeat} onHostTap={onHostTap} />
+            <SeatGrid 
+              seats={room.seats.map(s => ({
+                ...s,
+                // Add glowing styling class when this seat is targeted
+                className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : ""
+              }))} 
+              seatCount={effectiveSeatCount} 
+              host={room.host} 
+              roomId={roomId} 
+              isHost={isHost} 
+              onSeatTap={openMemberProfile} 
+              onJoinSeat={joinSeat} 
+              onHostTap={onHostTap} 
+            />
           </div>
+
+          {/* Flying Emoji Animation Overlay */}
+          {activeFlyingEmoji && (
+            <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
+              <div className="animate-ping absolute h-16 w-16 rounded-full bg-amber-400 opacity-75" />
+              <img src={activeFlyingEmoji.emojiUrl} alt="" className="h-16 w-16 object-contain animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,1)]" />
+            </div>
+          )}
+
           <section className="grid h-[clamp(160px,27dvh,220px)] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(80px,.7fr)] gap-1.5 px-2 py-1.5">
             <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
               <div className="flex h-8 shrink-0 items-end gap-5 border-b border-white/30 px-2.5">
@@ -505,7 +541,6 @@ export const VoiceRoomScreen = ({
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
           <Smile className="h-4 w-4" />
         </button>
-        {/* FIXED: Now opens RoomGamesSheet instead of emojis */}
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
           <Gamepad2 className="h-4 w-4" />
         </button>
@@ -524,7 +559,77 @@ export const VoiceRoomScreen = ({
       </nav>
 
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
-      {emojiOpen && <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={e => { onSendEmoji?.(e); setEmojiOpen(false); }} />}
+      
+      {/* PROFESSIONALLY REDESIGNED EMOJI SHEET WITH SEAT TARGET SELECTOR */}
+      {emojiOpen && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div 
+            className="absolute inset-0" 
+            onClick={() => setEmojiOpen(false)} 
+          />
+          <div className="relative z-10 w-full rounded-t-3xl bg-slate-900/95 border-t border-amber-500/30 p-4 shadow-2xl backdrop-blur-xl animate-slide-up max-h-[60dvh] flex flex-col">
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-700" />
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Smile className="h-4 w-4 text-amber-400" />
+                <span className="text-xs font-bold tracking-wide text-amber-400 uppercase">Send Emoji to Seat</span>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setEmojiOpen(false)} 
+                className="text-xs font-semibold text-slate-400 hover:text-white"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Target Seat Selector Horizontal Bar */}
+            <div className="py-2.5 border-b border-slate-800/80">
+              <p className="text-[10px] text-slate-400 mb-2 font-medium">Select Target Seat (Optional):</p>
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTargetSeat(null)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border",
+                    selectedTargetSeat === null 
+                      ? "bg-amber-500 text-black border-amber-400 shadow-md" 
+                      : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                  )}
+                >
+                  General Chat
+                </button>
+                {room.seats.map((seat) => (
+                  <button
+                    key={seat.index}
+                    type="button"
+                    onClick={() => setSelectedTargetSeat(seat.index)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border",
+                      selectedTargetSeat === seat.index 
+                        ? "bg-amber-500 text-black border-amber-400 shadow-md" 
+                        : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                    )}
+                  >
+                    <UserCheck className="h-3 w-3" />
+                    <span>Seat {seat.index + 1} {seat.user?.username ? `(${seat.user.username})` : "(Empty)"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-3">
+              <ChatEmojiSheet 
+                open={emojiOpen} 
+                onClose={() => setEmojiOpen(false)} 
+                onPick={handlePickEmoji} 
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={(slug) => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
       {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
       {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
