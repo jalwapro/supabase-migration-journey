@@ -52,7 +52,7 @@ function CoinPackagesAdmin() {
         coins: draft.coins,
         bonus_coins: draft.bonus_coins,
         price_pkr: draft.price_pkr,
-        price: draft.price_pkr, // legacy NOT NULL column
+        price: draft.price_pkr,
         label: draft.label || null,
         badge: draft.badge || null,
         sort_order: draft.sort_order,
@@ -71,10 +71,15 @@ function CoinPackagesAdmin() {
 
   const toggle = useMutation({
     mutationFn: async (p: PkgRow) => {
-      const { error } = await supabase.from("coin_packages").update({ active: !p.active }).eq("id", p.id);
+      const nextActive = !p.active;
+      const { error } = await supabase
+        .from("coin_packages")
+        .update({ active: nextActive, is_active: nextActive })
+        .eq("id", p.id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_packages"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const remove = useMutation({
@@ -83,6 +88,7 @@ function CoinPackagesAdmin() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_packages"] }),
+    onError: (e: Error) => toast.error(e.message),
   });
 
   return (
