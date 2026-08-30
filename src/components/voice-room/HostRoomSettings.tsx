@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { Check, Gift, Lock, MessageSquare, Mic, RefreshCw, Settings, Unlock, X, Users, VolumeX, ShieldAlert, Music, Shield, Ban, Star } from "lucide-react";
+import { Check, Gift, Lock, MessageSquare, Mic, RefreshCw, Settings, Unlock, X, Users, VolumeX, ShieldAlert, Music, Shield, Ban, Star, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { HostRoomManagementSheet } from "./HostRoomManagementSheet";
 
 type RoomSettings = {
   is_locked: boolean;
@@ -24,13 +23,13 @@ type Props = {
 
 const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false };
 
-type ManagementMode = "kick" | "block" | "moderators";
+type ActiveView = "main" | "kick" | "block" | "moderators";
 
 export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOpenMusic }: Props) {
   const [settings, setSettings] = useState<RoomSettings>(defaults);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
-  const [managementMode, setManagementMode] = useState<ManagementMode | null>(null);
+  const [activeView, setActiveView] = useState<ActiveView>("main");
 
   const load = async () => {
     setLoading(true);
@@ -73,13 +72,13 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
     });
     setSaving(null);
     if (error) { toast.error(error.message); return; }
-    const next = { ...settings, ...(data as Partial<RoomSettings>) } as RoomSettings; setSettings(next); onSettingsChange?.(next); toast.success(`${labels[key]} ${value ? "enabled" : "disabled"}`);
+    const next = { ...settings, ...(data as Partial<RoomSettings>) } as RoomSettings; setSettings(next); onSettingsChange?.(next); toast.success(`${labels[key]}${value ? "enabled" : "disabled"}`);
   };
 
   const handleAction = async (actionType: string) => {
-    if (actionType === "kick_room") { onClose(); setManagementMode("kick"); return; }
-    if (actionType === "block_list") { onClose(); setManagementMode("block"); return; }
-    if (actionType === "co_hosts") { onClose(); setManagementMode("moderators"); return; }
+    if (actionType === "kick_room") { setActiveView("kick"); return; }
+    if (actionType === "block_list") { setActiveView("block"); return; }
+    if (actionType === "co_hosts") { setActiveView("moderators"); return; }
     setSaving(actionType);
     try {
       if (actionType === "mute_all") {
@@ -93,30 +92,58 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
     finally { setSaving(null); }
   };
 
-  if (!open && !managementMode) return null;
+  // Animation reset jab view change ho
+  useEffect(() => {
+    if (open) {
+      // Optionally add logic here to animate internal views if needed
+    }
+  }, [activeView, open]);
 
   return (
-    <>
-      {open && (
-        <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm" onClick={onClose}>
-          {/* Yahan max-h-[65dvh] aur max-w-sm ki wajah se ye keyboard size compact rahega */}
-          <section className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#100719]/95 p-3 text-white shadow-2xl backdrop-blur-md max-h-[65dvh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="mb-2.5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <Settings className="h-4 w-4 text-[color:var(--secondary)]" />
-                <h2 className="text-xs font-black">Host Controls & Settings</h2>
-              </div>
-              <div className="flex items-center gap-1">
-                <button type="button" onClick={() => void load()} disabled={loading} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Refresh">
-                  <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-                </button>
-                <button type="button" onClick={onClose} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Close">
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            </div>
+    /* Backdrop */
+    <div 
+      className={`fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
+      onClick={onClose}
+    >
+      {/* Keyboard-style Popup: Slide up from bottom, rounded top corners */}
+      <section 
+        className={`w-full max-w-sm rounded-t-3xl border border-white/20 bg-[#100719]/95 p-3 text-white shadow-2xl backdrop-blur-md max-h-[65dvh] flex flex-col transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`} 
+        onClick={e => e.stopPropagation()}
+      >
+        
+        {/* Header */}
+        <div className="mb-2.5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-1.5">
+            {activeView !== "main" ? (
+              <button type="button" onClick={() => setActiveView("main")} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Back">
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+            ) : (
+              <Settings className="h-4 w-4 text-[color:var(--secondary)]" />
+            )}
+            <h2 className="text-xs font-black">
+              {activeView === "main" && "Host Controls & Settings"}
+              {activeView === "kick" && "Kick Participant"}
+              {activeView === "block" && "Blocked Users List"}
+              {activeView === "moderators" && "Manage Co-Hosts"}
+            </h2>
+          </div>
+          <div className="flex items-center gap-1">
+            {activeView === "main" && (
+              <button type="button" onClick={() => void load()} disabled={loading} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Refresh">
+                <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Close">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
 
-            <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 text-xs">
+        {/* Body Views */}
+        <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 text-xs">
+          {activeView === "main" ? (
+            <>
               {/* Seat Capacity Row */}
               <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5">
                 <div className="flex items-center gap-2">
@@ -133,7 +160,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
                 </select>
               </div>
 
-              {/* Quick Actions & Tools (3D Small Emoji-Sized Grid) */}
+              {/* Quick Actions Grid */}
               <div>
                 <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-white/50">Quick Actions</div>
                 <div className="grid grid-cols-4 gap-1.5 text-center">
@@ -150,22 +177,46 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
               <div className="space-y-1">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div>
                 <div className="grid grid-cols-3 gap-1.5">
-                  <ToggleMini icon={settings.is_locked ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />} label="Lock" value={settings.is_locked} busy={saving === "is_locked"} onToggle={v => void update("is_locked", v)} />
-                  <ToggleMini icon={<MessageSquare className="h-3 w-3" />} label="Chat" value={settings.chat_enabled} busy={saving === "chat_enabled"} onToggle={v => void update("chat_enabled", v)} />
-                  <ToggleMini icon={<Mic className="h-3 w-3" />} label="Mic" value={settings.guest_mic_enabled} busy={saving === "guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} />
+                  <ToggleMini icon={settings.is_locked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />} label="Lock" value={settings.is_locked} busy={saving === "is_locked"} onToggle={v => void update("is_locked", v)} />
+                  <ToggleMini icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" value={settings.chat_enabled} busy={saving === "chat_enabled"} onToggle={v => void update("chat_enabled", v)} />
+                  <ToggleMini icon={<Mic className="h-3.5 w-3.5" />} label="Mic" value={settings.guest_mic_enabled} busy={saving === "guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} />
                 </div>
               </div>
+            </>
+          ) : (
+            /* Sub-View for Kick / Block / Co-Hosts inside the same popup */
+            <div className="flex flex-col items-center justify-center h-full py-6 text-center text-white/60">
+              {activeView === "kick" && (
+                <div className="space-y-2">
+                  <Ban className="h-8 w-8 text-rose-400 mx-auto animate-pulse" />
+                  <p className="text-[11px] font-bold text-white">Select a participant from seats to kick</p>
+                  <p className="text-[9px] text-white/40">Tap any user profile on stage to remove them.</p>
+                </div>
+              )}
+              {activeView === "block" && (
+                <div className="space-y-2">
+                  <Shield className="h-8 w-8 text-blue-400 mx-auto" />
+                  <p className="text-[11px] font-bold text-white">No blocked users found</p>
+                  <p className="text-[9px] text-white/40">Banned or blocked accounts will appear here.</p>
+                </div>
+              )}
+              {activeView === "moderators" && (
+                <div className="space-y-2">
+                  <Star className="h-8 w-8 text-purple-400 mx-auto" />
+                  <p className="text-[11px] font-bold text-white">Promote Room Members</p>
+                  <p className="text-[9px] text-white/40">Assign moderators to help manage this room.</p>
+                </div>
+              )}
             </div>
-
-            <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-1 text-[9px] text-white/50 shrink-0">
-              <Check className="h-3 w-3 text-emerald-400" />
-              <span>Synced live to all participants</span>
-            </div>
-          </section>
+          )}
         </div>
-      )}
-      {managementMode && <HostRoomManagementSheet roomId={roomId} open={true} mode={managementMode} onClose={() => setManagementMode(null)} />}
-    </>
+
+        <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-1 text-[9px] text-white/50 shrink-0">
+          <Check className="h-3 w-3 text-emerald-400" />
+          <span>Synced live to all participants</span>
+        </div>
+      </section>
+    </div>
   );
 }
 
@@ -199,7 +250,4 @@ function ToggleMini({ icon, label, value, busy, onToggle }: { icon: React.ReactN
         {icon}
         <span className="text-[9px] font-bold">{label}</span>
       </div>
-      <div className={`h-2.5 w-2.5 rounded-full ${value ? "bg-emerald-400 shadow-[0_0_5px_#34d399]" : "bg-white/30"}`} />
-    </button>
-  );
-}
+      <div className={`h
