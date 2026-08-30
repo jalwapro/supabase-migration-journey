@@ -10,8 +10,6 @@ import { useRoomGames, NATIVE_GAME_EMOJI, type RoomGame } from "@/lib/roomGames"
  *
  *  - kind = "native"  → a game built into the app; opened by slug via onOpenNative.
  *  - kind = "iframe"  → externally hosted game; opened inline in an <iframe>.
- *
- * Nothing here needs to change when a game is added, hidden or reordered.
  */
 export function RoomGamesSheet({
   open,
@@ -40,16 +38,16 @@ export function RoomGamesSheet({
       />
       <div
         data-jalwa-overlay-content="true"
-        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+        className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-4 shadow-2xl transition-all duration-300 ease-out"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)",
-          height: activeGame ? "85vh" : undefined,
+          paddingBottom: "calc(env(safe-area-inset-bottom) + 16px)",
+          height: activeGame ? "85vh" : "280px", // Keyboard size height (~280px)
           maxHeight: "85vh",
           display: "flex",
           flexDirection: "column",
         }}
       >
-        <div className="mx-auto mb-3 h-1 w-10 shrink-0 rounded-full bg-white/20" />
+        <div className="mx-auto mb-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />
 
         {activeGame ? (
           <GameFrame game={activeGame} onBack={() => setActiveGame(null)} onClose={close} />
@@ -72,64 +70,69 @@ export function RoomGamesSheet({
 }
 
 // ---------------------------------------------------------------------------
-// Step 1 — picker grid, entirely from the admin-managed catalogue
+// Step 1 — picker grid: 2 lines (rows), 4 items per view row, slide left-to-right
 // ---------------------------------------------------------------------------
 
 function GamesPicker({ onClose, onPick }: { onClose: () => void; onPick: (g: RoomGame) => void }) {
   const games = useRoomGames();
 
   return (
-    <div className="overflow-y-auto">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-extrabold">
-          <Sparkles className="h-5 w-5 text-[color:var(--gold)]" /> Games
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="mb-3 flex items-center justify-between shrink-0">
+        <h2 className="flex items-center gap-2 text-base font-extrabold">
+          <Sparkles className="h-4 w-4 text-[color:var(--gold)]" /> Games
         </h2>
         <button
           onClick={onClose}
           aria-label="Close"
-          className="grid h-8 w-8 place-items-center rounded-full bg-background/60 border border-border"
+          className="grid h-7 w-7 place-items-center rounded-full bg-background/60 border border-border"
         >
-          <X className="h-4 w-4" />
+          <X className="h-3.5 w-3.5" />
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {games.isLoading && (
-          <div className="col-span-2 grid place-items-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" />
+      {games.isLoading && (
+        <div className="grid flex-1 place-items-center py-6">
+          <Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" />
+        </div>
+      )}
+
+      {!games.isLoading && games.data?.length === 0 && (
+        <p className="py-4 text-center text-xs text-foreground/50">
+          No games available right now.
+        </p>
+      )}
+
+      {/* 
+        Horizontal sliding container (left-to-right).
+        grid-rows-2 makes exactly 2 horizontal lines, and 4 items show per page column block.
+      */}
+      {!games.isLoading && games.data && games.data.length > 0 && (
+        <div className="flex-1 overflow-x-auto overflow-y-hidden pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+          <div className="grid grid-flow-col grid-rows-2 gap-2.5 h-full auto-cols-[calc(25% - 8px)] min-w-full">
+            {games.data.map((g) => {
+              const icon = g.icon_url ?? g.thumb_url;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => onPick(g)}
+                  className="group relative flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 text-center transition-transform active:scale-[0.97]"
+                >
+                  <div className="absolute -right-4 -top-4 h-12 w-12 rounded-full bg-[color:var(--primary)]/25 blur-xl" />
+                  <div className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-white/10 bg-black/30 text-xl">
+                    {icon ? (
+                      <img src={icon} alt={g.name} className="h-full w-full object-cover" loading="lazy" />
+                    ) : (
+                      <span>{NATIVE_GAME_EMOJI[g.slug] ?? "🎮"}</span>
+                    )}
+                  </div>
+                  <p className="relative mt-1.5 w-full truncate text-[11px] font-bold">{g.name}</p>
+                </button>
+              );
+            })}
           </div>
-        )}
-
-        {!games.isLoading && games.data?.length === 0 && (
-          <p className="col-span-2 py-6 text-center text-xs text-foreground/50">
-            No games available right now.
-          </p>
-        )}
-
-        {games.data?.map((g) => {
-          const icon = g.icon_url ?? g.thumb_url;
-          return (
-            <button
-              key={g.id}
-              onClick={() => onPick(g)}
-              className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/5 p-4 text-left transition-transform active:scale-[0.97]"
-            >
-              <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-[color:var(--primary)]/25 blur-2xl" />
-              <div className="relative grid h-14 w-14 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-black/30 text-3xl">
-                {icon ? (
-                  <img src={icon} alt={g.name} className="h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  <span>{NATIVE_GAME_EMOJI[g.slug] ?? "🎮"}</span>
-                )}
-              </div>
-              <p className="relative mt-3 truncate text-sm font-black">{g.name}</p>
-              <p className="relative mt-0.5 h-8 text-[10px] leading-4 text-foreground/55">
-                {g.subtitle ?? ""}
-              </p>
-            </button>
-          );
-        })}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
