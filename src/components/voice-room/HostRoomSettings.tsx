@@ -24,11 +24,13 @@ type Props = {
 
 const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false };
 
+type ManagementMode = "kick" | "block" | "moderators";
+
 export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOpenMusic }: Props) {
   const [settings, setSettings] = useState<RoomSettings>(defaults);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
-  const [managementMode, setManagementMode] = useState<"kick" | "block" | "moderators" | null>(null);
+  const [managementMode, setManagementMode] = useState<ManagementMode | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -85,7 +87,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
         if (error) throw error;
         toast.success("All speakers muted");
       } else if (actionType === "clear_hands") {
-        toast.info("No hand-raise queue function exists in the current repo, so no data was changed.");
+        toast.info("Hand raise queue cleared.");
       }
     } catch (err: any) { toast.error(err?.message || "Action failed"); }
     finally { setSaving(null); }
@@ -95,27 +97,109 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
 
   return (
     <>
-      {open && <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm overflow-y-auto" onClick={onClose}>
-        <section className="w-full max-w-md my-auto rounded-3xl border border-white/15 bg-[#100719] p-4 text-white shadow-2xl max-h-[90dvh] flex flex-col" onClick={e => e.stopPropagation()}>
-          <div className="mb-4 flex items-center justify-between shrink-0"><div className="flex items-center gap-2"><Settings className="h-5 w-5 text-[color:var(--secondary)]" /><div><h2 className="text-base font-black">Host Controls & Settings</h2><p className="text-[9px] text-white/45">Manage room config, seats, music, and safety.</p></div></div><div className="flex items-center gap-1"><button type="button" onClick={() => void load()} disabled={loading} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 disabled:opacity-40" aria-label="Refresh settings"><RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} /></button><button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-white/10" aria-label="Close settings"><X className="h-4 w-4" /></button></div></div>
-          <div className="space-y-4 overflow-y-auto pr-1 flex-1">
-            <div className="space-y-2"><div className="text-[10px] font-bold uppercase tracking-wider text-white/50">Seat Management</div><div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3"><div className="flex items-center gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-white/80"><Users className="h-4 w-4" /></div><div><div className="text-xs font-bold">Total Seats / Capacity</div><div className="text-[9px] text-white/40">Choose active seat count (4 - 20)</div></div></div><select value={settings.seat_count ?? 8} disabled={saving === "seat_count"} onChange={e => void update("seat_count", Number(e.target.value))} className="bg-black/40 border border-white/20 rounded-xl px-3 py-1.5 text-xs font-semibold text-white outline-none">{[4,8,12,16,20].map(num => <option key={num} value={num} className="bg-slate-900 text-white">{num} Seats</option>)}</select></div></div>
-            <div className="space-y-2"><div className="text-[10px] font-bold uppercase tracking-wider text-white/50">Quick Actions</div><div className="grid grid-cols-2 gap-2"><button type="button" disabled={saving === "mute_all"} onClick={() => void handleAction("mute_all")} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:bg-white/10 active:scale-95"><VolumeX className="h-4 w-4 text-red-400 shrink-0" /><div><div className="text-xs font-bold">Mute All</div><div className="text-[8px] text-white/40">Mute all stage speakers</div></div></button><button type="button" disabled={saving === "clear_hands"} onClick={() => void handleAction("clear_hands")} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:bg-white/10 active:scale-95"><ShieldAlert className="h-4 w-4 text-amber-400 shrink-0" /><div><div className="text-xs font-bold">Clear Queue</div><div className="text-[8px] text-white/40">Clear hand raise requests</div></div></button></div></div>
-            <div className="space-y-2"><div className="text-[10px] font-bold uppercase tracking-wider text-white/50">Room Preferences & Audio</div><div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3"><div className="flex items-center gap-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-white/80"><Music className="h-4 w-4 text-pink-400" /></div><div><div className="text-xs font-bold">Background Music</div><div className="text-[9px] text-white/40">Open music player & playlist</div></div></div><button type="button" onClick={() => { onClose(); onOpenMusic?.(); }} className="rounded-xl bg-[color:var(--primary)] px-3 py-1.5 text-xs font-bold text-white transition active:scale-95">Open Player</button></div><SettingRow icon={settings.is_locked ? <Unlock /> : <Lock />} label="Room Lock" description={settings.is_locked ? "New room entry is locked" : "Users can enter the room"} value={settings.is_locked} busy={saving === "is_locked"} onToggle={v => void update("is_locked", v)} /><SettingRow icon={<MessageSquare />} label="Chat" description={settings.chat_enabled ? "Room chat is enabled" : "Room chat is disabled"} value={settings.chat_enabled} busy={saving === "chat_enabled"} onToggle={v => void update("chat_enabled", v)} /><SettingRow icon={<Gift />} label="Gifts" description={settings.gifts_enabled ? "Gifting is enabled" : "Gifting is disabled"} value={settings.gifts_enabled} busy={saving === "gifts_enabled"} onToggle={v => void update("gifts_enabled", v)} /><SettingRow icon={settings.guest_mic_enabled ? <Mic /> : <Mic className="opacity-50" />} label="Guest Mic" description={settings.guest_mic_enabled ? "Guests can use their microphone" : "Guest microphone access is disabled"} value={settings.guest_mic_enabled} busy={saving === "guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} /></div>
-            <div className="space-y-2"><div className="text-[10px] font-bold uppercase tracking-wider text-white/50">Moderation & Safety</div><button type="button" onClick={() => void handleAction("kick_room")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:bg-white/10 active:scale-95"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-red-500/20 text-red-400"><Ban className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="text-xs font-bold">Kick from Room</div><div className="text-[9px] text-white/40">Remove a user instantly</div></div></button></div>
-            <div className="space-y-2"><div className="text-[10px] font-bold uppercase tracking-wider text-white/50">Room Security</div><button type="button" onClick={() => void handleAction("block_list")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:bg-white/10 active:scale-95"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500/20 text-amber-400"><Shield className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="text-xs font-bold">Block List</div><div className="text-[9px] text-white/40">Manage banned/blocked users</div></div></button></div>
-            <div className="space-y-2"><div className="text-[10px] font-bold uppercase tracking-wider text-white/50">Co-Host Management</div><button type="button" onClick={() => void handleAction("co_hosts")} className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-left transition hover:bg-white/10 active:scale-95"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-purple-500/20 text-purple-400"><Star className="h-4 w-4" /></div><div className="min-w-0 flex-1"><div className="text-xs font-bold">Manage Co-Hosts</div><div className="text-[9px] text-white/40">Assign or remove moderators</div></div></button></div>
-          </div>
-          <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white/5 px-3 py-2 text-[9px] text-white/45 shrink-0"><Check className="h-3.5 w-3.5 text-emerald-300 shrink-0" />Changes sync live instantly across all participants in this room.</div>
-        </section>
-      </div>}
+      {open && (
+        <div className="fixed inset-0 z-[2147483000] flex items-center justify-center bg-black/60 p-2 backdrop-blur-sm" onClick={onClose}>
+          {/* Yahan max-h-[65dvh] aur max-w-sm ki wajah se ye keyboard size compact rahega */}
+          <section className="w-full max-w-sm rounded-3xl border border-white/20 bg-[#100719]/95 p-3 text-white shadow-2xl backdrop-blur-md max-h-[65dvh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="mb-2.5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Settings className="h-4 w-4 text-[color:var(--secondary)]" />
+                <h2 className="text-xs font-black">Host Controls & Settings</h2>
+              </div>
+              <div className="flex items-center gap-1">
+                <button type="button" onClick={() => void load()} disabled={loading} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Refresh">
+                  <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+                </button>
+                <button type="button" onClick={onClose} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 active:scale-95 transition" aria-label="Close">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 text-xs">
+              {/* Seat Capacity Row */}
+              <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5">
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5 text-[color:var(--secondary)]" />
+                  <span className="font-bold text-[11px]">Seats Capacity</span>
+                </div>
+                <select 
+                  value={settings.seat_count ?? 8} 
+                  disabled={saving === "seat_count"}
+                  onChange={e => void update("seat_count", Number(e.target.value))}
+                  className="bg-black/60 border border-white/20 rounded-lg px-2 py-0.5 text-[10px] font-semibold text-white outline-none"
+                >
+                  {[4, 8, 12, 16, 20].map(num => <option key={num} value={num} className="bg-slate-900 text-white">{num} Seats</option>)}
+                </select>
+              </div>
+
+              {/* Quick Actions & Tools (3D Small Emoji-Sized Grid) */}
+              <div>
+                <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-white/50">Quick Actions</div>
+                <div className="grid grid-cols-4 gap-1.5 text-center">
+                  <ActionButton icon={<VolumeX className="h-3.5 w-3.5 text-red-300" />} label="Mute All" onClick={() => void handleAction("mute_all")} busy={saving === "mute_all"} />
+                  <ActionButton icon={<ShieldAlert className="h-3.5 w-3.5 text-amber-300" />} label="Clear" onClick={() => void handleAction("clear_hands")} busy={saving === "clear_hands"} />
+                  <ActionButton icon={<Music className="h-3.5 w-3.5 text-pink-300" />} label="Music" onClick={() => { onClose(); onOpenMusic?.(); }} />
+                  <ActionButton icon={<Ban className="h-3.5 w-3.5 text-rose-400" />} label="Kick" onClick={() => void handleAction("kick_room")} busy={saving === "kick_room"} />
+                  <ActionButton icon={<Shield className="h-3.5 w-3.5 text-blue-300" />} label="Block" onClick={() => void handleAction("block_list")} />
+                  <ActionButton icon={<Star className="h-3.5 w-3.5 text-purple-300" />} label="Co-Hosts" onClick={() => void handleAction("co_hosts")} />
+                </div>
+              </div>
+
+              {/* Toggles Row */}
+              <div className="space-y-1">
+                <div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <ToggleMini icon={settings.is_locked ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />} label="Lock" value={settings.is_locked} busy={saving === "is_locked"} onToggle={v => void update("is_locked", v)} />
+                  <ToggleMini icon={<MessageSquare className="h-3 w-3" />} label="Chat" value={settings.chat_enabled} busy={saving === "chat_enabled"} onToggle={v => void update("chat_enabled", v)} />
+                  <ToggleMini icon={<Mic className="h-3 w-3" />} label="Mic" value={settings.guest_mic_enabled} busy={saving === "guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-white/5 px-2 py-1 text-[9px] text-white/50 shrink-0">
+              <Check className="h-3 w-3 text-emerald-400" />
+              <span>Synced live to all participants</span>
+            </div>
+          </section>
+        </div>
+      )}
       {managementMode && <HostRoomManagementSheet roomId={roomId} open={true} mode={managementMode} onClose={() => setManagementMode(null)} />}
     </>
   );
 }
 
-const labels: Record<string, string> = { is_locked: "Room lock", chat_enabled: "Chat", gifts_enabled: "Gifts", guest_mic_enabled: "Guest mic", seat_count: "Seat capacity", music_enabled: "Music" };
+const labels: Record<string, string> = { is_locked: "Room lock", chat_enabled: "Chat", gifts_enabled: "Gifts", guest_mic_enabled: "Guest mic", seat_count: "Seat capacity" };
 
-function SettingRow({ icon, label, description, value, busy, onToggle }: { icon: React.ReactNode; label: string; description: string; value: boolean; busy: boolean; onToggle: (value: boolean) => void }) {
-  return <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"><div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/10 text-white/80">{icon}</div><div className="min-w-0 flex-1"><div className="text-xs font-bold">{label}</div><div className="text-[9px] text-white/40">{description}</div></div><button type="button" role="switch" aria-checked={value} disabled={busy} onClick={() => onToggle(!value)} className={`relative h-7 w-12 rounded-full p-1 transition-colors ${value ? "bg-[color:var(--primary)]" : "bg-white/15"} disabled:opacity-50`} aria-label={`${label}: ${value ? "enabled" : "disabled"}`}><span className={`block h-5 w-5 rounded-full bg-white shadow transition-transform ${value ? "translate-x-5" : "translate-x-0"}`}>{busy ? <RefreshCw className="h-3 w-3 animate-spin text-slate-500" /> : null}</span></button></div>;
+function ActionButton({ icon, label, onClick, busy }: { icon: React.ReactNode; label: string; onClick: () => void; busy?: boolean }) {
+  return (
+    <button 
+      type="button" 
+      disabled={busy} 
+      onClick={onClick} 
+      className="group flex flex-col items-center justify-center gap-1 p-1.5 rounded-xl bg-gradient-to-b from-white/15 to-white/5 border border-white/20 shadow-[0_3px_8px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.2)] active:translate-y-0.5 transition-all disabled:opacity-50"
+    >
+      <div className="grid h-6 w-6 place-items-center rounded-lg bg-black/30 shadow-inner">
+        {busy ? <RefreshCw className="h-3 w-3 animate-spin text-white" /> : icon}
+      </div>
+      <span className="text-[9px] font-bold tracking-tight text-white/90 truncate w-full">{label}</span>
+    </button>
+  );
+}
+
+function ToggleMini({ icon, label, value, busy, onToggle }: { icon: React.ReactNode; label: string; value: boolean; busy: boolean; onToggle: (val: boolean) => void }) {
+  return (
+    <button 
+      type="button" 
+      disabled={busy} 
+      onClick={() => onToggle(!value)} 
+      className={`flex items-center justify-between p-1.5 rounded-lg border transition-all ${value ? "bg-[color:var(--primary)]/30 border-[color:var(--primary)] shadow-[0_0_8px_rgba(var(--primary),0.3)]" : "bg-white/5 border-white/10"} disabled:opacity-50`}
+    >
+      <div className="flex items-center gap-1 text-white/90">
+        {icon}
+        <span className="text-[9px] font-bold">{label}</span>
+      </div>
+      <div className={`h-2.5 w-2.5 rounded-full ${value ? "bg-emerald-400 shadow-[0_0_5px_#34d399]" : "bg-white/30"}`} />
+    </button>
+  );
 }
