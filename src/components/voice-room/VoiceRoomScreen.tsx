@@ -78,6 +78,7 @@ export const VoiceRoomScreen = ({
   onOpenMore,
   onToggleMic,
   onToggleSpeaker,
+  onOpenMusic,
   onSendEmoji,
   onSeatTap,
   onJoinSeat,
@@ -330,35 +331,24 @@ export const VoiceRoomScreen = ({
         </div>
       </div>
       <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[clamp(52px,7dvh,62px)] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]">
-        {/* 1. Mic Button */}
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
           {micOn ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}
         </button>
-
-        {/* 2. Emoji Button */}
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
           <Smile className="h-4 w-4" />
         </button>
-
-        {/* 3. Game Button */}
         <button type="button" onClick={tap(openGames)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games">
           <Gamepad2 className="h-4 w-4" />
         </button>
-
-        {/* 4. Chat Button */}
         <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Private Chat">
           <MessageCircle className="h-5 w-5" />
         </button>
-
-        {/* 5. 4D Styled Gift Button */}
         <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/60 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="grid h-full w-full place-items-center rounded-[14px] bg-black/40 backdrop-blur-sm text-amber-200">
             <Gift className="h-6 w-6 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
           </div>
         </button>
-
-        {/* 6. More Button */}
         <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
           {isHost ? <Shield className="h-4 w-4" /> : isModerator ? <Shield className="h-4 w-4" /> : <Grid2X2 className="h-4 w-4" />}
         </button>
@@ -368,7 +358,7 @@ export const VoiceRoomScreen = ({
       {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} />}
       {emojiOpen && <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={e => { onSendEmoji?.(e); setEmojiOpen(false); }} />}
       {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
-      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} />}
+      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} onOpenMusic={onOpenMusic} />}
       {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
     </main>
   );
