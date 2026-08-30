@@ -72,7 +72,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
     });
     setSaving(null);
     if (error) { toast.error(error.message); return; }
-    const next = { ...settings, ...(data as Partial<RoomSettings>) } as RoomSettings; setSettings(next); onSettingsChange?.(next); toast.success(`${labels[key]}${value ? "enabled" : "disabled"}`);
+    const next = { ...settings, ...(data as Partial<RoomSettings>) } as RoomSettings; setSettings(next); onSettingsChange?.(next); toast.success(`${labels[key]} ${value ? "enabled" : "disabled"}`);
   };
 
   const handleAction = async (actionType: string) => {
@@ -92,22 +92,15 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
     finally { setSaving(null); }
   };
 
-  // Animation reset jab view change ho
-  useEffect(() => {
-    if (open) {
-      // Optionally add logic here to animate internal views if needed
-    }
-  }, [activeView, open]);
-
   return (
-    /* Backdrop */
+    /* items-end ki wajah se yeh ab screen ke bilkul bottom par align hoga */
     <div 
       className={`fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
       onClick={onClose}
     >
-      {/* Keyboard-style Popup: Slide up from bottom, rounded top corners */}
+      {/* Keyboard style popup: slide up from bottom with rounded-t-3xl */}
       <section 
-        className={`w-full max-w-sm rounded-t-3xl border border-white/20 bg-[#100719]/95 p-3 text-white shadow-2xl backdrop-blur-md max-h-[65dvh] flex flex-col transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`} 
+        className={`w-full max-w-sm rounded-t-3xl border-t border-x border-white/20 bg-[#100719]/95 p-3 text-white shadow-2xl backdrop-blur-md max-h-[65dvh] flex flex-col transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`} 
         onClick={e => e.stopPropagation()}
       >
         
@@ -184,7 +177,6 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
               </div>
             </>
           ) : (
-            /* Sub-View for Kick / Block / Co-Hosts inside the same popup */
             <div className="flex flex-col items-center justify-center h-full py-6 text-center text-white/60">
               {activeView === "kick" && (
                 <div className="space-y-2">
@@ -250,4 +242,7 @@ function ToggleMini({ icon, label, value, busy, onToggle }: { icon: React.ReactN
         {icon}
         <span className="text-[9px] font-bold">{label}</span>
       </div>
-      <div className={`h
+      <div className={`h-2.5 w-2.5 rounded-full ${value ? "bg-emerald-400 shadow-[0_0_5px_#34d399]" : "bg-white/30"}`} />
+    </button>
+  );
+}
