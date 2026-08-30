@@ -465,7 +465,7 @@ export const VoiceRoomScreen = ({
               </button>
 
               {/* Dynamic Game Image Slider */}
-              <div className="relative h-32 w-[160px] shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center shadow-lg">
+              <div className="relative h-32 w-[130px] shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center shadow-lg">
                 {currentSlide && (
                   <img 
                     src={currentSlide.image_url} 
