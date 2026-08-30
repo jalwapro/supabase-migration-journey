@@ -21,10 +21,8 @@ function GiftPreview({gift,large=false}:{gift:Gift;large?:boolean}){const cls="h
 export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;onClose:()=>void;roomId:string;receivers:GiftReceiver[];onSent?:(info:{gift:Gift;targets:string[]})=>void}){
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);
  
- // Track selected receivers using an array of IDs for multi-selection/host seats
  const [selectedReceiverIds, setSelectedReceiverIds] = useState<string[]>([]);
  
- // Initialize selected receivers with all receivers on open if empty
  useEffect(()=>{
   if(open && receivers.length > 0 && selectedReceiverIds.length === 0){
    setSelectedReceiverIds(receivers.map(r => r.id));
@@ -34,7 +32,6 @@ export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;o
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open});
  const price=(g:Gift|null)=>(g?.price_coins??g?.price??0) as number;
  
- // Removed .slice(0, 8) restriction to allow smooth scrolling/sliding when there are many gifts (e.g., 20+ per tier)
  const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>tierOf(price(g))===activeTier).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
@@ -111,37 +108,35 @@ export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;o
     })}
    </div>
 
-   {/* Scrollable Gift Grid Container (Keyboard Sized with vertical slide capability) */}
-   <div className="flex-1 overflow-y-auto px-3 py-1.5 no-scrollbar">
+   {/* Horizontal Swipeable/Scrollable Gift List Container (Left to Right) */}
+   <div className="flex-1 overflow-x-auto overflow-y-hidden px-3 py-2 flex items-center gap-2.5 no-scrollbar scroll-smooth">
     {gifts.isLoading ? (
-     <div className="grid h-full place-items-center"><Loader2 className="animate-spin h-5 w-5 text-violet-400"/></div>
+     <div className="w-full flex items-center justify-center"><Loader2 className="animate-spin h-5 w-5 text-violet-400"/></div>
     ) : gifts.isError ? (
-     <div className="grid h-full place-items-center text-xs text-red-300">Failed to load gifts.</div>
+     <div className="w-full text-center text-xs text-red-300">Failed to load gifts.</div>
     ) : visibleGifts.length === 0 ? (
-     <div className="grid h-full place-items-center text-xs text-white/40">No gifts available in this tier.</div>
+     <div className="w-full text-center text-xs text-white/40">No gifts available in this tier.</div>
     ) : (
-     <div className="grid grid-cols-4 gap-2">
-      {visibleGifts.map(g=>{
-       const isSelected = selectedGift?.id === g.id;
-       return (
-        <button 
-         key={g.id} 
-         type="button" 
-         onClick={()=>{setSelectedGift(g);preloadGiftVideo(giftVideoUrl(g))}} 
-         className={`relative flex flex-col items-center justify-between rounded-xl border p-1 text-center transition-all h-[78px] ${isSelected?"border-pink-500 bg-pink-500/15 shadow-[0_0_10px_rgba(236,72,153,0.3)]":"border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"}`}
-        >
-         <div className="h-8 w-8 flex items-center justify-center mt-0.5">
-          <GiftPreview gift={g}/>
-         </div>
-         <div className="w-full truncate text-[10px] font-medium text-white/90 px-0.5">{g.name}</div>
-         <div className="flex items-center justify-center gap-0.5 text-[9px] text-yellow-300 font-bold">
-          <Coins className="h-2.5 w-2.5"/>
-          <span>{price(g)}</span>
-         </div>
-        </button>
-       );
-      })}
-     </div>
+     visibleGifts.map(g=>{
+      const isSelected = selectedGift?.id === g.id;
+      return (
+       <button 
+        key={g.id} 
+        type="button" 
+        onClick={()=>{setSelectedGift(g);preloadGiftVideo(giftVideoUrl(g))}} 
+        className={`relative flex flex-col items-center justify-between shrink-0 w-[78px] h-[78px] rounded-xl border p-1 text-center transition-all ${isSelected?"border-pink-500 bg-pink-500/15 shadow-[0_0_10px_rgba(236,72,153,0.3)]":"border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"}`}
+       >
+        <div className="h-8 w-8 flex items-center justify-center mt-0.5">
+         <GiftPreview gift={g}/>
+        </div>
+        <div className="w-full truncate text-[10px] font-medium text-white/90 px-0.5">{g.name}</div>
+        <div className="flex items-center justify-center gap-0.5 text-[9px] text-yellow-300 font-bold">
+         <Coins className="h-2.5 w-2.5"/>
+         <span>{price(g)}</span>
+        </div>
+       </button>
+      );
+     })
     )}
    </div>
 
