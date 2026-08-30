@@ -12,6 +12,7 @@ import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMemberSheet";
 import { ModeratorControls } from "./ModeratorControls";
 import { HostRoomSettings } from "./HostRoomSettings";
+import { HostPopularitySheet } from "./HostPopularitySheet";
 
 const MIN_CAPACITY = 4, MAX_CAPACITY = 20;
 const normalizeCapacity = (v: unknown) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(v)) || MAX_CAPACITY));
@@ -93,6 +94,7 @@ export const VoiceRoomScreen = ({
   const [giftOpen, setGiftOpen] = useState(false);
   const [gamesOpen, setGamesOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [popularityOpen, setPopularityOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
   const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
@@ -263,6 +265,7 @@ export const VoiceRoomScreen = ({
   const openGifts = () => { if (!roomSettings.gifts_enabled) return; setGiftOpen(true); onOpenGift(); };
   const openGames = () => { setGamesOpen(true); onOpenGames(); };
   const openAnimatedEmojis = (e?: React.SyntheticEvent) => { e?.preventDefault(); e?.stopPropagation(); setEmojiOpen(true); };
+  const openPopularity = () => { setPopularityOpen(true); };
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
@@ -322,7 +325,7 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             <div className="flex min-w-0 flex-col justify-center gap-1.5">
-              <button type="button" onClick={tap(onRanking)} className={cn(buttonClass,"grid min-h-0 flex-1 place-items-center rounded-xl border border-white/45 bg-white/10 p-1.5")}>
+              <button type="button" onClick={tap(openPopularity)} className={cn(buttonClass,"grid min-h-0 flex-1 place-items-center rounded-xl border border-white/45 bg-white/10 p-1.5")}>
                 <span className="flex flex-col items-center"><Rocket className="h-7 w-7 text-[color:var(--secondary)]" /><span className="mt-0.5 text-[9px] font-bold text-white/90">{popularityPct}% Popular</span></span>
               </button>
               <button type="button" onClick={tap(openGames)} className={cn(buttonClass,"h-10 shrink-0 rounded-xl border border-white/45 bg-white/10 px-1 text-[10px] font-black text-white")}>Games</button>
@@ -357,8 +360,9 @@ export const VoiceRoomScreen = ({
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
       {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} />}
       {emojiOpen && <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={e => { onSendEmoji?.(e); setEmojiOpen(false); }} />}
+      {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
       {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
-      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} onOpenMusic={onOpenMusic} />}
+      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} />}
       {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
     </main>
   );
