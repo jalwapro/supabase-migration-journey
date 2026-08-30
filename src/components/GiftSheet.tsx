@@ -34,8 +34,8 @@ export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;o
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open});
  const price=(g:Gift|null)=>(g?.price_coins??g?.price??0) as number;
  
- // Strict 4x4 or 8 items max per keyboard-sized view
- const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>tierOf(price(g))===activeTier).sort((a,b)=>price(a)-price(b)).slice(0,8),[gifts.data,activeTier]);
+ // Removed .slice(0, 8) restriction to allow smooth scrolling/sliding when there are many gifts (e.g., 20+ per tier)
+ const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>tierOf(price(g))===activeTier).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
  useEffect(()=>{if(!open)return;visibleGifts.forEach(g=>preloadGiftVideo(giftVideoUrl(g)));},[open,visibleGifts]);
@@ -111,8 +111,8 @@ export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;o
     })}
    </div>
 
-   {/* 2x4 Grid Container (8 Gifts, Keyboard Sized) */}
-   <div className="flex-1 overflow-hidden px-3 py-1.5">
+   {/* Scrollable Gift Grid Container (Keyboard Sized with vertical slide capability) */}
+   <div className="flex-1 overflow-y-auto px-3 py-1.5 no-scrollbar">
     {gifts.isLoading ? (
      <div className="grid h-full place-items-center"><Loader2 className="animate-spin h-5 w-5 text-violet-400"/></div>
     ) : gifts.isError ? (
@@ -120,7 +120,7 @@ export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;o
     ) : visibleGifts.length === 0 ? (
      <div className="grid h-full place-items-center text-xs text-white/40">No gifts available in this tier.</div>
     ) : (
-     <div className="grid grid-cols-4 gap-2 h-full">
+     <div className="grid grid-cols-4 gap-2">
       {visibleGifts.map(g=>{
        const isSelected = selectedGift?.id === g.id;
        return (
@@ -128,7 +128,7 @@ export function GiftSheet({open,onClose,roomId,receivers,onSent}:{open:boolean;o
          key={g.id} 
          type="button" 
          onClick={()=>{setSelectedGift(g);preloadGiftVideo(giftVideoUrl(g))}} 
-         className={`relative flex flex-col items-center justify-between rounded-xl border p-1 text-center transition-all ${isSelected?"border-pink-500 bg-pink-500/15 shadow-[0_0_10px_rgba(236,72,153,0.3)]":"border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"}`}
+         className={`relative flex flex-col items-center justify-between rounded-xl border p-1 text-center transition-all h-[78px] ${isSelected?"border-pink-500 bg-pink-500/15 shadow-[0_0_10px_rgba(236,72,153,0.3)]":"border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"}`}
         >
          <div className="h-8 w-8 flex items-center justify-center mt-0.5">
           <GiftPreview gift={g}/>
