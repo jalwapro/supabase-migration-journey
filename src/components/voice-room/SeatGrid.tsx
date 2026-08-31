@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Mic, MicOff, Heart, Lock, Unlock, Check, X } from "lucide-react";
+import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { RoomSeat, RoomParticipant } from "@/types/room";
 import { HostCard } from "./HostCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -9,23 +8,151 @@ import { toast } from "sonner";
 const MIN_CAPACITY = 4;
 const MAX_CAPACITY = 20;
 const DEFAULT_SEAT_AVATAR = "https://png.pngtree.com/png-vector/20260330/ourmid/pngtree-luxurious-red-throne-chair-with-golden-lion-armrests-and-ornate-crown-png-image_18968101.webp";
+
 const normalizeCapacity = (value?: number) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(value ?? MAX_CAPACITY)) || MAX_CAPACITY));
 const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
+
 type SeatRequest = { id: string; from_user: string; seat_index: number | null; created_at: string; username: string; avatar: string | null };
 
-function EmptySeatArt({ locked }: { locked: boolean }) { return <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-[color:var(--primary)] bg-transparent shadow-[inset_0_0_18px_rgba(0,0,0,.28)]"><img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain" draggable={false} />{locked && <Lock className="absolute h-3.5 w-3.5 text-white drop-shadow" />}</span>; }
+export type RoomSeatUser = {
+  id?: string;
+  name?: string;
+  username: string;
+  avatar: string | null;
+  avatarUrl?: string;
+  is_muted?: boolean;
+  is_speaking?: boolean;
+  mic?: "speaking" | "muted" | "off";
+  gift_score: number;
+  popularity?: number;
+};
 
-type SeatProps = { seat: RoomSeat; onClick: () => void; canManage?: boolean; onToggleLock?: () => void; lockBusy?: boolean };
+export type RoomSeat = {
+  index: number;
+  seatNumber?: number;
+  user: RoomSeatUser | null;
+  is_locked: boolean;
+  is_requested?: boolean;
+};
 
-export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy = false }: SeatProps) {
-  const { user, is_locked, index } = seat;
-  const lockButton = canManage ? <button type="button" disabled={lockBusy} onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLock?.(); }} className="absolute -right-1 -top-1 z-20 grid h-6 w-6 place-items-center rounded-full border border-white/70 bg-black/65 text-white shadow-lg disabled:opacity-50" aria-label={is_locked ? `Unlock seat ${index}` : `Lock seat ${index}`} title={is_locked ? "Unlock seat" : "Lock seat"}>{is_locked ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}</button> : null;
-  if (!user) return <div className="relative flex min-w-0 flex-col items-center gap-0"><button type="button" onClick={onClick} disabled={is_locked && !canManage} className="group flex min-w-0 flex-col items-center gap-0 touch-manipulation active:scale-95 disabled:opacity-55" aria-label={is_locked ? `Locked seat ${index}` : `Request seat ${index}`}><span className="relative aspect-square w-[78%] max-w-[68px] rounded-full border-2 border-[color:var(--primary)] p-[2px] shadow-[0_2px_10px_rgba(0,0,0,.3)]"><EmptySeatArt locked={is_locked} /></span><span className="text-[9px] font-semibold tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]">No.{index}</span><span className="flex min-w-8 items-center justify-center gap-0.5 rounded-full border border-[color:var(--primary)]/55 bg-transparent px-1 py-px text-[8px] text-white/85"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />0</span></button>{lockButton}</div>;
-  const muted = user.is_muted, speaking = user.is_speaking && !muted;
-  return <div className="relative flex min-w-0 flex-col items-center gap-0"><button type="button" onClick={onClick} className="group relative flex min-w-0 flex-col items-center gap-0 touch-manipulation active:scale-95"><span className={cn("relative aspect-square w-[78%] max-w-[68px] rounded-full border-2 p-[2px]", speaking ? "border-[color:var(--secondary)] shadow-[0_0_16px_rgba(232,60,220,.7)]" : "border-[color:var(--primary)] shadow-[0_2px_10px_rgba(0,0,0,.3)")}><span className="relative block h-full w-full overflow-hidden rounded-full bg-transparent">{user.avatar ? <img src={user.avatar} alt={user.username} className="h-full w-full object-cover" draggable={false} /> : <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain" draggable={false} />}{speaking && <span className="absolute inset-1 rounded-full border-2 border-[color:var(--secondary)] animate-pulse" />}</span><span className={cn("absolute bottom-0 right-0 grid h-4 w-4 place-items-center rounded-full border border-black/60 text-white", muted ? "bg-red-500" : "bg-emerald-500")}>{muted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}</span></span><span className="max-w-full truncate px-0.5 text-[9px] font-semibold leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]">{user.username}</span><span className="flex min-w-8 items-center justify-center gap-0.5 rounded-full border border-[color:var(--primary)]/55 bg-transparent px-1 py-px text-[8px] text-white/85"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(user.gift_score)}</span></button>{lockButton}</div>;
+export type RoomParticipant = {
+  id: string;
+  username: string;
+  avatar: string | null;
+  gift_score?: number;
+  level?: number;
+};
+
+function EmptySeatArt({ locked }: { locked: boolean }) { 
+  return (
+    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/20 bg-black/20 shadow-inner">
+      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain p-0.5 opacity-60" draggable={false} />
+      <span className="absolute inset-0 flex items-center justify-center bg-black/30">
+        <Plus className="h-3.5 w-3.5 text-white/70" />
+      </span>
+      {locked && <Lock className="absolute h-3.5 w-3.5 text-amber-400 drop-shadow" />}
+    </span>
+  ); 
 }
 
-interface SeatGridProps { seats: RoomSeat[]; seatCount?: number; host: RoomParticipant; roomId?: string; isHost?: boolean; onSeatTap?: (index: number) => void; onJoinSeat?: (index: number) => void; onHostTap?: () => void; }
+type SeatProps = { 
+  seat: RoomSeat; 
+  onClick: () => void; 
+  canManage?: boolean; 
+  onToggleLock?: () => void; 
+  lockBusy?: boolean 
+};
+
+export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy = false }: SeatProps) {
+  const { user, is_locked, index, seatNumber } = seat;
+  const num = index ?? seatNumber ?? 1;
+  const username = user?.username || user?.name || `No.${num}`;
+  const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
+  const giftScore = user?.gift_score ?? user?.popularity ?? 0;
+  
+  const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
+  const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
+
+  const lockButton = canManage ? (
+    <button 
+      type="button" 
+      disabled={lockBusy} 
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLock?.(); }} 
+      className="absolute -right-1 -top-1 z-20 grid h-5 w-5 place-items-center rounded-full border border-white/70 bg-black/75 text-white shadow-md disabled:opacity-50" 
+      aria-label={is_locked ? `Unlock seat ${num}` : `Lock seat ${num}`}
+    >
+      {is_locked ? <Unlock className="h-2.5 w-2.5 text-amber-400" /> : <Lock className="h-2.5 w-2.5" />}
+    </button>
+  ) : null;
+
+  if (!user) {
+    return (
+      <div className="relative flex flex-col items-center justify-center">
+        <button 
+          type="button" 
+          onClick={onClick} 
+          disabled={is_locked && !canManage} 
+          className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-white/[0.03] p-1 shadow-sm transition-all active:scale-95 disabled:opacity-50"
+          aria-label={is_locked ? `Locked seat ${num}` : `Join seat ${num}`}
+        >
+          <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/60 text-[8px] font-bold text-white/70">
+            {num}
+          </span>
+          <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full border border-white/15 p-0.5">
+            <EmptySeatArt locked={is_locked} />
+          </span>
+          <span className="w-full truncate text-[8px] font-semibold text-white/50 text-center">No.{num}</span>
+          <span className="flex items-center gap-0.5 text-[7px] text-white/40">
+            <Heart className="h-2 w-2 fill-pink-500/60 text-pink-500" />0
+          </span>
+        </button>
+        {lockButton}
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative flex flex-col items-center justify-center">
+      <button 
+        type="button" 
+        onClick={onClick} 
+        className={cn(
+          "group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border p-1 shadow-md transition-all active:scale-95",
+          speaking ? "border-fuchsia-400 bg-fuchsia-950/30 shadow-[0_0_12px_rgba(236,72,153,0.5)]" : "border-white/15 bg-white/[0.06]"
+        )}
+      >
+        <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70 text-[8px] font-black text-white/90">
+          {num}
+        </span>
+        <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full border-2 p-0.5 border-[color:var(--primary)]">
+          <span className="relative block h-full w-full overflow-hidden rounded-full bg-slate-900">
+            <img src={avatar} alt={username} className="h-full w-full object-cover" draggable={false} />
+            {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse" />}
+          </span>
+          <span className={cn("absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+            {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
+          </span>
+        </span>
+        <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center">{username}</span>
+        <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/75">
+          <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
+        </span>
+      </button>
+      {lockButton}
+    </div>
+  );
+}
+
+interface SeatGridProps { 
+  seats: RoomSeat[]; 
+  seatCount?: number; 
+  host: RoomParticipant; 
+  roomId?: string; 
+  isHost?: boolean; 
+  onSeatTap?: (index: number) => void; 
+  onJoinSeat?: (index: number) => void; 
+  onHostTap?: () => void; 
+}
 
 export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
@@ -91,7 +218,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     return () => { active = false; void supabase.removeChannel(channel); };
   }, [roomId, isHost, host.id]);
 
-  const respond = async (request: SeatRequest, accept: boolean) => { if (busyRequest) return; setBusyRequest(request.id); const { error } = await supabase.rpc("respond_seat_request", { _request_id: request.id, _accept: accept }); if (error) toast.error(error.message || "Could not respond to seat request"); else toast.success(accept ? `${request.username} joined the seat` : "Seat request rejected"); setBusyRequest(null); };
+  const respond = async (request: SeatRequest, accept: boolean) => { 
+    if (busyRequest) return; 
+    setBusyRequest(request.id); 
+    const { error } = await supabase.rpc("respond_seat_request", { _request_id: request.id, _accept: accept }); 
+    if (error) toast.error(error.message || "Could not respond to seat request"); 
+    else toast.success(accept ? `${request.username} joined the seat` : "Seat request rejected"); 
+    setBusyRequest(null); 
+  };
 
   const toggleSeatLock = async (seatIndex: number, currentlyLocked: boolean) => {
     if (!roomId || !canManageSeats || lockBusy !== null) return;
@@ -102,8 +236,98 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     setLockBusy(null);
   };
 
-  const byIndex = new Map(seats.filter(s => s.index >= 2 && s.index <= capacity).map(s => [s.index, s]));
-  const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => { const index = offset + 2; return byIndex.get(index) ?? { index, user: null, is_locked: false, is_requested: false }; });
-  const handleTap = async (seat: RoomSeat) => { if (seat.user) { onSeatTap?.(seat.index); return; } if (seat.is_locked) return; if (isHost || !roomId) { onJoinSeat?.(seat.index); return; } const { error } = await supabase.rpc("request_seat", { _room_id: roomId, _seat_index: seat.index }); if (error) toast.error(error.message || "Could not send seat request"); else toast.success("Seat request sent to host"); };
-  return <section className="relative flex h-full w-full min-w-0 items-start overflow-hidden px-2 pb-0 pt-0" data-seat-capacity={capacity}><div className="grid w-full grid-cols-5 content-start gap-x-1 gap-y-1 sm:gap-x-2 sm:gap-y-1.5"><div className="relative flex min-w-0 flex-col items-center gap-0"><span className="relative aspect-square w-[78%] max-w-[68px] rounded-full border-2 border-[color:var(--primary)] p-[2px] shadow-[0_2px_10px_rgba(0,0,0,.35)]"><HostCard host={host} onTap={onHostTap} /></span><span className="text-[9px] font-bold leading-tight tracking-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,.9)]">No.1</span><span className="flex min-w-8 items-center justify-center gap-0.5 rounded-full border border-[color:var(--primary)]/55 bg-transparent px-1 py-px text-[8px] leading-tight text-white/85"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span></div>{participantSlots.map(seat => <Seat key={seat.index} seat={seat} canManage={canManageSeats} lockBusy={lockBusy === seat.index} onToggleLock={() => void toggleSeatLock(seat.index, seat.is_locked)} onClick={() => void handleTap(seat)} />)}</div>{isHost && requests.length > 0 && <div className="pointer-events-auto absolute left-3 right-3 top-1 z-[80] max-h-[42%] overflow-y-auto rounded-2xl border border-[color:var(--primary)]/70 bg-background/95 p-2 shadow-2xl backdrop-blur-md"><div className="mb-1.5 flex items-center justify-between px-1"><span className="text-xs font-bold text-foreground">Seat requests ({requests.length})</span><span className="text-[9px] text-foreground/50">Approve or reject</span></div><div className="space-y-1.5">{requests.map(request => <div key={request.id} className="flex items-center gap-2 rounded-xl border border-[color:var(--primary)]/35 bg-transparent p-1.5">{request.avatar ? <img src={request.avatar} alt={request.username} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-[color:var(--primary)]/50" /> : <div className="grid h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--primary)] text-[10px] font-bold text-white">{request.username[0]?.toUpperCase()}</div>}<div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-foreground">{request.username}</div><div className="truncate text-[8px] font-mono text-foreground/45">ID: {request.from_user}</div><div className="text-[9px] text-foreground/60">Requesting Seat {request.seat_index ?? "any"}</div></div><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, true)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white disabled:opacity-50" aria-label={`Accept ${request.username}'s seat request`}><Check className="h-4 w-4" /></button><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-red-500 text-white disabled:opacity-50" aria-label={`Reject ${request.username}'s seat request`}><X className="h-4 w-4" /></button></div>)}</div></div>}</section>;
+  const byIndex = new Map(seats.filter(s => (s.index >= 2 && s.index <= capacity) || (s.seatNumber && s.seatNumber >= 2 && s.seatNumber <= capacity)).map(s => [s.index ?? s.seatNumber!, s]));
+  const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => { 
+    const index = offset + 2; 
+    return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false }; 
+  });
+
+  const handleTap = async (seat: RoomSeat) => { 
+    const idx = seat.index ?? seat.seatNumber ?? 1;
+    if (seat.user) { 
+      onSeatTap?.(idx); 
+      return; 
+    } 
+    if (seat.is_locked) return; 
+    if (isHost || !roomId) { 
+      onJoinSeat?.(idx); 
+      return; 
+    } 
+    const { error } = await supabase.rpc("request_seat", { _room_id: roomId, _seat_index: idx }); 
+    if (error) toast.error(error.message || "Could not send seat request"); 
+    else toast.success("Seat request sent to host"); 
+  };
+
+  return (
+    <section className="relative flex w-full flex-col items-center px-1 py-0.5" data-seat-capacity={capacity}>
+      <div className="grid w-full grid-cols-5 gap-1 content-start">
+        {/* Seat No. 1: Host */}
+        <div className="relative flex flex-col items-center justify-center">
+          <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-fuchsia-400/50 bg-fuchsia-950/20 p-1 shadow-md">
+            <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/75 text-[8px] font-black text-amber-300">
+              1
+            </span>
+            <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full border-2 border-amber-400 p-0.5">
+              <HostCard host={host} onTap={onHostTap} />
+            </span>
+            <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center">
+              {host.username}
+            </span>
+            <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/85">
+              <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
+            </span>
+          </div>
+        </div>
+
+        {/* Remaining Seats (2 to Capacity) */}
+        {participantSlots.map(seat => {
+          const seatIdx = seat.index ?? seat.seatNumber ?? 2;
+          return (
+            <Seat 
+              key={seatIdx} 
+              seat={{ ...seat, index: seatIdx }} 
+              canManage={canManageSeats} 
+              lockBusy={lockBusy === seatIdx} 
+              onToggleLock={() => void toggleSeatLock(seatIdx, seat.is_locked)} 
+              onClick={() => void handleTap(seat)} 
+            />
+          );
+        })}
+      </div>
+
+      {/* Host Pending Seat Requests Drawer */}
+      {isHost && requests.length > 0 && (
+        <div className="pointer-events-auto absolute left-3 right-3 top-1 z-[80] max-h-[42%] overflow-y-auto rounded-2xl border border-[color:var(--primary)]/70 bg-background/95 p-2 shadow-2xl backdrop-blur-md">
+          <div className="mb-1.5 flex items-center justify-between px-1">
+            <span className="text-xs font-bold text-foreground">Seat requests ({requests.length})</span>
+            <span className="text-[9px] text-foreground/50">Approve or reject</span>
+          </div>
+          <div className="space-y-1.5">
+            {requests.map(request => (
+              <div key={request.id} className="flex items-center gap-2 rounded-xl border border-[color:var(--primary)]/35 bg-transparent p-1.5">
+                {request.avatar ? (
+                  <img src={request.avatar} alt={request.username} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-[color:var(--primary)]/50" />
+                ) : (
+                  <div className="grid h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--primary)] text-[10px] font-bold text-white">
+                    {request.username[0]?.toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[11px] font-bold text-foreground">{request.username}</div>
+                  <div className="truncate text-[8px] font-mono text-foreground/45">ID: {request.from_user}</div>
+                  <div className="text-[9px] text-foreground/60">Requesting Seat {request.seat_index ?? "any"}</div>
+                </div>
+                <button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, true)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white disabled:opacity-50" aria-label={`Accept ${request.username}'s seat request`}>
+                  <Check className="h-4 w-4" />
+                </button>
+                <button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-red-500 text-white disabled:opacity-50" aria-label={`Reject ${request.username}'s seat request`}>
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
