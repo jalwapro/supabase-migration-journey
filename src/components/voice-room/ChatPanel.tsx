@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Smile, Send, MessageCircle, X, Megaphone, Edit3 } from "lucide-react";
+import { Send, MessageCircle, X, Megaphone, Edit3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "./types";
 
@@ -56,7 +56,6 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
     }
   }, [messages, open]);
 
-  // Auto focus input when popup opens
   useEffect(() => {
     if (showInputPopup && inputRef.current) {
       inputRef.current.focus();
@@ -69,8 +68,8 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
     const text = draft.trim();
     if (!text) return;
     onSend(text);
-    setDraft(""); // Clear draft so it doesn't stay in input
-    setShowInputPopup(false); // Close input popup after sending
+    setDraft(""); // Input clean ho jayega taake dubara popup mein show na ho
+    setShowInputPopup(false); // Clean popup band ho jayega aur message sirf chat box mein dikhega
   };
 
   return (
@@ -82,7 +81,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
         className="w-full max-w-[485px] h-[52svh] rounded-t-[32px] border-t border-white/20 bg-[#0d0714]/95 p-4 text-white shadow-[0_-10px_35px_rgba(139,92,246,0.25)] backdrop-blur-2xl flex flex-col justify-between animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header & Announcement Bar */}
+        {/* Top Header & Announcement Bar (No Tabs, No Clickable Popup) */}
         <div className="flex flex-col gap-2 border-b border-white/10 pb-3 shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-black uppercase tracking-wider text-amber-300">Room Chat & Notice</h3>
@@ -114,7 +113,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
           )}
         </div>
 
-        {/* Bottom Trigger Bar (Clicking this opens the clean comment popup) */}
+        {/* Bottom Trigger Bar */}
         <div 
           onClick={() => setShowInputPopup(true)}
           className="mt-2 flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2.5 shrink-0 shadow-inner cursor-pointer active:scale-95 transition"
@@ -127,7 +126,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
 
       </div>
 
-      {/* Dedicated Clean Comment Popup Modal with Native Theme Keyboard */}
+      {/* Clean Comment Input Popup (Opens clean mobile keyboard matching user theme without extra system lines) */}
       {showInputPopup && (
         <div 
           className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/80 backdrop-blur-md animate-fade-in p-0"
