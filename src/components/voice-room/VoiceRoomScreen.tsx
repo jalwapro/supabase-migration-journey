@@ -393,7 +393,7 @@ export const VoiceRoomScreen = ({
     } else if (isModerator) {
       setModeratorControlsOpen(true); 
     } else {
-      setUserMoreOpen(true); // Normal user options sheet
+      setUserMoreOpen(true);
     }
   };
   
@@ -578,6 +578,7 @@ export const VoiceRoomScreen = ({
         
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
           
+          {/* Flexible and scrollable container for seats preventing overlap */}
           <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 px-1 no-scrollbar">
             <SeatGrid 
               seats={room.seats.map(s => ({
@@ -601,18 +602,19 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          <div className="shrink-0 flex flex-col gap-[10px] px-3 pb-1">
+          {/* Flexible bottom chat and banners section */}
+          <div className="shrink-0 flex flex-col gap-1.5 px-3 pb-1">
 
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               
-              <div className="flex min-w-0 h-[250px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
+              <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
                 {/* Clean Announcement Bar */}
                 <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
                   <span className="text-[10px]">📢</span>
                   <p className="text-[9px] font-semibold truncate flex-1">{announcement || "Welcome to the room! Follow rules."}</p>
                 </div>
                 
-                <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar scroll-smooth">
+                <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-1 space-y-1 no-scrollbar scroll-smooth">
                   {visibleMessages.length === 0 ? (
                     <div className="flex h-full items-center justify-center text-center text-white/40">
                       <p className="text-[10px] font-medium">{announcement || "Welcome to the room!"}</p>
@@ -622,7 +624,7 @@ export const VoiceRoomScreen = ({
                       const avatar = m.user?.avatar || m.sender_avatar;
                       const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase();
                       return (
-                        <div key={m.id} className="mb-0.5 flex min-w-0 items-start gap-1 text-[10px]">
+                        <div key={m.id} className="flex min-w-0 items-start gap-1 text-[10px]">
                           <div className="grid h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-amber-500/20 text-[7px] font-bold text-amber-300 place-items-center border border-amber-500/30">
                             {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
                           </div>
@@ -633,13 +635,13 @@ export const VoiceRoomScreen = ({
                   )}
                 </div>
 
-                {/* Clickable Trigger Bar to open clean keyboard-attached popup */}
+                {/* Clickable Trigger Bar */}
                 <div 
                   onClick={() => {
                     if (!roomSettings.chat_enabled) return;
                     setShowMiniInputPopup(true);
                   }}
-                  className={cn("mx-1.5 mb-1 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 shadow-inner cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}
+                  className={cn("mx-1.5 mb-1.5 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 shadow-inner cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}
                 >
                   <span className="min-w-0 flex-1 text-[10px] font-medium text-white/40 truncate">
                     {roomSettings.chat_enabled ? "Say something..." : "Chat disabled"}
@@ -648,23 +650,23 @@ export const VoiceRoomScreen = ({
                 </div>
               </div>
               
-              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[250px]">
+              <div className="flex min-w-0 flex-col justify-between items-end gap-1 max-h-[190px]">
                 <button 
                   type="button" 
                   onClick={tap(openPopularity)} 
-                  style={{ height: "100px" }}
+                  style={{ height: "75px" }}
                   className={cn(
                     buttonClass,
                     "relative group flex items-center justify-center bg-transparent border-0 p-0 w-full shrink-0 shadow-none"
                   )}
                 >
-                  <div className="relative h-[100px] w-[100px] flex items-center justify-center">
-                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[100px] w-[100px] object-contain animate-bounce drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
+                  <div className="relative h-[75px] w-[75px] flex items-center justify-center">
+                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[75px] w-[75px] object-contain animate-bounce drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
                   </div>
                 </button>
 
                 <div 
-                  style={{ height: "150px" }}
+                  style={{ height: "105px" }}
                   className="relative w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/50 backdrop-blur-md flex items-center justify-center shadow-lg"
                 >
                   {currentSlide && (
