@@ -465,7 +465,7 @@ export const VoiceRoomScreen = ({
 
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               
-              <div className="flex min-w-0 h-[280px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
+              <div className="flex min-w-0 h-[250px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
                 <div className="flex h-5 shrink-0 items-end gap-3 border-b border-white/10 px-2.5">
                   <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[10px] font-bold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-4 rounded-full bg-amber-400" /></button>
                   <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[10px] font-medium text-white/60 disabled:opacity-40")}>Chat</button>
@@ -511,13 +511,14 @@ export const VoiceRoomScreen = ({
                 </form>
               </div>
               
-              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[280px]">
+              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[250px]">
                 <button 
                   type="button" 
                   onClick={tap(openPopularity)} 
+                  style={{ height: "100px" }}
                   className={cn(
                     buttonClass,
-                    "relative group flex flex-col items-center justify-center flex-1 bg-black/50 border border-white/20 rounded-xl p-0 w-full backdrop-blur-md shadow-lg"
+                    "relative group flex flex-col items-center justify-center bg-black/50 border border-white/20 rounded-xl p-0 w-full backdrop-blur-md shadow-lg shrink-0"
                   )}
                 >
                   <div className="relative h-6 w-6 flex items-center justify-center">
@@ -526,7 +527,10 @@ export const VoiceRoomScreen = ({
                   <span className="relative z-10 text-[9px] font-black text-amber-300 tracking-wider">{popularityPct}%</span>
                 </button>
 
-                <div className="relative h-[52px] w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/50 backdrop-blur-md flex items-center justify-center shadow-lg">
+                <div 
+                  style={{ height: "150px" }}
+                  className="relative w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/50 backdrop-blur-md flex items-center justify-center shadow-lg"
+                >
                   {currentSlide && (
                     <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-xl" />
                   )}
