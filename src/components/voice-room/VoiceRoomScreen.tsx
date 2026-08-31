@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Lock, KeyRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -31,7 +31,7 @@ type RoomChatMessage = {
   pending?: boolean; 
   failed?: boolean; 
 };
-type RoomSettings = { is_locked: boolean; chat_enabled: boolean; gifts_enabled: boolean; guest_mic_enabled: boolean };
+type RoomSettings = { is_locked: boolean; chat_enabled: boolean; gifts_enabled: boolean; guest_mic_enabled: boolean; room_pin?: string | null };
 
 interface GameSlide {
   id: string;
@@ -76,7 +76,7 @@ interface VoiceRoomScreenProps {
   onOpenNativeGame?: (slug: string) => void;
 }
 
-const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true };
+const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, room_pin: null };
 
 export const VoiceRoomScreen = ({
   room,
@@ -126,6 +126,11 @@ export const VoiceRoomScreen = ({
   const [showRocketAnimation, setShowRocketAnimation] = useState(false);
   const [showHostFreePopup, setShowHostFreePopup] = useState(false);
   
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [enteredPin, setEnteredPin] = useState("");
+  const [isUnlockedByPin, setIsUnlockedByPin] = useState(false);
+  const [generatedPin, setGeneratedPin] = useState<string | null>(null);
+
   const [selectedTargetSeat, setSelectedTargetSeat] = useState<number | null>(null);
   const [activeFlyingEmoji, setActiveFlyingEmoji] = useState<{ emojiUrl: string; fromSeat: number; toSeat: number } | null>(null);
   const [glowingSeatIndex, setGlowingSeatIndex] = useState<number | null>(null);
@@ -134,8 +139,15 @@ export const VoiceRoomScreen = ({
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
-
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
+
+  useEffect(() => {
+    if (roomSettings.is_locked && !isHost && !isUnlockedByPin) {
+      setShowPinModal(true);
+    } else {
+      setShowPinModal(false);
+    }
+  }, [roomSettings.is_locked, isHost, isUnlockedByPin]);
 
   useEffect(() => {
     let active = true;
@@ -203,13 +215,23 @@ export const VoiceRoomScreen = ({
   useEffect(() => {
     let active = true;
     const syncSettings = async () => {
-      const { data, error } = await supabase.from("live_rooms").select("is_locked,chat_enabled,gifts_enabled,guest_mic_enabled").eq("id", roomId).maybeSingle();
-      if (active && !error && data) setRoomSettings(prev => ({ ...prev, ...data } as RoomSettings));
+      const { data, error } = await supabase.from("live_rooms").select("is_locked,chat_enabled,gifts_enabled,guest_mic_enabled,room_pin,seat_count").eq("id", roomId).maybeSingle();
+      if (active && !error && data) {
+        setRoomSettings(prev => ({ ...prev, ...data } as RoomSettings));
+        if (data.seat_count != null) {
+          setLiveSeatCount(normalizeCapacity(data.seat_count));
+        }
+      }
     };
     void syncSettings();
     const channel = supabase.channel(`voice-room-settings-${roomId}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` }, payload => {
-      const row = payload.new as Partial<RoomSettings>;
-      if (active) setRoomSettings(prev => ({ ...prev, ...row }));
+      const row = payload.new as Partial<RoomSettings & { seat_count?: number }>;
+      if (active) {
+        setRoomSettings(prev => ({ ...prev, ...row }));
+        if (row.seat_count != null) {
+          setLiveSeatCount(normalizeCapacity(row.seat_count));
+        }
+      }
     }).subscribe();
     return () => {
       active = false;
@@ -256,7 +278,6 @@ export const VoiceRoomScreen = ({
     };
   }, [roomId]);
 
-  // Auto scroll chat to bottom on new message
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -290,20 +311,6 @@ export const VoiceRoomScreen = ({
     }
     setSending(false);
   };
-
-  useEffect(() => {
-    if (seatCount != null) {
-      setLiveSeatCount(normalizeCapacity(seatCount));
-      return;
-    }
-    const channel = supabase.channel(`voice-layout-${roomId}`).on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` }, p => {
-      const row = p.new as { seat_count?: number };
-      if (row.seat_count != null) setLiveSeatCount(normalizeCapacity(row.seat_count));
-    }).subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [roomId, seatCount]);
 
   useEffect(() => {
     let cancelled = false;
@@ -345,7 +352,15 @@ export const VoiceRoomScreen = ({
   };
   const openPopularity = () => { setPopularityOpen(true); };
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
-  const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
+  
+  const joinSeat = (index: number) => { 
+    if (roomSettings.is_locked && !isHost && !isUnlockedByPin) {
+      setShowPinModal(true);
+      return;
+    } 
+    onJoinSeat(index); 
+  };
+
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
   const visibleMessages = roomMessages.filter(m => m.kind !== "emoji");
   const openMemberProfile = (seatIndex: number) => {
@@ -381,6 +396,75 @@ export const VoiceRoomScreen = ({
     <main className="fixed inset-0 z-50 mx-auto flex w-full max-w-[480px] flex-col overflow-hidden bg-slate-950 text-foreground shadow-2xl h-[100svh]">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover opacity-90" /></div> : null}
       
+      {showPinModal && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md px-4 animate-fade-in">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-amber-500/50 p-6 shadow-[0_0_35px_rgba(234,179,8,0.3)] text-center">
+            <div className="h-16 w-16 rounded-full bg-amber-500/20 border border-amber-500 flex items-center justify-center mb-4 text-amber-400">
+              <Lock className="h-8 w-8 animate-pulse" />
+            </div>
+            <h3 className="text-lg font-black text-amber-300">Room is Locked! 🔒</h3>
+            <p className="mt-1 text-xs text-slate-300">Yeh room lock hai. Enter karne ke liye Host ka diya hua code enter karein:</p>
+            
+            <input 
+              type="password" 
+              maxLength={6}
+              value={enteredPin}
+              onChange={(e) => setEnteredPin(e.target.value)}
+              placeholder="Enter Room PIN..."
+              className="mt-4 w-full px-4 py-3 rounded-xl bg-black/60 border border-white/20 text-center text-white tracking-widest font-bold text-lg outline-none focus:border-amber-400"
+            />
+
+            <div className="mt-6 flex gap-3 w-full">
+              <button 
+                type="button"
+                onClick={() => {
+                  if (enteredPin.trim() === roomSettings.room_pin) {
+                    setIsUnlockedByPin(true);
+                    setShowPinModal(false);
+                  } else {
+                    alert("Incorrect Room PIN! Please try again.");
+                  }
+                }}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-purple-600 text-white font-bold text-xs shadow-lg active:scale-95 transition-transform"
+              >
+                Enter Room ✨
+              </button>
+              <button 
+                type="button"
+                onClick={onExit}
+                className="px-4 py-3 rounded-xl bg-white/10 text-slate-300 font-semibold text-xs active:scale-95 transition-transform"
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {generatedPin && isHost && (
+        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/75 backdrop-blur-md px-4 animate-fade-in">
+          <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-purple-500/50 p-6 shadow-[0_0_35px_rgba(168,85,247,0.4)] text-center">
+            <div className="h-14 w-14 rounded-full bg-purple-500/20 border border-purple-400 flex items-center justify-center mb-3 text-purple-300">
+              <KeyRound className="h-7 w-7" />
+            </div>
+            <h3 className="text-base font-black text-purple-300">New Room Code Generated!</h3>
+            <p className="mt-1 text-xs text-slate-300">Aapka room lock ho chuka hai. Naya Secret Code yeh hai:</p>
+            
+            <div className="my-4 px-6 py-2 rounded-xl bg-black/80 border border-amber-400/60 text-amber-300 font-black text-2xl tracking-widest shadow-inner">
+              {generatedPin}
+            </div>
+
+            <button 
+              type="button"
+              onClick={() => setGeneratedPin(null)}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg active:scale-95 transition-transform"
+            >
+              Okay, Got It 👍
+            </button>
+          </div>
+        </div>
+      )}
+
       {showHostFreePopup && isHost && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in px-4">
           <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900 border border-amber-500/50 p-6 shadow-[0_0_35px_rgba(234,179,8,0.4)] text-center">
