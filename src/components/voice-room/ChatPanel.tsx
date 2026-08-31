@@ -145,14 +145,14 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
 
       </div>
 
-      {/* Clean Comment Input Popup */}
+      {/* Clean Comment Input Popup attached directly to keyboard with matched theme */}
       {showInputPopup && (
         <div 
-          className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/80 backdrop-blur-md animate-fade-in p-0"
+          className="fixed inset-0 z-[2147483500] flex items-end justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in p-0"
           onClick={() => setShowInputPopup(false)}
         >
           <div 
-            className="w-full max-w-[485px] bg-[#120a1f] border-t border-amber-500/40 p-3 rounded-t-3xl shadow-2xl flex items-center gap-2 animate-slide-up"
+            className="w-full max-w-[485px] bg-[#0d0714] border-t border-white/15 px-3 py-2.5 shadow-[0_-10px_25px_rgba(0,0,0,0.8)] flex items-center gap-2 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <input
@@ -168,13 +168,14 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
               spellCheck={false}
               enterKeyHint="send"
               inputMode="text"
-              className="flex-1 bg-black/50 border border-white/20 rounded-2xl px-4 py-3 text-xs font-medium text-white placeholder:text-white/40 outline-none focus:border-amber-400"
+              data-form-type="other"
+              className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none focus:border-amber-400"
             />
             <button
               type="button"
               onClick={handleSend}
               disabled={!draft.trim()}
-              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow-lg active:scale-95 transition disabled:opacity-40"
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow-lg active:scale-95 transition disabled:opacity-40"
             >
               Send
             </button>
