@@ -441,7 +441,7 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          {/* Balanced height chat section (h-[135px]) positioned securely below seats without overlapping */}
+          {/* Balanced height chat section positioned securely below seats without overlapping */}
           <section className="mt-auto grid h-[135px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1.5 px-2 py-1">
             <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
               <div className="flex h-6 shrink-0 items-end gap-4 border-b border-white/30 px-2.5">
@@ -471,7 +471,19 @@ export const VoiceRoomScreen = ({
                 )}
               </div>
               <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/30 bg-white px-2.5 shadow-md", !roomSettings.chat_enabled && "opacity-50")}>
-                <input value={draft} onChange={e => setDraft(e.target.value.slice(0, 500))} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} disabled={sending || !roomSettings.chat_enabled} className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-black outline-none placeholder:text-slate-400" />
+                <input 
+                  value={draft} 
+                  onChange={e => setDraft(e.target.value.slice(0, 500))} 
+                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} 
+                  placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} 
+                  disabled={sending || !roomSettings.chat_enabled} 
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck={false}
+                  data-form-type="other"
+                  className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-black outline-none placeholder:text-slate-400" 
+                />
                 <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[color:var(--secondary)]"><Smile className="h-3.5 w-3.5" /></button>
                 <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white"><Send className="h-2.5 w-2.5" /></button>
               </form>
@@ -505,4 +517,92 @@ export const VoiceRoomScreen = ({
       {/* Footer Navigation */}
       <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[52px] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
-          {micOn ? <Mic className="h-
+          {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
+        </button>
+        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
+          <Smile className="h-3.5 w-3.5" />
+        </button>
+        <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
+          <Gamepad2 className="h-3.5 w-3.5" />
+        </button>
+        <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-10 w-10 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Private Chat">
+          <MessageCircle className="h-4.5 w-4.5" />
+        </button>
+        <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_12px_rgba(234,179,8,0.5)] border border-white/60 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
+          <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/40 backdrop-blur-sm text-amber-200">
+            <Gift className="h-5 w-5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
+          </div>
+        </button>
+        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
+          {isHost ? <Shield className="h-3.5 w-3.5" /> : isModerator ? <Shield className="h-3.5 w-3.5" /> : <Grid2X2 className="h-3.5 w-3.5" />}
+        </button>
+      </nav>
+
+      {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
+      
+      {emojiOpen && (
+        <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="absolute inset-0" onClick={() => setEmojiOpen(false)} />
+          <div className="relative z-10 w-full rounded-t-3xl bg-slate-900/95 border-t border-amber-500/30 p-4 shadow-2xl backdrop-blur-xl animate-slide-up max-h-[60dvh] flex flex-col">
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-700" />
+            
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Smile className="h-4 w-4 text-amber-400" />
+                <span className="text-xs font-bold tracking-wide text-amber-400 uppercase">Send Emoji to Seat</span>
+              </div>
+              <button type="button" onClick={() => setEmojiOpen(false)} className="text-xs font-semibold text-slate-400 hover:text-white">
+                Close
+              </button>
+            </div>
+
+            <div className="py-2.5 border-b border-slate-800/80">
+              <p className="text-[10px] text-slate-400 mb-2 font-medium">Select Target Seat (Optional):</p>
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTargetSeat(null)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border",
+                    selectedTargetSeat === null 
+                      ? "bg-amber-500 text-black border-amber-400 shadow-md" 
+                      : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                  )}
+                >
+                  General Chat
+                </button>
+                {room.seats.map((seat) => (
+                  <button
+                    key={seat.index}
+                    type="button"
+                    onClick={() => setSelectedTargetSeat(seat.index)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border",
+                      selectedTargetSeat === seat.index 
+                        ? "bg-amber-500 text-black border-amber-400 shadow-md" 
+                        : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700"
+                    )}
+                  >
+                    <UserCheck className="h-3 w-3" />
+                    <span>Seat {seat.index + 1} {seat.user?.username ? `(${seat.user.username})` : "(Empty)"}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto py-3">
+              <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={handlePickEmoji} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={(slug) => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
+      {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
+      {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
+      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} />}
+      {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
+    </main>
+  );
+};
