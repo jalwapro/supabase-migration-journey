@@ -353,7 +353,7 @@ export const VoiceRoomScreen = ({
   };
 
   return (
-    // Fixed max-w-[480px] added so it looks identical and uniform on all devices (mobile, tablet, desktop)
+    // Fixed max-w-[480px] w-full mx-auto ensures exact mobile container bounds without widening elements
     <main className="relative z-50 mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background text-foreground shadow-2xl">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover" /></div> : null}
       
@@ -417,8 +417,9 @@ export const VoiceRoomScreen = ({
         <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
         <GiftAnimationPlayer roomId={roomId} />
         
-        <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden pb-1">
-          <div className="relative min-h-0 shrink-0 bg-transparent pt-0.5">
+        {/* Strict flex layout container to keep seats, chat section, and bottom nav seamlessly packed */}
+        <div className="relative flex min-h-0 flex-1 flex-col justify-between overflow-hidden pb-0.5">
+          <div className="relative min-h-0 shrink-0 bg-transparent pt-0">
             <SeatGrid 
               seats={room.seats.map(s => ({
                 ...s,
@@ -441,18 +442,18 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          {/* Compact Section with adjusted height to eliminate whitespace and fix alignment */}
-          <section className="grid h-[155px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1 px-2 py-1">
-            <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
-              <div className="flex h-7 shrink-0 items-end gap-5 border-b border-white/30 px-2.5">
-                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-1 text-xs font-semibold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-6 rounded-full bg-[color:var(--primary)]" /></button>
-                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-1 text-xs font-medium text-white/75 disabled:opacity-40")}>Chat</button>
+          {/* Optimized compact height section for Chat, Rocket & Slide Box */}
+          <section className="grid h-[142px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(72px,.7fr)] gap-1 px-2 py-0.5">
+            <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[12px] border border-white/45 bg-white/5 backdrop-blur-md">
+              <div className="flex h-6 shrink-0 items-end gap-4 border-b border-white/30 px-2">
+                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[11px] font-semibold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-[color:var(--primary)]" /></button>
+                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[11px] font-medium text-white/75 disabled:opacity-40")}>Chat</button>
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-1">
+              <div className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5">
                 {visibleMessages.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-center text-white/45">
                     <div>
-                      <p className="text-[11px] font-medium">{announcement || "No messages yet"}</p>
+                      <p className="text-[10px] font-medium">{announcement || "No messages yet"}</p>
                     </div>
                   </div>
                 ) : (
@@ -460,8 +461,8 @@ export const VoiceRoomScreen = ({
                     const avatar = m.user?.avatar || m.sender_avatar;
                     const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase();
                     return (
-                      <div key={m.id} className="mb-1 flex min-w-0 items-start gap-1.5 text-xs">
-                        <div className="grid h-4.5 w-4.5 shrink-0 overflow-hidden rounded-full bg-white/20 text-[9px] font-bold text-white/80 place-items-center">
+                      <div key={m.id} className="mb-0.5 flex min-w-0 items-start gap-1 text-[11px]">
+                        <div className="grid h-4 w-4 shrink-0 overflow-hidden rounded-full bg-white/20 text-[8px] font-bold text-white/80 place-items-center">
                           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
                         </div>
                         <span className="min-w-0 break-words text-white/90">{m.text || m.message || ""}</span>
@@ -470,10 +471,10 @@ export const VoiceRoomScreen = ({
                   })
                 )}
               </div>
-              <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-8 shrink-0 items-center gap-2 rounded-full border border-white/30 bg-white px-2.5 shadow-lg", !roomSettings.chat_enabled && "opacity-50")}>
-                <input value={draft} onChange={e => setDraft(e.target.value.slice(0, 500))} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} disabled={sending || !roomSettings.chat_enabled} className="min-w-0 flex-1 bg-transparent text-xs font-medium text-black outline-none placeholder:text-slate-400" />
-                <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-[color:var(--secondary)]"><Smile className="h-3.5 w-3.5" /></button>
-                <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white"><Send className="h-3 w-3" /></button>
+              <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1 mb-1 flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/30 bg-white px-2 shadow-md", !roomSettings.chat_enabled && "opacity-50")}>
+                <input value={draft} onChange={e => setDraft(e.target.value.slice(0, 500))} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} disabled={sending || !roomSettings.chat_enabled} className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-black outline-none placeholder:text-slate-400" />
+                <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[color:var(--secondary)]"><Smile className="h-3 w-3" /></button>
+                <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white"><Send className="h-2.5 w-2.5" /></button>
               </form>
             </div>
             
@@ -486,15 +487,15 @@ export const VoiceRoomScreen = ({
                   "relative group flex flex-col items-center justify-center min-h-0 flex-1 bg-transparent border-none outline-none p-0"
                 )}
               >
-                <div className="relative h-12 w-12 flex items-center justify-center">
-                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-12 w-12 object-contain animate-bounce" />
+                <div className="relative h-10 w-10 flex items-center justify-center">
+                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-10 w-10 object-contain animate-bounce" />
                 </div>
                 <span className="relative z-10 text-[9px] font-black text-amber-300">{popularityPct}%</span>
               </button>
 
-              <div className="relative h-24 w-[110px] shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center shadow-lg">
+              <div className="relative h-20 w-[100px] shrink-0 overflow-hidden rounded-lg border border-white/45 bg-white/10 flex items-center justify-center shadow-md">
                 {currentSlide && (
-                  <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-xl" />
+                  <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-lg" />
                 )}
               </div>
             </div>
@@ -502,27 +503,28 @@ export const VoiceRoomScreen = ({
         </div>
       </div>
       
-      <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[56px] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]">
-        <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
-          {micOn ? <Mic className="h-4.5 w-4.5" /> : <MicOff className="h-4.5 w-4.5" />}
+      {/* Footer Navigation */}
+      <nav style={{ backgroundColor: "var(--primary)" }} className="relative z-20 flex h-[52px] shrink-0 items-center justify-around border-t border-white/70 px-1 pb-[env(safe-area-inset-bottom)]">
+        <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
+          {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
         </button>
-        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
-          <Smile className="h-4 w-4" />
+        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
+          <Smile className="h-3.5 w-3.5" />
         </button>
-        <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
-          <Gamepad2 className="h-4 w-4" />
+        <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
+          <Gamepad2 className="h-3.5 w-3.5" />
         </button>
-        <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-11 w-11 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Private Chat">
-          <MessageCircle className="h-5 w-5" />
+        <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-10 w-10 place-items-center rounded-full border-2 border-white/90 bg-white/20 text-white shadow-lg ring-1 ring-black/10")} aria-label="Private Chat">
+          <MessageCircle className="h-4.5 w-4.5" />
         </button>
-        <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/60 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
+        <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-11 w-11 place-items-center rounded-2xl bg-gradient-to-br from-amber-300 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_12px_rgba(234,179,8,0.5)] border border-white/60 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="grid h-full w-full place-items-center rounded-[14px] bg-black/40 backdrop-blur-sm text-amber-200">
-            <Gift className="h-6 w-6 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
+          <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/40 backdrop-blur-sm text-amber-200">
+            <Gift className="h-5 w-5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
           </div>
         </button>
-        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
-          {isHost ? <Shield className="h-4 w-4" /> : isModerator ? <Shield className="h-4 w-4" /> : <Grid2X2 className="h-4 w-4" />}
+        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/75 bg-white/15 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
+          {isHost ? <Shield className="h-3.5 w-3.5" /> : isModerator ? <Shield className="h-3.5 w-3.5" /> : <Grid2X2 className="h-3.5 w-3.5" />}
         </button>
       </nav>
 
