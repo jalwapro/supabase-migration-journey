@@ -85,7 +85,6 @@ export const VoiceRoomScreen = ({
   onOpenGift,
   onOpenMore,
   onToggleMic,
-  onOpenNotice,
   onSendEmoji,
   onSeatTap,
   onJoinSeat,
@@ -320,7 +319,7 @@ export const VoiceRoomScreen = ({
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
-  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-5);
+  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-4);
   const openMemberProfile = (seatIndex: number) => {
     const seat = room.seats.find(s => s.index === seatIndex);
     if (!seat?.user) return;
@@ -411,12 +410,19 @@ export const VoiceRoomScreen = ({
       )}
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-        <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
+        
+        {/* Clean Single Room Header */}
+        <div className="shrink-0 pt-2 px-3">
+          <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
+        </div>
+
         <GiftAnimationPlayer roomId={roomId} />
         
-        {/* Professional Fixed Workspace Layout */}
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-1">
-          <div className="relative max-h-[28dvh] min-h-0 shrink-0 overflow-y-auto bg-transparent pt-0.5 no-scrollbar">
+        {/* Balanced Workspace: Seats Grid + Bottom Hub */}
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
+          
+          {/* Expanded Seats Grid Container */}
+          <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 px-1 no-scrollbar">
             <SeatGrid 
               seats={room.seats.map(s => ({
                 ...s,
@@ -439,104 +445,125 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          {/* Sleek Glassmorphism Chat & Banner Hub */}
-          <section className="mt-auto grid h-[110px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(70px,.7fr)] gap-1 px-2 py-1">
-            <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/40 backdrop-blur-xl shadow-xl">
-              <div className="flex h-5 shrink-0 items-end gap-3 border-b border-white/10 px-2.5">
-                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[10px] font-bold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-4 rounded-full bg-amber-400" /></button>
-                <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[10px] font-medium text-white/60 disabled:opacity-40")}>Chat</button>
+          {/* Bottom Dock Container: Entrance Bar + Chat Box Stacked */}
+          <div className="shrink-0 flex flex-col gap-1 px-3 pb-1">
+            
+            {/* Entrance Bar Notification */}
+            <div className="flex items-center gap-3 h-[38px] px-3 rounded-xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-transparent border border-pink-500/40 backdrop-blur-md shadow-lg">
+              <div className="h-6 w-6 rounded-full bg-pink-500/30 p-0.5 border border-pink-400 flex items-center justify-center overflow-hidden shrink-0">
+                <img src={room.host?.avatar || "/images/jalwa-1.gif"} alt="" className="h-full w-full object-cover rounded-full" />
               </div>
-              <div className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar">
-                {visibleMessages.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-center text-white/40">
-                    <div>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="text-xs font-bold text-pink-300 truncate">ALI KING 🌸</span>
+                <span className="text-[11px] text-white/80 truncate">enters the room</span>
+              </div>
+            </div>
+
+            {/* Chat & Popularity Hub */}
+            <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
+              
+              {/* Chat Box */}
+              <div className="flex min-w-0 h-[110px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
+                <div className="flex h-5 shrink-0 items-end gap-3 border-b border-white/10 px-2.5">
+                  <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[10px] font-bold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-4 rounded-full bg-amber-400" /></button>
+                  <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[10px] font-medium text-white/60 disabled:opacity-40")}>Chat</button>
+                </div>
+                
+                <div className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar">
+                  {visibleMessages.length === 0 ? (
+                    <div className="flex h-full items-center justify-center text-center text-white/40">
                       <p className="text-[10px] font-medium">{announcement || "Welcome to the room!"}</p>
                     </div>
-                  </div>
-                ) : (
-                  visibleMessages.map(m => {
-                    const avatar = m.user?.avatar || m.sender_avatar;
-                    const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase();
-                    return (
-                      <div key={m.id} className="mb-0.5 flex min-w-0 items-start gap-1 text-[10px]">
-                        <div className="grid h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-amber-500/20 text-[7px] font-bold text-amber-300 place-items-center border border-amber-500/30">
-                          {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
+                  ) : (
+                    visibleMessages.map(m => {
+                      const avatar = m.user?.avatar || m.sender_avatar;
+                      const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase();
+                      return (
+                        <div key={m.id} className="mb-0.5 flex min-w-0 items-start gap-1 text-[10px]">
+                          <div className="grid h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-amber-500/20 text-[7px] font-bold text-amber-300 place-items-center border border-amber-500/30">
+                            {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
+                          </div>
+                          <span className="min-w-0 break-words text-white/90">{m.text || m.message || ""}</span>
                         </div>
-                        <span className="min-w-0 break-words text-white/90">{m.text || m.message || ""}</span>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-              <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2 shadow-inner", !roomSettings.chat_enabled && "opacity-50")}>
-                <input 
-                  value={draft} 
-                  onChange={e => setDraft(e.target.value.slice(0, 500))} 
-                  onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} 
-                  placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} 
-                  disabled={sending || !roomSettings.chat_enabled} 
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck={false}
-                  data-form-type="other"
-                  className="min-w-0 flex-1 bg-transparent text-[10px] font-medium text-white outline-none placeholder:text-white/40" 
-                />
-                <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-amber-300"><Smile className="h-3 w-3" /></button>
-                <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-gradient-to-r from-amber-400 to-purple-600 text-black font-bold"><Send className="h-2.5 w-2.5" /></button>
-              </form>
-            </div>
-            
-            <div className="flex min-w-0 flex-col justify-between items-end gap-1">
-              <button 
-                type="button" 
-                onClick={tap(openPopularity)} 
-                className={cn(
-                  buttonClass,
-                  "relative group flex flex-col items-center justify-center min-h-0 flex-1 bg-black/40 border border-white/20 rounded-xl p-0 w-full backdrop-blur-md shadow-lg"
-                )}
-              >
-                <div className="relative h-7 w-7 flex items-center justify-center">
-                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-7 w-7 object-contain animate-bounce" />
+                      );
+                    })
+                  )}
                 </div>
-                <span className="relative z-10 text-[9px] font-black text-amber-300 tracking-wider">{popularityPct}%</span>
-              </button>
 
-              <div className="relative h-14 w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/40 backdrop-blur-md flex items-center justify-center shadow-lg">
-                {currentSlide && (
-                  <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-xl" />
-                )}
+                <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2 shadow-inner", !roomSettings.chat_enabled && "opacity-50")}>
+                  <input 
+                    value={draft} 
+                    onChange={e => setDraft(e.target.value.slice(0, 500))} 
+                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} 
+                    placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} 
+                    disabled={sending || !roomSettings.chat_enabled} 
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    data-form-type="other"
+                    className="min-w-0 flex-1 bg-transparent text-[10px] font-medium text-white outline-none placeholder:text-white/40" 
+                  />
+                  <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-amber-300"><Smile className="h-3 w-3" /></button>
+                  <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-gradient-to-r from-amber-400 to-purple-600 text-black font-bold"><Send className="h-2.5 w-2.5" /></button>
+                </form>
               </div>
-            </div>
-          </section>
+              
+              {/* Popularity & Slide Banner */}
+              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[110px]">
+                <button 
+                  type="button" 
+                  onClick={tap(openPopularity)} 
+                  className={cn(
+                    buttonClass,
+                    "relative group flex flex-col items-center justify-center flex-1 bg-black/50 border border-white/20 rounded-xl p-0 w-full backdrop-blur-md shadow-lg"
+                  )}
+                >
+                  <div className="relative h-6 w-6 flex items-center justify-center">
+                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-6 w-6 object-contain animate-bounce" />
+                  </div>
+                  <span className="relative z-10 text-[9px] font-black text-amber-300 tracking-wider">{popularityPct}%</span>
+                </button>
+
+                <div className="relative h-[52px] w-full shrink-0 overflow-hidden rounded-xl border border-white/20 bg-black/50 backdrop-blur-md flex items-center justify-center shadow-lg">
+                  {currentSlide && (
+                    <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-xl" />
+                  )}
+                </div>
+              </div>
+
+            </section>
+          </div>
+
         </div>
       </div>
       
-      {/* Professional Footer Bar */}
-      <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.9)" }} className="relative z-20 flex h-[46px] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-        <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
-          {micOn ? <Mic className="h-3.5 w-3.5 text-emerald-400" /> : <MicOff className="h-3.5 w-3.5 text-rose-400" />}
+      {/* Bottom Navigation Bar */}
+      <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 flex h-[52px] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+        <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
+          {micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}
         </button>
-        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
-          <Smile className="h-3 w-3 text-amber-300" />
+        <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}>
+          <Smile className="h-3.5 w-3.5 text-amber-300" />
         </button>
-        <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
-          <Gamepad2 className="h-3 w-3 text-purple-400" />
+        <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}>
+          <Gamepad2 className="h-3.5 w-3.5 text-purple-400" />
         </button>
-        <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat">
+        <button type="button" onClick={tap(onOpenPrivateChat)} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat">
           <MessageCircle className="h-4 w-4" />
         </button>
-        <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-9 w-9 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
+        <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}>
           <div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60 backdrop-blur-sm text-amber-200">
-            <Gift className="h-4 w-4 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
+            <Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" />
           </div>
         </button>
-        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-7 w-7 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
-          {isHost ? <Shield className="h-3 w-3 text-amber-400" /> : isModerator ? <Shield className="h-3 w-3 text-cyan-400" /> : <Grid2X2 className="h-3 w-3 text-white" />}
+        <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>
+          {isHost ? <Shield className="h-3.5 w-3.5 text-amber-400" /> : isModerator ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : <Grid2X2 className="h-3.5 w-3.5 text-white" />}
         </button>
       </nav>
 
+      {/* Sheets & Modals */}
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
       
       {emojiOpen && (
