@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Gift, Lock, MessageSquare, Mic, RefreshCw, Settings, Unlock, X, Users, VolumeX, ShieldAlert, Music, Shield, Ban, Star, ArrowLeft } from "lucide-react";
+import { Check, Gift, Lock, MessageSquare, Mic, RefreshCw, Settings, Unlock, X, Users, VolumeX, Volume2, ShieldAlert, Music, Shield, Ban, Star, ArrowLeft, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -11,6 +11,7 @@ type RoomSettings = {
   music_enabled?: boolean;
   seat_count?: number;
   stage_locked?: boolean;
+  room_pin?: string | null;
 };
 
 type Props = {
@@ -19,24 +20,32 @@ type Props = {
   onClose: () => void;
   onSettingsChange?: (settings: RoomSettings) => void;
   onOpenMusic?: () => void;
+  speakerMuted?: boolean;
+  onToggleSpeaker?: () => void;
 };
 
-const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false };
+const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false, room_pin: null };
 
 type ActiveView = "main" | "kick" | "block" | "moderators";
 
-export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOpenMusic }: Props) {
+export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOpenMusic, speakerMuted, onToggleSpeaker }: Props) {
   const [settings, setSettings] = useState<RoomSettings>(defaults);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("main");
+  const [generatedPin, setGeneratedPin] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("live_rooms").select("is_locked,chat_enabled,gifts_enabled,guest_mic_enabled,seat_count").eq("id", roomId).maybeSingle();
+    const { data, error } = await supabase.from("live_rooms").select("is_locked,chat_enabled,gifts_enabled,guest_mic_enabled,seat_count,room_pin").eq("id", roomId).maybeSingle();
     setLoading(false);
     if (error) { toast.error(error.message); return; }
-    if (data) { const next = { ...defaults, ...data } as RoomSettings; setSettings(next); onSettingsChange?.(next); }
+    if (data) { 
+      const next = { ...defaults, ...data } as RoomSettings; 
+      setSettings(next); 
+      onSettingsChange?.(next); 
+      if (data.room_pin) setGeneratedPin(data.room_pin);
+    }
   };
 
   useEffect(() => {
@@ -47,6 +56,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
       const next = { ...defaults, ...row } as RoomSettings;
       setSettings(prev => ({ ...prev, ...next }));
       onSettingsChange?.(next);
+      if (row.room_pin !== undefined) setGeneratedPin(row.room_pin ?? null);
     }).subscribe();
     return () => { void supabase.removeChannel(channel); };
   }, [roomId]);
@@ -54,15 +64,30 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
   const update = async (key: keyof RoomSettings, value: boolean | number) => {
     if (saving) return;
     setSaving(key);
+
     if (key === "seat_count") {
       const { error } = await supabase.from("live_rooms").update({ seat_count: value }).eq("id", roomId);
       setSaving(null);
       if (error) { toast.error(error.message); return; }
       const next = { ...settings, seat_count: Number(value) }; setSettings(next); onSettingsChange?.(next); toast.success(`Seat capacity updated to ${value}`); return;
     }
+
     if (key === "music_enabled") {
       setSaving(null); const next = { ...settings, music_enabled: Boolean(value) }; setSettings(next); onSettingsChange?.(next); toast.success(`Music ${value ? "enabled" : "disabled"}`); return;
     }
+
+    let extraData: any = {};
+    if (key === "is_locked") {
+      if (value === true) {
+        const newPin = Math.floor(1000 + Math.random() * 9000).toString();
+        extraData.room_pin = newPin;
+        setGeneratedPin(newPin);
+      } else {
+        extraData.room_pin = null;
+        setGeneratedPin(null);
+      }
+    }
+
     const { data, error } = await supabase.rpc("host_update_room_settings", {
       _room_id: roomId,
       _is_locked: key === "is_locked" ? value : null,
@@ -70,9 +95,18 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
       _gifts_enabled: key === "gifts_enabled" ? value : null,
       _guest_mic_enabled: key === "guest_mic_enabled" ? value : null,
     });
+
+    if (key === "is_locked") {
+      await supabase.from("live_rooms").update({ room_pin: extraData.room_pin }).eq("id", roomId);
+    }
+
     setSaving(null);
     if (error) { toast.error(error.message); return; }
-    const next = { ...settings, ...(data as Partial<RoomSettings>) } as RoomSettings; setSettings(next); onSettingsChange?.(next); toast.success(`${labels[key]} ${value ? "enabled" : "disabled"}`);
+
+    const next = { ...settings, [key]: value, ...extraData, ...(data as Partial<RoomSettings>) } as RoomSettings; 
+    setSettings(next); 
+    onSettingsChange?.(next); 
+    toast.success(`${labels[key] || key} ${value ? "enabled" : "disabled"}`);
   };
 
   const handleAction = async (actionType: string) => {
@@ -93,18 +127,14 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
   };
 
   return (
-    /* items-end ki wajah se yeh ab screen ke bilkul bottom par align hoga */
     <div 
       className={`fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm transition-opacity duration-300 ease-in-out ${open ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} 
       onClick={onClose}
     >
-      {/* Keyboard style popup: slide up from bottom with rounded-t-3xl */}
       <section 
         className={`w-full max-w-sm rounded-t-3xl border-t border-x border-white/20 bg-[#100719]/95 p-3 text-white shadow-2xl backdrop-blur-md max-h-[65dvh] flex flex-col transition-transform duration-300 ease-out ${open ? 'translate-y-0' : 'translate-y-full'}`} 
         onClick={e => e.stopPropagation()}
       >
-        
-        {/* Header */}
         <div className="mb-2.5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-1.5">
             {activeView !== "main" ? (
@@ -112,7 +142,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
                 <ArrowLeft className="h-3.5 w-3.5" />
               </button>
             ) : (
-              <Settings className="h-4 w-4 text-[color:var(--secondary)]" />
+              <Settings className="h-4 w-4 text-amber-400" />
             )}
             <h2 className="text-xs font-black">
               {activeView === "main" && "Host Controls & Settings"}
@@ -133,14 +163,39 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
           </div>
         </div>
 
-        {/* Body Views */}
+        {generatedPin && activeView === "main" && (
+          <div className="mb-2 p-2.5 rounded-xl bg-gradient-to-r from-purple-900/60 to-amber-900/60 border border-amber-400/50 text-center shadow-lg">
+            <div className="flex items-center justify-center gap-1.5 text-amber-300 mb-0.5">
+              <KeyRound className="h-4 w-4 animate-bounce" />
+              <span className="text-[10px] font-bold">Room Locked PIN</span>
+            </div>
+            <div className="text-lg font-black text-amber-300 tracking-widest bg-black/60 py-1 rounded-lg border border-amber-400/30">
+              {generatedPin}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 text-xs">
           {activeView === "main" ? (
             <>
-              {/* Seat Capacity Row */}
+              {/* Speaker Toggle Row in Host Controls */}
               <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5">
                 <div className="flex items-center gap-2">
-                  <Users className="h-3.5 w-3.5 text-[color:var(--secondary)]" />
+                  {speakerMuted ? <VolumeX className="h-3.5 w-3.5 text-rose-400" /> : <Volume2 className="h-3.5 w-3.5 text-cyan-400" />}
+                  <span className="font-bold text-[11px]">Room Speaker Output</span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={onToggleSpeaker}
+                  className={`px-3 py-1 rounded-lg text-[10px] font-bold ${speakerMuted ? "bg-rose-500/20 text-rose-300 border border-rose-500/40" : "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"}`}
+                >
+                  {speakerMuted ? "Unmute Speaker" : "Mute Speaker"}
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5">
+                <div className="flex items-center gap-2">
+                  <Users className="h-3.5 w-3.5 text-amber-400" />
                   <span className="font-bold text-[11px]">Seats Capacity</span>
                 </div>
                 <select 
@@ -153,7 +208,6 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
                 </select>
               </div>
 
-              {/* Quick Actions Grid */}
               <div>
                 <div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-white/50">Quick Actions</div>
                 <div className="grid grid-cols-4 gap-1.5 text-center">
@@ -166,7 +220,6 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
                 </div>
               </div>
 
-              {/* Toggles Row */}
               <div className="space-y-1">
                 <div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div>
                 <div className="grid grid-cols-3 gap-1.5">
@@ -236,7 +289,7 @@ function ToggleMini({ icon, label, value, busy, onToggle }: { icon: React.ReactN
       type="button" 
       disabled={busy} 
       onClick={() => onToggle(!value)} 
-      className={`flex items-center justify-between p-1.5 rounded-lg border transition-all ${value ? "bg-[color:var(--primary)]/30 border-[color:var(--primary)] shadow-[0_0_8px_rgba(var(--primary),0.3)]" : "bg-white/5 border-white/10"} disabled:opacity-50`}
+      className={`flex items-center justify-between p-1.5 rounded-lg border transition-all ${value ? "bg-amber-500/30 border-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.3)]" : "bg-white/5 border-white/10"} disabled:opacity-50`}
     >
       <div className="flex items-center gap-1 text-white/90">
         {icon}
