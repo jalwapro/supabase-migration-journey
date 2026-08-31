@@ -87,7 +87,7 @@ export function Seat({ seat, onClick }: SeatProps) {
           <span className="absolute left-0.5 top-0.5 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70 text-[8px] font-bold text-white/80">
             {num}
           </span>
-          <span className="relative aspect-square w-[52px] max-w-full rounded-full p-0">
+          <span className="relative aspect-square w-[46px] max-w-full rounded-full p-0">
             <EmptySeatArt locked={is_locked} />
           </span>
           <span className="w-full truncate text-[8px] font-semibold text-white/60 text-center">No.{num}</span>
@@ -111,7 +111,7 @@ export function Seat({ seat, onClick }: SeatProps) {
         </span>
 
         {/* Seat Avatar Container with Frame Outside Overlay */}
-        <span className="relative aspect-square w-[52px] max-w-full p-0 flex items-center justify-center my-1">
+        <span className="relative aspect-square w-[46px] max-w-full p-0 flex items-center justify-center my-1">
           {/* Round DP */}
           <span className={cn(
             "relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2 z-10",
@@ -123,10 +123,10 @@ export function Seat({ seat, onClick }: SeatProps) {
           
           {/* User Profile Frame perfectly overlayed on the outside of the DP */}
           {frameUrl && (
-            <img src={frameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />
+            <img src={frameUrl} alt="" className="absolute -inset-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] pointer-events-none object-contain z-30" draggable={false} />
           )}
 
-          <span className={cn("absolute -bottom-1 -right-1 z-40 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+          <span className={cn("absolute -bottom-1 -right-1 z-40 grid h-3 w-3 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
             {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
           </span>
         </span>
@@ -266,19 +266,19 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
   return (
     <section className="relative flex w-full flex-col items-center px-1 py-0.5" data-seat-capacity={capacity}>
-      <div className="grid w-full grid-cols-5 gap-1 content-start max-h-[38svh] min-h-[140px] overflow-y-auto no-scrollbar pb-2">
+      <div className="grid w-full grid-cols-5 gap-1.5 content-start max-h-[36svh] min-h-[140px] overflow-y-auto no-scrollbar pb-1">
         {/* Seat No. 1: Host */}
         <div className="relative flex flex-col items-center justify-center p-0.5">
           <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
             <span className="absolute left-0.5 top-0.5 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 text-[8px] font-black text-amber-300">
               1
             </span>
-            <span className="relative aspect-square w-[52px] max-w-full p-0 flex items-center justify-center my-1">
+            <span className="relative aspect-square w-[46px] max-w-full p-0 flex items-center justify-center my-1">
               <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10">
                 <HostCard host={host} onTap={onHostTap} />
               </span>
               {hostFrameUrl && (
-                <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />
+                <img src={hostFrameUrl} alt="" className="absolute -inset-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] pointer-events-none object-contain z-30" draggable={false} />
               )}
             </span>
             <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow mt-0.5">
