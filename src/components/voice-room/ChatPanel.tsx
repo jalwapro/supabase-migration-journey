@@ -69,7 +69,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
     if (!text) return;
     onSend(text);
     setDraft(""); // Input clean ho jayega taake dubara popup mein show na ho
-    setShowInputPopup(false); // Clean popup band ho jayega aur message sirf chat box mein dikhega
+    setShowInputPopup(false); // Popup band ho jayega aur message sirf chat box mein dikhega
   };
 
   return (
@@ -81,7 +81,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
         className="w-full max-w-[485px] h-[52svh] rounded-t-[32px] border-t border-white/20 bg-[#0d0714]/95 p-4 text-white shadow-[0_-10px_35px_rgba(139,92,246,0.25)] backdrop-blur-2xl flex flex-col justify-between animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header & Announcement Bar (No Tabs, No Clickable Popup) */}
+        {/* Top Header & Announcement Bar */}
         <div className="flex flex-col gap-2 border-b border-white/10 pb-3 shrink-0">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-black uppercase tracking-wider text-amber-300">Room Chat & Notice</h3>
@@ -126,7 +126,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
 
       </div>
 
-      {/* Clean Comment Input Popup (Opens clean mobile keyboard matching user theme without extra system lines) */}
+      {/* Clean Comment Input Popup */}
       {showInputPopup && (
         <div 
           className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/80 backdrop-blur-md animate-fade-in p-0"
