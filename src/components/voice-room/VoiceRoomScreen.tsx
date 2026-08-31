@@ -141,6 +141,35 @@ export const VoiceRoomScreen = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
+  // Handle Mobile / Browser Back Button to close popups first instead of exiting app
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      let closedSomething = false;
+
+      if (generatedPin) { setGeneratedPin(null); closedSomething = true; }
+      else if (giftOpen) { setGiftOpen(false); closedSomething = true; }
+      else if (emojiOpen) { setEmojiOpen(false); closedSomething = true; }
+      else if (gamesOpen) { setGamesOpen(false); closedSomething = true; }
+      else if (popularityOpen) { setPopularityOpen(false); closedSomething = true; }
+      else if (selectedMember) { setSelectedMember(null); closedSomething = true; }
+      else if (hostSettingsOpen) { setHostSettingsOpen(false); closedSomething = true; }
+      else if (moderatorControlsOpen) { setModeratorControlsOpen(false); closedSomething = true; }
+
+      if (closedSomething) {
+        e.preventDefault();
+        window.history.pushState(null, "", window.location.href);
+      }
+    };
+
+    // Push state so back button can be trapped
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [giftOpen, emojiOpen, gamesOpen, popularityOpen, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin]);
+
   useEffect(() => {
     if (roomSettings.is_locked && !isHost && !isUnlockedByPin) {
       setShowPinModal(true);
