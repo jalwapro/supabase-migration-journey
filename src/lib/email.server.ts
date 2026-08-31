@@ -55,31 +55,47 @@ export interface SendMailResult {
 export async function sendMailServer(
   input: SendMailInput,
 ): Promise<SendMailResult> {
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER!;
+  // FIX: Validate SMTP_FROM/SMTP_USER is configured
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER;
+  if (!from) {
+    throw new Error("SMTP_FROM or SMTP_USER environment variable must be configured");
+  }
+
   const transporter = getTransporter();
 
-  const info = await transporter.sendMail({
-    from,
-    to: input.to,
-    subject: input.subject,
-    html: input.html,
-    text: input.text ?? (input.html ? undefined : ""),
-    replyTo: input.replyTo,
-    cc: input.cc,
-    bcc: input.bcc,
-  });
+  // FIX: Add try-catch to handle sendMail errors properly
+  try {
+    const info = await transporter.sendMail({
+      from,
+      to: input.to,
+      subject: input.subject,
+      html: input.html,
+      text: input.text ?? (input.html ? undefined : ""),
+      replyTo: input.replyTo,
+      cc: input.cc,
+      bcc: input.bcc,
+    });
 
-  return {
-    ok: true,
-    messageId: info.messageId,
-    accepted: (info.accepted ?? []).map(String),
-    rejected: (info.rejected ?? []).map(String),
-    response: info.response ?? "",
-  };
+    return {
+      ok: true,
+      messageId: info.messageId || "",
+      accepted: (info.accepted ?? []).map(String),
+      rejected: (info.rejected ?? []).map(String),
+      response: info.response ?? "",
+    };
+  } catch (error) {
+    console.error("[email] sendMail failed:", error);
+    throw error;
+  }
 }
 
 export async function verifySmtpConnection(): Promise<boolean> {
   const transporter = getTransporter();
-  await transporter.verify();
-  return true;
+  try {
+    await transporter.verify();
+    return true;
+  } catch (error) {
+    console.error("[email] SMTP connection verification failed:", error);
+    throw error;
+  }
 }
