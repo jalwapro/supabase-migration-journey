@@ -18,7 +18,19 @@ const MIN_CAPACITY = 4, MAX_CAPACITY = 20;
 const normalizeCapacity = (v: unknown) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(v)) || MAX_CAPACITY));
 
 type HostTheme = { bg_image: string | null; animation_url: string | null; preview_url: string | null; primary_color: string | null; accent_color: string | null };
-type RoomChatMessage = { id: string; user_id: string | null; text: string | null; message?: string | null; kind: string; created_at: string; sender_username?: string | null; sender_avatar?: string | null; user?: { username: string | null; avatar: string | null } | null; pending?: boolean; failed?: boolean };
+type RoomChatMessage = { 
+  id: string; 
+  user_id: string | null; 
+  text: string | null; 
+  message?: string | null; 
+  kind: string; 
+  created_at: string; 
+  sender_username?: string | null; 
+  sender_avatar?: string | null; 
+  user?: { username: string | null; avatar: string | null } | null; 
+  pending?: boolean; 
+  failed?: boolean; 
+};
 type RoomSettings = { is_locked: boolean; chat_enabled: boolean; gifts_enabled: boolean; guest_mic_enabled: boolean };
 
 interface GameSlide {
@@ -152,7 +164,7 @@ export const VoiceRoomScreen = ({
     if (gameSlides.length <= 1) return;
     const slideInterval = setInterval(() => {
       setCurrentSlideIndex((prevIndex) => 
-        prevIndex === gameSlides.length - 1 ? 0 : prevIndex + 1
+        (prevIndex + 1) % gameSlides.length
       );
     }, 5000);
     return () => clearInterval(slideInterval);
@@ -176,7 +188,10 @@ export const VoiceRoomScreen = ({
       if (active) setIsModerator(!isHost && !!data?.is_moderator);
     };
     void syncRole();
-    const channel = supabase.channel(`voice-role-${roomId}`).on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, () => void syncRole()).subscribe();
+    const channel = supabase
+      .channel(`voice-role-${roomId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, () => void syncRole())
+      .subscribe();
     return () => {
       active = false;
       void supabase.removeChannel(channel);
@@ -215,7 +230,7 @@ export const VoiceRoomScreen = ({
     let active = true;
     const channel = supabase.channel(`voice-chat-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => {
       const row = p.new as RoomChatMessage;
-      if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev.filter(m => !(m.pending && m.text === row.text)), row].slice(-50));
+      if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev.filter(m => !m.pending), row].slice(-50));
     }).on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => {
       const row = p.new as RoomChatMessage;
       if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev.map(m => m.id === row.id ? { ...m, ...row, pending: false, failed: false } : m) : [...prev, row].slice(-50));
@@ -253,12 +268,16 @@ export const VoiceRoomScreen = ({
     }
     const localId = `local-${crypto.randomUUID()}`;
     setRoomMessages(prev => [...prev, { id: localId, user_id: user.id, kind: "text", text: value, created_at: new Date().toISOString(), pending: true }].slice(-50));
-    const { data, error } = await supabase.from("room_messages").insert({ room_id: roomId, user_id: user.id, kind: "text", text: value, client_id: crypto.randomUUID() }).select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").single();
+    const { data, error } = await supabase
+      .from("room_messages")
+      .insert({ room_id: roomId, user_id: user.id, kind: "text", text: value, client_id: crypto.randomUUID() })
+      .select("id, user_id, kind, text, message, created_at, sender_username, sender_avatar")
+      .single();
     if (error) {
       setRoomMessages(prev => prev.map(m => m.id === localId ? { ...m, pending: false, failed: true } : m));
       setDraft(value);
     } else if (data) {
-      setRoomMessages(prev => [...prev.filter(m => m.id !== localId && !(m.pending && m.text === value)), data as RoomChatMessage].slice(-50));
+      setRoomMessages(prev => [...prev.filter(m => m.id !== localId), data as RoomChatMessage].slice(-50));
     }
     setSending(false);
   };
