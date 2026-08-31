@@ -69,6 +69,7 @@ export function Seat({ seat, onClick }: SeatProps) {
   const username = user?.username || user?.name || `No.${num}`;
   const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
   
+  // User profile frame support
   const frameUrl = user?.avatar_frame_url || user?.frame_url;
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   
@@ -109,25 +110,28 @@ export function Seat({ seat, onClick }: SeatProps) {
           {num}
         </span>
 
-        <span className="relative aspect-square w-[52px] max-w-full rounded-full p-0 flex items-center justify-center">
+        {/* Seat Avatar Container with Frame Outside Overlay */}
+        <span className="relative aspect-square w-[52px] max-w-full p-0 flex items-center justify-center my-1">
+          {/* Round DP */}
           <span className={cn(
-            "relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2",
+            "relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2 z-10",
             speaking ? "border-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : "border-amber-400/80"
           )}>
             <img src={avatar} alt={username} className="h-full w-full object-cover rounded-full" draggable={false} />
             {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse pointer-events-none" />}
           </span>
           
+          {/* User Profile Frame perfectly overlayed on the outside of the DP */}
           {frameUrl && (
-            <img src={frameUrl} alt="" className="absolute inset-0 -m-2 h-[calc(100%+16px)] w-[calc(100%+16px)] pointer-events-none object-contain z-20" draggable={false} />
+            <img src={frameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />
           )}
 
-          <span className={cn("absolute bottom-0 right-0 z-30 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+          <span className={cn("absolute -bottom-1 -right-1 z-40 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
             {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
           </span>
         </span>
 
-        <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
+        <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow mt-0.5">{username}</span>
         <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/90">
           <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
         </span>
@@ -262,7 +266,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
   return (
     <section className="relative flex w-full flex-col items-center px-1 py-0.5" data-seat-capacity={capacity}>
-      {/* Universal Responsive Container: Har Android aur iOS device par 20 seats seamlessly fit aur scroll hongi */}
       <div className="grid w-full grid-cols-5 gap-1 content-start max-h-[38svh] min-h-[140px] overflow-y-auto no-scrollbar pb-2">
         {/* Seat No. 1: Host */}
         <div className="relative flex flex-col items-center justify-center p-0.5">
@@ -270,15 +273,15 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
             <span className="absolute left-0.5 top-0.5 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 text-[8px] font-black text-amber-300">
               1
             </span>
-            <span className="relative aspect-square w-[52px] max-w-full rounded-full p-0 flex items-center justify-center">
-              <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400">
+            <span className="relative aspect-square w-[52px] max-w-full p-0 flex items-center justify-center my-1">
+              <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10">
                 <HostCard host={host} onTap={onHostTap} />
               </span>
               {hostFrameUrl && (
-                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-2 h-[calc(100%+16px)] w-[calc(100%+16px)] pointer-events-none object-contain z-20" draggable={false} />
+                <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />
               )}
             </span>
-            <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow">
+            <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow mt-0.5">
               {host.username}
             </span>
             <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/95">
