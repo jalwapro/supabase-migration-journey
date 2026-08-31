@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Lock, KeyRound } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Lock, KeyRound, VolumeX, Volume2, Share2, Flag, LogOut, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -97,6 +97,8 @@ export const VoiceRoomScreen = ({
   onOpenGift,
   onOpenMore,
   onToggleMic,
+  speakerMuted,
+  onToggleSpeaker,
   onSendEmoji,
   onSeatTap,
   onJoinSeat,
@@ -113,6 +115,7 @@ export const VoiceRoomScreen = ({
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [gamesOpen, setGamesOpen] = useState(false);
   const [popularityOpen, setPopularityOpen] = useState(false);
+  const [userMoreOpen, setUserMoreOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
   const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
@@ -141,7 +144,6 @@ export const VoiceRoomScreen = ({
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
-  // Handle Mobile / Browser Back Button to close popups first instead of exiting app
   useEffect(() => {
     const handlePopState = (e: PopStateEvent) => {
       let closedSomething = false;
@@ -151,6 +153,7 @@ export const VoiceRoomScreen = ({
       else if (emojiOpen) { setEmojiOpen(false); closedSomething = true; }
       else if (gamesOpen) { setGamesOpen(false); closedSomething = true; }
       else if (popularityOpen) { setPopularityOpen(false); closedSomething = true; }
+      else if (userMoreOpen) { setUserMoreOpen(false); closedSomething = true; }
       else if (selectedMember) { setSelectedMember(null); closedSomething = true; }
       else if (hostSettingsOpen) { setHostSettingsOpen(false); closedSomething = true; }
       else if (moderatorControlsOpen) { setModeratorControlsOpen(false); closedSomething = true; }
@@ -161,14 +164,13 @@ export const VoiceRoomScreen = ({
       }
     };
 
-    // Push state so back button can be trapped
     window.history.pushState(null, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [giftOpen, emojiOpen, gamesOpen, popularityOpen, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin]);
+  }, [giftOpen, emojiOpen, gamesOpen, popularityOpen, userMoreOpen, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin]);
 
   useEffect(() => {
     if (roomSettings.is_locked && !isHost && !isUnlockedByPin) {
@@ -380,7 +382,16 @@ export const VoiceRoomScreen = ({
     onOpenGames?.(); 
   };
   const openPopularity = () => { setPopularityOpen(true); };
-  const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
+  
+  const openMoreForRole = () => { 
+    if (isHost) {
+      setHostSettingsOpen(true); 
+    } else if (isModerator) {
+      setModeratorControlsOpen(true); 
+    } else {
+      setUserMoreOpen(true); // Normal user options sheet
+    }
+  };
   
   const joinSeat = (index: number) => { 
     if (roomSettings.is_locked && !isHost && !isUnlockedByPin) {
@@ -460,7 +471,10 @@ export const VoiceRoomScreen = ({
               </button>
               <button 
                 type="button"
-                onClick={onExit}
+                onClick={() => {
+                  setShowPinModal(false);
+                  onExit();
+                }}
                 className="px-4 py-3 rounded-xl bg-white/10 text-slate-300 font-semibold text-xs active:scale-95 transition-transform"
               >
                 Leave
@@ -747,10 +761,91 @@ export const VoiceRoomScreen = ({
         </div>
       )}
 
+      {/* User More Options Sheet for Normal Users */}
+      {userMoreOpen && (
+        <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm animate-fade-in" onClick={() => setUserMoreOpen(false)}>
+          <div className="w-full max-w-sm rounded-t-3xl border-t border-x border-white/20 bg-[#100719]/95 p-4 text-white shadow-2xl backdrop-blur-md flex flex-col animate-slide-up" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <Info className="h-4 w-4 text-cyan-400" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300">Room Options</h3>
+              </div>
+              <button type="button" onClick={() => setUserMoreOpen(false)} className="p-1 rounded-full bg-white/10 text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-2 text-xs">
+              <button 
+                type="button"
+                onClick={() => { onToggleSpeaker(); }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`p-2 rounded-lg ${speakerMuted ? "bg-rose-500/20 text-rose-300" : "bg-cyan-500/20 text-cyan-300"}`}>
+                    {speakerMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-white">Speaker Output</p>
+                    <p className="text-[10px] text-white/50">{speakerMuted ? "Awaaz band hai (Muted)" : "Awaaz chalu hai"}</p>
+                  </div>
+                </div>
+                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${speakerMuted ? "bg-rose-500/30 text-rose-300" : "bg-cyan-500/30 text-cyan-300"}`}>
+                  {speakerMuted ? "Unmute" : "Mute"}
+                </span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => { setUserMoreOpen(false); onShare(); }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-purple-500/20 text-purple-300">
+                    <Share2 className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-white">Share Room</p>
+                    <p className="text-[10px] text-white/50">Doston ke sath room link share karein</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-semibold text-purple-300 bg-purple-500/20 px-2.5 py-1 rounded-lg">Share</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => { setUserMoreOpen(false); onReport(); }}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 active:scale-95 transition"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20 text-amber-300">
+                    <Flag className="h-4 w-4" />
+                  </div>
+                  <div className="text-left">
+                    <p className="font-bold text-white">Report Room</p>
+                    <p className="text-[10px] text-white/50">Agar koi kharabi ya violation hai</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-semibold text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded-lg">Report</span>
+              </button>
+            </div>
+
+            <button 
+              type="button"
+              onClick={() => { setUserMoreOpen(false); onExit(); }}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 text-white font-bold text-xs shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Leave Room</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={(slug) => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
       {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
       {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
-      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} />}
+      {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} speakerMuted={speakerMuted} onToggleSpeaker={onToggleSpeaker} />}
       {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
     </main>
   );
