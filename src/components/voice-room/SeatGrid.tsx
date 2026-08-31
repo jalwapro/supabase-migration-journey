@@ -13,6 +13,7 @@ const normalizeCapacity = (value?: number) => Math.min(MAX_CAPACITY, Math.max(MI
 const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
 
 type SeatRequest = { id: string; from_user: string; seat_index: number | null; created_at: string; username: string; avatar: string | null };
+type RoomViewer = { id: string; username: string; avatar: string | null };
 
 export type RoomSeatUser = {
   id?: string;
@@ -48,124 +49,105 @@ export type RoomParticipant = {
   level?: number;
 };
 
-function EmptySeatArt({ locked }: { locked: boolean }) { 
+function EmptySeatArt({ locked }: { locked: boolean }) {  
   return (
-    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/20 bg-black/20 shadow-inner">
-      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover opacity-60 rounded-full" draggable={false} />
-      <span className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
-        <Plus className="h-3 w-3 text-white/70" />
+    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/30 bg-black/40 shadow-inner">
+      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover opacity-50 rounded-full" draggable={false} />
+      <span className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+        <Plus className="h-4 w-4 text-white/80" />
       </span>
-      {locked && <Lock className="absolute h-3 w-3 text-amber-400 drop-shadow" />}
+      {locked && <Lock className="absolute h-4 w-4 text-amber-400 drop-shadow" />}
     </span>
-  ); 
+  );  
 }
 
-type SeatProps = { 
-  seat: RoomSeat; 
-  onClick: () => void; 
-  canManage?: boolean; 
-  onToggleLock?: () => void; 
-  lockBusy?: boolean 
+type SeatProps = {  
+  seat: RoomSeat;  
+  onClick: () => void;  
 };
 
-export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy = false }: SeatProps) {
+export function Seat({ seat, onClick }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
   const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
   
-  // Profile frame ko properly support karne ke liye dono properties check ki gayi hain
   const frameUrl = user?.avatar_frame_url || user?.frame_url;
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
   const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
 
-  const lockButton = canManage ? (
-    <button 
-      type="button" 
-      disabled={lockBusy} 
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLock?.(); }} 
-      className="absolute -right-0.5 -top-0.5 z-30 grid h-4 w-4 place-items-center rounded-full border border-white/70 bg-black/75 text-white shadow-md disabled:opacity-50" 
-      aria-label={is_locked ? `Unlock seat ${num}` : `Lock seat ${num}`}
-    >
-      {is_locked ? <Unlock className="h-2 w-2 text-amber-400" /> : <Lock className="h-2 w-2" />}
-    </button>
-  ) : null;
-
   if (!user) {
     return (
-      <div className={cn("relative flex flex-col items-center justify-center", className)}>
-        <button 
-          type="button" 
-          onClick={onClick} 
-          className="group relative flex w-full flex-col items-center justify-center gap-0 rounded-lg border border-white/10 bg-white/[0.03] p-0.5 shadow-sm transition-all active:scale-95"
-          aria-label={is_locked ? `Locked seat ${num}` : `Manage seat ${num}`}
+      <div className={cn("relative flex flex-col items-center justify-center p-1", className)}>
+        <button  
+          type="button"  
+          onClick={onClick}  
+          className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
         >
-          <span className="absolute left-0.5 top-0.5 z-10 grid h-3 w-3 place-items-center rounded-full bg-black/60 text-[7px] font-bold text-white/70">
+          <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/70 text-[9px] font-bold text-white/80">
             {num}
           </span>
-          <span className="relative aspect-square w-[68%] max-w-[34px] rounded-full p-0.5">
+          <span className="relative aspect-square w-[58px] max-w-full rounded-full p-0">
             <EmptySeatArt locked={is_locked} />
           </span>
-          <span className="w-full truncate text-[7px] font-semibold text-white/50 text-center">No.{num}</span>
-          <span className="flex items-center gap-0.5 text-[6px] text-white/40">
-            <Heart className="h-1.5 w-1.5 fill-pink-500/60 text-pink-500" />0
+          <span className="w-full truncate text-[9px] font-semibold text-white/60 text-center">No.{num}</span>
+          <span className="flex items-center gap-0.5 text-[8px] text-white/50">
+            <Heart className="h-2.5 w-2.5 fill-pink-500/60 text-pink-500" />0
           </span>
         </button>
-        {lockButton}
       </div>
     );
   }
 
   return (
-    <div className={cn("relative flex flex-col items-center justify-center", className)}>
-      <button 
-        type="button" 
-        onClick={onClick} 
-        className={cn(
-          "group relative flex w-full flex-col items-center justify-center gap-0 rounded-lg border p-0.5 shadow-md transition-all active:scale-95",
-          speaking ? "border-fuchsia-400 bg-fuchsia-950/30 shadow-[0_0_10px_rgba(236,72,153,0.5)]" : "border-white/15 bg-white/[0.06]"
-        )}
+    <div className={cn("relative flex flex-col items-center justify-center p-1", className)}>
+      <button  
+        type="button"  
+        onClick={onClick}  
+        className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
       >
-        <span className="absolute left-0.5 top-0.5 z-10 grid h-3 w-3 place-items-center rounded-full bg-black/70 text-[7px] font-black text-white/90">
+        <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/75 text-[9px] font-black text-white">
           {num}
         </span>
-        <span className="relative aspect-square w-[68%] max-w-[34px] rounded-full p-0.5 flex items-center justify-center">
-          {/* Circular container with overflow-hidden and rounded-full to keep DP perfectly round */}
-          <span className="relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2 border-[color:var(--primary)]">
+
+        <span className="relative aspect-square w-[58px] max-w-full rounded-full p-0 flex items-center justify-center">
+          <span className={cn(
+            "relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2",
+            speaking ? "border-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : "border-amber-400/80"
+          )}>
             <img src={avatar} alt={username} className="h-full w-full object-cover rounded-full" draggable={false} />
             {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse pointer-events-none" />}
           </span>
           
-          {/* User profile frame overlaying perfectly on top of the round DP */}
           {frameUrl && (
-            <img src={frameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-20" draggable={false} />
+            <img src={frameUrl} alt="" className="absolute inset-0 -m-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] pointer-events-none object-contain z-20" draggable={false} />
           )}
 
-          <span className={cn("absolute -bottom-0.5 -right-0.5 z-30 grid h-3 w-3 place-items-center rounded-full border border-black text-white", isMuted ? "bg-red-500" : "bg-emerald-500")}>
-            {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
+          <span className={cn("absolute bottom-0 right-0 z-30 grid h-4 w-4 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+            {isMuted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
           </span>
         </span>
-        <span className="w-full truncate px-0.5 text-[7px] font-bold leading-tight text-white text-center">{username}</span>
-        <span className="flex items-center gap-0.5 text-[6px] font-medium text-white/75">
-          <Heart className="h-1.5 w-1.5 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
+
+        <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
+        <span className="flex items-center gap-0.5 text-[8px] font-medium text-white/90">
+          <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
         </span>
       </button>
-      {lockButton}
     </div>
   );
 }
 
-interface SeatGridProps { 
-  seats: RoomSeat[]; 
-  seatCount?: number; 
-  host: RoomParticipant; 
-  roomId?: string; 
-  isHost?: boolean; 
-  onSeatTap?: (index: number) => void; 
-  onJoinSeat?: (index: number) => void; 
-  onHostTap?: () => void; 
+interface SeatGridProps {  
+  seats: RoomSeat[];  
+  seatCount?: number;  
+  host: RoomParticipant;  
+  roomId?: string;  
+  isHost?: boolean;  
+  onSeatTap?: (index: number) => void;  
+  onJoinSeat?: (index: number) => void;  
+  onHostTap?: () => void;  
 }
 
 export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
@@ -175,7 +157,12 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [isModerator, setIsModerator] = useState(false);
   const [moderatorCanManageSeats, setModeratorCanManageSeats] = useState(false);
   const [lockBusy, setLockBusy] = useState<number | null>(null);
+  
+  // Only for empty seat management
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
+  const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
+  const [targetShiftSeat, setTargetShiftSeat] = useState<number | "" >("");
+  const [activeTab, setActiveTab] = useState<"users" | "shift">("users");
 
   useEffect(() => {
     if (!roomId) return;
@@ -217,92 +204,90 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const canManageSeats = isHost || (isModerator && moderatorCanManageSeats);
 
   useEffect(() => {
-    if (!roomId || !isHost) return;
+    if (!roomId || !selectedEmptySeat) return;
     let active = true;
-    const load = async () => {
-      const { data } = await supabase.from("seat_requests").select("id,from_user,seat_index,created_at").eq("room_id", roomId).eq("status", "pending").order("created_at", { ascending: true });
-      if (!active) return;
-      if (!data?.length) { setRequests([]); return; }
-      const ids = data.map(r => r.from_user);
-      const { data: profiles } = await supabase.from("profiles").select("id,username,avatar").in("id", ids);
-      const map = new Map((profiles ?? []).map(p => [p.id, p]));
-      setRequests(data.map(r => { const p = map.get(r.from_user); return { ...r, username: p?.username || "User", avatar: p?.avatar || null }; }));
+    const fetchViewers = async () => {
+      const { data } = await supabase.from("room_members").select("user_id, profiles(id, username, avatar)").eq("room_id", roomId);
+      if (!active || !data) return;
+      const list = data.map((m: any) => ({
+        id: m.profiles?.id || m.user_id,
+        username: m.profiles?.username || "User",
+        avatar: m.profiles?.avatar || null
+      }));
+      setRoomViewers(list);
     };
-    void load();
-    const channel = supabase.channel(`seat-requests-${roomId}-${host.id}`).on("postgres_changes", { event: "*", schema: "public", table: "seat_requests", filter: `room_id=eq.${roomId}` }, () => void load()).subscribe();
-    return () => { active = false; void supabase.removeChannel(channel); };
-  }, [roomId, isHost, host.id]);
-
-  const respond = async (request: SeatRequest, accept: boolean) => { 
-    if (busyRequest) return; 
-    setBusyRequest(request.id); 
-    const { error } = await supabase.rpc("respond_seat_request", { _request_id: request.id, _accept: accept }); 
-    if (error) toast.error(error.message || "Could not respond to seat request"); 
-    else toast.success(accept ? `${request.username} joined the seat` : "Seat request rejected"); 
-    setBusyRequest(null); 
-  };
+    void fetchViewers();
+    return () => { active = false; };
+  }, [roomId, selectedEmptySeat]);
 
   const toggleSeatLock = async (seatIndex: number, currentlyLocked: boolean) => {
     if (!roomId || !canManageSeats || lockBusy !== null) return;
     setLockBusy(seatIndex);
     const { error } = await supabase.rpc("toggle_seat_lock", { _room_id: roomId, _seat_index: seatIndex, _locked: !currentlyLocked });
     if (error) toast.error(error.message || "Could not update seat lock");
-    else toast.success(currentlyLocked ? `Seat ${seatIndex} unlocked` : `Seat ${seatIndex} locked`);
+    else {
+      toast.success(currentlyLocked ? `Seat ${seatIndex} unlocked` : `Seat ${seatIndex} locked`);
+      setSelectedEmptySeat(prev => prev ? { ...prev, is_locked: !currentlyLocked } : null);
+    }
     setLockBusy(null);
   };
 
   const byIndex = new Map(seats.filter(s => (s.index >= 2 && s.index <= capacity) || (s.seatNumber && s.seatNumber >= 2 && s.seatNumber <= capacity)).map(s => [s.index ?? s.seatNumber!, s]));
-  const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => { 
-    const index = offset + 2; 
-    return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false }; 
+  const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => {  
+    const index = offset + 2;  
+    return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };  
   });
 
-  const handleTap = async (seat: RoomSeat) => { 
+  const handleSeatClick = async (seat: RoomSeat) => {  
     const idx = seat.index ?? seat.seatNumber ?? 1;
-    if (seat.user) { 
-      onSeatTap?.(idx); 
-      return; 
-    } 
-    
-    if (canManageSeats) {
-      setSelectedEmptySeat(seat);
+
+    // AGAR SEAT PAR USER HAI, TOH USKI PROFILE (VISIT, MESSAGE, FOLLOW) OPEN HO GI
+    if (seat.user) {
+      onSeatTap?.(idx);
       return;
     }
 
-    if (seat.is_locked) return; 
-    if (!roomId) { 
-      onJoinSeat?.(idx); 
-      return; 
-    } 
-    const { error } = await supabase.rpc("request_seat", { _room_id: roomId, _seat_index: idx }); 
-    if (error) toast.error(error.message || "Could not send seat request"); 
-    else toast.success("Seat request sent to host"); 
+    // AGAR SEAT KHALI HAI AUR HOST/MODERATOR HAIN, TOH MANAGEMENT POPUP KHULEGA
+    if (canManageSeats) {
+      setSelectedEmptySeat(seat);
+      setActiveTab("users");
+      return;
+    }
+
+    if (seat.is_locked) return;  
+    if (!roomId) {  
+      onJoinSeat?.(idx);  
+      return;  
+    }  
+    const { error } = await supabase.rpc("request_seat", { _room_id: roomId, _seat_index: idx });  
+    if (error) toast.error(error.message || "Could not send seat request");  
+    else toast.success("Seat request sent to host");  
   };
 
   const hostFrameUrl = host.avatar_frame_url || host.frame_url;
 
   return (
-    <section className="relative flex w-full flex-col items-center px-1 py-0.5" data-seat-capacity={capacity}>
-      <div className="grid w-full grid-cols-5 gap-1 content-start">
+    <section className="relative flex w-full flex-col items-center px-1 py-1" data-seat-capacity={capacity}>
+      <div className="grid w-full grid-cols-5 gap-1.5 content-start">
         {/* Seat No. 1: Host */}
-        <div className="relative flex flex-col items-center justify-center">
-          <div className="group relative flex w-full flex-col items-center justify-center gap-0 rounded-lg border border-fuchsia-400/50 bg-fuchsia-950/20 p-0.5 shadow-md">
-            <span className="absolute left-0.5 top-0.5 z-10 grid h-3 w-3 place-items-center rounded-full bg-black/75 text-[7px] font-black text-amber-300">
+        <div className="relative flex flex-col items-center justify-center p-1">
+          <div className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0">
+            <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 text-[9px] font-black text-amber-300">
               1
             </span>
-            <span className="relative aspect-square w-[68%] max-w-[34px] rounded-full p-0.5 flex items-center justify-center">
+            <span className="relative aspect-square w-[58px] max-w-full rounded-full p-0 flex items-center justify-center">
               <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400">
                 <HostCard host={host} onTap={onHostTap} />
               </span>
               {hostFrameUrl && (
-                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-20" draggable={false} />
+                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] pointer-events-none object-contain z-20" draggable={false} />
               )}
             </span>
-            <span className="w-full truncate px-0.5 text-[7px] font-bold leading-tight text-white text-center">
+            <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">
               {host.username}
             </span>
-            <span className="flex items-center gap-0.5 text-[6px] font-medium text-white/85">
-              <Heart className="h-1.5 w-1.5 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
+            <span className="flex items-center gap-0.5 text-[8px] font-medium text-white/95">
+              <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
             </span>
           </div>
         </div>
@@ -311,72 +296,126 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         {participantSlots.map(seat => {
           const seatIdx = seat.index ?? seat.seatNumber ?? 2;
           return (
-            <Seat 
-              key={seatIdx} 
-              seat={{ ...seat, index: seatIdx }} 
-              canManage={canManageSeats} 
-              lockBusy={lockBusy === seatIdx} 
-              onToggleLock={() => void toggleSeatLock(seatIdx, seat.is_locked)} 
-              onClick={() => void handleTap(seat)} 
+            <Seat  
+              key={seatIdx}  
+              seat={{ ...seat, index: seatIdx }}  
+              onClick={() => void handleSeatClick(seat)}  
             />
           );
         })}
       </div>
 
+      {/* Empty Seat / Management Popup */}
       {selectedEmptySeat && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in px-4">
-          <div className="relative flex flex-col max-w-xs w-full rounded-2xl bg-slate-900 border border-amber-500/40 p-4 shadow-2xl text-white">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in px-4" onClick={() => setSelectedEmptySeat(null)}>
+          <div className="relative flex flex-col max-w-xs w-full rounded-3xl bg-[#120a1f] border border-amber-500/40 p-4 shadow-2xl text-white" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
                 <Settings className="h-4 w-4 text-amber-400" />
-                <span className="text-xs font-bold text-amber-300">Manage Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span>
+                <span className="text-xs font-bold text-amber-300 uppercase tracking-wide">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span>
               </div>
-              <button type="button" onClick={() => setSelectedEmptySeat(null)} className="text-slate-400 hover:text-white">
+              <button type="button" onClick={() => setSelectedEmptySeat(null)} className="text-white/60 hover:text-white">
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="py-4 space-y-2.5">
-              <button 
+            {/* Lock / Unlock Bar */}
+            <div className="py-3 flex items-center justify-between border-b border-white/10">
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                {selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}
+                <span>{selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}</span>
+              </div>
+              <button
                 type="button"
+                disabled={lockBusy !== null}
                 onClick={() => {
                   const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
                   void toggleSeatLock(idx, selectedEmptySeat.is_locked);
-                  setSelectedEmptySeat(null);
                 }}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold transition-all border border-slate-700"
+                className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-amber-300 transition"
               >
-                <div className="flex items-center gap-2">
-                  {selectedEmptySeat.is_locked ? <Unlock className="h-4 w-4 text-emerald-400" /> : <Lock className="h-4 w-4 text-amber-400" />}
-                  <span>{selectedEmptySeat.is_locked ? "Unlock This Seat" : "Lock This Seat"}</span>
-                </div>
-                <span className="text-[10px] text-slate-400">{selectedEmptySeat.is_locked ? "Allow users" : "Block users"}</span>
-              </button>
-
-              <button 
-                type="button"
-                onClick={() => {
-                  const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
-                  setSelectedEmptySeat(null);
-                  onJoinSeat?.(idx);
-                }}
-                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold text-amber-300 transition-all border border-amber-500/30"
-              >
-                <div className="flex items-center gap-2">
-                  <UserPlus className="h-4 w-4 text-amber-400" />
-                  <span>Assign / Take Seat</span>
-                </div>
-                <span className="text-[10px] text-amber-400/70">Join</span>
+                {selectedEmptySeat.is_locked ? "Unlock" : "Lock"}
               </button>
             </div>
 
-            <button 
-              type="button"
-              onClick={() => setSelectedEmptySeat(null)}
-              className="w-full py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-all"
-            >
-              Cancel
-            </button>
+            {/* Viewer Assignment Section */}
+            <div className="pt-3">
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("users")}
+                  className={cn("flex-1 py-1.5 rounded-xl text-xs font-bold transition", activeTab === "users" ? "bg-amber-500 text-black shadow" : "bg-white/5 text-white/60 hover:text-white")}
+                >
+                  Assign Viewer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("shift")}
+                  className={cn("flex-1 py-1.5 rounded-xl text-xs font-bold transition", activeTab === "shift" ? "bg-amber-500 text-black shadow" : "bg-white/5 text-white/60 hover:text-white")}
+                >
+                  Shift User
+                </button>
+              </div>
+
+              {activeTab === "users" ? (
+                <div className="max-h-40 overflow-y-auto space-y-1.5 no-scrollbar">
+                  <p className="text-[10px] text-white/50 mb-1">Select a viewer from room:</p>
+                  {roomViewers.length === 0 ? (
+                    <p className="text-xs text-white/40 text-center py-4">No viewers found</p>
+                  ) : (
+                    roomViewers.map(viewer => (
+                      <div key={viewer.id} className="flex items-center justify-between p-2 rounded-xl bg-white/5 border border-white/10">
+                        <div className="flex items-center gap-2">
+                          <img src={viewer.avatar || DEFAULT_SEAT_AVATAR} alt="" className="h-7 w-7 rounded-full object-cover" />
+                          <span className="text-xs font-semibold">{viewer.username}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            toast.success(`${viewer.username} assigned to seat!`);
+                            setSelectedEmptySeat(null);
+                            onJoinSeat?.(selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2);
+                          }}
+                          className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-[10px]"
+                        >
+                          Assign
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-3 py-2">
+                  <p className="text-[10px] text-white/60">Shift user from another seat to seat No. <span className="font-bold text-amber-300">{selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span>:</p>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min={2}
+                      max={capacity}
+                      value={targetShiftSeat}
+                      onChange={(e) => setTargetShiftSeat(e.target.value === "" ? "" : Number(e.target.value))}
+                      placeholder="Enter source seat (e.g. 3)"
+                      className="flex-1 bg-black/50 border border-white/20 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!targetShiftSeat || targetShiftSeat < 2 || targetShiftSeat > capacity) {
+                          toast.error("Please enter a valid source seat number");
+                          return;
+                        }
+                        toast.success(`User shifted to seat ${selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}`);
+                        setSelectedEmptySeat(null);
+                        setTargetShiftSeat("");
+                      }}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow"
+                    >
+                      Shift
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
