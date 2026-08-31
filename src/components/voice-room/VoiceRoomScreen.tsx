@@ -116,6 +116,9 @@ export const VoiceRoomScreen = ({
   const [gamesOpen, setGamesOpen] = useState(false);
   const [popularityOpen, setPopularityOpen] = useState(false);
   const [userMoreOpen, setUserMoreOpen] = useState(false);
+  const [showMiniInputPopup, setShowMiniInputPopup] = useState(false);
+  const [miniDraft, setMiniDraft] = useState("");
+  
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
   const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
@@ -154,6 +157,7 @@ export const VoiceRoomScreen = ({
       else if (gamesOpen) { setGamesOpen(false); closedSomething = true; }
       else if (popularityOpen) { setPopularityOpen(false); closedSomething = true; }
       else if (userMoreOpen) { setUserMoreOpen(false); closedSomething = true; }
+      else if (showMiniInputPopup) { setShowMiniInputPopup(false); closedSomething = true; }
       else if (selectedMember) { setSelectedMember(null); closedSomething = true; }
       else if (hostSettingsOpen) { setHostSettingsOpen(false); closedSomething = true; }
       else if (moderatorControlsOpen) { setModeratorControlsOpen(false); closedSomething = true; }
@@ -170,7 +174,7 @@ export const VoiceRoomScreen = ({
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [giftOpen, emojiOpen, gamesOpen, popularityOpen, userMoreOpen, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin]);
+  }, [giftOpen, emojiOpen, gamesOpen, popularityOpen, userMoreOpen, showMiniInputPopup, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin]);
 
   useEffect(() => {
     if (roomSettings.is_locked && !isHost && !isUnlockedByPin) {
@@ -602,11 +606,11 @@ export const VoiceRoomScreen = ({
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               
               <div className="flex min-w-0 h-[250px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
-  {/* Tabs ki jagah ab yahan Host ki Announcement / Notice Bar show hoga */}
-  <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
-    <span className="text-[10px]">📢</span>
-    <p className="text-[9px] font-semibold truncate flex-1">{announcement || "Welcome to the room! Follow rules."}</p>
-  </div>
+                {/* Clean Announcement Bar */}
+                <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
+                  <span className="text-[10px]">📢</span>
+                  <p className="text-[9px] font-semibold truncate flex-1">{announcement || "Welcome to the room! Follow rules."}</p>
+                </div>
                 
                 <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar scroll-smooth">
                   {visibleMessages.length === 0 ? (
@@ -629,23 +633,19 @@ export const VoiceRoomScreen = ({
                   )}
                 </div>
 
-                <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2 shadow-inner", !roomSettings.chat_enabled && "opacity-50")}>
-                  <input 
-                    value={draft} 
-                    onChange={e => setDraft(e.target.value.slice(0, 500))} 
-                    onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} 
-                    placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} 
-                    disabled={sending || !roomSettings.chat_enabled} 
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    data-form-type="other"
-                    className="min-w-0 flex-1 bg-transparent text-[10px] font-medium text-white outline-none placeholder:text-white/40" 
-                  />
-                  <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-4 w-4 shrink-0 place-items-center rounded-full text-amber-300"><Smile className="h-3 w-3" /></button>
-                  <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-4 w-4 shrink-0 place-items-center rounded-full bg-gradient-to-r from-amber-400 to-purple-600 text-black font-bold"><Send className="h-2.5 w-2.5" /></button>
-                </form>
+                {/* Clickable Trigger Bar to open clean keyboard-attached popup */}
+                <div 
+                  onClick={() => {
+                    if (!roomSettings.chat_enabled) return;
+                    setShowMiniInputPopup(true);
+                  }}
+                  className={cn("mx-1.5 mb-1 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 shadow-inner cursor-pointer select-none", !roomSettings.chat_enabled && "opacity-50")}
+                >
+                  <span className="min-w-0 flex-1 text-[10px] font-medium text-white/40 truncate">
+                    {roomSettings.chat_enabled ? "Say something..." : "Chat disabled"}
+                  </span>
+                  <Smile className="h-3 w-3 shrink-0 text-amber-300" />
+                </div>
               </div>
               
               <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[250px]">
@@ -703,8 +703,57 @@ export const VoiceRoomScreen = ({
         </button>
       </nav>
 
+      {/* Keyboard-attached mini input popup modal */}
+      {showMiniInputPopup && (
+        <div 
+          className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-0"
+          onClick={() => setShowMiniInputPopup(false)}
+        >
+          <div 
+            className="w-full max-w-[480px] bg-[#120a1f] border-t border-amber-500/40 p-2.5 rounded-t-2xl shadow-2xl flex items-center gap-2 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              value={miniDraft}
+              onChange={(e) => setMiniDraft(e.target.value.slice(0, 500))}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (!miniDraft.trim()) return;
+                  setDraft(miniDraft);
+                  setShowMiniInputPopup(false);
+                  setMiniDraft("");
+                  await sendRoomMessage();
+                }
+              }}
+              placeholder="Type a comment..."
+              autoFocus
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
+              enterKeyHint="send"
+              inputMode="text"
+              className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none focus:border-amber-400"
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                if (!miniDraft.trim()) return;
+                setDraft(miniDraft);
+                setShowMiniInputPopup(false);
+                setMiniDraft("");
+                await sendRoomMessage();
+              }}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow-lg active:scale-95 transition"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
+
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
-      
       {emojiOpen && (
         <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/60 backdrop-blur-sm animate-fade-in">
           <div className="absolute inset-0" onClick={() => setEmojiOpen(false)} />
@@ -762,7 +811,6 @@ export const VoiceRoomScreen = ({
         </div>
       )}
 
-      {/* User More Options Sheet for Normal Users */}
       {userMoreOpen && (
         <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm animate-fade-in" onClick={() => setUserMoreOpen(false)}>
           <div className="w-full max-w-sm rounded-t-3xl border-t border-x border-white/20 bg-[#100719]/95 p-4 text-white shadow-2xl backdrop-blur-md flex flex-col animate-slide-up" onClick={e => e.stopPropagation()}>
