@@ -47,14 +47,21 @@ function MessageRow({ msg }: { msg: ChatMessage }) {
 export function ChatPanel({ open, onClose, messages, onSend, announcement }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
   const [showInputPopup, setShowInputPopup] = useState(false);
+  const [localMessages, setLocalMessages] = useState<ChatMessage[]>(messages);
+  
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync external messages with local list
+  useEffect(() => {
+    setLocalMessages(messages);
+  }, [messages]);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages, open]);
+  }, [localMessages, open]);
 
   useEffect(() => {
     if (showInputPopup && inputRef.current) {
@@ -67,9 +74,21 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
   const handleSend = () => {
     const text = draft.trim();
     if (!text) return;
+
+    // Optimistic local update taake foran chat box mein message show ho jaye
+    const optimisticMsg: ChatMessage = {
+      id: `local-${Date.now()}`,
+      kind: "chat",
+      userName: "You",
+      body: text,
+      userColor: "text-amber-300"
+    };
+
+    setLocalMessages(prev => [...prev, optimisticMsg]);
     onSend(text);
-    setDraft(""); // Input clean ho jayega taake dubara popup mein show na ho
-    setShowInputPopup(false); // Popup band ho jayega aur message sirf chat box mein dikhega
+    
+    setDraft(""); 
+    setShowInputPopup(false); 
   };
 
   return (
@@ -102,14 +121,14 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
 
         {/* Messages List Area */}
         <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto py-2 space-y-1.5 pr-1 no-scrollbar scroll-smooth">
-          {messages.length === 0 ? (
+          {localMessages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-white/40">
               <MessageCircle className="h-10 w-10 text-purple-400/50" />
               <p className="text-xs font-bold text-white/70">No messages yet</p>
               <p className="text-[10px]">Start the conversation in room!</p>
             </div>
           ) : (
-            messages.map((m) => <MessageRow key={m.id} msg={m} />)
+            localMessages.map((m) => <MessageRow key={m.id} msg={m} />)
           )}
         </div>
 
