@@ -113,21 +113,9 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
   };
 
   const handleAction = async (actionType: string) => {
-    if (actionType === "kick_room") {
-      setActiveView("kick");
-      setManagementMode("kick");
-      return;
-    }
-    if (actionType === "block_list") {
-      setActiveView("block");
-      setManagementMode("block");
-      return;
-    }
-    if (actionType === "co_hosts") {
-      setActiveView("moderators");
-      setManagementMode("moderators");
-      return;
-    }
+    if (actionType === "kick_room") { setActiveView("kick"); setManagementMode("kick"); return; }
+    if (actionType === "block_list") { setActiveView("block"); setManagementMode("block"); return; }
+    if (actionType === "co_hosts") { setActiveView("moderators"); setManagementMode("moderators"); return; }
     setSaving(actionType);
     try {
       if (actionType === "mute_all") {
@@ -139,11 +127,6 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
       }
     } catch (err: any) { toast.error(err?.message || "Action failed"); }
     finally { setSaving(null); }
-  };
-
-  const openManagement = (mode: ManagementMode) => {
-    if (!mode) return;
-    setManagementMode(mode);
   };
 
   return (
@@ -199,6 +182,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
           <div className="space-y-2.5 overflow-y-auto pr-1 flex-1 text-xs">
             {activeView === "main" ? (
               <>
+                {/* Speaker Toggle Row in Host Controls */}
                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-2.5 py-1.5">
                   <div className="flex items-center gap-2">
                     {speakerMuted ? <VolumeX className="h-3.5 w-3.5 text-rose-400" /> : <Volume2 className="h-3.5 w-3.5 text-cyan-400" />}
@@ -246,21 +230,21 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
                   <div className="space-y-2">
                     <Ban className="h-8 w-8 text-rose-400 mx-auto animate-pulse" />
                     <p className="text-[11px] font-bold text-white">Select a participant from seats to kick</p>
-                    <button type="button" onClick={() => openManagement("kick")} className="px-4 py-2 rounded-xl bg-rose-500/20 border border-rose-400/30 text-[10px] font-bold text-rose-200">Open Participant List</button>
+                    <p className="text-[9px] text-white/40">Tap any user profile on stage to remove them.</p>
                   </div>
                 )}
                 {activeView === "block" && (
                   <div className="space-y-2">
                     <Shield className="h-8 w-8 text-blue-400 mx-auto" />
-                    <p className="text-[11px] font-bold text-white">Blocked Users List</p>
-                    <button type="button" onClick={() => openManagement("block")} className="px-4 py-2 rounded-xl bg-blue-500/20 border border-blue-400/30 text-[10px] font-bold text-blue-200">Open Block List</button>
+                    <p className="text-[11px] font-bold text-white">No blocked users found</p>
+                    <p className="text-[9px] text-white/40">Banned or blocked accounts will appear here.</p>
                   </div>
                 )}
                 {activeView === "moderators" && (
                   <div className="space-y-2">
                     <Star className="h-8 w-8 text-purple-400 mx-auto" />
                     <p className="text-[11px] font-bold text-white">Promote Room Members</p>
-                    <button type="button" onClick={() => openManagement("moderators")} className="px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-400/30 text-[10px] font-bold text-purple-200">Open Co-Hosts</button>
+                    <p className="text-[9px] text-white/40">Assign moderators to help manage this room.</p>
                   </div>
                 )}
               </div>
