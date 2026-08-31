@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Smile, Send, MessageCircle, X } from "lucide-react";
+import { Smile, Send, MessageCircle, X, Megaphone, Edit3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ChatMessage } from "./types";
 
@@ -8,6 +8,7 @@ interface ChatPanelProps {
   onClose: () => void;
   messages: ChatMessage[];
   onSend: (text: string) => void;
+  announcement?: string | null;
 }
 
 function MessageRow({ msg }: { msg: ChatMessage }) {
@@ -43,10 +44,11 @@ function MessageRow({ msg }: { msg: ChatMessage }) {
   );
 }
 
-export function ChatPanel({ open, onClose, messages, onSend }: ChatPanelProps) {
-  const [tab, setTab] = useState<"all" | "chat">("all");
+export function ChatPanel({ open, onClose, messages, onSend, announcement }: ChatPanelProps) {
   const [draft, setDraft] = useState("");
+  const [showInputPopup, setShowInputPopup] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -54,13 +56,21 @@ export function ChatPanel({ open, onClose, messages, onSend }: ChatPanelProps) {
     }
   }, [messages, open]);
 
+  // Auto focus input when popup opens
+  useEffect(() => {
+    if (showInputPopup && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showInputPopup]);
+
   if (!open) return null;
 
   const handleSend = () => {
     const text = draft.trim();
     if (!text) return;
     onSend(text);
-    setDraft("");
+    setDraft(""); // Clear draft so it doesn't stay in input
+    setShowInputPopup(false); // Close input popup after sending
   };
 
   return (
@@ -72,30 +82,23 @@ export function ChatPanel({ open, onClose, messages, onSend }: ChatPanelProps) {
         className="w-full max-w-[485px] h-[52svh] rounded-t-[32px] border-t border-white/20 bg-[#0d0714]/95 p-4 text-white shadow-[0_-10px_35px_rgba(139,92,246,0.25)] backdrop-blur-2xl flex flex-col justify-between animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Header & Tabs */}
-        <div className="flex items-center justify-between border-b border-white/10 pb-3 shrink-0">
-          <div className="flex items-center gap-6">
-            {(["all", "chat"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={cn(
-                  "text-xs font-bold uppercase tracking-wider transition-all relative pb-1",
-                  tab === t ? "text-amber-300" : "text-white/40 hover:text-white/70",
-                )}
-              >
-                {t === "all" ? "All Messages" : "Chat Only"}
-                {tab === t && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" />}
-              </button>
-            ))}
+        {/* Top Header & Announcement Bar */}
+        <div className="flex flex-col gap-2 border-b border-white/10 pb-3 shrink-0">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-black uppercase tracking-wider text-amber-300">Room Chat & Notice</h3>
+            <button 
+              type="button"
+              onClick={onClose}
+              className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/80 hover:text-white active:scale-95 transition"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button 
-            type="button"
-            onClick={onClose}
-            className="grid h-7 w-7 place-items-center rounded-full bg-white/10 text-white/80 hover:text-white active:scale-95 transition"
-          >
-            <X className="h-4 w-4" />
-          </button>
+
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-[11px] font-medium shadow-inner">
+            <Megaphone className="h-3.5 w-3.5 text-amber-400 shrink-0 animate-pulse" />
+            <span className="truncate flex-1">{announcement || "Welcome to the room! Follow room rules."}</span>
+          </div>
         </div>
 
         {/* Messages List Area */}
@@ -111,30 +114,55 @@ export function ChatPanel({ open, onClose, messages, onSend }: ChatPanelProps) {
           )}
         </div>
 
-        {/* Input Bar */}
-        <div className="mt-2 flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-2 shrink-0 shadow-inner">
-          <input
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSend()}
-            placeholder="Say something nice..."
-            className="flex-1 bg-transparent text-xs font-medium text-white placeholder:text-white/40 focus:outline-none"
-          />
-          <button type="button" className="text-amber-300 transition-colors hover:text-amber-200 p-1" aria-label="Emoji">
-            <Smile className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={handleSend}
-            disabled={!draft.trim()}
-            className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-bold shadow-md transition-transform active:scale-90 disabled:opacity-50"
-            aria-label="Send message"
-          >
-            <Send className="h-3.5 w-3.5" />
-          </button>
+        {/* Bottom Trigger Bar (Clicking this opens the clean comment popup) */}
+        <div 
+          onClick={() => setShowInputPopup(true)}
+          className="mt-2 flex items-center justify-between rounded-2xl border border-white/15 bg-white/10 px-3.5 py-2.5 shrink-0 shadow-inner cursor-pointer active:scale-95 transition"
+        >
+          <span className="text-xs font-medium text-white/40">Say something nice...</span>
+          <div className="flex items-center gap-2 text-amber-300">
+            <Edit3 className="h-4 w-4" />
+          </div>
         </div>
 
       </div>
+
+      {/* Dedicated Clean Comment Popup Modal with Native Theme Keyboard */}
+      {showInputPopup && (
+        <div 
+          className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/80 backdrop-blur-md animate-fade-in p-0"
+          onClick={() => setShowInputPopup(false)}
+        >
+          <div 
+            className="w-full max-w-[485px] bg-[#120a1f] border-t border-amber-500/40 p-3 rounded-t-3xl shadow-2xl flex items-center gap-2 animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <input
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              placeholder="Type your comment..."
+              autoFocus
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="sentences"
+              spellCheck={false}
+              enterKeyHint="send"
+              inputMode="text"
+              className="flex-1 bg-black/50 border border-white/20 rounded-2xl px-4 py-3 text-xs font-medium text-white placeholder:text-white/40 outline-none focus:border-amber-400"
+            />
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!draft.trim()}
+              className="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow-lg active:scale-95 transition disabled:opacity-40"
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
