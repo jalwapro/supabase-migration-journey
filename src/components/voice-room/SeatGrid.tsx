@@ -35,6 +35,7 @@ export type RoomSeat = {
   user: RoomSeatUser | null;
   is_locked: boolean;
   is_requested?: boolean;
+  className?: string;
 };
 
 export type RoomParticipant = {
@@ -50,11 +51,11 @@ export type RoomParticipant = {
 function EmptySeatArt({ locked }: { locked: boolean }) { 
   return (
     <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/20 bg-black/20 shadow-inner">
-      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain p-0.5 opacity-60" draggable={false} />
-      <span className="absolute inset-0 flex items-center justify-center bg-black/30">
-        <Plus className="h-3.5 w-3.5 text-white/70" />
+      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover opacity-60 rounded-full" draggable={false} />
+      <span className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-full">
+        <Plus className="h-3 w-3 text-white/70" />
       </span>
-      {locked && <Lock className="absolute h-3.5 w-3.5 text-amber-400 drop-shadow" />}
+      {locked && <Lock className="absolute h-3 w-3 text-amber-400 drop-shadow" />}
     </span>
   ); 
 }
@@ -68,10 +69,12 @@ type SeatProps = {
 };
 
 export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy = false }: SeatProps) {
-  const { user, is_locked, index, seatNumber } = seat;
+  const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
   const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
+  
+  // Profile frame ko properly support karne ke liye dono properties check ki gayi hain
   const frameUrl = user?.avatar_frame_url || user?.frame_url;
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   
@@ -83,31 +86,31 @@ export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy 
       type="button" 
       disabled={lockBusy} 
       onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleLock?.(); }} 
-      className="absolute -right-1 -top-1 z-20 grid h-5 w-5 place-items-center rounded-full border border-white/70 bg-black/75 text-white shadow-md disabled:opacity-50" 
+      className="absolute -right-0.5 -top-0.5 z-30 grid h-4 w-4 place-items-center rounded-full border border-white/70 bg-black/75 text-white shadow-md disabled:opacity-50" 
       aria-label={is_locked ? `Unlock seat ${num}` : `Lock seat ${num}`}
     >
-      {is_locked ? <Unlock className="h-2.5 w-2.5 text-amber-400" /> : <Lock className="h-2.5 w-2.5" />}
+      {is_locked ? <Unlock className="h-2 w-2 text-amber-400" /> : <Lock className="h-2 w-2" />}
     </button>
   ) : null;
 
   if (!user) {
     return (
-      <div className="relative flex flex-col items-center justify-center">
+      <div className={cn("relative flex flex-col items-center justify-center", className)}>
         <button 
           type="button" 
           onClick={onClick} 
-          className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-white/[0.03] p-1 shadow-sm transition-all active:scale-95"
+          className="group relative flex w-full flex-col items-center justify-center gap-0 rounded-lg border border-white/10 bg-white/[0.03] p-0.5 shadow-sm transition-all active:scale-95"
           aria-label={is_locked ? `Locked seat ${num}` : `Manage seat ${num}`}
         >
-          <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/60 text-[8px] font-bold text-white/70">
+          <span className="absolute left-0.5 top-0.5 z-10 grid h-3 w-3 place-items-center rounded-full bg-black/60 text-[7px] font-bold text-white/70">
             {num}
           </span>
-          <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full border border-white/15 p-0.5">
+          <span className="relative aspect-square w-[68%] max-w-[34px] rounded-full p-0.5">
             <EmptySeatArt locked={is_locked} />
           </span>
-          <span className="w-full truncate text-[8px] font-semibold text-white/50 text-center">No.{num}</span>
-          <span className="flex items-center gap-0.5 text-[7px] text-white/40">
-            <Heart className="h-2 w-2 fill-pink-500/60 text-pink-500" />0
+          <span className="w-full truncate text-[7px] font-semibold text-white/50 text-center">No.{num}</span>
+          <span className="flex items-center gap-0.5 text-[6px] text-white/40">
+            <Heart className="h-1.5 w-1.5 fill-pink-500/60 text-pink-500" />0
           </span>
         </button>
         {lockButton}
@@ -116,33 +119,37 @@ export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy 
   }
 
   return (
-    <div className="relative flex flex-col items-center justify-center">
+    <div className={cn("relative flex flex-col items-center justify-center", className)}>
       <button 
         type="button" 
         onClick={onClick} 
         className={cn(
-          "group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border p-1 shadow-md transition-all active:scale-95",
-          speaking ? "border-fuchsia-400 bg-fuchsia-950/30 shadow-[0_0_12px_rgba(236,72,153,0.5)]" : "border-white/15 bg-white/[0.06]"
+          "group relative flex w-full flex-col items-center justify-center gap-0 rounded-lg border p-0.5 shadow-md transition-all active:scale-95",
+          speaking ? "border-fuchsia-400 bg-fuchsia-950/30 shadow-[0_0_10px_rgba(236,72,153,0.5)]" : "border-white/15 bg-white/[0.06]"
         )}
       >
-        <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70 text-[8px] font-black text-white/90">
+        <span className="absolute left-0.5 top-0.5 z-10 grid h-3 w-3 place-items-center rounded-full bg-black/70 text-[7px] font-black text-white/90">
           {num}
         </span>
-        <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full p-0.5 flex items-center justify-center">
+        <span className="relative aspect-square w-[68%] max-w-[34px] rounded-full p-0.5 flex items-center justify-center">
+          {/* Circular container with overflow-hidden and rounded-full to keep DP perfectly round */}
           <span className="relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2 border-[color:var(--primary)]">
-            <img src={avatar} alt={username} className="h-full w-full object-cover" draggable={false} />
+            <img src={avatar} alt={username} className="h-full w-full object-cover rounded-full" draggable={false} />
             {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse pointer-events-none" />}
           </span>
+          
+          {/* User profile frame overlaying perfectly on top of the round DP */}
           {frameUrl && (
-            <img src={frameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-10" draggable={false} />
+            <img src={frameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-20" draggable={false} />
           )}
-          <span className={cn("absolute -bottom-0.5 -right-0.5 z-20 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+
+          <span className={cn("absolute -bottom-0.5 -right-0.5 z-30 grid h-3 w-3 place-items-center rounded-full border border-black text-white", isMuted ? "bg-red-500" : "bg-emerald-500")}>
             {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
           </span>
         </span>
-        <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center">{username}</span>
-        <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/75">
-          <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
+        <span className="w-full truncate px-0.5 text-[7px] font-bold leading-tight text-white text-center">{username}</span>
+        <span className="flex items-center gap-0.5 text-[6px] font-medium text-white/75">
+          <Heart className="h-1.5 w-1.5 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
         </span>
       </button>
       {lockButton}
@@ -257,7 +264,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       return; 
     } 
     
-    // Agar user Host ya Moderator hai aur seat empty hai, toh popup open karein
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       return;
@@ -280,23 +286,23 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       <div className="grid w-full grid-cols-5 gap-1 content-start">
         {/* Seat No. 1: Host */}
         <div className="relative flex flex-col items-center justify-center">
-          <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-fuchsia-400/50 bg-fuchsia-950/20 p-1 shadow-md">
-            <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/75 text-[8px] font-black text-amber-300">
+          <div className="group relative flex w-full flex-col items-center justify-center gap-0 rounded-lg border border-fuchsia-400/50 bg-fuchsia-950/20 p-0.5 shadow-md">
+            <span className="absolute left-0.5 top-0.5 z-10 grid h-3 w-3 place-items-center rounded-full bg-black/75 text-[7px] font-black text-amber-300">
               1
             </span>
-            <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full p-0.5 flex items-center justify-center">
+            <span className="relative aspect-square w-[68%] max-w-[34px] rounded-full p-0.5 flex items-center justify-center">
               <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400">
                 <HostCard host={host} onTap={onHostTap} />
               </span>
               {hostFrameUrl && (
-                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-10" draggable={false} />
+                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-20" draggable={false} />
               )}
             </span>
-            <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center">
+            <span className="w-full truncate px-0.5 text-[7px] font-bold leading-tight text-white text-center">
               {host.username}
             </span>
-            <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/85">
-              <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
+            <span className="flex items-center gap-0.5 text-[6px] font-medium text-white/85">
+              <Heart className="h-1.5 w-1.5 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
             </span>
           </div>
         </div>
@@ -317,7 +323,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         })}
       </div>
 
-      {/* Host / Moderator Empty Seat Management Popup */}
       {selectedEmptySeat && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in px-4">
           <div className="relative flex flex-col max-w-xs w-full rounded-2xl bg-slate-900 border border-amber-500/40 p-4 shadow-2xl text-white">
@@ -376,7 +381,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         </div>
       )}
 
-      {/* Host Pending Seat Requests Drawer */}
       {isHost && requests.length > 0 && (
         <div className="pointer-events-auto absolute left-3 right-3 top-1 z-[80] max-h-[42%] overflow-y-auto rounded-2xl border border-[color:var(--primary)]/70 bg-background/95 p-2 shadow-2xl backdrop-blur-md">
           <div className="mb-1.5 flex items-center justify-between px-1">
