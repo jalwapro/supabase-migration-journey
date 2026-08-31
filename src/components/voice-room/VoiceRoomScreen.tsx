@@ -521,10 +521,9 @@ export const VoiceRoomScreen = ({
                     "relative group flex flex-col items-center justify-center bg-black/50 border border-white/20 rounded-xl p-0 w-full backdrop-blur-md shadow-lg shrink-0"
                   )}
                 >
-                  <div className="relative h-6 w-6 flex items-center justify-center">
-                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-6 w-6 object-contain animate-bounce" />
+                  <div className="relative h-[100px] w-[100px] flex items-center justify-center">
+                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[100px] w-[100px] object-contain animate-bounce" />
                   </div>
-                  <span className="relative z-10 text-[9px] font-black text-amber-300 tracking-wider">{popularityPct}%</span>
                 </button>
 
                 <div 
