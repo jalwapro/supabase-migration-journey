@@ -240,16 +240,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      // FIX: Improve error handling for heartbeat operations
       supabase
         .from("profiles")
         .update({ last_seen: new Date().toISOString() })
         .eq("id", user.id)
         .then(({ error }) => {
-          if (error) console.warn("[useAuth] heartbeat", error);
+          if (error) {
+            console.error("[useAuth] heartbeat update failed:", error);
+            // Note: Consider retry logic here if heartbeats are critical
+          }
+        })
+        .catch((e) => {
+          console.error("[useAuth] heartbeat exception:", e);
         });
-      supabase.rpc("touch_presence").then(({ error }) => {
-        if (error) console.warn("[useAuth] presence", error);
-      });
+      
+      supabase.rpc("touch_presence")
+        .then(({ error }) => {
+          if (error) {
+            console.error("[useAuth] presence update failed:", error);
+          }
+        })
+        .catch((e) => {
+          console.error("[useAuth] presence exception:", e);
+        });
     };
     tick();
     heartbeatRef.current = setInterval(tick, 15_000);
