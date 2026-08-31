@@ -49,7 +49,6 @@ export type RoomParticipant = {
   level?: number;
 };
 
-// Plus sign bilkul khatam kar diya gaya hai taake seat clear nazar aaye
 function EmptySeatArt({ locked }: { locked: boolean }) {  
   return (
     <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/20 bg-black/30 shadow-inner">
@@ -78,22 +77,21 @@ export function Seat({ seat, onClick }: SeatProps) {
 
   if (!user) {
     return (
-      <div className={cn("relative flex flex-col items-center justify-center p-1", className)}>
+      <div className={cn("relative flex flex-col items-center justify-center p-0.5", className)}>
         <button  
           type="button"  
           onClick={onClick}  
-          className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
+          className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
         >
-          {/* Seat Number sirf ek jagah single show hoga */}
-          <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/70 text-[9px] font-bold text-white/80">
+          <span className="absolute left-0.5 top-0.5 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70 text-[8px] font-bold text-white/80">
             {num}
           </span>
-          <span className="relative aspect-square w-[58px] max-w-full rounded-full p-0">
+          <span className="relative aspect-square w-[52px] max-w-full rounded-full p-0">
             <EmptySeatArt locked={is_locked} />
           </span>
-          <span className="w-full truncate text-[9px] font-semibold text-white/60 text-center">No.{num}</span>
-          <span className="flex items-center gap-0.5 text-[8px] text-white/50">
-            <Heart className="h-2.5 w-2.5 fill-pink-500/60 text-pink-500" />0
+          <span className="w-full truncate text-[8px] font-semibold text-white/60 text-center">No.{num}</span>
+          <span className="flex items-center gap-0.5 text-[7px] text-white/50">
+            <Heart className="h-2 w-2 fill-pink-500/60 text-pink-500" />0
           </span>
         </button>
       </div>
@@ -101,17 +99,17 @@ export function Seat({ seat, onClick }: SeatProps) {
   }
 
   return (
-    <div className={cn("relative flex flex-col items-center justify-center p-1", className)}>
+    <div className={cn("relative flex flex-col items-center justify-center p-0.5", className)}>
       <button  
         type="button"  
         onClick={onClick}  
-        className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
+        className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
       >
-        <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/75 text-[9px] font-black text-white">
+        <span className="absolute left-0.5 top-0.5 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/75 text-[8px] font-black text-white">
           {num}
         </span>
 
-        <span className="relative aspect-square w-[58px] max-w-full rounded-full p-0 flex items-center justify-center">
+        <span className="relative aspect-square w-[52px] max-w-full rounded-full p-0 flex items-center justify-center">
           <span className={cn(
             "relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2",
             speaking ? "border-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : "border-amber-400/80"
@@ -121,16 +119,16 @@ export function Seat({ seat, onClick }: SeatProps) {
           </span>
           
           {frameUrl && (
-            <img src={frameUrl} alt="" className="absolute inset-0 -m-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] pointer-events-none object-contain z-20" draggable={false} />
+            <img src={frameUrl} alt="" className="absolute inset-0 -m-2 h-[calc(100%+16px)] w-[calc(100%+16px)] pointer-events-none object-contain z-20" draggable={false} />
           )}
 
-          <span className={cn("absolute bottom-0 right-0 z-30 grid h-4 w-4 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
-            {isMuted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
+          <span className={cn("absolute bottom-0 right-0 z-30 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+            {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
           </span>
         </span>
 
-        <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
-        <span className="flex items-center gap-0.5 text-[8px] font-medium text-white/90">
+        <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
+        <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/90">
           <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
         </span>
       </button>
@@ -263,26 +261,27 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const hostFrameUrl = host.avatar_frame_url || host.frame_url;
 
   return (
-    <section className="relative flex w-full flex-col items-center px-1 py-1" data-seat-capacity={capacity}>
-      <div className="grid w-full grid-cols-5 gap-1.5 content-start">
-        {/* Seat No. 1: Host (Double numbering fix done here) */}
-        <div className="relative flex flex-col items-center justify-center p-1">
-          <div className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0">
-            <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 text-[9px] font-black text-amber-300">
+    <section className="relative flex w-full flex-col items-center px-1 py-0.5" data-seat-capacity={capacity}>
+      {/* Universal Responsive Container: Har Android aur iOS device par 20 seats seamlessly fit aur scroll hongi */}
+      <div className="grid w-full grid-cols-5 gap-1 content-start max-h-[38svh] min-h-[140px] overflow-y-auto no-scrollbar pb-2">
+        {/* Seat No. 1: Host */}
+        <div className="relative flex flex-col items-center justify-center p-0.5">
+          <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
+            <span className="absolute left-0.5 top-0.5 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 text-[8px] font-black text-amber-300">
               1
             </span>
-            <span className="relative aspect-square w-[58px] max-w-full rounded-full p-0 flex items-center justify-center">
+            <span className="relative aspect-square w-[52px] max-w-full rounded-full p-0 flex items-center justify-center">
               <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400">
                 <HostCard host={host} onTap={onHostTap} />
               </span>
               {hostFrameUrl && (
-                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-2.5 h-[calc(100%+20px)] w-[calc(100%+20px)] pointer-events-none object-contain z-20" draggable={false} />
+                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-2 h-[calc(100%+16px)] w-[calc(100%+16px)] pointer-events-none object-contain z-20" draggable={false} />
               )}
             </span>
-            <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">
+            <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center drop-shadow">
               {host.username}
             </span>
-            <span className="flex items-center gap-0.5 text-[8px] font-medium text-white/95">
+            <span className="flex items-center gap-0.5 text-[7px] font-medium text-white/95">
               <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
             </span>
           </div>
