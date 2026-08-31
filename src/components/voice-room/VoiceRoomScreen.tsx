@@ -511,7 +511,7 @@ export const VoiceRoomScreen = ({
                 </form>
               </div>
               
-              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[680px]">
+              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[320px]">
                 <button 
                   type="button" 
                   onClick={tap(openPopularity)} 
