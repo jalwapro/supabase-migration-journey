@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Plus, Settings, UserPlus } from "lucide-react";
+import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -49,13 +49,11 @@ export type RoomParticipant = {
   level?: number;
 };
 
+// Plus sign bilkul khatam kar diya gaya hai taake seat clear nazar aaye
 function EmptySeatArt({ locked }: { locked: boolean }) {  
   return (
-    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/30 bg-black/40 shadow-inner">
-      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover opacity-50 rounded-full" draggable={false} />
-      <span className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
-        <Plus className="h-4 w-4 text-white/80" />
-      </span>
+    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border border-white/20 bg-black/30 shadow-inner">
+      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover opacity-30 rounded-full" draggable={false} />
       {locked && <Lock className="absolute h-4 w-4 text-amber-400 drop-shadow" />}
     </span>
   );  
@@ -86,6 +84,7 @@ export function Seat({ seat, onClick }: SeatProps) {
           onClick={onClick}  
           className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
         >
+          {/* Seat Number sirf ek jagah single show hoga */}
           <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/70 text-[9px] font-bold text-white/80">
             {num}
           </span>
@@ -158,7 +157,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [moderatorCanManageSeats, setModeratorCanManageSeats] = useState(false);
   const [lockBusy, setLockBusy] = useState<number | null>(null);
   
-  // Only for empty seat management
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
   const [targetShiftSeat, setTargetShiftSeat] = useState<number | "" >("");
@@ -241,13 +239,11 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const handleSeatClick = async (seat: RoomSeat) => {  
     const idx = seat.index ?? seat.seatNumber ?? 1;
 
-    // AGAR SEAT PAR USER HAI, TOH USKI PROFILE (VISIT, MESSAGE, FOLLOW) OPEN HO GI
     if (seat.user) {
       onSeatTap?.(idx);
       return;
     }
 
-    // AGAR SEAT KHALI HAI AUR HOST/MODERATOR HAIN, TOH MANAGEMENT POPUP KHULEGA
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       setActiveTab("users");
@@ -269,7 +265,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   return (
     <section className="relative flex w-full flex-col items-center px-1 py-1" data-seat-capacity={capacity}>
       <div className="grid w-full grid-cols-5 gap-1.5 content-start">
-        {/* Seat No. 1: Host */}
+        {/* Seat No. 1: Host (Double numbering fix done here) */}
         <div className="relative flex flex-col items-center justify-center p-1">
           <div className="group relative flex w-full flex-col items-center justify-center gap-1 bg-transparent p-0">
             <span className="absolute left-1 top-1 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 text-[9px] font-black text-amber-300">
