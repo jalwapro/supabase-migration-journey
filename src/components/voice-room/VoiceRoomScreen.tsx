@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Trophy, ChevronRight } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
@@ -412,16 +412,6 @@ export const VoiceRoomScreen = ({
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
         <div className="shrink-0 pt-2 px-3">
           <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
-        </div>
-
-        <div className="shrink-0 px-3 py-1">
-          <div className="flex items-center justify-between h-[36px] px-3 rounded-xl bg-black/40 border border-amber-500/30 backdrop-blur-md">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-4 w-4 text-amber-400 animate-pulse" />
-              <span className="text-xs font-bold text-amber-200">No ranking yet</span>
-            </div>
-            <ChevronRight className="h-4 w-4 text-white/60" />
-          </div>
         </div>
 
         <GiftAnimationPlayer roomId={roomId} />
