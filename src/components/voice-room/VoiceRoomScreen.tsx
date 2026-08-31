@@ -461,7 +461,7 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          <div className="shrink-0 flex flex-col gap-1 px-3 pb-1">
+          <div className="shrink-0 flex flex-col gap-[10px] px-3 pb-1">
 
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               
