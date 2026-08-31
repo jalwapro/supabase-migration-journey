@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Plus } from "lucide-react";
+import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Plus, Settings, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +20,8 @@ export type RoomSeatUser = {
   username: string;
   avatar: string | null;
   avatarUrl?: string;
+  avatar_frame_url?: string | null;
+  frame_url?: string | null;
   is_muted?: boolean;
   is_speaking?: boolean;
   mic?: "speaking" | "muted" | "off";
@@ -39,6 +41,8 @@ export type RoomParticipant = {
   id: string;
   username: string;
   avatar: string | null;
+  avatar_frame_url?: string | null;
+  frame_url?: string | null;
   gift_score?: number;
   level?: number;
 };
@@ -68,6 +72,7 @@ export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy 
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
   const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
+  const frameUrl = user?.avatar_frame_url || user?.frame_url;
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
@@ -91,9 +96,8 @@ export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy 
         <button 
           type="button" 
           onClick={onClick} 
-          disabled={is_locked && !canManage} 
-          className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-white/[0.03] p-1 shadow-sm transition-all active:scale-95 disabled:opacity-50"
-          aria-label={is_locked ? `Locked seat ${num}` : `Join seat ${num}`}
+          className="group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-xl border border-white/10 bg-white/[0.03] p-1 shadow-sm transition-all active:scale-95"
+          aria-label={is_locked ? `Locked seat ${num}` : `Manage seat ${num}`}
         >
           <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/60 text-[8px] font-bold text-white/70">
             {num}
@@ -124,12 +128,15 @@ export function Seat({ seat, onClick, canManage = false, onToggleLock, lockBusy 
         <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/70 text-[8px] font-black text-white/90">
           {num}
         </span>
-        <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full border-2 p-0.5 border-[color:var(--primary)]">
-          <span className="relative block h-full w-full overflow-hidden rounded-full bg-slate-900">
+        <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full p-0.5 flex items-center justify-center">
+          <span className="relative block h-full w-full overflow-hidden rounded-full bg-slate-900 border-2 border-[color:var(--primary)]">
             <img src={avatar} alt={username} className="h-full w-full object-cover" draggable={false} />
-            {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse" />}
+            {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse pointer-events-none" />}
           </span>
-          <span className={cn("absolute -bottom-0.5 -right-0.5 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+          {frameUrl && (
+            <img src={frameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-10" draggable={false} />
+          )}
+          <span className={cn("absolute -bottom-0.5 -right-0.5 z-20 grid h-3.5 w-3.5 place-items-center rounded-full border border-black text-white", isMuted ? "bg-red-500" : "bg-emerald-500")}>
             {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
           </span>
         </span>
@@ -161,6 +168,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [isModerator, setIsModerator] = useState(false);
   const [moderatorCanManageSeats, setModeratorCanManageSeats] = useState(false);
   const [lockBusy, setLockBusy] = useState<number | null>(null);
+  const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
 
   useEffect(() => {
     if (!roomId) return;
@@ -248,8 +256,15 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       onSeatTap?.(idx); 
       return; 
     } 
+    
+    // Agar user Host ya Moderator hai aur seat empty hai, toh popup open karein
+    if (canManageSeats) {
+      setSelectedEmptySeat(seat);
+      return;
+    }
+
     if (seat.is_locked) return; 
-    if (isHost || !roomId) { 
+    if (!roomId) { 
       onJoinSeat?.(idx); 
       return; 
     } 
@@ -257,6 +272,8 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     if (error) toast.error(error.message || "Could not send seat request"); 
     else toast.success("Seat request sent to host"); 
   };
+
+  const hostFrameUrl = host.avatar_frame_url || host.frame_url;
 
   return (
     <section className="relative flex w-full flex-col items-center px-1 py-0.5" data-seat-capacity={capacity}>
@@ -267,8 +284,13 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
             <span className="absolute left-1 top-1 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/75 text-[8px] font-black text-amber-300">
               1
             </span>
-            <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full border-2 border-amber-400 p-0.5">
-              <HostCard host={host} onTap={onHostTap} />
+            <span className="relative aspect-square w-[72%] max-w-[42px] rounded-full p-0.5 flex items-center justify-center">
+              <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400">
+                <HostCard host={host} onTap={onHostTap} />
+              </span>
+              {hostFrameUrl && (
+                <img src={hostFrameUrl} alt="" className="absolute inset-0 -m-1.5 h-[calc(100%+12px)] w-[calc(100%+12px)] pointer-events-none object-contain z-10" draggable={false} />
+              )}
             </span>
             <span className="w-full truncate px-0.5 text-[8px] font-bold leading-tight text-white text-center">
               {host.username}
@@ -294,6 +316,65 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
           );
         })}
       </div>
+
+      {/* Host / Moderator Empty Seat Management Popup */}
+      {selectedEmptySeat && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in px-4">
+          <div className="relative flex flex-col max-w-xs w-full rounded-2xl bg-slate-900 border border-amber-500/40 p-4 shadow-2xl text-white">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <div className="flex items-center gap-2">
+                <Settings className="h-4 w-4 text-amber-400" />
+                <span className="text-xs font-bold text-amber-300">Manage Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span>
+              </div>
+              <button type="button" onClick={() => setSelectedEmptySeat(null)} className="text-slate-400 hover:text-white">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="py-4 space-y-2.5">
+              <button 
+                type="button"
+                onClick={() => {
+                  const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
+                  void toggleSeatLock(idx, selectedEmptySeat.is_locked);
+                  setSelectedEmptySeat(null);
+                }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold transition-all border border-slate-700"
+              >
+                <div className="flex items-center gap-2">
+                  {selectedEmptySeat.is_locked ? <Unlock className="h-4 w-4 text-emerald-400" /> : <Lock className="h-4 w-4 text-amber-400" />}
+                  <span>{selectedEmptySeat.is_locked ? "Unlock This Seat" : "Lock This Seat"}</span>
+                </div>
+                <span className="text-[10px] text-slate-400">{selectedEmptySeat.is_locked ? "Allow users" : "Block users"}</span>
+              </button>
+
+              <button 
+                type="button"
+                onClick={() => {
+                  const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
+                  setSelectedEmptySeat(null);
+                  onJoinSeat?.(idx);
+                }}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-xs font-semibold text-amber-300 transition-all border border-amber-500/30"
+              >
+                <div className="flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-amber-400" />
+                  <span>Assign / Take Seat</span>
+                </div>
+                <span className="text-[10px] text-amber-400/70">Join</span>
+              </button>
+            </div>
+
+            <button 
+              type="button"
+              onClick={() => setSelectedEmptySeat(null)}
+              className="w-full py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium hover:bg-slate-700 transition-all"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Host Pending Seat Requests Drawer */}
       {isHost && requests.length > 0 && (
