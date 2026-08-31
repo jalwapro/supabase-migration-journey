@@ -145,7 +145,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
 
       </div>
 
-      {/* Clean Comment Input Popup attached directly to keyboard with matched theme */}
+      {/* Clean Comment Input Popup attached directly to keyboard with search/plain input mode to completely prevent key/card/location toolbars */}
       {showInputPopup && (
         <div 
           className="fixed inset-0 z-[2147483500] flex items-end justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in p-0"
@@ -164,10 +164,12 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
               autoFocus
               autoComplete="off"
               autoCorrect="off"
-              autoCapitalize="sentences"
+              autoCapitalize="none"
               spellCheck={false}
               enterKeyHint="send"
-              inputMode="text"
+              inputMode="search"
+              role="textbox"
+              aria-autocomplete="none"
               data-form-type="other"
               className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none focus:border-amber-400"
             />
