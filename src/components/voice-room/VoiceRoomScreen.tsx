@@ -322,7 +322,7 @@ export const VoiceRoomScreen = ({
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
-  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-12);
+  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-15);
   const openMemberProfile = (seatIndex: number) => {
     const seat = room.seats.find(s => s.index === seatIndex);
     if (!seat?.user) return;
@@ -440,8 +440,8 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          {/* Chat composer height set explicitly to 180px */}
-          <section className="mt-auto grid h-[180px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1.5 px-2 py-1">
+          {/* flex-1 ki madad se chat section seats ke bilkul kareeb se shuru hokar footer tak bina kisi gap ke perfectly expand ho jayega */}
+          <section className="mt-auto flex min-h-0 flex-1 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1.5 px-2 py-1 grid">
             <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
               <div className="flex h-6 shrink-0 items-end gap-4 border-b border-white/30 px-2.5">
                 <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[11px] font-semibold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-[color:var(--primary)]" /></button>
