@@ -441,7 +441,7 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          {/* Fixed height chat section (h-[140px]) to ensure seats are fully visible and do not hide behind chat */}
+          {/* Fixed height chat section (h-[180px]) to ensure seats are fully visible and do not hide behind chat */}
           <section className="mt-auto grid h-[140px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1.5 px-2 py-1">
             <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
               <div className="flex h-6 shrink-0 items-end gap-4 border-b border-white/30 px-2.5">
