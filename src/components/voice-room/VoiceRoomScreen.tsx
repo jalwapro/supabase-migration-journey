@@ -338,7 +338,7 @@ export const VoiceRoomScreen = ({
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
-  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-4);
+  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji");
   const openMemberProfile = (seatIndex: number) => {
     const seat = room.seats.find(s => s.index === seatIndex);
     if (!seat?.user) return;
@@ -465,7 +465,7 @@ export const VoiceRoomScreen = ({
 
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               
-              <div className="flex min-w-0 h-[110px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
+              <div className="flex min-w-0 h-[680px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
                 <div className="flex h-5 shrink-0 items-end gap-3 border-b border-white/10 px-2.5">
                   <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[10px] font-bold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-4 rounded-full bg-amber-400" /></button>
                   <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[10px] font-medium text-white/60 disabled:opacity-40")}>Chat</button>
@@ -511,7 +511,7 @@ export const VoiceRoomScreen = ({
                 </form>
               </div>
               
-              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[110px]">
+              <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[680px]">
                 <button 
                   type="button" 
                   onClick={tap(openPopularity)} 
