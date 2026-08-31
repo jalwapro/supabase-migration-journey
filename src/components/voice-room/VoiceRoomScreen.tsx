@@ -462,16 +462,6 @@ export const VoiceRoomScreen = ({
           )}
 
           <div className="shrink-0 flex flex-col gap-1 px-3 pb-1">
-            
-            <div className="flex items-center gap-3 h-[38px] px-3 rounded-xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-transparent border border-pink-500/40 backdrop-blur-md shadow-lg">
-              <div className="h-6 w-6 rounded-full bg-pink-500/30 p-0.5 border border-pink-400 flex items-center justify-center overflow-hidden shrink-0">
-                <img src={room.host?.avatar || "/images/jalwa-1.gif"} alt="" className="h-full w-full object-cover rounded-full" />
-              </div>
-              <div className="flex items-center gap-2 min-w-0">
-                <span className="text-xs font-bold text-pink-300 truncate">ALI KING 🌸</span>
-                <span className="text-[11px] text-white/80 truncate">enters the room</span>
-              </div>
-            </div>
 
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               
