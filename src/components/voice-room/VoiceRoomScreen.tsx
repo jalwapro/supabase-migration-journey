@@ -409,14 +409,20 @@ export const VoiceRoomScreen = ({
         </div>
       )}
 
+      {/* Main Content Area */}
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
+        
+        {/* 1. Header Section */}
         <div className="shrink-0 pt-2 px-3">
           <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
         </div>
 
         <GiftAnimationPlayer roomId={roomId} />
         
+        {/* 2. Seats Grid & Bottom Hub */}
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+          
+          {/* Seats Scrollable Area */}
           <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 no-scrollbar">
             <SeatGrid 
               seats={room.seats.map(s => ({
@@ -440,9 +446,10 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
+          {/* 3. Entrance Bar Notification */}
           <div className="shrink-0 px-3 py-1">
-            <div className="flex items-center gap-3 h-[42px] px-3 rounded-xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-transparent border border-pink-500/40 backdrop-blur-md shadow-lg">
-              <div className="h-7 w-7 rounded-full bg-pink-500/30 p-0.5 border border-pink-400 flex items-center justify-center overflow-hidden shrink-0">
+            <div className="flex items-center gap-3 h-[40px] px-3 rounded-xl bg-gradient-to-r from-pink-950/80 via-purple-950/80 to-transparent border border-pink-500/40 backdrop-blur-md shadow-lg">
+              <div className="h-6 w-6 rounded-full bg-pink-500/30 p-0.5 border border-pink-400 flex items-center justify-center overflow-hidden shrink-0">
                 <img src={room.host?.avatar || "/images/jalwa-1.gif"} alt="" className="h-full w-full object-cover rounded-full" />
               </div>
               <div className="flex items-center gap-2 min-w-0">
@@ -452,12 +459,16 @@ export const VoiceRoomScreen = ({
             </div>
           </div>
 
+          {/* 4. Chat & Popularity Hub */}
           <section className="shrink-0 grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5 px-3 py-1 mb-1">
+            
+            {/* Chat Box */}
             <div className="flex min-w-0 h-[115px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
               <div className="flex h-5 shrink-0 items-end gap-3 border-b border-white/10 px-2.5">
                 <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[10px] font-bold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-4 rounded-full bg-amber-400" /></button>
                 <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[10px] font-medium text-white/60 disabled:opacity-40")}>Chat</button>
               </div>
+              
               <div className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar">
                 {visibleMessages.length === 0 ? (
                   <div className="flex h-full items-center justify-center text-center text-white/40">
@@ -478,6 +489,7 @@ export const VoiceRoomScreen = ({
                   })
                 )}
               </div>
+
               <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-6 shrink-0 items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-2 shadow-inner", !roomSettings.chat_enabled && "opacity-50")}>
                 <input 
                   value={draft} 
@@ -497,6 +509,7 @@ export const VoiceRoomScreen = ({
               </form>
             </div>
             
+            {/* Popularity & Slide Banner */}
             <div className="flex min-w-0 flex-col justify-between items-end gap-1 h-[115px]">
               <button 
                 type="button" 
@@ -518,10 +531,12 @@ export const VoiceRoomScreen = ({
                 )}
               </div>
             </div>
+
           </section>
         </div>
       </div>
       
+      {/* 5. Bottom Navigation Bar */}
       <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 flex h-[52px] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>
           {micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}
@@ -546,6 +561,7 @@ export const VoiceRoomScreen = ({
         </button>
       </nav>
 
+      {/* Sheets & Modals */}
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
       
       {emojiOpen && (
