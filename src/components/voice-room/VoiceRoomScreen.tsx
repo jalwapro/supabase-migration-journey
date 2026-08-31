@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -133,6 +133,8 @@ export const VoiceRoomScreen = ({
   const [gameSlides, setGameSlides] = useState<GameSlide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
 
   useEffect(() => {
@@ -253,6 +255,13 @@ export const VoiceRoomScreen = ({
       active = false;
     };
   }, [roomId]);
+
+  // Auto scroll chat to bottom on new message
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [roomMessages]);
 
   const sendRoomMessage = async () => {
     const value = draft.trim();
@@ -471,7 +480,7 @@ export const VoiceRoomScreen = ({
                   <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"pb-0.5 text-[10px] font-medium text-white/60 disabled:opacity-40")}>Chat</button>
                 </div>
                 
-                <div className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar">
+                <div ref={chatContainerRef} className="min-h-0 flex-1 overflow-y-auto px-2 py-0.5 no-scrollbar scroll-smooth">
                   {visibleMessages.length === 0 ? (
                     <div className="flex h-full items-center justify-center text-center text-white/40">
                       <p className="text-[10px] font-medium">{announcement || "Welcome to the room!"}</p>
@@ -518,11 +527,11 @@ export const VoiceRoomScreen = ({
                   style={{ height: "100px" }}
                   className={cn(
                     buttonClass,
-                    "relative group flex flex-col items-center justify-center bg-black/50 border border-white/20 rounded-xl p-0 w-full backdrop-blur-md shadow-lg shrink-0"
+                    "relative group flex items-center justify-center bg-transparent border-0 p-0 w-full shrink-0 shadow-none"
                   )}
                 >
                   <div className="relative h-[100px] w-[100px] flex items-center justify-center">
-                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[100px] w-[100px] object-contain animate-bounce" />
+                    <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-[100px] w-[100px] object-contain animate-bounce drop-shadow-[0_0_10px_rgba(234,179,8,0.5)]" />
                   </div>
                 </button>
 
