@@ -322,7 +322,7 @@ export const VoiceRoomScreen = ({
   const openMoreForRole = () => { if (isHost) setHostSettingsOpen(true); else if (isModerator) setModeratorControlsOpen(true); else onOpenMore(); };
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost) return; onJoinSeat(index); };
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
-  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-15);
+  const visibleMessages = roomMessages.filter(m => m.kind !== "emoji").slice(-8);
   const openMemberProfile = (seatIndex: number) => {
     const seat = room.seats.find(s => s.index === seatIndex);
     if (!seat?.user) return;
@@ -416,6 +416,7 @@ export const VoiceRoomScreen = ({
         <RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} />
         <GiftAnimationPlayer roomId={roomId} />
         
+        {/* Container managing layout to prevent overlap with seats */}
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden pb-1">
           <div className="relative shrink-0 bg-transparent pt-0.5">
             <SeatGrid 
@@ -440,8 +441,8 @@ export const VoiceRoomScreen = ({
             </div>
           )}
 
-          {/* flex-1 ki madad se chat section seats ke bilkul kareeb se shuru hokar footer tak bina kisi gap ke perfectly expand ho jayega */}
-          <section className="mt-auto flex min-h-0 flex-1 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1.5 px-2 py-1 grid">
+          {/* Fixed height chat section (h-[140px]) to ensure seats are fully visible and do not hide behind chat */}
+          <section className="mt-auto grid h-[140px] shrink-0 grid-cols-[minmax(0,1.7fr)_minmax(75px,.7fr)] gap-1.5 px-2 py-1">
             <div className="flex min-w-0 min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/45 bg-white/5 backdrop-blur-md">
               <div className="flex h-6 shrink-0 items-end gap-4 border-b border-white/30 px-2.5">
                 <button type="button" onClick={tap(onOpenChat)} disabled={!roomSettings.chat_enabled} className={cn(buttonClass,"relative pb-0.5 text-[11px] font-semibold text-white disabled:opacity-40")}>All<span className="absolute bottom-0 left-0 h-0.5 w-5 rounded-full bg-[color:var(--primary)]" /></button>
@@ -459,7 +460,7 @@ export const VoiceRoomScreen = ({
                     const avatar = m.user?.avatar || m.sender_avatar;
                     const fallback = (m.user?.username || m.sender_username || "U").trim().charAt(0).toUpperCase();
                     return (
-                      <div key={m.id} className="mb-1 flex min-w-0 items-start gap-1.5 text-[11px]">
+                      <div key={m.id} className="mb-0.5 flex min-w-0 items-start gap-1 text-[11px]">
                         <div className="grid h-4 w-4 shrink-0 overflow-hidden rounded-full bg-white/20 text-[8px] font-bold text-white/80 place-items-center">
                           {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
                         </div>
@@ -469,10 +470,10 @@ export const VoiceRoomScreen = ({
                   })
                 )}
               </div>
-              <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1.5 flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/30 bg-white px-3 shadow-md", !roomSettings.chat_enabled && "opacity-50")}>
+              <form onSubmit={e => { e.preventDefault(); void sendRoomMessage(); }} className={cn("mx-1.5 mb-1 flex h-7 shrink-0 items-center gap-1.5 rounded-full border border-white/30 bg-white px-2.5 shadow-md", !roomSettings.chat_enabled && "opacity-50")}>
                 <input value={draft} onChange={e => setDraft(e.target.value.slice(0, 500))} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); void sendRoomMessage(); } }} placeholder={roomSettings.chat_enabled ? "Say something..." : "Chat disabled"} disabled={sending || !roomSettings.chat_enabled} className="min-w-0 flex-1 bg-transparent text-[11px] font-medium text-black outline-none placeholder:text-slate-400" />
-                <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[color:var(--secondary)]"><Smile className="h-4 w-4" /></button>
-                <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white"><Send className="h-3 w-3" /></button>
+                <button type="button" onClick={openAnimatedEmojis} disabled={!roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full text-[color:var(--secondary)]"><Smile className="h-3.5 w-3.5" /></button>
+                <button type="submit" disabled={!draft.trim() || sending || !roomSettings.chat_enabled} className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-[color:var(--primary)] text-white"><Send className="h-2.5 w-2.5" /></button>
               </form>
             </div>
             
@@ -485,15 +486,15 @@ export const VoiceRoomScreen = ({
                   "relative group flex flex-col items-center justify-center min-h-0 flex-1 bg-transparent border-none outline-none p-0"
                 )}
               >
-                <div className="relative h-11 w-11 flex items-center justify-center">
-                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-11 w-11 object-contain animate-bounce" />
+                <div className="relative h-10 w-10 flex items-center justify-center">
+                  <img src="/images/jalwa-1.gif" alt="Rocket GIF" className="h-10 w-10 object-contain animate-bounce" />
                 </div>
                 <span className="relative z-10 text-[9px] font-black text-amber-300">{popularityPct}%</span>
               </button>
 
-              <div className="relative h-24 w-[105px] shrink-0 overflow-hidden rounded-xl border border-white/45 bg-white/10 flex items-center justify-center shadow-md">
+              <div className="relative h-20 w-[100px] shrink-0 overflow-hidden rounded-lg border border-white/45 bg-white/10 flex items-center justify-center shadow-md">
                 {currentSlide && (
-                  <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-xl" />
+                  <img src={currentSlide.image_url} alt={currentSlide.title} className="h-full w-full object-cover rounded-lg" />
                 )}
               </div>
             </div>
