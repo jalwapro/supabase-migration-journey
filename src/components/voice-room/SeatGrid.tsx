@@ -53,7 +53,7 @@ function EmptySeatArt({ locked }: { locked: boolean }) {
   return (
     <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-amber-500 bg-transparent shadow-none">
       <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover rounded-full" draggable={false} />
-      {locked && <Lock className="absolute h-4 w-4 text-amber-400 drop-shadow" />}
+      {locked && <Lock className="absolute h-3.5 w-3.5 text-amber-400 drop-shadow" />}
     </span>
   );
 }
@@ -61,10 +61,9 @@ function EmptySeatArt({ locked }: { locked: boolean }) {
 type SeatProps = {
   seat: RoomSeat;
   onClick: () => void;
-  sizeClass?: string;
 };
 
-export function Seat({ seat, onClick, sizeClass = "w-[72px]" }: SeatProps) {
+export function Seat({ seat, onClick }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
@@ -76,21 +75,21 @@ export function Seat({ seat, onClick, sizeClass = "w-[72px]" }: SeatProps) {
 
   if (!user) {
     return (
-      <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent", className)}>
+      <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
         <button
           type="button"
           onClick={onClick}
           className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
         >
-          <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 border border-amber-500 text-[9px] font-bold text-white shadow">
+          <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">
             {num}
           </span>
-          <span className={cn("relative aspect-square max-w-full rounded-full p-0 bg-transparent", sizeClass)}>
+          <span className="relative aspect-square w-full max-w-[56px] rounded-full p-0 bg-transparent">
             <EmptySeatArt locked={is_locked} />
           </span>
-          <span className="w-full truncate text-[10px] font-semibold text-white text-center">No.{num}</span>
-          <span className="flex items-center gap-0.5 text-[9px] text-white">
-            <Heart className="h-2.5 w-2.5 fill-pink-500 text-pink-500" />0
+          <span className="w-full truncate text-[9px] font-semibold text-white text-center leading-tight">No.{num}</span>
+          <span className="flex items-center gap-0.5 text-[8px] text-white">
+            <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />0
           </span>
         </button>
       </div>
@@ -98,33 +97,33 @@ export function Seat({ seat, onClick, sizeClass = "w-[72px]" }: SeatProps) {
   }
 
   return (
-    <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent", className)}>
+    <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
       <button
         type="button"
         onClick={onClick}
         className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
       >
-        <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 border border-amber-500 text-[9px] font-black text-white shadow">
+        <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">
           {num}
         </span>
-        <span className={cn("relative aspect-square max-w-full p-0 flex items-center justify-center my-0.5 bg-transparent", sizeClass)}>
+        <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent">
           <span className={cn(
             "relative block h-full w-full overflow-hidden rounded-full border-2 z-10 shadow-md bg-transparent",
-            speaking ? "border-fuchsia-400 shadow-[0_0_20px_rgba(236,72,153,0.8)]" : "border-amber-400"
+            speaking ? "border-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : "border-amber-400"
           )}>
             <img src={avatar} alt={username} className="h-full w-full object-cover rounded-full" draggable={false} />
             {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse pointer-events-none" />}
           </span>
           {frameUrl && (
-            <img src={frameUrl} alt="" className="absolute -inset-3.5 h-[calc(100%+28px)] w-[calc(100%+28px)] pointer-events-none object-contain z-30" draggable={false} />
+            <img src={frameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />
           )}
-          <span className={cn("absolute bottom-0 right-0 z-40 grid h-4.5 w-4.5 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
-            {isMuted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
+          <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+            {isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}
           </span>
         </span>
-        <span className="w-full truncate px-0.5 text-[10px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
-        <span className="flex items-center gap-0.5 text-[9px] font-medium text-white">
-          <Heart className="h-2.5 w-2.5 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
+        <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
+        <span className="flex items-center gap-0.5 text-[8px] font-medium text-white">
+          <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}
         </span>
       </button>
     </div>
@@ -339,56 +338,40 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     ...participantSlots,
   ];
 
+  // Auto-layout calculation: exactly 5 seats per row like mobile app grids
+  const SEATS_PER_ROW = 5;
   let rows: (typeof allSeats)[] = [];
-  let avatarSize = "w-[68px]";
-
-  if (capacity === 4) {
-    rows = [
-      allSeats.slice(0, 2),
-      allSeats.slice(2, 4),
-    ];
-    avatarSize = "w-[85px]";
-  } else if (capacity === 8) {
-    rows = [
-      allSeats.slice(0, 2),
-      allSeats.slice(2, 5),
-      allSeats.slice(5, 8),
-    ];
-    avatarSize = "w-[76px]";
-  } else {
-    avatarSize = capacity > 16 ? "w-[56px]" : capacity > 12 ? "w-[62px]" : "w-[68px]";
-    for (let i = 0; i < allSeats.length; i += 4) {
-      rows.push(allSeats.slice(i, i + 4));
-    }
+  for (let i = 0; i < allSeats.length; i += SEATS_PER_ROW) {
+    rows.push(allSeats.slice(i, i + SEATS_PER_ROW));
   }
 
   return (
-    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-transparent" data-seat-capacity={capacity}>
-      <div className="flex w-full h-full flex-col items-center justify-around overflow-hidden p-1 bg-transparent">
+    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-transparent overflow-hidden" data-seat-capacity={capacity}>
+      <div className="flex w-full h-full flex-col items-center justify-evenly overflow-hidden px-1 bg-transparent">
         {rows.map((rowSeats, rowIndex) => (
-          <div key={rowIndex} className="flex w-full items-center justify-center gap-2 bg-transparent">
+          <div key={rowIndex} className="flex w-full items-center justify-evenly gap-1 bg-transparent">
             {rowSeats.map((seat) => {
               const seatIdx = seat.index ?? seat.seatNumber ?? 1;
               if (seat.isHost) {
                 return (
-                  <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent")}>
+                  <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
                     <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
-                      <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 border border-amber-500 text-[9px] font-black text-amber-300 shadow">
+                      <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">
                         1
                       </span>
-                      <span className={cn("relative aspect-square max-w-full p-0 flex items-center justify-center my-0.5 bg-transparent", avatarSize)}>
+                      <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent">
                         <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md">
                           <HostCard host={host} onTap={onHostTap} />
                         </span>
                         {hostFrameUrl && (
-                          <img src={hostFrameUrl} alt="" className="absolute -inset-3.5 h-[calc(100%+28px)] w-[calc(100%+28px)] pointer-events-none object-contain z-30" draggable={false} />
+                          <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />
                         )}
                       </span>
-                      <span className="w-full truncate px-0.5 text-[10px] font-bold leading-tight text-white text-center drop-shadow">
+                      <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">
                         {host.username}
                       </span>
-                      <span className="flex items-center gap-0.5 text-[9px] font-medium text-white">
-                        <Heart className="h-2.5 w-2.5 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
+                      <span className="flex items-center gap-0.5 text-[8px] font-medium text-white">
+                        <Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}
                       </span>
                     </div>
                   </div>
@@ -400,7 +383,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                   key={seatIdx}
                   seat={{ ...seat, index: seatIdx }}
                   onClick={() => void handleSeatClick(seat)}
-                  sizeClass={avatarSize}
                 />
               );
             })}
