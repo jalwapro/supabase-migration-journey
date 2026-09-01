@@ -51,7 +51,7 @@ export type RoomParticipant = {
 
 function EmptySeatArt({ locked }: { locked: boolean }) {
   return (
-    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-amber-500 bg-[#1e1238] shadow-md">
+    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-amber-500 bg-transparent shadow-none">
       <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover rounded-full" draggable={false} />
       {locked && <Lock className="absolute h-4 w-4 text-amber-400 drop-shadow" />}
     </span>
@@ -76,16 +76,16 @@ export function Seat({ seat, onClick, sizeClass = "w-[72px]" }: SeatProps) {
 
   if (!user) {
     return (
-      <div className={cn("relative flex flex-col items-center justify-center p-0.5", className)}>
+      <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent", className)}>
         <button
           type="button"
           onClick={onClick}
           className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
         >
-          <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-[#120a1f] border border-amber-500 text-[9px] font-bold text-white shadow">
+          <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 border border-amber-500 text-[9px] font-bold text-white shadow">
             {num}
           </span>
-          <span className={cn("relative aspect-square max-w-full rounded-full p-0", sizeClass)}>
+          <span className={cn("relative aspect-square max-w-full rounded-full p-0 bg-transparent", sizeClass)}>
             <EmptySeatArt locked={is_locked} />
           </span>
           <span className="w-full truncate text-[10px] font-semibold text-white text-center">No.{num}</span>
@@ -98,18 +98,18 @@ export function Seat({ seat, onClick, sizeClass = "w-[72px]" }: SeatProps) {
   }
 
   return (
-    <div className={cn("relative flex flex-col items-center justify-center p-0.5", className)}>
+    <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent", className)}>
       <button
         type="button"
         onClick={onClick}
         className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer"
       >
-        <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-[#120a1f] border border-amber-500 text-[9px] font-black text-white shadow">
+        <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 border border-amber-500 text-[9px] font-black text-white shadow">
           {num}
         </span>
-        <span className={cn("relative aspect-square max-w-full p-0 flex items-center justify-center my-0.5", sizeClass)}>
+        <span className={cn("relative aspect-square max-w-full p-0 flex items-center justify-center my-0.5 bg-transparent", sizeClass)}>
           <span className={cn(
-            "relative block h-full w-full overflow-hidden rounded-full bg-[#1e1238] border-2 z-10 shadow-md",
+            "relative block h-full w-full overflow-hidden rounded-full border-2 z-10 shadow-md bg-transparent",
             speaking ? "border-fuchsia-400 shadow-[0_0_20px_rgba(236,72,153,0.8)]" : "border-amber-400"
           )}>
             <img src={avatar} alt={username} className="h-full w-full object-cover rounded-full" draggable={false} />
@@ -118,7 +118,7 @@ export function Seat({ seat, onClick, sizeClass = "w-[72px]" }: SeatProps) {
           {frameUrl && (
             <img src={frameUrl} alt="" className="absolute -inset-3.5 h-[calc(100%+28px)] w-[calc(100%+28px)] pointer-events-none object-contain z-30" draggable={false} />
           )}
-          <span className={cn("absolute bottom-0 right-0 z-40 grid h-4.5 w-4.5 place-items-center rounded-full border-2 border-[#120a1f] text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
+          <span className={cn("absolute bottom-0 right-0 z-40 grid h-4.5 w-4.5 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>
             {isMuted ? <MicOff className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
           </span>
         </span>
@@ -321,7 +321,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
   const hostFrameUrl = host.avatar_frame_url || host.frame_url;
 
-  // Build all seats list (Host is seat 1, then participant slots)
   const allSeats: (RoomSeat & { isHost?: boolean })[] = [
     {
       index: 1,
@@ -340,19 +339,16 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     ...participantSlots,
   ];
 
-  // Group seats into rows based on capacity requirements
   let rows: (typeof allSeats)[] = [];
-  let avatarSize = "w-[68px]"; // Default size to fit 480x480 box cleanly without scrolling
+  let avatarSize = "w-[68px]";
 
   if (capacity === 4) {
-    // 4 seats: 2 top, 2 bottom
     rows = [
       allSeats.slice(0, 2),
       allSeats.slice(2, 4),
     ];
     avatarSize = "w-[85px]";
   } else if (capacity === 8) {
-    // 8 seats: 2 top, 3 middle, 3 bottom
     rows = [
       allSeats.slice(0, 2),
       allSeats.slice(2, 5),
@@ -360,7 +356,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     ];
     avatarSize = "w-[76px]";
   } else {
-    // 12, 16, 20 seats: 4 per row (4x4, 4x5, etc.)
     avatarSize = capacity > 16 ? "w-[56px]" : capacity > 12 ? "w-[62px]" : "w-[68px]";
     for (let i = 0; i < allSeats.length; i += 4) {
       rows.push(allSeats.slice(i, i + 4));
@@ -368,22 +363,21 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   }
 
   return (
-    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-[#0d0714]" data-seat-capacity={capacity}>
-      {/* Container 480x480 with zero scrolling */}
-      <div className="flex w-full h-full flex-col items-center justify-around overflow-hidden p-1">
+    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-transparent" data-seat-capacity={capacity}>
+      <div className="flex w-full h-full flex-col items-center justify-around overflow-hidden p-1 bg-transparent">
         {rows.map((rowSeats, rowIndex) => (
-          <div key={rowIndex} className="flex w-full items-center justify-center gap-2">
+          <div key={rowIndex} className="flex w-full items-center justify-center gap-2 bg-transparent">
             {rowSeats.map((seat) => {
               const seatIdx = seat.index ?? seat.seatNumber ?? 1;
               if (seat.isHost) {
                 return (
-                  <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5")}>
+                  <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent")}>
                     <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
-                      <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-[#120a1f] border border-amber-500 text-[9px] font-black text-amber-300 shadow">
+                      <span className="absolute left-0.5 top-0.5 z-10 grid h-4 w-4 place-items-center rounded-full bg-black/80 border border-amber-500 text-[9px] font-black text-amber-300 shadow">
                         1
                       </span>
-                      <span className={cn("relative aspect-square max-w-full p-0 flex items-center justify-center my-0.5", avatarSize)}>
-                        <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-[#1e1238] shadow-md">
+                      <span className={cn("relative aspect-square max-w-full p-0 flex items-center justify-center my-0.5 bg-transparent", avatarSize)}>
+                        <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md">
                           <HostCard host={host} onTap={onHostTap} />
                         </span>
                         {hostFrameUrl && (
