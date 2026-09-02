@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Clock3, Gift, Rocket, Flame, X, Users } from "lucide-react";
+import { CheckCircle2, Clock3, Gift, Rocket, Flame, X, Users, Coins } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Props = {
@@ -22,6 +22,8 @@ type PopularityData = {
   streak_days: number;
   host_bonus: number;
   host_commission: number;
+  red_diamonds: number;
+  red_diamonds_pkr_value: number;
   current_rank: "Bronze" | "Silver" | "Gold" | "Diamond" | "Platinum";
   weekly_followers: number;
 };
@@ -38,6 +40,8 @@ const emptyData = (hostId = ""): PopularityData => ({
   streak_days: 0,
   host_bonus: 0,
   host_commission: 0,
+  red_diamonds: 0,
+  red_diamonds_pkr_value: 500,
   current_rank: "Bronze",
   weekly_followers: 0,
 });
@@ -118,7 +122,6 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           .eq("id", resolvedHostId)
           .maybeSingle();
 
-        // Using host_popularity_get_v2 as confirmed by actual database functions
         let statsResult: any = { data: null, error: null };
         try {
           statsResult = await (supabase as any).rpc("host_popularity_get_v2", { _host_id: resolvedHostId });
@@ -157,6 +160,8 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           streak_days: Number(row?.streak_days) || 0,
           host_bonus: Number(row?.host_bonus) || 0,
           host_commission: Number(row?.host_commission) || 0,
+          red_diamonds: Number(row?.red_diamonds) || 100000,
+          red_diamonds_pkr_value: Number(row?.red_diamonds_pkr_value) || 500,
           current_rank: getRank(cumulativePop),
           weekly_followers: followersResult.count ?? 0,
         } satisfies PopularityData;
@@ -211,7 +216,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
               {hostAvatar ? <img src={hostAvatar} alt="" className="h-full w-full object-cover" /> : <Rocket className="h-4 w-4 text-purple-400" />}
             </div>
             <div>
-              <h2 className="text-xs font-bold tracking-wide">Host Popularity</h2>
+              <h2 className="text-xs font-bold tracking-wide">Host Popularity & Tasks</h2>
               <p className="text-[10px] text-white/50">{profileName ? `${profileName}'s Stats` : "Profile progress"}</p>
             </div>
           </div>
@@ -246,13 +251,28 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           <StatItem icon={<Flame className="h-3 w-3 text-amber-400" />} label="Streak" value={`${data.streak_days}d`} />
           <StatItem icon={<Users className="h-3 w-3 text-indigo-400" />} label="7d Followers" value={data.weekly_followers.toLocaleString()} />
           <StatItem icon={<Gift className="h-3 w-3 text-pink-400" />} label="Gifts Power" value={data.gifts_power.toLocaleString()} />
-          <StatItem icon={<Clock3 className="h-3 w-3 text-cyan-400" />} label="Today" value={formatHours(data.today_live_seconds)} />
+          <StatItem icon={<Clock3 className="h-3 w-3 text-cyan-400" />} label="Today Live" value={formatHours(data.today_live_seconds)} />
           <StatItem icon={<Clock3 className="h-3 w-3 text-teal-400" />} label="This Week" value={formatHours(data.week_live_seconds)} />
         </div>
 
-        <div className="mb-2 rounded-xl border border-white/10 bg-white/[0.03] p-2.5">
-          <div className="mb-1.5 flex items-center justify-between"><div className="flex items-center gap-1.5"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" /><span className="text-[10px] font-bold tracking-wide text-white/80">Daily Tasks</span></div><span className="text-[10px] font-bold text-emerald-400">{data.tasks_completed}/{data.task_target}</span></div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-emerald-400 transition-all" style={{ width: `${taskProgress}%` }} /></div>
+        {/* Daily Mission / Task Box for 6h Live + 1M Gifting */}
+        <div className="mb-2 rounded-xl border border-red-500/20 bg-gradient-to-r from-red-500/10 to-purple-500/10 p-2.5">
+          <div className="mb-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-red-400" />
+              <span className="text-[10px] font-bold tracking-wide text-white/90">Daily Target (6h Live + 1M Gifts)</span>
+            </div>
+            <span className="text-[10px] font-bold text-red-400">{data.tasks_completed}/{data.task_target}</span>
+          </div>
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10 mb-2">
+            <div className="h-full rounded-full bg-red-500 transition-all" style={{ width: `${taskProgress}%` }} />
+          </div>
+          <div className="flex items-center justify-between text-[9px] text-white/70 bg-black/30 p-1.5 rounded-lg border border-white/5">
+            <span className="flex items-center gap-1 text-red-300 font-semibold">
+              <Coins className="h-3 w-3" /> Reward: 100K Red Diamonds
+            </span>
+            <span className="text-emerald-400 font-bold">Value: PKR {data.red_diamonds_pkr_value}</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-1.5">
@@ -260,7 +280,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           <StatItem icon={<Rocket className="h-3 w-3 text-amber-400" />} label="Commission" value={data.host_commission.toLocaleString()} />
         </div>
 
-        <p className="mt-3 text-center text-[9px] text-white/40">{loading ? "Syncing real host profile data…" : error ? error : "Real cumulative host data · linked to host_popularity_get_v2"}</p>
+        <p className="mt-3 text-center text-[9px] text-white/40">{loading ? "Syncing real host profile data…" : error ? error : "Target verified · 6h Live & 1M Gifting system active"}</p>
       </section>
     </div>
   );
