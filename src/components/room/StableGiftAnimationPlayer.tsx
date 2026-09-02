@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT, type GiftRenderConfig } from "@/lib/giftRender";
+import GiftGLVideo from "@/components/room/GiftGLVideo"; // <-- NEW: GiftGLVideo import kiya gaya hai
 
 type GiftRow = {
   id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null;
@@ -30,7 +31,6 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const seenRef = useRef(new Set<string>());
   const seenOrderRef = useRef<string[]>([]);
   const localEchoRef = useRef(new Set<string>());
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const endTimerRef = useRef<number | null>(null);
 
   const clearTimer = useCallback(() => {
@@ -148,11 +148,9 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop };
   const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
 
-  const onLoadedMetadata = () => {
-    const v = videoRef.current;
-    if (!v) return;
+  const handleDuration = (ms: number) => {
     clearTimer();
-    const naturalMs = Number.isFinite(v.duration) && v.duration > 0 ? v.duration * 1000 : num(active.gift_duration_ms, 15000);
+    const naturalMs = ms > 0 ? ms : num(active.gift_duration_ms, 15000);
     const maxMs = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, naturalMs + cfg.holdMs);
     const remaining = Math.max(0, cfg.delayMs) + maxMs + 250;
     endTimerRef.current = window.setTimeout(finish, remaining);
@@ -162,14 +160,29 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite">
       <div style={stageStyle}>
         {video && src ? (
-          <video ref={videoRef} key={active.id} src={src} autoPlay playsInline controls={false} muted={false} loop={loop} preload="auto" className="h-full w-full" style={mediaStyle} onLoadedMetadata={onLoadedMetadata} onEnded={finish} onError={finish} />
+          /* Yahan humne normal <video> ko <GiftGLVideo> se replace kar diya hai */
+          <GiftGLVideo
+            key={active.id}
+            src={src}
+            config={cfg}
+            loop={loop}
+            muted={false}
+            className="h-full w-full"
+            style={mediaStyle}
+            objectFit={OBJECT_FIT[cfg.fit]}
+            onDuration={handleDuration}
+            onEnded={finish}
+            onError={finish}
+          />
         ) : image ? (
           <img src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={finish} />
         ) : (
           <div className="grid h-full w-full place-items-center text-[clamp(64px,22vw,180px)]">{active.gift_emoji || "🎁"}</div>
         )}
       </div>
-      <div className="absolute left-4 top-16 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white">{active.sender_username || "User"} sent {active.gift_name || "Gift"}{num(active.quantity, 1) > 1 ? ` ×${active.quantity}` : ""}</div>
+      <div className="absolute left-4 top-16 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white">
+        {active.sender_username || "User"} sent {active.gift_name || "Gift"}{num(active.quantity, 1) > 1 ? ` ×${active.quantity}` : ""}
+      </div>
     </div>
   );
 }
