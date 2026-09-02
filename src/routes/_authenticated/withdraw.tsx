@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { Coins, Sparkles, ArrowRightLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: Page });
 
@@ -17,6 +18,10 @@ function Page() {
   const [accNum, setAccNum] = useState("");
   const [accName, setAccName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Exchange state
+  const [exchangeAmount, setExchangeAmount] = useState(1000);
+  const [exchanging, setExchanging] = useState(false);
 
   // Server-driven rate + limits. Never hard-code payout math client-side.
   const { data: settings } = useQuery({
@@ -30,6 +35,21 @@ function Page() {
         rate: Number(row?.diamond_price_pkr ?? 0.5),
         max: Number(row?.max_withdrawal_diamonds ?? 10_000_000),
         min: Number(row?.min_withdrawal_diamonds ?? 100),
+      };
+    },
+  });
+
+  // Fetch Red Diamonds balance / task stats for this user
+  const { data: hostStats } = useQuery({
+    queryKey: ["host_red_diamonds", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).rpc("host_popularity_get_v2", { _host_id: user!.id });
+      if (error) return { red_diamonds: 0, pkr_val: 500 };
+      const row = Array.isArray(data) ? data[0] : data;
+      return {
+        red_diamonds: Number(row?.red_diamonds ?? 0),
+        pkr_val: Number(row?.red_diamonds_pkr_value ?? 500),
       };
     },
   });
@@ -55,6 +75,8 @@ function Page() {
   const amount = Math.max(0, diamonds * rate);
   const hasPending = (history ?? []).some((h) => h.status === "pending");
 
+  const redDiamondsCount = hostStats?.red_diamonds ?? 0;
+  const redDiamondsPkr = redDiamondsCount > 0 ? (redDiamondsCount / 100000) * 500 : 0;
 
   async function submit() {
     if (!user || submitting) return;
@@ -63,6 +85,11 @@ function Page() {
     if (diamonds > balance) return toast.error("Not enough points");
     if (hasPending) return toast.error("You already have a pending withdrawal");
     if (!accNum.trim() || !accName.trim()) return toast.error("Fill account details");
+
+    // Validation for JazzCash / EasyPaisa (Must be 11 digits starting with 03)
+    if ((method === "jazzcash" || method === "easypaisa") && !/^03\d{9}$/.test(accNum.trim())) {
+      return toast.error("Enter a valid 11-digit mobile number (e.g. 03XXXXXXXXX)");
+    }
 
     setSubmitting(true);
     const { error } = await supabase.rpc("request_withdrawal", {
@@ -80,18 +107,86 @@ function Page() {
     qc.invalidateQueries({ queryKey: ["profile"] });
   }
 
+  async function handleExchange() {
+    if (!user || exchanging) return;
+    if (exchangeAmount <= 0) return toast.error("Enter a valid amount");
+    if (exchangeAmount > redDiamondsCount) return toast.error("Not enough Red Diamonds");
+
+    setExchanging(true);
+    const { data, error } = await supabase.rpc("exchange_red_diamonds_for_coins", {
+      _red_diamonds_to_exchange: exchangeAmount,
+    });
+    setExchanging(false);
+
+    if (error) return toast.error(error.message);
+    toast.success(`Successfully exchanged for ${(exchangeAmount * 10).toLocaleString()} Coins!`);
+    qc.invalidateQueries({ queryKey: ["host_red_diamonds"] });
+    qc.invalidateQueries({ queryKey: ["profile"] });
+  }
+
   return (
     <>
       <AppShell title="Withdraw Points">
-        <div className="space-y-4 px-4 pt-4">
-          <div className="glass rounded-3xl p-4 text-center">
+        <div className="space-y-4 px-4 pt-4 pb-20">
+          
+          {/* Available Balance Card */}
+          <div className="glass rounded-3xl p-4 text-center border border-white/10">
             <p className="text-xs text-muted-foreground">Available balance</p>
             <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">{balance.toLocaleString()} pts</p>
+            <p className="text-[10px] text-muted-foreground mt-1">≈ Rs. {(balance * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
           </div>
 
+          {/* Red Diamonds & Exchange Card */}
+          <div className="rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/15 to-purple-500/15 p-4 relative overflow-hidden space-y-3">
+            <div className="absolute -right-4 -bottom-4 opacity-10">
+              <Sparkles className="w-24 h-24 text-red-400" />
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins className="h-4 w-4 text-red-400" />
+                <h3 className="text-xs font-bold uppercase tracking-wide text-red-300">Daily Task Red Diamonds</h3>
+              </div>
+              <span className="text-[9px] text-muted-foreground bg-black/40 px-2 py-0.5 rounded-full">PKR {redDiamondsPkr.toLocaleString()} Value</span>
+            </div>
+
+            <div className="flex items-baseline justify-between">
+              <div>
+                <p className="text-2xl font-black text-white">{redDiamondsCount.toLocaleString()}</p>
+                <p className="text-[10px] text-white/60">Earned via 6h Live & 1M Room Gifting</p>
+              </div>
+            </div>
+
+            {/* Exchange Section */}
+            <div className="pt-2 border-t border-white/10 space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-white/80 font-medium">
+                <span>Exchange for Gifting Coins (Rate: 1:10)</span>
+                <span className="text-emerald-400 font-bold">{(exchangeAmount * 10).toLocaleString()} Coins</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  max={redDiamondsCount}
+                  value={exchangeAmount}
+                  onChange={(e) => setExchangeAmount(Number(e.target.value))}
+                  className="w-full rounded-xl border border-white/15 bg-black/40 px-3 py-1.5 text-xs text-white outline-none focus:border-red-400"
+                  placeholder="Amount to exchange"
+                />
+                <button
+                  onClick={handleExchange}
+                  disabled={exchanging || redDiamondsCount <= 0}
+                  className="flex items-center gap-1 rounded-xl bg-red-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-red-500 disabled:opacity-50 transition-all shrink-0"
+                >
+                  <ArrowRightLeft className="w-3.5 h-3.5" />
+                  {exchanging ? "Exchanging…" : "Exchange"}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Withdrawal Form */}
           <div className="space-y-3 rounded-2xl border border-border bg-card/60 p-4">
             <Field label="Points to withdraw">
-
               <input
                 type="number"
                 min={minD}
@@ -117,8 +212,9 @@ function Page() {
                 <option value="manual">Manual / Other</option>
               </select>
             </Field>
-            <Field label="Account number / IBAN">
+            <Field label={method === "jazzcash" || method === "easypaisa" ? "Mobile Number (03XXXXXXXXX)" : "Account number / IBAN"}>
               <input
+                placeholder={method === "jazzcash" || method === "easypaisa" ? "03001234567" : "Enter account number"}
                 value={accNum}
                 onChange={(e) => setAccNum(e.target.value)}
                 className="w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm outline-none"
@@ -140,6 +236,7 @@ function Page() {
             </button>
           </div>
 
+          {/* History Section */}
           <div>
             <h3 className="mb-2 px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">History</h3>
             <div className="space-y-2">
