@@ -13,6 +13,7 @@ import { VoiceRoomMemberSheet, type VoiceRoomMemberProfile } from "./VoiceRoomMe
 import { ModeratorControls } from "./ModeratorControls";
 import { HostRoomSettings } from "./HostRoomSettings";
 import { HostPopularitySheet } from "./HostPopularitySheet";
+import { JalwaPrivateChat } from "./JalwaPrivateChat"; // <-- Real Luxury Chat Imported Here
 
 const MIN_CAPACITY = 4, MAX_CAPACITY = 20;
 const normalizeCapacity = (v: unknown) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(v)) || MAX_CAPACITY));
@@ -27,7 +28,7 @@ const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: tr
 export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount, micOn, isHost, mySeatIndex, popularityPct, topGifterName, topGifterCoins, announcement, messages = [], onOpenChat, onOpenPrivateChat, onOpenGift, onOpenMore, onToggleMic, speakerMuted, onToggleSpeaker, onSendEmoji, onSeatTap, onJoinSeat, onHostTap, onReport, onShare, onExit, onHome, onRanking, onOpenGames, onOpenNativeGame }: VoiceRoomScreenProps) => {
   const [giftOpen, setGiftOpen] = useState(false), [emojiOpen, setEmojiOpen] = useState(false), [gamesOpen, setGamesOpen] = useState(false), [popularityOpen, setPopularityOpen] = useState(false), [userMoreOpen, setUserMoreOpen] = useState(false), [showMiniInputPopup, setShowMiniInputPopup] = useState(false), [miniDraft, setMiniDraft] = useState("");
   
-  // Luxury Private Chat Popup State added here
+  // Private Chat Popup State
   const [privateChatOpen, setPrivateChatOpen] = useState(false);
 
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null), [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount)), [hostTheme, setHostTheme] = useState<HostTheme | null>(null), [roomMessages, setRoomMessages] = useState<RoomChatMessage[]>(messages), [draft, setDraft] = useState(""), [sending, setSending] = useState(false), [isModerator, setIsModerator] = useState(false), [moderatorControlsOpen, setModeratorControlsOpen] = useState(false), [hostSettingsOpen, setHostSettingsOpen] = useState(false), [roomSettings, setRoomSettings] = useState<RoomSettings>(DEFAULT_ROOM_SETTINGS), [showRocketAnimation, setShowRocketAnimation] = useState(false), [showHostFreePopup, setShowHostFreePopup] = useState(false);
@@ -139,50 +140,21 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         </div>
       </div>
 
-      {/* Bottom Navigation Bar with Private Chat Triggering Local Popup */}
+      {/* Bottom Navigation Bar */}
       <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 flex h-[52px] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5 text-amber-300" /></button>
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5 text-purple-400" /></button>
         
-        {/* Private Chat Button set to open Half-Screen Luxury Popup */}
+        {/* Private Chat Button triggers JalwaPrivateChat */}
         <button type="button" onClick={tap(() => setPrivateChatOpen(true))} className={cn(buttonClass,"grid h-9 w-9 place-items-center rounded-full border border-cyan-400/50 bg-cyan-500/20 text-cyan-300 shadow-md")} aria-label="Private Chat"><MessageCircle className="h-4 w-4" /></button>
         
         <button type="button" onClick={tap(openGifts)} disabled={!roomSettings.gifts_enabled} className={cn(buttonClass, "relative group grid h-10 w-10 place-items-center rounded-2xl bg-gradient-to-br from-amber-400 via-purple-600 to-indigo-900 p-0.5 shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-white/40 disabled:opacity-40")} aria-label={roomSettings.gifts_enabled ? "Gifts" : "Gifts disabled"}><div className="absolute inset-0 rounded-2xl bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" /><div className="grid h-full w-full place-items-center rounded-[12px] bg-black/60 backdrop-blur-sm text-amber-200"><Gift className="h-4.5 w-4.5 animate-pulse drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] text-amber-300" /></div></button>
         <button type="button" onClick={openMoreForRole} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label={isHost ? "Host Room Settings" : isModerator ? "Moderator Controls" : "More"}>{isHost ? <Shield className="h-3.5 w-3.5 text-amber-400" /> : isModerator ? <Shield className="h-3.5 w-3.5 text-cyan-400" /> : <Grid2X2 className="h-3.5 w-3.5 text-white" />}</button>
       </nav>
 
-      {/* Luxury Private Chat Half-Screen Popup Modal */}
-      {privateChatOpen && (
-        <div className="absolute inset-0 z-[2147483600] flex flex-col justify-end bg-black/70 backdrop-blur-sm animate-fade-in">
-          <div className="absolute inset-0" onClick={() => setPrivateChatOpen(false)} />
-          <div className="relative z-10 w-full h-[55dvh] rounded-t-3xl bg-slate-900 border-t border-cyan-500/40 shadow-2xl backdrop-blur-xl flex flex-col animate-slide-up overflow-hidden" onClick={e => e.stopPropagation()}>
-            
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-black/40">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-                <h3 className="text-xs font-black tracking-wider text-cyan-300 uppercase">Luxury Private Chat</h3>
-              </div>
-              <button type="button" onClick={() => setPrivateChatOpen(false)} className="text-xs font-semibold text-slate-400 hover:text-white px-2.5 py-1 rounded-lg bg-white/5">
-                Close ✕
-              </button>
-            </div>
-
-            {/* Content Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 no-scrollbar">
-              <div className="text-center py-12 text-slate-400 text-xs">
-                <div className="h-12 w-12 rounded-full bg-cyan-500/20 border border-cyan-500/40 mx-auto flex items-center justify-center text-cyan-300 mb-3 shadow-lg">
-                  <MessageCircle className="h-6 w-6 animate-pulse" />
-                </div>
-                <p className="font-bold text-cyan-200 text-sm">Aapki Private Messages yahan hongi ✨</p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs mx-auto">Yahan aap apne friends ke sath 1-on-1 direct chat aur luxury conversations kar sakte hain.</p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
+      {/* Real Jalwa Private Chat Messenger Popup integrated here */}
+      <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 
       {showMiniInputPopup && (<div className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-0" onClick={() => setShowMiniInputPopup(false)}><div className="w-full max-w-[480px] bg-[#120a1f] border-t border-amber-500/40 p-2.5 rounded-t-2xl shadow-2xl flex items-center gap-2 animate-slide-up" onClick={e => e.stopPropagation()}><input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="url" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none focus:border-amber-400" /><button type="button" onClick={async () => { if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); }} className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow-lg active:scale-95 transition">Send</button></div></div>)}
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
