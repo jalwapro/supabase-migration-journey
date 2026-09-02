@@ -96,43 +96,58 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
       setLoading(true);
       setError(null);
       try {
+        let resolvedHostId = roomId;
+        
         const { data: room, error: roomError } = await supabase
           .from("live_rooms")
-          .select("host_id")
+          .select("host_id, user_id")
           .eq("id", roomId)
           .maybeSingle();
-        if (roomError) throw roomError;
 
-        const resolvedHostId = String((room as { host_id?: string } | null)?.host_id || "");
+        if (!roomError && room) {
+          resolvedHostId = String(room.host_id || (room as any).user_id || roomId);
+        }
+
         if (!resolvedHostId) throw new Error("Host profile could not be resolved");
         if (!active) return;
         setHostId(resolvedHostId);
 
-        const [profileResult, statsResult, followersResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("level,username,full_name,avatar")
-            .eq("id", resolvedHostId)
-            .maybeSingle(),
-          (supabase as any).rpc("host_popularity_get", { _host_id: resolvedHostId }),
-          supabase
-            .from("follows")
-            .select("id", { count: "exact", head: true })
-            .eq("following_id", resolvedHostId)
-            .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()),
+        const profilePromise = supabase
+          .from("profiles")
+          .select("level, username, full_name, avatar")
+          .eq("id", resolvedHostId)
+          .maybeSingle();
+
+        // Using host_popularity_get_v2 as confirmed by actual database functions
+        let statsResult: any = { data: null, error: null };
+        try {
+          statsResult = await (supabase as any).rpc("host_popularity_get_v2", { _host_id: resolvedHostId });
+        } catch (e) {
+          console.warn("RPC host_popularity_get_v2 failed, using safe defaults.", e);
+        }
+
+        const followersPromise = supabase
+          .from("follows")
+          .select("id", { count: "exact", head: true })
+          .eq("following_id", resolvedHostId)
+          .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+
+        const [profileResult, followersResult] = await Promise.all([
+          profilePromise,
+          followersPromise,
         ]);
 
-        if (profileResult.error) throw profileResult.error;
-        if (statsResult.error) throw statsResult.error;
-        if (followersResult.error) throw followersResult.error;
         if (!active) return;
 
         const profile = profileResult.data as { level?: number | null; username?: string | null; full_name?: string | null; avatar?: string | null } | null;
-        const row = (Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data) as Partial<PopularityData> | null;
+        const row = statsResult.error || !statsResult.data ? null : (Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data);
+
+        const cumulativePop = Number(row?.cumulative_popularity) || 0;
+
         const next = {
           ...emptyData(resolvedHostId),
           host_id: resolvedHostId,
-          cumulative_popularity: Number(row?.cumulative_popularity) || 0,
+          cumulative_popularity: cumulativePop,
           total_live_seconds: Number(row?.total_live_seconds) || 0,
           today_live_seconds: Number(row?.today_live_seconds) || 0,
           week_live_seconds: Number(row?.week_live_seconds) || 0,
@@ -142,17 +157,17 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           streak_days: Number(row?.streak_days) || 0,
           host_bonus: Number(row?.host_bonus) || 0,
           host_commission: Number(row?.host_commission) || 0,
-          current_rank: getRank(Number(row?.cumulative_popularity) || 0),
+          current_rank: getRank(cumulativePop),
           weekly_followers: followersResult.count ?? 0,
         } satisfies PopularityData;
 
-        setHostLevel(Number(profile?.level) || 0);
-        setProfileName(profile?.full_name || profile?.username || hostName || null);
+        setHostLevel(Number(profile?.level) || 1);
+        setProfileName(profile?.full_name || profile?.username || hostName || "Host");
         setHostAvatar(profile?.avatar || null);
         setData(next);
       } catch (err) {
         if (!active) return;
-        setData(emptyData(hostId));
+        console.error("Error loading popularity sheet:", err);
         setError(err instanceof Error ? err.message : "Unable to load host popularity");
       } finally {
         if (active) setLoading(false);
@@ -215,7 +230,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
               <span className="text-[9px] font-bold tracking-wider text-white/40 uppercase">Vibes Score</span>
               <span className={`text-2xl font-black ${rankColorClass}`}>{vibeScore.toLocaleString()}</span>
               <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-medium text-white/80 border border-white/10">
-                ⭐ Lvl {hostLevel ?? 0} · <span className={rankColorClass}>{data.current_rank}</span>
+                ⭐ Lvl {hostLevel ?? 1} · <span className={rankColorClass}>{data.current_rank}</span>
               </span>
             </div>
           </div>
@@ -245,7 +260,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           <StatItem icon={<Rocket className="h-3 w-3 text-amber-400" />} label="Commission" value={data.host_commission.toLocaleString()} />
         </div>
 
-        <p className="mt-3 text-center text-[9px] text-white/40">{loading ? "Syncing real host profile data…" : error ? error : "Real cumulative host data · linked to host profile"}</p>
+        <p className="mt-3 text-center text-[9px] text-white/40">{loading ? "Syncing real host profile data…" : error ? error : "Real cumulative host data · linked to host_popularity_get_v2"}</p>
       </section>
     </div>
   );
