@@ -74,7 +74,7 @@ const getRankColor = (rank: PopularityData["current_rank"]) => {
 const CircularProgressRing = ({ progress, colorClass }: { progress: number; colorClass: string }) => {
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+  const strokeDashoffset = circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference;
   return (
     <svg className="h-32 w-32 -rotate-90 transform" viewBox="0 0 100 100">
       <circle className="text-white/5" strokeWidth="8" stroke="currentColor" fill="transparent" r={radius} cx="50" cy="50" />
@@ -126,7 +126,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
         try {
           statsResult = await (supabase as any).rpc("host_popularity_get_v2", { _host_id: resolvedHostId });
         } catch (e) {
-          console.warn("RPC host_popularity_get_v2 failed, using safe defaults.", e);
+          console.warn("RPC host_popularity_get_v2 failed", e);
         }
 
         const followersPromise = supabase
@@ -160,7 +160,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           streak_days: Number(row?.streak_days) || 0,
           host_bonus: Number(row?.host_bonus) || 0,
           host_commission: Number(row?.host_commission) || 0,
-          red_diamonds: Number(row?.red_diamonds) || 100000,
+          red_diamonds: Number(row?.red_diamonds) || 0,
           red_diamonds_pkr_value: Number(row?.red_diamonds_pkr_value) || 500,
           current_rank: getRank(cumulativePop),
           weekly_followers: followersResult.count ?? 0,
@@ -172,7 +172,6 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
         setData(next);
       } catch (err) {
         if (!active) return;
-        console.error("Error loading popularity sheet:", err);
         setError(err instanceof Error ? err.message : "Unable to load host popularity");
       } finally {
         if (active) setLoading(false);
@@ -182,21 +181,6 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
     void load();
     return () => { active = false; };
   }, [open, roomId, hostName]);
-
-  useEffect(() => {
-    if (!open || !hostId) return;
-    const channel = supabase
-      .channel(`host-popularity-v2-${hostId}`)
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "host_popularity_stats", filter: `host_id=eq.${hostId}` }, payload => {
-        const row = payload.new as Partial<PopularityData>;
-        setData(prev => {
-          const merged = { ...prev, ...Object.fromEntries(Object.entries(row).filter(([, value]) => value !== null && value !== undefined)) } as PopularityData;
-          return { ...merged, current_rank: getRank(merged.cumulative_popularity) };
-        });
-      })
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  }, [open, hostId]);
 
   const vibeScore = data.cumulative_popularity;
   const vibeTarget = Math.max(10000, (Math.floor(vibeScore / 10000) + 1) * 10000);
@@ -220,7 +204,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
               <p className="text-[10px] text-white/50">{profileName ? `${profileName}'s Stats` : "Profile progress"}</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Close popularity"><X className="h-3.5 w-3.5" /></button>
+          <button type="button" onClick={onClose} className="grid h-7 w-7 place-items-center rounded-full bg-white/10 hover:bg-white/20 transition-colors" aria-label="Close"><X className="h-3.5 w-3.5" /></button>
         </header>
 
         <div className="relative mb-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 shadow-inner">
@@ -255,14 +239,13 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           <StatItem icon={<Clock3 className="h-3 w-3 text-teal-400" />} label="This Week" value={formatHours(data.week_live_seconds)} />
         </div>
 
-        {/* Daily Mission / Task Box for 6h Live + 1M Gifting */}
         <div className="mb-2 rounded-xl border border-red-500/20 bg-gradient-to-r from-red-500/10 to-purple-500/10 p-2.5">
           <div className="mb-1.5 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5 text-red-400" />
               <span className="text-[10px] font-bold tracking-wide text-white/90">Daily Target (6h Live + 1M Gifts)</span>
             </div>
-            <span className="text-[10px] font-bold text-red-400">{data.tasks_completed}/{data.task_target}</span>
+            <span className="text-[10px] font-bold text-red-400">{data.tasks_completed}/100</span>
           </div>
           <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10 mb-2">
             <div className="h-full rounded-full bg-red-500 transition-all" style={{ width: `${taskProgress}%` }} />
@@ -280,7 +263,7 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
           <StatItem icon={<Rocket className="h-3 w-3 text-amber-400" />} label="Commission" value={data.host_commission.toLocaleString()} />
         </div>
 
-        <p className="mt-3 text-center text-[9px] text-white/40">{loading ? "Syncing real host profile data…" : error ? error : "Target verified · 6h Live & 1M Gifting system active"}</p>
+        <p className="mt-3 text-center text-[9px] text-white/40">{loading ? "Syncing real host data…" : error ? error : "Real live data synchronized"}</p>
       </section>
     </div>
   );
