@@ -1,188 +1,41 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT, type GiftRenderConfig } from "@/lib/giftRender";
-import GiftGLVideo from "@/components/room/GiftGLVideo"; // <-- NEW: GiftGLVideo import kiya gaya hai
+import GiftGLVideo from "@/components/room/GiftGLVideo";
 
-type GiftRow = {
-  id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null;
-  gift_id?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null;
-  gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null;
-  gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null;
-  gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null;
-};
-
+type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
-const assetUrl = (v: string | null | undefined) => {
-  if (!v) return null; const s = v.trim(); if (!s) return null;
-  if (s.startsWith("__l5e/assets-v1/")) return `https://cloud-to-soul.lovable.app/${s}`;
-  if (s.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${s}`;
-  return s;
-};
-const isVideo = (src: string | null, type?: string | null) => {
-  const s = (src ?? "").split("?")[0].split("#")[0].toLowerCase();
-  return !!src && (s.endsWith(".mp4") || s.endsWith(".webm") || s.endsWith(".mov") || ["mp4", "webm", "mov"].includes((type ?? "").toLowerCase()));
-};
+const assetUrl = (v: string | null | undefined) => { if (!v) return null; const s = v.trim(); if (!s) return null; if (s.startsWith("__l5e/assets-v1/")) return `https://cloud-to-soul.lovable.app/${s}`; if (s.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${s}`; return s; };
+const isVideo = (src: string | null, type?: string | null) => { const s = (src ?? "").split("?")[0].split("#")[0].toLowerCase(); return !!src && (s.endsWith(".mp4") || s.endsWith(".webm") || s.endsWith(".mov") || ["mp4", "webm", "mov"].includes((type ?? "").toLowerCase())); };
 
 export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [active, setActive] = useState<GiftRow | null>(null);
   const [localUserId, setLocalUserId] = useState<string | null>(null);
-  const activeRef = useRef<GiftRow | null>(null);
-  const queueRef = useRef<GiftRow[]>([]);
-  const seenRef = useRef(new Set<string>());
-  const seenOrderRef = useRef<string[]>([]);
-  const localEchoRef = useRef(new Set<string>());
-  const endTimerRef = useRef<number | null>(null);
+  const [mediaFailed, setMediaFailed] = useState(false);
+  const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
+  const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
+  const finish = useCallback(() => { clearTimer(); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
+  const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setActive(row); } }, []);
+  const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => { if (row.gift_render_config && typeof row.gift_render_config === "object") return row; if (!row.gift_id) return row; const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,emoji,sound_url").eq("id", row.gift_id).maybeSingle(); if (!data) return row; return { ...row, gift_render_config: (data as any).render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_sound_url: row.gift_sound_url ?? (data as any).sound_url ?? null }; }, []);
 
-  const clearTimer = useCallback(() => {
-    if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current);
-    endTimerRef.current = null;
-  }, []);
+  useEffect(() => { setMediaFailed(false); }, [active?.id]);
 
-  const finish = useCallback(() => {
-    clearTimer();
-    const next = queueRef.current.shift() ?? null;
-    activeRef.current = next;
-    setActive(next);
-  }, [clearTimer]);
-
-  const enqueue = useCallback((row: GiftRow) => {
-    if (!row?.id || seenRef.current.has(row.id)) return;
-    seenRef.current.add(row.id); seenOrderRef.current.push(row.id);
-    if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); }
-    if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setActive(row); }
-  }, []);
-
-  const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => {
-    if (row.gift_render_config && typeof row.gift_render_config === "object") return row;
-    if (!row.gift_id) return row;
-    const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,emoji,sound_url").eq("id", row.gift_id).maybeSingle();
-    if (!data) return row;
-    return {
-      ...row,
-      gift_render_config: (data as any).render_config ?? null,
-      gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null,
-      gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null,
-      gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null,
-      gift_icon: row.gift_icon ?? (data as any).icon ?? null,
-      gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null,
-      gift_sound_url: row.gift_sound_url ?? (data as any).sound_url ?? null,
-    };
-  }, []);
-
+  // Voice-room global Escape/back handling. The room's existing popstate routing closes the active overlay.
   useEffect(() => {
-    let alive = true;
-    void supabase.auth.getUser().then(({ data }) => { if (alive) setLocalUserId(data.user?.id ?? null); });
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => { if (alive) setLocalUserId(session?.user?.id ?? null); });
-    return () => { alive = false; data.subscription.unsubscribe(); };
+    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); window.dispatchEvent(new PopStateEvent("popstate")); } };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    let alive = true;
-    const channel = supabase.channel(`gift-player-${roomId}`).on(
-      "postgres_changes",
-      { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` },
-      (payload) => {
-        if (!alive) return;
-        const row = payload.new as GiftRow;
-        if (!row?.id) return;
-        if (row.sender_id && localUserId && row.sender_id === localUserId && localEchoRef.current.has(row.id)) return;
-        void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
-      },
-    ).subscribe();
-
-    const onLocalGift = (event: Event) => {
-      const d = (event as CustomEvent).detail as Record<string, unknown> | undefined;
-      if (!d) return;
-      const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
-      if (targets.length && localUserId && !targets.includes(localUserId) && d.local !== true) return;
-      const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`;
-      localEchoRef.current.add(key);
-      const row: GiftRow = {
-        id: key, room_id: roomId, sender_id: localUserId,
-        receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets,
-        gift_id: typeof d.giftId === "string" ? d.giftId : null,
-        gift_name: typeof d.giftName === "string" ? d.giftName : "Gift",
-        gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁",
-        gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null,
-        gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null,
-        gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null,
-        gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null,
-        gift_duration_ms: num(d.durationMs, 0) || null,
-        gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null,
-        gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User",
-      };
-      void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
-    };
-    window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
-    return () => { alive = false; void supabase.removeChannel(channel); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
-  }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
-
-  useEffect(() => {
-    clearTimer();
-    if (!active) return;
-    const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
-    const declared = num(active.gift_duration_ms, 0);
-    const clipFallback = declared > 0 ? declared : 15000;
-    const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs));
-    const delay = Math.max(0, cfg.delayMs);
-    endTimerRef.current = window.setTimeout(finish, delay + duration + 250);
-    return clearTimer;
-  }, [active, clearTimer, finish]);
-
+  useEffect(() => { let alive = true; void supabase.auth.getUser().then(({ data }) => { if (alive) setLocalUserId(data.user?.id ?? null); }); const { data } = supabase.auth.onAuthStateChange((_event, session) => { if (alive) setLocalUserId(session?.user?.id ?? null); }); return () => { alive = false; data.subscription.unsubscribe(); }; }, []);
+  useEffect(() => { let alive = true; const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => { if (!alive) return; const row = payload.new as GiftRow; if (!row?.id) return; if (row.sender_id && localUserId && row.sender_id === localUserId && localEchoRef.current.has(row.id)) return; void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); }); }).subscribe(); const onLocalGift = (event: Event) => { const d = (event as CustomEvent).detail as Record<string, unknown> | undefined; if (!d) return; const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []); if (targets.length && localUserId && !targets.includes(localUserId) && d.local !== true) return; const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`; localEchoRef.current.add(key); const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" }; void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); }); }; window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener); return () => { alive = false; void supabase.removeChannel(channel); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); }; }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
+  useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const declared = num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, clearTimer, finish]);
   useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
   if (!active) return null;
-  const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
-  const src = assetUrl(active.gift_clip_path);
-  const image = assetUrl(active.gift_image_url ?? active.gift_icon);
-  const video = isVideo(src, active.gift_clip_type);
-  const stageStyle = renderConfigToStyle(cfg);
-  const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
-  const filter = [
-    `brightness(${Math.max(0, 1 + cfg.brightness / 100)})`,
-    `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`,
-    `saturate(${Math.max(0, cfg.saturation)})`,
-    `hue-rotate(${cfg.hue}deg)`,
-    `blur(${Math.max(0, cfg.blurRadius)}px)`,
-  ].join(" ");
-  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop };
-  const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
-
-  const handleDuration = (ms: number) => {
-    clearTimer();
-    const naturalMs = ms > 0 ? ms : num(active.gift_duration_ms, 15000);
-    const maxMs = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, naturalMs + cfg.holdMs);
-    const remaining = Math.max(0, cfg.delayMs) + maxMs + 250;
-    endTimerRef.current = window.setTimeout(finish, remaining);
-  };
-
-  return (
-    <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite">
-      <div style={stageStyle}>
-        {video && src ? (
-          /* Yahan humne normal <video> ko <GiftGLVideo> se replace kar diya hai */
-          <GiftGLVideo
-            key={active.id}
-            src={src}
-            config={cfg}
-            loop={loop}
-            muted={false}
-            className="h-full w-full"
-            style={mediaStyle}
-            objectFit={OBJECT_FIT[cfg.fit]}
-            onDuration={handleDuration}
-            onEnded={finish}
-            onError={finish}
-          />
-        ) : image ? (
-          <img src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={finish} />
-        ) : (
-          <div className="grid h-full w-full place-items-center text-[clamp(64px,22vw,180px)]">{active.gift_emoji || "🎁"}</div>
-        )}
-      </div>
-      <div className="absolute left-4 top-16 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white">
-        {active.sender_username || "User"} sent {active.gift_name || "Gift"}{num(active.quantity, 1) > 1 ? ` ×${active.quantity}` : ""}
-      </div>
-    </div>
-  );
+  const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const src = assetUrl(active.gift_clip_path); const image = assetUrl(active.gift_image_url ?? active.gift_icon); const fallbackImage = assetUrl(active.gift_icon); const video = isVideo(src, active.gift_clip_type); const stageStyle = renderConfigToStyle(cfg); const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {}; const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" "); const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop }; const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
+  const handleDuration = (ms: number) => { clearTimer(); const naturalMs = ms > 0 ? ms : num(active.gift_duration_ms, 15000); const maxMs = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, naturalMs + cfg.holdMs); endTimerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + maxMs + 250); };
+  const handleMediaError = () => { if (video && fallbackImage && !mediaFailed) { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(finish, 5000); return; } finish(); };
+  const showImage = mediaFailed || !video;
+  return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>{showImage && (image || fallbackImage) ? <img src={image || fallbackImage || undefined} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={() => { if (fallbackImage && image !== fallbackImage && !mediaFailed) { setMediaFailed(true); return; } finish(); }} /> : video && src ? <GiftGLVideo key={active.id} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} /> : <div className="grid h-full w-full place-items-center text-[clamp(64px,22vw,180px)]">{active.gift_emoji || "🎁"}</div>}</div><div className="absolute left-4 top-16 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white">{active.sender_username || "User"} sent {active.gift_name || "Gift"}{num(active.quantity, 1) > 1 ? ` ×${active.quantity}` : ""}</div></div>);
 }
