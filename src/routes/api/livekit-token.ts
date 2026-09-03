@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { jwtVerify } from "jose";
 import { createLiveKitToken } from "@/lib/livekit-token.server";
 
 const cors = {
@@ -24,24 +23,25 @@ function getServiceKey() {
 }
 
 async function verifyBearer(bearer: string): Promise<string | null> {
-  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SB_JWT_SECRET || process.env.JWT_SECRET;
-  if (secret) {
-    try {
-      const { payload } = await jwtVerify(bearer, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
-      const sub = typeof payload.sub === "string" ? payload.sub : null;
-      if (!sub || (payload.role && payload.role !== "authenticated")) return null;
-      return sub;
-    } catch {
-      return null;
-    }
+  // Always validate the user's Supabase access token through Supabase Auth.
+  // Do not locally assume the JWT signing algorithm/secret: Supabase projects
+  // can use different signing configurations, and getUser() validates the
+  // actual access token against the Auth service.
+  const serviceKey = getServiceKey();
+  if (!serviceKey) {
+    throw new Error("Supabase server authorization key is not configured");
   }
 
-  const serviceKey = getServiceKey();
-  if (!serviceKey) return null;
   const { createClient } = await import("@supabase/supabase-js");
-  const sb = createClient(resolveSupabaseUrl(), serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
+  const sb = createClient(resolveSupabaseUrl(), serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   const { data, error } = await sb.auth.getUser(bearer);
-  return error || !data?.user ? null : data.user.id;
+  if (error || !data?.user) {
+    console.error("[livekit-token] Supabase access-token validation failed", error?.message ?? "user not found");
+    return null;
+  }
+  return data.user.id;
 }
 
 async function canPublish(userId: string, channel: string) {
@@ -49,8 +49,13 @@ async function canPublish(userId: string, channel: string) {
   if (!serviceKey) throw new Error("Supabase server authorization key is not configured");
 
   const { createClient } = await import("@supabase/supabase-js");
-  const sb = createClient(resolveSupabaseUrl(), serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await sb.rpc("can_publish_in_channel", { _user_id: userId, _channel: channel });
+  const sb = createClient(resolveSupabaseUrl(), serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await sb.rpc("can_publish_in_channel", {
+    _user_id: userId,
+    _channel: channel,
+  });
   if (error) {
     console.error("[livekit-token] entitlement check failed", error.message);
     throw new Error(`channel permission check failed: ${error.message}`);
@@ -65,11 +70,11 @@ export const Route = createFileRoute("/api/livekit-token")({
       POST: async ({ request }) => {
         try {
           const auth = request.headers.get("authorization") ?? "";
-          const bearer = auth.replace(/^Bearer\s+/i, "");
+          const bearer = auth.replace(/^Bearer\s+/i, "").trim();
           if (!bearer) return json({ error: "unauthorized" }, 401);
 
           const userId = await verifyBearer(bearer);
-          if (!userId) return json({ error: "unauthorized" }, 401);
+          if (!userId) return json({ error: "invalid Supabase access token" }, 401);
 
           let body: { channel?: string; name?: string; publish?: boolean };
           try {
@@ -84,9 +89,6 @@ export const Route = createFileRoute("/api/livekit-token")({
           const requestedPublish = body.publish !== false;
           const allowed = requestedPublish ? await canPublish(userId, channel) : false;
 
-          // Keep the server URL in the private environment, but allow the
-          // public VITE_ fallback so a misnamed Vercel variable gives a useful
-          // response instead of an opaque platform 503.
           const livekitUrl = process.env.LIVEKIT_URL || process.env.VITE_LIVEKIT_URL;
           if (!livekitUrl) {
             console.error("[livekit-token] LIVEKIT_URL is not configured");
