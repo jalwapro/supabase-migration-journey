@@ -1,6 +1,8 @@
 import type { DesignTokens } from "./schema";
-import { DEFAULT_TOKENS } from "./schema";
+import { DEFAULT_TOKENS as SCHEMA_DEFAULT_TOKENS } from "./schema";
 
+export type { DesignTokens } from "./schema";
+export const DEFAULT_TOKENS: DesignTokens = SCHEMA_DEFAULT_TOKENS;
 export type TokenCategory = keyof DesignTokens;
 
 export function mergeDesignTokens(base: DesignTokens = DEFAULT_TOKENS, overrides?: Partial<DesignTokens>): DesignTokens {
