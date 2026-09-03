@@ -6,10 +6,13 @@ export interface RoomParticipant {
   avatar: string | null;
   level: number;
   is_vip: boolean;
+  vip_level?: number | null;
   is_muted: boolean;
   is_speaking: boolean;
   has_video: boolean;
   gift_score: number;
+  avatar_frame_url?: string | null;
+  frame_url?: string | null;
 }
 
 export interface RoomSeat {
