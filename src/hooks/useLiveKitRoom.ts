@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Room, RoomEvent, Track, createLocalAudioTrack, type LocalAudioTrack, type RemoteAudioTrack as LKRemoteAudioTrack } from "livekit-client";
+import {
+  Room,
+  RoomEvent,
+  Track,
+  type LocalAudioTrack,
+  type RemoteAudioTrack as LKRemoteAudioTrack,
+} from "livekit-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export type RemoteAudioTrack = {
@@ -48,7 +54,7 @@ async function fetchToken(channel: string, publish: boolean, name?: string) {
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
     body: JSON.stringify({ channel, publish, name }),
   });
-  const body = (await res.json()) as { error?: string; token?: string; url?: string };
+  const body = (await res.json()) as { error?: string; token?: string; url?: string; canPublish?: boolean };
   if (!res.ok || !body.token || !body.url) throw new Error(body.error ?? "LiveKit token failed");
   return body;
 }
@@ -102,13 +108,16 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
   const attachRemoteAudio = useCallback((track: LKRemoteAudioTrack) => {
     track.setVolume(1);
     const elements = track.attach();
+    console.info("[LiveKit] attaching remote audio", { trackSid: track.sid, elements: elements.length });
     for (const el of elements) {
       el.autoplay = true;
       el.muted = speakerMutedRef.current;
       el.setAttribute("playsinline", "true");
       audioElementsRef.current.add(el);
-      void el.play().catch((err) => {
-        console.warn("[LiveKit] remote audio autoplay blocked; waiting for audio unlock", err);
+      void el.play().then(() => {
+        console.info("[LiveKit] remote audio playback started", track.sid);
+      }).catch((err) => {
+        console.warn("[LiveKit] remote audio playback blocked", err);
       });
     }
   }, []);
@@ -117,8 +126,8 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
     const next = new Map<number, RemoteUser>();
     for (const participant of room.remoteParticipants.values()) {
       const numericUid = uidFromIdentity(participant.identity);
-      const audioPub = Array.from(participant.audioTrackPublications.values()).find((p) => !!p.track);
-      const videoPub = Array.from(participant.videoTrackPublications.values()).find((p) => !!p.track);
+      const audioPub = Array.from(participant.audioTrackPublications.values()).find((p) => p.kind === Track.Kind.Audio);
+      const videoPub = Array.from(participant.videoTrackPublications.values()).find((p) => p.kind === Track.Kind.Video);
       const audio = audioPub?.track?.kind === Track.Kind.Audio
         ? remoteAudioFacade(audioPub.track as LKRemoteAudioTrack)
         : undefined;
@@ -174,15 +183,51 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
     setMicError(null);
 
     const onParticipantChanged = () => rebuildRemotes(room);
-    const onTrackSubscribed = (track: unknown, _pub: unknown, participant: { identity: string }) => {
-      if (cancelled) return;
-      if ((track as { kind?: string }).kind !== Track.Kind.Audio) return;
-      const mediaTrack = track as LKRemoteAudioTrack;
-      console.info("[LiveKit] remote audio subscribed", participant.identity);
-      attachRemoteAudio(mediaTrack);
+
+    const onTrackPublished = (publication: any, participant: any) => {
+      if (publication?.kind !== Track.Kind.Audio) return;
+      console.info("[LiveKit] remote audio published", {
+        participant: participant?.identity,
+        sid: publication?.trackSid,
+        subscribed: publication?.isSubscribed,
+        hasTrack: !!publication?.track,
+      });
+      if (!publication.isSubscribed) publication.setSubscribed(true);
       rebuildRemotes(room);
     };
-    const onTrackUnsubscribed = (track: unknown) => {
+
+    const onTrackSubscribed = (track: any, publication: any, participant: any) => {
+      if (cancelled) return;
+      if (track?.kind !== Track.Kind.Audio) return;
+      console.info("[LiveKit] remote audio subscribed", {
+        participant: participant?.identity,
+        sid: publication?.trackSid,
+        subscribed: publication?.isSubscribed,
+      });
+      attachRemoteAudio(track as LKRemoteAudioTrack);
+      rebuildRemotes(room);
+    };
+
+    const onTrackSubscriptionFailed = (trackSid: string, participant: any) => {
+      console.error("[LiveKit] remote audio subscription failed", {
+        trackSid,
+        participant: participant?.identity,
+      });
+      rebuildRemotes(room);
+    };
+
+    const onTrackSubscriptionStatusChanged = (publication: any, subscriptionStatus: any, participant: any) => {
+      if (publication?.kind !== Track.Kind.Audio) return;
+      console.info("[LiveKit] audio subscription status", {
+        participant: participant?.identity,
+        sid: publication?.trackSid,
+        status: subscriptionStatus,
+        subscribed: publication?.isSubscribed,
+      });
+      if (!publication.isSubscribed) publication.setSubscribed(true);
+    };
+
+    const onTrackUnsubscribed = (track: any) => {
       try {
         const mediaTrack = track as LKRemoteAudioTrack;
         const elements = mediaTrack.detach();
@@ -190,23 +235,61 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       } catch { /* ignore */ }
       rebuildRemotes(room);
     };
+
+    const onLocalTrackPublished = (publication: any) => {
+      if (publication?.kind !== Track.Kind.Audio) return;
+      console.info("[LiveKit] local audio published", {
+        sid: publication?.trackSid,
+        source: publication?.source,
+        muted: publication?.isMuted,
+      });
+    };
+
+    const onLocalTrackSubscribed = (track: any, publication: any) => {
+      if (publication?.kind === Track.Kind.Audio) {
+        console.info("[LiveKit] another participant subscribed to my audio", publication?.trackSid, track?.sid);
+      }
+    };
+
     const onActiveSpeakers = (participants: Array<{ identity: string }>) => {
       setSpeakingUids(new Set(participants.map((p) => uidFromIdentity(p.identity))));
     };
 
     room.on(RoomEvent.ParticipantConnected, onParticipantChanged);
     room.on(RoomEvent.ParticipantDisconnected, onParticipantChanged);
-    room.on(RoomEvent.TrackSubscribed, onTrackSubscribed as never);
+    room.on(RoomEvent.TrackPublished, onTrackPublished);
+    room.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
+    room.on(RoomEvent.TrackSubscriptionFailed, onTrackSubscriptionFailed as never);
+    room.on(RoomEvent.TrackSubscriptionStatusChanged, onTrackSubscriptionStatusChanged as never);
     room.on(RoomEvent.TrackUnsubscribed, onTrackUnsubscribed as never);
+    room.on(RoomEvent.LocalTrackPublished, onLocalTrackPublished as never);
+    room.on(RoomEvent.LocalTrackSubscribed, onLocalTrackSubscribed as never);
     room.on(RoomEvent.ActiveSpeakersChanged, onActiveSpeakers as never);
 
     (async () => {
       try {
         const token = await fetchToken(channel, publish);
         if (cancelled) return;
+        console.info("[LiveKit] token received", { channel, canPublish: token.canPublish });
         await room.connect(token.url!, token.token!);
         if (cancelled) return;
         setStatus("connected");
+
+        // Verify and force-subscribe any audio publication that already exists.
+        for (const participant of room.remoteParticipants.values()) {
+          for (const publication of participant.audioTrackPublications.values()) {
+            console.info("[LiveKit] existing remote audio publication", {
+              participant: participant.identity,
+              sid: publication.trackSid,
+              subscribed: publication.isSubscribed,
+              hasTrack: !!publication.track,
+            });
+            if (!publication.isSubscribed) publication.setSubscribed(true);
+            if (publication.track?.kind === Track.Kind.Audio) {
+              attachRemoteAudio(publication.track as LKRemoteAudioTrack);
+            }
+          }
+        }
         rebuildRemotes(room);
       } catch (e) {
         if (cancelled) return;
@@ -220,8 +303,13 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       cancelled = true;
       room.off(RoomEvent.ParticipantConnected, onParticipantChanged);
       room.off(RoomEvent.ParticipantDisconnected, onParticipantChanged);
-      room.off(RoomEvent.TrackSubscribed, onTrackSubscribed as never);
+      room.off(RoomEvent.TrackPublished, onTrackPublished);
+      room.off(RoomEvent.TrackSubscribed, onTrackSubscribed);
+      room.off(RoomEvent.TrackSubscriptionFailed, onTrackSubscriptionFailed as never);
+      room.off(RoomEvent.TrackSubscriptionStatusChanged, onTrackSubscriptionStatusChanged as never);
       room.off(RoomEvent.TrackUnsubscribed, onTrackUnsubscribed as never);
+      room.off(RoomEvent.LocalTrackPublished, onLocalTrackPublished as never);
+      room.off(RoomEvent.LocalTrackSubscribed, onLocalTrackSubscribed as never);
       room.off(RoomEvent.ActiveSpeakersChanged, onActiveSpeakers as never);
       void cleanup();
     };
@@ -235,25 +323,33 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       return { ok: false, error: message };
     }
     try {
-      try { await room.startAudio(); } catch { /* audio may already be unlocked */ }
+      await room.startAudio();
 
-      if (!localAudioTrack.current) {
-        localAudioTrack.current = await createLocalAudioTrack({
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-        });
-      }
-      if (!room.localParticipant.isMicrophoneEnabled) {
-        await room.localParticipant.publishTrack(localAudioTrack.current);
-      }
-      localAudioPublished.current = true;
+      // Use LiveKit's microphone API so the publication is a real microphone
+      // track and LocalParticipant.isMicrophoneEnabled stays in sync with UI.
+      const publication = await room.localParticipant.setMicrophoneEnabled(true, {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      });
+
+      if (publication?.track) localAudioTrack.current = publication.track as LocalAudioTrack;
+      localAudioPublished.current = !!publication;
       setMuted(false);
       setMicBlocked(false);
       setMicError(null);
 
+      console.info("[LiveKit] microphone enabled", {
+        published: !!publication,
+        sid: publication?.trackSid,
+        canPublish: room.localParticipant.permissions?.canPublish,
+      });
+
+      // If remote publications existed before the mic button was pressed,
+      // make sure they are subscribed and attached now that audio is unlocked.
       for (const participant of room.remoteParticipants.values()) {
         for (const publication of participant.audioTrackPublications.values()) {
+          if (!publication.isSubscribed) publication.setSubscribed(true);
           if (publication.track?.kind === Track.Kind.Audio) {
             attachRemoteAudio(publication.track as LKRemoteAudioTrack);
           }
@@ -306,7 +402,7 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
     const capture = (el as HTMLAudioElement & { captureStream?: () => MediaStream }).captureStream?.();
     const capturedAudio = capture?.getAudioTracks()[0];
     if (capturedAudio) {
-      const track = new LocalAudioTrack(capturedAudio);
+      const track = new (await import("livekit-client")).LocalAudioTrack(capturedAudio);
       musicTrackRef.current = track;
       try { await room.localParticipant.publishTrack(track); } catch { /* local playback still works */ }
     }
