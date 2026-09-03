@@ -37,7 +37,7 @@ export function tokenCssVariables(tokens: DesignTokens): Record<string, string> 
   Object.entries(tokens.radius).forEach(([k, v]) => { vars[`--jalwa-radius-${k}`] = String(v); });
   Object.entries(tokens.shadows).forEach(([k, v]) => { vars[`--jalwa-shadow-${k}`] = String(v); });
   Object.entries(tokens.typography).forEach(([name, spec]) => {
-    Object.entries(spec).forEach(([prop, value]) => { vars[`--jalwa-type-${name}-${prop}`] = String(value); });
+    Object.entries(spec as Record<string, unknown>).forEach(([prop, value]) => { vars[`--jalwa-type-${name}-${prop}`] = String(value); });
   });
   return vars;
 }
