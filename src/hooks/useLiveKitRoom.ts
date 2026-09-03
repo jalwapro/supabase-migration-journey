@@ -62,7 +62,12 @@ function remoteAudioFacade(track: LKRemoteAudioTrack): RemoteAudioTrack {
     },
     play() {
       track.setVolume(volume);
-      void track.attach();
+      const elements = track.attach();
+      for (const el of elements) {
+        el.autoplay = true;
+        el.muted = false;
+        void el.play().catch(() => { /* playback can require a user gesture */ });
+      }
     },
     stop() {
       track.detach();
@@ -93,6 +98,20 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
   const musicTrackRef = useRef<LocalAudioTrack | null>(null);
 
   useEffect(() => { statusRef.current = status; }, [status]);
+
+  const attachRemoteAudio = useCallback((track: LKRemoteAudioTrack) => {
+    track.setVolume(1);
+    const elements = track.attach();
+    for (const el of elements) {
+      el.autoplay = true;
+      el.muted = speakerMutedRef.current;
+      el.setAttribute("playsinline", "true");
+      audioElementsRef.current.add(el);
+      void el.play().catch((err) => {
+        console.warn("[LiveKit] remote audio autoplay blocked; waiting for audio unlock", err);
+      });
+    }
+  }, []);
 
   const rebuildRemotes = useCallback((room: Room) => {
     const next = new Map<number, RemoteUser>();
@@ -147,7 +166,7 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
     }
 
     let cancelled = false;
-    const room = new Room({ adaptiveStream: true, dynacast: false });
+    const room = new Room({ adaptiveStream: true, dynacast: false, autoSubscribe: true });
     roomRef.current = room;
     setStatus("connecting");
     setError(null);
@@ -159,16 +178,16 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       if (cancelled) return;
       if ((track as { kind?: string }).kind !== Track.Kind.Audio) return;
       const mediaTrack = track as LKRemoteAudioTrack;
-      const el = mediaTrack.attach();
-      el.muted = speakerMutedRef.current;
-      el.autoplay = true;
-      audioElementsRef.current.add(el);
-      el.play().catch(() => { /* browser gesture may be required */ });
+      console.info("[LiveKit] remote audio subscribed", participant.identity);
+      attachRemoteAudio(mediaTrack);
       rebuildRemotes(room);
-      void participant;
     };
     const onTrackUnsubscribed = (track: unknown) => {
-      try { (track as LKRemoteAudioTrack).detach(); } catch { /* ignore */ }
+      try {
+        const mediaTrack = track as LKRemoteAudioTrack;
+        const elements = mediaTrack.detach();
+        for (const el of elements) audioElementsRef.current.delete(el);
+      } catch { /* ignore */ }
       rebuildRemotes(room);
     };
     const onActiveSpeakers = (participants: Array<{ identity: string }>) => {
@@ -206,7 +225,7 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       room.off(RoomEvent.ActiveSpeakersChanged, onActiveSpeakers as never);
       void cleanup();
     };
-  }, [enabled, channel, uid, publish, cleanup, rebuildRemotes]);
+  }, [enabled, channel, uid, publish, cleanup, rebuildRemotes, attachRemoteAudio]);
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
@@ -216,12 +235,30 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       return { ok: false, error: message };
     }
     try {
-      if (!localAudioTrack.current) localAudioTrack.current = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true, autoGainControl: true });
-      if (!room.localParticipant.isMicrophoneEnabled) await room.localParticipant.publishTrack(localAudioTrack.current);
+      try { await room.startAudio(); } catch { /* audio may already be unlocked */ }
+
+      if (!localAudioTrack.current) {
+        localAudioTrack.current = await createLocalAudioTrack({
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        });
+      }
+      if (!room.localParticipant.isMicrophoneEnabled) {
+        await room.localParticipant.publishTrack(localAudioTrack.current);
+      }
       localAudioPublished.current = true;
       setMuted(false);
       setMicBlocked(false);
       setMicError(null);
+
+      for (const participant of room.remoteParticipants.values()) {
+        for (const publication of participant.audioTrackPublications.values()) {
+          if (publication.track?.kind === Track.Kind.Audio) {
+            attachRemoteAudio(publication.track as LKRemoteAudioTrack);
+          }
+        }
+      }
       return { ok: true };
     } catch (e) {
       const err = e as { name?: string; message?: string };
@@ -231,7 +268,7 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
       setMicError(message);
       return { ok: false, error: message };
     }
-  }, []);
+  }, [attachRemoteAudio]);
 
   const toggleMute = useCallback(async () => {
     const room = roomRef.current;
@@ -252,9 +289,6 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
   }, []);
 
   const toggleVideo = useCallback(async () => {
-    // LiveKit migration is intentionally audio-first. Existing video UI remains
-    // available, but no camera track is published until the video migration is
-    // enabled explicitly.
     return { ok: false, error: "Camera is disabled in the LiveKit voice migration." };
   }, []);
 
@@ -267,16 +301,16 @@ export function useLiveKitRoom({ channel, uid, publish, video: _video, enabled, 
     el.volume = 0.35;
     try { await el.play(); } catch { /* user gesture may be required */ }
     musicAudioRef.current = el;
-    musicTitle && void musicTitle;
     setMusicTitle(title ?? (file instanceof File ? file.name : "Music"));
     setMusicPlaying(true);
     const capture = (el as HTMLAudioElement & { captureStream?: () => MediaStream }).captureStream?.();
-    if (capture) {
-      const track = new LocalAudioTrack(capture.getAudioTracks()[0]);
+    const capturedAudio = capture?.getAudioTracks()[0];
+    if (capturedAudio) {
+      const track = new LocalAudioTrack(capturedAudio);
       musicTrackRef.current = track;
       try { await room.localParticipant.publishTrack(track); } catch { /* local playback still works */ }
     }
-  }, [musicTitle]);
+  }, []);
 
   const pauseMusic = useCallback(() => { musicAudioRef.current?.pause(); setMusicPlaying(false); }, []);
   const resumeMusic = useCallback(() => { void musicAudioRef.current?.play().then(() => setMusicPlaying(true)).catch(() => {}); }, []);
