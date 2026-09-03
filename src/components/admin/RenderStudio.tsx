@@ -143,15 +143,20 @@ export default function RenderStudio({
     setReplayKey((k) => k + 1); // Trigger replay when switching gifts
   }, [selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const setCfg = useCallback((patch: Partial<GiftRenderConfig>) => {
+  // `live` marks rapid slider/drag updates: they still apply, but we coalesce
+  // history so a single drag doesn't flood the undo stack.
+  const setCfg = useCallback((patch: Partial<GiftRenderConfig>, live = false) => {
     setCfgState((prev) => {
-      undoStack.current.push(prev);
-      if (undoStack.current.length > 100) undoStack.current.shift();
-      redoStack.current = [];
+      if (!live) {
+        undoStack.current.push(prev);
+        if (undoStack.current.length > 100) undoStack.current.shift();
+        redoStack.current = [];
+      }
       return { ...prev, ...patch };
     });
     setDirty(true);
   }, []);
+
 
   const undo = useCallback(() => {
     const prev = undoStack.current.pop();
