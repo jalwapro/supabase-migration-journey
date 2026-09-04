@@ -19,11 +19,42 @@ function attachedElements(track: AnyTrack): HTMLMediaElement[] {
 
 function videoFacade(track: AnyTrack): RemoteVideoTrack {
   let attached: HTMLElement[] = [];
-  return { play(container, opts) { attached = attachedElements(track).map((el) => { const v = el as HTMLVideoElement; v.autoplay = true; v.playsInline = true; v.style.width = "100%"; v.style.height = "100%"; v.style.objectFit = opts?.fit ?? "cover"; container.appendChild(v); return v; }); }, stop() { track.detach(); attached.forEach((el) => el.remove()); attached = []; } };
+  return {
+    play(container, opts) {
+      if (attached.length) return;
+      attached = attachedElements(track).map((el) => { const v = el as HTMLVideoElement; v.autoplay = true; v.playsInline = true; v.style.width = "100%"; v.style.height = "100%"; v.style.objectFit = opts?.fit ?? "cover"; container.appendChild(v); return v; });
+    },
+    stop() { track.detach(); attached.forEach((el) => el.remove()); attached = []; },
+  };
 }
+
 function audioFacade(track: AnyTrack): RemoteAudioTrack {
-  let elements: HTMLMediaElement[] = []; let volume = 1;
-  return { setVolume(v) { volume = Math.max(0, Math.min(1, v / 100)); elements.forEach((el) => { el.volume = volume; }); }, play() { elements = attachedElements(track).map((el) => { const a = el as HTMLAudioElement; a.autoplay = true; a.volume = volume; document.body.appendChild(a); void a.play().catch(() => undefined); return a; }); }, stop() { track.detach(); elements.forEach((el) => el.remove()); elements = []; } };
+  let elements: HTMLMediaElement[] = [];
+  let volume = 1;
+  return {
+    setVolume(v) {
+      volume = Math.max(0, Math.min(1, v / 100));
+      elements.forEach((el) => { el.volume = volume; });
+    },
+    play() {
+      if (elements.length) {
+        elements.forEach((el) => { el.volume = volume; void (el as HTMLAudioElement).play().catch(() => undefined); });
+        return;
+      }
+      elements = attachedElements(track).map((el) => {
+        const a = el as HTMLAudioElement;
+        a.autoplay = true;
+        a.controls = false;
+        a.muted = false;
+        a.volume = volume;
+        a.style.display = "none";
+        document.body.appendChild(a);
+        void a.play().catch(() => undefined);
+        return a;
+      });
+    },
+    stop() { track.detach(); elements.forEach((el) => el.remove()); elements = []; },
+  };
 }
 
 export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiveKitRoomArgs) {
@@ -60,16 +91,95 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   useEffect(() => {
     if (!enabled || !channel || uid == null) { void disconnect(); return; }
     let cancelled = false;
-    const room = new Room({ adaptiveStream: true, dynacast: true }); roomRef.current = room; setStatus("connecting"); setError(null);
-    const refresh = (p: RemoteParticipant) => { const id = uidFromIdentity(p.identity); const a = Array.from(p.trackPublications.values()).find((x) => x.kind === Track.Kind.Audio && x.track); const v = Array.from(p.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); setRemotes((cur) => new Map(cur).set(id, { uid: id, hasAudio: !!a, hasVideo: !!v, audioTrack: a?.track ? audioFacade(a.track) : undefined, videoTrack: v?.track ? videoFacade(v.track) : undefined })); };
-    const onSub = (track: RemoteTrack, _pub: RemoteTrackPublication, p: RemoteParticipant) => { refresh(p); if (track.kind === Track.Kind.Audio && !speakerMutedRef.current) { attachedElements(track).forEach((el) => { const a = el as HTMLAudioElement; a.autoplay = true; document.body.appendChild(a); void a.play().catch(() => undefined); }); } };
+    const room = new Room({ adaptiveStream: true, dynacast: true });
+    roomRef.current = room;
+    setStatus("connecting");
+    setError(null);
+
+    const refresh = (p: RemoteParticipant) => {
+      const id = uidFromIdentity(p.identity);
+      const a = Array.from(p.trackPublications.values()).find((x) => x.kind === Track.Kind.Audio && x.track);
+      const v = Array.from(p.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track);
+
+      setRemotes((cur) => {
+        const previous = cur.get(id);
+        previous?.audioTrack?.stop();
+        const audioTrack = a?.track ? audioFacade(a.track) : undefined;
+        const videoTrack = v?.track ? videoFacade(v.track) : undefined;
+        if (audioTrack) {
+          audioTrack.setVolume(speakerMutedRef.current ? 0 : 100);
+          audioTrack.play();
+        }
+        const next = new Map(cur);
+        next.set(id, { uid: id, hasAudio: !!a, hasVideo: !!v, audioTrack, videoTrack });
+        return next;
+      });
+    };
+
+    const onSub = (track: RemoteTrack, _pub: RemoteTrackPublication, p: RemoteParticipant) => {
+      // refresh() owns the actual HTMLAudioElement attachment so speaker volume
+      // changes always target the same element that is playing the LiveKit track.
+      refresh(p);
+      if (track.kind === Track.Kind.Audio) {
+        // Explicitly resume the media element on a subscription event as a
+        // browser/WebView autoplay safeguard.
+        const current = uidFromIdentity(p.identity);
+        setRemotes((cur) => {
+          cur.get(current)?.audioTrack?.play();
+          return cur;
+        });
+      }
+    };
     const onUnsub = (_track: RemoteTrack, _pub: RemoteTrackPublication, p: RemoteParticipant) => refresh(p);
-    const onDisc = (p: RemoteParticipant) => setRemotes((cur) => { const n = new Map(cur); n.delete(uidFromIdentity(p.identity)); return n; });
-    room.on(RoomEvent.TrackSubscribed, onSub); room.on(RoomEvent.TrackUnsubscribed, onUnsub); room.on(RoomEvent.ParticipantConnected, refresh); room.on(RoomEvent.ParticipantDisconnected, onDisc); const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((sp) => uidFromIdentity(sp.identity))));
+    const onDisc = (p: RemoteParticipant) => setRemotes((cur) => { const n = new Map(cur); n.get(uidFromIdentity(p.identity))?.audioTrack?.stop(); n.delete(uidFromIdentity(p.identity)); return n; });
+    const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((sp) => uidFromIdentity(sp.identity))));
+
+    room.on(RoomEvent.TrackSubscribed, onSub);
+    room.on(RoomEvent.TrackUnsubscribed, onUnsub);
+    room.on(RoomEvent.ParticipantConnected, refresh);
+    room.on(RoomEvent.ParticipantDisconnected, onDisc);
     room.on(RoomEvent.ActiveSpeakersChanged, onSpeakers);
     room.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
-    (async () => { try { const { data } = await supabase.auth.getSession(); const token = data.session?.access_token; if (!token) throw new Error("Sign in first"); const res = await fetch("/api/livekit-token", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ room: channel, name: `Jalwa user ${uid}`, canPublish: publishRef.current }) }); const body = await res.json() as { server_url?: string; participant_token?: string; canPublish?: boolean; error?: string }; if (!res.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed"); if (cancelled) return; await room.connect(body.server_url, body.participant_token, { autoSubscribe: true }); if (cancelled) return; room.remoteParticipants.forEach(refresh); setStatus("connected"); } catch (e) { if (cancelled) return; setStatus("error"); setError(e instanceof Error ? e.message : "LiveKit connection failed"); if (room.state !== "disconnected") await room.disconnect(); } })();
-    return () => { cancelled = true; room.off(RoomEvent.TrackSubscribed, onSub); room.off(RoomEvent.TrackUnsubscribed, onUnsub); room.off(RoomEvent.ParticipantConnected, refresh); room.off(RoomEvent.ParticipantDisconnected, onDisc); room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers); if (room.state !== "disconnected") void room.disconnect(); if (roomRef.current === room) roomRef.current = null; };
+
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) throw new Error("Sign in first");
+        const res = await fetch("/api/livekit-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ room: channel, name: `Jalwa user ${uid}`, canPublish: publishRef.current }),
+        });
+        const body = await res.json() as { server_url?: string; participant_token?: string; canPublish?: boolean; error?: string };
+        if (!res.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed");
+        if (publishRef.current && body.canPublish !== true) {
+          throw new Error("LiveKit microphone permission is not granted for this user");
+        }
+        if (cancelled) return;
+        await room.connect(body.server_url, body.participant_token, { autoSubscribe: true });
+        if (cancelled) return;
+        room.remoteParticipants.forEach(refresh);
+        setStatus("connected");
+      } catch (e) {
+        if (cancelled) return;
+        setStatus("error");
+        setError(e instanceof Error ? e.message : "LiveKit connection failed");
+        if (room.state !== "disconnected") await room.disconnect();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      room.off(RoomEvent.TrackSubscribed, onSub);
+      room.off(RoomEvent.TrackUnsubscribed, onUnsub);
+      room.off(RoomEvent.ParticipantConnected, refresh);
+      room.off(RoomEvent.ParticipantDisconnected, onDisc);
+      room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers);
+      setRemotes((cur) => { cur.forEach((r) => r.audioTrack?.stop()); return new Map(); });
+      if (room.state !== "disconnected") void room.disconnect();
+      if (roomRef.current === room) roomRef.current = null;
+    };
   }, [channel, uid, enabled, disconnect]);
 
   useEffect(() => {
@@ -114,7 +224,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
   const toggleMute = useCallback(async () => { const room = roomRef.current; if (!room || room.state !== "connected") return; try { const enable = muted; await room.localParticipant.setMicrophoneEnabled(enable); setMuted(!enable); setMicBlocked(false); setMicError(null); } catch (e) { setMicBlocked(true); setMicError(e instanceof Error ? e.message : "Microphone permission denied"); } }, [muted]);
   const toggleVideo = useCallback(async (_pipeline?: unknown) => { const room = roomRef.current; if (!room || room.state !== "connected") return; try { const enable = !videoOn; await room.localParticipant.setCameraEnabled(enable); setVideoOn(enable); const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); setLocalVideoTrack(enable && pub?.track ? videoFacade(pub.track) : null); } catch (e) { setError(e instanceof Error ? e.message : "Camera failed"); } }, [videoOn]);
-  const toggleSpeaker = useCallback(() => { const next = !speakerMuted; speakerMutedRef.current = next; setSpeakerMuted(next); remotes.forEach((r) => r.audioTrack?.setVolume(next ? 0 : 100)); }, [speakerMuted, remotes]);
+  const toggleSpeaker = useCallback(() => { const next = !speakerMuted; speakerMutedRef.current = next; setSpeakerMuted(next); remotes.forEach((r) => { r.audioTrack?.setVolume(next ? 0 : 100); r.audioTrack?.play(); }); }, [speakerMuted, remotes]);
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
