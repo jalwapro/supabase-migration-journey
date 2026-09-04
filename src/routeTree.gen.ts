@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
+import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as SvgaPreviewRouteImport } from './routes/svga-preview'
 import { Route as SvgaFramesPreviewRouteImport } from './routes/svga-frames-preview'
 import { Route as SplashRouteImport } from './routes/splash'
@@ -35,6 +36,8 @@ import { Route as ApiRtcVerifyRouteImport } from './routes/api/rtc-verify'
 import { Route as ApiRtcUsageRouteImport } from './routes/api/rtc-usage'
 import { Route as ApiRtcStatusRouteImport } from './routes/api/rtc-status'
 import { Route as ApiR2SignRouteImport } from './routes/api/r2-sign'
+import { Route as ApiLivekitTokenRouteImport } from './routes/api/livekit-token'
+import { Route as ApiLivekitRoomRouteImport } from './routes/api/livekit-room'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
@@ -131,6 +134,11 @@ import { Route as AuthenticatedGamesPlaySlugRouteImport } from './routes/_authen
 const VoiceRoomRedesignRoute = VoiceRoomRedesignRouteImport.update({
   id: '/voice-room-redesign',
   path: '/voice-room-redesign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TestLivekitRoute = TestLivekitRouteImport.update({
+  id: '/test-livekit',
+  path: '/test-livekit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SvgaPreviewRoute = SvgaPreviewRouteImport.update({
@@ -255,6 +263,16 @@ const ApiRtcStatusRoute = ApiRtcStatusRouteImport.update({
 const ApiR2SignRoute = ApiR2SignRouteImport.update({
   id: '/api/r2-sign',
   path: '/api/r2-sign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLivekitTokenRoute = ApiLivekitTokenRouteImport.update({
+  id: '/api/livekit-token',
+  path: '/api/livekit-token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLivekitRoomRoute = ApiLivekitRoomRouteImport.update({
+  id: '/api/livekit-room',
+  path: '/api/livekit-room',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -789,6 +807,7 @@ export interface FileRoutesByFullPath {
   '/splash': typeof SplashRoute
   '/svga-frames-preview': typeof SvgaFramesPreviewRoute
   '/svga-preview': typeof SvgaPreviewRoute
+  '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
@@ -815,6 +834,8 @@ export interface FileRoutesByFullPath {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/livekit-room': typeof ApiLivekitRoomRoute
+  '/api/livekit-token': typeof ApiLivekitTokenRoute
   '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
@@ -908,6 +929,7 @@ export interface FileRoutesByTo {
   '/splash': typeof SplashRoute
   '/svga-frames-preview': typeof SvgaFramesPreviewRoute
   '/svga-preview': typeof SvgaPreviewRoute
+  '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
@@ -932,6 +954,8 @@ export interface FileRoutesByTo {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/livekit-room': typeof ApiLivekitRoomRoute
+  '/api/livekit-token': typeof ApiLivekitTokenRoute
   '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
@@ -1027,6 +1051,7 @@ export interface FileRoutesById {
   '/splash': typeof SplashRoute
   '/svga-frames-preview': typeof SvgaFramesPreviewRoute
   '/svga-preview': typeof SvgaPreviewRoute
+  '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
@@ -1053,6 +1078,8 @@ export interface FileRoutesById {
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/livekit-room': typeof ApiLivekitRoomRoute
+  '/api/livekit-token': typeof ApiLivekitTokenRoute
   '/api/r2-sign': typeof ApiR2SignRoute
   '/api/rtc-status': typeof ApiRtcStatusRoute
   '/api/rtc-usage': typeof ApiRtcUsageRoute
@@ -1148,6 +1175,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/svga-frames-preview'
     | '/svga-preview'
+    | '/test-livekit'
     | '/voice-room-redesign'
     | '/admin'
     | '/blocked'
@@ -1174,6 +1202,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/livekit-room'
+    | '/api/livekit-token'
     | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
@@ -1267,6 +1297,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/svga-frames-preview'
     | '/svga-preview'
+    | '/test-livekit'
     | '/voice-room-redesign'
     | '/blocked'
     | '/create-room'
@@ -1291,6 +1322,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/livekit-room'
+    | '/api/livekit-token'
     | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
@@ -1385,6 +1418,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/svga-frames-preview'
     | '/svga-preview'
+    | '/test-livekit'
     | '/voice-room-redesign'
     | '/_authenticated/admin'
     | '/_authenticated/blocked'
@@ -1411,6 +1445,8 @@ export interface FileRouteTypes {
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
+    | '/api/livekit-room'
+    | '/api/livekit-token'
     | '/api/r2-sign'
     | '/api/rtc-status'
     | '/api/rtc-usage'
@@ -1506,7 +1542,10 @@ export interface RootRouteChildren {
   SplashRoute: typeof SplashRoute
   SvgaFramesPreviewRoute: typeof SvgaFramesPreviewRoute
   SvgaPreviewRoute: typeof SvgaPreviewRoute
+  TestLivekitRoute: typeof TestLivekitRoute
   VoiceRoomRedesignRoute: typeof VoiceRoomRedesignRoute
+  ApiLivekitRoomRoute: typeof ApiLivekitRoomRoute
+  ApiLivekitTokenRoute: typeof ApiLivekitTokenRoute
   ApiR2SignRoute: typeof ApiR2SignRoute
   ApiRtcStatusRoute: typeof ApiRtcStatusRoute
   ApiRtcUsageRoute: typeof ApiRtcUsageRoute
@@ -1528,6 +1567,13 @@ declare module '@tanstack/react-router' {
       path: '/voice-room-redesign'
       fullPath: '/voice-room-redesign'
       preLoaderRoute: typeof VoiceRoomRedesignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/test-livekit': {
+      id: '/test-livekit'
+      path: '/test-livekit'
+      fullPath: '/test-livekit'
+      preLoaderRoute: typeof TestLivekitRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/svga-preview': {
@@ -1703,6 +1749,20 @@ declare module '@tanstack/react-router' {
       path: '/api/r2-sign'
       fullPath: '/api/r2-sign'
       preLoaderRoute: typeof ApiR2SignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/livekit-token': {
+      id: '/api/livekit-token'
+      path: '/api/livekit-token'
+      fullPath: '/api/livekit-token'
+      preLoaderRoute: typeof ApiLivekitTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/livekit-room': {
+      id: '/api/livekit-room'
+      path: '/api/livekit-room'
+      fullPath: '/api/livekit-room'
+      preLoaderRoute: typeof ApiLivekitRoomRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -2582,7 +2642,10 @@ const rootRouteChildren: RootRouteChildren = {
   SplashRoute: SplashRoute,
   SvgaFramesPreviewRoute: SvgaFramesPreviewRoute,
   SvgaPreviewRoute: SvgaPreviewRoute,
+  TestLivekitRoute: TestLivekitRoute,
   VoiceRoomRedesignRoute: VoiceRoomRedesignRoute,
+  ApiLivekitRoomRoute: ApiLivekitRoomRoute,
+  ApiLivekitTokenRoute: ApiLivekitTokenRoute,
   ApiR2SignRoute: ApiR2SignRoute,
   ApiRtcStatusRoute: ApiRtcStatusRoute,
   ApiRtcUsageRoute: ApiRtcUsageRoute,
