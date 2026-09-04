@@ -101,8 +101,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@lovable.dev/vite-tanstack-config": "2.13.1",
     "@types/node": "^22.16.5",
-    "@types/nodemailer": "^8.0.4",
+    "@types/nodemailer": "^8.0.1",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/web-push": "^3.6.4",
@@ -113,12 +114,15 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
-    "@lovable.dev/vite-tanstack-config": "2.13.1",
     "nitro": "3.0.260603-beta",
     "prettier": "^3.7.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16"
   },
-  "overrides": { "protobufjs": "^7.5.4" },
-  "resolutions": { "protobufjs": "^7.5.4" }
+  "overrides": {
+    "protobufjs": "^7.5.4"
+  },
+  "resolutions": {
+    "protobufjs": "^7.5.4"
+  }
 }
