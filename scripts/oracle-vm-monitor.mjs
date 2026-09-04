@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 const PORT = Number(process.env.VM_MONITOR_PORT || 8787);
 const SECRET = process.env.ORACLE_VM_MONITOR_SECRET;
-const LIVEKIT_METRICS_URL = process.env.LIVEKIT_METRICS_URL || "http://127.0.0.1:7880/metrics";
+const LIVEKIT_METRICS_URL = process.env.LIVEKIT_METRICS_URL || "http://127.0.0.1:6789/metrics";
 
 if (!SECRET) {
   console.error("ORACLE_VM_MONITOR_SECRET is required");
@@ -17,6 +17,8 @@ if (!SECRET) {
 let previousCpu = null;
 let previousNetwork = null;
 let previousNetworkAt = Date.now();
+let previousLiveKitBytes = null;
+let previousLiveKitAt = Date.now();
 
 function cpuSnapshot() {
   const cpus = os.cpus();
@@ -88,15 +90,24 @@ async function livekitMetrics() {
     const response = await fetch(LIVEKIT_METRICS_URL, { signal: AbortSignal.timeout(1500) });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
-    const bandwidthValues = [];
+    let packetBytes = 0;
     for (const line of text.split("\n")) {
-      if (line.startsWith("#") || !/livekit/i.test(line) || !/(bandwidth|bytes)/i.test(line)) continue;
+      if (line.startsWith("#") || !/^livekit_packet_bytes(?:\{|\s)/.test(line)) continue;
       const match = line.match(/\s(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*$/i);
-      if (match) bandwidthValues.push(Number(match[1]));
+      if (match) packetBytes += Number(match[1]);
     }
-    return { metricsAvailable: true, bandwidthMetricSamples: bandwidthValues.slice(0, 20) };
+
+    const now = Date.now();
+    let bandwidthMbps = null;
+    if (previousLiveKitBytes !== null && packetBytes >= previousLiveKitBytes) {
+      const seconds = Math.max((now - previousLiveKitAt) / 1000, 0.001);
+      bandwidthMbps = Number(((packetBytes - previousLiveKitBytes) * 8 / seconds / 1e6).toFixed(2));
+    }
+    previousLiveKitBytes = packetBytes;
+    previousLiveKitAt = now;
+    return { metricsAvailable: true, bandwidthMbps, packetBytesTotal: packetBytes };
   } catch {
-    return { metricsAvailable: false, bandwidthMetricSamples: [] };
+    return { metricsAvailable: false, bandwidthMbps: null, packetBytesTotal: null };
   }
 }
 
@@ -123,7 +134,7 @@ async function stats() {
     network,
     livekit: {
       cpuUsagePercent: cpu,
-      bandwidthMbps: network.totalMbps,
+      bandwidthMbps: lkMetrics.bandwidthMbps ?? network.totalMbps,
       ...lkMetrics,
     },
   };
