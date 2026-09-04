@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Create an OCI VM.Standard.A1.Flex instance and retry capacity failures."""
 
+import hashlib
 import os
 import sys
-import time
 import tempfile
+import time
 
 import oci
+from cryptography.hazmat.primitives import serialization
 from oci.exceptions import ServiceError
 
 RETRY_SECONDS = 60
@@ -22,16 +24,51 @@ def required(name: str) -> str:
     return value
 
 
+def normalize_private_key(value: str) -> str:
+    """Normalize a PEM secret copied through GitHub without exposing its contents."""
+    value = value.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\r", "\n")
+    value = value.strip()
+    if not value:
+        raise RuntimeError("OCI_PRIVATE_KEY is empty")
+    return value + "\n"
+
+
+def fingerprint_from_private_key(private_key: str) -> str:
+    """Return OCI-style MD5 fingerprint of the SSH/RSA public key in the PEM."""
+    try:
+        key = serialization.load_pem_private_key(
+            private_key.encode("utf-8"), password=None
+        )
+    except Exception as exc:
+        raise RuntimeError(
+            "OCI_PRIVATE_KEY is not a valid unencrypted PEM private key"
+        ) from exc
+
+    public_der = key.public_key().public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    digest = hashlib.md5(public_der).hexdigest()
+    return ":".join(digest[i:i + 2] for i in range(0, len(digest), 2))
+
+
 def build_oci_clients():
-    """Build OCI clients using the API private key supplied by GitHub Secrets.
+    """Build OCI clients using the API private key supplied by GitHub Secrets."""
+    private_key = normalize_private_key(required("OCI_PRIVATE_KEY"))
+    configured_fingerprint = required("OCI_FINGERPRINT").strip().lower()
+    derived_fingerprint = fingerprint_from_private_key(private_key).lower()
 
-    OCI SDK client config validation expects a key_file entry even when a custom
-    signer is supplied, so write the secret to a short-lived 0600 temp file and
-    use that same file for both the signer and client config.
-    """
-    private_key = required("OCI_PRIVATE_KEY").replace("\\r\\n", "\\n").replace("\\r", "\\n").strip() + "\\n"
+    if configured_fingerprint != derived_fingerprint:
+        raise RuntimeError(
+            "OCI_FINGERPRINT does not match OCI_PRIVATE_KEY. "
+            f"Configured fingerprint: {configured_fingerprint}; "
+            f"private-key fingerprint: {derived_fingerprint}. "
+            "Update the GitHub OCI_FINGERPRINT secret to the fingerprint of this API key."
+        )
 
-    key_file = tempfile.NamedTemporaryFile(mode="w", prefix="oci-api-", suffix=".pem", delete=False)
+    key_file = tempfile.NamedTemporaryFile(
+        mode="w", prefix="oci-api-", suffix=".pem", delete=False
+    )
     try:
         key_file.write(private_key)
         key_file.flush()
@@ -152,7 +189,10 @@ def create_instance():
         if ssh_public_key:
             launch_details.metadata = {"ssh_authorized_keys": ssh_public_key}
 
-        print(f"Attempting {SHAPE}: {OCPUS} OCPUs / {MEMORY_GBS} GB RAM in {availability_domain} (region {required('OCI_REGION')})")
+        print(
+            f"Attempting {SHAPE}: {OCPUS} OCPUs / {MEMORY_GBS} GB RAM "
+            f"in {availability_domain} (region {required('OCI_REGION')})"
+        )
         instance = compute.launch_instance(launch_details).data
         print("SUCCESS: OCI Ampere instance created")
         print(f"Instance OCID: {instance.id}")
@@ -174,10 +214,17 @@ def main():
                 return 0
         except ServiceError as exc:
             if is_capacity_error(exc):
-                print(f"OCI reported Out of host capacity. Retrying in {RETRY_SECONDS} seconds...")
+                print(
+                    f"OCI reported Out of host capacity. "
+                    f"Retrying in {RETRY_SECONDS} seconds..."
+                )
                 time.sleep(RETRY_SECONDS)
                 continue
-            print(f"OCI API error: status={exc.status}, code={exc.code}, message={exc.message}", file=sys.stderr)
+            print(
+                f"OCI API error: status={exc.status}, code={exc.code}, "
+                f"message={exc.message}",
+                file=sys.stderr,
+            )
             return 1
         except Exception as exc:
             print(f"Fatal error: {exc}", file=sys.stderr)
