@@ -58,16 +58,8 @@ def build_oci_clients():
             f"Configured fingerprint: {configured_fingerprint}; private-key fingerprint: {derived_fingerprint}."
         )
 
-    config = {
-        "user": required("OCI_USER_OCID"),
-        "fingerprint": configured_fingerprint,
-        "tenancy": required("OCI_TENANCY_OCID"),
-        "region": required("OCI_REGION"),
-    }
-    oci.config.validate_config(config)
-
-    # OCI SDK 2.185.x requires the private key file location as the fourth
-    # positional Signer argument. Keep the secret in a short-lived 0600 file.
+    # OCI SDK config validation requires key_file. Create the short-lived
+    # 0600 key file before validating the config and constructing the signer.
     key_path = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as key_file:
@@ -75,6 +67,17 @@ def build_oci_clients():
             key_file.write(private_key)
         os.chmod(key_path, 0o600)
 
+        config = {
+            "user": required("OCI_USER_OCID"),
+            "fingerprint": configured_fingerprint,
+            "tenancy": required("OCI_TENANCY_OCID"),
+            "region": required("OCI_REGION"),
+            "key_file": key_path,
+        }
+        oci.config.validate_config(config)
+
+        # OCI SDK 2.185.x requires the private key file location as the fourth
+        # positional Signer argument.
         signer = oci.signer.Signer(
             config["tenancy"],
             config["user"],
