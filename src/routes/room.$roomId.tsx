@@ -134,9 +134,7 @@ export const Route = createFileRoute("/room/$roomId")({
       .eq("id", params.roomId)
       .maybeSingle();
     const isPk = !!(data && (data.pk_battle || (data.room_type === "video" && data.seat_count === 2)));
-    if (isPk) {
-      throw redirect({ to: "/pk/$roomId", params: { roomId: params.roomId }, replace: true });
-    }
+    void isPk; // PK rooms render their dedicated layout inside this route.
   },
   component: RoomPage,
 });
@@ -2154,7 +2152,7 @@ onOpenChat={() => setChatComposerOpen(true)}
 onOpenPrivateChat={() => setPrivateChatOpen(true)}
 onOpenGift={() => setGiftOpen(true)}
 onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}
-onToggleMic={() => void toggleMuteWithSync()} onToggleSpeaker={() => void agora.toggleSpeaker()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}
+onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
