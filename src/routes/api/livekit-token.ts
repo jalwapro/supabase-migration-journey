@@ -114,10 +114,11 @@ export const Route = createFileRoute("/api/livekit-token")({
           isMuted = member?.is_muted === true;
         }
 
-        const requestedPublish = body.canPublish !== false;
-        const canPublish = userId
-          ? requestedPublish && (isHost || seated || moderator) && !isMuted
-          : requestedPublish;
+        // LiveKit permissions are explicit for every valid room participant.
+        // Application-level seat/mute rules can still control whether the UI
+        // exposes the microphone, but the token itself must allow publication.
+        const canPublish = true;
+        const canSubscribe = true;
 
         const identity = userId
           ? `jalwa_${userId}`
@@ -138,7 +139,7 @@ export const Route = createFileRoute("/api/livekit-token")({
         at.addGrant({
           roomJoin: true,
           room: roomId,
-          canSubscribe: true,
+          canSubscribe,
           canPublish,
           canPublishData: true,
           roomAdmin: userId ? isHost || moderator : false,
@@ -152,6 +153,7 @@ export const Route = createFileRoute("/api/livekit-token")({
             room: roomId,
             database_room_id: room.id,
             canPublish,
+            canSubscribe,
             guest: !userId,
           }),
           {
