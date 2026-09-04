@@ -28,6 +28,12 @@ function audioFacade(track: AnyTrack): RemoteAudioTrack {
 
 export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiveKitRoomArgs) {
   const roomRef = useRef<Room | null>(null);
+  const publishRef = useRef(publish);
+  const videoRef = useRef(video);
+  const speakerMutedRef = useRef(false);
+  publishRef.current = publish;
+  videoRef.current = video;
+
   const [status, setStatus] = useState<LiveKitStatus>(enabled ? "idle" : "disabled");
   const [error, setError] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
@@ -49,27 +55,66 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [musicTitle, setMusicTitle] = useState<string | null>(null);
 
-  const disconnect = useCallback(async () => { const room = roomRef.current; roomRef.current = null; if (room) await room.disconnect(); setRemotes(new Map()); setLocalVideoTrack(null); setVideoOn(false); setStatus(enabled ? "idle" : "disabled"); }, [enabled]);
+  const disconnect = useCallback(async () => { const room = roomRef.current; roomRef.current = null; if (room && room.state !== "disconnected") await room.disconnect(); setRemotes(new Map()); setLocalVideoTrack(null); setVideoOn(false); setStatus(enabled ? "idle" : "disabled"); }, [enabled]);
 
   useEffect(() => {
     if (!enabled || !channel || uid == null) { void disconnect(); return; }
     let cancelled = false;
     const room = new Room({ adaptiveStream: true, dynacast: true }); roomRef.current = room; setStatus("connecting"); setError(null);
     const refresh = (p: RemoteParticipant) => { const id = uidFromIdentity(p.identity); const a = Array.from(p.trackPublications.values()).find((x) => x.kind === Track.Kind.Audio && x.track); const v = Array.from(p.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); setRemotes((cur) => new Map(cur).set(id, { uid: id, hasAudio: !!a, hasVideo: !!v, audioTrack: a?.track ? audioFacade(a.track) : undefined, videoTrack: v?.track ? videoFacade(v.track) : undefined })); };
-    const onSub = (track: RemoteTrack, _pub: RemoteTrackPublication, p: RemoteParticipant) => { refresh(p); if (track.kind === Track.Kind.Audio && !speakerMuted) { attachedElements(track).forEach((el) => { const a = el as HTMLAudioElement; a.autoplay = true; document.body.appendChild(a); void a.play().catch(() => undefined); }); } };
+    const onSub = (track: RemoteTrack, _pub: RemoteTrackPublication, p: RemoteParticipant) => { refresh(p); if (track.kind === Track.Kind.Audio && !speakerMutedRef.current) { attachedElements(track).forEach((el) => { const a = el as HTMLAudioElement; a.autoplay = true; document.body.appendChild(a); void a.play().catch(() => undefined); }); } };
     const onUnsub = (_track: RemoteTrack, _pub: RemoteTrackPublication, p: RemoteParticipant) => refresh(p);
     const onDisc = (p: RemoteParticipant) => setRemotes((cur) => { const n = new Map(cur); n.delete(uidFromIdentity(p.identity)); return n; });
     room.on(RoomEvent.TrackSubscribed, onSub); room.on(RoomEvent.TrackUnsubscribed, onUnsub); room.on(RoomEvent.ParticipantConnected, refresh); room.on(RoomEvent.ParticipantDisconnected, onDisc); const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((sp) => uidFromIdentity(sp.identity))));
     room.on(RoomEvent.ActiveSpeakersChanged, onSpeakers);
     room.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
-    (async () => { try { const { data } = await supabase.auth.getSession(); const token = data.session?.access_token; if (!token) throw new Error("Sign in first"); const res = await fetch("/api/livekit-token", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ room: channel, name: `Jalwa user ${uid}`, canPublish: publish }) }); const body = await res.json() as { server_url?: string; participant_token?: string; canPublish?: boolean; error?: string }; if (!res.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed"); if (cancelled) return; await room.connect(body.server_url, body.participant_token, { autoSubscribe: true }); if (cancelled) return; room.remoteParticipants.forEach(refresh); setStatus("connected"); if (body.canPublish === true && publish) { try { await room.localParticipant.setMicrophoneEnabled(true); localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null; setMuted(false); } catch (e) { setMicBlocked(true); setMicError(e instanceof Error ? e.message : "Microphone permission denied"); } } if (body.canPublish === true && video) { try { await room.localParticipant.setCameraEnabled(true); const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); if (pub?.track) setLocalVideoTrack(videoFacade(pub.track)); setVideoOn(true); } catch { setVideoOn(false); } } } catch (e) { if (cancelled) return; setStatus("error"); setError(e instanceof Error ? e.message : "LiveKit connection failed"); await room.disconnect(); } })();
-    return () => { cancelled = true; room.off(RoomEvent.TrackSubscribed, onSub); room.off(RoomEvent.TrackUnsubscribed, onUnsub); room.off(RoomEvent.ParticipantConnected, refresh); room.off(RoomEvent.ParticipantDisconnected, onDisc); room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers); void room.disconnect(); if (roomRef.current === room) roomRef.current = null; };
-  }, [channel, uid, enabled, publish, video, disconnect, speakerMuted]);
+    (async () => { try { const { data } = await supabase.auth.getSession(); const token = data.session?.access_token; if (!token) throw new Error("Sign in first"); const res = await fetch("/api/livekit-token", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ room: channel, name: `Jalwa user ${uid}`, canPublish: publishRef.current }) }); const body = await res.json() as { server_url?: string; participant_token?: string; canPublish?: boolean; error?: string }; if (!res.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed"); if (cancelled) return; await room.connect(body.server_url, body.participant_token, { autoSubscribe: true }); if (cancelled) return; room.remoteParticipants.forEach(refresh); setStatus("connected"); } catch (e) { if (cancelled) return; setStatus("error"); setError(e instanceof Error ? e.message : "LiveKit connection failed"); if (room.state !== "disconnected") await room.disconnect(); } })();
+    return () => { cancelled = true; room.off(RoomEvent.TrackSubscribed, onSub); room.off(RoomEvent.TrackUnsubscribed, onUnsub); room.off(RoomEvent.ParticipantConnected, refresh); room.off(RoomEvent.ParticipantDisconnected, onDisc); room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers); if (room.state !== "disconnected") void room.disconnect(); if (roomRef.current === room) roomRef.current = null; };
+  }, [channel, uid, enabled, disconnect]);
+
+  useEffect(() => {
+    if (status !== "connected") return;
+    const room = roomRef.current;
+    if (!room || room.state !== "connected") return;
+    const desiredPublish = publishRef.current;
+    const desiredVideo = videoRef.current;
+    let active = true;
+    const syncMedia = async () => {
+      if (desiredPublish) {
+        try {
+          await room.localParticipant.setMicrophoneEnabled(true);
+          if (active) { localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null; setMuted(false); setMicBlocked(false); setMicError(null); }
+        } catch (e) {
+          if (active) { setMicBlocked(true); setMicError(e instanceof Error ? e.message : "Microphone permission denied"); }
+        }
+      } else {
+        try { await room.localParticipant.setMicrophoneEnabled(false); } catch { /* room may be disconnecting */ }
+        if (active) setMuted(true);
+      }
+      if (!active || room.state !== "connected") return;
+      if (desiredVideo) {
+        try {
+          await room.localParticipant.setCameraEnabled(true);
+          const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track);
+          if (active && pub?.track) { setLocalVideoTrack(videoFacade(pub.track)); setVideoOn(true); }
+        } catch { if (active) setVideoOn(false); }
+      } else if (room.localParticipant.isCameraEnabled) {
+        try { await room.localParticipant.setCameraEnabled(false); } catch { /* room may be disconnecting */ }
+        if (active) { setVideoOn(false); setLocalVideoTrack(null); }
+      }
+    };
+    void syncMedia();
+    return () => { active = false; };
+  }, [status, publish, video]);
+
+  useEffect(() => {
+    speakerMutedRef.current = speakerMuted;
+    remotes.forEach((r) => r.audioTrack?.setVolume(speakerMuted ? 0 : 100));
+  }, [speakerMuted, remotes]);
 
   const toggleMute = useCallback(async () => { const room = roomRef.current; if (!room || room.state !== "connected") return; try { const enable = muted; await room.localParticipant.setMicrophoneEnabled(enable); setMuted(!enable); setMicBlocked(false); setMicError(null); } catch (e) { setMicBlocked(true); setMicError(e instanceof Error ? e.message : "Microphone permission denied"); } }, [muted]);
   const toggleVideo = useCallback(async (_pipeline?: unknown) => { const room = roomRef.current; if (!room || room.state !== "connected") return; try { const enable = !videoOn; await room.localParticipant.setCameraEnabled(enable); setVideoOn(enable); const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); setLocalVideoTrack(enable && pub?.track ? videoFacade(pub.track) : null); } catch (e) { setError(e instanceof Error ? e.message : "Camera failed"); } }, [videoOn]);
-  const toggleSpeaker = useCallback(() => { const next = !speakerMuted; setSpeakerMuted(next); remotes.forEach((r) => r.audioTrack?.setVolume(next ? 0 : 100)); }, [speakerMuted, remotes]);
-
+  const toggleSpeaker = useCallback(() => { const next = !speakerMuted; speakerMutedRef.current = next; setSpeakerMuted(next); remotes.forEach((r) => r.audioTrack?.setVolume(next ? 0 : 100)); }, [speakerMuted, remotes]);
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
