@@ -1,5 +1,6 @@
 import http from "node:http";
 import os from "node:os";
+import fs from "node:fs";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
@@ -32,7 +33,7 @@ function cpuUsagePercent() {
   const current = cpuSnapshot();
   if (!previousCpu) {
     previousCpu = current;
-    return Number(((1 - (os.loadavg()[0] / Math.max(os.cpus().length, 1))) * 100).toFixed(1));
+    return Number(Math.min(100, (os.loadavg()[0] / Math.max(os.cpus().length, 1)) * 100).toFixed(1));
   }
   const idleDelta = current.idle - previousCpu.idle;
   const totalDelta = current.total - previousCpu.total;
@@ -44,8 +45,8 @@ function cpuUsagePercent() {
 async function diskUsage() {
   try {
     const { stdout } = await execFileAsync("df", ["-Pk", "/"]);
-    const line = stdout.trim().split("\\n").at(-1) || "";
-    const match = line.match(/\\s(\\d+)%\\s+\\//);
+    const line = stdout.trim().split("\n").at(-1) || "";
+    const match = line.match(/\s(\d+)%\s+\//);
     return Number(match?.[1] ?? 0);
   } catch {
     return 0;
@@ -53,14 +54,13 @@ async function diskUsage() {
 }
 
 function networkSnapshot() {
-  const fs = require("node:fs");
   const text = fs.readFileSync("/proc/net/dev", "utf8");
   let rx = 0;
   let tx = 0;
-  for (const line of text.split("\\n").slice(2)) {
+  for (const line of text.split("\n").slice(2)) {
     const [iface, values] = line.trim().split(":");
     if (!iface || iface === "lo" || !values) continue;
-    const p = values.trim().split(/\\s+/).map(Number);
+    const p = values.trim().split(/\s+/).map(Number);
     rx += p[0] || 0;
     tx += p[8] || 0;
   }
@@ -89,9 +89,9 @@ async function livekitMetrics() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const text = await response.text();
     const bandwidthValues = [];
-    for (const line of text.split("\\n")) {
+    for (const line of text.split("\n")) {
       if (line.startsWith("#") || !/livekit/i.test(line) || !/(bandwidth|bytes)/i.test(line)) continue;
-      const match = line.match(/\\s(-?\\d+(?:\\.\\d+)?(?:e[+-]?\\d+)?)\\s*$/i);
+      const match = line.match(/\s(-?\d+(?:\.\d+)?(?:e[+-]?\d+)?)\s*$/i);
       if (match) bandwidthValues.push(Number(match[1]));
     }
     return { metricsAvailable: true, bandwidthMetricSamples: bandwidthValues.slice(0, 20) };
@@ -105,8 +105,8 @@ async function stats() {
   const freeMemory = os.freemem();
   const usedMemory = totalMemory - freeMemory;
   const network = networkStats();
-  const lkMetrics = await livekitMetrics();
   const cpu = cpuUsagePercent();
+  const lkMetrics = await livekitMetrics();
   return {
     server: {
       hostname: os.hostname(),
@@ -135,8 +135,7 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify({ error: "not found" }));
     return;
   }
-  const auth = req.headers.authorization || "";
-  if (auth !== `Bearer ${SECRET}`) {
+  if ((req.headers.authorization || "") !== `Bearer ${SECRET}`) {
     res.writeHead(401, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "unauthorized" }));
     return;
@@ -151,6 +150,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Oracle VM monitor listening on :${PORT}`);
-});
+server.listen(PORT, "0.0.0.0", () => console.log(`Oracle VM monitor listening on :${PORT}`));
