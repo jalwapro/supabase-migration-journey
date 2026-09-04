@@ -10,13 +10,20 @@ export type UseLiveKitRoomArgs = { channel: string | null; uid: number | null; p
 
 function uidFromIdentity(identity: string) { const raw = identity.replace(/^jalwa_/, ""); let h = 0; for (let i = 0; i < raw.length; i++) h = ((h << 5) - h + raw.charCodeAt(i)) | 0; return (Math.abs(h) % 2_000_000_000) + 1; }
 
-function videoFacade(track: RemoteTrack): RemoteVideoTrack {
-  let attached: HTMLElement[] = [];
-  return { play(container, opts) { attached = track.attach().map((el) => { const v = el as HTMLVideoElement; v.autoplay = true; v.playsInline = true; v.style.width = "100%"; v.style.height = "100%"; v.style.objectFit = opts?.fit ?? "cover"; container.appendChild(v); return v; }); }, stop() { track.detach(); attached.forEach((el) => el.remove()); attached = []; } };
+type AnyTrack = { attach: () => HTMLMediaElement; detach: () => HTMLMediaElement[] | HTMLMediaElement };
+
+function attachedElements(track: AnyTrack): HTMLMediaElement[] {
+  const el = track.attach();
+  return Array.isArray(el) ? el : [el];
 }
-function audioFacade(track: RemoteTrack): RemoteAudioTrack {
+
+function videoFacade(track: AnyTrack): RemoteVideoTrack {
+  let attached: HTMLElement[] = [];
+  return { play(container, opts) { attached = attachedElements(track).map((el) => { const v = el as HTMLVideoElement; v.autoplay = true; v.playsInline = true; v.style.width = "100%"; v.style.height = "100%"; v.style.objectFit = opts?.fit ?? "cover"; container.appendChild(v); return v; }); }, stop() { track.detach(); attached.forEach((el) => el.remove()); attached = []; } };
+}
+function audioFacade(track: AnyTrack): RemoteAudioTrack {
   let elements: HTMLMediaElement[] = []; let volume = 1;
-  return { setVolume(v) { volume = Math.max(0, Math.min(1, v / 100)); elements.forEach((el) => { el.volume = volume; }); }, play() { elements = track.attach().map((el) => { const a = el as HTMLAudioElement; a.autoplay = true; a.volume = volume; document.body.appendChild(a); void a.play().catch(() => undefined); return a; }); }, stop() { track.detach(); elements.forEach((el) => el.remove()); elements = []; } };
+  return { setVolume(v) { volume = Math.max(0, Math.min(1, v / 100)); elements.forEach((el) => { el.volume = volume; }); }, play() { elements = attachedElements(track).map((el) => { const a = el as HTMLAudioElement; a.autoplay = true; a.volume = volume; document.body.appendChild(a); void a.play().catch(() => undefined); return a; }); }, stop() { track.detach(); elements.forEach((el) => el.remove()); elements = []; } };
 }
 
 export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiveKitRoomArgs) {
