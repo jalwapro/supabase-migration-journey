@@ -42,6 +42,10 @@ async function verifyBearer(token: string): Promise<string | null> {
   return error || !data.user ? null : data.user.id;
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 export const Route = createFileRoute("/api/livekit-token")({
   server: {
     handlers: {
@@ -68,10 +72,6 @@ export const Route = createFileRoute("/api/livekit-token")({
         const roomId = String(body.room ?? "").trim();
         if (!roomId || roomId.length > 128) return json({ error: "room is required" }, 400);
 
-        // Authentication is optional for the Voice Room connection. If a valid
-        // Supabase session is present, use the real user identity and existing
-        // room permissions. Otherwise issue a short-lived guest/test identity
-        // so the LiveKit connection does not fail with 401.
         const bearer = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
         let userId: string | null = null;
         if (bearer) userId = await verifyBearer(bearer);
@@ -81,12 +81,18 @@ export const Route = createFileRoute("/api/livekit-token")({
         const { createClient } = await import("@supabase/supabase-js");
         const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-        const { data: room, error: roomError } = await sb
-          .from("live_rooms")
-          .select("id,host_id,status,room_type")
-          .eq("id", roomId)
-          .maybeSingle();
-        if (roomError || !room) return json({ error: "room not found" }, 404);
+        // The app has two valid room identifiers: the UUID primary key and the
+        // LiveKit/RTC channel (for example, "jalwa-abc123"). Resolve either to
+        // the same live_rooms row before checking permissions. The previous
+        // implementation always queried the UUID column, which caused a 22P02
+        // PostgreSQL error whenever the voice-room flow supplied rtc_channel.
+        const roomQuery = isUuid(roomId)
+          ? sb.from("live_rooms").select("id,host_id,status,room_type,rtc_channel").eq("id", roomId).maybeSingle()
+          : sb.from("live_rooms").select("id,host_id,status,room_type,rtc_channel").eq("rtc_channel", roomId).maybeSingle();
+
+        const { data: room, error: roomError } = await roomQuery;
+        if (roomError) return json({ error: "room lookup failed", detail: roomError.message }, 500);
+        if (!room) return json({ error: "room not found" }, 404);
         if (room.status !== "live") return json({ error: "room is not live" }, 409);
 
         let isHost = false;
@@ -98,7 +104,7 @@ export const Route = createFileRoute("/api/livekit-token")({
           const { data: member } = await sb
             .from("room_members")
             .select("seat_index,is_moderator,is_muted")
-            .eq("room_id", roomId)
+            .eq("room_id", room.id)
             .eq("user_id", userId)
             .maybeSingle();
 
@@ -109,9 +115,6 @@ export const Route = createFileRoute("/api/livekit-token")({
         }
 
         const requestedPublish = body.canPublish !== false;
-        // Authenticated users keep the existing permission model. Guests are
-        // allowed to publish for the voice-room/test flow so they can speak,
-        // but receive a short-lived token and have no admin permissions.
         const canPublish = userId
           ? requestedPublish && (isHost || seated || moderator) && !isMuted
           : requestedPublish;
@@ -123,6 +126,10 @@ export const Route = createFileRoute("/api/livekit-token")({
           .trim()
           .slice(0, 80) || (userId ? "Jalwa user" : "Jalwa guest");
 
+        // Keep the LiveKit room name identical to the identifier supplied by
+        // the client. This lets both UUID-based and rtc_channel-based clients
+        // connect consistently while the database lookup above resolves the
+        // corresponding live_rooms record for authorization.
         const at = new AccessToken(apiKey, apiSecret, {
           identity,
           name,
@@ -143,6 +150,7 @@ export const Route = createFileRoute("/api/livekit-token")({
             server_url: wsUrl,
             participant_token: participantToken,
             room: roomId,
+            database_room_id: room.id,
             canPublish,
             guest: !userId,
           }),
