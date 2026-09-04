@@ -36,6 +36,9 @@ jobs:
         shell: bash
         run: |
           test -f src/hooks/useZegoRoom.ts
+          test -f src/hooks/useLiveKitVoiceRoom.ts
+          test -f src/routes/api/livekit-token.ts
+          test -f src/routes/api/livekit-room.ts
           test -f src/components/GiftSheet.tsx
           test -f src/components/room/GiftAnimationPlayer.tsx
           test -f src/components/room/HostMusicPlayer.tsx
