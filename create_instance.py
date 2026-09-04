@@ -4,7 +4,6 @@
 import hashlib
 import os
 import sys
-import tempfile
 import time
 
 import oci
@@ -53,7 +52,7 @@ def fingerprint_from_private_key(private_key: str) -> str:
 
 
 def build_oci_clients():
-    """Build OCI clients using the API private key supplied by GitHub Secrets."""
+    """Build OCI clients directly from the GitHub Secret PEM contents."""
     private_key = normalize_private_key(required("OCI_PRIVATE_KEY"))
     configured_fingerprint = required("OCI_FINGERPRINT").strip().lower()
     derived_fingerprint = fingerprint_from_private_key(private_key).lower()
@@ -69,42 +68,25 @@ def build_oci_clients():
             "Update the GitHub OCI_FINGERPRINT secret to the fingerprint of this API key."
         )
 
-    key_file = tempfile.NamedTemporaryFile(
-        mode="w", prefix="oci-api-", suffix=".pem", delete=False
-    )
-    try:
-        key_file.write(private_key)
-        key_file.flush()
-        os.chmod(key_file.name, 0o600)
-    finally:
-        key_file.close()
-
     config = {
         "user": required("OCI_USER_OCID"),
         "fingerprint": configured_fingerprint,
         "tenancy": required("OCI_TENANCY_OCID"),
         "region": required("OCI_REGION"),
-        "key_file": key_file.name,
+        "key_content": private_key,
     }
 
-    try:
-        oci.config.validate_config(config)
-        signer = oci.signer.Signer(
-            tenancy=config["tenancy"],
-            user=config["user"],
-            fingerprint=config["fingerprint"],
-            private_key_file_location=key_file.name,
-        )
-        identity = oci.identity.IdentityClient(config, signer=signer)
-        compute = oci.core.ComputeClient(config, signer=signer)
-        virtual_network = oci.core.VirtualNetworkClient(config, signer=signer)
-        return identity, compute, virtual_network, key_file.name
-    except Exception:
-        try:
-            os.unlink(key_file.name)
-        except OSError:
-            pass
-        raise
+    oci.config.validate_config(config)
+    signer = oci.signer.Signer(
+        tenancy=config["tenancy"],
+        user=config["user"],
+        fingerprint=config["fingerprint"],
+        private_key_content=private_key,
+    )
+    identity = oci.identity.IdentityClient(config, signer=signer)
+    compute = oci.core.ComputeClient(config, signer=signer)
+    virtual_network = oci.core.VirtualNetworkClient(config, signer=signer)
+    return identity, compute, virtual_network
 
 
 def is_capacity_error(exc: Exception) -> bool:
@@ -122,7 +104,18 @@ def is_capacity_error(exc: Exception) -> bool:
 def verify_oci_auth(identity):
     """Make a minimal signed OCI request so auth failures are isolated clearly."""
     print("Verifying OCI API authentication...")
-    user = identity.get_user(required("OCI_USER_OCID")).data
+    try:
+        user = identity.get_user(required("OCI_USER_OCID")).data
+    except ServiceError as exc:
+        if exc.status == 401:
+            raise RuntimeError(
+                "OCI authentication failed with 401 NotAuthenticated. "
+                "The GitHub private key must correspond to the API public key "
+                "registered under OCI_USER_OCID, and the runner clock must be within "
+                "5 minutes of OCI server time. Verify the API key/fingerprint in "
+                "OCI Console > User Settings > API Keys."
+            ) from exc
+        raise
     print(f"OCI authentication OK for user: {user.name}")
 
 
@@ -159,66 +152,60 @@ def find_image(compute, compartment_id: str):
 def create_instance():
     compartment_id = required("OCI_COMPARTMENT_OCID")
     subnet_id = required("OCI_SUBNET_OCID")
-    identity, compute, virtual_network, key_file = build_oci_clients()
+    identity, compute, virtual_network = build_oci_clients()
 
-    try:
-        verify_oci_auth(identity)
+    verify_oci_auth(identity)
 
-        availability_domain = os.getenv("OCI_AVAILABILITY_DOMAIN") or find_availability_domain(
-            identity, compartment_id
-        )
-        image_ocid = os.getenv("OCI_IMAGE_OCID")
-        if image_ocid:
-            image_id = image_ocid
-        else:
-            image = find_image(compute, compartment_id)
-            image_id = image.id
-            print(f"Using discovered Ubuntu image: {image.display_name} ({image.id})")
+    availability_domain = os.getenv("OCI_AVAILABILITY_DOMAIN") or find_availability_domain(
+        identity, compartment_id
+    )
+    image_ocid = os.getenv("OCI_IMAGE_OCID")
+    if image_ocid:
+        image_id = image_ocid
+    else:
+        image = find_image(compute, compartment_id)
+        image_id = image.id
+        print(f"Using discovered Ubuntu image: {image.display_name} ({image.id})")
 
-        print("Checking OCI subnet access...")
-        subnet = virtual_network.get_subnet(subnet_id).data
-        print(f"Using subnet: {subnet.display_name} ({subnet.id})")
+    print("Checking OCI subnet access...")
+    subnet = virtual_network.get_subnet(subnet_id).data
+    print(f"Using subnet: {subnet.display_name} ({subnet.id})")
 
-        display_name = os.getenv("OCI_INSTANCE_NAME", "jalwa-ampere-a1")
-        ssh_public_key = os.getenv("OCI_SSH_PUBLIC_KEY", "").strip()
+    display_name = os.getenv("OCI_INSTANCE_NAME", "jalwa-ampere-a1")
+    ssh_public_key = os.getenv("OCI_SSH_PUBLIC_KEY", "").strip()
 
-        launch_details = oci.core.models.LaunchInstanceDetails(
-            availability_domain=availability_domain,
-            compartment_id=compartment_id,
-            display_name=display_name,
-            shape=SHAPE,
-            shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
-                ocpus=OCPUS,
-                memory_in_gbs=MEMORY_GBS,
-            ),
-            create_vnic_details=oci.core.models.CreateVnicDetails(
-                subnet_id=subnet_id,
-                assign_public_ip=True,
-            ),
-            source_details=oci.core.models.InstanceSourceViaImageDetails(
-                image_id=image_id,
-                boot_volume_size_in_gbs=50,
-            ),
-        )
+    launch_details = oci.core.models.LaunchInstanceDetails(
+        availability_domain=availability_domain,
+        compartment_id=compartment_id,
+        display_name=display_name,
+        shape=SHAPE,
+        shape_config=oci.core.models.LaunchInstanceShapeConfigDetails(
+            ocpus=OCPUS,
+            memory_in_gbs=MEMORY_GBS,
+        ),
+        create_vnic_details=oci.core.models.CreateVnicDetails(
+            subnet_id=subnet_id,
+            assign_public_ip=True,
+        ),
+        source_details=oci.core.models.InstanceSourceViaImageDetails(
+            image_id=image_id,
+            boot_volume_size_in_gbs=50,
+        ),
+    )
 
-        if ssh_public_key:
-            launch_details.metadata = {"ssh_authorized_keys": ssh_public_key}
+    if ssh_public_key:
+        launch_details.metadata = {"ssh_authorized_keys": ssh_public_key}
 
-        print(
-            f"Attempting {SHAPE}: {OCPUS} OCPUs / {MEMORY_GBS} GB RAM "
-            f"in {availability_domain} (region {required('OCI_REGION')})"
-        )
-        instance = compute.launch_instance(launch_details).data
-        print("SUCCESS: OCI Ampere instance created")
-        print(f"Instance OCID: {instance.id}")
-        print(f"Display name: {instance.display_name}")
-        print(f"Lifecycle state: {instance.lifecycle_state}")
-        return True
-    finally:
-        try:
-            os.unlink(key_file)
-        except OSError:
-            pass
+    print(
+        f"Attempting {SHAPE}: {OCPUS} OCPUs / {MEMORY_GBS} GB RAM "
+        f"in {availability_domain} (region {required('OCI_REGION')})"
+    )
+    instance = compute.launch_instance(launch_details).data
+    print("SUCCESS: OCI Ampere instance created")
+    print(f"Instance OCID: {instance.id}")
+    print(f"Display name: {instance.display_name}")
+    print(f"Lifecycle state: {instance.lifecycle_state}")
+    return True
 
 
 def main():
