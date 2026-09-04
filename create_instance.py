@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import time
+from datetime import datetime, timezone
 
 import oci
 from cryptography.hazmat.primitives import serialization
@@ -58,8 +59,6 @@ def build_oci_clients():
             f"Configured fingerprint: {configured_fingerprint}; private-key fingerprint: {derived_fingerprint}."
         )
 
-    # OCI SDK config validation requires key_file. Create the short-lived
-    # 0600 key file before validating the config and constructing the signer.
     key_path = None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", delete=False) as key_file:
@@ -76,8 +75,6 @@ def build_oci_clients():
         }
         oci.config.validate_config(config)
 
-        # OCI SDK 2.185.x requires the private key file location as the fourth
-        # positional Signer argument.
         signer = oci.signer.Signer(
             config["tenancy"],
             config["user"],
@@ -111,14 +108,19 @@ def is_capacity_error(exc: Exception) -> bool:
 
 def verify_oci_auth(identity):
     print("Verifying OCI API authentication...")
+    print(f"Runner UTC time: {datetime.now(timezone.utc).isoformat()}")
     try:
         user = identity.get_user(required("OCI_USER_OCID")).data
     except ServiceError as exc:
         if exc.status == 401:
+            request_id = getattr(exc, "opc_request_id", None) or "not returned"
             raise RuntimeError(
-                "OCI authentication failed with 401 NotAuthenticated. Verify that "
-                "the API public key registered under this OCI user matches OCI_PRIVATE_KEY "
-                "and OCI_FINGERPRINT, and that the runner clock is accurate."
+                "OCI authentication failed with 401 NotAuthenticated. "
+                "The GitHub private key fingerprint matches OCI_FINGERPRINT, so the remaining "
+                "likely causes are: the public key for this fingerprint is not registered under "
+                "OCI_USER_OCID, OCI_USER_OCID is a different OCI user, or OCI rejected the request "
+                "signature/clock. "
+                f"OCI code={exc.code}; request_id={request_id}; runner_utc={datetime.now(timezone.utc).isoformat()}"
             ) from exc
         raise
     print(f"OCI authentication OK for user: {user.name}")
