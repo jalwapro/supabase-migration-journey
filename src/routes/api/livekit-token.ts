@@ -41,12 +41,6 @@ async function verifyBearer(token: string): Promise<string | null> {
   return error || !data.user ? null : data.user.id;
 }
 
-function livekitHost() {
-  const raw = (process.env.LIVEKIT_URL || "").trim();
-  if (!raw) return "";
-  return raw.replace(/^wss:\/\//i, "https://").replace(/^ws:\/\//i, "http://").replace(/\/$/, "");
-}
-
 export const Route = createFileRoute("/api/livekit-token")({
   server: {
     handlers: {
@@ -73,11 +67,10 @@ export const Route = createFileRoute("/api/livekit-token")({
         const roomId = String(body.room ?? "").trim();
         if (!roomId || roomId.length > 128) return json({ error: "room is required" }, 400);
 
+        const key = serviceKey();
+        if (!key) return json({ error: "Supabase service key is not configured" }, 503);
         const { createClient } = await import("@supabase/supabase-js");
-        const sb = serviceKey()
-          ? createClient(supabaseUrl(), serviceKey()!, { auth: { persistSession: false, autoRefreshToken: false } })
-          : null;
-        if (!sb) return json({ error: "Supabase service key is not configured" }, 503);
+        const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
 
         const { data: room, error: roomError } = await sb
           .from("live_rooms")
@@ -88,7 +81,7 @@ export const Route = createFileRoute("/api/livekit-token")({
         if (room.status !== "live") return json({ error: "room is not live" }, 409);
 
         const { data: member } = await sb
-          .from("live_room_members")
+          .from("room_members")
           .select("seat_index,is_moderator,is_muted")
           .eq("room_id", roomId)
           .eq("user_id", userId)
