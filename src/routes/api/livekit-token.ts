@@ -83,9 +83,7 @@ export const Route = createFileRoute("/api/livekit-token")({
 
         // The app has two valid room identifiers: the UUID primary key and the
         // LiveKit/RTC channel (for example, "jalwa-abc123"). Resolve either to
-        // the same live_rooms row before checking permissions. The previous
-        // implementation always queried the UUID column, which caused a 22P02
-        // PostgreSQL error whenever the voice-room flow supplied rtc_channel.
+        // the same live_rooms row before checking permissions.
         const roomQuery = isUuid(roomId)
           ? sb.from("live_rooms").select("id,host_id,status,room_type,rtc_channel").eq("id", roomId).maybeSingle()
           : sb.from("live_rooms").select("id,host_id,status,room_type,rtc_channel").eq("rtc_channel", roomId).maybeSingle();
@@ -114,10 +112,13 @@ export const Route = createFileRoute("/api/livekit-token")({
           isMuted = member?.is_muted === true;
         }
 
-        // LiveKit permissions are explicit for every valid room participant.
-        // Application-level seat/mute rules can still control whether the UI
-        // exposes the microphone, but the token itself must allow publication.
-        const canPublish = true;
+        // Everyone may join and subscribe to the room, but microphone
+        // publication is restricted to users who currently occupy a seat.
+        // The host keeps the existing host privilege even if their member row
+        // has not yet been assigned a seat. Moderators do NOT gain microphone
+        // permission merely from being moderators.
+        const requestedPublish = body.canPublish !== false;
+        const canPublish = requestedPublish && !!userId && (isHost || seated) && !isMuted;
         const canSubscribe = true;
 
         const identity = userId
@@ -127,10 +128,6 @@ export const Route = createFileRoute("/api/livekit-token")({
           .trim()
           .slice(0, 80) || (userId ? "Jalwa user" : "Jalwa guest");
 
-        // Keep the LiveKit room name identical to the identifier supplied by
-        // the client. This lets both UUID-based and rtc_channel-based clients
-        // connect consistently while the database lookup above resolves the
-        // corresponding live_rooms record for authorization.
         const at = new AccessToken(apiKey, apiSecret, {
           identity,
           name,
