@@ -80,7 +80,7 @@ type SearchUser = {
   user_code: string | null;
 };
 
-type TabKey = "voice";
+type TabKey = "voice" | "video" | "pk";
 const TABS: { key: TabKey; label: string; Icon: typeof Mic }[] = [
   { key: "voice", label: "Voice Room", Icon: Mic },
 ];
