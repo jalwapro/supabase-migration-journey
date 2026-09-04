@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create an OCI VM.Standard.A1.Flex instance and retry capacity failures."""
+"""Create an OCI VM.Standard.A1.Flex instance and retry transient failures."""
 
 import hashlib
 import os
@@ -46,6 +46,19 @@ def fingerprint_from_private_key(private_key: str) -> str:
     return ":".join(digest[i:i + 2] for i in range(0, len(digest), 2))
 
 
+def fingerprint_from_public_key(public_key: str) -> str:
+    try:
+        key = serialization.load_pem_public_key(public_key.encode("utf-8"))
+    except Exception as exc:
+        raise RuntimeError("OCI_PUBLIC_KEY is not a valid PEM public key") from exc
+    public_der = key.public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    digest = hashlib.md5(public_der).hexdigest()
+    return ":".join(digest[i:i + 2] for i in range(0, len(digest), 2))
+
+
 def build_oci_clients():
     private_key = normalize_private_key(required("OCI_PRIVATE_KEY"))
     configured_fingerprint = required("OCI_FINGERPRINT").strip().lower()
@@ -58,6 +71,16 @@ def build_oci_clients():
             "OCI_FINGERPRINT does not match OCI_PRIVATE_KEY. "
             f"Configured fingerprint: {configured_fingerprint}; private-key fingerprint: {derived_fingerprint}."
         )
+
+    optional_public_key = os.getenv("OCI_PUBLIC_KEY", "").strip()
+    if optional_public_key:
+        public_fingerprint = fingerprint_from_public_key(optional_public_key).lower()
+        print(f"OCI API public-key fingerprint check: public-key={public_fingerprint}")
+        if public_fingerprint != derived_fingerprint:
+            raise RuntimeError(
+                "OCI_PUBLIC_KEY does not match OCI_PRIVATE_KEY. "
+                f"Public-key fingerprint: {public_fingerprint}; private-key fingerprint: {derived_fingerprint}."
+            )
 
     key_path = None
     try:
@@ -106,6 +129,10 @@ def is_capacity_error(exc: Exception) -> bool:
     )
 
 
+def is_auth_error(exc: Exception) -> bool:
+    return isinstance(exc, ServiceError) and exc.status == 401 and str(exc.code).lower() == "notauthenticated"
+
+
 def verify_oci_auth(identity):
     print("Verifying OCI API authentication...")
     print(f"Runner UTC time: {datetime.now(timezone.utc).isoformat()}")
@@ -116,10 +143,11 @@ def verify_oci_auth(identity):
             request_id = getattr(exc, "opc_request_id", None) or "not returned"
             raise RuntimeError(
                 "OCI authentication failed with 401 NotAuthenticated. "
-                "The GitHub private key fingerprint matches OCI_FINGERPRINT, so the remaining "
-                "likely causes are: the public key for this fingerprint is not registered under "
-                "OCI_USER_OCID, OCI_USER_OCID is a different OCI user, or OCI rejected the request "
-                "signature/clock. "
+                "The private-key fingerprint matches OCI_FINGERPRINT. "
+                "The PEM public key supplied for this key also has the same fingerprint when OCI_PUBLIC_KEY is set. "
+                "The remaining OCI-side checks are that this exact public key is registered under OCI_USER_OCID, "
+                "OCI_USER_OCID is the same user shown in the API-key configuration snippet, and the runner clock "
+                "is within OCI's allowed skew. "
                 f"OCI code={exc.code}; request_id={request_id}; runner_utc={datetime.now(timezone.utc).isoformat()}"
             ) from exc
         raise
@@ -199,7 +227,7 @@ def create_instance():
 
 
 def main():
-    print("Starting OCI VM.Standard.A1.Flex capacity retry...")
+    print("Starting OCI VM.Standard.A1.Flex capacity/auth retry...")
     while True:
         try:
             if create_instance():
@@ -209,7 +237,26 @@ def main():
                 print(f"OCI reported Out of host capacity. Retrying in {RETRY_SECONDS} seconds...")
                 time.sleep(RETRY_SECONDS)
                 continue
+            if is_auth_error(exc):
+                print(
+                    "OCI returned 401 NotAuthenticated. Retrying in 60 seconds so the workflow can recover "
+                    "automatically after the OCI API key is corrected/registered."
+                )
+                time.sleep(RETRY_SECONDS)
+                continue
             print(f"OCI API error: status={exc.status}, code={exc.code}, message={exc.message}", file=sys.stderr)
+            return 1
+        except RuntimeError as exc:
+            text = str(exc)
+            if "OCI authentication failed with 401 NotAuthenticated" in text:
+                print(f"{text}", file=sys.stderr)
+                print(
+                    "The workflow will retry authentication every 60 seconds. "
+                    "Register the matching PEM public key under the exact OCI_USER_OCID, then the same run can continue."
+                )
+                time.sleep(RETRY_SECONDS)
+                continue
+            print(f"Fatal error: {exc}", file=sys.stderr)
             return 1
         except Exception as exc:
             print(f"Fatal error: {exc}", file=sys.stderr)
