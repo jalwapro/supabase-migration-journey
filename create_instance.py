@@ -34,7 +34,7 @@ def normalize_private_key(value: str) -> str:
 
 
 def fingerprint_from_private_key(private_key: str) -> str:
-    """Return OCI-style MD5 fingerprint of the SSH/RSA public key in the PEM."""
+    """Return OCI-style MD5 fingerprint of the public key in the PEM."""
     try:
         key = serialization.load_pem_private_key(
             private_key.encode("utf-8"), password=None
@@ -58,6 +58,9 @@ def build_oci_clients():
     configured_fingerprint = required("OCI_FINGERPRINT").strip().lower()
     derived_fingerprint = fingerprint_from_private_key(private_key).lower()
 
+    print(f"OCI API key fingerprint check: configured={configured_fingerprint}")
+    print(f"OCI API key fingerprint check: private-key={derived_fingerprint}")
+
     if configured_fingerprint != derived_fingerprint:
         raise RuntimeError(
             "OCI_FINGERPRINT does not match OCI_PRIVATE_KEY. "
@@ -78,7 +81,7 @@ def build_oci_clients():
 
     config = {
         "user": required("OCI_USER_OCID"),
-        "fingerprint": required("OCI_FINGERPRINT"),
+        "fingerprint": configured_fingerprint,
         "tenancy": required("OCI_TENANCY_OCID"),
         "region": required("OCI_REGION"),
         "key_file": key_file.name,
@@ -116,7 +119,15 @@ def is_capacity_error(exc: Exception) -> bool:
     )
 
 
+def verify_oci_auth(identity):
+    """Make a minimal signed OCI request so auth failures are isolated clearly."""
+    print("Verifying OCI API authentication...")
+    user = identity.get_user(required("OCI_USER_OCID")).data
+    print(f"OCI authentication OK for user: {user.name}")
+
+
 def find_availability_domain(identity, compartment_id: str) -> str:
+    print("Querying OCI availability domains...")
     ads = oci.pagination.list_call_get_all_results(
         identity.list_availability_domains, compartment_id
     ).data
@@ -126,6 +137,7 @@ def find_availability_domain(identity, compartment_id: str) -> str:
 
 
 def find_image(compute, compartment_id: str):
+    print("Querying Ubuntu ARM64 images...")
     images = oci.pagination.list_call_get_all_results(
         compute.list_images,
         compartment_id=compartment_id,
@@ -150,6 +162,8 @@ def create_instance():
     identity, compute, virtual_network, key_file = build_oci_clients()
 
     try:
+        verify_oci_auth(identity)
+
         availability_domain = os.getenv("OCI_AVAILABILITY_DOMAIN") or find_availability_domain(
             identity, compartment_id
         )
@@ -161,6 +175,7 @@ def create_instance():
             image_id = image.id
             print(f"Using discovered Ubuntu image: {image.display_name} ({image.id})")
 
+        print("Checking OCI subnet access...")
         subnet = virtual_network.get_subnet(subnet_id).data
         print(f"Using subnet: {subnet.display_name} ({subnet.id})")
 
