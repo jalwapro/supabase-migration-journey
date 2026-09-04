@@ -24,12 +24,17 @@ const stripTanStackSourceMarkers = () => ({
   },
 });
 
+// Lovable's wrapper uses Cloudflare as its default Nitro target.
+// Vercel requires the Vercel Nitro preset so TanStack Start server/API
+// routes are emitted as Vercel Functions instead of a Cloudflare bundle.
+const isVercel = !!process.env.VERCEL;
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-    // nitro/vite builds from this
     server: { entry: "server" },
   },
+  nitro: isVercel ? { preset: "vercel" } : undefined,
   vite: {
     plugins: [stripTanStackSourceMarkers()],
   },
