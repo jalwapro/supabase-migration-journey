@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Room, RoomEvent, Track, type RemoteParticipant, type RemoteTrack } from "livekit-client";
+import { Room, RoomEvent, Track, type RemoteParticipant, type RemoteTrack, type RemoteTrackPublication } from "livekit-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/test-livekit")({ component: LiveKitDiagnosticPage });
