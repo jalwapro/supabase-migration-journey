@@ -114,8 +114,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         if (!api) return json({ error: "LiveKit is not configured on the server" }, 503);
 
         try {
-          const participant = await api.room.updateParticipant(livekitRoom, participantIdentity, {
-            permission: {
+          const participant = await api.room.updateParticipant(livekitRoom, participantIdentity, undefined, {
               canPublish,
               canSubscribe: true,
               canPublishData: true,

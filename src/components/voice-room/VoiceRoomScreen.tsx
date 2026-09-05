@@ -329,7 +329,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       {showMiniInputPopup && (
         <div className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/30 backdrop-blur-md animate-fade-in p-0" onClick={() => setShowMiniInputPopup(false)}>
           <div className="w-full max-w-[480px] bg-[#120a1f]/90 border-t p-2.5 rounded-t-2xl shadow-2xl flex items-center gap-2 animate-slide-up backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }} onClick={e => e.stopPropagation()}>
-            <input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="url" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none" style={{ focusBorderColor: primaryThemeColor }} />
+            <input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="url" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none" style={{ borderColor: primaryThemeColor }} />
             <button type="button" onClick={async () => { if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); }} className="px-4 py-2 rounded-xl text-white font-extrabold text-xs shadow-lg active:scale-95 transition" style={{ background: `linear-gradient(90deg, ${primaryThemeColor}, ${accentThemeColor})` }}>Send</button>
           </div>
         </div>
@@ -398,7 +398,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
 
       {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={slug => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
       {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
-      {selectedMember && <VoiceRoomMemberSheet member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
+      {selectedMember && <VoiceRoomMemberSheet roomId={roomId} member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
       {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} speakerMuted={speakerMuted} onToggleSpeaker={onToggleSpeaker} />}
       {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} />}
     </main>
