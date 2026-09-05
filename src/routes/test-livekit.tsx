@@ -124,7 +124,7 @@ function LiveKitDiagnosticPage() {
         setRemoteAudioTracks(audioCount);
       };
 
-      const attachAudio = (track: RemoteTrack, participant: RemoteParticipant) => {
+      const attachAudio = (track: RemoteTrack, _pub: RemoteTrackPublication, participant: RemoteParticipant) => {
         if (track.kind !== Track.Kind.Audio) return;
         const el = track.attach() as HTMLAudioElement;
         el.autoplay = true;
@@ -139,7 +139,7 @@ function LiveKitDiagnosticPage() {
         refreshParticipants();
       };
 
-      const detachAudio = (track: RemoteTrack) => {
+      const detachAudio = (track: RemoteTrack, _pub?: RemoteTrackPublication, _p?: RemoteParticipant) => {
         if (track.kind !== Track.Kind.Audio) return;
         track.detach().forEach((el) => {
           audioElsRef.current.delete(el as HTMLAudioElement);
