@@ -74,6 +74,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const publishRef = useRef(publish);
   const videoRef = useRef(video);
   const speakerMutedRef = useRef(false);
+  const speakerVolumeRef = useRef(100);
   publishRef.current = publish;
   videoRef.current = video;
 
@@ -82,6 +83,11 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
   const [muted, setMuted] = useState(!publish);
   const [speakerMuted, setSpeakerMuted] = useState(false);
+  const [speakerVolume, setSpeakerVolumeState] = useState(100);
+  const [micLevel, setMicLevel] = useState(0);
+  const [audioOutputs, setAudioOutputs] = useState<{ deviceId: string; label: string }[]>([]);
+  const [audioOutputId, setAudioOutputId] = useState<string>("");
+  const [musicVolume, setMusicVolumeState] = useState(80);
   const [videoOn, setVideoOn] = useState(false);
   const [micBlocked, setMicBlocked] = useState(false);
   const [micError, setMicError] = useState<string | null>(null);
@@ -119,7 +125,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         const audioTrack = a?.track ? audioFacade(a.track) : undefined;
         const videoTrack = v?.track ? videoFacade(v.track) : undefined;
         if (audioTrack) {
-          audioTrack.setVolume(speakerMutedRef.current ? 0 : 100);
+          audioTrack.setVolume(speakerMutedRef.current ? 0 : speakerVolumeRef.current);
           audioTrack.play();
         }
         const next = new Map(cur);
@@ -231,8 +237,69 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
   useEffect(() => {
     speakerMutedRef.current = speakerMuted;
-    remotes.forEach((r) => r.audioTrack?.setVolume(speakerMuted ? 0 : 100));
-  }, [speakerMuted, remotes]);
+    speakerVolumeRef.current = speakerVolume;
+    const level = speakerMuted ? 0 : speakerVolume;
+    remotes.forEach((r) => r.audioTrack?.setVolume(level));
+  }, [speakerMuted, speakerVolume, remotes]);
+
+  /** Master output volume 0-100 (independent of the deafen toggle). */
+  const setSpeakerVolume = useCallback((v: number) => {
+    const next = Math.max(0, Math.min(100, Math.round(v)));
+    speakerVolumeRef.current = next;
+    setSpeakerVolumeState(next);
+  }, []);
+
+  /** Enumerate speakers / earphones / bluetooth outputs when supported. */
+  const refreshAudioOutputs = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      setAudioOutputs(devices.filter((d) => d.kind === "audiooutput").map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Output ${i + 1}` })));
+    } catch { /* permission not granted yet */ }
+  }, []);
+
+  useEffect(() => {
+    if (status !== "connected") return;
+    void refreshAudioOutputs();
+    const md = navigator.mediaDevices;
+    if (!md?.addEventListener) return;
+    const onChange = () => void refreshAudioOutputs();
+    md.addEventListener("devicechange", onChange);
+    return () => md.removeEventListener("devicechange", onChange);
+  }, [status, refreshAudioOutputs]);
+
+  const setAudioOutput = useCallback(async (deviceId: string) => {
+    preferredSinkId = deviceId || null;
+    setAudioOutputId(deviceId);
+    await Promise.all(Array.from(remoteAudioEls).map((el) => applySink(el)));
+  }, []);
+
+  // Live microphone input level for the waveform / meter UI.
+  useEffect(() => {
+    if (muted || status !== "connected") { setMicLevel(0); return; }
+    const room = roomRef.current;
+    const mediaTrack = (room?.localParticipant.getTrackPublication(Track.Source.Microphone)?.track as LocalAudioTrack | undefined)?.mediaStreamTrack;
+    if (!mediaTrack) return;
+    let raf = 0;
+    let ctx: AudioContext | null = null;
+    try {
+      ctx = new AudioContext();
+      const source = ctx.createMediaStreamSource(new MediaStream([mediaTrack]));
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512;
+      source.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let sum = 0;
+        for (let i = 0; i < data.length; i++) { const v = (data[i] - 128) / 128; sum += v * v; }
+        setMicLevel(Math.min(1, Math.sqrt(sum / data.length) * 3));
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    } catch { /* analyser unsupported */ }
+    return () => { cancelAnimationFrame(raf); setMicLevel(0); void ctx?.close().catch(() => undefined); };
+  }, [muted, status]);
 
   const toggleMute = useCallback(async () => { const room = roomRef.current; if (!room || room.state !== "connected") return; try { const enable = muted; await room.localParticipant.setMicrophoneEnabled(enable); setMuted(!enable); setMicBlocked(false); setMicError(null); } catch (e) { setMicBlocked(true); setMicError(e instanceof Error ? e.message : "Microphone permission denied"); } }, [muted]);
   const toggleVideo = useCallback(async (_pipeline?: unknown) => { const room = roomRef.current; if (!room || room.state !== "connected") return; try { const enable = !videoOn; await room.localParticipant.setCameraEnabled(enable); setVideoOn(enable); const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); setLocalVideoTrack(enable && pub?.track ? videoFacade(pub.track) : null); } catch (e) { setError(e instanceof Error ? e.message : "Camera failed"); } }, [videoOn]);
@@ -283,8 +350,9 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     }
     musicOffsetRef.current = 0;
     startMusicSource(0);
+    if (musicGainRef.current) musicGainRef.current.gain.value = musicVolume / 100;
     setMusicTitle(title); setMusicPlaying(true);
-  }, [startMusicSource]);
+  }, [startMusicSource, musicVolume]);
 
   const pauseMusic = useCallback(() => {
     const ctx = musicCtxRef.current;
@@ -315,8 +383,22 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   }, []);
 
   const setMusicVolume = useCallback((v: number) => {
-    if (musicGainRef.current) musicGainRef.current.gain.value = Math.max(0, Math.min(1, v / 100));
+    const next = Math.max(0, Math.min(100, Math.round(v)));
+    setMusicVolumeState(next);
+    if (musicGainRef.current) musicGainRef.current.gain.value = next / 100;
   }, []);
 
-  return { status, error, remotes, speakingUids, localAudioTrack, requestMic, musicPlaying, musicTitle, playMusicFile, pauseMusic, resumeMusic, stopMusic, setMusicVolume, muted, speakerMuted, videoOn, micBlocked, micError, localVideoTrack, localAudioPublished: { current: !muted }, toggleMute, toggleSpeaker, toggleVideo, disconnect };
+  // Release music graph + audio elements when the hook unmounts.
+  useEffect(() => () => {
+    musicSourceRef.current?.stop();
+    musicSourceRef.current = null;
+    musicTrackRef.current?.stop();
+    musicTrackRef.current = null;
+    void musicCtxRef.current?.close().catch(() => undefined);
+    musicCtxRef.current = null;
+    remoteAudioEls.forEach((el) => { el.pause(); el.remove(); });
+    remoteAudioEls.clear();
+  }, []);
+
+  return { status, error, remotes, speakingUids, localAudioTrack, requestMic, micLevel, speakerVolume, setSpeakerVolume, audioOutputs, audioOutputId, setAudioOutput, refreshAudioOutputs, musicVolume, musicPlaying, musicTitle, playMusicFile, pauseMusic, resumeMusic, stopMusic, setMusicVolume, muted, speakerMuted, videoOn, micBlocked, micError, localVideoTrack, localAudioPublished: { current: !muted }, toggleMute, toggleSpeaker, toggleVideo, disconnect };
 }
