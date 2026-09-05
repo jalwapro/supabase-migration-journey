@@ -104,9 +104,9 @@ export const Route = createFileRoute("/api/vm-stats")({
         try {
           const api = getLiveKitApi();
           if (!api) throw new Error("LiveKit server credentials are not configured");
-          const result = await api.room.listRooms();
-          livekit.activeRooms = result.rooms.length;
-          livekit.activeParticipants = result.rooms.reduce((sum, room) => sum + Number(room.numParticipants ?? 0), 0);
+          const rooms = await api.room.listRooms();
+          livekit.activeRooms = rooms.length;
+          livekit.activeParticipants = rooms.reduce((sum: number, room) => sum + Number(room.numParticipants ?? 0), 0);
         } catch (error) {
           livekit.error = error instanceof Error ? error.message : "LiveKit room stats unavailable";
         }

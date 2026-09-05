@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Room, RoomEvent, Track, type RemoteParticipant, type RemoteTrack } from "livekit-client";
+import { Room, RoomEvent, Track, type RemoteParticipant, type RemoteTrack, type RemoteTrackPublication } from "livekit-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/test-livekit")({ component: LiveKitDiagnosticPage });
@@ -124,7 +124,7 @@ function LiveKitDiagnosticPage() {
         setRemoteAudioTracks(audioCount);
       };
 
-      const attachAudio = (track: RemoteTrack, participant: RemoteParticipant) => {
+      const attachAudio = (track: RemoteTrack, _pub: RemoteTrackPublication, participant: RemoteParticipant) => {
         if (track.kind !== Track.Kind.Audio) return;
         const el = track.attach() as HTMLAudioElement;
         el.autoplay = true;
@@ -139,7 +139,7 @@ function LiveKitDiagnosticPage() {
         refreshParticipants();
       };
 
-      const detachAudio = (track: RemoteTrack) => {
+      const detachAudio = (track: RemoteTrack, _pub?: RemoteTrackPublication, _p?: RemoteParticipant) => {
         if (track.kind !== Track.Kind.Audio) return;
         track.detach().forEach((el) => {
           audioElsRef.current.delete(el as HTMLAudioElement);

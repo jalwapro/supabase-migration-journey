@@ -18,7 +18,7 @@ export function StudioAssetManager() {
 
   const refresh = async () => { try { setAssets(await listStudioAssets()); } catch (e) { toast.error(e instanceof Error ? e.message : "Unable to load assets"); } };
   useEffect(() => { void refresh(); }, []);
-  const filtered = useMemo(() => filterAssets(assets.map(a => ({ ...a, kind: a.type === "font" ? "font" : (a.type as AssetKind) })) as StudioAsset[], query, kind), [assets, query, kind]);
+  const filtered = useMemo(() => filterAssets(assets.map(a => ({ ...a, kind: a.type === "font" ? "font" : (a.type as AssetKind) })), query, kind) as unknown as StudioAsset[], [assets, query, kind]);
 
   const upload = async (files: FileList | null) => { if (!files?.length) return; setBusy(true); try { for (const file of Array.from(files)) { const isFont = file.type.startsWith("font/") || /\.(woff2?|ttf|otf)$/i.test(file.name); await uploadStudioAsset(file, isFont ? "fonts" : "images"); } await refresh(); toast.success(`${files.length} asset${files.length > 1 ? "s" : ""} uploaded`); } catch (e) { toast.error(e instanceof Error ? e.message : "Upload failed"); } finally { setBusy(false); } };
   const remove = async (asset: StudioAsset) => { if (!window.confirm(`Delete ${asset.name}?`)) return; try { await deleteStudioAsset(asset); setAssets(x => x.filter(a => a.id !== asset.id)); toast.success("Asset deleted"); } catch (e) { toast.error(e instanceof Error ? e.message : "Delete failed"); } };
