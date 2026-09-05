@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { jwtVerify } from "jose";
 import { AccessToken } from "livekit-server-sdk";
 
 const cors = {
@@ -24,16 +23,10 @@ function serviceKey() {
 }
 
 async function verifyBearer(token: string): Promise<string | null> {
-  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SB_JWT_SECRET || process.env.JWT_SECRET;
-  if (secret) {
-    try {
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
-      return typeof payload.sub === "string" && (!payload.role || payload.role === "authenticated") ? payload.sub : null;
-    } catch {
-      return null;
-    }
-  }
-
+  // Always validate the access token through Supabase itself. A locally
+  // configured SUPABASE_JWT_SECRET can become stale after a Supabase key/JWT
+  // rotation; treating that failed local verification as an anonymous user
+  // silently removes the host's LiveKit canPublish grant.
   const key = serviceKey();
   if (!key) return null;
   const { createClient } = await import("@supabase/supabase-js");
