@@ -10,22 +10,22 @@ import {
 } from "@/hooks/useLiveKitRoom";
 
 // Backward-compatible module name for existing room UI imports.
-// The RTC implementation is entirely LiveKit; this wrapper adds the
-// server-side permission transition needed when a listener takes/releases
-// an active seat without reconnecting the WebRTC room.
+// The RTC implementation is entirely LiveKit. This wrapper owns the
+// server-side permission transition when a listener takes/releases a seat.
 export function useZegoRoom(args: UseLiveKitRoomArgs) {
-  const livekit = useLiveKitRoom(args);
+  // IMPORTANT: do not let useLiveKitRoom publish immediately when a seat is
+  // acquired. The database seat update and LiveKit participant permission
+  // update are asynchronous. Passing publish=false keeps the local media
+  // layer quiet until /api/livekit-permissions has actually granted publish.
+  // This removes the "first mic tap fails, second tap works" race.
+  const livekit = useLiveKitRoom({ ...args, publish: false });
   const previousPublishRef = useRef<boolean | null>(null);
 
   useEffect(() => {
     if (livekit.status !== "connected" || !args.channel || args.uid == null) return;
-    if (previousPublishRef.current === null) {
-      previousPublishRef.current = args.publish;
-      return;
-    }
     if (previousPublishRef.current === args.publish) return;
-
     previousPublishRef.current = args.publish;
+
     let cancelled = false;
 
     const sync = async () => {
@@ -47,26 +47,24 @@ export function useZegoRoom(args: UseLiveKitRoomArgs) {
           throw new Error(body.error ?? "LiveKit permission update failed");
         }
 
-        if (args.publish && !cancelled) {
-          // LiveKit's server-side participant permission update is applied
-          // asynchronously. A single immediate publish attempt can therefore
-          // race the permission propagation and leave the seat mic disabled.
-          // Retry the local publication briefly until the updated permission
-          // is visible to the LiveKit participant. This is automatic: the user
-          // never needs to tap the mic a second time.
-          let lastError = "Microphone could not be enabled";
-          for (let attempt = 0; attempt < 6 && !cancelled; attempt += 1) {
-            const result = await livekit.requestMic();
-            if (result.ok) return;
-            lastError = result.error ?? lastError;
-            if (attempt < 5) {
-              await new Promise<void>((resolve) => setTimeout(resolve, 200));
-            }
+        if (!args.publish || cancelled) return;
+
+        // LiveKit applies updateParticipant asynchronously. Keep trying the
+        // local publication for a few seconds so a seat never requires a
+        // second manual mic tap. Browser permission is requested by the first
+        // successful attempt and is not repeatedly requested by LiveKit.
+        let lastError = "Microphone could not be enabled";
+        for (let attempt = 0; attempt < 16 && !cancelled; attempt += 1) {
+          const result = await livekit.requestMic();
+          if (result.ok) return;
+          lastError = result.error ?? lastError;
+          if (attempt < 15) {
+            await new Promise<void>((resolve) => setTimeout(resolve, 200));
           }
-          if (!cancelled) throw new Error(lastError);
         }
+        if (!cancelled) throw new Error(lastError);
       } catch (error) {
-        if (!cancelled) console.warn("[LiveKit] dynamic participant permission sync failed", error);
+        if (!cancelled) console.warn("[LiveKit] participant permission sync failed", error);
       }
     };
 
