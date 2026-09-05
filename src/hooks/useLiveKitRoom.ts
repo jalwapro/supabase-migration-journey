@@ -28,6 +28,16 @@ function videoFacade(track: AnyTrack): RemoteVideoTrack {
   };
 }
 
+/** Every attached remote audio element, so master volume / output device changes hit all of them. */
+const remoteAudioEls = new Set<HTMLAudioElement>();
+let preferredSinkId: string | null = null;
+
+async function applySink(el: HTMLAudioElement) {
+  const anyEl = el as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
+  if (!preferredSinkId || typeof anyEl.setSinkId !== "function") return;
+  try { await anyEl.setSinkId(preferredSinkId); } catch { /* device gone or unsupported */ }
+}
+
 function audioFacade(track: AnyTrack): RemoteAudioTrack {
   let elements: HTMLMediaElement[] = [];
   let volume = 1;
@@ -49,11 +59,13 @@ function audioFacade(track: AnyTrack): RemoteAudioTrack {
         a.volume = volume;
         a.style.display = "none";
         document.body.appendChild(a);
+        remoteAudioEls.add(a);
+        void applySink(a);
         void a.play().catch(() => undefined);
         return a;
       });
     },
-    stop() { track.detach(); elements.forEach((el) => el.remove()); elements = []; },
+    stop() { track.detach(); elements.forEach((el) => { remoteAudioEls.delete(el as HTMLAudioElement); el.remove(); }); elements = []; },
   };
 }
 
