@@ -48,8 +48,22 @@ export function useZegoRoom(args: UseLiveKitRoomArgs) {
         }
 
         if (args.publish && !cancelled) {
-          const result = await livekit.requestMic();
-          if (!result.ok) throw new Error(result.error ?? "Microphone could not be enabled");
+          // LiveKit's server-side participant permission update is applied
+          // asynchronously. A single immediate publish attempt can therefore
+          // race the permission propagation and leave the seat mic disabled.
+          // Retry the local publication briefly until the updated permission
+          // is visible to the LiveKit participant. This is automatic: the user
+          // never needs to tap the mic a second time.
+          let lastError = "Microphone could not be enabled";
+          for (let attempt = 0; attempt < 6 && !cancelled; attempt += 1) {
+            const result = await livekit.requestMic();
+            if (result.ok) return;
+            lastError = result.error ?? lastError;
+            if (attempt < 5) {
+              await new Promise<void>((resolve) => setTimeout(resolve, 200));
+            }
+          }
+          if (!cancelled) throw new Error(lastError);
         }
       } catch (error) {
         if (!cancelled) console.warn("[LiveKit] dynamic participant permission sync failed", error);
