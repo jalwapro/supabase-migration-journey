@@ -31,6 +31,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
+import { Route as ApiVmStatsRouteImport } from './routes/api/vm-stats'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
 import { Route as ApiRtcVerifyRouteImport } from './routes/api/rtc-verify'
 import { Route as ApiRtcUsageRouteImport } from './routes/api/rtc-usage'
@@ -38,6 +39,7 @@ import { Route as ApiRtcStatusRouteImport } from './routes/api/rtc-status'
 import { Route as ApiR2SignRouteImport } from './routes/api/r2-sign'
 import { Route as ApiLivekitTokenRouteImport } from './routes/api/livekit-token'
 import { Route as ApiLivekitRoomRouteImport } from './routes/api/livekit-room'
+import { Route as ApiLivekitPermissionsRouteImport } from './routes/api/livekit-permissions'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
@@ -76,6 +78,7 @@ import { Route as AuthenticatedGamesLuckySpinRouteImport } from './routes/_authe
 import { Route as AuthenticatedGamesLeaderboardRouteImport } from './routes/_authenticated/games.leaderboard'
 import { Route as AuthenticatedGamesDailySpinRouteImport } from './routes/_authenticated/games.daily-spin'
 import { Route as AuthenticatedAdminWithdrawalsRouteImport } from './routes/_authenticated/admin.withdrawals'
+import { Route as AuthenticatedAdminVmServerRouteImport } from './routes/_authenticated/admin.vm-server'
 import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authenticated/admin.vip-levels'
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
@@ -240,6 +243,11 @@ const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
   path: '/api/zego-token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiVmStatsRoute = ApiVmStatsRouteImport.update({
+  id: '/api/vm-stats',
+  path: '/api/vm-stats',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
   id: '/api/send-email',
   path: '/api/send-email',
@@ -273,6 +281,11 @@ const ApiLivekitTokenRoute = ApiLivekitTokenRouteImport.update({
 const ApiLivekitRoomRoute = ApiLivekitRoomRouteImport.update({
   id: '/api/livekit-room',
   path: '/api/livekit-room',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLivekitPermissionsRoute = ApiLivekitPermissionsRouteImport.update({
+  id: '/api/livekit-permissions',
+  path: '/api/livekit-permissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -474,6 +487,12 @@ const AuthenticatedAdminWithdrawalsRoute =
   AuthenticatedAdminWithdrawalsRouteImport.update({
     id: '/withdrawals',
     path: '/withdrawals',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminVmServerRoute =
+  AuthenticatedAdminVmServerRouteImport.update({
+    id: '/vm-server',
+    path: '/vm-server',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminVipLevelsRoute =
@@ -834,6 +853,7 @@ export interface FileRoutesByFullPath {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
   '/api/livekit-room': typeof ApiLivekitRoomRoute
   '/api/livekit-token': typeof ApiLivekitTokenRoute
   '/api/r2-sign': typeof ApiR2SignRoute
@@ -841,6 +861,7 @@ export interface FileRoutesByFullPath {
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -897,6 +918,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
+  '/admin/vm-server': typeof AuthenticatedAdminVmServerRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
@@ -954,6 +976,7 @@ export interface FileRoutesByTo {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
   '/api/livekit-room': typeof ApiLivekitRoomRoute
   '/api/livekit-token': typeof ApiLivekitTokenRoute
   '/api/r2-sign': typeof ApiR2SignRoute
@@ -961,6 +984,7 @@ export interface FileRoutesByTo {
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -1017,6 +1041,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
   '/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
+  '/admin/vm-server': typeof AuthenticatedAdminVmServerRoute
   '/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
@@ -1078,6 +1103,7 @@ export interface FileRoutesById {
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
   '/api/livekit-room': typeof ApiLivekitRoomRoute
   '/api/livekit-token': typeof ApiLivekitTokenRoute
   '/api/r2-sign': typeof ApiR2SignRoute
@@ -1085,6 +1111,7 @@ export interface FileRoutesById {
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
@@ -1141,6 +1168,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
   '/_authenticated/admin/vip-levels': typeof AuthenticatedAdminVipLevelsRoute
+  '/_authenticated/admin/vm-server': typeof AuthenticatedAdminVmServerRoute
   '/_authenticated/admin/withdrawals': typeof AuthenticatedAdminWithdrawalsRoute
   '/_authenticated/games/daily-spin': typeof AuthenticatedGamesDailySpinRoute
   '/_authenticated/games/leaderboard': typeof AuthenticatedGamesLeaderboardRoute
@@ -1202,6 +1230,7 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/livekit-permissions'
     | '/api/livekit-room'
     | '/api/livekit-token'
     | '/api/r2-sign'
@@ -1209,6 +1238,7 @@ export interface FileRouteTypes {
     | '/api/rtc-usage'
     | '/api/rtc-verify'
     | '/api/send-email'
+    | '/api/vm-stats'
     | '/api/zego-token'
     | '/messages/$peerId'
     | '/room/$roomId'
@@ -1265,6 +1295,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/vip'
     | '/admin/vip-levels'
+    | '/admin/vm-server'
     | '/admin/withdrawals'
     | '/games/daily-spin'
     | '/games/leaderboard'
@@ -1322,6 +1353,7 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/livekit-permissions'
     | '/api/livekit-room'
     | '/api/livekit-token'
     | '/api/r2-sign'
@@ -1329,6 +1361,7 @@ export interface FileRouteTypes {
     | '/api/rtc-usage'
     | '/api/rtc-verify'
     | '/api/send-email'
+    | '/api/vm-stats'
     | '/api/zego-token'
     | '/messages/$peerId'
     | '/room/$roomId'
@@ -1385,6 +1418,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/admin/vip'
     | '/admin/vip-levels'
+    | '/admin/vm-server'
     | '/admin/withdrawals'
     | '/games/daily-spin'
     | '/games/leaderboard'
@@ -1445,6 +1479,7 @@ export interface FileRouteTypes {
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
+    | '/api/livekit-permissions'
     | '/api/livekit-room'
     | '/api/livekit-token'
     | '/api/r2-sign'
@@ -1452,6 +1487,7 @@ export interface FileRouteTypes {
     | '/api/rtc-usage'
     | '/api/rtc-verify'
     | '/api/send-email'
+    | '/api/vm-stats'
     | '/api/zego-token'
     | '/messages_/$peerId'
     | '/room/$roomId'
@@ -1508,6 +1544,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/users'
     | '/_authenticated/admin/vip'
     | '/_authenticated/admin/vip-levels'
+    | '/_authenticated/admin/vm-server'
     | '/_authenticated/admin/withdrawals'
     | '/_authenticated/games/daily-spin'
     | '/_authenticated/games/leaderboard'
@@ -1544,6 +1581,7 @@ export interface RootRouteChildren {
   SvgaPreviewRoute: typeof SvgaPreviewRoute
   TestLivekitRoute: typeof TestLivekitRoute
   VoiceRoomRedesignRoute: typeof VoiceRoomRedesignRoute
+  ApiLivekitPermissionsRoute: typeof ApiLivekitPermissionsRoute
   ApiLivekitRoomRoute: typeof ApiLivekitRoomRoute
   ApiLivekitTokenRoute: typeof ApiLivekitTokenRoute
   ApiR2SignRoute: typeof ApiR2SignRoute
@@ -1551,6 +1589,7 @@ export interface RootRouteChildren {
   ApiRtcUsageRoute: typeof ApiRtcUsageRoute
   ApiRtcVerifyRoute: typeof ApiRtcVerifyRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
+  ApiVmStatsRoute: typeof ApiVmStatsRoute
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
@@ -1716,6 +1755,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiZegoTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/vm-stats': {
+      id: '/api/vm-stats'
+      path: '/api/vm-stats'
+      fullPath: '/api/vm-stats'
+      preLoaderRoute: typeof ApiVmStatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/send-email': {
       id: '/api/send-email'
       path: '/api/send-email'
@@ -1763,6 +1809,13 @@ declare module '@tanstack/react-router' {
       path: '/api/livekit-room'
       fullPath: '/api/livekit-room'
       preLoaderRoute: typeof ApiLivekitRoomRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/livekit-permissions': {
+      id: '/api/livekit-permissions'
+      path: '/api/livekit-permissions'
+      fullPath: '/api/livekit-permissions'
+      preLoaderRoute: typeof ApiLivekitPermissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -2029,6 +2082,13 @@ declare module '@tanstack/react-router' {
       path: '/withdrawals'
       fullPath: '/admin/withdrawals'
       preLoaderRoute: typeof AuthenticatedAdminWithdrawalsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/vm-server': {
+      id: '/_authenticated/admin/vm-server'
+      path: '/vm-server'
+      fullPath: '/admin/vm-server'
+      preLoaderRoute: typeof AuthenticatedAdminVmServerRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/vip-levels': {
@@ -2466,6 +2526,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
   AuthenticatedAdminVipLevelsRoute: typeof AuthenticatedAdminVipLevelsRoute
+  AuthenticatedAdminVmServerRoute: typeof AuthenticatedAdminVmServerRoute
   AuthenticatedAdminWithdrawalsRoute: typeof AuthenticatedAdminWithdrawalsRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -2532,6 +2593,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
   AuthenticatedAdminVipLevelsRoute: AuthenticatedAdminVipLevelsRoute,
+  AuthenticatedAdminVmServerRoute: AuthenticatedAdminVmServerRoute,
   AuthenticatedAdminWithdrawalsRoute: AuthenticatedAdminWithdrawalsRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
@@ -2644,6 +2706,7 @@ const rootRouteChildren: RootRouteChildren = {
   SvgaPreviewRoute: SvgaPreviewRoute,
   TestLivekitRoute: TestLivekitRoute,
   VoiceRoomRedesignRoute: VoiceRoomRedesignRoute,
+  ApiLivekitPermissionsRoute: ApiLivekitPermissionsRoute,
   ApiLivekitRoomRoute: ApiLivekitRoomRoute,
   ApiLivekitTokenRoute: ApiLivekitTokenRoute,
   ApiR2SignRoute: ApiR2SignRoute,
@@ -2651,6 +2714,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRtcUsageRoute: ApiRtcUsageRoute,
   ApiRtcVerifyRoute: ApiRtcVerifyRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
+  ApiVmStatsRoute: ApiVmStatsRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
