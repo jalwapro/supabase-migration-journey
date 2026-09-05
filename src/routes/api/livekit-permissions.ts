@@ -115,11 +115,10 @@ export const Route = createFileRoute("/api/livekit-permissions")({
 
         try {
           const participant = await api.room.updateParticipant(livekitRoom, participantIdentity, undefined, {
-              canPublish,
-              canSubscribe: true,
-              canPublishData: true,
-              roomAdmin: isHost,
-            },
+            canPublish,
+            canSubscribe: true,
+            canPublishData: true,
+            roomAdmin: isHost,
           });
 
           return json({
