@@ -118,7 +118,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
             canPublish,
             canSubscribe: true,
             canPublishData: true,
-            roomAdmin: isHost,
+            // roomAdmin is not part of ParticipantPermission in this SDK version
           });
 
           return json({
