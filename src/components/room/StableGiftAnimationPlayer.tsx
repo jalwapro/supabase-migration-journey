@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT_FIT, type GiftRenderConfig } from "@/lib/giftRender";
 import GiftGLVideo from "@/components/room/GiftGLVideo";
+import { giftAssetCandidates, giftAssetType } from "@/lib/giftAssetResolver";
 
 type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
@@ -12,15 +13,54 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [active, setActive] = useState<GiftRow | null>(null);
   const [localUserId, setLocalUserId] = useState<string | null>(null);
   const [mediaFailed, setMediaFailed] = useState(false);
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+  const [fallbackType, setFallbackType] = useState<"video" | "image" | null>(null);
   const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
   const finish = useCallback(() => { clearTimer(); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setActive(row); } }, []);
-  const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => { if (row.gift_render_config && typeof row.gift_render_config === "object") return row; if (!row.gift_id) return row; const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,emoji,sound_url").eq("id", row.gift_id).maybeSingle(); if (!data) return row; return { ...row, gift_render_config: (data as any).render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_sound_url: row.gift_sound_url ?? (data as any).sound_url ?? null }; }, []);
+  const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => { if (row.gift_render_config && typeof row.gift_render_config === "object" && (row.gift_clip_path || row.gift_image_url || row.gift_icon)) return row; if (!row.gift_id) return row; const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,emoji,sound_url,animation,duration_ms,loop").eq("id", row.gift_id).maybeSingle(); if (!data) return row; return { ...row, gift_render_config: (data as any).render_config ?? row.gift_render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_sound_url: row.gift_sound_url ?? (data as any).sound_url ?? null, gift_duration_ms: row.gift_duration_ms ?? (data as any).duration_ms ?? null, gift_loop: row.gift_loop ?? (data as any).loop ?? false }; }, []);
 
-  useEffect(() => { setMediaFailed(false); }, [active?.id]);
+  useEffect(() => {
+    let cancelled = false;
+    setMediaFailed(false); setFallbackSrc(null); setFallbackType(null);
+    if (!active) return;
+    const primary = assetUrl(active.gift_clip_path) ?? assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon);
+    if (primary) return;
+    const candidates = giftAssetCandidates(active.gift_name);
+    (async () => {
+      for (const candidate of candidates) {
+        try {
+          const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" });
+          if (response.ok && !cancelled) {
+            setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate));
+            return;
+          }
+        } catch {}
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_image_url, active?.gift_icon]);
 
-  // Voice-room global Escape/back handling. The room's existing popstate routing closes the active overlay.
+  // If the DB contains a stale/missing clip path, fall back to the repository
+  // asset with the same gift name instead of dropping straight to an emoji.
+  useEffect(() => {
+    if (!active || !mediaFailed) return;
+    let cancelled = false;
+    const candidates = giftAssetCandidates(active.gift_name);
+    (async () => {
+      for (const candidate of candidates) {
+        if (assetUrl(active.gift_clip_path) === candidate) continue;
+        try {
+          const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" });
+          if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); setMediaFailed(false); return; }
+        } catch {}
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [mediaFailed, active?.id, active?.gift_name, active?.gift_clip_path]);
+
+  // Voice-room global Escape/back handling.
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); window.dispatchEvent(new PopStateEvent("popstate")); } };
     window.addEventListener("keydown", handleKeyDown);
@@ -33,9 +73,20 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
   if (!active) return null;
-  const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const src = assetUrl(active.gift_clip_path); const image = assetUrl(active.gift_image_url ?? active.gift_icon); const fallbackImage = assetUrl(active.gift_icon); const video = isVideo(src, active.gift_clip_type); const stageStyle = renderConfigToStyle(cfg); const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {}; const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" "); const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop }; const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
+  const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
+  const primaryClip = assetUrl(active.gift_clip_path);
+  const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
+  const src = primaryClip ?? fallbackSrc;
+  const image = primaryImage;
+  const video = fallbackType === "video" && !primaryClip ? true : isVideo(src, active.gift_clip_type);
+  const fallbackImage = assetUrl(active.gift_icon);
+  const stageStyle = renderConfigToStyle(cfg);
+  const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
+  const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" ");
+  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop };
+  const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
   const handleDuration = (ms: number) => { clearTimer(); const naturalMs = ms > 0 ? ms : num(active.gift_duration_ms, 15000); const maxMs = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, naturalMs + cfg.holdMs); endTimerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + maxMs + 250); };
-  const handleMediaError = () => { if (video && fallbackImage && !mediaFailed) { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(finish, 5000); return; } finish(); };
-  const showImage = mediaFailed || !video;
-  return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>{showImage && (image || fallbackImage) ? <img src={image || fallbackImage || undefined} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={() => { if (fallbackImage && image !== fallbackImage && !mediaFailed) { setMediaFailed(true); return; } finish(); }} /> : video && src ? <GiftGLVideo key={active.id} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} /> : <div className="grid h-full w-full place-items-center text-[clamp(64px,22vw,180px)]">{active.gift_emoji || "🎁"}</div>}</div><div className="absolute left-4 top-16 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white">{active.sender_username || "User"} sent {active.gift_name || "Gift"}{num(active.quantity, 1) > 1 ? ` ×${active.quantity}` : ""}</div></div>);
+  const handleMediaError = () => { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(() => { if (!fallbackSrc) finish(); }, 7000); };
+  const showImage = !video || mediaFailed;
+  return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>{showImage && image ? <img src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={() => { if (fallbackImage && image !== fallbackImage) { setFallbackSrc(fallbackImage); setFallbackType("image"); setMediaFailed(false); return; } finish(); }} /> : video && src && !mediaFailed ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} /> : !showImage && (src || image) ? <img src={src || image || undefined} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={finish} /> : <div className="grid h-full w-full place-items-center text-[clamp(64px,22vw,180px)]">{active.gift_emoji || "🎁"}</div>}</div><div className="absolute left-4 top-16 rounded-full border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white">{active.sender_username || "User"} sent {active.gift_name || "Gift"}{num(active.quantity, 1) > 1 ? ` ×${active.quantity}` : ""}</div></div>);
 }
