@@ -29,15 +29,10 @@ export function ChatEmojiSheet({ open, onClose, onPick }: { open: boolean; onClo
   const [loading, setLoading] = useState(false);
   const [tier, setTier] = useState<"normal" | "vip">("normal");
   const isVip = isAdmin || (profile?.vip_level ?? 0) > 0;
-
-  // Voice Room has its own animated seat-to-seat emoji surface.
-  // Private/chat surfaces stay simple text emoji.
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/room/")) {
-    return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} />;
-  }
+  const isVoiceRoom = typeof window !== "undefined" && window.location.pathname.startsWith("/room/");
 
   useEffect(() => {
-    if (!open || list.length > 0) return;
+    if (isVoiceRoom || !open || list.length > 0) return;
     setLoading(true);
     void supabase
       .from("chat_emojis")
@@ -49,13 +44,14 @@ export function ChatEmojiSheet({ open, onClose, onPick }: { open: boolean; onClo
         setList((data ?? []) as ChatEmoji[]);
         setLoading(false);
       });
-  }, [open, list.length]);
+  }, [isVoiceRoom, open, list.length]);
 
   const filtered = useMemo(
     () => list.filter((e) => (tier === "normal" ? (e.tier ?? "normal") === "normal" : (e.tier ?? "normal") !== "normal")),
     [list, tier],
   );
 
+  if (isVoiceRoom) return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} />;
   if (!open) return null;
 
   return (
