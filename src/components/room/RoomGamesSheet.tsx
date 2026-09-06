@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { X, Sparkles, ArrowLeft, Loader2, AlertTriangle } from "lucide-react";
 import { useRoomGames, NATIVE_GAME_EMOJI, type RoomGame } from "@/lib/roomGames";
+import { NativeGamePopup } from "@/components/room/NativeGamePopup";
 
 /**
  * Voice Room Games popup.
@@ -28,9 +29,11 @@ export function RoomGamesSheet({
   };
 
   const pickGame = (game: RoomGame) => {
+    // Native games must stay inside the Games flow. Previously this closed the
+    // sheet and called an optional route callback that was no longer wired,
+    // so clicking a native game appeared to do nothing.
     if (game.kind === "native") {
-      close();
-      onOpenNative(game.slug);
+      setActiveGame(game);
       return;
     }
     if (game.game_url) setActiveGame(game);
@@ -140,6 +143,35 @@ function GameFrame({
 }) {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
+
+  if (game.kind === "native") {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="mb-2 flex shrink-0 items-center justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            aria-label="Back to games"
+            className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background/60"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <p className="truncate px-3 text-sm font-black">{game.name}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background/60"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="min-h-0 flex-1 overflow-auto rounded-2xl">
+          <NativeGamePopup slug={game.slug} onClose={onClose} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
