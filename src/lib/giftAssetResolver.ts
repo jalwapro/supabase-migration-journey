@@ -37,9 +37,10 @@ const dirs = [
   "luxury25/",
   "pack300/",
   "pack300/music/",
+  "svga/",
 ];
 
-const extensions = ["svg", "png", "webp", "mp4", "webm"];
+const extensions = ["svg", "svga", "png", "webp", "mp4", "webm", "mov"];
 
 export function giftAssetCandidates(name: string | null | undefined): string[] {
   if (!name) return [];
@@ -55,7 +56,9 @@ export function giftAssetCandidates(name: string | null | undefined): string[] {
   return [...new Set(candidates)];
 }
 
-export function giftAssetType(url: string): "video" | "image" {
+export function giftAssetType(url: string): "video" | "svga" | "image" {
   const clean = url.split("?")[0].split("#")[0].toLowerCase();
-  return /\.(mp4|webm|mov)$/.test(clean) ? "video" : "image";
+  if (/\.svga$/.test(clean)) return "svga";
+  if (/\.(mp4|webm|mov)$/.test(clean)) return "video";
+  return "image";
 }
