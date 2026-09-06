@@ -33,7 +33,10 @@ export function HostMusicPlayer({
   const [uploading, setUploading] = useState(false);
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [volume, setVolume] = useState(80);
+  const [hostControlOpen, setHostControlOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const visible = open || hostControlOpen;
 
   async function refresh() {
     setLoading(true);
@@ -52,6 +55,27 @@ export function HostMusicPlayer({
   useEffect(() => {
     controller.setMusicVolume(volume);
   }, [volume, controller]);
+
+  // HostRoomSettings historically did not receive the room-level music opener,
+  // so its Quick Actions > Music button could close the settings sheet without
+  // opening this player. Keep a small DOM bridge here as a backwards-compatible
+  // safety net: only a button named exactly "Music" inside the Host Controls
+  // panel can trigger it. The normal onOpenMusic prop path still works too.
+  useEffect(() => {
+    const handleHostMusicClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const button = target?.closest("button");
+      if (!button || button.textContent?.trim() !== "Music") return;
+      const panel = button.closest("section");
+      if (!panel) return;
+      const text = panel.textContent ?? "";
+      if (!text.includes("Host Controls & Settings") || !text.includes("Quick Actions")) return;
+      setHostControlOpen(true);
+    };
+
+    document.addEventListener("click", handleHostMusicClick, true);
+    return () => document.removeEventListener("click", handleHostMusicClick, true);
+  }, []);
 
   async function handleFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -107,17 +131,19 @@ export function HostMusicPlayer({
 
   const activeTitle = controller.musicTitle;
 
+  const close = () => {
+    setHostControlOpen(false);
+    onClose();
+  };
+
   return (
     <>
-      {/* Floating mini-player pill removed — music controls live inside More sheet */}
-
-
-      {open && (
+      {visible && (
         <>
-          <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+          <div data-jalwa-overlay="true" className="fixed inset-0 z-[2147483001] bg-black/60 backdrop-blur-sm" onClick={close} />
           <div
             data-jalwa-overlay-content="true"
-            className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
+            className="fixed bottom-0 left-1/2 z-[2147483002] flex w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl"
             style={{
               maxHeight: "85vh",
               paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)",
@@ -129,7 +155,7 @@ export function HostMusicPlayer({
                 <Music className="h-5 w-5 text-[color:var(--primary)]" /> My Music
               </h2>
               <button
-                onClick={onClose}
+                onClick={close}
                 aria-label="Close"
                 className="grid h-8 w-8 place-items-center rounded-full bg-background/60 border border-border"
               >
@@ -161,9 +187,7 @@ export function HostMusicPlayer({
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-bold">{activeTitle}</div>
-                  <div className="truncate text-[11px] text-[color:var(--gold)]">
-                    ● Broadcasting to room
-                  </div>
+                  <div className="truncate text-[11px] text-[color:var(--gold)]">● Broadcasting to room</div>
                 </div>
                 <button
                   onClick={handleToggle}
@@ -172,7 +196,7 @@ export function HostMusicPlayer({
                   {controller.musicPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </button>
                 <button
-                  onClick={handleStop}
+                  onClick={() => void handleStop()}
                   aria-label="Stop"
                   className="grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-white/10 text-white"
                 >
@@ -198,16 +222,12 @@ export function HostMusicPlayer({
 
             <div className="flex-1 overflow-y-auto">
               <div className="mb-2 flex items-center justify-between px-1">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Your Library
-                </div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Your Library</div>
                 <div className="text-[10px] text-muted-foreground">{songs.length} songs</div>
               </div>
 
               {loading ? (
-                <div className="py-10 text-center">
-                  <Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
+                <div className="py-10 text-center"><Loader2 className="mx-auto h-5 w-5 animate-spin text-muted-foreground" /></div>
               ) : songs.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border p-6 text-center">
                   <Music className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
@@ -223,11 +243,7 @@ export function HostMusicPlayer({
                     const isActive = currentId === s.id && !!activeTitle;
                     return (
                       <li key={s.id}>
-                        <div
-                          className={`flex items-center gap-3 rounded-xl p-2 transition ${
-                            isActive ? "bg-[color:var(--primary)]/20" : "hover:bg-white/5"
-                          }`}
-                        >
+                        <div className={`flex items-center gap-3 rounded-xl p-2 transition ${isActive ? "bg-[color:var(--primary)]/20" : "hover:bg-white/5"}`}>
                           <button
                             onClick={() => void handlePlay(s)}
                             className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-[color:var(--primary)] to-[color:var(--secondary)] text-white"
@@ -237,9 +253,7 @@ export function HostMusicPlayer({
                           </button>
                           <div className="min-w-0 flex-1">
                             <div className="truncate text-sm font-bold">{s.name}</div>
-                            <div className="truncate text-[10px] text-muted-foreground">
-                              {formatSize(s.size)}
-                            </div>
+                            <div className="truncate text-[10px] text-muted-foreground">{formatSize(s.size)}</div>
                           </div>
                           <button
                             onClick={() => void handleDelete(s.id)}
