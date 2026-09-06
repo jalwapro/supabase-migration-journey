@@ -42,11 +42,19 @@ async function adminClient(token: string) {
   const key = serviceKey();
   if (!key) return null;
   const { createClient } = await import("@supabase/supabase-js");
-  const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await sb.from("user_roles").select("role").eq("user_id", userId);
-  if (error) return null;
-  const isAdmin = (data ?? []).some((row) => row.role === "admin" || row.role === "super_admin");
-  return isAdmin ? sb : null;
+
+  // Keep the service key for secure server-side access, but forward the
+  // caller's JWT so SECURITY DEFINER admin checks can evaluate auth.uid().
+  const sb = createClient(supabaseUrl(), key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+
+  // Use the canonical DB-side admin check. This also preserves the project's
+  // configured super-admin email fallback when the user_roles row is missing.
+  const { data: isAdmin, error } = await sb.rpc("is_admin", { _user_id: userId });
+  if (error || isAdmin !== true) return null;
+  return sb;
 }
 
 function getLiveKitApi() {
@@ -79,7 +87,6 @@ export const Route = createFileRoute("/api/vm-stats")({
         const sb = await adminClient(token);
         if (!sb) return json({ error: "admin access required" }, 403);
 
-        // ── Oracle VM telemetry (optional: dashboard still works without it) ──
         const monitor = vmMonitorConfig();
         let vm: VmPayload = {};
         let vmStatus: "online" | "offline" | "not_configured" = "not_configured";
@@ -103,7 +110,6 @@ export const Route = createFileRoute("/api/vm-stats")({
           }
         }
 
-        // ── LiveKit media server status + live room breakdown ──
         const lk = getLiveKitApi();
         const livekit = {
           status: "not_configured" as "online" | "offline" | "not_configured",
@@ -147,7 +153,6 @@ export const Route = createFileRoute("/api/vm-stats")({
           }
         }
 
-        // ── App-level (database) room + user activity ──
         const app = { liveRooms: 0, seatedUsers: 0, roomMembers: 0, error: null as string | null };
         try {
           const [live, seated, members] = await Promise.all([
