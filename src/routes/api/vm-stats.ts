@@ -36,16 +36,17 @@ async function getUserId(token: string): Promise<string | null> {
   return error || !data.user ? null : data.user.id;
 }
 
-async function requireAdmin(token: string) {
+async function adminClient(token: string) {
   const userId = await getUserId(token);
-  if (!userId) return false;
+  if (!userId) return null;
   const key = serviceKey();
-  if (!key) return false;
+  if (!key) return null;
   const { createClient } = await import("@supabase/supabase-js");
   const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data, error } = await sb.from("user_roles").select("role").eq("user_id", userId);
-  if (error) return false;
-  return (data ?? []).some((row) => row.role === "admin" || row.role === "super_admin");
+  if (error) return null;
+  const isAdmin = (data ?? []).some((row) => row.role === "admin" || row.role === "super_admin");
+  return isAdmin ? sb : null;
 }
 
 function getLiveKitApi() {
@@ -54,7 +55,7 @@ function getLiveKitApi() {
   const apiSecret = process.env.LIVEKIT_API_SECRET;
   if (!wsUrl || !apiKey || !apiSecret) return null;
   const host = wsUrl.replace(/^wss:\/\//i, "https://").replace(/^ws:\/\//i, "http://").replace(/\/$/, "");
-  return new LiveKitAPI({ host, apiKey, secret: apiSecret });
+  return { api: new LiveKitAPI({ host, apiKey, secret: apiSecret }), host, wsUrl };
 }
 
 function vmMonitorConfig() {
@@ -63,52 +64,102 @@ function vmMonitorConfig() {
   return url && secret ? { url, secret } : null;
 }
 
+type VmPayload = {
+  server?: Record<string, unknown> & { cpuUsagePercent?: number; memoryUsagePercent?: number; diskUsagePercent?: number };
+  network?: Record<string, unknown>;
+  livekit?: { bandwidthMbps?: number; cpuUsagePercent?: number; metricsAvailable?: boolean };
+};
+
 export const Route = createFileRoute("/api/vm-stats")({
   server: {
     handlers: {
       GET: async ({ request }) => {
         const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
         if (!token) return json({ error: "authentication required" }, 401);
-        if (!(await requireAdmin(token))) return json({ error: "admin access required" }, 403);
+        const sb = await adminClient(token);
+        if (!sb) return json({ error: "admin access required" }, 403);
 
+        // ── Oracle VM telemetry (optional: dashboard still works without it) ──
         const monitor = vmMonitorConfig();
+        let vm: VmPayload = {};
+        let vmStatus: "online" | "offline" | "not_configured" = "not_configured";
+        let vmError: string | null = null;
+
         if (!monitor) {
-          return json({
-            error: "Oracle VM monitor is not configured",
-            detail: "Set ORACLE_VM_MONITOR_URL and ORACLE_VM_MONITOR_SECRET on the server.",
-          }, 503);
+          vmError = "Set ORACLE_VM_MONITOR_URL and ORACLE_VM_MONITOR_SECRET to stream CPU/RAM/disk metrics.";
+        } else {
+          try {
+            const response = await fetch(`${monitor.url}/stats`, {
+              headers: { Authorization: `Bearer ${monitor.secret}` },
+              signal: AbortSignal.timeout(4000),
+              cache: "no-store",
+            });
+            if (!response.ok) throw new Error(`VM monitor returned HTTP ${response.status}`);
+            vm = (await response.json()) as VmPayload;
+            vmStatus = "online";
+          } catch (error) {
+            vmStatus = "offline";
+            vmError = error instanceof Error ? error.message : "VM monitor unreachable";
+          }
         }
 
-        let vm: any;
-        try {
-          const response = await fetch(`${monitor.url}/stats`, {
-            headers: { Authorization: `Bearer ${monitor.secret}` },
-            signal: AbortSignal.timeout(4000),
-            cache: "no-store",
-          });
-          if (!response.ok) throw new Error(`VM monitor returned HTTP ${response.status}`);
-          vm = await response.json();
-        } catch (error) {
-          return json({ error: "Oracle VM monitor unreachable", detail: error instanceof Error ? error.message : "unknown error" }, 502);
-        }
-
+        // ── LiveKit media server status + live room breakdown ──
+        const lk = getLiveKitApi();
         const livekit = {
+          status: "not_configured" as "online" | "offline" | "not_configured",
+          url: lk?.wsUrl ?? null,
+          secure: lk ? /^wss:\/\//i.test(lk.wsUrl) : false,
+          latencyMs: null as number | null,
           activeRooms: 0,
           activeParticipants: 0,
-          bandwidthMbps: Number(vm.livekit?.bandwidthMbps ?? vm.network?.egressMbps ?? 0),
+          activePublishers: 0,
+          bandwidthMbps: Number(vm.livekit?.bandwidthMbps ?? (vm.network as { egressMbps?: number } | undefined)?.egressMbps ?? 0),
           cpuUsagePercent: Number(vm.livekit?.cpuUsagePercent ?? vm.server?.cpuUsagePercent ?? 0),
           metricsAvailable: Boolean(vm.livekit?.metricsAvailable),
           error: null as string | null,
+          rooms: [] as { name: string; participants: number; publishers: number; createdAt: string | null; activeRecording: boolean }[],
         };
 
+        if (!lk) {
+          livekit.error = "LIVEKIT_URL / LIVEKIT_API_KEY / LIVEKIT_API_SECRET are not configured.";
+        } else {
+          const started = Date.now();
+          try {
+            const rooms = await lk.api.room.listRooms();
+            livekit.latencyMs = Date.now() - started;
+            livekit.status = "online";
+            livekit.activeRooms = rooms.length;
+            livekit.activeParticipants = rooms.reduce((sum, room) => sum + Number(room.numParticipants ?? 0), 0);
+            livekit.activePublishers = rooms.reduce((sum, room) => sum + Number(room.numPublishers ?? 0), 0);
+            livekit.rooms = rooms
+              .map((room) => ({
+                name: String(room.name ?? ""),
+                participants: Number(room.numParticipants ?? 0),
+                publishers: Number(room.numPublishers ?? 0),
+                createdAt: room.creationTime ? new Date(Number(room.creationTime) * 1000).toISOString() : null,
+                activeRecording: Boolean(room.activeRecording),
+              }))
+              .sort((a, b) => b.participants - a.participants)
+              .slice(0, 50);
+          } catch (error) {
+            livekit.status = "offline";
+            livekit.error = error instanceof Error ? error.message : "LiveKit room stats unavailable";
+          }
+        }
+
+        // ── App-level (database) room + user activity ──
+        const app = { liveRooms: 0, seatedUsers: 0, roomMembers: 0, error: null as string | null };
         try {
-          const api = getLiveKitApi();
-          if (!api) throw new Error("LiveKit server credentials are not configured");
-          const rooms = await api.room.listRooms();
-          livekit.activeRooms = rooms.length;
-          livekit.activeParticipants = rooms.reduce((sum: number, room) => sum + Number(room.numParticipants ?? 0), 0);
+          const [live, seated, members] = await Promise.all([
+            sb.from("live_rooms").select("id", { count: "exact", head: true }).eq("status", "live"),
+            sb.from("room_members").select("id", { count: "exact", head: true }).not("seat_index", "is", null),
+            sb.from("room_members").select("id", { count: "exact", head: true }),
+          ]);
+          app.liveRooms = live.count ?? 0;
+          app.seatedUsers = seated.count ?? 0;
+          app.roomMembers = members.count ?? 0;
         } catch (error) {
-          livekit.error = error instanceof Error ? error.message : "LiveKit room stats unavailable";
+          app.error = error instanceof Error ? error.message : "App stats unavailable";
         }
 
         const cpu = Number(vm.server?.cpuUsagePercent ?? 0);
@@ -116,23 +167,34 @@ export const Route = createFileRoute("/api/vm-stats")({
         const disk = Number(vm.server?.diskUsagePercent ?? 0);
         const thresholds = { cpuWarn: 60, cpuCritical: 80, memoryWarn: 70, memoryCritical: 85, diskWarn: 80, diskCritical: 90 };
 
-        let statusColor = "green";
-        let recommendation = "Optimal: current VM headroom looks healthy for additional traffic.";
-        if (cpu >= thresholds.cpuCritical || memory >= thresholds.memoryCritical || disk >= thresholds.diskCritical) {
+        let statusColor: "green" | "yellow" | "red" = "green";
+        let recommendation = "Optimal: current headroom looks healthy for additional traffic.";
+        if (livekit.status === "offline") {
           statusColor = "red";
-          recommendation = "Upgrade recommended: sustained high resource usage leaves too little headroom for reliable peak traffic.";
+          recommendation = "LiveKit media server is not answering — voice rooms cannot connect until it is back online.";
+        } else if (cpu >= thresholds.cpuCritical || memory >= thresholds.memoryCritical || disk >= thresholds.diskCritical) {
+          statusColor = "red";
+          recommendation = "Upgrade recommended: sustained high resource usage leaves too little headroom for peak traffic.";
+        } else if (vmStatus === "offline") {
+          statusColor = "yellow";
+          recommendation = "LiveKit is live, but the VM metrics agent is unreachable — CPU/RAM/disk figures are stale.";
         } else if (cpu >= thresholds.cpuWarn || memory >= thresholds.memoryWarn || disk >= thresholds.diskWarn) {
           statusColor = "yellow";
-          recommendation = "Moderate load: the VM is usable, but monitor peak traffic and plan capacity before a major growth spike.";
+          recommendation = "Moderate load: usable, but plan capacity before a major growth spike.";
+        } else if (vmStatus === "not_configured") {
+          statusColor = "yellow";
+          recommendation = "LiveKit is reachable. Configure the VM monitor agent to also see CPU, RAM and disk load.";
         }
 
         return json({
+          vm: { status: vmStatus, error: vmError },
           server: {
-            ...vm.server,
-            loadAvg: vm.server?.loadAvg ?? null,
+            ...(vm.server ?? {}),
+            loadAvg: (vm.server as { loadAvg?: number[] } | undefined)?.loadAvg ?? null,
             network: vm.network ?? null,
           },
           livekit,
+          app,
           insights: {
             recommendation,
             statusColor,
