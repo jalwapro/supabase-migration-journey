@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { VoiceRoomAnimatedEmojiSheet } from "@/components/voice-room/VoiceRoomAnimatedEmojiSheet";
 
 export type ChatEmoji = {
   id: string;
@@ -28,6 +29,12 @@ export function ChatEmojiSheet({ open, onClose, onPick }: { open: boolean; onClo
   const [loading, setLoading] = useState(false);
   const [tier, setTier] = useState<"normal" | "vip">("normal");
   const isVip = isAdmin || (profile?.vip_level ?? 0) > 0;
+
+  // Voice Room has its own animated seat-to-seat emoji surface.
+  // Private/chat surfaces stay simple text emoji.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/room/")) {
+    return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} />;
+  }
 
   useEffect(() => {
     if (!open || list.length > 0) return;
