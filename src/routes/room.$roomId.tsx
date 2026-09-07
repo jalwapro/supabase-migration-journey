@@ -1955,7 +1955,7 @@ function RoomPage() {
         toast.error(result.error ?? agora.micError ?? "Microphone unavailable", {
           description: permissionIssue
             ? "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again."
-            : "Seat connect ho rahi hai — 1 second baad mic dobara tap karein.",
+            : "Mic abhi start nahi ho saka. Doosri audio app band karke mic dobara tap karein.",
           duration: 8000,
         });
         return;
