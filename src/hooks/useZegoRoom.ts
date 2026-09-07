@@ -7,11 +7,10 @@ const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89
 export function useZegoRoom(args: UseLiveKitRoomArgs) {
   const [canonicalRoomName, setCanonicalRoomName] = useState<string | null>(null);
 
-  // The LiveKit token endpoint accepts either the database room UUID or the
-  // rtc_channel, but LiveKit itself must be joined with the exact rtc_channel
-  // that is placed in the token grant. Resolve that canonical value before
-  // creating the LiveKit connection so the token and Room.connect() can never
-  // target different room names.
+  // Resolve the database room UUID to the exact rtc_channel before LiveKit
+  // creates its Room. The same canonical value is then used by the token API
+  // and Room.connect(), so the client cannot join one room while the token
+  // grants access to another.
   useEffect(() => {
     const requestedRoom = typeof args.channel === "string" ? args.channel.trim() : "";
     let cancelled = false;
@@ -71,10 +70,13 @@ export function useZegoRoom(args: UseLiveKitRoomArgs) {
           throw new Error(body.error ?? "LiveKit permission update failed");
         }
         if (!args.publish || cancelled) return;
-        for (let attempt = 0; attempt < 16 && !cancelled; attempt += 1) {
-          const result = await livekit.requestMic();
-          if (result.ok) return;
-          if (attempt < 15) await new Promise<void>((resolve) => setTimeout(resolve, 200));
+
+        // One clean microphone request only. The LiveKit room hook performs
+        // the actual operation with room.localParticipant.setMicrophoneEnabled
+        // and no retry/prewarming loop is used here.
+        const result = await livekit.requestMic();
+        if (!result.ok && !cancelled) {
+          console.warn("[LiveKit] microphone enable failed", result.error);
         }
       } catch (error) {
         if (!cancelled) console.warn("[LiveKit] participant permission sync failed", error);
