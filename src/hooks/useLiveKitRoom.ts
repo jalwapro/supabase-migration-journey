@@ -178,15 +178,19 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || !channel || uid == null) {
+    const roomName = typeof channel === "string" ? channel.trim() : "";
+
+    // Room data is loaded asynchronously. Do not create a LiveKit Room or
+    // request a token until the actual RTC channel is present and non-empty.
+    if (!enabled || !roomName || uid == null) {
       void disconnect();
       return;
     }
 
     const seq = ++joinSeqRef.current;
     let cancelled = false;
-    const room = new Room({ adaptiveStream: true, dynacast: true });
-    roomRef.current = room;
+    let room: Room | null = null;
+
     setStatus("connecting");
     setError(null);
 
@@ -221,30 +225,59 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     };
     const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((participant) => uidFromIdentity(participant.identity))));
 
-    room.on(RoomEvent.TrackSubscribed, onSub);
-    room.on(RoomEvent.TrackUnsubscribed, onUnsub);
-    room.on(RoomEvent.ParticipantConnected, refresh);
-    room.on(RoomEvent.ParticipantDisconnected, onDisc);
-    room.on(RoomEvent.ActiveSpeakersChanged, onSpeakers);
-    room.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
-
-    if (publishRef.current) void prewarmMic();
+    const attachListeners = (nextRoom: Room) => {
+      nextRoom.on(RoomEvent.TrackSubscribed, onSub);
+      nextRoom.on(RoomEvent.TrackUnsubscribed, onUnsub);
+      nextRoom.on(RoomEvent.ParticipantConnected, refresh);
+      nextRoom.on(RoomEvent.ParticipantDisconnected, onDisc);
+      nextRoom.on(RoomEvent.ActiveSpeakersChanged, onSpeakers);
+      nextRoom.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
+    };
 
     void (async () => {
       try {
+        // Explicitly finish any previous LiveKit session before creating a
+        // new one. This avoids duplicate-identity connect/disconnect races
+        // when roomId/rtc_channel changes while the page is mounting.
+        const previousRoom = roomRef.current;
+        if (previousRoom && previousRoom.state !== "disconnected") {
+          roomRef.current = null;
+          try { await previousRoom.disconnect(); } catch {}
+        }
+        if (cancelled || seq !== joinSeqRef.current) return;
+
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
         const userId = data.session?.user?.id;
         if (!token || !userId) throw new Error("Sign in first");
+        if (cancelled || seq !== joinSeqRef.current) return;
 
         const response = await fetch("/api/livekit-token", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ userId, roomName: channel, name: `Jalwa user ${uid}`, canPublish: publishRef.current }),
+          body: JSON.stringify({ userId, roomName, name: `Jalwa user ${uid}`, canPublish: publishRef.current }),
         });
-        const body = await response.json() as { server_url?: string; participant_token?: string; error?: string };
+        const body = await response.json() as { server_url?: string; participant_token?: string; room?: string; error?: string };
         if (!response.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed");
+
+        // The token endpoint is authoritative for the room. Refuse to connect
+        // if it did not return a valid room name, and never connect using the
+        // stale/empty client-side value.
+        const tokenRoomName = typeof body.room === "string" ? body.room.trim() : roomName;
+        if (!tokenRoomName) throw new Error("LiveKit room name missing");
+        if (tokenRoomName !== roomName) throw new Error("LiveKit room mismatch");
         if (cancelled || seq !== joinSeqRef.current) return;
+
+        room = new Room({ adaptiveStream: true, dynacast: true });
+        roomRef.current = room;
+        attachListeners(room);
+
+        if (publishRef.current) void prewarmMic();
+
+        if (cancelled || seq !== joinSeqRef.current) {
+          if (room.state !== "disconnected") await room.disconnect();
+          return;
+        }
 
         await room.connect(body.server_url, body.participant_token, { autoSubscribe: true });
         if (cancelled || seq !== joinSeqRef.current) {
@@ -257,29 +290,33 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         if (cancelled) return;
         setStatus("error");
         setError(joinError instanceof Error ? joinError.message : "LiveKit connection failed");
-        if (room.state !== "disconnected") await room.disconnect();
+        if (room && room.state !== "disconnected") await room.disconnect();
+        if (roomRef.current === room) roomRef.current = null;
       }
     })();
 
     return () => {
       cancelled = true;
-      room.off(RoomEvent.TrackSubscribed, onSub);
-      room.off(RoomEvent.TrackUnsubscribed, onUnsub);
-      room.off(RoomEvent.ParticipantConnected, refresh);
-      room.off(RoomEvent.ParticipantDisconnected, onDisc);
-      room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers);
+      if (room) {
+        room.off(RoomEvent.TrackSubscribed, onSub);
+        room.off(RoomEvent.TrackUnsubscribed, onUnsub);
+        room.off(RoomEvent.ParticipantConnected, refresh);
+        room.off(RoomEvent.ParticipantDisconnected, onDisc);
+        room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers);
+        if (room.state !== "disconnected") void room.disconnect();
+        if (roomRef.current === room) roomRef.current = null;
+      }
       setRemotes((current) => {
         current.forEach((remote) => remote.audioTrack?.stop());
         return new Map();
       });
-      if (room.state !== "disconnected") void room.disconnect();
-      if (roomRef.current === room) roomRef.current = null;
     };
   }, [channel, uid, enabled, disconnect, prewarmMic]);
 
   const ensurePublishGrant = useCallback(async () => {
     const room = roomRef.current;
-    if (!room || room.state !== "connected" || !channel) return false;
+    const roomName = typeof channel === "string" ? channel.trim() : "";
+    if (!room || room.state !== "connected" || !roomName) return false;
     if (room.localParticipant.permissions?.canPublish) return true;
     try {
       const { data } = await supabase.auth.getSession();
@@ -288,7 +325,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       const response = await fetch("/api/livekit-permissions", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ room: channel, canPublish: true }),
+        body: JSON.stringify({ room: roomName, canPublish: true }),
       });
       const body = await response.json().catch(() => ({})) as { canPublish?: boolean };
       if (!response.ok || body.canPublish !== true) return false;
