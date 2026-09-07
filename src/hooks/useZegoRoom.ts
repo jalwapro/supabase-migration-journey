@@ -1,18 +1,53 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveKitRoom, type RemoteVideoTrack, type RemoteAudioTrack, type RemoteUser, type LiveKitStatus, type UseLiveKitRoomArgs } from "@/hooks/useLiveKitRoom";
 
+const isUuid = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 export function useZegoRoom(args: UseLiveKitRoomArgs) {
-  // Keep the original publish intent for the initial LiveKit token. This is
-  // critical for the host: the host is already authorized when the room is
-  // created, so the initial token must contain canPublish=true. Seat users
-  // still get a safe retry path below when their permission changes after
-  // connecting.
-  const livekit = useLiveKitRoom(args);
+  const [canonicalRoomName, setCanonicalRoomName] = useState<string | null>(null);
+
+  // The LiveKit token endpoint accepts either the database room UUID or the
+  // rtc_channel, but LiveKit itself must be joined with the exact rtc_channel
+  // that is placed in the token grant. Resolve that canonical value before
+  // creating the LiveKit connection so the token and Room.connect() can never
+  // target different room names.
+  useEffect(() => {
+    const requestedRoom = typeof args.channel === "string" ? args.channel.trim() : "";
+    let cancelled = false;
+
+    setCanonicalRoomName(null);
+    if (!requestedRoom) return () => { cancelled = true; };
+
+    const loadCanonicalRoom = async () => {
+      try {
+        const query = isUuid(requestedRoom)
+          ? supabase.from("live_rooms").select("rtc_channel,status").eq("id", requestedRoom).maybeSingle()
+          : supabase.from("live_rooms").select("rtc_channel,status").eq("rtc_channel", requestedRoom).maybeSingle();
+        const { data, error } = await query;
+        if (cancelled) return;
+        if (error) {
+          console.warn("[LiveKit] canonical room lookup failed", error);
+          return;
+        }
+        if (data?.status !== "live") return;
+        const rtcChannel = typeof data.rtc_channel === "string" ? data.rtc_channel.trim() : "";
+        if (!rtcChannel) return;
+        setCanonicalRoomName(rtcChannel);
+      } catch (error) {
+        if (!cancelled) console.warn("[LiveKit] canonical room lookup failed", error);
+      }
+    };
+
+    void loadCanonicalRoom();
+    return () => { cancelled = true; };
+  }, [args.channel]);
+
+  const livekit = useLiveKitRoom({ ...args, channel: canonicalRoomName });
   const previousPublishRef = useRef<boolean | null>(null);
 
   useEffect(() => {
-    if (livekit.status !== "connected" || !args.channel || args.uid == null) return;
+    if (livekit.status !== "connected" || !canonicalRoomName || args.uid == null) return;
     if (previousPublishRef.current === null) {
       previousPublishRef.current = args.publish;
       return;
@@ -29,7 +64,7 @@ export function useZegoRoom(args: UseLiveKitRoomArgs) {
         const response = await fetch("/api/livekit-permissions", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ room: args.channel, canPublish: args.publish }),
+          body: JSON.stringify({ room: canonicalRoomName, canPublish: args.publish }),
         });
         const body = await response.json().catch(() => ({})) as { error?: string; canPublish?: boolean };
         if (!response.ok || body.canPublish !== args.publish) {
@@ -47,7 +82,7 @@ export function useZegoRoom(args: UseLiveKitRoomArgs) {
     };
     void sync();
     return () => { cancelled = true; };
-  }, [args.channel, args.uid, args.publish, livekit.status, livekit.requestMic]);
+  }, [canonicalRoomName, args.uid, args.publish, livekit.status, livekit.requestMic]);
 
   return livekit;
 }
