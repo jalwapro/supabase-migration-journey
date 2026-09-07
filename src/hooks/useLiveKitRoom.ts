@@ -64,6 +64,20 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const localAudioTrack = useRef<unknown>(null); const musicCtxRef = useRef<AudioContext | null>(null); const musicSourceRef = useRef<AudioBufferSourceNode | null>(null); const musicGainRef = useRef<GainNode | null>(null); const musicTrackRef = useRef<LocalAudioTrack | null>(null); const musicBufferRef = useRef<AudioBuffer | null>(null); const musicStartedAtRef = useRef(0); const musicOffsetRef = useRef(0);
   const [musicPlaying, setMusicPlaying] = useState(false); const [musicTitle, setMusicTitle] = useState<string | null>(null);
 
+  // Microphone permission + capture is requested as early as possible so that
+  // publishing on join is immediate rather than a visible pause.
+  const prewarmRef = useRef<Promise<MediaStreamTrack | null> | null>(null);
+  const prewarmMic = useCallback(() => {
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return Promise.resolve(null);
+    if (!prewarmRef.current) {
+      prewarmRef.current = navigator.mediaDevices
+        .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
+        .then((stream) => stream.getAudioTracks()[0] ?? null)
+        .catch(() => null);
+    }
+    return prewarmRef.current;
+  }, []);
+
   const disconnect = useCallback(async () => { const room = roomRef.current; roomRef.current = null; if (room && room.state !== "disconnected") await room.disconnect(); setRemotes(new Map()); setLocalVideoTrack(null); setVideoOn(false); setStatus(enabled ? "idle" : "disabled"); }, [enabled]);
 
   useEffect(() => {
