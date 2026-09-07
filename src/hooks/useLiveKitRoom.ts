@@ -149,9 +149,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
   useEffect(() => {
     const roomName = typeof channel === "string" ? channel.trim() : "";
-
-    // Room data is loaded asynchronously. Do not create a LiveKit Room or
-    // request a token until the actual RTC channel is present and non-empty.
     if (!enabled || !roomName || uid == null) {
       void disconnect();
       return;
@@ -242,7 +239,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         }
 
         await room.connect(body.server_url, body.participant_token, { autoSubscribe: true });
-        if (cancelled || seq !== joinSeqRefRef.current) {
+        if (cancelled || seq !== joinSeqRef.current) {
           if (room.state !== "disconnected") await room.disconnect();
           return;
         }
@@ -296,6 +293,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     }
     return new Promise<boolean>((resolve) => {
       if (room.localParticipant.permissions?.canPublish) return resolve(true);
+      let timer: ReturnType<typeof setTimeout>;
       const onChange = () => {
         if (room.localParticipant.permissions?.canPublish) {
           clearTimeout(timer);
@@ -303,22 +301,13 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
           resolve(true);
         }
       };
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         room.off(RoomEvent.ParticipantPermissionsChanged, onChange);
         resolve(room.localParticipant.permissions?.canPublish === true);
       }, 4000);
       room.on(RoomEvent.ParticipantPermissionsChanged, onChange);
     });
   }, [channel]);
-
-  const waitForConnected = useCallback(async (timeoutMs = 9000) => {
-    const deadline = Date.now() + timeoutMs;
-    while (Date.now() < deadline) {
-      if (roomRef.current?.state === "connected") return true;
-      await new Promise<void>((resolve) => setTimeout(resolve, 120));
-    }
-    return roomRef.current?.state === "connected";
-  }, []);
 
   const attemptMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
@@ -327,11 +316,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       const granted = await ensurePublishGrant();
       if (!granted) return { ok: false, error: "Microphone publish permission available nahi hai" };
     }
-
     try {
-      // Let LiveKit handle getUserMedia, permission prompts and microphone
-      // track creation. No custom pre-warm, delay or createLocalAudioTrack
-      // wrapper is used here.
       await room.localParticipant.setMicrophoneEnabled(true);
       localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
       if (!localAudioTrack.current) return { ok: false, error: "Microphone track publish nahi hua" };
