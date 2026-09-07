@@ -87,16 +87,66 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     const onDisc = (p: RemoteParticipant) => setRemotes((cur) => { const n = new Map(cur); n.get(uidFromIdentity(p.identity))?.audioTrack?.stop(); n.delete(uidFromIdentity(p.identity)); return n; });
     const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((sp) => uidFromIdentity(sp.identity))));
     room.on(RoomEvent.TrackSubscribed, onSub); room.on(RoomEvent.TrackUnsubscribed, onUnsub); room.on(RoomEvent.ParticipantConnected, refresh); room.on(RoomEvent.ParticipantDisconnected, onDisc); room.on(RoomEvent.ActiveSpeakersChanged, onSpeakers); room.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
+    // Warm the microphone permission in parallel with the token request so
+    // publishing is instant the moment the room reaches "connected".
+    if (publishRef.current) void prewarmMic();
     (async () => { try { const { data } = await supabase.auth.getSession(); const token = data.session?.access_token; if (!token) throw new Error("Sign in first"); const res = await fetch("/api/livekit-token", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify({ room: channel, name: `Jalwa user ${uid}`, canPublish: publishRef.current }) }); const body = await res.json() as { server_url?: string; participant_token?: string; canPublish?: boolean; error?: string }; if (!res.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed"); if (cancelled) return; await room.connect(body.server_url, body.participant_token, { autoSubscribe: true }); if (cancelled) return; room.remoteParticipants.forEach(refresh); setStatus("connected"); } catch (e) { if (cancelled) return; setStatus("error"); setError(e instanceof Error ? e.message : "LiveKit connection failed"); if (room.state !== "disconnected") await room.disconnect(); } })();
     return () => { cancelled = true; room.off(RoomEvent.TrackSubscribed, onSub); room.off(RoomEvent.TrackUnsubscribed, onUnsub); room.off(RoomEvent.ParticipantConnected, refresh); room.off(RoomEvent.TrackUnsubscribed, onUnsub); room.off(RoomEvent.ParticipantDisconnected, onDisc); room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers); setRemotes((cur) => { cur.forEach((r) => r.audioTrack?.stop()); return new Map(); }); if (room.state !== "disconnected") void room.disconnect(); if (roomRef.current === room) roomRef.current = null; };
-  }, [channel, uid, enabled, disconnect]);
+  }, [channel, uid, enabled, disconnect, prewarmMic]);
+
+  // The join token's publish grant is decided at connect time. A user who
+  // takes a seat afterwards must have the grant upgraded server-side instead
+  // of being told to "try again" — that was the source of the retry message.
+  const ensurePublishGrant = useCallback(async (): Promise<boolean> => {
+    const room = roomRef.current;
+    if (!room || room.state !== "connected" || !channel) return false;
+    if (room.localParticipant.permissions?.canPublish) return true;
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) return false;
+      const res = await fetch("/api/livekit-permissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ room: channel, canPublish: true }),
+      });
+      const body = await res.json().catch(() => ({})) as { canPublish?: boolean };
+      if (!res.ok || body.canPublish !== true) return false;
+    } catch {
+      return false;
+    }
+    // Wait for the server-pushed permission update to reach this client.
+    return await new Promise<boolean>((resolve) => {
+      if (room.localParticipant.permissions?.canPublish) return resolve(true);
+      const done = (value: boolean) => { clearTimeout(timer); room.off(RoomEvent.ParticipantPermissionsChanged, onChange); resolve(value); };
+      const onChange = () => { if (room.localParticipant.permissions?.canPublish) done(true); };
+      const timer = setTimeout(() => done(room.localParticipant.permissions?.canPublish === true), 4000);
+      room.on(RoomEvent.ParticipantPermissionsChanged, onChange);
+    });
+  }, [channel]);
 
   const enableMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
     if (!room || room.state !== "connected") return { ok: false, error: "Room connect ho raha hai" };
-    if (!room.localParticipant.permissions?.canPublish) return { ok: false, error: "Microphone publish permission available nahi hai" };
+    if (!room.localParticipant.permissions?.canPublish) {
+      const upgraded = await ensurePublishGrant();
+      if (!upgraded) return { ok: false, error: "Microphone publish permission available nahi hai" };
+    }
     try {
-      await room.localParticipant.setMicrophoneEnabled(true);
+      const existing = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      if (existing?.track) {
+        await room.localParticipant.setMicrophoneEnabled(true);
+      } else {
+        const warm = await prewarmMic();
+        if (warm && warm.readyState === "live") {
+          const lkTrack = new LocalAudioTrack(warm, undefined, false);
+          await room.localParticipant.publishTrack(lkTrack, { source: Track.Source.Microphone });
+          prewarmRef.current = null;
+        } else {
+          prewarmRef.current = null;
+          await room.localParticipant.setMicrophoneEnabled(true);
+        }
+      }
       localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
       setMuted(false); setMicBlocked(false); setMicError(null);
       return { ok: true };
@@ -104,7 +154,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       const message = e instanceof Error ? e.message : "Microphone permission denied";
       setMicBlocked(true); setMicError(message); return { ok: false, error: message };
     }
-  }, []);
+  }, [ensurePublishGrant, prewarmMic]);
 
   useEffect(() => {
     if (status !== "connected") return; const room = roomRef.current; if (!room || room.state !== "connected") return; let active = true;
