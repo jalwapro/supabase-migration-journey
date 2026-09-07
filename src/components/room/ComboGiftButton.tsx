@@ -82,37 +82,14 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
       } catch { /* noop */ }
     }
 
-    window.dispatchEvent(new CustomEvent("jalwa:gift-sent", { detail: {
-      key: `combo-${gift.id}-${Date.now()}`,
-      senderName: profile?.username ?? "Guest",
-      senderAvatar: profile?.avatar ?? null,
-      receiverId: receivers.find((r) => r.id === targets[0])?.id ?? null,
-      receiverIds: targets,
-      receiverName: receivers.find((r) => r.id === targets[0])?.username ?? "Host",
-      receiverAvatar: receivers.find((r) => r.id === targets[0])?.avatar ?? null,
-      giftName: gift.name,
-      giftEmoji: clipUrl ? "" : gift.emoji ?? (isAssetUrlLike(gift.icon) ? "" : gift.icon) ?? "🎁",
-      giftImageUrl: thumbUrl,
-      giftClipUrl: clipUrl ?? thumbUrl,
-      giftClipType: clipUrl ? gift.clip_type : (thumbUrl ? "image" : null),
-      coins: price,
-      diamonds: gift.diamonds_value,
-      quantity: 1,
-      animation: gift.animation ?? "pop",
-      soundUrl: giftSoundSrc(gift),
-      audioEnabled: giftAudioEnabled(gift),
-      audioVolume: giftAudioGain(gift),
-      renderConfig: gift.render_config,
-      local: true,
-      combo: true,
-    }}));
-
     try {
       for (const rid of targets) {
-        const { error } = await supabase.rpc("send_gift", { _room_id: roomId, _receiver_id: rid, _gift_id: gift.id, _quantity: 1, _write_message: false });
+        const { data, error } = await supabase.rpc("send_gift", { _room_id: roomId, _receiver_id: rid, _gift_id: gift.id, _quantity: 1, _write_message: false });
         if (error) throw error;
+        const row = data as { id?: string } | null;
+        if (!row?.id) throw new Error("Gift was charged but returned no canonical send id");
         tapTotalsRef.current[rid] = (tapTotalsRef.current[rid] ?? 0) + 1;
-        void broadcastGiftPlayback(roomId, gift, [rid], { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null }, 1);
+        await broadcastGiftPlayback(roomId, gift, [rid], { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null }, 1, row.id);
       }
       await refresh();
     } catch (e) {
