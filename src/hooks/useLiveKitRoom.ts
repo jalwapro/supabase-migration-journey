@@ -174,7 +174,11 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     if (status !== "connected") return; const room = roomRef.current; if (!room || room.state !== "connected") return; let active = true;
     const syncMedia = async () => {
       if (publishRef.current) {
-        for (let i = 0; i < 20 && active && room.state === "connected"; i++) { const result = await enableMicrophone(); if (result.ok) break; await new Promise<void>((r) => setTimeout(r, 250)); }
+        // enableMicrophone now upgrades the publish grant itself, so a single
+        // attempt plus one short retry (for a transient device hiccup) is
+        // enough — no long polling loop that surfaces as a delay.
+        const first = await enableMicrophone();
+        if (!first.ok && active && room.state === "connected") { await new Promise<void>((r) => setTimeout(r, 300)); if (active && room.state === "connected") await enableMicrophone(); }
       } else { try { await room.localParticipant.setMicrophoneEnabled(false); } catch {} if (active) setMuted(true); }
       if (!active || room.state !== "connected") return;
       if (videoRef.current) { try { await room.localParticipant.setCameraEnabled(true); const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); if (active && pub?.track) { setLocalVideoTrack(videoFacade(pub.track as unknown as AnyTrack)); setVideoOn(true); } } catch { if (active) setVideoOn(false); } }
