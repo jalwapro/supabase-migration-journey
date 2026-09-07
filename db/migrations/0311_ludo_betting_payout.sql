@@ -16,6 +16,7 @@ declare
   v_uid uuid := auth.uid();
   v_player uuid;
   v_count integer;
+  v_new_balance bigint;
 begin
   if v_uid is null then raise exception 'AUTH_REQUIRED'; end if;
   if p_room is null then raise exception 'ROOM_REQUIRED'; end if;
@@ -40,20 +41,23 @@ begin
     raise exception 'ALL_PLAYERS_MUST_BE_SEATED';
   end if;
 
-  foreach v_player in array p_players loop
-    update public.profiles
-       set coins = coins - p_bet, updated_at = now()
-     where id = v_player and coins >= p_bet;
-    if not found then
-      raise exception 'PLAYER_NOT_ENOUGH_COINS:%', v_player;
-    end if;
-    insert into public.wallet_transactions(user_id, kind, coins, note)
-    values (v_player, 'ludo_bet', -p_bet, 'Ludo match entry bet');
-  end loop;
-
   insert into public.ludo_matches(room_id, player_ids, bet_coins, seed)
   values (p_room, p_players, p_bet, encode(gen_random_bytes(8), 'hex'))
   returning id into v_id;
+
+  foreach v_player in array p_players loop
+    update public.profiles
+       set coins = coins - p_bet, updated_at = now()
+     where id = v_player and coins >= p_bet
+     returning coins into v_new_balance;
+    if not found then
+      raise exception 'PLAYER_NOT_ENOUGH_COINS:%', v_player;
+    end if;
+    insert into public.wallet_transactions
+      (user_id, kind, coins_delta, balance_coins_after, ref_type, ref_id, note)
+    values
+      (v_player, 'ludo_bet', -p_bet, v_new_balance, 'ludo_match', v_id, 'Ludo match entry bet');
+  end loop;
 
   insert into public.ludo_match_events(match_id, seq, actor_id, kind, payload)
   values (v_id, 1, v_uid, 'start', jsonb_build_object('players', p_players, 'bet', p_bet));
@@ -76,6 +80,7 @@ declare
   v_m public.ludo_matches;
   v_seq integer;
   v_pool integer := 0;
+  v_new_balance bigint;
   v_status text := case when p_status in ('finished','aborted') then p_status else 'finished' end;
 begin
   select * into v_m from public.ludo_matches where id = p_match for update;
@@ -94,10 +99,13 @@ begin
     v_pool := v_m.bet_coins * coalesce(array_length(v_m.player_ids, 1), 0);
     update public.profiles
        set coins = coins + v_pool, updated_at = now()
-     where id = p_winner;
+     where id = p_winner
+     returning coins into v_new_balance;
     if not found then raise exception 'WINNER_NOT_FOUND'; end if;
-    insert into public.wallet_transactions(user_id, kind, coins, note)
-    values (p_winner, 'ludo_payout', v_pool, 'Ludo winner payout');
+    insert into public.wallet_transactions
+      (user_id, kind, coins_delta, balance_coins_after, ref_type, ref_id, note)
+    values
+      (p_winner, 'ludo_payout', v_pool, v_new_balance, 'ludo_match', p_match, 'Ludo winner payout');
   end if;
 
   select coalesce(max(seq), 0) + 1 into v_seq
