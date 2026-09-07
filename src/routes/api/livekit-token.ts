@@ -38,9 +38,12 @@ export const Route = createFileRoute("/api/livekit-token")({ server: { handlers:
     const isHost = room.host_id === authenticatedUserId;
     const seated = member?.seat_index !== null && member?.seat_index !== undefined;
     const canPublish = body.canPublish !== false && (isHost || seated) && member?.is_muted !== true;
-    const livekitRoom = room.rtc_channel || roomName;
+    const livekitRoom = typeof room.rtc_channel === "string" ? room.rtc_channel.trim() : "";
+    if (!livekitRoom) return json({ error: "room rtc_channel is missing" }, 500);
 
-    // Canonical identity is exactly the Supabase Auth UUID. No prefix, hash or random identity is generated.
+    // The database room id may be used for lookup, but the rtc_channel is the
+    // single canonical LiveKit room name. The token grant and frontend
+    // Room.connect() must both use this exact value.
     const identity = authenticatedUserId;
     const at = new AccessToken(apiKey, apiSecret, { identity, name: String(body.name ?? "Jalwa user").trim().slice(0, 80) || "Jalwa user", ttl: "1h" });
     at.addGrant({ roomJoin: true, room: livekitRoom, canPublish, canSubscribe: true, canPublishData: true, roomAdmin: isHost || member?.is_moderator === true });
