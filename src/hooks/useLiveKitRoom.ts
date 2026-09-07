@@ -187,6 +187,31 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     void syncMedia(); return () => { active = false; };
   }, [status, publish, video, enableMicrophone]);
 
+  // Keep the local mute UI bound to the real track state so the button never
+  // drifts out of sync with what other participants actually hear.
+  useEffect(() => {
+    if (status !== "connected") return;
+    const room = roomRef.current;
+    if (!room) return;
+    const sync = () => {
+      const pub = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      setMuted(!pub?.track || pub.isMuted);
+    };
+    room.on(RoomEvent.LocalTrackPublished, sync);
+    room.on(RoomEvent.LocalTrackUnpublished, sync);
+    room.on(RoomEvent.TrackMuted, sync);
+    room.on(RoomEvent.TrackUnmuted, sync);
+    room.on(RoomEvent.ParticipantPermissionsChanged, sync);
+    sync();
+    return () => {
+      room.off(RoomEvent.LocalTrackPublished, sync);
+      room.off(RoomEvent.LocalTrackUnpublished, sync);
+      room.off(RoomEvent.TrackMuted, sync);
+      room.off(RoomEvent.TrackUnmuted, sync);
+      room.off(RoomEvent.ParticipantPermissionsChanged, sync);
+    };
+  }, [status]);
+
   useEffect(() => { speakerMutedRef.current = speakerMuted; speakerVolumeRef.current = speakerVolume; const level = speakerMuted ? 0 : speakerVolume; remotes.forEach((r) => r.audioTrack?.setVolume(level)); }, [speakerMuted, speakerVolume, remotes]);
   const setSpeakerVolume = useCallback((v: number) => { const next = Math.max(0, Math.min(100, Math.round(v))); speakerVolumeRef.current = next; setSpeakerVolumeState(next); }, []);
   const refreshAudioOutputs = useCallback(async () => { if (typeof navigator === "undefined" || !navigator.mediaDevices?.enumerateDevices) return; try { const devices = await navigator.mediaDevices.enumerateDevices(); setAudioOutputs(devices.filter((d) => d.kind === "audiooutput").map((d, i) => ({ deviceId: d.deviceId, label: d.label || `Output ${i + 1}` }))); } catch {} }, []);
