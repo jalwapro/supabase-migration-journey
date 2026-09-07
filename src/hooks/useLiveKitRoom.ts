@@ -233,11 +233,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         roomRef.current = room;
         attachListeners(room);
 
-        if (cancelled || seq !== joinSeqRef.current) {
-          if (room.state !== "disconnected") await room.disconnect();
-          return;
-        }
-
         await room.connect(body.server_url, body.participant_token, { autoSubscribe: true });
         if (cancelled || seq !== joinSeqRef.current) {
           if (room.state !== "disconnected") await room.disconnect();
@@ -245,6 +240,21 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         }
         room.remoteParticipants.forEach(refresh);
         setStatus("connected");
+
+        if (publishRef.current) {
+          try {
+            await room.localParticipant.setMicrophoneEnabled(true);
+            localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
+            setMuted(false);
+            setMicBlocked(false);
+            setMicError(null);
+          } catch (micErrorValue) {
+            setMicBlocked(true);
+            setMicError(micErrorValue instanceof Error ? micErrorValue.message : "Microphone permission denied");
+          }
+        } else {
+          setMuted(true);
+        }
       } catch (joinError) {
         if (cancelled) return;
         setStatus("error");
@@ -272,99 +282,27 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     };
   }, [channel, uid, enabled, disconnect]);
 
-  const ensurePublishGrant = useCallback(async () => {
+  const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
-    const roomName = typeof channel === "string" ? channel.trim() : "";
-    if (!room || room.state !== "connected" || !roomName) return false;
-    if (room.localParticipant.permissions?.canPublish) return true;
-    try {
-      const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token) return false;
-      const response = await fetch("/api/livekit-permissions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ room: roomName, canPublish: true }),
-      });
-      const body = await response.json().catch(() => ({})) as { canPublish?: boolean };
-      if (!response.ok || body.canPublish !== true) return false;
-    } catch {
-      return false;
-    }
-    return new Promise<boolean>((resolve) => {
-      if (room.localParticipant.permissions?.canPublish) return resolve(true);
-      let timer: ReturnType<typeof setTimeout>;
-      const onChange = () => {
-        if (room.localParticipant.permissions?.canPublish) {
-          clearTimeout(timer);
-          room.off(RoomEvent.ParticipantPermissionsChanged, onChange);
-          resolve(true);
-        }
-      };
-      timer = setTimeout(() => {
-        room.off(RoomEvent.ParticipantPermissionsChanged, onChange);
-        resolve(room.localParticipant.permissions?.canPublish === true);
-      }, 4000);
-      room.on(RoomEvent.ParticipantPermissionsChanged, onChange);
-    });
-  }, [channel]);
-
-  const attemptMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
-    const room = roomRef.current;
-    if (!room || room.state !== "connected") return { ok: false, error: "Room connect ho raha hai" };
-    if (!room.localParticipant.permissions?.canPublish) {
-      const granted = await ensurePublishGrant();
-      if (!granted) return { ok: false, error: "Microphone publish permission available nahi hai" };
+    if (!room || room.state !== "connected") {
+      const message = "Room connect nahi hua";
+      setMicError(message);
+      return { ok: false, error: message };
     }
     try {
       await room.localParticipant.setMicrophoneEnabled(true);
       localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
-      if (!localAudioTrack.current) return { ok: false, error: "Microphone track publish nahi hua" };
       setMuted(false);
       setMicBlocked(false);
       setMicError(null);
       return { ok: true };
     } catch (micErrorValue) {
-      return { ok: false, error: micErrorValue instanceof Error ? micErrorValue.message : "Microphone permission denied" };
-    }
-  }, [ensurePublishGrant]);
-
-  const enableMicrophone = useCallback(async () => {
-    if (roomRef.current?.state !== "connected") {
-      setMicError("Room connect nahi hua");
-      return { ok: false, error: "Room connect nahi hua" };
-    }
-    const result = await attemptMicrophone();
-    if (!result.ok) {
+      const message = micErrorValue instanceof Error ? micErrorValue.message : "Microphone permission denied";
       setMicBlocked(true);
-      setMicError(result.error ?? "Microphone permission denied");
+      setMicError(message);
+      return { ok: false, error: message };
     }
-    return result;
-  }, [attemptMicrophone]);
-
-  useEffect(() => {
-    if (status !== "connected") return;
-    const room = roomRef.current;
-    if (!room) return;
-    const syncMedia = async () => {
-      if (publishRef.current) await enableMicrophone();
-      else {
-        try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
-        setMuted(true);
-      }
-      if (videoRef.current) {
-        try {
-          await room.localParticipant.setCameraEnabled(true);
-          const publication = Array.from(room.localParticipant.trackPublications.values()).find((pub) => pub.kind === Track.Kind.Video && pub.track);
-          if (publication?.track) {
-            setLocalVideoTrack(videoFacade(publication.track as unknown as AnyTrack));
-            setVideoOn(true);
-          }
-        } catch { setVideoOn(false); }
-      }
-    };
-    void syncMedia();
-  }, [status, publish, video, enableMicrophone]);
+  }, []);
 
   useEffect(() => {
     if (status !== "connected") return;
@@ -378,14 +316,12 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     room.on(RoomEvent.LocalTrackUnpublished, sync);
     room.on(RoomEvent.TrackMuted, sync);
     room.on(RoomEvent.TrackUnmuted, sync);
-    room.on(RoomEvent.ParticipantPermissionsChanged, sync);
     sync();
     return () => {
       room.off(RoomEvent.LocalTrackPublished, sync);
       room.off(RoomEvent.LocalTrackUnpublished, sync);
       room.off(RoomEvent.TrackMuted, sync);
       room.off(RoomEvent.TrackUnmuted, sync);
-      room.off(RoomEvent.ParticipantPermissionsChanged, sync);
     };
   }, [status]);
 
@@ -454,8 +390,14 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
   const toggleMute = useCallback(async () => {
     const room = roomRef.current;
-    if (!room || room.state !== "connected") return;
-    if (muted) { await enableMicrophone(); return; }
+    if (!room || room.state !== "connected") {
+      setMicError("Room connect nahi hua");
+      return;
+    }
+    if (muted) {
+      await requestMic();
+      return;
+    }
     try {
       await room.localParticipant.setMicrophoneEnabled(false);
       setMuted(true);
@@ -465,7 +407,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       setMicBlocked(true);
       setMicError(toggleError instanceof Error ? toggleError.message : "Microphone toggle failed");
     }
-  }, [muted, enableMicrophone]);
+  }, [muted, requestMic]);
 
   const activateAudio = useCallback(async () => {
     const room = roomRef.current;
@@ -498,8 +440,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       setError(videoError instanceof Error ? videoError.message : "Camera failed");
     }
   }, [videoOn]);
-
-  const requestMic = useCallback(async () => enableMicrophone(), [enableMicrophone]);
 
   const startMusicSource = useCallback((offset: number) => {
     const context = musicCtxRef.current;
