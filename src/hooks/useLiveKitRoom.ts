@@ -139,7 +139,34 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     });
   }, [channel]);
 
-  const enableMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+  // Wait for the room handshake instead of failing instantly. A mic tap made
+  // during connect used to surface as "Room connect ho raha hai".
+  const waitForConnected = useCallback(async (timeoutMs = 9000): Promise<boolean> => {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      const room = roomRef.current;
+      if (room?.state === "connected") return true;
+      await new Promise<void>((r) => setTimeout(r, 120));
+    }
+    return roomRef.current?.state === "connected";
+  }, []);
+
+  // Release any locked capture so the next acquisition starts from a clean
+  // device state (fixes hardware/other-tab locks without user intervention).
+  const releaseMicCapture = useCallback(async () => {
+    const room = roomRef.current;
+    try {
+      const warm = await prewarmRef.current;
+      warm?.stop();
+    } catch {}
+    prewarmRef.current = null;
+    const pub = room?.localParticipant.getTrackPublication(Track.Source.Microphone);
+    if (room && pub?.track) {
+      try { await room.localParticipant.unpublishTrack(pub.track as LocalAudioTrack, true); } catch {}
+    }
+  }, []);
+
+  const attemptMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
     if (!room || room.state !== "connected") return { ok: false, error: "Room connect ho raha hai" };
     if (!room.localParticipant.permissions?.canPublish) {
@@ -162,23 +189,44 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         }
       }
       localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
+      if (!localAudioTrack.current) return { ok: false, error: "Microphone track publish nahi hua" };
       setMuted(false); setMicBlocked(false); setMicError(null);
       return { ok: true };
     } catch (e) {
-      const message = e instanceof Error ? e.message : "Microphone permission denied";
-      setMicBlocked(true); setMicError(message); return { ok: false, error: message };
+      return { ok: false, error: e instanceof Error ? e.message : "Microphone permission denied" };
     }
   }, [ensurePublishGrant, prewarmMic]);
+
+  // Self-healing mic start: waits for the handshake, then retries with a clean
+  // device re-acquisition before ever reporting an error to the user.
+  const enableMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
+    const connected = await waitForConnected();
+    if (!connected) {
+      const message = "Room connect nahi ho saka";
+      setMicError(message);
+      return { ok: false, error: message };
+    }
+    let last: { ok: boolean; error?: string } = { ok: false };
+    for (let attempt = 0; attempt < 3; attempt++) {
+      last = await attemptMicrophone();
+      if (last.ok) return last;
+      const permissionDenied = /notallowed|permission denied|denied by system|dismissed/i.test(last.error ?? "");
+      if (permissionDenied) break;
+      await releaseMicCapture();
+      await new Promise<void>((r) => setTimeout(r, 250 * (attempt + 1)));
+    }
+    setMicBlocked(true);
+    setMicError(last.error ?? "Microphone unavailable");
+    return last;
+  }, [attemptMicrophone, releaseMicCapture, waitForConnected]);
 
   useEffect(() => {
     if (status !== "connected") return; const room = roomRef.current; if (!room || room.state !== "connected") return; let active = true;
     const syncMedia = async () => {
       if (publishRef.current) {
-        // enableMicrophone now upgrades the publish grant itself, so a single
-        // attempt plus one short retry (for a transient device hiccup) is
-        // enough — no long polling loop that surfaces as a delay.
-        const first = await enableMicrophone();
-        if (!first.ok && active && room.state === "connected") { await new Promise<void>((r) => setTimeout(r, 300)); if (active && room.state === "connected") await enableMicrophone(); }
+        // enableMicrophone waits for the handshake and self-heals device locks,
+        // so a single call is enough here.
+        await enableMicrophone();
       } else { try { await room.localParticipant.setMicrophoneEnabled(false); } catch {} if (active) setMuted(true); }
       if (!active || room.state !== "connected") return;
       if (videoRef.current) { try { await room.localParticipant.setCameraEnabled(true); const pub = Array.from(room.localParticipant.trackPublications.values()).find((x) => x.kind === Track.Kind.Video && x.track); if (active && pub?.track) { setLocalVideoTrack(videoFacade(pub.track as unknown as AnyTrack)); setVideoOn(true); } } catch { if (active) setVideoOn(false); } }
@@ -186,6 +234,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     };
     void syncMedia(); return () => { active = false; };
   }, [status, publish, video, enableMicrophone]);
+
 
   // Keep the local mute UI bound to the real track state so the button never
   // drifts out of sync with what other participants actually hear.
