@@ -191,6 +191,12 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       });
     };
     const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((participant) => uidFromIdentity(participant.identity))));
+    const onDisconnected = (reason?: unknown) => {
+      console.error("LiveKit Disconnected Reason:", reason);
+      console.error("LiveKit Disconnected Error Object:", reason);
+      console.error("LiveKit Disconnected Error Message:", reason instanceof Error ? reason.message : String(reason ?? "Unknown disconnect reason"));
+      if (!cancelled) setStatus("idle");
+    };
 
     const attachListeners = (nextRoom: Room) => {
       nextRoom.on(RoomEvent.TrackSubscribed, onSub);
@@ -198,7 +204,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       nextRoom.on(RoomEvent.ParticipantConnected, refresh);
       nextRoom.on(RoomEvent.ParticipantDisconnected, onDisc);
       nextRoom.on(RoomEvent.ActiveSpeakersChanged, onSpeakers);
-      nextRoom.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
+      nextRoom.on(RoomEvent.Disconnected, onDisconnected);
     };
 
     void (async () => {
@@ -256,6 +262,10 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
           setMuted(true);
         }
       } catch (joinError) {
+        console.error("LiveKit connect() failed - exact error object:", joinError);
+        console.error("LiveKit connect() failed - error message:", joinError instanceof Error ? joinError.message : String(joinError));
+        if (joinError instanceof Error && "name" in joinError) console.error("LiveKit connect() failed - error name:", joinError.name);
+        if (joinError instanceof Error && "cause" in joinError) console.error("LiveKit connect() failed - error cause:", (joinError as Error & { cause?: unknown }).cause);
         if (cancelled) return;
         setStatus("error");
         setError(joinError instanceof Error ? joinError.message : "LiveKit connection failed");
@@ -272,6 +282,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         room.off(RoomEvent.ParticipantConnected, refresh);
         room.off(RoomEvent.ParticipantDisconnected, onDisc);
         room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers);
+        room.off(RoomEvent.Disconnected, onDisconnected);
         if (room.state !== "disconnected") void room.disconnect();
         if (roomRef.current === room) roomRef.current = null;
       }
