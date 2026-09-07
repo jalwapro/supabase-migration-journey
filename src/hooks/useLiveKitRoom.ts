@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  createLocalAudioTrack,
   LocalAudioTrack,
   Room,
   RoomEvent,
@@ -99,23 +98,6 @@ function multiAudioFacade(tracks: AnyTrack[]): RemoteAudioTrack {
   };
 }
 
-function isMicBusyError(error: unknown) {
-  const name = error instanceof DOMException ? error.name : "";
-  const message = error instanceof Error ? error.message : String(error ?? "");
-  return /notreadable|aborterror/i.test(name) || /notreadable|device.*(busy|in use)|hardware.*(busy|in use)|could not start audio source|audio source.*start|track.*failed to start/i.test(message);
-}
-
-async function createMicrophoneTrackWithRetry() {
-  const options = { echoCancellation: true, noiseSuppression: true, autoGainControl: true };
-  try {
-    return await createLocalAudioTrack(options);
-  } catch (error) {
-    if (!isMicBusyError(error)) throw error;
-    await new Promise<void>((resolve) => setTimeout(resolve, 1000));
-    return createLocalAudioTrack(options);
-  }
-}
-
 export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiveKitRoomArgs) {
   const roomRef = useRef<Room | null>(null);
   const joinSeqRef = useRef(0);
@@ -126,7 +108,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
   const speakerMutedRef = useRef(false);
   const speakerVolumeRef = useRef(100);
-  const prewarmRef = useRef<Promise<MediaStreamTrack | null> | null>(null);
   const localAudioTrack = useRef<unknown>(null);
 
   const [status, setStatus] = useState<LiveKitStatus>(enabled ? "idle" : "disabled");
@@ -154,17 +135,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const musicBufferRef = useRef<AudioBuffer | null>(null);
   const musicStartedAtRef = useRef(0);
   const musicOffsetRef = useRef(0);
-
-  const prewarmMic = useCallback(() => {
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return Promise.resolve(null);
-    if (!prewarmRef.current) {
-      prewarmRef.current = navigator.mediaDevices
-        .getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })
-        .then((stream) => stream.getAudioTracks()[0] ?? null)
-        .catch(() => null);
-    }
-    return prewarmRef.current;
-  }, []);
 
   const disconnect = useCallback(async () => {
     const room = roomRef.current;
@@ -236,9 +206,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
     void (async () => {
       try {
-        // Explicitly finish any previous LiveKit session before creating a
-        // new one. This avoids duplicate-identity connect/disconnect races
-        // when roomId/rtc_channel changes while the page is mounting.
         const previousRoom = roomRef.current;
         if (previousRoom && previousRoom.state !== "disconnected") {
           roomRef.current = null;
@@ -260,9 +227,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         const body = await response.json() as { server_url?: string; participant_token?: string; room?: string; error?: string };
         if (!response.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed");
 
-        // The token endpoint is authoritative for the room. Refuse to connect
-        // if it did not return a valid room name, and never connect using the
-        // stale/empty client-side value.
         const tokenRoomName = typeof body.room === "string" ? body.room.trim() : roomName;
         if (!tokenRoomName) throw new Error("LiveKit room name missing");
         if (tokenRoomName !== roomName) throw new Error("LiveKit room mismatch");
@@ -272,15 +236,13 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         roomRef.current = room;
         attachListeners(room);
 
-        if (publishRef.current) void prewarmMic();
-
         if (cancelled || seq !== joinSeqRef.current) {
           if (room.state !== "disconnected") await room.disconnect();
           return;
         }
 
         await room.connect(body.server_url, body.participant_token, { autoSubscribe: true });
-        if (cancelled || seq !== joinSeqRef.current) {
+        if (cancelled || seq !== joinSeqRefRef.current) {
           if (room.state !== "disconnected") await room.disconnect();
           return;
         }
@@ -311,7 +273,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         return new Map();
       });
     };
-  }, [channel, uid, enabled, disconnect, prewarmMic]);
+  }, [channel, uid, enabled, disconnect]);
 
   const ensurePublishGrant = useCallback(async () => {
     const room = roomRef.current;
@@ -334,10 +296,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     }
     return new Promise<boolean>((resolve) => {
       if (room.localParticipant.permissions?.canPublish) return resolve(true);
-      const timer = setTimeout(() => {
-        room.off(RoomEvent.ParticipantPermissionsChanged, onChange);
-        resolve(room.localParticipant.permissions?.canPublish === true);
-      }, 4000);
       const onChange = () => {
         if (room.localParticipant.permissions?.canPublish) {
           clearTimeout(timer);
@@ -345,6 +303,10 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
           resolve(true);
         }
       };
+      const timer = setTimeout(() => {
+        room.off(RoomEvent.ParticipantPermissionsChanged, onChange);
+        resolve(room.localParticipant.permissions?.canPublish === true);
+      }, 4000);
       room.on(RoomEvent.ParticipantPermissionsChanged, onChange);
     });
   }, [channel]);
@@ -358,16 +320,6 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     return roomRef.current?.state === "connected";
   }, []);
 
-  const releaseMicCapture = useCallback(async () => {
-    const room = roomRef.current;
-    try { (await prewarmRef.current)?.stop(); } catch {}
-    prewarmRef.current = null;
-    const publication = room?.localParticipant.getTrackPublication(Track.Source.Microphone);
-    if (room && publication?.track) {
-      try { await room.localParticipant.unpublishTrack(publication.track as LocalAudioTrack, true); } catch {}
-    }
-  }, []);
-
   const attemptMicrophone = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
     if (!room || room.state !== "connected") return { ok: false, error: "Room connect ho raha hai" };
@@ -377,13 +329,10 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     }
 
     try {
-      const existing = room.localParticipant.getTrackPublication(Track.Source.Microphone);
-      if (existing?.track) {
-        await room.localParticipant.setMicrophoneEnabled(true);
-      } else {
-        const audioTrack = await createMicrophoneTrackWithRetry();
-        await room.localParticipant.publishTrack(audioTrack, { source: Track.Source.Microphone, name: "microphone" });
-      }
+      // Let LiveKit handle getUserMedia, permission prompts and microphone
+      // track creation. No custom pre-warm, delay or createLocalAudioTrack
+      // wrapper is used here.
+      await room.localParticipant.setMicrophoneEnabled(true);
       localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
       if (!localAudioTrack.current) return { ok: false, error: "Microphone track publish nahi hua" };
       setMuted(false);
@@ -391,29 +340,22 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       setMicError(null);
       return { ok: true };
     } catch (micErrorValue) {
-      const busy = isMicBusyError(micErrorValue);
-      return { ok: false, error: busy ? "Mic access check karein ya page refresh karein" : micErrorValue instanceof Error ? micErrorValue.message : "Microphone permission denied" };
+      return { ok: false, error: micErrorValue instanceof Error ? micErrorValue.message : "Microphone permission denied" };
     }
   }, [ensurePublishGrant]);
 
   const enableMicrophone = useCallback(async () => {
-    if (!await waitForConnected()) {
-      const message = "Room connect nahi ho saka";
-      setMicError(message);
-      return { ok: false, error: message };
+    if (roomRef.current?.state !== "connected") {
+      setMicError("Room connect nahi hua");
+      return { ok: false, error: "Room connect nahi hua" };
     }
-    let last: { ok: boolean; error?: string } = { ok: false };
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      last = await attemptMicrophone();
-      if (last.ok) return last;
-      if (/notallowed|permission denied|denied by system|dismissed/i.test(last.error ?? "")) break;
-      await releaseMicCapture();
-      await new Promise<void>((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+    const result = await attemptMicrophone();
+    if (!result.ok) {
+      setMicBlocked(true);
+      setMicError(result.error ?? "Microphone permission denied");
     }
-    setMicBlocked(true);
-    setMicError(last.error ?? "Mic access check karein ya page refresh karein");
-    return last;
-  }, [attemptMicrophone, releaseMicCapture, waitForConnected]);
+    return result;
+  }, [attemptMicrophone]);
 
   useEffect(() => {
     if (status !== "connected") return;
