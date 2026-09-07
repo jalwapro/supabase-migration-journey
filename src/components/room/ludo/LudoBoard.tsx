@@ -61,7 +61,6 @@ export function LudoBoard({
   onPickToken: (tokenIndex: number) => void;
   avatarByUserId?: AvatarMap;
 }) {
-  const current = state.players[state.turnIndex];
   const myTurn = myPlayerIndex === state.turnIndex;
   const DiceIcon =
     state.dice && state.dice >= 1 && state.dice <= 6
@@ -94,7 +93,6 @@ export function LudoBoard({
           {/* Four glossy yards */}
           {(["red", "blue", "green", "yellow"] as LudoColor[]).map((color) => {
             const player = state.players.find((p) => p.color === color);
-            const yardTokens = player?.tokens.filter((t) => t.d === 0) ?? [];
             return (
               <div
                 key={`yard-${color}`}
@@ -103,14 +101,20 @@ export function LudoBoard({
                 <div className="flex h-full w-full items-center justify-center rounded-[16px] border border-white/35 bg-white/80 shadow-inner">
                   <div className="grid grid-cols-2 gap-3 rounded-[14px] bg-white/70 p-4">
                     {[0, 1, 2, 3].map((slot) => {
-                      const token = yardTokens[slot];
-                      const tokenIndex = player?.tokens.findIndex((t) => t === token) ?? -1;
+                      // Find token belonging to this player that is in yard (d === 0)
+                      const playerTokens = player?.tokens ?? [];
+                      const yardTokens = playerTokens
+                        .map((t, idx) => ({ ...t, originalIndex: idx }))
+                        .filter((t) => t.d === 0);
+                      
+                      const tokenObj = yardTokens[slot];
+                      const tokenIndex = tokenObj ? tokenObj.originalIndex : -1;
+
                       const canPick =
                         !!player &&
                         myTurn &&
-                        myPlayerIndex === state.turnIndex &&
                         state.awaitingMove &&
-                        state.players[state.turnIndex].color === color &&
+                        player.color === color &&
                         tokenIndex >= 0;
 
                       return (
@@ -120,11 +124,11 @@ export function LudoBoard({
                           disabled={!canPick}
                           onClick={() => tokenIndex >= 0 && onPickToken(tokenIndex)}
                           className={`grid h-8 w-8 place-items-center rounded-full border-2 border-black/10 text-[9px] font-black text-white transition-transform ${
-                            canPick ? "animate-pulse scale-110 ring-2 ring-white" : ""
+                            canPick ? "animate-pulse scale-110 ring-2 ring-white cursor-pointer" : "opacity-60 cursor-not-allowed"
                           } ${TOKEN_RING[color]}`}
                           style={{ backgroundColor: COLOR_HEX[color] }}
                         >
-                          {token ? tokenIndex + 1 : ""}
+                          {tokenObj ? tokenIndex + 1 : ""}
                         </button>
                       );
                     })}
@@ -159,10 +163,6 @@ export function LudoBoard({
 
           {/* Home-stretch lanes */}
           {(["red", "blue", "yellow", "green"] as LudoColor[]).map((color) => {
-            const player = state.players.find((p) => p.color === color);
-            const cells = player ? player.tokens : [];
-            const lane = cells.length ? tokenCoord : null;
-            void lane;
             const coords =
               color === "red"
                 ? [5, 4, 3, 2, 1, 0].map((col) => ({ row: 7, col }))
@@ -334,7 +334,7 @@ function PlayerCard({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-extrabold">{player.name ?? player.color}</p>
-        <p className="text-[10px] text-white/60">🪙  {player.tokens.filter((t) => t.d === 58).length * 1000 + 7200}</p>
+        <p className="text-[10px] text-white/60">🪙 {player.tokens.filter((t) => t.d === 58).length * 1000 + 7200}</p>
       </div>
 
       <Gift className="h-5 w-5 shrink-0" style={{ color: COLOR_HEX[player.color] }} />
