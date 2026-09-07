@@ -18,6 +18,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   const [rolling, setRolling] = useState(false);
   const [betModalOpen, setBetModalOpen] = useState(false);
   const [pendingMode, setPendingMode] = useState<LudoMode>("2p");
+  const [activeBet, setActiveBet] = useState(0);
   const isAuthority = useRef(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const gameRef = useRef<LudoGameState | null>(null);
@@ -27,10 +28,9 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
 
   const myName = profile?.username ?? "You";
   const balance = Number(profile?.coins ?? 0);
-  const roomBet = pendingMode ? (matchIdRef.current ? 0 : 0) : 0;
 
   const resetToClosed = () => {
-    setStep("mode"); setGame(null); setBetModalOpen(false); matchIdRef.current = null; payoutSettledRef.current = false; isAuthority.current = false;
+    setStep("mode"); setGame(null); setBetModalOpen(false); setActiveBet(0); matchIdRef.current = null; payoutSettledRef.current = false; isAuthority.current = false;
     if (channelRef.current) { void supabase.removeChannel(channelRef.current); channelRef.current = null; }
   };
   useEffect(() => { if (!open) resetToClosed(); }, [open]);
@@ -98,7 +98,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   function startSolo(mode: LudoMode) {
     const colors = activeColorsForMode(mode);
     const seats = colors.map((color, i) => ({ color, kind: (i === 0 ? "human" : "bot") as SeatKind, userId: i === 0 ? user?.id : undefined, name: i === 0 ? myName : `Computer ${i}` }));
-    isAuthority.current = true; matchIdRef.current = null; setGame(createGame(mode, seats)); setStep("play");
+    isAuthority.current = true; matchIdRef.current = null; setActiveBet(0); setGame(createGame(mode, seats)); setStep("play");
   }
 
   function openBetModal(mode: LudoMode) {
@@ -120,7 +120,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     if (error) throw new Error(error.message || "Unable to fund Ludo match");
     const colors = activeColorsForMode(mode);
     const seats = colors.map((color, i) => ({ color, kind: "human" as SeatKind, userId: ids[i], name: seatedHumans[i]?.username ?? "Player" }));
-    isAuthority.current = true; matchIdRef.current = matchId as string; payoutSettledRef.current = false; setBetModalOpen(false);
+    isAuthority.current = true; matchIdRef.current = matchId as string; payoutSettledRef.current = false; setActiveBet(bet); setBetModalOpen(false);
     const g = createGame(mode, seats); setGame(g); setStep("play"); broadcastLater(g);
   }
 
@@ -137,7 +137,6 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   const exit = () => { if (typeof window !== "undefined" && window.parent !== window) window.parent.postMessage({ type: "jalwa:ludo-exit" }, "*"); onClose(); };
   if (!open) return null;
 
-  const playRoomBet = game && matchIdRef.current ? 0 : 0;
   return (
     <>
       <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={exit} />
@@ -148,7 +147,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
         {step === "waiting" && <div className="grid place-items-center gap-3 py-10"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" /><p className="text-xs text-muted-foreground">Waiting for the match to start…</p><button onClick={() => setStep("mode")} className="text-xs text-muted-foreground underline">Back</button></div>}
         {step === "play" && game && <div>
           <button onClick={() => setStep("mode")} className="mb-2 flex items-center gap-1 text-[11px] text-muted-foreground"><ArrowLeft className="h-3 w-3" /> New match</button>
-          <JalwaLudoUIWrapper state={game} myPlayerIndex={myPlayerIndex} rolling={rolling} onRoll={onRoll} onExit={exit} userCoins={balance} roomBet={playRoomBet}>
+          <JalwaLudoUIWrapper state={game} myPlayerIndex={myPlayerIndex} rolling={rolling} onRoll={onRoll} onExit={exit} userCoins={balance} roomBet={activeBet}>
             <LudoBoard state={game} myPlayerIndex={myPlayerIndex} rolling={rolling} onRoll={onRoll} onPickToken={onPickToken} />
           </JalwaLudoUIWrapper>
           {game.winnerIndex !== null && <div className="mt-3 rounded-2xl border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/10 p-3 text-center"><Trophy className="mx-auto mb-1 h-5 w-5 text-[color:var(--gold)]" /><p className="text-sm font-black">{game.mode === "2v2" ? `Team ${game.winningTeam} wins!` : `${game.players[game.winnerIndex].name ?? game.players[game.winnerIndex].color} wins!`}</p></div>}
