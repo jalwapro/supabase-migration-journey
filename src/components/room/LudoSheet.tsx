@@ -10,6 +10,7 @@ import { activeColorsForMode, applyMove, applyRoll, botChooseToken, createGame, 
 
 export type LudoPlayer = { id: string; username: string | null; avatar: string | null };
 type Step = "mode" | "waiting" | "play";
+type RevisionedState = { state: LudoGameState; revision: number };
 
 export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; onClose: () => void; players: LudoPlayer[]; isHost?: boolean; roomId?: string }) {
   const { user, profile } = useAuth();
@@ -24,6 +25,8 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   const gameRef = useRef<LudoGameState | null>(null);
   const matchIdRef = useRef<string | null>(null);
   const payoutSettledRef = useRef(false);
+  const revisionRef = useRef(0);
+  const lastRemoteRevisionRef = useRef(0);
   gameRef.current = game;
 
   const myName = profile?.username ?? "You";
@@ -31,19 +34,37 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
 
   const resetToClosed = () => {
     setStep("mode"); setGame(null); setBetModalOpen(false); setActiveBet(0); matchIdRef.current = null; payoutSettledRef.current = false; isAuthority.current = false;
+    revisionRef.current = 0; lastRemoteRevisionRef.current = 0;
     if (channelRef.current) { void supabase.removeChannel(channelRef.current); channelRef.current = null; }
   };
   useEffect(() => { if (!open) resetToClosed(); }, [open]);
 
   useEffect(() => {
     if (!open || !roomId) return;
-    const ch = supabase.channel(`ludo-${roomId}`, { config: { broadcast: { self: false } } });
-    ch.on("broadcast", { event: "state" }, ({ payload }) => { if (isAuthority.current) return; const incoming = payload?.state as LudoGameState | undefined; if (!incoming) return; setGame(incoming); setStep("play"); });
-    ch.on("broadcast", { event: "sync-request" }, () => { if (!isAuthority.current || !gameRef.current) return; void ch.send({ type: "broadcast", event: "state", payload: { state: gameRef.current } }); });
-    ch.on("broadcast", { event: "action" }, ({ payload }) => { if (!isAuthority.current || !gameRef.current) return; handleRemoteAction(payload as { kind: "roll" | "move"; tokenIndex?: number; userId?: string }); });
+    const ch = supabase.channel(`ludo-${roomId}`, { config: { broadcast: { self: false, ack: true } } });
+    ch.on("broadcast", { event: "state" }, ({ payload }) => {
+      if (isAuthority.current) return;
+      const packet = payload as RevisionedState | undefined;
+      const incoming = packet?.state;
+      const revision = Number(packet?.revision);
+      if (!incoming || !Number.isFinite(revision)) return;
+      if (revision <= lastRemoteRevisionRef.current) return;
+      lastRemoteRevisionRef.current = revision;
+      revisionRef.current = revision;
+      setGame(incoming);
+      setStep("play");
+    });
+    ch.on("broadcast", { event: "sync-request" }, () => {
+      if (!isAuthority.current || !gameRef.current) return;
+      void ch.send({ type: "broadcast", event: "state", payload: { state: gameRef.current, revision: revisionRef.current } });
+    });
+    ch.on("broadcast", { event: "action" }, ({ payload }) => {
+      if (!isAuthority.current || !gameRef.current) return;
+      void handleRemoteAction(payload as { kind: "roll" | "move"; tokenIndex?: number; userId?: string });
+    });
     ch.subscribe((status) => { if (status === "SUBSCRIBED") void ch.send({ type: "broadcast", event: "sync-request", payload: {} }); });
     channelRef.current = ch;
-    return () => { void supabase.removeChannel(ch); };
+    return () => { void supabase.removeChannel(ch); channelRef.current = null; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, roomId]);
 
@@ -54,18 +75,60 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     return idx >= 0 ? idx : null;
   }, [game, roomId, user?.id]);
 
+  function broadcastLater(state: LudoGameState, bump = true) {
+    if (!roomId || !channelRef.current) return;
+    if (bump) revisionRef.current += 1;
+    const revision = revisionRef.current;
+    setTimeout(() => { void channelRef.current?.send({ type: "broadcast", event: "state", payload: { state, revision } }); }, 0);
+  }
+
+  async function serverRoll(state: LudoGameState): Promise<number | null> {
+    if (!matchIdRef.current) return rollDice();
+    const { data, error } = await supabase.rpc("ludo_server_roll", { p_match: matchIdRef.current, p_turn: state.turnIndex });
+    if (error) { toast.error(error.message || "Server roll failed"); return null; }
+    const dice = Number((data as { dice?: number })?.dice);
+    return Number.isInteger(dice) && dice >= 1 && dice <= 6 ? dice : null;
+  }
+
+  async function serverMove(state: LudoGameState, tokenIndex: number): Promise<boolean> {
+    if (!matchIdRef.current) return true;
+    const { error } = await supabase.rpc("ludo_server_move", { p_match: matchIdRef.current, p_turn: state.turnIndex, p_token: tokenIndex });
+    if (error) { toast.error(error.message || "Server rejected the move"); return false; }
+    return true;
+  }
+
+  async function processRoll() {
+    const state = gameRef.current;
+    if (!state || !isAuthority.current || state.winnerIndex !== null || state.awaitingMove) return;
+    setRolling(true);
+    const dice = await serverRoll(state);
+    if (dice === null) { setRolling(false); return; }
+    const next = applyRoll(state, dice);
+    setGame(next);
+    broadcastLater(next);
+    setRolling(false);
+  }
+
+  async function processMove(tokenIndex: number) {
+    const state = gameRef.current;
+    if (!state || !isAuthority.current || state.winnerIndex !== null || !state.awaitingMove) return;
+    if (!(await serverMove(state, tokenIndex))) return;
+    const next = applyMove(state, tokenIndex);
+    setGame(next);
+    broadcastLater(next);
+  }
+
   useEffect(() => {
     if (!isAuthority.current || !game || game.winnerIndex !== null) return;
     const current = game.players[game.turnIndex];
-    if (current.kind !== "bot") return;
+    if (current?.kind !== "bot") return;
     const t = setTimeout(() => {
-      setGame((prev) => {
-        if (!prev) return prev;
-        if (!prev.awaitingMove) { const rolled = applyRoll(prev, rollDice()); broadcastLater(rolled); return rolled; }
-        const tokenIdx = botChooseToken(prev, prev.turnIndex, prev.dice ?? 0);
-        if (tokenIdx === null) return prev;
-        const moved = applyMove(prev, tokenIdx); broadcastLater(moved); return moved;
-      });
+      if (!gameRef.current || gameRef.current.winnerIndex !== null) return;
+      if (!gameRef.current.awaitingMove) void processRoll();
+      else {
+        const tokenIdx = botChooseToken(gameRef.current, gameRef.current.turnIndex, gameRef.current.dice ?? 0);
+        if (tokenIdx !== null) void processMove(tokenIdx);
+      }
     }, 650);
     return () => clearTimeout(t);
   }, [game]);
@@ -81,24 +144,19 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     });
   }, [game]);
 
-  function broadcastLater(state: LudoGameState) { if (!roomId || !channelRef.current) return; setTimeout(() => { void channelRef.current?.send({ type: "broadcast", event: "state", payload: { state } }); }, 0); }
-  function handleRemoteAction(payload: { kind: "roll" | "move"; tokenIndex?: number; userId?: string }) {
-    setGame((prev) => {
-      if (!prev) return prev;
-      const actingIdx = prev.players.findIndex((p) => p.userId === payload.userId);
-      if (actingIdx !== prev.turnIndex) return prev;
-      let next = prev;
-      if (payload.kind === "roll" && !prev.awaitingMove) next = applyRoll(prev, rollDice());
-      else if (payload.kind === "move" && prev.awaitingMove && typeof payload.tokenIndex === "number") next = applyMove(prev, payload.tokenIndex);
-      else return prev;
-      broadcastLater(next); return next;
-    });
+  async function handleRemoteAction(payload: { kind: "roll" | "move"; tokenIndex?: number; userId?: string }) {
+    const state = gameRef.current;
+    if (!state) return;
+    const actingIdx = state.players.findIndex((p) => p.userId === payload.userId);
+    if (actingIdx !== state.turnIndex) return;
+    if (payload.kind === "roll" && !state.awaitingMove) await processRoll();
+    else if (payload.kind === "move" && state.awaitingMove && typeof payload.tokenIndex === "number") await processMove(payload.tokenIndex);
   }
 
   function startSolo(mode: LudoMode) {
     const colors = activeColorsForMode(mode);
     const seats = colors.map((color, i) => ({ color, kind: (i === 0 ? "human" : "bot") as SeatKind, userId: i === 0 ? user?.id : undefined, name: i === 0 ? myName : `Computer ${i}` }));
-    isAuthority.current = true; matchIdRef.current = null; setActiveBet(0); setGame(createGame(mode, seats)); setStep("play");
+    isAuthority.current = true; matchIdRef.current = null; revisionRef.current = 0; lastRemoteRevisionRef.current = 0; setActiveBet(0); setGame(createGame(mode, seats)); setStep("play");
   }
 
   function openBetModal(mode: LudoMode) {
@@ -120,20 +178,24 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     if (error) throw new Error(error.message || "Unable to fund Ludo match");
     const colors = activeColorsForMode(mode);
     const seats = colors.map((color, i) => ({ color, kind: "human" as SeatKind, userId: ids[i], name: seatedHumans[i]?.username ?? "Player" }));
-    isAuthority.current = true; matchIdRef.current = matchId as string; payoutSettledRef.current = false; setActiveBet(bet); setBetModalOpen(false);
-    const g = createGame(mode, seats); setGame(g); setStep("play"); broadcastLater(g);
+    isAuthority.current = true; matchIdRef.current = matchId as string; payoutSettledRef.current = false; revisionRef.current = 0; lastRemoteRevisionRef.current = 0; setActiveBet(bet); setBetModalOpen(false);
+    const g = createGame(mode, seats); setGame(g); setStep("play"); broadcastLater(g, false);
   }
 
   function onRoll() {
-    if (!game || myPlayerIndex !== game.turnIndex) return;
-    if (isAuthority.current) { setRolling(true); setTimeout(() => { setGame((prev) => { if (!prev) return prev; const next = applyRoll(prev, rollDice()); broadcastLater(next); return next; }); setRolling(false); }, 400); }
+    const state = gameRef.current;
+    if (!state || myPlayerIndex !== state.turnIndex) return;
+    if (isAuthority.current) void processRoll();
     else void channelRef.current?.send({ type: "broadcast", event: "action", payload: { kind: "roll", userId: user?.id } });
   }
+
   function onPickToken(tokenIndex: number) {
-    if (!game || myPlayerIndex !== game.turnIndex || !game.awaitingMove) return;
-    if (isAuthority.current) setGame((prev) => { if (!prev) return prev; const next = applyMove(prev, tokenIndex); broadcastLater(next); return next; });
+    const state = gameRef.current;
+    if (!state || myPlayerIndex !== state.turnIndex || !state.awaitingMove) return;
+    if (isAuthority.current) void processMove(tokenIndex);
     else void channelRef.current?.send({ type: "broadcast", event: "action", payload: { kind: "move", tokenIndex, userId: user?.id } });
   }
+
   const exit = () => { if (typeof window !== "undefined" && window.parent !== window) window.parent.postMessage({ type: "jalwa:ludo-exit" }, "*"); onClose(); };
   if (!open) return null;
 
