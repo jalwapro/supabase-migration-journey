@@ -65,7 +65,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         if (!token) return json({ error: "authentication required" }, 401);
 
         const userId = await verifyUser(token);
-        if (!userId) return json({ error: "invalid authentication" }, 401);
+        if (!userId || !isUuid(userId)) return json({ error: "invalid authentication" }, 401);
 
         let body: { room?: string; canPublish?: boolean };
         try {
@@ -102,12 +102,11 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         const isHost = room.host_id === userId;
         const seated = member?.seat_index !== null && member?.seat_index !== undefined;
         const isMuted = member?.is_muted === true;
-
-        // Granting publication is only valid for a currently seated user or
-        // the host. Revocation is always allowed for the authenticated user's
-        // own participant. This keeps the permission transition server-side.
         const canPublish = requestedPublish && (isHost || seated) && !isMuted;
-        const participantIdentity = `jalwa_${userId}`;
+
+        // LiveKit identity MUST be the exact authenticated Supabase UUID.
+        // Never prefix or transform it.
+        const participantIdentity = userId;
         const livekitRoom = room.rtc_channel || roomId;
 
         const api = getLiveKitApi();
@@ -118,7 +117,6 @@ export const Route = createFileRoute("/api/livekit-permissions")({
             canPublish,
             canSubscribe: true,
             canPublishData: true,
-            // roomAdmin is not part of ParticipantPermission in this SDK version
           });
 
           return json({
