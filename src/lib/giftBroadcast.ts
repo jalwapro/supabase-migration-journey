@@ -25,11 +25,50 @@ export type GiftBroadcastPayload = {
   renderConfig?: Record<string, unknown> | null;
 };
 
+type GiftChannel = ReturnType<typeof supabase.channel>;
+type ChannelEntry = { channel: GiftChannel; refs: number; ready: Promise<void> };
+
+const channels = new Map<string, ChannelEntry>();
+
+/** Acquire the room-scoped gift channel. The room player owns the lifetime. */
+export function acquireGiftBroadcastChannel(roomId: string): GiftChannel {
+  const existing = channels.get(roomId);
+  if (existing) {
+    existing.refs += 1;
+    return existing.channel;
+  }
+
+  const channel = supabase.channel(`gift-player-${roomId}`, {
+    config: {
+      private: false,
+      broadcast: { self: true, ack: true },
+    },
+  });
+  const ready = new Promise<void>((resolve, reject) => {
+    channel.subscribe((status, error) => {
+      if (status === "SUBSCRIBED") resolve();
+      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(error ?? new Error(`Gift channel ${status}`));
+    });
+  });
+
+  channels.set(roomId, { channel, refs: 1, ready });
+  return channel;
+}
+
+/** Release one room-scoped gift channel reference. */
+export function releaseGiftBroadcastChannel(roomId: string): void {
+  const entry = channels.get(roomId);
+  if (!entry) return;
+  entry.refs -= 1;
+  if (entry.refs > 0) return;
+  channels.delete(roomId);
+  void supabase.removeChannel(entry.channel);
+}
+
 /**
  * Low-latency room gift fan-out. The database RPC remains authoritative for
- * coins/history; this broadcast is only the playback signal and its immutable
- * render snapshot. Sending before SUBSCRIBED intentionally falls back to the
- * Realtime HTTP transport, avoiding a second connection setup delay.
+ * coins/history. `id` MUST be the gift_sends.id returned by the RPC so the
+ * local Broadcast and durable Postgres event share one canonical dedupe key.
  */
 export async function broadcastGiftPlayback(
   roomId: string,
@@ -37,9 +76,17 @@ export async function broadcastGiftPlayback(
   targets: string[],
   sender: { id: string | null; name: string; avatar?: string | null },
   quantity: number,
-  id = crypto.randomUUID(),
+  id: string,
 ): Promise<void> {
-  const channel = supabase.channel(`gift-player-${roomId}`);
+  if (!id) throw new Error("Gift broadcast requires the canonical gift_sends.id");
+
+  let entry = channels.get(roomId);
+  if (!entry) {
+    acquireGiftBroadcastChannel(roomId);
+    entry = channels.get(roomId);
+  }
+  if (!entry) throw new Error("Unable to initialize gift broadcast channel");
+
   const payload: GiftBroadcastPayload = {
     id,
     roomId,
@@ -64,9 +111,7 @@ export async function broadcastGiftPlayback(
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
   };
 
-  try {
-    await channel.send({ type: "broadcast", event: "gift_play", payload });
-  } finally {
-    await supabase.removeChannel(channel);
-  }
+  await entry.ready;
+  const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
+  if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
 }
