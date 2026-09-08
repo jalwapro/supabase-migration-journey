@@ -276,30 +276,25 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       setActiveTab("users");
       return;
     }
-    if (seat.is_locked) return;
+    if (seat.is_locked) {
+      toast.error("Seat is locked");
+      return;
+    }
     if (!roomId) {
       onJoinSeat?.(idx);
       return;
     }
 
-    // A room can render before AuthProvider has hydrated or while an old
-    // access token is being refreshed. The UI's `user` state is not enough to
-    // prove that the outgoing RPC will carry an authenticated JWT, so verify
-    // against Supabase Auth immediately before calling the protected RPC.
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData.user) {
       toast.error("Your login session is not ready. Please sign in again.");
       return;
     }
 
-    const { error } = await supabase.rpc("request_seat", { _room_id: roomId, _seat_index: idx });
-    if (error) {
-      if (error.code === "42501" || /permission denied|unauthorized/i.test(error.message || "")) {
-        toast.error("Seat request needs an active login session. Please sign in again.");
-      } else {
-        toast.error(error.message || "Could not send seat request");
-      }
-    } else toast.success("Seat request sent to host");
+    // Regular seats are direct-claim seats. The parent calls the authoritative
+    // take_seat RPC; the database enforces membership, occupancy and host-seat
+    // exclusivity. We no longer create a host-approval request for normal seats.
+    onJoinSeat?.(idx);
   };
 
   const hostFrameUrl = host.avatar_frame_url || host.frame_url;
@@ -321,10 +316,10 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                     <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">1</span>
                     <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent">
-                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={onHostTap} /></span>
+                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
                       {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />}
                     </span>
-                    <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{host.username}</span>
+                    <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
                     <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span>
                   </div>
                 </div>
