@@ -12,6 +12,9 @@ interface RoomSlide {
   sort_order: number;
 }
 
+const ROOM_SLIDES_BUCKET = "room-bg";
+const ROOM_SLIDES_FOLDER = "room-slides";
+
 const normalizeImageUrl = (value: string) => {
   const url = value.trim();
   const match = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+?)(?:\?raw=true)?$/i);
@@ -46,27 +49,38 @@ export function AdminRoomSlidesManager() {
     if (!file) return;
 
     setUploading(true);
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
-    const filePath = `room-slides/${fileName}`;
+    try {
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `${crypto.randomUUID()}.${fileExt}`;
+      const filePath = `${ROOM_SLIDES_FOLDER}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("public")
-      .upload(filePath, file);
+      const { error: uploadError } = await supabase.storage
+        .from(ROOM_SLIDES_BUCKET)
+        .upload(filePath, file, {
+          contentType: file.type || undefined,
+          cacheControl: "3600",
+          upsert: false,
+        });
 
-    if (uploadError) {
+      if (uploadError) {
+        return toast.error("Upload failed: " + uploadError.message);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from(ROOM_SLIDES_BUCKET)
+        .getPublicUrl(filePath);
+
+      if (publicUrlData?.publicUrl) {
+        setImageUrl(publicUrlData.publicUrl);
+        toast.success("Image uploaded successfully!");
+      } else {
+        toast.error("Upload succeeded but public image URL was not generated");
+      }
+    } catch (uploadError) {
+      toast.error(uploadError instanceof Error ? uploadError.message : "Image upload failed");
+    } finally {
       setUploading(false);
-      return toast.error("Upload failed: " + uploadError.message);
-    }
-
-    const { data: publicUrlData } = supabase.storage
-      .from("public")
-      .getPublicUrl(filePath);
-
-    setUploading(false);
-    if (publicUrlData?.publicUrl) {
-      setImageUrl(publicUrlData.publicUrl);
-      toast.success("Image uploaded successfully!");
+      e.target.value = "";
     }
   };
 
@@ -129,17 +143,17 @@ export function AdminRoomSlidesManager() {
 
       <form onSubmit={add} className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 md:grid-cols-2">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Slide Title" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white" required />
-        
+
         <div className="flex items-center gap-2">
-          <input 
-            type="file" 
-            accept="image/*" 
-            id="slide-image-upload" 
-            className="hidden" 
-            onChange={handleFileUpload} 
+          <input
+            type="file"
+            accept="image/*"
+            id="slide-image-upload"
+            className="hidden"
+            onChange={handleFileUpload}
           />
-          <label 
-            htmlFor="slide-image-upload" 
+          <label
+            htmlFor="slide-image-upload"
             className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-amber-500/50 bg-slate-900 p-2 text-xs text-amber-400 hover:bg-amber-500/10"
           >
             <Upload className="h-4 w-4" />
