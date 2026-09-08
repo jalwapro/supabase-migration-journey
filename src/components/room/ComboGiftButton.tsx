@@ -58,7 +58,7 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
   }, [state, onExpire]);
 
   if (!state) return null;
-  const { gift, targets, receivers } = state;
+  const { gift, targets } = state;
   const price = (gift.price_coins ?? gift.price ?? 0) as number;
   const clipUrl = gift.clip_path && ["mp4", "webm", "svga"].includes(gift.clip_type ?? "") ? resolvePlayableGiftUrl(gift.clip_path) : null;
   const thumbUrl = resolveGiftImageUrl(gift.image_url ?? gift.icon_path ?? (isAssetUrlLike(gift.icon) ? gift.icon : null));
@@ -83,13 +83,29 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
     }
 
     try {
+      // Charge/log each recipient individually, but do not trigger playback here.
+      // Playback is broadcast once below for the whole recipient batch.
+      let firstSendId: string | null = null;
       for (const rid of targets) {
         const { data, error } = await supabase.rpc("send_gift", { _room_id: roomId, _receiver_id: rid, _gift_id: gift.id, _quantity: 1, _write_message: false });
         if (error) throw error;
         const row = data as { id?: string } | null;
         if (!row?.id) throw new Error("Gift was charged but returned no canonical send id");
+        if (!firstSendId) firstSendId = row.id;
         tapTotalsRef.current[rid] = (tapTotalsRef.current[rid] ?? 0) + 1;
-        await broadcastGiftPlayback(roomId, gift, [rid], { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null }, 1, row.id);
+      }
+
+      // One unified animation event for the complete batch, regardless of how
+      // many recipients were charged above (e.g. 5 recipients => 1 playback).
+      if (firstSendId) {
+        await broadcastGiftPlayback(
+          roomId,
+          gift,
+          targets,
+          { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null },
+          1,
+          firstSendId,
+        );
       }
       await refresh();
     } catch (e) {
