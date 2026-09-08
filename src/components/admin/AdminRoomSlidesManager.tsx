@@ -47,10 +47,9 @@ export function AdminRoomSlidesManager() {
 
     setUploading(true);
     const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36.substring(2))}-${Date.now()}.${fileExt}`;
+    const fileName = `${Math.random().toString(36).substring(2)}_${Date.now()}.${fileExt}`;
     const filePath = `room-slides/${fileName}`;
 
-    // Uploading to Supabase Storage bucket named 'public' or change bucket name as required
     const { error: uploadError } = await supabase.storage
       .from("public")
       .upload(filePath, file);
@@ -131,7 +130,6 @@ export function AdminRoomSlidesManager() {
       <form onSubmit={add} className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 md:grid-cols-2">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Slide Title" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white" required />
         
-        {/* Upload Button Component Integration */}
         <div className="flex items-center gap-2">
           <input 
             type="file" 
