@@ -32,14 +32,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     const primary = assetUrl(active.gift_clip_path) ?? assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon);
     if (primary) return;
     const candidates = giftAssetCandidates(active.gift_name);
-    (async () => {
-      for (const candidate of candidates) {
-        try {
-          const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" });
-          if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); return; }
-        } catch {}
-      }
-    })();
+    (async () => { for (const candidate of candidates) { try { const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" }); if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); return; } } catch {} } })();
     return () => { cancelled = true; };
   }, [active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_image_url, active?.gift_icon]);
 
@@ -47,26 +40,49 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     if (!active || !mediaFailed) return;
     let cancelled = false;
     const candidates = giftAssetCandidates(active.gift_name);
-    (async () => {
-      for (const candidate of candidates) {
-        if (assetUrl(active.gift_clip_path) === candidate) continue;
-        try {
-          const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" });
-          if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); setMediaFailed(false); return; }
-        } catch {}
-      }
-    })();
+    (async () => { for (const candidate of candidates) { if (assetUrl(active.gift_clip_path) === candidate) continue; try { const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" }); if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); setMediaFailed(false); return; } } catch {} } })();
     return () => { cancelled = true; };
   }, [mediaFailed, active?.id, active?.gift_name, active?.gift_clip_path]);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); window.dispatchEvent(new PopStateEvent("popstate")); } };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
+  useEffect(() => { const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); window.dispatchEvent(new PopStateEvent("popstate")); } }; window.addEventListener("keydown", handleKeyDown); return () => window.removeEventListener("keydown", handleKeyDown); }, []);
   useEffect(() => { let alive = true; void supabase.auth.getUser().then(({ data }) => { if (alive) setLocalUserId(data.user?.id ?? null); }); const { data } = supabase.auth.onAuthStateChange((_event, session) => { if (alive) setLocalUserId(session?.user?.id ?? null); }); return () => { alive = false; data.subscription.unsubscribe(); }; }, []);
-  useEffect(() => { let alive = true; const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => { if (!alive) return; const row = payload.new as GiftRow; if (!row?.id) return; if (row.sender_id && localUserId && row.sender_id === localUserId && localEchoRef.current.has(row.id)) return; void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); }); }).subscribe(); const onLocalGift = (event: Event) => { const d = (event as CustomEvent).detail as Record<string, unknown> | undefined; if (!d) return; const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []); if (targets.length && localUserId && !targets.includes(localUserId) && d.local !== true) return; const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`; localEchoRef.current.add(key); const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" }; void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); }); }; window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener); return () => { alive = false; void supabase.removeChannel(channel); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); }; }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
+
+  useEffect(() => {
+    let alive = true;
+    const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
+      if (!alive || !localUserId) return;
+      const row = payload.new as GiftRow;
+      if (!row?.id) return;
+      // Sender playback is delivered by the unified Broadcast event. Never replay
+      // the sender's durable rows, and never show another recipient's gift.
+      if (row.sender_id === localUserId) return;
+      const receiverIds = Array.isArray(row.receiver_ids) ? row.receiver_ids : (row.receiver_id ? [row.receiver_id] : []);
+      if (receiverIds.length && !receiverIds.includes(localUserId)) return;
+      if (localEchoRef.current.has(row.id)) return;
+      void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+    }).subscribe();
+    const onLocalGift = (event: Event) => {
+      const d = (event as CustomEvent).detail as Record<string, unknown> | undefined;
+      if (!d) return;
+      const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
+      if (targets.length && localUserId && !targets.includes(localUserId) && d.local !== true) return;
+      const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`;
+      const eventIds = Array.isArray(d.eventIds) ? d.eventIds.filter((x): x is string => typeof x === "string") : [key];
+      // Mark every durable row represented by this single broadcast as already
+      // played. This prevents the second/third/etc. recipient row from replaying.
+      for (const eventId of eventIds) {
+        if (eventId === key) continue;
+        seenRef.current.add(eventId);
+        seenOrderRef.current.push(eventId);
+      }
+      localEchoRef.current.add(key);
+      const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" };
+      void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+    };
+    window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
+    return () => { alive = false; void supabase.removeChannel(channel); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
+  }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
+
   useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const declared = num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, clearTimer, finish]);
   useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
