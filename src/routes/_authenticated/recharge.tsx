@@ -6,15 +6,14 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { CheckCircle2, Copy, Image as ImageIcon, Loader2, Smartphone, Upload, WalletCards } from "lucide-react";
 import { toast } from "sonner";
-import jalwaCoin from "@/assets/jalwa-coin.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
 type Method = "easypaisa" | "jazzcash" | "jazzcash_api";
 type Tier = "starter" | "popular" | "vip" | "whale";
 type Pkg = { id: string; coins: number; bonus_coins: number; price_pkr: number; label: string | null; badge: string | null; tier: Tier };
 const tiers: { key: Tier; label: string }[] = [{ key: "starter", label: "Starter" }, { key: "popular", label: "Popular" }, { key: "vip", label: "VIP" }, { key: "whale", label: "Whale" }];
-const coinSrc = jalwaCoin.url;
-const Coin = ({ className = "h-5 w-5" }: { className?: string }) => <img src={coinSrc} alt="Jalwa coin" className={className} />;
+const coinSrc = "/jalwa-coin.svg";
+const Coin = ({ className = "h-5 w-5" }: { className?: string }) => <img src={coinSrc} alt="Jalwa coin" className={className} onError={(e) => { e.currentTarget.style.display = "none"; }} />;
 
 function RechargePage() {
   const navigate = useNavigate(); const qc = useQueryClient();
