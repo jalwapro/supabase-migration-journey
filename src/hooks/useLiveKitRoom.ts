@@ -26,9 +26,19 @@ function uidFromIdentity(identity: string) {
   return (Math.abs(hash) % 2_000_000_000) + 1;
 }
 
-function attachedElements(track: AnyTrack): HTMLMediaElement[] {
-  const attached = track.attach();
-  return Array.isArray(attached) ? attached : [attached];
+function hasAttach(track: unknown): track is AnyTrack {
+  return !!track && typeof (track as AnyTrack).attach === "function";
+}
+
+function attachedElements(track: unknown): HTMLMediaElement[] {
+  if (!hasAttach(track)) return [];
+  try {
+    const attached = track.attach();
+    return (Array.isArray(attached) ? attached : [attached]).filter(Boolean);
+  } catch (error) {
+    console.warn("[LiveKit] Failed to attach track", error);
+    return [];
+  }
 }
 
 function videoFacade(track: AnyTrack): RemoteVideoTrack {
@@ -48,7 +58,9 @@ function videoFacade(track: AnyTrack): RemoteVideoTrack {
       });
     },
     stop() {
-      try { track.detach(); } catch {}
+      if (hasAttach(track)) {
+        try { track.detach(); } catch {}
+      }
       elements.forEach((el) => el.remove());
       elements = [];
     },
@@ -91,7 +103,11 @@ function multiAudioFacade(tracks: AnyTrack[]): RemoteAudioTrack {
       });
     },
     stop() {
-      tracks.forEach((track) => { try { track.detach(); } catch {} });
+      tracks.forEach((track) => {
+        if (hasAttach(track)) {
+          try { track.detach(); } catch {}
+        }
+      });
       elements.forEach((el) => { remoteAudioEls.delete(el as HTMLAudioElement); el.remove(); });
       elements = [];
     },
@@ -163,19 +179,19 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
     const refresh = (participant: RemoteParticipant) => {
       const id = uidFromIdentity(participant.identity);
-      const audioPubs = Array.from(participant.trackPublications.values()).filter((pub) => pub.kind === Track.Kind.Audio && pub.track);
-      const videoPub = Array.from(participant.trackPublications.values()).find((pub) => pub.kind === Track.Kind.Video && pub.track);
+      const audioPubs = Array.from(participant.trackPublications.values()).filter((pub) => pub.kind === Track.Kind.Audio && hasAttach(pub.track));
+      const videoPub = Array.from(participant.trackPublications.values()).find((pub) => pub.kind === Track.Kind.Video && hasAttach(pub.track));
       setRemotes((current) => {
         current.get(id)?.audioTrack?.stop();
-        const audioTracks = audioPubs.map((pub) => pub.track as unknown as AnyTrack);
+        const audioTracks = audioPubs.map((pub) => pub.track).filter(hasAttach);
         const audioTrack = audioTracks.length ? multiAudioFacade(audioTracks) : undefined;
-        const videoTrack = videoPub?.track ? videoFacade(videoPub.track as unknown as AnyTrack) : undefined;
+        const videoTrack = videoPub?.track && hasAttach(videoPub.track) ? videoFacade(videoPub.track) : undefined;
         if (audioTrack) {
           audioTrack.setVolume(speakerMutedRef.current ? 0 : speakerVolumeRef.current);
           audioTrack.play();
         }
         const next = new Map(current);
-        next.set(id, { uid: id, hasAudio: audioTracks.length > 0, hasVideo: !!videoPub, audioTrack, videoTrack });
+        next.set(id, { uid: id, hasAudio: audioTracks.length > 0, hasVideo: !!videoTrack, audioTrack, videoTrack });
         return next;
       });
     };
@@ -445,8 +461,8 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       const enable = !videoOn;
       await room.localParticipant.setCameraEnabled(enable);
       setVideoOn(enable);
-      const publication = Array.from(room.localParticipant.trackPublications.values()).find((pub) => pub.kind === Track.Kind.Video && pub.track);
-      setLocalVideoTrack(enable && publication?.track ? videoFacade(publication.track as unknown as AnyTrack) : null);
+      const publication = Array.from(room.localParticipant.trackPublications.values()).find((pub) => pub.kind === Track.Kind.Video && hasAttach(pub.track));
+      setLocalVideoTrack(enable && publication?.track && hasAttach(publication.track) ? videoFacade(publication.track) : null);
     } catch (videoError) {
       setError(videoError instanceof Error ? videoError.message : "Camera failed");
     }
