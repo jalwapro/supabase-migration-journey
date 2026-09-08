@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Trash2, Plus, Power, RefreshCw, Image as ImageIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Trash2, Plus, Power, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -11,6 +11,14 @@ interface RoomSlide {
   is_active: boolean;
   sort_order: number;
 }
+
+const normalizeImageUrl = (value: string) => {
+  const url = value.trim();
+  const match = url.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+?)(?:\?raw=true)?$/i);
+  if (!match) return url;
+  const [, owner, repo, ref, path] = match;
+  return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${path}`;
+};
 
 export function AdminRoomSlidesManager() {
   const [slides, setSlides] = useState<RoomSlide[]>([]);
@@ -24,7 +32,6 @@ export function AdminRoomSlidesManager() {
       .from("room_slides")
       .select("id, title, image_url, link_url, is_active, sort_order")
       .order("sort_order", { ascending: true });
-    
     if (error) return toast.error(error.message);
     setSlides((data ?? []) as RoomSlide[]);
   };
@@ -40,14 +47,15 @@ export function AdminRoomSlidesManager() {
     }
 
     setLoading(true);
+    const normalizedImageUrl = normalizeImageUrl(imageUrl);
     const { error } = await supabase.from("room_slides").insert({
       title: title.trim(),
-      image_url: imageUrl.trim(),
+      image_url: normalizedImageUrl,
       link_url: linkUrl.trim() || null,
       is_active: true,
       sort_order: slides.length + 1,
     });
-    
+
     setLoading(false);
     if (error) return toast.error(error.message);
 
@@ -63,7 +71,6 @@ export function AdminRoomSlidesManager() {
       .from("room_slides")
       .update({ is_active: !s.is_active })
       .eq("id", s.id);
-      
     if (error) return toast.error(error.message);
     toast.success(s.is_active ? "Slide deactivated" : "Slide activated");
     void fetchSlides();
@@ -85,53 +92,24 @@ export function AdminRoomSlidesManager() {
             Manage slides shown in voice rooms using public image URLs (GitHub, Imgur, etc.).
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void fetchSlides()}
-          className="rounded-lg bg-white/10 p-2 hover:bg-white/20"
-          aria-label="Refresh"
-        >
+        <button type="button" onClick={() => void fetchSlides()} className="rounded-lg bg-white/10 p-2 hover:bg-white/20" aria-label="Refresh">
           <RefreshCw className="h-4 w-4" />
         </button>
       </div>
 
-      <form
-        onSubmit={add}
-        className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 md:grid-cols-2"
-      >
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Slide Title"
-          className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white"
-          required
-        />
-        <input
-          value={imageUrl}
-          onChange={(e) => setImageUrl(e.target.value)}
-          placeholder="Public Image URL (e.g. GitHub raw link)"
-          className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white"
-          required
-        />
-        <input
-          value={linkUrl}
-          onChange={(e) => setLinkUrl(e.target.value)}
-          placeholder="Link URL (Optional)"
-          className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white md:col-span-2"
-        />
+      <form onSubmit={add} className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 md:grid-cols-2">
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Slide Title" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white" required />
+        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Public Image URL (e.g. GitHub raw link)" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white" required />
+        <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Link URL (Optional)" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white md:col-span-2" />
 
         {imageUrl && (
           <div className="flex items-center gap-3 rounded-lg border border-slate-700 bg-slate-900 p-2 md:col-span-2">
-            <img src={imageUrl} alt="Preview" className="h-14 w-24 rounded-md object-cover" />
-            <span className="min-w-0 truncate text-[10px] text-slate-400">{imageUrl}</span>
+            <img src={normalizeImageUrl(imageUrl)} alt="Preview" className="h-14 w-24 rounded-md object-cover" />
+            <span className="min-w-0 truncate text-[10px] text-slate-400">{normalizeImageUrl(imageUrl)}</span>
           </div>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-purple-600 py-2.5 text-xs font-bold text-white disabled:opacity-50 md:col-span-2"
-        >
+        <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-purple-600 py-2.5 text-xs font-bold text-white disabled:opacity-50 md:col-span-2">
           <Plus className="h-4 w-4" />
           {loading ? "Adding..." : "Add New Slide"}
         </button>
@@ -149,47 +127,17 @@ export function AdminRoomSlidesManager() {
           </thead>
           <tbody>
             {slides.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="p-8 text-center text-slate-500">
-                  No slides yet.
-                </td>
-              </tr>
+              <tr><td colSpan={4} className="p-8 text-center text-slate-500">No slides yet.</td></tr>
             ) : (
               slides.map((s) => (
                 <tr key={s.id} className="border-b border-slate-800 hover:bg-slate-800/50">
-                  <td className="p-3">
-                    <img
-                      src={s.image_url}
-                      alt=""
-                      className="h-10 w-16 rounded-lg border border-slate-700 object-cover"
-                    />
-                  </td>
+                  <td className="p-3"><img src={normalizeImageUrl(s.image_url)} alt="" className="h-10 w-16 rounded-lg border border-slate-700 object-cover" /></td>
                   <td className="p-3 font-semibold">{s.title}</td>
-                  <td className="p-3">
-                    <span className={s.is_active ? "text-emerald-400" : "text-slate-500"}>
-                      {s.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="p-3">
-                    <div className="flex justify-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => void toggle(s)}
-                        className="rounded-lg bg-white/10 p-2 hover:bg-white/20"
-                        aria-label={s.is_active ? "Deactivate" : "Activate"}
-                      >
-                        <Power className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => void remove(s.id)}
-                        className="rounded-lg bg-red-500/20 p-2 text-red-400 hover:bg-red-500 hover:text-white"
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+                  <td className="p-3"><span className={s.is_active ? "text-emerald-400" : "text-slate-500"}>{s.is_active ? "Active" : "Inactive"}</span></td>
+                  <td className="p-3"><div className="flex justify-center gap-2">
+                    <button type="button" onClick={() => void toggle(s)} className="rounded-lg bg-white/10 p-2 hover:bg-white/20" aria-label={s.is_active ? "Deactivate" : "Activate"}><Power className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => void remove(s.id)} className="rounded-lg bg-red-500/20 p-2 text-red-400 hover:bg-red-500 hover:text-white" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
+                  </div></td>
                 </tr>
               ))
             )}
