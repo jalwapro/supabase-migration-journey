@@ -37,14 +37,14 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
      if(error)throw error;
      const row=data as { id?: string } | null;
      if(!row?.id)throw new Error("Gift was charged but returned no canonical send id");
-     await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,row.id);
+     await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,row.id,[row.id]);
    }else{
      const{data,error}=await supabase.rpc("send_gift_multi",{_room_id:roomId,_receiver_ids:uniqueTargets,_gift_id:gift.id,_quantity:quantity} as any);
      if(error)throw error;
      const rows=Array.isArray(data)?data as Array<{id?:string;receiver_id?:string}>:[];
      if(rows.length!==uniqueTargets.length||rows.some((row)=>!row.id))throw new Error("Gift batch returned incomplete canonical send ids");
      // Keep one durable row per recipient for accounting/history, but emit only one playback event.
-     await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,rows[0].id!);
+     await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,rows[0].id!,rows.map(row=>row.id!));
    }
    return{gift,quantity};
  },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["wallet_tx"]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
