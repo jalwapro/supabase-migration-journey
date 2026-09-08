@@ -75,8 +75,17 @@ function PaymentAccounts() {
   const save = useMutation({
     mutationFn: async () => {
       if (!verified) throw new Error("Google Authenticator verification is required before saving payment settings.");
-      const { error } = await supabase.from("app_kv").upsert({ key: "payments", value: values });
+      // `payments` is a canonical seeded app_kv row. Use UPDATE instead of
+      // upsert: Postgres RLS evaluates the INSERT policy for an upsert even
+      // when the primary key already exists, which caused a false RLS failure.
+      const { data, error } = await supabase
+        .from("app_kv")
+        .update({ value: values })
+        .eq("key", "payments")
+        .select("key")
+        .maybeSingle();
       if (error) throw error;
+      if (!data) throw new Error("Payment settings could not be saved. Admin permission is required.");
     },
     onSuccess: () => {
       toast.success("Payment accounts saved");
