@@ -43,7 +43,26 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
 
     const onSubscribed = (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
       if (track.kind !== Track.Kind.Audio) return;
-      const el = track.attach() as HTMLAudioElement;
+
+      // LiveKit can emit a subscription during track lifecycle transitions where
+      // the track object is already stale. Never call attach on an invalid track.
+      if (!track || typeof track.attach !== "function") {
+        console.warn("[LiveKit] TrackSubscribed received without attach-capable track", {
+          participant: participant.identity,
+          trackSid: publication.trackSid,
+        });
+        return;
+      }
+
+      let el: HTMLAudioElement;
+      try {
+        el = track.attach() as HTMLAudioElement;
+      } catch (attachError) {
+        console.warn("[LiveKit] Failed to attach remote audio track", attachError);
+        return;
+      }
+
+      if (!el) return;
       el.autoplay = true;
       el.setAttribute("playsinline", "true");
       document.body.appendChild(el);
@@ -53,7 +72,11 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
 
     const onUnsubscribed = (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
       if (track.kind !== Track.Kind.Audio) return;
-      track.detach().forEach((el) => el.remove());
+      try {
+        track.detach().forEach((el) => el.remove());
+      } catch (detachError) {
+        console.warn("[LiveKit] Failed to detach remote audio track", detachError);
+      }
       const key = `${participant.identity}:${publication.trackSid}`;
       setRemoteAudio((current) => {
         const next = new Map(current);
