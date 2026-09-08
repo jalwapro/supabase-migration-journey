@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trash2, Plus, Power, RefreshCw } from "lucide-react";
+import { Trash2, Plus, Power, RefreshCw, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -26,6 +26,7 @@ export function AdminRoomSlidesManager() {
   const [imageUrl, setImageUrl] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const fetchSlides = async () => {
     const { data, error } = await supabase
@@ -40,10 +41,40 @@ export function AdminRoomSlidesManager() {
     void fetchSlides();
   }, []);
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${Math.random().toString(36.substring(2))}-${Date.now()}.${fileExt}`;
+    const filePath = `room-slides/${fileName}`;
+
+    // Uploading to Supabase Storage bucket named 'public' or change bucket name as required
+    const { error: uploadError } = await supabase.storage
+      .from("public")
+      .upload(filePath, file);
+
+    if (uploadError) {
+      setUploading(false);
+      return toast.error("Upload failed: " + uploadError.message);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from("public")
+      .getPublicUrl(filePath);
+
+    setUploading(false);
+    if (publicUrlData?.publicUrl) {
+      setImageUrl(publicUrlData.publicUrl);
+      toast.success("Image uploaded successfully!");
+    }
+  };
+
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !imageUrl.trim()) {
-      return toast.error("Title and public image URL are required");
+      return toast.error("Title and image URL are required");
     }
 
     setLoading(true);
@@ -89,7 +120,7 @@ export function AdminRoomSlidesManager() {
         <div>
           <h2 className="text-xl font-bold text-amber-400">Voice Room Slides</h2>
           <p className="mt-1 text-xs text-slate-400">
-            Manage slides shown in voice rooms using public image URLs (GitHub, Imgur, etc.).
+            Manage slides shown in voice rooms with direct file upload or image URLs.
           </p>
         </div>
         <button type="button" onClick={() => void fetchSlides()} className="rounded-lg bg-white/10 p-2 hover:bg-white/20" aria-label="Refresh">
@@ -99,7 +130,26 @@ export function AdminRoomSlidesManager() {
 
       <form onSubmit={add} className="mb-6 grid grid-cols-1 gap-3 rounded-xl border border-slate-700 bg-slate-800 p-4 md:grid-cols-2">
         <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Slide Title" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white" required />
-        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Public Image URL (e.g. GitHub raw link)" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white" required />
+        
+        {/* Upload Button Component Integration */}
+        <div className="flex items-center gap-2">
+          <input 
+            type="file" 
+            accept="image/*" 
+            id="slide-image-upload" 
+            className="hidden" 
+            onChange={handleFileUpload} 
+          />
+          <label 
+            htmlFor="slide-image-upload" 
+            className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-amber-500/50 bg-slate-900 p-2 text-xs text-amber-400 hover:bg-amber-500/10"
+          >
+            <Upload className="h-4 w-4" />
+            {uploading ? "Uploading to Cloud..." : "Upload Image File"}
+          </label>
+        </div>
+
+        <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL (Auto-filled on upload or paste link)" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white md:col-span-2" required />
         <input value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="Link URL (Optional)" className="rounded-lg border border-slate-700 bg-slate-900 p-2.5 text-xs text-white md:col-span-2" />
 
         {imageUrl && (
@@ -109,7 +159,7 @@ export function AdminRoomSlidesManager() {
           </div>
         )}
 
-        <button type="submit" disabled={loading} className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-purple-600 py-2.5 text-xs font-bold text-white disabled:opacity-50 md:col-span-2">
+        <button type="submit" disabled={loading || uploading} className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-amber-500 to-purple-600 py-2.5 text-xs font-bold text-white disabled:opacity-50 md:col-span-2">
           <Plus className="h-4 w-4" />
           {loading ? "Adding..." : "Add New Slide"}
         </button>
