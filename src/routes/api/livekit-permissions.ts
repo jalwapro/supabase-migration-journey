@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { jwtVerify } from "jose";
 import { LiveKitAPI } from "livekit-server-sdk";
 
 const cors = {
@@ -9,37 +8,40 @@ const cors = {
 };
 
 function json(body: unknown, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { "Content-Type": "application/json", ...cors },
-  });
+  return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...cors } });
 }
 
 function supabaseUrl() {
   return process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
 }
-
 function serviceKey() {
   return process.env.SB_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SB_SECRET_KEY;
 }
 
 async function verifyUser(token: string): Promise<string | null> {
-  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SB_JWT_SECRET || process.env.JWT_SECRET;
-  if (secret) {
+  // Verify against Supabase Auth first. This prevents a stale/mismatched
+  // Vercel JWT secret from turning valid Supabase sessions into 401s.
+  const key = serviceKey();
+  if (key) {
     try {
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
-      return typeof payload.sub === "string" && (!payload.role || payload.role === "authenticated") ? payload.sub : null;
+      const { createClient } = await import("@supabase/supabase-js");
+      const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
+      const { data, error } = await sb.auth.getUser(token);
+      if (!error && data.user?.id) return data.user.id;
     } catch {
-      return null;
+      // Fall through to local verification if Auth is temporarily unavailable.
     }
   }
 
-  const key = serviceKey();
-  if (!key) return null;
-  const { createClient } = await import("@supabase/supabase-js");
-  const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await sb.auth.getUser(token);
-  return error || !data.user ? null : data.user.id;
+  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SB_JWT_SECRET || process.env.JWT_SECRET;
+  if (!secret) return null;
+  try {
+    const { jwtVerify } = await import("jose");
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
+    return typeof payload.sub === "string" && (!payload.role || payload.role === "authenticated") ? payload.sub : null;
+  } catch {
+    return null;
+  }
 }
 
 function isUuid(value: string) {
@@ -59,7 +61,6 @@ export const Route = createFileRoute("/api/livekit-permissions")({
   server: {
     handlers: {
       OPTIONS: async () => new Response(null, { status: 204, headers: cors }),
-
       POST: async ({ request }) => {
         const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
         if (!token) return json({ error: "authentication required" }, 401);
@@ -68,11 +69,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         if (!userId || !isUuid(userId)) return json({ error: "invalid authentication" }, 401);
 
         let body: { room?: string; canPublish?: boolean };
-        try {
-          body = await request.json();
-        } catch {
-          return json({ error: "invalid json" }, 400);
-        }
+        try { body = await request.json(); } catch { return json({ error: "invalid json" }, 400); }
 
         const roomId = String(body.room ?? "").trim();
         if (!roomId || roomId.length > 128) return json({ error: "room is required" }, 400);
@@ -91,8 +88,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         if (!room) return json({ error: "room not found" }, 404);
         if (room.status !== "live") return json({ error: "room is not live" }, 409);
 
-        const { data: member, error: memberError } = await sb
-          .from("room_members")
+        const { data: member, error: memberError } = await sb.from("room_members")
           .select("seat_index,is_muted")
           .eq("room_id", room.id)
           .eq("user_id", userId)
@@ -103,9 +99,6 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         const seated = member?.seat_index !== null && member?.seat_index !== undefined;
         const isMuted = member?.is_muted === true;
         const canPublish = requestedPublish && (isHost || seated) && !isMuted;
-
-        // LiveKit identity MUST be the exact authenticated Supabase UUID.
-        // Never prefix or transform it.
         const participantIdentity = userId;
         const livekitRoom = room.rtc_channel || roomId;
 
@@ -118,15 +111,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
             canSubscribe: true,
             canPublishData: true,
           });
-
-          return json({
-            ok: true,
-            room: livekitRoom,
-            identity: participantIdentity,
-            canPublish,
-            canSubscribe: true,
-            participant_sid: participant.sid,
-          });
+          return json({ ok: true, room: livekitRoom, identity: participantIdentity, canPublish, canSubscribe: true, participant_sid: participant.sid });
         } catch (e) {
           return json({ error: e instanceof Error ? e.message : "LiveKit permission update failed" }, 502);
         }
