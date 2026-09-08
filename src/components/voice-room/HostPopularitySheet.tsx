@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Clock3, Gift, Rocket, Flame, X, Users, Coins } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 type Props = { roomId: string; open: boolean; onClose: () => void; popularityPct: number; hostName?: string | null };
 type PopularityData = { host_id: string; cumulative_popularity: number; total_live_seconds: number; today_live_seconds: number; week_live_seconds: number; gifts_power: number; tasks_completed: number; task_target: number; streak_days: number; host_bonus: number; host_commission: number; red_diamonds: number; red_diamonds_pkr_value: number; current_rank: "Bronze" | "Silver" | "Gold" | "Diamond" | "Platinum"; weekly_followers: number };
+type HostPopularityView = { hostId: string; hostLevel: number; profileName: string; hostAvatar: string | null; data: PopularityData; dailyGiftPower: number };
 
 const DAILY_LIVE_TARGET = 6 * 60 * 60;
 const DAILY_GIFT_TARGET = 1_000_000;
@@ -14,58 +16,74 @@ const getRankColor = (rank: PopularityData["current_rank"]) => { switch (rank) {
 const CircularProgressRing = ({ progress, colorClass }: { progress: number; colorClass: string }) => { const radius = 42; const circumference = 2 * Math.PI * radius; const strokeDashoffset = circumference - (Math.min(100, Math.max(0, progress)) / 100) * circumference; return (<svg className="h-32 w-32 -rotate-90 transform" viewBox="0 0 100 100"><circle className="text-white/5" strokeWidth="8" stroke="currentColor" fill="transparent" r={radius} cx="50" cy="50" /><circle className={`${colorClass} transition-all duration-1000 ease-out`} strokeWidth="10" strokeDasharray={circumference} strokeDashoffset={strokeDashoffset} strokeLinecap="round" stroke="currentColor" fill="transparent" r={radius} cx="50" cy="50" style={{ filter: "drop-shadow(0 0 6px currentColor)" }} /></svg>); };
 
 export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) {
-  const [hostId, setHostId] = useState(""); const [hostLevel, setHostLevel] = useState<number | null>(null); const [profileName, setProfileName] = useState<string | null>(hostName ?? null); const [hostAvatar, setHostAvatar] = useState<string | null>(null); const [data, setData] = useState<PopularityData>(emptyData); const [dailyGiftPower, setDailyGiftPower] = useState(0); const [loading, setLoading] = useState(false); const [error, setError] = useState<string | null>(null);
+  const roomHostQuery = useQuery({
+    queryKey: ["host-room", roomId],
+    queryFn: async () => {
+      const { data: room, error } = await supabase.from("live_rooms").select("host_id").eq("id", roomId).maybeSingle();
+      if (error) throw error;
+      const resolvedHostId = room?.host_id ? String(room.host_id) : "";
+      if (!resolvedHostId) throw new Error("Host profile could not be resolved");
+      return resolvedHostId;
+    },
+    enabled: open && !!roomId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnReconnect: true,
+  });
 
-  useEffect(() => {
-    if (!open || !roomId) return;
-    let active = true;
-    const load = async () => {
-      setLoading(true); setError(null);
-      try {
-        let resolvedHostId = roomId;
-        // live_rooms uses host_id as the authoritative room -> host mapping.
-        // Do not query a non-existent user_id column: that makes PostgREST reject
-        // the whole room lookup and leaves resolvedHostId equal to roomId.
-        const { data: room, error: roomError } = await supabase
-          .from("live_rooms")
-          .select("host_id")
-          .eq("id", roomId)
-          .maybeSingle();
-        if (roomError) throw roomError;
-        if (room?.host_id) resolvedHostId = String(room.host_id);
-        if (!resolvedHostId) throw new Error("Host profile could not be resolved");
-        if (!active) return;
-        setHostId(resolvedHostId);
-        const profilePromise = supabase.from("profiles").select("level, username, full_name, avatar").eq("id", resolvedHostId).maybeSingle();
-        let statsResult: any = { data: null, error: null };
-        try { statsResult = await (supabase as any).rpc("host_popularity_get_v2", { _host_id: resolvedHostId }); } catch (e) { console.warn("RPC host_popularity_get_v2 failed", e); }
-        if (statsResult.error || !statsResult.data) {
-          try { statsResult = await (supabase as any).rpc("host_popularity_get", { _host_id: resolvedHostId }); } catch (e) { console.warn("RPC host_popularity_get failed", e); }
-        }
-        const followersPromise = supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", resolvedHostId).gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
-        const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
-        const giftsPromise = supabase.from("gift_sends").select("coins_spent").eq("receiver_id", resolvedHostId).gte("created_at", dayStart.toISOString());
-        const [profileResult, followersResult, giftsResult] = await Promise.all([profilePromise, followersPromise, giftsPromise]);
-        if (!active) return;
-        const profile = profileResult.data as { level?: number | null; username?: string | null; full_name?: string | null; avatar?: string | null } | null;
-        const row = statsResult.error || !statsResult.data ? null : (Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data);
-        const cumulativePop = Number(row?.cumulative_popularity) || 0;
-        const baseToday = Number(row?.today_live_seconds) || 0;
-        const activeStartedAt = row?.active_session_started_at ? Date.parse(String(row.active_session_started_at)) : NaN;
-        const liveNow = Number.isFinite(activeStartedAt) ? Math.max(0, Math.floor((Date.now() - activeStartedAt) / 1000)) : 0;
-        const todayLiveSeconds = baseToday + liveNow;
-        const totalLiveSeconds = (Number(row?.total_live_seconds) || 0) + liveNow;
-        const weekLiveSeconds = (Number(row?.week_live_seconds) || 0) + liveNow;
-        const giftRows = Array.isArray(giftsResult.data) ? giftsResult.data : [];
-        const todayGifts = giftRows.reduce((sum, gift) => sum + Math.max(0, Number(gift.coins_spent) || 0), 0);
-        const next = { ...emptyData(resolvedHostId), host_id: resolvedHostId, cumulative_popularity: cumulativePop, total_live_seconds: totalLiveSeconds, today_live_seconds: todayLiveSeconds, week_live_seconds: weekLiveSeconds, gifts_power: Number(row?.gifts_power) || 0, tasks_completed: Number(row?.tasks_completed) || 0, task_target: Math.max(1, Number(row?.task_target) || 100), streak_days: Number(row?.streak_days) || 0, host_bonus: Number(row?.host_bonus) || 0, host_commission: Number(row?.host_commission) || 0, red_diamonds: Number(row?.red_diamonds) || 0, red_diamonds_pkr_value: Number(row?.red_diamonds_pkr_value) || 500, current_rank: getRank(cumulativePop), weekly_followers: followersResult.count ?? 0 } satisfies PopularityData;
-        setHostLevel(Number(profile?.level) || 1); setProfileName(profile?.full_name || profile?.username || hostName || "Host"); setHostAvatar(profile?.avatar || null); setDailyGiftPower(todayGifts); setData(next);
-      } catch (err) { if (active) setError(err instanceof Error ? err.message : "Unable to load host popularity"); } finally { if (active) setLoading(false); }
-    };
-    void load();
-    const timer = window.setInterval(() => { void load(); }, 15000);
-    return () => { active = false; window.clearInterval(timer); };
-  }, [open, roomId, hostName]);
+  const hostId = roomHostQuery.data ?? "";
+  const popularityQuery = useQuery<HostPopularityView>({
+    queryKey: ["host-popularity", hostId],
+    queryFn: async () => {
+      if (!hostId) throw new Error("Host profile could not be resolved");
+
+      const profilePromise = supabase.from("profiles").select("level, username, full_name, avatar").eq("id", hostId).maybeSingle();
+      let statsResult: any = { data: null, error: null };
+      try { statsResult = await (supabase as any).rpc("host_popularity_get_v2", { _host_id: hostId }); } catch (e) { console.warn("RPC host_popularity_get_v2 failed", e); }
+      if (statsResult.error || !statsResult.data) {
+        try { statsResult = await (supabase as any).rpc("host_popularity_get", { _host_id: hostId }); } catch (e) { console.warn("RPC host_popularity_get failed", e); }
+      }
+
+      const followersPromise = supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", hostId).gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+      const dayStart = new Date();
+      dayStart.setHours(0, 0, 0, 0);
+      const giftsPromise = supabase.from("gift_sends").select("coins_spent").eq("receiver_id", hostId).gte("created_at", dayStart.toISOString());
+      const [profileResult, followersResult, giftsResult] = await Promise.all([profilePromise, followersPromise, giftsPromise]);
+
+      const profile = profileResult.data as { level?: number | null; username?: string | null; full_name?: string | null; avatar?: string | null } | null;
+      const row = statsResult.error || !statsResult.data ? null : (Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data);
+      const cumulativePop = Number(row?.cumulative_popularity) || 0;
+      const baseToday = Number(row?.today_live_seconds) || 0;
+      const activeStartedAt = row?.active_session_started_at ? Date.parse(String(row.active_session_started_at)) : NaN;
+      const liveNow = Number.isFinite(activeStartedAt) ? Math.max(0, Math.floor((Date.now() - activeStartedAt) / 1000)) : 0;
+      const todayLiveSeconds = baseToday + liveNow;
+      const totalLiveSeconds = (Number(row?.total_live_seconds) || 0) + liveNow;
+      const weekLiveSeconds = (Number(row?.week_live_seconds) || 0) + liveNow;
+      const giftRows = Array.isArray(giftsResult.data) ? giftsResult.data : [];
+      const todayGifts = giftRows.reduce((sum, gift) => sum + Math.max(0, Number(gift.coins_spent) || 0), 0);
+      const next = { ...emptyData(hostId), host_id: hostId, cumulative_popularity: cumulativePop, total_live_seconds: totalLiveSeconds, today_live_seconds: todayLiveSeconds, week_live_seconds: weekLiveSeconds, gifts_power: Number(row?.gifts_power) || 0, tasks_completed: Number(row?.tasks_completed) || 0, task_target: Math.max(1, Number(row?.task_target) || 100), streak_days: Number(row?.streak_days) || 0, host_bonus: Number(row?.host_bonus) || 0, host_commission: Number(row?.host_commission) || 0, red_diamonds: Number(row?.red_diamonds) || 0, red_diamonds_pkr_value: Number(row?.red_diamonds_pkr_value) || 500, current_rank: getRank(cumulativePop), weekly_followers: followersResult.count ?? 0 } satisfies PopularityData;
+
+      return {
+        hostId,
+        hostLevel: Number(profile?.level) || 1,
+        profileName: profile?.full_name || profile?.username || hostName || "Host",
+        hostAvatar: profile?.avatar || null,
+        data: next,
+        dailyGiftPower: todayGifts,
+      };
+    },
+    enabled: open && !!hostId,
+    staleTime: 30 * 1000,
+    refetchOnReconnect: true,
+  });
+
+  const view = popularityQuery.data;
+  const data = view?.data ?? emptyData(hostId);
+  const hostLevel = view?.hostLevel ?? 1;
+  const profileName = view?.profileName ?? hostName ?? null;
+  const hostAvatar = view?.hostAvatar ?? null;
+  const dailyGiftPower = view?.dailyGiftPower ?? 0;
+  const loading = roomHostQuery.isLoading || popularityQuery.isLoading || popularityQuery.isFetching;
+  const error = roomHostQuery.error instanceof Error ? roomHostQuery.error.message : popularityQuery.error instanceof Error ? popularityQuery.error.message : null;
 
   const vibeScore = data.cumulative_popularity;
   const vibeTarget = Math.max(10000, (Math.floor(vibeScore / 10000) + 1) * 10000);
