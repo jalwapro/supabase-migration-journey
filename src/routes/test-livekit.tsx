@@ -125,8 +125,14 @@ function LiveKitDiagnosticPage() {
       };
 
       const attachAudio = (track: RemoteTrack, _pub: RemoteTrackPublication, participant: RemoteParticipant) => {
-        if (track.kind !== Track.Kind.Audio) return;
-        const el = track.attach() as HTMLAudioElement;
+        if (track.kind !== Track.Kind.Audio || !track || typeof track.attach !== "function") return;
+        let el: HTMLAudioElement;
+        try {
+          el = track.attach() as HTMLAudioElement;
+        } catch (attachError) {
+          console.warn("[LiveKit Diagnostic] Failed to attach remote audio track", attachError);
+          return;
+        }
         el.autoplay = true;
         el.muted = false;
         el.volume = 1;
@@ -140,11 +146,15 @@ function LiveKitDiagnosticPage() {
       };
 
       const detachAudio = (track: RemoteTrack, _pub?: RemoteTrackPublication, _p?: RemoteParticipant) => {
-        if (track.kind !== Track.Kind.Audio) return;
-        track.detach().forEach((el) => {
-          audioElsRef.current.delete(el as HTMLAudioElement);
-          el.remove();
-        });
+        if (!track || typeof track.detach !== "function" || track.kind !== Track.Kind.Audio) return;
+        try {
+          track.detach().forEach((el) => {
+            audioElsRef.current.delete(el as HTMLAudioElement);
+            el.remove();
+          });
+        } catch (detachError) {
+          console.warn("[LiveKit Diagnostic] Failed to detach remote audio track", detachError);
+        }
         refreshParticipants();
       };
 
