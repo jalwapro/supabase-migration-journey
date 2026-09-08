@@ -46,7 +46,11 @@ export const Route = createFileRoute("/api/livekit-token")({ server: { handlers:
     // Room.connect() must both use this exact value.
     const identity = authenticatedUserId;
     const at = new AccessToken(apiKey, apiSecret, { identity, name: String(body.name ?? "Jalwa user").trim().slice(0, 80) || "Jalwa user", ttl: "1h" });
-    at.addGrant({ roomJoin: true, room: livekitRoom, canPublish, canSubscribe: true, canPublishData: true, roomAdmin: isHost || member?.is_moderator === true });
+    // The connection token must explicitly grant the client the base LiveKit
+    // room capabilities. Runtime room-role/mute restrictions are enforced by
+    // the separate livekit-permissions endpoint via UpdateParticipant.
+    const canPublish = true;
+    at.addGrant({ roomJoin: true, room: livekitRoom, canPublish: true, canSubscribe: true, canPublishData: true, roomAdmin: isHost || member?.is_moderator === true });
     return new Response(JSON.stringify({ server_url: wsUrl, participant_token: await at.toJwt(), room: livekitRoom, database_room_id: room.id, identity, canPublish, canSubscribe: true }), { status: 201, headers: { "Content-Type": "application/json", ...cors } });
   },
 } } });
