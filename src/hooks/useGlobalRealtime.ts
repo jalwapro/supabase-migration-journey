@@ -7,17 +7,10 @@ import { openNotification } from "@/components/NotificationPopup";
 import { playNotifySound } from "@/lib/notify-sound";
 import type { NotificationRow } from "@/hooks/useNotifications";
 
-
-
 /**
  * Global realtime bridge for the signed-in user.
- * Subscribes to every user-scoped table once (filtered by user id) and
- * invalidates the matching React Query keys so any open screen refreshes
- * without the user having to pull-to-refresh.
- *
- * Filtered subscriptions only (per project scale rules): each `on()` sets
- * a `user_id=eq.<uid>` style filter so the Postgres replication stream
- * never fans out unrelated rows to this client.
+ * Subscribes to user-scoped tables and invalidates the matching React Query
+ * keys so open screens refresh without a manual page reload.
  */
 type Sub = {
   table: string;
@@ -56,12 +49,8 @@ export function useGlobalRealtime() {
     if (!user) return;
     const uid = user.id;
 
-    // Auto-enable notifications on first login (prompts permission if needed).
     void import("@/lib/fcm-client").then((m) => m.autoEnableFcm(uid)).catch(() => {});
 
-
-
-    // Split into a few channels so a single bad filter can't kill everything.
     const ch1 = subscribe(qc, `me:${uid}`, [
       {
         table: "profiles",
@@ -78,7 +67,6 @@ export function useGlobalRealtime() {
         filter: `user_id=eq.${uid}`,
         keys: ["notification_prefs"],
       },
-
       {
         table: "push_subscriptions",
         filter: `user_id=eq.${uid}`,
@@ -118,7 +106,6 @@ export function useGlobalRealtime() {
       },
     ]);
 
-
     const ch3 = subscribe(qc, `dm-received:${uid}`, [
       {
         table: "direct_messages",
@@ -148,15 +135,24 @@ export function useGlobalRealtime() {
       {
         table: "gift_sends",
         filter: `receiver_id=eq.${uid}`,
-        keys: ["wallet", "wallet_tx", "me-counts", "gifts-received"],
+        keys: ["wallet", "wallet_tx", "me-counts", "gifts-received", "profile"],
       },
       {
         table: "gift_sends",
         filter: `sender_id=eq.${uid}`,
-        keys: ["wallet", "wallet_tx", "me-counts", "gifts-sent"],
+        keys: ["wallet", "wallet_tx", "me-counts", "gifts-sent", "profile"],
       },
     ]);
 
+    // Host popularity is persisted by the gift_sends trigger. Keep the
+    // current user's host dashboard/profile caches in sync when that row moves.
+    const chPopularity = subscribe(qc, `host-popularity:${uid}`, [
+      {
+        table: "host_popularity_stats",
+        filter: `host_id=eq.${uid}`,
+        keys: ["host-popularity", "profile", "public-profile", "me"],
+      },
+    ]);
 
     const ch4 = subscribe(qc, `assets:${uid}`, [
       {
@@ -196,10 +192,6 @@ export function useGlobalRealtime() {
       },
     ]);
 
-    // Dedicated notifications channel with toast + cache refresh.
-    // ALSO carries the global `milestone_broadcasts` INSERT (unfiltered global
-    // event) so we open only one channel per session instead of one per open
-    // room tab (scale fix — was P0 #3 in the audit).
     const chNotif = supabase
       .channel(`notif:${uid}`)
       .on(
@@ -218,7 +210,6 @@ export function useGlobalRealtime() {
             });
           }
         },
-
       )
       .on(
         "postgres_changes",
@@ -233,16 +224,15 @@ export function useGlobalRealtime() {
       )
       .subscribe();
 
-
     return () => {
       void supabase.removeChannel(ch1);
       void supabase.removeChannel(ch2);
       void supabase.removeChannel(ch3);
       void supabase.removeChannel(ch3b);
       void supabase.removeChannel(ch3c);
+      void supabase.removeChannel(chPopularity);
       void supabase.removeChannel(ch4);
       void supabase.removeChannel(chNotif);
     };
   }, [user, qc]);
 }
-
