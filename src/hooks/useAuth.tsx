@@ -40,13 +40,7 @@ export type Profile = {
   last_seen: string | null;
 };
 
-export type AppRole =
-  | "user"
-  | "host"
-  | "agent"
-  | "moderator"
-  | "admin"
-  | "super_admin";
+export type AppRole = "user" | "host" | "agent" | "moderator" | "admin" | "super_admin";
 
 type AuthContextValue = {
   session: Session | null;
@@ -99,11 +93,7 @@ function demoProfile(userId: string): Profile {
 
 async function loadProfile(userId: string): Promise<Profile | null> {
   if (isStudioPreview()) return demoProfile(userId);
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
   if (error) {
     console.error("[useAuth] loadProfile", error);
     return null;
@@ -113,10 +103,7 @@ async function loadProfile(userId: string): Promise<Profile | null> {
 
 async function loadRoles(userId: string): Promise<AppRole[]> {
   if (isStudioPreview()) return ["user"];
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId);
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) {
     console.error("[useAuth] loadRoles", error);
     return [];
@@ -136,11 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const user = session?.user ?? null;
   const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
-  const isAdmin =
-    !isStudioPreview() &&
-    (roles.includes("admin") ||
-      roles.includes("super_admin") ||
-      (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
+  const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin") || (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
@@ -160,24 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token !== hydrateTokenRef.current) return;
       setProfile(p);
       setRoles(r);
-      if (!isStudioPreview() && p && !p.country) {
-        try {
-          const res = await fetch("https://ipapi.co/json/");
-          if (res.ok) {
-            const j = await res.json();
-            const cn = (j?.country_name as string | undefined)?.trim();
-            if (cn) {
-              const { error: upErr } = await supabase
-                .from("profiles").update({ country: cn }).eq("id", uid);
-              if (!upErr && token === hydrateTokenRef.current) {
-                setProfile((prev) => (prev ? { ...prev, country: cn } : prev));
-              }
-            }
-          }
-        } catch (e) {
-          console.warn("[useAuth] country detect", e);
-        }
-      }
     }, 0);
   }, []);
 
@@ -193,7 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.warn("[useAuth] initial session", error);
       }
     }
-
     initialSessionLoadedRef.current = true;
     await hydrate(nextSession);
     setLoading(false);
@@ -215,9 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
-    if (typeof window !== "undefined") {
-      window.location.replace("/auth");
-    }
+    if (typeof window !== "undefined") window.location.replace("/auth");
   }, []);
 
   useEffect(() => {
@@ -227,9 +189,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event !== "SIGNED_OUT") setLoading(false);
     });
     void loadInitialSession();
-    return () => {
-      sub.subscription.unsubscribe();
-    };
+    return () => sub.subscription.unsubscribe();
   }, [hydrate, loadInitialSession]);
 
   useEffect(() => {
@@ -240,13 +200,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      supabase
-        .from("profiles")
-        .update({ last_seen: new Date().toISOString() })
-        .eq("id", user.id)
-        .then(({ error }) => {
-          if (error) console.warn("[useAuth] heartbeat", error);
-        });
+      supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("id", user.id).then(({ error }) => {
+        if (error) console.warn("[useAuth] heartbeat", error);
+      });
       supabase.rpc("touch_presence").then(({ error }) => {
         if (error) console.warn("[useAuth] presence", error);
       });
@@ -254,9 +210,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     tick();
     heartbeatRef.current = setInterval(tick, 15_000);
     const onFocus = () => tick();
-    const onVisible = () => {
-      if (document.visibilityState === "visible") tick();
-    };
+    const onVisible = () => { if (document.visibilityState === "visible") tick(); };
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
@@ -267,13 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  return (
-    <AuthContext.Provider
-      value={{ session, user, profile, roles, isAdmin, loading, refresh, signOut }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={{ session, user, profile, roles, isAdmin, loading, refresh, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
