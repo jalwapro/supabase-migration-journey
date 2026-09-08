@@ -37,7 +37,6 @@ export const Route = createFileRoute("/api/livekit-token")({ server: { handlers:
     const { data: member } = await sb.from("room_members").select("seat_index,is_moderator,is_muted").eq("room_id", room.id).eq("user_id", authenticatedUserId).maybeSingle();
     const isHost = room.host_id === authenticatedUserId;
     const seated = member?.seat_index !== null && member?.seat_index !== undefined;
-    const canPublish = body.canPublish !== false && (isHost || seated) && member?.is_muted !== true;
     const livekitRoom = typeof room.rtc_channel === "string" ? room.rtc_channel.trim() : "";
     if (!livekitRoom) return json({ error: "room rtc_channel is missing" }, 500);
 
