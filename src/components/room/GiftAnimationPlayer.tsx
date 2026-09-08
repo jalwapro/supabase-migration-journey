@@ -4,11 +4,6 @@ import { StableGiftAnimationPlayer } from "./StableGiftAnimationPlayer";
 
 type Props = { roomId: string };
 
-/**
- * Room-level playback entry point. The Broadcast channel is persistent for the
- * room lifetime and uses the same canonical gift_sends.id as Postgres Changes.
- * StableGiftAnimationPlayer remains the durable/recovery plane.
- */
 export function GiftAnimationPlayer({ roomId }: Props) {
   useEffect(() => {
     let alive = true;
@@ -21,6 +16,7 @@ export function GiftAnimationPlayer({ roomId }: Props) {
         new CustomEvent("jalwa:gift-sent", {
           detail: {
             key: p.id,
+            eventIds: Array.isArray(p.eventIds) ? p.eventIds.filter((x): x is string => typeof x === "string") : [p.id],
             senderId: typeof p.senderId === "string" ? p.senderId : null,
             senderName: typeof p.senderName === "string" ? p.senderName : "User",
             senderAvatar: typeof p.senderAvatar === "string" ? p.senderAvatar : null,
@@ -45,7 +41,6 @@ export function GiftAnimationPlayer({ roomId }: Props) {
       );
     });
     void subscription;
-
     return () => {
       alive = false;
       releaseGiftBroadcastChannel(roomId);
