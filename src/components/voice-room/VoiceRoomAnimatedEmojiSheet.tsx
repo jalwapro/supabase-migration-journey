@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { Loader2, Smile, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,39 +13,29 @@ const TIERS: { key: "normal" | "vip"; label: string }[] = [
 function playSeatToSeatAnimation(emoji: ChatEmoji, username?: string | null) {
   if (typeof document === "undefined") return;
 
-  // The VoiceRoom target selector marks the selected seat button with an inline
-  // background style. Read that selection before the sheet closes.
   const targetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => {
     const text = button.textContent?.trim() ?? "";
-    return /^Seat\\s+\\d+/i.test(text) && !!button.style.background;
+    return /^Seat\s+\d+/i.test(text) && !!button.style.background;
   });
-
   if (!targetButton) return;
 
-  const targetMatch = targetButton.textContent?.match(/Seat\\s+(\\d+)/i);
+  const targetMatch = targetButton.textContent?.match(/Seat\s+(\d+)/i);
   const targetSeat = targetMatch ? Number(targetMatch[1]) - 1 : -1;
   if (targetSeat < 0) return;
 
-  // SeatGrid renders the user's avatar as an img whose alt is the username.
-  // Fall back to the selected seat number when the avatar alt is unavailable.
   const senderAvatar = username
     ? Array.from(document.querySelectorAll<HTMLImageElement>("img[alt]")).find((img) => img.alt.trim() === username.trim())
     : null;
 
-  const seatButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).filter((button) => {
-    return Array.from(button.querySelectorAll("span")).some((span) => /^\\d+$/.test(span.textContent?.trim() ?? ""));
-  });
-
+  const seatButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).filter((button) =>
+    Array.from(button.querySelectorAll("span")).some((span) => /^\d+$/.test(span.textContent?.trim() ?? "")),
+  );
   const targetSeatButton = seatButtons.find((button) =>
     Array.from(button.querySelectorAll("span")).some((span) => span.textContent?.trim() === String(targetSeat + 1)),
   );
 
-  const senderRect = (senderAvatar ?? null)?.getBoundingClientRect() ??
-    (seatButtons.find((button) =>
-      Array.from(button.querySelectorAll("span")).some((span) => span.textContent?.trim() === String(targetSeat + 1)),
-    )?.getBoundingClientRect() ?? null);
+  const senderRect = senderAvatar?.getBoundingClientRect() ?? null;
   const targetRect = (targetSeatButton ?? targetButton).getBoundingClientRect();
-
   if (!senderRect) return;
 
   const startX = senderRect.left + senderRect.width / 2;
@@ -102,16 +91,20 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, username?: string | null) {
   );
 
   const glow = targetGlow.animate(
-    [{ opacity: 0, transform: "scale(.55)" }, { opacity: 0, transform: "scale(.55)" }, { opacity: 1, transform: "scale(1.15)" }, { opacity: 0, transform: "scale(1.45)" }],
+    [
+      { opacity: 0, transform: "scale(.55)" },
+      { opacity: 0, transform: "scale(.55)" },
+      { opacity: 1, transform: "scale(1.15)" },
+      { opacity: 0, transform: "scale(1.45)" },
+    ],
     { duration: 360, delay: 900, easing: "ease-out", fill: "forwards" },
   );
 
-  const cleanup = () => {
+  window.setTimeout(() => {
     flight.cancel();
     glow.cancel();
     layer.remove();
-  };
-  window.setTimeout(cleanup, 1350);
+  }, 1350);
 }
 
 export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (emoji: ChatEmoji) => void }) {
