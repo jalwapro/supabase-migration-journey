@@ -58,10 +58,7 @@ function EmptySeatArt({ locked }: { locked: boolean }) {
   );
 }
 
-type SeatProps = {
-  seat: RoomSeat;
-  onClick: () => void;
-};
+type SeatProps = { seat: RoomSeat; onClick: () => void };
 
 export function Seat({ seat, onClick }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
@@ -287,10 +284,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       return;
     }
     if (isHost) {
-      if (seat.is_locked && idx !== 1) {
-        toast.error("Seat is locked");
-        return;
-      }
       onJoinSeat?.(idx);
       return;
     }
@@ -326,20 +319,11 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         index,
         seatNumber: index,
         isHost: true,
-        user: {
-          id: host.id,
-          username: host.username,
-          avatar: host.avatar,
-          avatar_frame_url: host.avatar_frame_url,
-          frame_url: host.frame_url,
-          gift_score: host.gift_score ?? 0,
-        },
+        user: { id: host.id, username: host.username, avatar: host.avatar, avatar_frame_url: host.avatar_frame_url, frame_url: host.frame_url, gift_score: host.gift_score ?? 0 },
         is_locked: false,
       };
     }
-    if (index === 1) {
-      return { index, seatNumber: 1, user: null, is_locked: false, is_requested: false };
-    }
+    if (index === 1) return { index, seatNumber: 1, user: null, is_locked: false, is_requested: false };
     return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
   });
 
