@@ -38,22 +38,28 @@ async function getUserId(token: string): Promise<string | null> {
 
 async function adminClient(token: string) {
   const userId = await getUserId(token);
+  console.log("VM-Stats Diagnostic - Auth Check:", {
+    hasToken: !!token,
+    hasUserId: !!userId,
+  });
+
   if (!userId) return null;
   const key = serviceKey();
   if (!key) return null;
   const { createClient } = await import("@supabase/supabase-js");
 
-  // Keep the service key for secure server-side access, but forward the
-  // caller's JWT so SECURITY DEFINER admin checks can evaluate auth.uid().
   const sb = createClient(supabaseUrl(), key, {
     auth: { persistSession: false, autoRefreshToken: false },
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
 
-  // Use the canonical DB-side admin check. This also preserves the project's
-  // configured super-admin email fallback when the user_roles row is missing.
-  const { data: isAdmin, error } = await sb.rpc("is_admin", { _user_id: userId });
-  if (error || isAdmin !== true) return null;
+  const { data: isAdmin, error: rpcError } = await sb.rpc("is_admin", { _user_id: userId });
+  console.log("VM-Stats Diagnostic - Admin Check:", {
+    isAdmin: isAdmin === true,
+    hasRpcError: !!rpcError,
+  });
+
+  if (rpcError || isAdmin !== true) return null;
   return sb;
 }
 
