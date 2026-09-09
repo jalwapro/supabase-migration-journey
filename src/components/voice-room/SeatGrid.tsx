@@ -127,6 +127,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
   const [targetShiftSeat, setTargetShiftSeat] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<"users" | "shift">("users");
+  const [hostSeatIndex, setHostSeatIndex] = useState(1);
 
   useEffect(() => {
     if (!roomId) return;
@@ -153,9 +154,10 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     void loadPermissions();
     const channel = supabase.channel(`seat-permissions-${roomId}-${host.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_members", filter: `room_id=eq.${roomId}` }, payload => {
-        const row = payload.new as { user_id?: string; is_moderator?: boolean };
+        const row = payload.new as { user_id?: string; is_moderator?: boolean; seat_index?: number | null };
         if (row.user_id === authUserId) setIsModerator(row.is_moderator === true);
-        else void loadPermissions();
+        if (row.user_id === host.id && typeof row.seat_index === "number") setHostSeatIndex(Math.min(capacity, Math.max(1, row.seat_index)));
+        else if (row.user_id !== authUserId) void loadPermissions();
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "live_rooms", filter: `id=eq.${roomId}` }, payload => {
         const value = (payload.new as { moderator_can_manage_seats?: boolean } | null)?.moderator_can_manage_seats;
@@ -163,7 +165,20 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       })
       .subscribe();
     return () => { active = false; void supabase.removeChannel(channel); };
-  }, [roomId, host.id, isHost]);
+  }, [roomId, host.id, isHost, capacity]);
+
+  useEffect(() => {
+    if (!roomId || !host.id) return;
+    let active = true;
+    const loadHostSeat = async () => {
+      const { data, error } = await supabase.from("room_members").select("seat_index").eq("room_id", roomId).eq("user_id", host.id).maybeSingle();
+      if (!active || error) return;
+      const next = Number(data?.seat_index ?? 1);
+      if (Number.isFinite(next) && next >= 1 && next <= capacity) setHostSeatIndex(next);
+    };
+    void loadHostSeat();
+    return () => { active = false; };
+  }, [roomId, host.id, capacity]);
 
   const canManageSeats = isHost || (isModerator && moderatorCanManageSeats);
 
@@ -271,6 +286,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       onSeatTap?.(idx);
       return;
     }
+    if (isHost) {
+      if (seat.is_locked && idx !== 1) {
+        toast.error("Seat is locked");
+        return;
+      }
+      onJoinSeat?.(idx);
+      return;
+    }
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       setActiveTab("users");
@@ -291,14 +314,34 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       return;
     }
 
-    // Regular seats are direct-claim seats. The parent calls the authoritative
-    // take_seat RPC; the database enforces membership, occupancy and host-seat
-    // exclusivity. We no longer create a host-approval request for normal seats.
     onJoinSeat?.(idx);
   };
 
   const hostFrameUrl = host.avatar_frame_url || host.frame_url;
-  const allSeats: (RoomSeat & { isHost?: boolean })[] = [{ index: 1, seatNumber: 1, isHost: true, user: { id: host.id, username: host.username, avatar: host.avatar, avatar_frame_url: host.avatar_frame_url, frame_url: host.frame_url, gift_score: host.gift_score ?? 0 }, is_locked: false }, ...participantSlots];
+  const safeHostSeatIndex = Math.min(capacity, Math.max(1, hostSeatIndex));
+  const allSeats: (RoomSeat & { isHost?: boolean })[] = Array.from({ length: capacity }, (_, offset) => {
+    const index = offset + 1;
+    if (index === safeHostSeatIndex) {
+      return {
+        index,
+        seatNumber: index,
+        isHost: true,
+        user: {
+          id: host.id,
+          username: host.username,
+          avatar: host.avatar,
+          avatar_frame_url: host.avatar_frame_url,
+          frame_url: host.frame_url,
+          gift_score: host.gift_score ?? 0,
+        },
+        is_locked: false,
+      };
+    }
+    if (index === 1) {
+      return { index, seatNumber: 1, user: null, is_locked: false, is_requested: false };
+    }
+    return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
+  });
 
   const SEATS_PER_ROW = 5;
   let rows: (typeof allSeats)[] = [];
@@ -314,7 +357,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               if (seat.isHost) return (
                 <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
-                    <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">1</span>
+                    <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                     <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent">
                       <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
                       {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />}
