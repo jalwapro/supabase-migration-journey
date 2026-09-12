@@ -11,9 +11,12 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const safepaySecret = Deno.env.get("SAFE_PAY_SECRET_KEY");
-    const safepayMerchantKey = Deno.env.get("SAFE_PAY_MERCHANT_API_KEY");
-    const safepayBase = Deno.env.get("SAFE_PAY_BASE_URL") || "https://sandbox.api.getsafepay.com";
+
+    // Support the new SAFEPAY_* names as well as the legacy names already used by
+    // this project. Secrets remain server-side; never expose them to the browser.
+    const safepaySecret = Deno.env.get("SAFEPAY_SECRET_KEY") || Deno.env.get("SAFE_PAY_SECRET_KEY");
+    const safepayMerchantKey = Deno.env.get("SAFEPAY_PUBLIC_KEY") || Deno.env.get("SAFE_PAY_MERCHANT_API_KEY");
+    const safepayBase = Deno.env.get("SAFEPAY_BASE_URL") || Deno.env.get("SAFE_PAY_BASE_URL") || "https://sandbox.api.getsafepay.com";
     const appBase = Deno.env.get("APP_BASE_URL") || "https://www.jalwa.pro";
     if (!safepaySecret || !safepayMerchantKey) throw new Error("Card payment gateway is not configured");
 
