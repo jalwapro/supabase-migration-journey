@@ -49,8 +49,7 @@ begin
   select * into p
   from public.coin_packages
   where id = _package_id
-    and coalesce(active, is_active, false) = true
-  for share;
+    and coalesce(active, is_active, false) = true;
 
   if not found then raise exception 'Package not found or inactive'; end if;
 
@@ -92,8 +91,6 @@ $$;
 
 revoke all on function public.set_card_recharge_tracker(uuid,text,text) from public;
 grant execute on function public.set_card_recharge_tracker(uuid,text,text) to authenticated;
-
-authorize function public.credit_card_recharge(_order_id uuid, _provider_status text, _provider_reference text default null, _provider_payload jsonb default '{}'::jsonb);
 
 -- Finalize a verified provider success exactly once. Only service_role may execute this.
 create or replace function public.credit_card_recharge(
@@ -154,7 +151,7 @@ end;
 $$;
 
 revoke all on function public.credit_card_recharge(uuid,text,text,jsonb) from public;
-grant execute on function public.credit_card_recharge(uuid,text,text,jsonb) to service_role;
+grant execute on function public.credit_card_recharge(uuid,text,text,text) to service_role;
 
 create or replace function public.touch_card_recharge_orders_updated_at()
 returns trigger language plpgsql as $$
