@@ -1,13 +1,12 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 // Jalwa — Capacitor native wrapper config.
-// The web app is a TanStack Start SSR app deployed on Lovable Cloud.
-// For the native shell we load the published Lovable URL directly
-// (hot-reload friendly, no SSR bundling on device).
+// The native shell loads the production Jalwa web app directly.
+// Keep this URL on the production domain so the native app does not depend
+// on the old Lovable-hosted web app.
 //
-// After you publish the web app, update `server.url` to your production URL
-// (e.g. https://project--<id>.lovable.app) and run:
-//   bun run build:web      # generates dist/ as a fallback
+// After changing this file, rebuild the web app and sync the native projects:
+//   bun run build
 //   npx cap sync
 //   npx cap open android   # or: npx cap open ios
 const config: CapacitorConfig = {
@@ -15,9 +14,8 @@ const config: CapacitorConfig = {
   appName: "Jalwa",
   webDir: "dist/client",
   server: {
-    // Point the native shell at your published web app. Comment out to run
-    // fully offline from bundled `webDir` assets.
-    url: "https://project--269a4b2a-bb70-44e1-bd04-6acc825e6f84.lovable.app",
+    // Production web app / API origin used by the native shell.
+    url: "https://www.jalwa.pro",
     cleartext: false,
     androidScheme: "https",
   },
