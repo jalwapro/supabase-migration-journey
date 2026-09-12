@@ -5,6 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 
+const JALWA_PRODUCTION_URL = "https://www.jalwa.pro/";
+
+function getAuthRedirectUrl() {
+  if (typeof window === "undefined") return JALWA_PRODUCTION_URL;
+  const hostname = window.location.hostname;
+  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
+  return isLocalhost ? `${window.location.origin}/` : JALWA_PRODUCTION_URL;
+}
+
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
@@ -51,7 +60,7 @@ function AuthPage() {
     setBusy(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/` },
+      options: { emailRedirectTo: getAuthRedirectUrl() },
     });
     setBusy(false);
     if (error) setErr(error.message);
@@ -82,7 +91,7 @@ function AuthPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${window.location.origin}/` },
+        options: { emailRedirectTo: getAuthRedirectUrl() },
       });
       setBusy(false);
       if (error) setErr(error.message);
@@ -98,14 +107,13 @@ function AuthPage() {
     resetAlerts();
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: { redirectTo: `${window.location.origin}/` },
+      options: { redirectTo: getAuthRedirectUrl() },
     });
     if (error) setErr(error.message);
   }
 
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-10 flex items-center justify-center">
-      {/* neon glow backdrop */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
@@ -118,21 +126,14 @@ function AuthPage() {
       <div className="w-full max-w-md">
         <div className="glass rounded-3xl p-8 shadow-2xl">
           <div className="flex flex-col items-center text-center">
-            <img
-              src={jalwaLogo}
-              alt="Jalwa"
-              className="h-16 w-16 rounded-2xl object-cover shadow-lg"
-            />
-            <h1 className="mt-4 text-2xl font-bold text-gradient">
-              Welcome to Jalwa
-            </h1>
+            <img src={jalwaLogo} alt="Jalwa" className="h-16 w-16 rounded-2xl object-cover shadow-lg" />
+            <h1 className="mt-4 text-2xl font-bold text-gradient">Welcome to Jalwa</h1>
             <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5 text-gold" />
               Verified sign-in — real accounts only.
             </p>
           </div>
 
-          {/* Social */}
           <div className="mt-6 grid gap-2.5">
             <button
               type="button"
@@ -159,10 +160,7 @@ function AuthPage() {
           </div>
 
           {mode === "otp" ? (
-            <form
-              onSubmit={otpStep === "email" ? sendOtp : verifyOtp}
-              className="space-y-3"
-            >
+            <form onSubmit={otpStep === "email" ? sendOtp : verifyOtp} className="space-y-3">
               <div className="relative">
                 <Mail className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
@@ -257,10 +255,7 @@ function AuthPage() {
                 >
                   {isSignUp ? "Have an account? Sign in" : "New here? Sign up"}
                 </button>
-                <Link
-                  to="/reset-password"
-                  className="text-muted-foreground hover:text-foreground"
-                >
+                <Link to="/reset-password" className="text-muted-foreground hover:text-foreground">
                   Forgot password?
                 </Link>
               </div>
@@ -281,17 +276,12 @@ function AuthPage() {
             {mode === "otp" ? "Use password instead" : "Use email code instead"}
           </button>
 
-          {err && (
-            <p className="mt-4 text-sm text-destructive text-center">{err}</p>
-          )}
+          {err && <p className="mt-4 text-sm text-destructive text-center">{err}</p>}
           {msg && <p className="mt-4 text-sm text-gold text-center">{msg}</p>}
         </div>
 
         <div className="mt-5 text-center">
-          <Link
-            to="/"
-            className="text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground"
-          >
+          <Link to="/" className="text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground">
             ← Back to home
           </Link>
         </div>
