@@ -49,37 +49,15 @@ jobs:
           elif 'supabase.rpc("update_voice_room_seat_count"' not in s:
               raise SystemExit('secure seat RPC call was not found and the old unsafe update pattern was not found')
 
-          # Fix VoiceRoom emoji routing: honor the exact seat selected by tapping
-          # that user's DP instead of silently choosing the first occupied seat.
-          old = 'onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}'
-          new = 'onSendEmoji={(e, targetSeatIndex) => { const target = targetSeatIndex ?? null; if (target == null) { toast.info("Pehle room mein kisi user ki DP/seat select karein"); return; } void sendEmoji(e.emoji, target, e.clip_path); }}'
-          if old in s:
-              s = s.replace(old, new, 1)
-          elif 'onSendEmoji={(e, targetSeatIndex)' not in s:
-              raise SystemExit('emoji target callback pattern not found; refusing unsafe patch')
-
           p.write_text(s, encoding='utf-8')
-
-          # Small/Basic gifts are explicitly the 10–300 coin range.
-          g = Path('src/components/GiftSheet.tsx')
-          gs = g.read_text(encoding='utf-8')
-          old = 'const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>tierOf(price(g))===activeTier).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);'
-          new = 'const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);'
-          if old in gs:
-              gs = gs.replace(old, new, 1)
-          elif 'activeTier==="small"?p>=10&&p<=300' not in gs:
-              raise SystemExit('small gift 10-300 filter pattern not found; refusing unsafe patch')
-          g.write_text(gs, encoding='utf-8')
           PY
 
           grep -q 'supabase.rpc("update_voice_room_seat_count"' 'src/routes/room.$roomId.tsx'
           grep -q 'const layouts = \[4, 8, 12, 16, 20\]' 'src/routes/room.$roomId.tsx'
-          grep -q 'onSendEmoji={(e, targetSeatIndex)' 'src/routes/room.$roomId.tsx'
-          grep -q 'activeTier==="small"?p>=10&&p<=300' 'src/components/GiftSheet.tsx'
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- 'src/routes/room.$roomId.tsx' 'src/components/GiftSheet.tsx'
+          git add -- 'src/routes/room.$roomId.tsx'
           if git diff --cached --quiet; then echo 'Already wired'; exit 0; fi
-          git commit -m 'fix(voice-room): complete emoji targeting and small gifts [skip-seat-realign]'
+          git commit -m 'fix(voice-room): use secure seat realignment RPC [skip-seat-realign]'
           git push
