@@ -2152,7 +2152,7 @@ onOpenChat={() => setChatComposerOpen(true)}
 onOpenPrivateChat={() => setPrivateChatOpen(true)}
 onOpenGift={() => setGiftOpen(true)}
 onOpenMore={() => { if (isHost) setHostMoreOpen(true); else setVideoSettingsOpen(true); }}
-onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}
+onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost && mySeatIndex == null) { toast.info("Take a seat to use room music"); return; } setMusicOpen(true); }} canPlayMusic={isHost || mySeatIndex != null} onSendEmoji={(e, targetSeatIndex) => { const target = targetSeatIndex ?? null; if (target == null) { toast.info("Pehle room mein kisi user ki DP/seat select karein"); return; } void sendEmoji(e.emoji, target, e.clip_path); }}
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
