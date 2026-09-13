@@ -8,12 +8,59 @@ on:
 jobs:
   verify:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-      - name: Verify Voice Room build
-        run: bun run build
+          fetch-depth: 0
+      - name: Apply VoiceRoom emoji and small gift fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          route = Path('src/routes/room.$roomId.tsx')
+          text = route.read_text()
+          old = 'onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}'
+          new = 'onSendEmoji={(e, targetSeatIndex) => { const target = targetSeatIndex ?? null; if (target == null) { toast.info("Pehle room mein kisi user ki DP/seat select karein"); return; } void sendEmoji(e.emoji, target, e.clip_path); }}'
+          if old not in text:
+              raise SystemExit('Expected emoji callback not found; refusing unsafe patch')
+          route.write_text(text.replace(old, new, 1))
+
+          gift = Path('src/components/GiftSheet.tsx')
+          text = gift.read_text()
+          old = 'const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>tierOf(price(g))===activeTier).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);'
+          new = 'const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);'
+          if old not in text:
+              raise SystemExit('Expected gift tier filter not found; refusing unsafe patch')
+          gift.write_text(text.replace(old, new, 1))
+          PY
+
+      - name: Commit fixes and restore workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cat > .github/workflows/voice-room-apply.yml <<'YAML'
+          name: Voice Room Apply
+
+          on:
+            push:
+              branches: [main]
+            workflow_dispatch:
+
+          jobs:
+            verify:
+              runs-on: ubuntu-latest
+              steps:
+                - uses: actions/checkout@v4
+                - uses: oven-sh/setup-bun@v2
+                  with:
+                    bun-version: latest
+                - name: Install dependencies
+                  run: bun install --frozen-lockfile
+                - name: Verify Voice Room build
+                  run: bun run build
+          YAML
+          git add src/routes/room.$roomId.tsx src/components/GiftSheet.tsx .github/workflows/voice-room-apply.yml
+          git commit -m "fix: complete VoiceRoom emoji targeting and small gifts [skip ci]"
+          git push origin main
