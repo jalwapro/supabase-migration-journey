@@ -2,18 +2,19 @@ name: Fix VoiceRoom emoji target routing
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 permissions:
   contents: write
 
 jobs:
   fix:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Patch emoji target routing
+        shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -22,14 +23,16 @@ jobs:
           old = '''onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}'''
           new = '''onSendEmoji={(e, targetSeatIndex) => {\n              const target = targetSeatIndex ?? null;\n              if (target == null) {\n                toast.info("Pehle room mein kisi user ki DP/seat select karein");\n                return;\n              }\n              const targetMember = members.find((m) => m.seat_index === target && m.user_id !== user?.id);\n              if (!targetMember) {\n                toast.info("Sirf occupied user ki DP par emoji bhej sakte hain");\n                return;\n              }\n              void sendEmoji(e.emoji, target, e.clip_path);\n            }}'''
           if old not in s:
-              raise SystemExit('Expected onSendEmoji callback was not found')
+              raise SystemExit('Expected emoji callback not found; aborting without changes')
           p.write_text(s.replace(old, new, 1))
           PY
-      - name: Commit fix and clean workflow
+      - name: Commit source fix and remove one-time files
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git rm -f .github/workflows/fix-emoji-target-routing.yml .github/emoji-fix-trigger.txt
           git add src/routes/room.$roomId.tsx
+          git rm -f .github/workflows/fix-emoji-target-routing.yml .github/emoji-fix-trigger.txt || true
+          git diff --cached --quiet && exit 0
           git commit -m "fix: route VoiceRoom emojis to selected user"
           git push
