@@ -67,7 +67,7 @@ jobs:
           grep -Fq 'onSendEmoji={(e, targetSeatIndex)' 'src/routes/room.$roomId.tsx'
           grep -Fq 'activeTier==="small"?p>=10&&p<=300' 'src/components/GiftSheet.tsx'
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
       - name: Build verification
         run: npm run build
       - name: Commit actual source fixes to PR branch
