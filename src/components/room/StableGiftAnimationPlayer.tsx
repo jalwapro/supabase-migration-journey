@@ -12,7 +12,7 @@ const cleanUrl = (src: string | null) => (src ?? "").split("?")[0].split("#")[0]
 const isVideo = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".mp4") || s.endsWith(".webm") || s.endsWith(".mov") || ["mp4", "webm", "mov"].includes((type ?? "").toLowerCase())); };
 const isSvga = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svga") || (type ?? "").toLowerCase() === "svga"); };
 const isSvg = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svg") || (type ?? "").toLowerCase() === "svg"); };
-const isSmallGift = (row: GiftRow) => num(row.gift_price_coins, Number.POSITIVE_INFINITY) >= 10 && num(row.gift_price_coins, Number.POSITIVE_INFINITY) <= 300;
+const isSmallGift = (row: GiftRow) => { const price = Number(row.gift_price_coins); return Number.isFinite(price) && price >= 10 && price <= 300; };
 const svgCandidates = (row: GiftRow) => [row.gift_clip_path, row.gift_icon_path, row.gift_image_url, row.gift_icon, ...giftAssetCandidates(row.gift_name)].map(assetUrl).filter((v): v is string => !!v && isSvg(v));
 
 export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
@@ -58,21 +58,27 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, [mediaFailed, active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_price_coins]);
 
   useEffect(() => {
-    const resolveTarget = () => {
+    let cancelled = false;
+    const resolveTarget = async () => {
       if (!active || !isSmallGift(active)) return;
       const targetId = active.receiver_ids?.find(Boolean) ?? active.receiver_id ?? null;
       if (!targetId) return;
-      const selector = `[data-voice-seat-user-id="${CSS.escape(targetId)}"]`;
-      const target = document.querySelector<HTMLElement>(selector);
+      const { data: profile } = await supabase.from("profiles").select("username,avatar").eq("id", targetId).maybeSingle();
+      if (cancelled) return;
+      const username = typeof profile?.username === "string" ? profile.username : null;
+      const avatar = typeof profile?.avatar === "string" ? profile.avatar : null;
+      let target: HTMLElement | null = null;
+      if (avatar) target = document.querySelector<HTMLElement>(`img[src="${CSS.escape(avatar)}"]`);
+      if (!target && username) target = document.querySelector<HTMLElement>(`img[alt="${CSS.escape(username)}"]`);
       if (!target) { setFlyTarget(null); return; }
       const rect = target.getBoundingClientRect();
       setFlyTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     };
-    resolveTarget();
-    const timer = window.setTimeout(resolveTarget, 80);
+    void resolveTarget();
+    const timer = window.setTimeout(() => void resolveTarget(), 100);
     window.addEventListener("resize", resolveTarget);
     window.addEventListener("scroll", resolveTarget, true);
-    return () => { window.clearTimeout(timer); window.removeEventListener("resize", resolveTarget); window.removeEventListener("scroll", resolveTarget, true); };
+    return () => { cancelled = true; window.clearTimeout(timer); window.removeEventListener("resize", resolveTarget); window.removeEventListener("scroll", resolveTarget, true); };
   }, [active?.id, active?.receiver_id, active?.receiver_ids, active?.gift_price_coins]);
 
   useEffect(() => { const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); window.dispatchEvent(new PopStateEvent("popstate")); } }; window.addEventListener("keydown", handleKeyDown); return () => window.removeEventListener("keydown", handleKeyDown); }, []);
