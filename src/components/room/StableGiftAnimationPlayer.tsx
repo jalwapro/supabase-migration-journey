@@ -5,13 +5,15 @@ import GiftGLVideo from "@/components/room/GiftGLVideo";
 import SvgaPlayer from "@/components/room/SvgaPlayer";
 import { giftAssetCandidates, giftAssetType } from "@/lib/giftAssetResolver";
 
-type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
+type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
 const assetUrl = (v: string | null | undefined) => { if (!v) return null; const s = v.trim(); if (!s) return null; if (s.startsWith("__l5e/assets-v1/")) return `https://cloud-to-soul.lovable.app/${s}`; if (s.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${s}`; return s; };
 const cleanUrl = (src: string | null) => (src ?? "").split("?")[0].split("#")[0].toLowerCase();
 const isVideo = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".mp4") || s.endsWith(".webm") || s.endsWith(".mov") || ["mp4", "webm", "mov"].includes((type ?? "").toLowerCase())); };
 const isSvga = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svga") || (type ?? "").toLowerCase() === "svga"); };
 const isSvg = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svg") || (type ?? "").toLowerCase() === "svg"); };
+const isSmallGift = (row: GiftRow) => num(row.gift_price_coins, Number.POSITIVE_INFINITY) >= 10 && num(row.gift_price_coins, Number.POSITIVE_INFINITY) <= 300;
+const svgCandidates = (row: GiftRow) => [row.gift_clip_path, row.gift_icon_path, row.gift_image_url, row.gift_icon, ...giftAssetCandidates(row.gift_name)].map(assetUrl).filter((v): v is string => !!v && isSvg(v));
 
 export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [active, setActive] = useState<GiftRow | null>(null);
@@ -19,30 +21,59 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [mediaFailed, setMediaFailed] = useState(false);
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
   const [fallbackType, setFallbackType] = useState<"video" | "svga" | "image" | null>(null);
+  const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
   const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
-  const finish = useCallback(() => { clearTimer(); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
+  const finish = useCallback(() => { clearTimer(); setFlyTarget(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setActive(row); } }, []);
-  const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => { if (row.gift_render_config && typeof row.gift_render_config === "object" && (row.gift_clip_path || row.gift_image_url || row.gift_icon)) return row; if (!row.gift_id) return row; const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,emoji,sound_url,animation,duration_ms,loop").eq("id", row.gift_id).maybeSingle(); if (!data) return row; return { ...row, gift_render_config: (data as any).render_config ?? row.gift_render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_audio_url: row.gift_audio_url ?? (data as any).sound_url ?? null, gift_duration_ms: row.gift_duration_ms ?? (data as any).duration_ms ?? null, gift_loop: row.gift_loop ?? false }; }, []);
+  const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => {
+    if (!row.gift_id) return row;
+    const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,icon_path,emoji,sound_url,animation,duration_ms,loop,price_coins,price").eq("id", row.gift_id).maybeSingle();
+    if (!data) return row;
+    return { ...row, gift_render_config: (data as any).render_config ?? row.gift_render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_icon_path: row.gift_icon_path ?? (data as any).icon_path ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_audio_url: row.gift_audio_url ?? (data as any).sound_url ?? null, gift_duration_ms: row.gift_duration_ms ?? (data as any).duration_ms ?? null, gift_loop: row.gift_loop ?? false, gift_price_coins: row.gift_price_coins ?? num((data as any).price_coins ?? (data as any).price, 0) };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
-    setMediaFailed(false); setFallbackSrc(null); setFallbackType(null);
+    setMediaFailed(false); setFallbackSrc(null); setFallbackType(null); setFlyTarget(null);
     if (!active) return;
+    if (isSmallGift(active)) {
+      const svg = svgCandidates(active)[0];
+      if (svg && !cancelled) setFallbackSrc(svg);
+      return () => { cancelled = true; };
+    }
     const primary = assetUrl(active.gift_clip_path) ?? assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon);
     if (primary) return;
     const candidates = giftAssetCandidates(active.gift_name);
     (async () => { for (const candidate of candidates) { try { const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" }); if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); return; } } catch {} } })();
     return () => { cancelled = true; };
-  }, [active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_image_url, active?.gift_icon]);
+  }, [active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_image_url, active?.gift_icon, active?.gift_icon_path, active?.gift_price_coins]);
 
   useEffect(() => {
-    if (!active || !mediaFailed) return;
+    if (!active || !mediaFailed || isSmallGift(active)) return;
     let cancelled = false;
     const candidates = giftAssetCandidates(active.gift_name);
     (async () => { for (const candidate of candidates) { if (assetUrl(active.gift_clip_path) === candidate) continue; try { const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" }); if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); setMediaFailed(false); return; } } catch {} } })();
     return () => { cancelled = true; };
-  }, [mediaFailed, active?.id, active?.gift_name, active?.gift_clip_path]);
+  }, [mediaFailed, active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_price_coins]);
+
+  useEffect(() => {
+    const resolveTarget = () => {
+      if (!active || !isSmallGift(active)) return;
+      const targetId = active.receiver_ids?.find(Boolean) ?? active.receiver_id ?? null;
+      if (!targetId) return;
+      const selector = `[data-voice-seat-user-id="${CSS.escape(targetId)}"]`;
+      const target = document.querySelector<HTMLElement>(selector);
+      if (!target) { setFlyTarget(null); return; }
+      const rect = target.getBoundingClientRect();
+      setFlyTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+    };
+    resolveTarget();
+    const timer = window.setTimeout(resolveTarget, 80);
+    window.addEventListener("resize", resolveTarget);
+    window.addEventListener("scroll", resolveTarget, true);
+    return () => { window.clearTimeout(timer); window.removeEventListener("resize", resolveTarget); window.removeEventListener("scroll", resolveTarget, true); };
+  }, [active?.id, active?.receiver_id, active?.receiver_ids, active?.gift_price_coins]);
 
   useEffect(() => { const handleKeyDown = (event: KeyboardEvent) => { if (event.key === "Escape") { event.preventDefault(); window.dispatchEvent(new PopStateEvent("popstate")); } }; window.addEventListener("keydown", handleKeyDown); return () => window.removeEventListener("keydown", handleKeyDown); }, []);
   useEffect(() => { let alive = true; void supabase.auth.getUser().then(({ data }) => { if (alive) setLocalUserId(data.user?.id ?? null); }); const { data } = supabase.auth.onAuthStateChange((_event, session) => { if (alive) setLocalUserId(session?.user?.id ?? null); }); return () => { alive = false; data.subscription.unsubscribe(); }; }, []);
@@ -53,8 +84,6 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       if (!alive || !localUserId) return;
       const row = payload.new as GiftRow;
       if (!row?.id) return;
-      // Sender playback is delivered by the unified Broadcast event. Never replay
-      // the sender's durable rows, and never show another recipient's gift.
       if (row.sender_id === localUserId) return;
       const receiverIds = Array.isArray(row.receiver_ids) ? row.receiver_ids : (row.receiver_id ? [row.receiver_id] : []);
       if (receiverIds.length && !receiverIds.includes(localUserId)) return;
@@ -68,15 +97,9 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       if (targets.length && localUserId && !targets.includes(localUserId) && d.local !== true) return;
       const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`;
       const eventIds = Array.isArray(d.eventIds) ? d.eventIds.filter((x): x is string => typeof x === "string") : [key];
-      // Mark every durable row represented by this single broadcast as already
-      // played. This prevents the second/third/etc. recipient row from replaying.
-      for (const eventId of eventIds) {
-        if (eventId === key) continue;
-        seenRef.current.add(eventId);
-        seenOrderRef.current.push(eventId);
-      }
+      for (const eventId of eventIds) { if (eventId === key) continue; seenRef.current.add(eventId); seenOrderRef.current.push(eventId); }
       localEchoRef.current.add(key);
-      const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" };
+      const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_icon_path: null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" };
       void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
     };
     window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
@@ -87,14 +110,15 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
   if (!active) return null;
+  const small = isSmallGift(active);
   const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
   const primaryClip = assetUrl(active.gift_clip_path);
   const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
-  const src = primaryClip ?? fallbackSrc;
+  const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (primaryClip ?? fallbackSrc);
   const mediaType = fallbackSrc && !primaryClip ? fallbackType : giftAssetType(src ?? "");
-  const video = mediaType === "video" || isVideo(src, active.gift_clip_type);
-  const svga = mediaType === "svga" || isSvga(src, active.gift_clip_type);
-  const svg = mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
+  const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
+  const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
+  const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : primaryImage;
   const fallbackImage = assetUrl(active.gift_icon);
   const stageStyle = renderConfigToStyle(cfg);
@@ -103,8 +127,20 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop };
   const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
   const handleDuration = (ms: number) => { clearTimer(); const naturalMs = ms > 0 ? ms : num(active.gift_duration_ms, 15000); const maxMs = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, naturalMs + cfg.holdMs); endTimerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + maxMs + 250); };
-  const handleMediaError = () => { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(() => { if (!fallbackSrc) finish(); }, 7000); };
+  const handleMediaError = () => { if (small) { finish(); return; } setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(() => { if (!fallbackSrc) finish(); }, 7000); };
   const handleSvgError = () => { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(finish, 1200); };
+
+  if (small) {
+    const startX = typeof window !== "undefined" ? window.innerWidth * 0.5 : 0;
+    const startY = typeof window !== "undefined" ? window.innerHeight * 0.72 : 0;
+    const endX = flyTarget?.x ?? startX;
+    const endY = flyTarget?.y ?? startY;
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite">
+      {src && <img key={`${active.id}:${src}:${endX}:${endY}`} src={src} alt={active.gift_name ?? "Gift"} className="absolute h-14 w-14 object-contain drop-shadow-[0_4px_12px_rgba(255,255,255,0.45)]" style={{ left: startX - 28, top: startY - 28, transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${flyTarget ? 0.38 : 1})`, opacity: flyTarget ? 0.15 : 1, transition: flyTarget ? "transform 850ms cubic-bezier(.2,.8,.2,1), opacity 850ms ease" : "none" }} onError={handleSvgError} />}
+    </div>);
+  }
 
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
     {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
