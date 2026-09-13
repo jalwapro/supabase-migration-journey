@@ -4,6 +4,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   smoke-admin-rls:
     runs-on: ubuntu-latest
@@ -20,8 +23,6 @@ jobs:
 
       - name: Run admin-gating smoke test
         env:
-          # VITE_SUPABASE_URL + VITE_SUPABASE_PUBLISHABLE_KEY come from .env (checked in).
-          # Credentials must be configured as repo/organization secrets.
           ADMIN_EMAIL: ${{ secrets.SMOKE_ADMIN_EMAIL }}
           ADMIN_PASSWORD: ${{ secrets.SMOKE_ADMIN_PASSWORD }}
           USER_EMAIL: ${{ secrets.SMOKE_USER_EMAIL }}
@@ -32,3 +33,67 @@ jobs:
             exit 1
           fi
           node scripts/smoke-admin-rls.mjs
+
+  complete-emoji-gifts-fix:
+    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'fix/emoji-small-gifts-complete' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Apply exact source fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          room = Path('src/routes/room.$roomId.tsx')
+          s = room.read_text(encoding='utf-8')
+          old = 'onSendEmoji={(e) => { const target = members.find((m) => m.seat_index != null && m.user_id !== user?.id)?.seat_index ?? 0; void sendEmoji(e.emoji, target, e.clip_path); }}'
+          new = 'onSendEmoji={(e, targetSeatIndex) => { const target = targetSeatIndex ?? null; if (target == null) { toast.info("Pehle room mein kisi user ki DP/seat select karein"); return; } void sendEmoji(e.emoji, target, e.clip_path); }}'
+          if old in s:
+              s = s.replace(old, new, 1)
+          elif 'onSendEmoji={(e, targetSeatIndex)' not in s:
+              raise SystemExit('Expected emoji callback was not found')
+          room.write_text(s, encoding='utf-8')
+
+          gift = Path('src/components/GiftSheet.tsx')
+          gs = gift.read_text(encoding='utf-8')
+          old = 'const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>tierOf(price(g))===activeTier).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);'
+          new = 'const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);'
+          if old in gs:
+              gs = gs.replace(old, new, 1)
+          elif 'activeTier==="small"?p>=10&&p<=300' not in gs:
+              raise SystemExit('Expected small-gift filter was not found')
+          gift.write_text(gs, encoding='utf-8')
+          PY
+
+          grep -Fq 'onSendEmoji={(e, targetSeatIndex)' 'src/routes/room.$roomId.tsx'
+          grep -Fq 'activeTier==="small"?p>=10&&p<=300' 'src/components/GiftSheet.tsx'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build verification
+        run: npm run build
+
+      - name: Commit actual source fixes to PR branch
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- 'src/routes/room.$roomId.tsx' 'src/components/GiftSheet.tsx'
+          if git diff --cached --quiet; then
+            echo 'Source fixes already committed.'
+            exit 0
+          fi
+          git commit -m 'fix(voice-room): route emojis to selected user and enforce 10-300 gifts'
+          git push origin HEAD:${{ github.head_ref }}
