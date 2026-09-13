@@ -35,7 +35,6 @@ jobs:
               raise SystemExit('Expected gift tier filter not found; refusing unsafe patch')
           gift.write_text(text.replace(old, new, 1))
           PY
-
       - name: Commit fixes and restore workflow
         run: |
           git config user.name "github-actions[bot]"
@@ -64,3 +63,4 @@ jobs:
           git add src/routes/room.$roomId.tsx src/components/GiftSheet.tsx .github/workflows/voice-room-apply.yml
           git commit -m "fix: complete VoiceRoom emoji targeting and small gifts [skip ci]"
           git push origin main
+          # trigger marker: this workflow is restored in the fix commit
