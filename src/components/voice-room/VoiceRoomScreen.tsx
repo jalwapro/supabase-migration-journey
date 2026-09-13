@@ -25,7 +25,7 @@ interface GameSlide { id: string; image_url: string; title: string; link_url?: s
 interface VoiceRoomScreenProps { room: RoomState; roomId: string; seatCount?: number; roomCode: string; onlineCount: number; micOn: boolean; isHost: boolean; mySeatIndex: number | null; popularityPct: number; topGifterName?: string | null; topGifterCoins?: number; announcement?: string | null; messages?: RoomChatMessage[]; onOpenChat: () => void; onOpenPrivateChat: () => void; onOpenGift: () => void; onOpenMore: () => void; onToggleMic: () => void; speakerMuted: boolean; onToggleSpeaker: () => void; onOpenMusic?: () => void; onSendEmoji?: (emoji: ChatEmoji, targetSeatIndex?: number | null) => void; canPlayMusic?: boolean; onSeatTap: (i: number) => void; onJoinSeat: (i: number) => void; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; onOpenGames?: () => void; onOpenNativeGame?: (slug: string) => void; }
 const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, room_pin: null };
 
-export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount, micOn, isHost, mySeatIndex, popularityPct, topGifterName, topGifterCoins, announcement, messages = [], onOpenChat, onOpenPrivateChat, onOpenGift, onOpenMore, onToggleMic, onToggleSpeaker, speakerMuted, onSendEmoji, onSeatTap, onJoinSeat, onHostTap, onReport, onShare, onExit, onHome, onRanking, onOpenGames, onOpenNativeGame }: VoiceRoomScreenProps) => {
+export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount, micOn, isHost, mySeatIndex, popularityPct, topGifterName, topGifterCoins, announcement, messages = [], onOpenChat, onOpenPrivateChat, onOpenGift, onOpenMore, onToggleMic, onToggleSpeaker, speakerMuted, onOpenMusic, onSendEmoji, onSeatTap, onJoinSeat, onHostTap, onReport, onShare, onExit, onHome, onRanking, onOpenGames, onOpenNativeGame }: VoiceRoomScreenProps) => {
   const [giftOpen, setGiftOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [gamesOpen, setGamesOpen] = useState(false);
@@ -167,8 +167,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const joinSeat = (index: number) => { if (roomSettings.is_locked && !isHost && !isUnlockedByPin) { setShowPinModal(true); return; } onJoinSeat(index); };
   
   const hostMedia = hostTheme?.bg_image || hostTheme?.animation_url || hostTheme?.preview_url;
-  const primaryThemeColor = hostTheme?.primary_color || "#f59e0b"; // fallback amber
-  const accentThemeColor = hostTheme?.accent_color || "#a855f7"; // fallback purple
+  const primaryThemeColor = hostTheme?.primary_color || "#f59e0b";
+  const accentThemeColor = hostTheme?.accent_color || "#a855f7";
 
   const visibleMessages = roomMessages.filter(m => m.kind !== "emoji");
   const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setMiniDraft(`@${seat.user.username} `); setShowMiniInputPopup(true); setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
@@ -176,15 +176,28 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   
   const handlePickEmoji = (emoji: ChatEmoji) => { 
     const targetSeat = selectedTargetSeat, senderSeat = mySeatIndex ?? 0; 
-    onSendEmoji?.(emoji, targetSeat); 
-    setEmojiOpen(false); 
-    setSelectedTargetSeat(null); 
-    if (targetSeat !== null && targetSeat !== undefined) { 
-      setActiveFlyingEmoji({ emojiUrl: emoji.url || "", fromSeat: senderSeat, toSeat: targetSeat }); 
-      setGlowingSeatIndex(targetSeat); 
-      setTimeout(() => setActiveFlyingEmoji(null), 1500); 
-      setTimeout(() => setGlowingSeatIndex(null), 3000); 
-    } 
+    if (targetSeat == null) {
+      toast.info("Pehle room mein kisi user ki DP/seat select karein");
+      return;
+    }
+    const target = room.seats.find((seat) => seat.index === targetSeat);
+    if (!target?.user) {
+      toast.info("Sirf occupied user ki DP par emoji bhej sakte hain");
+      return;
+    }
+    onSendEmoji?.(emoji, targetSeat);
+    setEmojiOpen(false);
+    setSelectedTargetSeat(null);
+    setActiveFlyingEmoji({ emojiUrl: emoji.url || emoji.clip_path || "", fromSeat: senderSeat, toSeat: targetSeat });
+    setGlowingSeatIndex(targetSeat);
+    setTimeout(() => setActiveFlyingEmoji(null), 2700);
+    setTimeout(() => setGlowingSeatIndex(null), 3100);
+  };
+
+  const handleSeatTapForEmoji = (seatIndex: number) => {
+    const seat = room.seats.find((s) => s.index === seatIndex);
+    if (seat?.user) setSelectedTargetSeat(seatIndex);
+    onSeatTap(seatIndex);
   };
 
   return (
@@ -257,7 +270,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <GiftAnimationPlayer roomId={roomId} />
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
           <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 px-1 no-scrollbar">
-            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={openMemberProfile} onJoinSeat={joinSeat} onHostTap={onHostTap} />
+            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={onHostTap} />
           </div>
           
           {activeFlyingEmoji && (
@@ -339,25 +352,25 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       
       {emojiOpen && (
         <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/30 backdrop-blur-md animate-fade-in">
-          <div className="absolute inset-0" onClick={() => setEmojiOpen(false)} />
+          <div className="absolute inset-0" onClick={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} />
           <div className="relative z-10 w-full rounded-t-3xl bg-slate-900/90 border-t p-4 shadow-2xl backdrop-blur-xl animate-slide-up max-h-[60dvh] flex flex-col" style={{ borderColor: `${primaryThemeColor}55` }}>
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-700" />
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-2"><Smile className="h-4 w-4" style={{ color: primaryThemeColor }} /><span className="text-xs font-bold tracking-wide uppercase" style={{ color: primaryThemeColor }}>Send Emoji to Seat</span></div>
-              <button type="button" onClick={() => setEmojiOpen(false)} className="text-xs font-semibold text-slate-400 hover:text-white">Close</button>
+              <button type="button" onClick={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} className="text-xs font-semibold text-slate-400 hover:text-white">Close</button>
             </div>
             <div className="py-2.5 border-b border-slate-800/80">
               <p className="text-[10px] text-slate-400 mb-2 font-medium">Select Target Seat (Optional):</p>
               <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                 <button type="button" onClick={() => setSelectedTargetSeat(null)} className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border", selectedTargetSeat === null ? "text-white border-transparent shadow-md" : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700")} style={selectedTargetSeat === null ? { background: primaryThemeColor, color: "#000" } : {}}>General Chat</button>
                 {room.seats.map(seat => (
-                  <button key={seat.index} type="button" onClick={() => setSelectedTargetSeat(seat.index)} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border", selectedTargetSeat === seat.index ? "text-white border-transparent shadow-md" : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700")} style={selectedTargetSeat === seat.index ? { background: primaryThemeColor, color: "#000" } : {}}>
+                  <button key={seat.index} type="button" disabled={!seat.user} onClick={() => setSelectedTargetSeat(seat.index)} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border", selectedTargetSeat === seat.index ? "text-white border-transparent shadow-md" : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700", !seat.user && "opacity-40 cursor-not-allowed")} style={selectedTargetSeat === seat.index ? { background: primaryThemeColor, color: "#000" } : {}}>
                     <UserCheck className="h-3 w-3" /><span>Seat {seat.index + 1} {seat.user?.username ? `(${seat.user.username})` : "(Empty)"}</span>
                   </button>
                 ))}
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto py-3"><ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={handlePickEmoji} /></div>
+            <div className="flex-1 overflow-y-auto py-3"><ChatEmojiSheet open={emojiOpen} onClose={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} onPick={handlePickEmoji} /></div>
           </div>
         </div>
       )}
