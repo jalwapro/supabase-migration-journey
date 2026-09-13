@@ -26,16 +26,19 @@ export function GiftAnimationPlayer({ roomId }: Props) {
           : [];
       const affectsCurrentUser = !!user?.id && (user.id === senderId || receiverIds.includes(user.id));
 
+      // Broadcast is room-scoped, so every viewer receives the realtime event.
+      // Only the sender and the explicitly selected receiver(s) should play or
+      // receive the gift. Other room members must ignore it completely.
+      if (!affectsCurrentUser) return;
+
       // gift_sends is the durable source of truth; Broadcast is only the
       // low-latency signal. Scope user-profile/wallet invalidations to the
       // actual sender/receiver to avoid refetching every viewer's wallet.
       const invalidations: Promise<void>[] = [];
-      if (affectsCurrentUser) {
-        invalidations.push(queryClient.invalidateQueries({ queryKey: ["profile"] }));
-        invalidations.push(queryClient.invalidateQueries({ queryKey: ["wallet"] }));
-        invalidations.push(queryClient.invalidateQueries({ queryKey: ["gifts-received"] }));
-        invalidations.push(queryClient.invalidateQueries({ queryKey: ["gifts-sent"] }));
-      }
+      invalidations.push(queryClient.invalidateQueries({ queryKey: ["profile"] }));
+      invalidations.push(queryClient.invalidateQueries({ queryKey: ["wallet"] }));
+      invalidations.push(queryClient.invalidateQueries({ queryKey: ["gifts-received"] }));
+      invalidations.push(queryClient.invalidateQueries({ queryKey: ["gifts-sent"] }));
       for (const receiverId of receiverIds) {
         invalidations.push(queryClient.invalidateQueries({ queryKey: ["host-popularity", receiverId] }));
       }
