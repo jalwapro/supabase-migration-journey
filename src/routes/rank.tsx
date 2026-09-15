@@ -6,13 +6,10 @@ import { AppShell } from "@/components/layout/AppShell";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { formatCoins } from "@/lib/vip-levels";
 import {
-  ArrowLeft, HelpCircle, Crown, Star, Mic, Gift, Swords, Gem, Sparkles,
-  Flame, Globe2, ChevronDown, Coins, Bell,
+  ArrowLeft, HelpCircle, Star, Mic, Gift, Swords, Gem, Sparkles,
+  Flame, Globe2, ChevronDown,
 } from "lucide-react";
-import { formatCompact } from "@/lib/utils";
-import { useUnreadCount } from "@/hooks/useNotifications";
 
 export const Route = createFileRoute("/rank")({
   component: RankPage,
@@ -133,21 +130,21 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div className="relative min-h-full [overflow-x:clip] pb-36 text-white bg-[#2a0105]">
-          {/* Ambient red velvet background lighting */}
+        <div className="relative min-h-full [overflow-x:clip] pb-36 text-white bg-[#1a0003] selection:bg-rose-600">
+          {/* Velvet Red Background Curves */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-12 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-rose-600/25 blur-[100px]" />
-            <div className="absolute top-40 -left-16 h-60 w-60 rounded-full bg-red-900/40 blur-[90px]" />
-            <div className="absolute top-80 -right-16 h-60 w-60 rounded-full bg-rose-500/20 blur-[90px]" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#420208]/80 via-[#260105]/95 to-[#160002]" />
+            <div className="absolute top-0 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-rose-600/20 blur-[150px]" />
+            <div className="absolute top-28 -left-32 h-80 w-80 rounded-full bg-red-900/30 blur-[120px]" />
+            <div className="absolute top-72 -right-32 h-80 w-80 rounded-full bg-rose-600/15 blur-[120px]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-rose-950/70 via-[#1e0003]/90 to-[#0a0001]" />
           </div>
 
           {/* Header */}
           <RankHeader onBack={() => router.history.back()} onHelp={() => setHelpOpen(true)} userId={user?.id} />
 
-          {/* Category Tabs */}
+          {/* Categories Navigation */}
           <nav className="relative z-10 mt-1 overflow-x-auto no-scrollbar border-b border-white/10 pb-2">
-            <ul className="flex gap-5 px-4">
+            <ul className="flex gap-6 px-4">
               {CATS.map(({ k, label, Icon }) => {
                 const active = category === k;
                 return (
@@ -156,11 +153,11 @@ function RankPage() {
                       onClick={() => setCategory(k)}
                       className={`group inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium transition py-1 border-b-2 ${
                         active
-                          ? "border-amber-300 text-amber-300 font-bold drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]"
-                          : "border-transparent text-white/70 hover:text-white"
+                          ? "border-amber-300 text-amber-300 font-bold drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                          : "border-transparent text-white/65 hover:text-white"
                       }`}
                     >
-                      <Icon className={`h-3.5 w-3.5 ${active ? "text-amber-300" : "text-white/60"}`} />
+                      <Icon className={`h-3.5 w-3.5 ${active ? "text-amber-300" : "text-white/50"}`} />
                       {label}
                     </button>
                   </li>
@@ -169,7 +166,7 @@ function RankPage() {
             </ul>
           </nav>
 
-          {/* Sub-Filter Bar (Daily/Weekly/Monthly + Country Dropdown) */}
+          {/* Sub-Filter Bar */}
           <section className="relative z-10 mt-3 px-4 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 bg-black/40 p-1 rounded-full border border-white/10 backdrop-blur-md">
               {PERIODS.map(({ k, label }) => {
@@ -180,7 +177,7 @@ function RankPage() {
                     onClick={() => setPeriod(k)}
                     className={`whitespace-nowrap rounded-full px-3 py-1 text-[11px] font-semibold transition ${
                       active
-                        ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md"
+                        ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-900/50"
                         : "text-white/60 hover:text-white"
                     }`}
                   >
@@ -192,16 +189,16 @@ function RankPage() {
             <CountrySelect value={country} onChange={setCountry} />
           </section>
 
-          {/* ── Exact Reference Podium Layout: [3rd (Left) | 1st (Center Top) | 2nd (Right)] ── */}
-          <section className="relative z-10 mt-5 px-3">
-            <div className="grid grid-cols-3 items-end gap-2 pt-6">
-              <Podium row={c3} place={3} unit={activeCat.unit} />
-              <Podium row={c1} place={1} unit={activeCat.unit} />
-              <Podium row={c2} place={2} unit={activeCat.unit} />
+          {/* ── Top 3 Podium Section: [3rd Left | 1st Center Top | 2nd Right] ── */}
+          <section className="relative z-10 mt-6 px-2">
+            <div className="grid grid-cols-3 items-end gap-1.5 pt-12">
+              <Podium row={c3} place={3} />
+              <Podium row={c1} place={1} />
+              <Podium row={c2} place={2} />
             </div>
           </section>
 
-          {/* ── Leaderboard List (Rank 4 onwards) ── */}
+          {/* ── Leaderboard List (Rank 4 onwards - No Coins displayed) ── */}
           <section className="relative z-10 mt-6 px-4">
             {q.isLoading ? (
               <ul className="space-y-2.5">
@@ -213,19 +210,18 @@ function RankPage() {
               <EmptyState />
             ) : (
               <ul className="space-y-2.5">
-                {rest.map((r) => <RankRow key={r.user_id} row={r} unit={activeCat.unit} />)}
+                {rest.map((r) => <RankRow key={r.user_id} row={r} />)}
               </ul>
             )}
           </section>
         </div>
       </AppShell>
 
-      {/* Sticky "My Rank" Footer Bar */}
+      {/* Sticky "My Rank" Footer Bar (No Coins shown) */}
       {user && (
         <MyRank
           row={meQ.data ?? null}
           fallback={profile}
-          unit={activeCat.unit}
         />
       )}
 
@@ -235,12 +231,12 @@ function RankPage() {
   );
 }
 
-function RankHeader({ onBack, onHelp, userId }: {
+function RankHeader({ onBack, onHelp, userId: _userId }: {
   onBack: () => void; onHelp: () => void; userId: string | undefined;
 }) {
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/5 bg-[#260105]/90 backdrop-blur-xl"
+      className="sticky top-0 z-30 border-b border-white/5 bg-[#140002]/90 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
@@ -253,7 +249,7 @@ function RankHeader({ onBack, onHelp, userId }: {
         </button>
 
         <div className="min-w-0 text-center">
-          <h1 className="text-lg font-black tracking-wider text-rose-100 font-serif italic drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
+          <h1 className="text-lg font-black tracking-wider text-rose-100 font-serif italic drop-shadow-[0_0_10px_rgba(251,191,36,0.6)]">
             Rankings
           </h1>
         </div>
@@ -272,33 +268,49 @@ function RankHeader({ onBack, onHelp, userId }: {
   );
 }
 
-/* ─────────────────────────────  Podium (Matched to Reference Image Structure)  ───────────────────────────── */
+/* ─────────────────────────────  Podium Component (Image Placeholders Ready)  ───────────────────────────── */
 
-function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
+function Podium({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const isFirst = place === 1;
   const isSecond = place === 2;
 
-  // Colors & styles tailored precisely to match the reference screenshot
-  const crownColor = isFirst ? "text-amber-300" : isSecond ? "text-cyan-300" : "text-amber-500";
-  
-  // Custom styling layout blocks for 1st, 2nd, 3rd shields
-  const badgeBg = isFirst 
-    ? "bg-gradient-to-b from-[#6b0914] via-[#450308] to-[#1c0002] border-amber-400/70 shadow-[0_0_25px_rgba(251,191,36,0.35)]" 
+  // Aap yahan apni image files ke paths set kar sakte hain (jaise public/images/crown-1.png)
+  const crownImage = isFirst 
+    ? "/images/crown-1.png" 
     : isSecond 
-    ? "bg-gradient-to-b from-[#0c3157] via-[#06192d] to-[#020b14] border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
-    : "bg-gradient-to-b from-[#6b3409] via-[#401e02] to-[#1a0a01] border-amber-600/60 shadow-[0_0_20px_rgba(245,158,11,0.3)]";
+    ? "/images/crown-2.png" 
+    : "/images/crown-3.png";
+
+  const bannerGradient = isFirst
+    ? "from-[#8a0f1e] via-[#52030b] to-[#240003] border-amber-400/90 shadow-[0_0_35px_rgba(251,191,36,0.45)]"
+    : isSecond
+    ? "from-[#0d3e75] via-[#072445] to-[#020e1c] border-cyan-400/80 shadow-[0_0_25px_rgba(6,182,212,0.4)]"
+    : "from-[#8a440f] via-[#542804] to-[#240d01] border-amber-600/80 shadow-[0_0_25px_rgba(245,158,11,0.4)]";
 
   const content = (
-    <div className={`relative flex flex-col items-center ${isFirst ? "-mt-8" : "mt-2"}`}>
-      {/* Big Crown on Top */}
-      <div className={`absolute z-30 pointer-events-none ${isFirst ? "-top-8" : "-top-6"}`}>
-        <Crown className={`drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] ${isFirst ? "h-9 w-9 text-amber-300" : "h-7 w-7 " + crownColor}`} />
+    <div className={`relative flex flex-col items-center ${isFirst ? "-mt-16" : "-mt-4"}`}>
+      {/* 3D Crown Image Container (Aap yahan apni crown image laga dein) */}
+      <div className={`absolute z-30 pointer-events-none ${isFirst ? "-top-16 h-20 w-20" : "-top-14 h-16 w-16"}`}>
+        <img 
+          src={crownImage} 
+          alt={`Crown ${place}`} 
+          className="w-full h-full object-contain drop-shadow-[0_6px_12px_rgba(0,0,0,0.95)]" 
+          onError={(e) => {
+            // Fallback agar image na mile taake layout kharab na ho
+            (e.target as HTMLElement).style.display = 'none';
+          }}
+        />
       </div>
 
-      {/* Main Banner Shield */}
-      <div className={`relative w-full rounded-2xl border p-2 pt-4 flex flex-col items-center ${badgeBg}`}>
+      {/* Main Shield Banner Container (No coins displayed inside) */}
+      <div className={`relative w-full rounded-2xl border-2 pt-7 pb-4 px-2 flex flex-col items-center bg-gradient-to-b ${bannerGradient}`}>
+        {/* Top Tag Badge */}
+        <div className="absolute top-2 px-2.5 py-0.5 rounded-full bg-black/60 border border-white/15 text-[8px] font-black tracking-widest text-amber-300 uppercase shadow">
+          TOP {place}
+        </div>
+
         {/* Avatar Ring */}
-        <div className={`relative rounded-full p-0.5 border-2 ${isFirst ? "border-amber-300 h-15 w-15" : "border-white/30 h-13 w-13"}`}>
+        <div className={`relative rounded-full p-0.5 mt-3 border-2 ${isFirst ? "border-amber-300 h-16 w-16 shadow-[0_0_15px_rgba(251,191,36,0.7)]" : "border-white/30 h-14 w-14"}`}>
           <LevelAvatar
             src={row?.avatar ?? undefined}
             name={row?.username ?? undefined}
@@ -309,29 +321,21 @@ function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: strin
         </div>
 
         {/* Username */}
-        <p className="mt-1.5 max-w-[85px] truncate text-center text-[12px] font-bold text-white">
+        <p className="mt-2 max-w-[85px] truncate text-center text-[12px] font-black text-white drop-shadow">
           {row?.username ?? "—"}
         </p>
 
-        {/* Level and Country Badges */}
-        <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-white/90">
-          <span className="rounded bg-amber-500/20 border border-amber-400/30 px-1 py-0.5 text-amber-300 font-bold">
+        {/* Level and Country details */}
+        <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-white/95">
+          <span className="rounded bg-amber-500/25 border border-amber-400/40 px-1 py-0.5 text-amber-300 font-bold">
             N{row?.level ?? 1}
           </span>
-          <span className="rounded bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 text-purple-200">
+          <span className="rounded bg-purple-500/25 border border-purple-400/40 px-1 py-0.5 text-purple-200">
             Lv.{row?.vip_level ?? 0}
           </span>
           {row?.country && COUNTRY_FLAG[row.country] && (
             <span>{COUNTRY_FLAG[row.country]}</span>
           )}
-        </div>
-
-        {/* Score pill */}
-        <div className="mt-2 w-full rounded-full bg-black/45 py-1 px-1.5 text-center border border-white/5 flex items-center justify-center gap-1">
-          <Coins className="h-3 w-3 text-amber-300 shrink-0" />
-          <span className="text-[11px] font-black text-amber-300 truncate">
-            {row ? formatCompact(row.score) : "0"}
-          </span>
         </div>
       </div>
     </div>
@@ -345,15 +349,17 @@ function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: strin
   );
 }
 
-function RankRow({ row, unit }: { row: Row; unit: string }) {
+/* ─────────────────────────────  Rank Row (Ranks 4+) - No Coins  ───────────────────────────── */
+
+function RankRow({ row }: { row: Row }) {
   return (
     <li>
       <Link
         to="/u/$userId"
         params={{ userId: row.user_id }}
-        className="grid grid-cols-[32px_auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-950/40 via-red-950/20 to-black/40 px-3.5 py-2.5 backdrop-blur-md transition hover:border-rose-400/50 hover:bg-rose-900/30 shadow-lg shadow-black/20"
+        className="grid grid-cols-[32px_auto_minmax(0,1fr)] items-center gap-3 rounded-2xl border border-rose-600/25 bg-gradient-to-r from-rose-950/50 via-red-950/25 to-black/50 px-3.5 py-2.5 backdrop-blur-md transition hover:border-rose-400/60 hover:bg-rose-900/40 shadow-lg shadow-black/30"
       >
-        <span className="text-center text-[14px] font-black text-white/70 font-serif">
+        <span className="text-center text-[14px] font-black text-white/75 font-serif">
           {row.rnk}
         </span>
 
@@ -381,29 +387,23 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
             </span>
           </div>
         </div>
-
-        <div className="flex items-center gap-1 text-[13px] font-black text-amber-300 bg-black/30 px-2.5 py-1 rounded-full border border-white/5">
-          <Coins className="h-3.5 w-3.5 text-amber-300" />
-          <span>{formatCompact(row.score)}</span>
-          <span className="sr-only">{unit}</span>
-        </div>
       </Link>
     </li>
   );
 }
 
-function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit: string }) {
+/* ─────────────────────────────  My Rank Footer (No Coins)  ───────────────────────────── */
+
+function MyRank({ row, fallback }: { row: Row | null; fallback: any }) {
   const avatar = row?.avatar ?? fallback?.avatar ?? null;
   const country = row?.country ?? fallback?.country ?? null;
   const rank = row?.rnk ?? null;
-  const score = row?.score ?? Number(fallback?.coins ?? 0);
   const level = row?.level ?? fallback?.level ?? 1;
-  const vip = row?.vip_level ?? fallback?.vip_level ?? 0;
 
   return (
     <div className="fixed inset-x-0 bottom-16 z-40 px-3">
-      <div className="mx-auto max-w-[520px] rounded-2xl border border-amber-400/40 bg-[#250106]/95 p-3 backdrop-blur-xl shadow-[0_0_25px_rgba(251,191,36,0.25)]">
-        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3">
+      <div className="mx-auto max-w-[520px] rounded-2xl border border-amber-400/50 bg-[#1d0003]/95 p-3 backdrop-blur-xl shadow-[0_0_30px_rgba(251,191,36,0.3)]">
+        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3">
           <div className="text-center px-1">
             <p className="text-[9px] uppercase tracking-wider text-amber-300">My Rank</p>
             <p className="text-lg font-black leading-none text-white">{rank ? `#${rank}` : "—"}</p>
@@ -429,12 +429,6 @@ function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit:
                 {country ?? "Pakistan"} {country && COUNTRY_FLAG[country] ? COUNTRY_FLAG[country] : "🇵🇰"}
               </span>
             </div>
-          </div>
-
-          <div className="flex items-center gap-1 text-[13px] font-black text-amber-300 bg-black/40 px-3 py-1.5 rounded-full border border-amber-400/30">
-            <Coins className="h-3.5 w-3.5 text-amber-300" />
-            <span>{formatCoins(score)}</span>
-            <span className="sr-only">{unit}</span>
           </div>
         </div>
       </div>
@@ -475,13 +469,13 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-md"
+        className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/40 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-md"
       >
         <Globe2 className="h-3.5 w-3.5 text-amber-300" />
         {value} <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-rose-500/30 bg-[#260105]/95 p-1 shadow-2xl backdrop-blur-xl">
+        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-rose-500/30 bg-[#140002]/95 p-1 shadow-2xl backdrop-blur-xl">
           {options.length === 1 ? (
             <p className="px-3 py-2 text-[11px] text-white/50">No country data yet</p>
           ) : options.map((c) => (
@@ -503,7 +497,7 @@ function EmptyState() {
   return (
     <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-white/10 bg-black/20 p-6 text-center backdrop-blur-md">
       <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/40 bg-amber-500/10">
-        <Crown className="h-6 w-6 text-amber-300" />
+        <Gem className="h-6 w-6 text-amber-300" />
       </div>
       <p className="text-sm font-bold text-white">Throne awaits</p>
       <p className="mt-1 text-xs text-white/50">Be the first to climb this leaderboard.</p>
@@ -515,7 +509,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-3xl border border-rose-500/40 bg-[#260105]/95 p-5 shadow-2xl shadow-rose-950/80"
+        className="w-full max-w-md rounded-3xl border border-rose-500/40 bg-[#140002]/95 p-5 shadow-2xl shadow-rose-950/80"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
