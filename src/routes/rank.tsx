@@ -9,11 +9,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatCoins } from "@/lib/vip-levels";
 import {
   ArrowLeft, HelpCircle, Crown, Star, Mic, Gift, Swords, Gem, Sparkles,
-  Flame, Globe2, ChevronDown, Coins, Bell, Wallet as WalletIcon,
+  Flame, Globe2, ChevronDown, Coins, Bell,
 } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
-
 
 export const Route = createFileRoute("/rank")({
   component: RankPage,
@@ -40,25 +39,23 @@ type Row = {
 };
 
 const CATS: { k: Category; label: string; Icon: React.ComponentType<{ className?: string }>; unit: string; }[] = [
-  { k: "points",  label: "Points",  Icon: Star,     unit: "XP" },
-  { k: "hosts",   label: "Hosts",   Icon: Mic,      unit: "Coins" },
-  { k: "gifters", label: "Gifters", Icon: Gift,     unit: "Coins" },
-  { k: "pk",      label: "PK King", Icon: Swords,   unit: "Wins" },
-  { k: "vip",     label: "VIP",     Icon: Gem,      unit: "Level" },
-  { k: "royals",  label: "Royals",  Icon: Sparkles, unit: "Level" },
-  { k: "popular", label: "Popular", Icon: Flame,    unit: "Coins" },
-  { k: "country", label: "Country", Icon: Globe2,   unit: "Coins" },
+  { k: "hosts",    label: "Room Gift", Icon: Gift,     unit: "Coins" },
+  { k: "points",   label: "Points",    Icon: Star,     unit: "XP" },
+  { k: "gifters",  label: "Gifters",   Icon: Gift,     unit: "Coins" },
+  { k: "pk",       label: "PK King",   Icon: Swords,   unit: "Wins" },
+  { k: "vip",      label: "VIP",       Icon: Gem,      unit: "Level" },
+  { k: "royals",   label: "Royals",    Icon: Sparkles, unit: "Level" },
+  { k: "popular",  label: "Popular",   Icon: Flame,    unit: "Coins" },
+  { k: "country",  label: "Country",   Icon: Globe2,   unit: "Coins" },
 ];
-
 
 const PERIODS: { k: Period; label: string }[] = [
-  { k: "daily", label: "Daily Ranking" },
-  { k: "weekly", label: "Weekly Ranking" },
-  { k: "monthly", label: "Monthly Ranking" },
-  { k: "all", label: "Overall Ranking" },
+  { k: "daily", label: "Daily" },
+  { k: "weekly", label: "Weekly" },
+  { k: "monthly", label: "Monthly" },
+  { k: "all", label: "All-Time" },
 ];
 
-/* Country flags — extended dynamically with countries actually present in DB. */
 const COUNTRY_FLAG: Record<string, string> = {
   Pakistan: "🇵🇰", India: "🇮🇳", Bangladesh: "🇧🇩", "Saudi Arabia": "🇸🇦",
   UAE: "🇦🇪", Turkey: "🇹🇷", Egypt: "🇪🇬", Indonesia: "🇮🇩", Malaysia: "🇲🇾",
@@ -111,7 +108,6 @@ function RankPage() {
     },
   });
 
-  /* Realtime: debounced refresh on gift / profile / pk changes */
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     const bump = () => {
@@ -133,18 +129,6 @@ function RankPage() {
     };
   }, [qc]);
 
-  /* Auto refresh countdown (per minute) */
-  const [refreshIn, setRefreshIn] = useState(60);
-  useEffect(() => {
-    const t = setInterval(() => {
-      setRefreshIn((n) => {
-        if (n <= 1) { qc.invalidateQueries({ queryKey: qKey }); return 60; }
-        return n - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [qc, qKey]);
-
   const list = q.data ?? [];
   const [c1, c2, c3] = [list[0], list[1], list[2]];
   const rest = list.slice(3);
@@ -153,34 +137,34 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div data-adaptive="neon" className="relative min-h-full [overflow-x:clip] pb-32 text-foreground">
-          {/* ambient glows */}
+        <div className="relative min-h-full [overflow-x:clip] pb-36 text-white bg-[#3b020a] selection:bg-rose-500 selection:text-white">
+          {/* Rich Red Velvet Background Glows */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-fuchsia-500/15 blur-[100px]" />
-            <div className="absolute top-40 -left-16 h-52 w-52 rounded-full bg-violet-600/15 blur-[90px]" />
-            <div className="absolute top-96 -right-16 h-56 w-56 rounded-full bg-amber-500/10 blur-[100px]" />
+            <div className="absolute -top-10 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-rose-600/30 blur-[120px]" />
+            <div className="absolute top-48 -left-20 h-72 w-72 rounded-full bg-red-900/40 blur-[100px]" />
+            <div className="absolute top-96 -right-20 h-72 w-72 rounded-full bg-rose-500/20 blur-[110px]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-rose-950/40 via-[#2d0106]/80 to-[#1a0003]" />
           </div>
 
           {/* ── Header ───────────────────────────────────────────────── */}
-          <RankHeader onBack={() => router.history.back()} onHelp={() => setHelpOpen(true)} profile={profile} userId={user?.id} />
+          <RankHeader onBack={() => router.history.back()} onHelp={() => setHelpOpen(true)} userId={user?.id} />
 
-
-          {/* ── Category tabs ────────────────────────────────────────── */}
-          <nav className="relative z-10 mt-5 overflow-x-auto no-scrollbar">
-            <ul className="flex gap-2 px-4">
+          {/* ── Category tabs (Image style: Horizontal scroll pills) ── */}
+          <nav className="relative z-10 mt-2 overflow-x-auto no-scrollbar border-b border-white/10 pb-2.5">
+            <ul className="flex gap-4 px-4">
               {CATS.map(({ k, label, Icon }) => {
                 const active = category === k;
                 return (
                   <li key={k}>
                     <button
                       onClick={() => setCategory(k)}
-                      className={`group inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl border px-3.5 py-2 text-[12px] font-semibold transition ${
+                      className={`group inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium transition py-1 border-b-2 ${
                         active
-                          ? "border-fuchsia-400/60 bg-gradient-to-r from-fuchsia-600/70 via-violet-600/70 to-purple-700/70 text-white shadow-[0_0_20px_-4px_rgba(217,70,239,0.75)]"
-                          : "border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:border-white/25"
+                          ? "border-amber-300 text-amber-300 font-bold drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]"
+                          : "border-transparent text-white/70 hover:text-white"
                       }`}
                     >
-                      <Icon className={`h-4 w-4 ${active ? "text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]" : "text-white/50"}`} />
+                      <Icon className={`h-3.5 w-3.5 ${active ? "text-amber-300" : "text-white/60"}`} />
                       {label}
                     </button>
                   </li>
@@ -189,73 +173,58 @@ function RankPage() {
             </ul>
           </nav>
 
-          {/* ── Top 3 podium ─────────────────────────────────────────── */}
-          <section className="relative z-10 mt-4 px-2">
-            <div className="grid grid-cols-3 items-end gap-1">
-              <Podium row={c2} place={2} unit={activeCat.unit} />
-              <Podium row={c1} place={1} unit={activeCat.unit} />
-              <Podium row={c3} place={3} unit={activeCat.unit} />
-            </div>
-          </section>
-
-          {/* ── Filter bar ───────────────────────────────────────────── */}
-          <section className="relative z-10 mt-6 px-4">
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+          {/* ── Sub-Filter Bar (Daily/Weekly/Monthly + Country) ───── */}
+          <section className="relative z-10 mt-3 px-4 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1 bg-black/30 p-1 rounded-full border border-white/10 backdrop-blur-md">
               {PERIODS.map(({ k, label }) => {
                 const active = period === k;
                 return (
                   <button
                     key={k}
                     onClick={() => setPeriod(k)}
-                    className={`whitespace-nowrap rounded-2xl border px-3.5 py-2 text-[12px] font-semibold transition ${
+                    className={`whitespace-nowrap rounded-full px-3.5 py-1 text-[11px] font-semibold transition ${
                       active
-                        ? "border-fuchsia-400/60 bg-gradient-to-r from-fuchsia-600/60 to-violet-600/60 text-white shadow-[0_0_16px_-4px_rgba(217,70,239,0.7)]"
-                        : "border-white/10 bg-white/[0.03] text-white/55 hover:text-white"
+                        ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-md shadow-rose-900/50"
+                        : "text-white/60 hover:text-white"
                     }`}
                   >
                     {label}
                   </button>
                 );
               })}
-              <div className="ml-auto">
-                <CountrySelect value={country} onChange={setCountry} />
-              </div>
             </div>
-
+            <CountrySelect value={country} onChange={setCountry} />
           </section>
 
-          {/* ── Leaderboard list ─────────────────────────────────────── */}
-          <section className="relative z-10 mt-4 px-4">
+          {/* ── Top 3 Podium (Exact Reference Layout: 2nd on Left, 1st Center Top, 3rd on Right) ── */}
+          <section className="relative z-10 mt-6 px-3">
+            <div className="grid grid-cols-3 items-end gap-2 pt-8">
+              <Podium row={c2} place={2} unit={activeCat.unit} />
+              <Podium row={c1} place={1} unit={activeCat.unit} />
+              <Podium row={c3} place={3} unit={activeCat.unit} />
+            </div>
+          </section>
+
+          {/* ── Leaderboard list (Rank 4 onwards - Red Velvet Cards) ── */}
+          <section className="relative z-10 mt-6 px-4">
             {q.isLoading ? (
-              <ul className="space-y-2">
-                {[0,1,2,3,4,5].map((i) => (
+              <ul className="space-y-2.5">
+                {[0, 1, 2, 3, 4].map((i) => (
                   <li key={i} className="h-16 animate-pulse rounded-2xl bg-white/5" />
                 ))}
               </ul>
             ) : rest.length === 0 && list.length <= 3 ? (
               <EmptyState />
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {rest.map((r) => <RankRow key={r.user_id} row={r} unit={activeCat.unit} />)}
               </ul>
             )}
           </section>
-
-          {/* ── Bottom info ─────────────────────────────────────────── */}
-          <section className="relative z-10 mt-6 px-4 text-[11px] leading-relaxed text-white/50">
-            <div className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur-md">
-              <Crown className="mt-[2px] h-4 w-4 shrink-0 text-amber-300" />
-              <p>
-                Rankings indicate the total {activeCat.unit.toLowerCase()} for the selected category.
-                Daily resets at 00:00 UTC, weekly on Monday, monthly on the 1st. Overall never resets.
-                Rewards are distributed at each reset — see rules for details.
-              </p>
-            </div>
-          </section>
         </div>
       </AppShell>
 
-      {/* Sticky "My Rank" */}
+      {/* Sticky "My Rank" Footer Bar */}
       {user && (
         <MyRank
           row={meQ.data ?? null}
@@ -274,54 +243,36 @@ function RankPage() {
 
 /* ─────────────────────────────  Header  ───────────────────────────── */
 
-function RankHeader({ onBack, onHelp, profile, userId }: {
-  onBack: () => void; onHelp: () => void;
-  profile: { coins: number } | null | undefined; userId: string | undefined;
+function RankHeader({ onBack, onHelp, userId }: {
+  onBack: () => void; onHelp: () => void; userId: string | undefined;
 }) {
   const unread = useUnreadCount();
   const unreadCount = userId ? (unread.data ?? 0) : 0;
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/5 bg-background/60 backdrop-blur-2xl"
+      className="sticky top-0 z-30 border-b border-white/5 bg-[#2d0106]/75 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
         <button
           onClick={onBack}
           aria-label="Back"
-          className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+          className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/90 hover:text-amber-300"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
 
         <div className="min-w-0 text-center">
-          <h1 className="truncate text-[15px] font-black tracking-tight drop-shadow-[0_0_10px_rgba(217,70,239,0.45)]">
+          <h1 className="text-lg font-black tracking-wider text-rose-100 drop-name font-serif italic">
             Rankings
           </h1>
-          <p className="text-[10px] tracking-[0.2em] text-white/50 leading-none mt-0.5">
-            Top hosts • gifters • royals
-          </p>
         </div>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          {userId && (
-            <Link
-              to="/notifications"
-              aria-label="Notifications"
-              className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
-            >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-4 min-w-[16px] place-items-center rounded-full bg-[color:var(--primary)] px-1 text-[9px] font-black text-primary-foreground ring-2 ring-background">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </Link>
-          )}
           <button
             onClick={onHelp}
             aria-label="Ranking rules"
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+            className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-white/90 hover:text-amber-300"
           >
             <HelpCircle className="h-4 w-4" />
           </button>
@@ -331,175 +282,78 @@ function RankHeader({ onBack, onHelp, profile, userId }: {
   );
 }
 
-/* ─────────────────────────────  Podium  ───────────────────────────── */
+/* ─────────────────────────────  Podium (Image matched UI)  ───────────────────────────── */
 
-function PodiumAvatarFrame({ tone }: { tone: "gold" | "silver" | "bronze" }) {
-  const c1 = tone === "gold" ? "#fff4c2" : tone === "silver" ? "#ffffff" : "#ffe0b2";
-  const c2 = tone === "gold" ? "#fbbf24" : tone === "silver" ? "#cbd5e1" : "#fb923c";
-  const c3 = tone === "gold" ? "#b45309" : tone === "silver" ? "#475569" : "#7c2d12";
-  const gem = tone === "gold" ? "#ef4444" : tone === "silver" ? "#a78bfa" : "#f59e0b";
-  return (
-    <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full pointer-events-none" aria-hidden>
-      <defs>
-        <linearGradient id={`pf-${tone}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={c1} />
-          <stop offset="0.5" stopColor={c2} />
-          <stop offset="1" stopColor={c3} />
-        </linearGradient>
-        <radialGradient id={`pfg-${tone}`} cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0" stopColor={c2} stopOpacity="0.5" />
-          <stop offset="1" stopColor={c2} stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      {/* outer glow */}
-      <circle cx="100" cy="100" r="98" fill={`url(#pfg-${tone})`} />
-      {/* outer ornate ring */}
-      <circle cx="100" cy="100" r="94" fill="none" stroke={`url(#pf-${tone})`} strokeWidth="4" />
-      {/* inner thin ring */}
-      <circle cx="100" cy="100" r="82" fill="none" stroke={c1} strokeWidth="1.2" opacity="0.9" />
-      {/* 4 cardinal gem clusters */}
-      {[[100,6],[194,100],[100,194],[6,100]].map(([x,y],i)=>(
-        <g key={i}>
-          <circle cx={x} cy={y} r="7" fill={`url(#pf-${tone})`} stroke={c3} strokeWidth="1" />
-          <circle cx={x} cy={y} r="3.2" fill={gem} stroke="#fff" strokeWidth="0.6" />
-        </g>
-      ))}
-      {/* 4 diagonal small gems */}
-      {[[30,30],[170,30],[170,170],[30,170]].map(([x,y],i)=>(
-        <circle key={i} cx={x} cy={y} r="4" fill={c1} stroke={c3} strokeWidth="0.8" />
-      ))}
-      {/* decorative dashed circle */}
-      <circle cx="100" cy="100" r="88" fill="none" stroke={c1} strokeWidth="0.8" strokeDasharray="2 4" opacity="0.7" />
-    </svg>
-  );
-}
-
-
-function PodiumWings({ tone }: { tone: "gold" | "silver" | "bronze" }) {
-  const c1 = tone === "gold" ? "#fde68a" : tone === "silver" ? "#f1f5f9" : "#fed7aa";
-  const c2 = tone === "gold" ? "#f59e0b" : tone === "silver" ? "#94a3b8" : "#c2410c";
-  return (
-    <svg viewBox="0 0 220 140" className="absolute inset-0 h-full w-full" aria-hidden>
-      <defs>
-        <linearGradient id={`wg-${tone}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor={c1} />
-          <stop offset="1" stopColor={c2} />
-        </linearGradient>
-      </defs>
-      {/* left wing */}
-      <g fill={`url(#wg-${tone})`} opacity="0.95">
-        <path d="M78 70 C 40 48, 18 62, 6 82 C 24 78, 40 82, 54 90 C 40 82, 30 88, 20 100 C 40 96, 56 100, 68 108 C 58 100, 52 104, 46 114 C 62 108, 74 108, 82 112 Z" />
-      </g>
-      {/* right wing (mirrored) */}
-      <g fill={`url(#wg-${tone})`} opacity="0.95" transform="translate(220 0) scale(-1 1)">
-        <path d="M78 70 C 40 48, 18 62, 6 82 C 24 78, 40 82, 54 90 C 40 82, 30 88, 20 100 C 40 96, 56 100, 68 108 C 58 100, 52 104, 46 114 C 62 108, 74 108, 82 112 Z" />
-      </g>
-    </svg>
-  );
-}
-
-function PodiumBase({ tone }: { tone: "gold" | "silver" | "bronze" }) {
-  const top = tone === "gold" ? "#fde68a" : tone === "silver" ? "#e5e7eb" : "#fdba74";
-  const mid = tone === "gold" ? "#f59e0b" : tone === "silver" ? "#94a3b8" : "#ea580c";
-  const bot = tone === "gold" ? "#78350f" : tone === "silver" ? "#334155" : "#7c2d12";
-  const gem = tone === "gold" ? "#fbbf24" : tone === "silver" ? "#a5b4fc" : "#fb923c";
-  return (
-    <svg viewBox="0 0 160 60" className="h-full w-full drop-shadow-[0_10px_20px_rgba(0,0,0,0.55)]" aria-hidden>
-      <defs>
-        <radialGradient id={`bg-${tone}`} cx="0.5" cy="0.3" r="0.7">
-          <stop offset="0" stopColor={top} />
-          <stop offset="0.6" stopColor={mid} />
-          <stop offset="1" stopColor={bot} />
-        </radialGradient>
-        <linearGradient id={`gem-${tone}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#fff" />
-          <stop offset="0.5" stopColor={gem} />
-          <stop offset="1" stopColor={mid} />
-        </linearGradient>
-      </defs>
-      {/* disc */}
-      <ellipse cx="80" cy="20" rx="72" ry="12" fill={`url(#bg-${tone})`} stroke={bot} strokeWidth="1.2" />
-      <path d={`M8 20 L14 44 Q80 58 146 44 L152 20 Q80 34 8 20 Z`} fill={`url(#bg-${tone})`} stroke={bot} strokeWidth="1.2" />
-      {/* diamond gem */}
-      <path d="M80 26 L92 36 L80 52 L68 36 Z" fill={`url(#gem-${tone})`} stroke={bot} strokeWidth="1" />
-      <path d="M80 26 L92 36 L80 40 L68 36 Z" fill="#fff" opacity="0.35" />
-    </svg>
-  );
-}
-
-function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
-  const tone: "gold" | "silver" | "bronze" =
-    place === 1 ? "gold" : place === 2 ? "silver" : "bronze";
+function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
   const isFirst = place === 1;
-
-  const numberBadge =
-    tone === "gold" ? "from-amber-300 to-yellow-600 text-amber-950 border-amber-200"
-    : tone === "silver" ? "from-slate-200 to-slate-400 text-slate-900 border-white/60"
-    : "from-orange-300 to-orange-600 text-orange-950 border-orange-200";
+  const isSecond = place === 2;
+  
+  // Custom styling elements based on image design hierarchy
+  const crownColor = isFirst ? "text-amber-300" : isSecond ? "text-cyan-300" : "text-amber-500";
+  const badgeBg = isFirst 
+    ? "bg-gradient-to-b from-[#6b0914] via-[#4a040b] to-[#250003] border-amber-400/60 shadow-[0_0_20px_rgba(251,191,36,0.3)]" 
+    : isSecond 
+    ? "bg-gradient-to-b from-[#0c3157] via-[#071e36] to-[#040f1a] border-cyan-400/50 shadow-[0_0_15px_rgba(6,182,212,0.3)]" 
+    : "bg-gradient-to-b from-[#6b3409] via-[#4a2204] to-[#220f01] border-amber-600/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]";
 
   const content = (
-    <div className={`relative flex flex-col items-center ${isFirst ? "pt-0" : "pt-6"}`}>
-      {/* Avatar with wings + ornate frame */}
-      <div className={`relative ${isFirst ? "h-[140px] w-[140px]" : "h-[116px] w-[116px]"}`}>
-        <PodiumWings tone={tone} />
-        <PodiumAvatarFrame tone={tone} />
-        <div className="absolute inset-[14%] grid place-items-center">
+    <div className={`relative flex flex-col items-center ${isFirst ? "-mt-4" : "mt-4"}`}>
+      {/* Crown atop the avatar container */}
+      <div className="absolute -top-7 z-30 pointer-events-none">
+        <Crown className={`h-8 w-8 drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)] ${crownColor}`} />
+      </div>
+
+      {/* Main Container Card resembling the reference image */}
+      <div className={`relative w-full rounded-2xl border p-2 pt-5 flex flex-col items-center ${badgeBg}`}>
+        {/* Avatar Ring */}
+        <div className={`relative rounded-full p-0.5 border-2 ${isFirst ? "border-amber-300 h-16 w-16" : "border-white/30 h-14 w-14"}`}>
           <LevelAvatar
             src={row?.avatar ?? undefined}
             name={row?.username ?? undefined}
             level={row?.level ?? 0}
-            size={isFirst ? "xl" : "lg"}
+            size={isFirst ? "lg" : "md"}
             showBadge={false}
           />
         </div>
-        {/* Rank number badge on ring bottom */}
-        <div className="absolute left-1/2 -bottom-1 z-20 -translate-x-1/2">
-          <span className={`grid h-7 w-7 place-items-center rounded-full border-2 bg-gradient-to-b ${numberBadge} text-[13px] font-black shadow-[0_2px_6px_rgba(0,0,0,0.6)]`}>
-            {place}
+
+        {/* Username */}
+        <p className="mt-1.5 max-w-[90px] truncate text-center text-[13px] font-bold text-white">
+          {row?.username ?? "—"}
+        </p>
+
+        {/* Badges / Levels row */}
+        <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-white/80">
+          <span className="rounded bg-amber-500/20 border border-amber-400/30 px-1 py-0.5 text-amber-300">
+            N{row?.level ?? 1}
+          </span>
+          <span className="rounded bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 text-purple-200">
+            Lv.{row?.vip_level ?? 0}
+          </span>
+          {row?.country && COUNTRY_FLAG[row.country] && (
+            <span>{COUNTRY_FLAG[row.country]}</span>
+          )}
+        </div>
+
+        {/* Score pill */}
+        <div className="mt-2 w-full rounded-full bg-black/40 py-1 px-2 text-center border border-white/5 flex items-center justify-center gap-1">
+          <Coins className="h-3 w-3 text-amber-300 shrink-0" />
+          <span className="text-[11px] font-black text-amber-300 truncate">
+            {row ? formatCompact(row.score) : "0"}
           </span>
         </div>
-      </div>
-
-
-      {/* Name pill */}
-      <div className="relative z-20 mt-2 rounded-xl border border-white/10 bg-black/45 px-2.5 py-1 backdrop-blur-md">
-        <p className="max-w-[110px] truncate text-center text-[12px] font-black text-white">
-          {row?.username ?? "—"}
-          {row?.vip_level ? <span className="ml-1 text-fuchsia-300">◆</span> : null}
-        </p>
-      </div>
-
-      {/* Level chip */}
-      <span className="mt-1 rounded-md border border-fuchsia-400/40 bg-fuchsia-500/15 px-2 py-[1px] text-[10px] font-bold text-fuchsia-200">
-        Level {row?.level ?? 0}
-      </span>
-
-      {/* Score */}
-      <p className={`mt-1 text-[13px] font-black ${tone === "gold" ? "text-amber-300" : tone === "silver" ? "text-slate-100" : "text-orange-300"}`}>
-        {row ? formatCompact(row.score) : "—"} <span className="text-[10px] font-semibold text-white/50">Points</span>
-      </p>
-
-      {/* Base platform */}
-      <div className={`relative -mt-1 ${isFirst ? "h-16 w-[150px]" : "h-14 w-[130px]"}`}>
-        <PodiumBase tone={tone} />
-        {/* glow */}
-        <div className={`pointer-events-none absolute inset-x-4 -bottom-1 h-6 rounded-full blur-xl opacity-70 ${
-          tone === "gold" ? "bg-amber-400/70" : tone === "silver" ? "bg-violet-400/60" : "bg-orange-500/60"
-        }`} />
       </div>
     </div>
   );
 
   if (!row) return <div className="opacity-40">{content}</div>;
   return (
-    <Link to="/u/$userId" params={{ userId: row.user_id }} className="block hover-scale">
+    <Link to="/u/$userId" params={{ userId: row.user_id }} className="block">
       {content}
     </Link>
   );
 }
 
-
-/* ─────────────────────────────  Row  ───────────────────────────── */
+/* ─────────────────────────────  Row (Ranks 4+)  ───────────────────────────── */
 
 function RankRow({ row, unit }: { row: Row; unit: string }) {
   return (
@@ -507,9 +361,9 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
       <Link
         to="/u/$userId"
         params={{ userId: row.user_id }}
-        className="grid grid-cols-[26px_auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3 py-2.5 backdrop-blur-md transition hover:border-fuchsia-400/40 hover:bg-white/[0.06]"
+        className="grid grid-cols-[32px_auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl border border-rose-500/20 bg-gradient-to-r from-rose-950/40 via-red-950/20 to-black/40 px-3.5 py-2.5 backdrop-blur-md transition hover:border-rose-400/50 hover:bg-rose-900/30 shadow-lg shadow-black/20"
       >
-        <span className={`text-center text-[15px] font-black ${row.rnk <= 10 ? "text-fuchsia-300" : "text-white/60"}`}>
+        <span className="text-center text-[14px] font-black text-white/70 font-serif">
           {row.rnk}
         </span>
 
@@ -522,39 +376,35 @@ function RankRow({ row, unit }: { row: Row; unit: string }) {
         />
 
         <div className="min-w-0">
-          <p className="flex items-center gap-1.5 truncate text-[14px] font-bold leading-tight">
-            <span className="truncate">{row.username ?? "user"}</span>
-            {row.vip_level > 0 && (
-              <span className="rounded-md bg-gradient-to-b from-amber-300 to-amber-600 px-1.5 text-[9px] font-black text-amber-950">
-                VIP
-              </span>
-            )}
+          <p className="truncate text-[13px] font-bold leading-tight text-white">
+            {row.username ?? "user"}
           </p>
-          <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-fuchsia-400/30 bg-fuchsia-500/10 px-1.5 py-[1px] text-[10px] font-bold text-fuchsia-200">
-            Level {row.level}
-          </span>
+          <div className="mt-1 flex items-center gap-1.5">
+            <span className="rounded bg-amber-500/20 border border-amber-400/30 px-1 py-[0.5px] text-[9px] font-bold text-amber-300">
+              N{row.level}
+            </span>
+            <span className="rounded bg-purple-500/20 border border-purple-400/30 px-1.5 py-[0.5px] text-[9px] font-bold text-purple-200">
+              Lv.{row.vip_level}
+            </span>
+            <span className="text-xs">
+              {row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🌐"}
+            </span>
+          </div>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 text-[13px] font-black text-amber-300">
-          <Flame className="h-3.5 w-3.5 text-orange-400" />
-          {formatCompact(row.score)}
+        <div className="flex items-center gap-1 text-[13px] font-black text-amber-300 bg-black/30 px-2.5 py-1 rounded-full border border-white/5">
+          <Coins className="h-3.5 w-3.5 text-amber-300" />
+          <span>{formatCompact(row.score)}</span>
           <span className="sr-only">{unit}</span>
-        </span>
-
-        <span className="inline-flex items-center gap-1 text-base">
-          {row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🌐"}
-        </span>
+        </div>
       </Link>
     </li>
   );
 }
 
-
-
-/* ─────────────────────────────  My Rank sticky  ───────────────────────────── */
+/* ─────────────────────────────  My Rank Sticky Footer  ───────────────────────────── */
 
 function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit: string }) {
-  
   const avatar = row?.avatar ?? fallback?.avatar ?? null;
   const country = row?.country ?? fallback?.country ?? null;
   const rank = row?.rnk ?? null;
@@ -564,11 +414,11 @@ function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit:
 
   return (
     <div className="fixed inset-x-0 bottom-16 z-40 px-3">
-      <div className="mx-auto max-w-[520px] rounded-2xl border border-fuchsia-400/40 bg-[#0f0820]/85 p-3 backdrop-blur-xl shadow-[0_0_24px_-4px_rgba(217,70,239,0.55)]">
-        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto_auto] items-center gap-3">
-          <div className="text-center">
-            <p className="text-[9px] uppercase tracking-widest text-amber-300">My Rank</p>
-            <p className="text-xl font-black leading-none">{rank ? `#${rank}` : "—"}</p>
+      <div className="mx-auto max-w-[520px] rounded-2xl border border-amber-400/40 bg-[#250106]/95 p-3 backdrop-blur-xl shadow-[0_0_25px_rgba(251,191,36,0.25)]">
+        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3">
+          <div className="text-center px-1">
+            <p className="text-[9px] uppercase tracking-wider text-amber-300">My Rank</p>
+            <p className="text-lg font-black leading-none text-white">{rank ? `#${rank}` : "—"}</p>
           </div>
 
           <LevelAvatar
@@ -579,41 +429,32 @@ function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit:
             showBadge={false}
           />
 
-
           <div className="min-w-0">
-            <p className="flex items-center gap-1.5 truncate text-[13px] font-bold">
+            <p className="truncate text-[13px] font-bold text-white">
               {row?.username ?? fallback?.username ?? "You"}
-              <span className="rounded-md bg-fuchsia-500/20 px-1.5 py-[1px] text-[9px] font-black text-fuchsia-200">You</span>
             </p>
-            <span className="mt-1 inline-flex items-center gap-1 rounded-md border border-amber-300/40 bg-amber-500/10 px-1.5 py-[1px] text-[10px] font-bold text-amber-200">
-              Lv {level} • VIP {vip}
-            </span>
+            <div className="mt-1 flex items-center gap-1">
+              <span className="rounded bg-amber-500/20 border border-amber-400/30 px-1 py-[0.5px] text-[9px] font-bold text-amber-300">
+                N{level}
+              </span>
+              <span className="text-[10px] text-white/60 truncate">
+                {country ?? "Pakistan"} {country && COUNTRY_FLAG[country] ? COUNTRY_FLAG[country] : "🇵🇰"}
+              </span>
+            </div>
           </div>
 
-          <span className="inline-flex items-center gap-1 text-[13px] font-black text-white">
-            {formatCoins(score)} <Coins className="h-3.5 w-3.5 text-amber-300" />
-          </span>
-
-          <span className="inline-flex items-center gap-1 text-[11px] text-white/60">
-            {country && COUNTRY_FLAG[country] ? COUNTRY_FLAG[country] : "🌐"}
-            <span className="max-w-[60px] truncate">{country ?? "—"}</span>
+          <div className="flex items-center gap-1 text-[13px] font-black text-amber-300 bg-black/40 px-3 py-1.5 rounded-full border border-amber-400/30">
+            <Coins className="h-3.5 w-3.5 text-amber-300" />
+            <span>{formatCoins(score)}</span>
             <span className="sr-only">{unit}</span>
-          </span>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ─────────────────────────────  Bits  ───────────────────────────── */
-
-function Laurel({ side }: { side: "left" | "right" }) {
-  return (
-    <svg viewBox="0 0 40 40" className={`h-8 w-8 text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)] ${side === "right" ? "-scale-x-100" : ""}`} fill="currentColor" aria-hidden>
-      <path d="M8 34c8-2 14-8 16-16 1 6-2 14-9 18-2 1-5 1-7-2zm-2-10c4-3 7-8 7-14 3 4 3 12-2 16-2 2-4 1-5-2zm4 16c6-1 12-6 14-13 0 8-6 15-13 15-1 0-1-1-1-2z" />
-    </svg>
-  );
-}
+/* ─────────────────────────────  Country Select & Helpers  ───────────────────────────── */
 
 function CountrySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -624,7 +465,6 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
     return () => document.removeEventListener("mousedown", off);
   }, []);
 
-  // Live list of countries from actual users in DB
   const { data: dbCountries } = useQuery({
     queryKey: ["rank-countries"],
     staleTime: 5 * 60_000,
@@ -649,20 +489,20 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/[0.05] px-3 py-2 text-[12px] font-semibold text-white/80 backdrop-blur-md"
+        className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-md"
       >
-        <Globe2 className="h-4 w-4 text-violet-300" />
-        {value} <ChevronDown className="h-3.5 w-3.5" />
+        <Globe2 className="h-3.5 w-3.5 text-amber-300" />
+        {value} <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div data-keep-dark className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-white/10 bg-[#12081e]/95 p-1 shadow-2xl backdrop-blur-xl">
+        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-rose-500/30 bg-[#2d0106]/95 p-1 shadow-2xl backdrop-blur-xl">
           {options.length === 1 ? (
             <p className="px-3 py-2 text-[11px] text-white/50">No country data yet</p>
           ) : options.map((c) => (
             <button
               key={c}
               onClick={() => { onChange(c); setOpen(false); }}
-              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[12px] transition hover:bg-white/10 ${value === c ? "bg-white/10 text-white" : "text-white/70"}`}
+              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-[12px] transition hover:bg-rose-900/40 ${value === c ? "bg-rose-900/50 text-amber-300 font-bold" : "text-white/70"}`}
             >
               <span>{c === "Global" ? "🌐" : (COUNTRY_FLAG[c] ?? "🏳️")}</span>{c}
             </button>
@@ -675,11 +515,11 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
 
 function EmptyState() {
   return (
-    <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center backdrop-blur-md">
+    <div className="mx-auto mt-6 max-w-[280px] rounded-2xl border border-white/10 bg-black/20 p-6 text-center backdrop-blur-md">
       <div className="mx-auto mb-3 grid h-14 w-14 place-items-center rounded-2xl border border-amber-300/40 bg-amber-500/10">
         <Crown className="h-6 w-6 text-amber-300" />
       </div>
-      <p className="text-sm font-bold">Throne awaits</p>
+      <p className="text-sm font-bold text-white">Throne awaits</p>
       <p className="mt-1 text-xs text-white/50">Be the first to climb this leaderboard.</p>
     </div>
   );
@@ -689,31 +529,23 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-3xl border border-fuchsia-400/40 bg-[#0f0820]/95 p-5 shadow-[0_0_40px_-8px_rgba(217,70,239,0.6)] animate-scale-in"
+        className="w-full max-w-md rounded-3xl border border-rose-500/40 bg-[#2d0106]/95 p-5 shadow-2xl shadow-rose-950/80"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-black">Ranking rules</h2>
-          <button onClick={onClose} className="rounded-full border border-white/15 px-2 py-1 text-xs text-white/70 hover:bg-white/10">Close</button>
+          <h2 className="text-lg font-black text-rose-100">Ranking rules</h2>
+          <button onClick={onClose} className="rounded-full border border-white/15 px-2.5 py-1 text-xs text-white/70 hover:bg-white/10">Close</button>
         </div>
-        <ul className="space-y-2 text-[13px] leading-relaxed text-white/75">
-          <li><b className="text-amber-300">Wealth</b> — total coins owned by users.</li>
-          <li><b className="text-amber-300">Points</b> — XP earned across the app.</li>
-          <li><b className="text-amber-300">Charm</b> — number of unique fans who gifted you.</li>
-          <li><b className="text-amber-300">Hosts</b> — coins received via gifts.</li>
-          <li><b className="text-amber-300">Gifters</b> — coins spent on gifts.</li>
-          <li><b className="text-amber-300">PK King</b> — PK battles won.</li>
-          <li><b className="text-amber-300">VIP / Royals</b> — VIP level progression (Royals = Lv 10+).</li>
-          <li><b className="text-amber-300">Popular</b> — combined engagement in period.</li>
-          <li><b className="text-amber-300">Country</b> — same as Wealth, filtered by country.</li>
+        <ul className="space-y-2 text-[13px] leading-relaxed text-white/80">
+          <li><b className="text-amber-300">Room Gift</b> — total coins received through live room gifts.</li>
+          <li><b className="text-amber-300">Points</b> — XP earned across your app activities.</li>
+          <li><b className="text-amber-300">Gifters</b> — total coins spent sending gifts.</li>
+          <li><b className="text-amber-300">PK King</b> — battles won in live PK matches.</li>
+          <li><b className="text-amber-300">VIP / Royals</b> — VIP level progression tiers.</li>
         </ul>
-        <p className="mt-3 text-[11px] text-white/45">
-          Daily resets 00:00 UTC · Weekly Monday · Monthly on the 1st · Overall never resets. Rankings update live after every gift.
-        </p>
       </div>
     </div>
   );
 }
 
-/* Utility: hide scrollbar for horizontal rows */
 declare module "react" { interface CSSProperties { WebkitOverflowScrolling?: "auto" | "touch" } }
