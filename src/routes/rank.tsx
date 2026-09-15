@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { formatCoins } from "@/lib/vip-levels";
 import {
   ArrowLeft, HelpCircle, Crown, Star, Mic, Gift, Swords, Gem, Sparkles,
-  Flame, Globe2, ChevronDown, Coins,
+  Flame, Globe2, ChevronDown, Coins, Bell,
 } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
@@ -133,13 +133,13 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div className="relative min-h-full [overflow-x:clip] pb-36 text-white bg-[#220003]">
-          {/* Rich velvet crimson background lighting simulation */}
+        <div className="relative min-h-full [overflow-x:clip] pb-36 text-white bg-[#2a0105]">
+          {/* Ambient red velvet background lighting */}
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-10 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-rose-600/30 blur-[130px]" />
-            <div className="absolute top-36 -left-20 h-72 w-72 rounded-full bg-red-950/60 blur-[100px]" />
-            <div className="absolute top-96 -right-20 h-72 w-72 rounded-full bg-rose-700/20 blur-[110px]" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-rose-950/60 via-[#1c0003]/90 to-[#0c0001]" />
+            <div className="absolute -top-12 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-rose-600/25 blur-[100px]" />
+            <div className="absolute top-40 -left-16 h-60 w-60 rounded-full bg-red-900/40 blur-[90px]" />
+            <div className="absolute top-80 -right-16 h-60 w-60 rounded-full bg-rose-500/20 blur-[90px]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#420208]/80 via-[#260105]/95 to-[#160002]" />
           </div>
 
           {/* Header */}
@@ -156,7 +156,7 @@ function RankPage() {
                       onClick={() => setCategory(k)}
                       className={`group inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-medium transition py-1 border-b-2 ${
                         active
-                          ? "border-amber-300 text-amber-300 font-bold drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]"
+                          ? "border-amber-300 text-amber-300 font-bold drop-shadow-[0_0_8px_rgba(251,191,36,0.7)]"
                           : "border-transparent text-white/70 hover:text-white"
                       }`}
                     >
@@ -169,7 +169,7 @@ function RankPage() {
             </ul>
           </nav>
 
-          {/* Sub-Filter Bar */}
+          {/* Sub-Filter Bar (Daily/Weekly/Monthly + Country Dropdown) */}
           <section className="relative z-10 mt-3 px-4 flex items-center justify-between gap-2">
             <div className="flex items-center gap-1 bg-black/40 p-1 rounded-full border border-white/10 backdrop-blur-md">
               {PERIODS.map(({ k, label }) => {
@@ -192,9 +192,9 @@ function RankPage() {
             <CountrySelect value={country} onChange={setCountry} />
           </section>
 
-          {/* ── Top 3 Podium: Exact 3D Shield Layout (3rd Left | 1st Center Top | 2nd Right) ── */}
-          <section className="relative z-10 mt-6 px-3">
-            <div className="grid grid-cols-3 items-end gap-2 pt-8">
+          {/* ── Exact Reference Podium Layout: [3rd (Left) | 1st (Center Top) | 2nd (Right)] ── */}
+          <section className="relative z-10 mt-5 px-3">
+            <div className="grid grid-cols-3 items-end gap-2 pt-6">
               <Podium row={c3} place={3} unit={activeCat.unit} />
               <Podium row={c1} place={1} unit={activeCat.unit} />
               <Podium row={c2} place={2} unit={activeCat.unit} />
@@ -235,12 +235,12 @@ function RankPage() {
   );
 }
 
-function RankHeader({ onBack, onHelp, userId: _userId }: {
+function RankHeader({ onBack, onHelp, userId }: {
   onBack: () => void; onHelp: () => void; userId: string | undefined;
 }) {
   return (
     <header
-      className="sticky top-0 z-30 border-b border-white/5 bg-[#1a0002]/90 backdrop-blur-xl"
+      className="sticky top-0 z-30 border-b border-white/5 bg-[#260105]/90 backdrop-blur-xl"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
@@ -253,7 +253,7 @@ function RankHeader({ onBack, onHelp, userId: _userId }: {
         </button>
 
         <div className="min-w-0 text-center">
-          <h1 className="text-lg font-black tracking-wider text-rose-100 font-serif italic drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]">
+          <h1 className="text-lg font-black tracking-wider text-rose-100 font-serif italic drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]">
             Rankings
           </h1>
         </div>
@@ -272,38 +272,33 @@ function RankHeader({ onBack, onHelp, userId: _userId }: {
   );
 }
 
-/* ─────────────────────────────  Podium (Exact 3D Shield Match to Reference)  ───────────────────────────── */
+/* ─────────────────────────────  Podium (Matched to Reference Image Structure)  ───────────────────────────── */
 
-function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
+function Podium({ row, place, unit }: { row?: Row; place: 1 | 2 | 3; unit: string }) {
   const isFirst = place === 1;
   const isSecond = place === 2;
 
-  // Visual Styling matching reference screenshot banners
+  // Colors & styles tailored precisely to match the reference screenshot
   const crownColor = isFirst ? "text-amber-300" : isSecond ? "text-cyan-300" : "text-amber-500";
   
-  // Custom shield gradients & shapes
-  const bannerBg = isFirst 
-    ? "bg-gradient-to-b from-[#7a0d1a] via-[#4d040c] to-[#1f0003] border-amber-400/80 shadow-[0_0_30px_rgba(251,191,36,0.4)]" 
+  // Custom styling layout blocks for 1st, 2nd, 3rd shields
+  const badgeBg = isFirst 
+    ? "bg-gradient-to-b from-[#6b0914] via-[#450308] to-[#1c0002] border-amber-400/70 shadow-[0_0_25px_rgba(251,191,36,0.35)]" 
     : isSecond 
-    ? "bg-gradient-to-b from-[#0e3b68] via-[#07223d] to-[#030d17] border-cyan-400/70 shadow-[0_0_20px_rgba(6,182,212,0.35)]" 
-    : "bg-gradient-to-b from-[#7a3b0d] via-[#4a2304] to-[#1f0d01] border-amber-600/70 shadow-[0_0_20px_rgba(245,158,11,0.35)]";
+    ? "bg-gradient-to-b from-[#0c3157] via-[#06192d] to-[#020b14] border-cyan-400/60 shadow-[0_0_20px_rgba(6,182,212,0.3)]" 
+    : "bg-gradient-to-b from-[#6b3409] via-[#401e02] to-[#1a0a01] border-amber-600/60 shadow-[0_0_20px_rgba(245,158,11,0.3)]";
 
   const content = (
-    <div className={`relative flex flex-col items-center ${isFirst ? "-mt-10" : "mt-2"}`}>
-      {/* 3D Crown Graphic atop the Shield */}
-      <div className={`absolute z-30 pointer-events-none ${isFirst ? "-top-9" : "-top-7"}`}>
-        <Crown className={`drop-shadow-[0_3px_10px_rgba(0,0,0,0.95)] ${isFirst ? "h-10 w-10 text-amber-300 animate-pulse" : "h-7 w-7 " + crownColor}`} />
+    <div className={`relative flex flex-col items-center ${isFirst ? "-mt-8" : "mt-2"}`}>
+      {/* Big Crown on Top */}
+      <div className={`absolute z-30 pointer-events-none ${isFirst ? "-top-8" : "-top-6"}`}>
+        <Crown className={`drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] ${isFirst ? "h-9 w-9 text-amber-300" : "h-7 w-7 " + crownColor}`} />
       </div>
 
-      {/* Main Royal Shield Container */}
-      <div className={`relative w-full rounded-2xl border-2 p-2.5 pt-5 flex flex-col items-center clip-shield ${bannerBg}`}>
-        {/* Top Tag Label (TOP 1 / TOP 2 / TOP 3) */}
-        <div className="absolute top-2 px-2 py-0.5 rounded-full bg-black/50 border border-white/10 text-[8px] font-black tracking-widest text-amber-300 uppercase">
-          TOP {place}
-        </div>
-
-        {/* Avatar Ring with Glow */}
-        <div className={`relative rounded-full p-0.5 mt-3 border-2 ${isFirst ? "border-amber-300 h-16 w-16 shadow-[0_0_12px_rgba(251,191,36,0.6)]" : "border-white/30 h-13 w-13"}`}>
+      {/* Main Banner Shield */}
+      <div className={`relative w-full rounded-2xl border p-2 pt-4 flex flex-col items-center ${badgeBg}`}>
+        {/* Avatar Ring */}
+        <div className={`relative rounded-full p-0.5 border-2 ${isFirst ? "border-amber-300 h-15 w-15" : "border-white/30 h-13 w-13"}`}>
           <LevelAvatar
             src={row?.avatar ?? undefined}
             name={row?.username ?? undefined}
@@ -314,16 +309,16 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
         </div>
 
         {/* Username */}
-        <p className="mt-1.5 max-w-[85px] truncate text-center text-[12px] font-black text-white drop-shadow">
+        <p className="mt-1.5 max-w-[85px] truncate text-center text-[12px] font-bold text-white">
           {row?.username ?? "—"}
         </p>
 
-        {/* Level and Country Badges Row */}
+        {/* Level and Country Badges */}
         <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold text-white/90">
           <span className="rounded bg-amber-500/20 border border-amber-400/30 px-1 py-0.5 text-amber-300 font-bold">
             N{row?.level ?? 1}
           </span>
-          <span className="rounded bg-purple-500/20 border border-purple-400/30 px-1 py-0.5 text-purple-200">
+          <span className="rounded bg-purple-500/20 border border-purple-400/30 px-1.5 py-0.5 text-purple-200">
             Lv.{row?.vip_level ?? 0}
           </span>
           {row?.country && COUNTRY_FLAG[row.country] && (
@@ -332,7 +327,7 @@ function Podium({ row, place, unit: _unit }: { row?: Row; place: 1 | 2 | 3; unit
         </div>
 
         {/* Score pill */}
-        <div className="mt-2 w-full rounded-full bg-black/60 py-1 px-1.5 text-center border border-white/10 flex items-center justify-center gap-1 shadow-inner">
+        <div className="mt-2 w-full rounded-full bg-black/45 py-1 px-1.5 text-center border border-white/5 flex items-center justify-center gap-1">
           <Coins className="h-3 w-3 text-amber-300 shrink-0" />
           <span className="text-[11px] font-black text-amber-300 truncate">
             {row ? formatCompact(row.score) : "0"}
@@ -407,7 +402,7 @@ function MyRank({ row, fallback, unit }: { row: Row | null; fallback: any; unit:
 
   return (
     <div className="fixed inset-x-0 bottom-16 z-40 px-3">
-      <div className="mx-auto max-w-[520px] rounded-2xl border border-amber-400/40 bg-[#1e0003]/95 p-3 backdrop-blur-xl shadow-[0_0_25px_rgba(251,191,36,0.25)]">
+      <div className="mx-auto max-w-[520px] rounded-2xl border border-amber-400/40 bg-[#250106]/95 p-3 backdrop-blur-xl shadow-[0_0_25px_rgba(251,191,36,0.25)]">
         <div className="grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3">
           <div className="text-center px-1">
             <p className="text-[9px] uppercase tracking-wider text-amber-300">My Rank</p>
@@ -486,7 +481,7 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
         {value} <ChevronDown className="h-3 w-3" />
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-rose-500/30 bg-[#1a0002]/95 p-1 shadow-2xl backdrop-blur-xl">
+        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-rose-500/30 bg-[#260105]/95 p-1 shadow-2xl backdrop-blur-xl">
           {options.length === 1 ? (
             <p className="px-3 py-2 text-[11px] text-white/50">No country data yet</p>
           ) : options.map((c) => (
@@ -520,7 +515,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-3xl border border-rose-500/40 bg-[#1a0002]/95 p-5 shadow-2xl shadow-rose-950/80"
+        className="w-full max-w-md rounded-3xl border border-rose-500/40 bg-[#260105]/95 p-5 shadow-2xl shadow-rose-950/80"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
