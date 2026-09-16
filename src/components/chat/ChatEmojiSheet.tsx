@@ -26,7 +26,7 @@ const TIERS: { key: "normal" | "vip"; label: string }[] = [
 type Props = {
   open: boolean;
   onClose: () => void;
-  onPick: (e: ChatEmoji) => void;
+  onPick: (e: ChatEmoji, targetSeatIndex?: number | null) => void;
 };
 
 export function ChatEmojiSheet({ open, onClose, onPick }: Props) {
@@ -57,7 +57,7 @@ export function ChatEmojiSheet({ open, onClose, onPick }: Props) {
     [list, tier],
   );
 
-  if (isVoiceRoom) return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} embedded />;
+  if (isVoiceRoom) return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} />;
   if (!open) return null;
 
   return (
