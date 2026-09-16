@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
@@ -8,7 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import {
   ArrowLeft, HelpCircle, Trophy, Star, Mic, Gift, Swords, Gem, Sparkles,
-  Flame, Globe2, ChevronDown, Crown, ShieldCheck,
+  Flame, Globe2, ChevronDown, Crown, ShieldCheck, ArrowUpDown,
 } from "lucide-react";
 
 export const Route = createFileRoute("/rank")({
@@ -25,7 +25,7 @@ type Category =
   | "points" | "hosts" | "gifters"
   | "pk"     | "vip"    | "royals" | "popular" | "country";
 type Period = "daily" | "weekly" | "monthly" | "all";
-type Scope  = "global" | "country";
+type Scope = "global" | "country";
 
 type Row = {
   user_id: string; username: string | null; avatar: string | null;
@@ -34,21 +34,21 @@ type Row = {
 };
 
 const CATS: { k: Category; label: string; Icon: React.ComponentType<{ className?: string }> }[] = [
-  { k: "hosts",    label: "Room Gift", Icon: Gift },
-  { k: "points",   label: "Points",    Icon: Star },
-  { k: "gifters",  label: "Gifters",   Icon: Mic },
-  { k: "pk",       label: "PK King",   Icon: Swords },
-  { k: "vip",      label: "VIP",       Icon: Gem },
-  { k: "royals",   label: "Royals",    Icon: Sparkles },
-  { k: "popular",  label: "Popular",   Icon: Flame },
-  { k: "country",  label: "Country",   Icon: Globe2 },
+  { k: "points",   label: "Gift Share", Icon: Star },
+  { k: "hosts",    label: "Room Gift",  Icon: Gift },
+  { k: "gifters",  label: "Room Tier",  Icon: Mic },
+  { k: "pk",       label: "Tribe",      Icon: Swords },
+  { k: "vip",      label: "Rela",       Icon: Gem },
+  { k: "royals",   label: "Royals",     Icon: Sparkles },
+  { k: "popular",  label: "Popular",    Icon: Flame },
+  { k: "country",  label: "Country",    Icon: Globe2 },
 ];
 
 const PERIODS: { k: Period; label: string }[] = [
   { k: "daily", label: "Daily" },
   { k: "weekly", label: "Weekly" },
   { k: "monthly", label: "Monthly" },
-  { k: "all", label: "All-Time" },
+  { k: "all", label: "All" },
 ];
 
 const COUNTRY_FLAG: Record<string, string> = {
@@ -61,15 +61,16 @@ const COUNTRY_FLAG: Record<string, string> = {
 function RankPage() {
   const router = useRouter();
   const { user, profile } = useAuth();
-  const qc = useQueryClient();
 
   const [category, setCategory] = useState<Category>("hosts");
-  const [period, setPeriod]     = useState<Period>("daily");
-  const [country, setCountry]   = useState<string>("Global");
+  const [period, setPeriod] = useState<Period>("daily");
+  const [country, setCountry] = useState<string>("Global");
   const [helpOpen, setHelpOpen] = useState(false);
 
   const scope: Scope = category === "country" || country !== "Global" ? "country" : "global";
-  const scopeValue = scope === "country" ? (country === "Global" ? (profile?.country ?? "Pakistan") : country) : null;
+  const scopeValue = scope === "country"
+    ? (country === "Global" ? (profile?.country ?? "Pakistan") : country)
+    : null;
 
   const qKey = ["rank_users_v2", category, period, scope, scopeValue] as const;
   const q = useQuery({
@@ -105,153 +106,133 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <div className="relative min-h-full [overflow-x:clip] pb-36 text-slate-100 bg-[#070514] selection:bg-amber-500 selection:text-black">
-          
-          {/* Cyberpunk / Deep Violet Ambient Glows */}
+        <main className="relative min-h-[100svh] overflow-x-clip bg-[#3a0508] text-white selection:bg-red-300 selection:text-[#3a0508]">
           <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-16 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-violet-600/20 blur-[140px]" />
-            <div className="absolute top-40 -left-20 h-80 w-80 rounded-full bg-fuchsia-600/15 blur-[130px]" />
-            <div className="absolute top-96 -right-20 h-80 w-80 rounded-full bg-amber-500/10 blur-[140px]" />
+            <div className="absolute -top-24 left-1/2 h-[430px] w-[430px] -translate-x-1/2 rounded-full bg-[#ff4d5d]/25 blur-[110px]" />
+            <div className="absolute top-20 -left-32 h-[360px] w-[360px] rounded-full bg-[#b9001b]/30 blur-[100px]" />
+            <div className="absolute top-[330px] -right-36 h-[380px] w-[380px] rounded-full bg-[#ff3048]/20 blur-[120px]" />
+            <div className="absolute top-[145px] left-1/2 h-[2px] w-[125%] -translate-x-1/2 rotate-[14deg] bg-white/35 blur-[1px]" />
           </div>
 
-          {/* Header */}
-          <header className="sticky top-0 z-30 border-b border-white/10 bg-[#070514]/80 backdrop-blur-xl" style={{ paddingTop: "env(safe-area-inset-top)" }}>
-            <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-3">
+          <header
+            className="relative z-20 px-3 pb-1"
+            style={{ paddingTop: "max(12px, env(safe-area-inset-top))" }}
+          >
+            <div className="mx-auto grid max-w-[430px] grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2 px-1 pt-1">
               <button
+                aria-label="Go back"
                 onClick={() => router.history.back()}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition"
+                className="grid h-9 w-9 place-items-center rounded-full bg-black/10 text-white/90 transition active:scale-95"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="h-5 w-5" />
               </button>
 
-              <div className="text-center">
-                <h1 className="text-base font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400">
-                  Global Rankings
-                </h1>
-              </div>
+              <h1 className="text-center font-serif text-[30px] font-bold italic leading-none tracking-tight text-[#ffd2d8] drop-shadow-[0_2px_3px_rgba(0,0,0,.35)]">
+                Rankings
+              </h1>
 
               <button
+                aria-label="Ranking information"
                 onClick={() => setHelpOpen(true)}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white transition"
+                className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-white/75 bg-black/10 text-white transition active:scale-95"
               >
-                <HelpCircle className="h-4 w-4" />
+                <HelpCircle className="h-[18px] w-[18px]" />
               </button>
             </div>
 
-            {/* Horizontal Category Nav */}
-            <nav className="overflow-x-auto no-scrollbar px-4 pb-2.5 pt-1">
-              <ul className="flex gap-2">
-                {CATS.map(({ k, label, Icon }) => {
+            <nav className="no-scrollbar mx-auto mt-4 max-w-[430px] overflow-x-auto px-0.5">
+              <ul className="flex min-w-max items-center gap-[26px] text-[10px] font-medium text-white/75">
+                {CATS.map(({ k, label }) => {
                   const active = category === k;
                   return (
                     <li key={k}>
                       <button
                         onClick={() => setCategory(k)}
-                        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3.5 py-1.5 text-xs font-semibold transition ${
-                          active
-                            ? "bg-gradient-to-r from-amber-500 to-yellow-500 text-black shadow-lg shadow-amber-500/25 font-bold"
-                            : "bg-white/5 border border-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                        }`}
+                        className={`relative whitespace-nowrap pb-2 transition ${active ? "font-bold text-white" : "text-white/70"}`}
                       >
-                        <Icon className={`h-3.5 w-3.5 ${active ? "text-black" : "text-slate-400"}`} />
                         {label}
+                        {active && <span className="absolute inset-x-0 -bottom-px mx-auto h-[2px] rounded-full bg-white" />}
                       </button>
                     </li>
                   );
                 })}
               </ul>
             </nav>
+
+            <div className="mx-auto mt-2 flex max-w-[430px] items-center justify-between gap-2">
+              <div className="flex items-center gap-1 rounded-full bg-white/10 p-1 backdrop-blur-sm">
+                {PERIODS.map(({ k, label }) => {
+                  const active = period === k;
+                  return (
+                    <button
+                      key={k}
+                      onClick={() => setPeriod(k)}
+                      className={`rounded-full px-3 py-1 text-[10px] font-medium transition ${active ? "bg-white text-[#8f1019] shadow-sm" : "text-white/80"}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              <CountrySelect value={country} onChange={setCountry} compact />
+            </div>
           </header>
 
-          {/* Period Filter & Country Selector */}
-          <section className="relative z-10 mt-4 px-4 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/10 backdrop-blur-md">
-              {PERIODS.map(({ k, label }) => {
-                const active = period === k;
-                return (
-                  <button
-                    key={k}
-                    onClick={() => setPeriod(k)}
-                    className={`rounded-lg px-3 py-1 text-[11px] font-medium transition ${
-                      active
-                        ? "bg-white/15 text-white font-semibold shadow-sm"
-                        : "text-slate-400 hover:text-slate-200"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-            <CountrySelect value={country} onChange={setCountry} />
-          </section>
-
-          {/* ── Podium Section (Modern Floating Glass Cards) ── */}
-          <section className="relative z-10 mt-6 px-4">
-            <div className="grid grid-cols-3 items-end gap-3 pt-6">
-              <PodiumCard row={c2} place={2} />
-              <PodiumCard row={c1} place={1} />
-              <PodiumCard row={c3} place={3} />
+          <section className="relative z-10 mx-auto mt-3 max-w-[430px] px-3">
+            <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#50070d]/75 px-2 pb-2 pt-7 shadow-[0_18px_50px_rgba(45,0,4,.35)] backdrop-blur-sm">
+              <div aria-hidden className="absolute -top-16 left-1/2 h-32 w-[125%] -translate-x-1/2 rounded-[50%] border-b border-white/20 bg-[#a70b19]/45" />
+              <div className="relative grid grid-cols-3 items-end gap-2">
+                <PodiumCard row={c2} place={2} />
+                <PodiumCard row={c1} place={1} />
+                <PodiumCard row={c3} place={3} />
+              </div>
             </div>
           </section>
 
-          {/* ── Leaderboard List (Rank 4 onwards) ── */}
-          <section className="relative z-10 mt-6 px-4">
+          <section className="relative z-10 mx-auto mt-3 max-w-[430px] px-3 pb-32">
             {q.isLoading ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-16 animate-pulse rounded-2xl bg-white/5 border border-white/5" />
+                  <div key={i} className="h-[62px] animate-pulse rounded-xl border border-white/10 bg-white/5" />
                 ))}
+              </div>
+            ) : q.isError ? (
+              <div className="rounded-xl border border-white/10 bg-black/15 p-5 text-center text-xs text-white/70">
+                Rankings could not be loaded right now.
               </div>
             ) : rest.length === 0 && list.length <= 3 ? (
               <EmptyState />
             ) : (
-              <ul className="space-y-2.5">
-                {rest.map((r) => (
-                  <RankItem key={r.user_id} row={r} />
-                ))}
+              <ul className="space-y-2">
+                {rest.map((r) => <RankItem key={r.user_id} row={r} />)}
               </ul>
             )}
           </section>
-        </div>
+        </main>
       </AppShell>
 
-      {/* Sticky My Rank Footer */}
       {user && <MyRankCard row={meQ.data ?? null} fallback={profile} />}
-
       {helpOpen && <HelpModal onClose={() => setHelpOpen(false)} />}
       <BottomNav />
     </>
   );
 }
 
-/* ──────────────────────── Subcomponents ──────────────────────── */
-
 function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const isFirst = place === 1;
-
-  const borderColor = isFirst
-    ? "border-amber-400/60 bg-gradient-to-b from-amber-500/20 via-slate-900/80 to-slate-950/90 shadow-[0_0_30px_rgba(251,191,36,0.15)]"
+  const tone = place === 1
+    ? { card: "bg-[#a90b1b] border-[#e83248]", crown: "text-[#ffd45a]", crownBg: "bg-[#690714]", label: "bg-[#f1b41b] text-[#5b1d00]", avatar: "border-white", score: "text-[#ffe66b]" }
     : place === 2
-    ? "border-slate-300/40 bg-gradient-to-b from-slate-300/15 via-slate-900/80 to-slate-950/90 shadow-[0_0_20px_rgba(203,213,225,0.1)]"
-    : "border-amber-700/40 bg-gradient-to-b from-amber-700/20 via-slate-900/80 to-slate-950/90 shadow-[0_0_20px_rgba(217,119,6,0.1)]";
-
-  const badgeColor = isFirst
-    ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-black"
-    : place === 2
-    ? "bg-gradient-to-r from-slate-200 to-slate-400 text-slate-950 font-black"
-    : "bg-gradient-to-r from-amber-600 to-amber-800 text-white font-black";
+    ? { card: "bg-[#10529d] border-[#2278c8]", crown: "text-[#7fd5ff]", crownBg: "bg-[#083b78]", label: "bg-[#1d70cf] text-white", avatar: "border-[#8ad7ff]", score: "text-[#ffe66b]" }
+    : { card: "bg-[#bd7106] border-[#e3a21d]", crown: "text-[#ffe56b]", crownBg: "bg-[#8d4d00]", label: "bg-[#e2a915] text-[#5b2100]", avatar: "border-[#ffe18a]", score: "text-[#ffe66b]" };
 
   const content = (
-    <div className={`relative flex flex-col items-center rounded-3xl border p-3 backdrop-blur-xl transition hover:scale-[1.02] ${borderColor} ${isFirst ? "-mt-4 pb-5 pt-5" : "pb-3 pt-4"}`}>
-      
-      {/* Crown / Trophy icon */}
-      <div className={`absolute -top-4 grid h-8 w-8 place-items-center rounded-full border border-white/20 shadow-lg ${badgeColor}`}>
-        {isFirst ? <Crown className="h-4 w-4 fill-current" /> : <span className="text-xs font-extrabold">{place}</span>}
+    <div className={`relative flex min-h-[128px] flex-col items-center rounded-[14px] border p-2 shadow-[0_12px_25px_rgba(0,0,0,.22)] ${tone.card} ${isFirst ? "min-h-[150px] -mt-3" : ""}`}>
+      <div className={`absolute -top-7 grid h-12 w-14 place-items-center rounded-full ${tone.crownBg} ${tone.crown}`}>
+        <Crown className="h-10 w-10 fill-current stroke-[1.4] drop-shadow-[0_3px_3px_rgba(0,0,0,.35)]" />
       </div>
 
-      {/* Avatar */}
-      <div className={`relative rounded-full p-0.5 mt-2 border-2 ${isFirst ? "border-amber-400 h-16 w-16" : "border-white/20 h-13 w-13"}`}>
+      <div className={`relative mt-5 rounded-full border-2 bg-white p-[2px] shadow-[0_4px_12px_rgba(0,0,0,.28)] ${isFirst ? "h-[68px] w-[68px]" : "h-[58px] w-[58px]"} ${tone.avatar}`}>
         <LevelAvatar
           src={row?.avatar ?? undefined}
           name={row?.username ?? undefined}
@@ -261,29 +242,25 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
         />
       </div>
 
-      {/* Username */}
-      <p className="mt-2 max-w-[90px] truncate text-center text-[13px] font-bold text-white">
+      <span className={`absolute left-1/2 top-[82px] -translate-x-1/2 whitespace-nowrap rounded-[2px] px-2 py-0.5 text-[8px] font-extrabold uppercase shadow-sm ${tone.label}`}>
+        TOP {place}
+      </span>
+
+      <p className="mt-2 max-w-[92px] truncate text-center text-[10px] font-bold text-white">
         {row?.username ?? "—"}
       </p>
-
-      {/* Badges row */}
-      <div className="mt-1 flex items-center gap-1 text-[9px] font-semibold">
-        <span className="rounded bg-white/10 px-1.5 py-0.5 text-slate-200">
-          N{row?.level ?? 1}
-        </span>
-        <span className="rounded bg-amber-500/20 text-amber-300 px-1.5 py-0.5">
-          VIP {row?.vip_level ?? 0}
-        </span>
+      <div className="mt-1 flex items-center gap-1 text-[8px] text-white/90">
+        <span className="rounded bg-black/15 px-1.5 py-0.5">N{row?.level ?? 1}</span>
+        <span className="rounded bg-black/15 px-1.5 py-0.5">Lvl{row?.level ?? 1}</span>
       </div>
+      <p className={`mt-1 text-[12px] font-extrabold ${tone.score}`}>
+        {formatScore(row?.score ?? 0)}
+      </p>
     </div>
   );
 
-  if (!row) return <div className="opacity-30">{content}</div>;
-  return (
-    <Link to="/u/$userId" params={{ userId: row.user_id }} className="block">
-      {content}
-    </Link>
-  );
+  if (!row) return <div className="opacity-35">{content}</div>;
+  return <Link to="/u/$userId" params={{ userId: row.user_id }} className="block">{content}</Link>;
 }
 
 function RankItem({ row }: { row: Row }) {
@@ -292,34 +269,29 @@ function RankItem({ row }: { row: Row }) {
       <Link
         to="/u/$userId"
         params={{ userId: row.user_id }}
-        className="grid grid-cols-[36px_auto_minmax(0,1fr)] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 backdrop-blur-md transition hover:border-amber-500/40 hover:bg-white/[0.06]"
+        className="grid grid-cols-[24px_40px_minmax(0,1fr)_auto] items-center gap-2 rounded-[12px] border border-white/20 bg-[#650a11]/45 px-2.5 py-2.5 shadow-[0_5px_18px_rgba(0,0,0,.12)] backdrop-blur-sm transition active:scale-[.99]"
       >
-        <span className="text-center text-sm font-extrabold text-slate-400">
-          {row.rnk}
-        </span>
-
-        <LevelAvatar
-          src={row.avatar ?? undefined}
-          name={row.username ?? undefined}
-          level={row.level ?? 0}
-          size="sm"
-          showBadge={false}
-        />
-
+        <span className="text-center text-[15px] font-medium text-white">{row.rnk}</span>
+        <div className="h-10 w-10 rounded-full border border-white/30 bg-white/10 p-[2px]">
+          <LevelAvatar
+            src={row.avatar ?? undefined}
+            name={row.username ?? undefined}
+            level={row.level ?? 0}
+            size="sm"
+            showBadge={false}
+          />
+        </div>
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-white">
-            {row.username ?? "user"}
-          </p>
-          <div className="mt-1 flex items-center gap-1.5 text-[10px]">
-            <span className="rounded bg-white/10 px-1.5 py-0.5 text-slate-300 font-medium">
-              Level {row.level}
-            </span>
-            {row.country && COUNTRY_FLAG[row.country] && (
-              <span className="flex items-center gap-1 text-slate-400">
-                {COUNTRY_FLAG[row.country]} {row.country}
-              </span>
-            )}
+          <p className="truncate text-[13px] font-medium text-white">{row.username ?? "user"}</p>
+          <div className="mt-1 flex items-center gap-1.5 text-[9px] text-white/75">
+            <span className="rounded bg-black/15 px-1.5 py-0.5">N{row.level}</span>
+            <span>•</span>
+            <span>Lvl{row.level}</span>
+            <span className="text-[12px]">{row.country && COUNTRY_FLAG[row.country] ? COUNTRY_FLAG[row.country] : "🇵🇰"}</span>
           </div>
+        </div>
+        <div className="flex items-center gap-1 text-[12px] font-bold text-[#ffe36a]">
+          <span className="text-[11px]">◉</span>{formatScore(row.score)}
         </div>
       </Link>
     </li>
@@ -333,33 +305,19 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
   const level = row?.level ?? fallback?.level ?? 1;
 
   return (
-    <div className="fixed inset-x-0 bottom-16 z-40 px-4">
-      <div className="mx-auto max-w-[520px] rounded-2xl border border-amber-500/40 bg-[#120e26]/95 p-3.5 backdrop-blur-2xl shadow-[0_0_30px_rgba(251,191,36,0.15)]">
-        <div className="grid grid-cols-[auto_auto_minmax(0,1fr)] items-center gap-3">
+    <div className="fixed inset-x-0 bottom-16 z-40 px-3">
+      <div className="mx-auto max-w-[430px] rounded-2xl border border-[#ffb4bd]/40 bg-[#4a070d]/95 p-3 backdrop-blur-xl shadow-[0_0_30px_rgba(0,0,0,.3)]">
+        <div className="grid grid-cols-[auto_40px_minmax(0,1fr)] items-center gap-3">
           <div className="text-center px-1">
-            <p className="text-[9px] uppercase tracking-wider text-amber-400 font-bold">My Rank</p>
+            <p className="text-[8px] uppercase tracking-wider text-[#ffcbd1] font-bold">My Rank</p>
             <p className="text-base font-extrabold text-white">{rank ? `#${rank}` : "—"}</p>
           </div>
-
-          <LevelAvatar
-            src={avatar ?? undefined}
-            name={row?.username ?? fallback?.username ?? undefined}
-            level={level}
-            size="sm"
-            showBadge={false}
-          />
-
+          <LevelAvatar src={avatar ?? undefined} name={row?.username ?? fallback?.username ?? undefined} level={level} size="sm" showBadge={false} />
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-white">
-              {row?.username ?? fallback?.username ?? "You"}
-            </p>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="rounded bg-amber-500/20 text-amber-300 px-1.5 py-0.5 text-[10px] font-semibold">
-                Level {level}
-              </span>
-              <span className="text-[11px] text-slate-400">
-                {country && COUNTRY_FLAG[country] ? COUNTRY_FLAG[country] : "🌐"} {country ?? "Global"}
-              </span>
+            <p className="truncate text-sm font-bold text-white">{row?.username ?? fallback?.username ?? "You"}</p>
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-white/75">
+              <span>Lvl{level}</span>
+              <span>{country && COUNTRY_FLAG[country] ? COUNTRY_FLAG[country] : "🌐"}</span>
             </div>
           </div>
         </div>
@@ -368,9 +326,10 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
   );
 }
 
-function CountrySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function CountrySelect({ value, onChange, compact = false }: { value: string; onChange: (v: string) => void; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const off = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
     document.addEventListener("mousedown", off);
@@ -394,21 +353,21 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
   const options = useMemo(() => ["Global", ...(dbCountries ?? [])], [dbCountries]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative shrink-0">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 backdrop-blur-md hover:bg-white/10 transition"
+        className={`${compact ? "px-3 py-1.5 text-[10px]" : "px-3 py-1.5 text-xs"} inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-[#7f0d17]/70 font-semibold text-white backdrop-blur-md transition active:scale-95`}
       >
-        <Globe2 className="h-3.5 w-3.5 text-amber-400" />
-        {value} <ChevronDown className="h-3 w-3 text-slate-400" />
+        <span>{value === "Global" ? "Today" : value}</span>
+        <ArrowUpDown className="h-3 w-3 text-white/80" />
       </button>
       {open && (
-        <div className="absolute right-0 z-30 mt-1 max-h-72 w-44 overflow-auto rounded-2xl border border-white/10 bg-[#120e26]/95 p-1 shadow-2xl backdrop-blur-xl">
+        <div className="absolute right-0 z-50 mt-1 max-h-64 w-44 overflow-auto rounded-xl border border-white/15 bg-[#4a070d]/98 p-1 shadow-2xl backdrop-blur-xl">
           {options.map((c) => (
             <button
               key={c}
               onClick={() => { onChange(c); setOpen(false); }}
-              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs transition hover:bg-white/10 ${value === c ? "bg-amber-500/20 text-amber-300 font-bold" : "text-slate-300"}`}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-xs transition ${value === c ? "bg-white/15 text-white font-bold" : "text-white/75 hover:bg-white/10"}`}
             >
               <span>{c === "Global" ? "🌐" : (COUNTRY_FLAG[c] ?? "🏳️")}</span>{c}
             </button>
@@ -421,41 +380,36 @@ function CountrySelect({ value, onChange }: { value: string; onChange: (v: strin
 
 function EmptyState() {
   return (
-    <div className="mx-auto mt-6 max-w-[280px] rounded-3xl border border-white/10 bg-white/[0.02] p-8 text-center backdrop-blur-md">
-      <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-400">
-        <Trophy className="h-6 w-6" />
-      </div>
+    <div className="mx-auto mt-5 max-w-[280px] rounded-2xl border border-white/15 bg-white/5 p-7 text-center backdrop-blur-md">
+      <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-2xl bg-white/10 text-[#ffd45d]"><Trophy className="h-6 w-6" /></div>
       <p className="text-sm font-bold text-white">No Rankings Yet</p>
-      <p className="mt-1 text-xs text-slate-400">Be the first to claim your spot on the leaderboard.</p>
+      <p className="mt-1 text-xs text-white/60">Be the first to claim your spot on the leaderboard.</p>
     </div>
   );
 }
 
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in" onClick={onClose}>
-      <div
-        className="w-full max-w-md rounded-3xl border border-white/15 bg-[#120e26]/95 p-6 shadow-2xl backdrop-blur-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="w-full max-w-md rounded-3xl border border-white/15 bg-[#4a070d]/98 p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-base font-extrabold text-white flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-amber-400" /> Ranking Rules
-          </h2>
-          <button onClick={onClose} className="rounded-xl border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300 hover:bg-white/10">Close</button>
+          <h2 className="flex items-center gap-2 text-base font-extrabold text-white"><ShieldCheck className="h-5 w-5 text-[#ffd45d]" /> Ranking Rules</h2>
+          <button onClick={onClose} className="rounded-xl border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/80">Close</button>
         </div>
-        <ul className="space-y-2.5 text-xs leading-relaxed text-slate-300">
-          <li><b className="text-amber-300">Room Gift</b> — Calculated based on gifts received during live streams.</li>
-          <li><b className="text-amber-300">Points & XP</b> — Earned through general activity across app features.</li>
-          <li><b className="text-amber-300">PK Battles</b> — Ranked by total successful victories in PK matches.</li>
-          <li><b className="text-amber-300">VIP & Royals</b> — Based on active VIP tier status and progression.</li>
+        <ul className="space-y-2.5 text-xs leading-relaxed text-white/75">
+          <li><b className="text-[#ffd45d]">Room Gift</b> — Calculated based on gifts received during live streams.</li>
+          <li><b className="text-[#ffd45d]">Points & XP</b> — Earned through general activity across app features.</li>
+          <li><b className="text-[#ffd45d]">PK Battles</b> — Ranked by total successful victories in PK matches.</li>
+          <li><b className="text-[#ffd45d]">VIP & Royals</b> — Based on active VIP tier status and progression.</li>
         </ul>
-        <p className="mt-4 text-[10px] text-slate-500 text-center">
-          Resets daily at 00:00 UTC · Weekly on Monday · Monthly on the 1st
-        </p>
+        <p className="mt-4 text-center text-[10px] text-white/40">Resets daily at 00:00 UTC · Weekly on Monday · Monthly on the 1st</p>
       </div>
     </div>
   );
+}
+
+function formatScore(score: number) {
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(score || 0);
 }
 
 declare module "react" { interface CSSProperties { WebkitOverflowScrolling?: "auto" | "touch" } }
