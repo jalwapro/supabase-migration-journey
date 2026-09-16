@@ -10,105 +10,8 @@ const TIERS: { key: "normal" | "vip"; label: string }[] = [
   { key: "vip", label: "👑 VIP" },
 ];
 
-function playSeatToSeatAnimation(emoji: ChatEmoji, username?: string | null) {
-  if (typeof document === "undefined") return;
-
-  const targetButton = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).find((button) => {
-    const text = button.textContent?.trim() ?? "";
-    return /^Seat\s+\d+/i.test(text) && !!button.style.background;
-  });
-  if (!targetButton) return;
-
-  const targetMatch = targetButton.textContent?.match(/Seat\s+(\d+)/i);
-  const targetSeat = targetMatch ? Number(targetMatch[1]) - 1 : -1;
-  if (targetSeat < 0) return;
-
-  const senderAvatar = username
-    ? Array.from(document.querySelectorAll<HTMLImageElement>("img[alt]")).find((img) => img.alt.trim() === username.trim())
-    : null;
-
-  const seatButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("button")).filter((button) =>
-    Array.from(button.querySelectorAll("span")).some((span) => /^\d+$/.test(span.textContent?.trim() ?? "")),
-  );
-  const targetSeatButton = seatButtons.find((button) =>
-    Array.from(button.querySelectorAll("span")).some((span) => span.textContent?.trim() === String(targetSeat + 1)),
-  );
-
-  const senderRect = senderAvatar?.getBoundingClientRect() ?? null;
-  const targetRect = (targetSeatButton ?? targetButton).getBoundingClientRect();
-  if (!senderRect) return;
-
-  const startX = senderRect.left + senderRect.width / 2;
-  const startY = senderRect.top + senderRect.height / 2;
-  const endX = targetRect.left + targetRect.width / 2;
-  const endY = targetRect.top + targetRect.height / 2;
-  const dx = endX - startX;
-  const dy = endY - startY;
-
-  const layer = document.createElement("div");
-  layer.style.position = "fixed";
-  layer.style.inset = "0";
-  layer.style.zIndex = "2147483646";
-  layer.style.pointerEvents = "none";
-  layer.setAttribute("data-jalwa-flying-emoji", "true");
-
-  const emojiNode = document.createElement("img");
-  emojiNode.src = emoji.url || emoji.clip_path;
-  emojiNode.alt = emoji.name || "Animated emoji";
-  emojiNode.style.position = "fixed";
-  emojiNode.style.left = `${startX - 24}px`;
-  emojiNode.style.top = `${startY - 24}px`;
-  emojiNode.style.width = "48px";
-  emojiNode.style.height = "48px";
-  emojiNode.style.objectFit = "contain";
-  emojiNode.style.filter = "drop-shadow(0 0 12px rgba(255,215,0,.95))";
-  emojiNode.style.willChange = "transform, opacity";
-  emojiNode.style.transformOrigin = "50% 50%";
-
-  const targetGlow = document.createElement("div");
-  targetGlow.style.position = "fixed";
-  targetGlow.style.left = `${endX - 34}px`;
-  targetGlow.style.top = `${endY - 34}px`;
-  targetGlow.style.width = "68px";
-  targetGlow.style.height = "68px";
-  targetGlow.style.borderRadius = "9999px";
-  targetGlow.style.border = "3px solid rgba(251,191,36,.95)";
-  targetGlow.style.boxShadow = "0 0 28px rgba(251,191,36,.9)";
-  targetGlow.style.opacity = "0";
-
-  layer.appendChild(targetGlow);
-  layer.appendChild(emojiNode);
-  document.body.appendChild(layer);
-
-  const flight = emojiNode.animate(
-    [
-      { transform: "translate3d(0,0,0) scale(.72) rotate(-8deg)", opacity: 0 },
-      { transform: `translate3d(${dx * 0.38}px,${dy * 0.38 - 34}px,0) scale(1.12) rotate(8deg)`, opacity: 1, offset: 0.32 },
-      { transform: `translate3d(${dx * 0.72}px,${dy * 0.72 + 10}px,0) scale(1.02) rotate(-5deg)`, opacity: 1, offset: 0.72 },
-      { transform: `translate3d(${dx}px,${dy}px,0) scale(.62) rotate(0deg)`, opacity: 1 },
-    ],
-    { duration: 980, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" },
-  );
-
-  const glow = targetGlow.animate(
-    [
-      { opacity: 0, transform: "scale(.55)" },
-      { opacity: 0, transform: "scale(.55)" },
-      { opacity: 1, transform: "scale(1.15)" },
-      { opacity: 0, transform: "scale(1.45)" },
-    ],
-    { duration: 360, delay: 900, easing: "ease-out", fill: "forwards" },
-  );
-
-  window.setTimeout(() => {
-    flight.cancel();
-    glow.cancel();
-    layer.remove();
-  }, 1350);
-}
-
 export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (emoji: ChatEmoji) => void }) {
-  const { profile, isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const [list, setList] = useState<ChatEmoji[]>([]);
   const [loading, setLoading] = useState(false);
   const [tier, setTier] = useState<"normal" | "vip">("normal");
@@ -146,6 +49,10 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick }: { open: b
   );
 
   if (!open) return null;
+
+  const pickEmoji = (emoji: ChatEmoji) => {
+    onPick(emoji);
+  };
 
   return (
     <div
@@ -198,16 +105,12 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick }: { open: b
                 <button
                   key={emoji.id}
                   type="button"
-                  onClick={() => {
-                    playSeatToSeatAnimation(emoji, profile?.username);
-                    onPick(emoji);
-                    onClose();
-                  }}
+                  onClick={() => pickEmoji(emoji)}
                   className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-1 transition active:scale-95"
                   aria-label={emoji.name}
                 >
                   <img
-                    src={emoji.clip_path}
+                    src={emoji.url || emoji.clip_path}
                     alt={emoji.name}
                     loading="lazy"
                     className="h-full w-full object-contain"
