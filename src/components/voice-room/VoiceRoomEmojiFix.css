@@ -5,9 +5,10 @@
   to { transform: translate3d(0, -50%, 0); }
 }
 
-/* This selector uniquely matches the VoiceRoomScreen emoji panel by its
-   existing max-height + slide-up utility classes. */
-main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
+/* The emoji modal has this distinctive rounded + slide-up + max-height
+   combination in VoiceRoomScreen. Target it directly so the parent layout
+   does not matter. */
+[class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
   position: fixed !important;
   top: 50% !important;
   right: 0 !important;
@@ -30,17 +31,17 @@ main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60
 
 /* The old drag handle belongs to the bottom-sheet design; hide it for the
    side panel so the emoji picker reads like a compact keyboard. */
-main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] > div:first-child {
+[class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] > div:first-child {
   display: none !important;
 }
 
 /* Keep the target-seat row compact and usable on narrow mobile screens. */
-main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] [class*="overflow-x-auto"] {
+[class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] [class*="overflow-x-auto"] {
   flex-shrink: 0;
 }
 
 @media (max-width: 430px) {
-  main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
+  [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
     width: min(94vw, 360px) !important;
     height: min(62vh, 500px) !important;
   }
