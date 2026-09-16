@@ -1,0 +1,47 @@
+/* Voice Room emoji picker: replace the legacy bottom sheet with a compact
+   keyboard-style side panel without changing the existing React flow. */
+@keyframes jalwa-emoji-sheet-in {
+  from { transform: translate3d(100%, -50%, 0); }
+  to { transform: translate3d(0, -50%, 0); }
+}
+
+/* This selector uniquely matches the VoiceRoomScreen emoji panel by its
+   existing max-height + slide-up utility classes. */
+main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
+  position: fixed !important;
+  top: 50% !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: min(92vw, 390px) !important;
+  height: min(58vh, 520px) !important;
+  max-height: 520px !important;
+  min-height: 0 !important;
+  padding: 10px !important;
+  border-top: 1px solid !important;
+  border-right: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 1px solid !important;
+  border-radius: 24px 0 0 24px !important;
+  overflow: hidden !important;
+  transform: translate3d(0, -50%, 0) !important;
+  animation: jalwa-emoji-sheet-in 260ms cubic-bezier(.22,1,.36,1) both !important;
+}
+
+/* The old drag handle belongs to the bottom-sheet design; hide it for the
+   side panel so the emoji picker reads like a compact keyboard. */
+main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] > div:first-child {
+  display: none !important;
+}
+
+/* Keep the target-seat row compact and usable on narrow mobile screens. */
+main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] [class*="overflow-x-auto"] {
+  flex-shrink: 0;
+}
+
+@media (max-width: 430px) {
+  main.fixed [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
+    width: min(94vw, 360px) !important;
+    height: min(62vh, 500px) !important;
+  }
+}
