@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Smile, X } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -57,12 +57,10 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
     };
   }, [open]);
 
-  const filtered = useMemo(() => {
-    return list.filter((e) => {
-      if (tier === "normal") return (e.tier ?? "normal") === "normal";
-      return (e.tier ?? "normal") !== "normal";
-    });
-  }, [list, tier]);
+  const filtered = useMemo(
+    () => list.filter((e) => (tier === "normal" ? (e.tier ?? "normal") === "normal" : (e.tier ?? "normal") !== "normal")),
+    [list, tier],
+  );
 
   if (!open) return null;
 
@@ -72,17 +70,19 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
   };
 
   const emojiGrid = (
-    <div className="max-h-[42vh] overflow-y-auto px-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+    <div className="h-[min(38vh,320px)] min-h-[190px] overflow-y-auto overscroll-contain px-2 pb-[max(env(safe-area-inset-bottom),8px)]">
       {loading ? (
-        <div className="grid h-40 place-items-center"><Loader2 className="h-5 w-5 animate-spin text-white/60" /></div>
+        <div className="grid h-full min-h-[190px] place-items-center">
+          <Loader2 className="h-5 w-5 animate-spin text-white/60" />
+        </div>
       ) : (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-5 gap-1.5">
           {filtered.map((emoji) => (
             <button
               key={emoji.id}
               type="button"
               onClick={() => pickEmoji(emoji)}
-              className="group relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-1 transition active:scale-95"
+              className="group relative flex aspect-square min-h-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 p-1 transition active:scale-90"
               aria-label={emoji.name}
             >
               <img
@@ -96,35 +96,23 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
                   if (fallback) fallback.style.display = "grid";
                 }}
               />
-              <span data-emoji-fallback className="hidden h-full w-full place-items-center text-4xl" role="img" aria-label={emoji.name}>
+              <span data-emoji-fallback className="hidden h-full w-full place-items-center text-3xl" role="img" aria-label={emoji.name}>
                 {emoji.emoji}
               </span>
-              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/60 py-0.5 text-center text-[9px] font-bold text-white">{emoji.name}</span>
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-black/60 px-0.5 py-0.5 text-center text-[8px] font-bold text-white">{emoji.name}</span>
             </button>
           ))}
-          {!filtered.length && <p className="col-span-4 py-10 text-center text-xs text-white/50">No emojis here</p>}
+          {!filtered.length && <p className="col-span-5 py-8 text-center text-xs text-white/50">No emojis here</p>}
         </div>
       )}
     </div>
   );
 
-  // VoiceRoomScreen already owns the single modal/header/target-user selector.
-  // Embedded mode must therefore render only the emoji controls + grid.
+  // In VoiceRoomScreen the target selector/modal is already present.
+  // Embedded mode intentionally contains only the emoji keyboard controls.
   const content = (
     <div className="w-full overflow-hidden">
-      <div className="flex shrink-0 items-center justify-between px-3 pb-2">
-        <div className="flex items-center gap-2">
-          <Smile className="h-4 w-4 text-amber-400" />
-          <p className="text-xs font-bold text-white">Animated Emojis</p>
-        </div>
-        {!embedded && (
-          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white" aria-label="Close emojis">
-            <X className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-
-      <div className="flex shrink-0 gap-1.5 overflow-x-auto px-3 pb-2 no-scrollbar">
+      <div className="flex shrink-0 gap-1.5 overflow-x-auto px-2 pb-2 no-scrollbar">
         {TIERS.map((item) => (
           <button
             key={item.key}
@@ -142,7 +130,6 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
           </button>
         ))}
       </div>
-
       {emojiGrid}
     </div>
   );
@@ -152,13 +139,16 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
   return (
     <div
       data-jalwa-emoji-sheet="true"
-      className="fixed inset-0 z-[70] flex items-end bg-black/55"
+      className="fixed inset-0 z-[70] flex items-center justify-end bg-black/45"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Animated emojis"
     >
-      <div className="w-full rounded-t-3xl border-t border-white/10 bg-slate-950/95 shadow-2xl backdrop-blur-md" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="h-[min(58vh,430px)] w-[min(92vw,390px)] max-w-full rounded-l-3xl border border-r-0 border-white/10 bg-slate-950/96 py-2 shadow-2xl backdrop-blur-md"
+        onClick={(event) => event.stopPropagation()}
+      >
         {content}
       </div>
     </div>
