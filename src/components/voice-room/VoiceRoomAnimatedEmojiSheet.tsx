@@ -25,6 +25,17 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
   const isVip = isAdmin || (profile?.vip_level ?? 0) > 0;
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    const id = "jalwa-voice-room-emoji-fix";
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = new URL("./VoiceRoomEmojiFix.css", import.meta.url).href;
+    document.head.appendChild(link);
+  }, []);
+
+  useEffect(() => {
     if (!open) return;
     let active = true;
     setLoading(true);
