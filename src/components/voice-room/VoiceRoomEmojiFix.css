@@ -1,50 +1,78 @@
-/* Voice Room emoji picker: compact keyboard-style panel fixed directly above the footer. */
+/* Voice Room emoji picker: real keyboard-style panel above the actual footer. */
 @keyframes jalwa-emoji-sheet-in {
-  from { transform: translate3d(50%, 24px, 0); opacity: 0; }
-  to { transform: translate3d(50%, 0, 0); opacity: 1; }
+  from { transform: translateY(18px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-/* Keep the emoji picker above the Voice Room footer instead of using the
-   legacy bottom-sheet / right-side layout. */
-[class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
+/* IMPORTANT: VoiceRoomAnimatedEmojiSheet uses data-jalwa-emoji-sheet on the
+   OUTER overlay. The previous selector looked for legacy Tailwind classes
+   that this component does not have, so it never matched. */
+[data-jalwa-emoji-sheet="true"] {
   position: fixed !important;
-  top: auto !important;
-  right: 50% !important;
-  bottom: 72px !important;
-  left: auto !important;
-  width: min(94vw, 390px) !important;
-  height: min(48vh, 420px) !important;
-  max-height: 420px !important;
-  min-height: 0 !important;
-  padding: 10px !important;
-  border-top: 1px solid !important;
-  border-right: 1px solid !important;
-  border-bottom: 1px solid !important;
-  border-left: 1px solid !important;
-  border-radius: 22px !important;
-  overflow: hidden !important;
-  transform: translate3d(50%, 0, 0) !important;
-  animation: jalwa-emoji-sheet-in 220ms cubic-bezier(.22,1,.36,1) both !important;
+  inset: auto 0 calc(64px + env(safe-area-inset-bottom, 0px)) auto !important;
+  width: 100% !important;
+  height: min(42vh, 340px) !important;
+  max-height: 340px !important;
+  display: flex !important;
+  align-items: flex-end !important;
+  justify-content: flex-end !important;
+  padding: 0 8px 8px 8px !important;
+  background: transparent !important;
+  pointer-events: none !important;
   z-index: 9999 !important;
+  animation: jalwa-emoji-sheet-in 180ms cubic-bezier(.22,1,.36,1) both !important;
 }
 
-/* The old drag handle belongs to the bottom-sheet design; hide it so the
-   picker looks and behaves like a compact mobile keyboard. */
-[class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] > div:first-child {
-  display: none !important;
+/* The real keyboard panel. */
+[data-jalwa-emoji-sheet="true"] > div {
+  width: min(100%, 360px) !important;
+  height: min(100%, 332px) !important;
+  max-height: 332px !important;
+  margin: 0 !important;
+  padding: 8px 0 !important;
+  overflow: hidden !important;
+  pointer-events: auto !important;
+  border: 1px solid rgba(255,255,255,.10) !important;
+  border-radius: 18px !important;
+  background: rgba(2,6,23,.98) !important;
+  box-shadow: 0 16px 40px rgba(0,0,0,.45) !important;
 }
 
-/* Keep the target-seat row compact and usable on narrow mobile screens. */
-[class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] [class*="overflow-x-auto"] {
-  flex-shrink: 0;
+/* Compact category row. */
+[data-jalwa-emoji-sheet="true"] [class*="overflow-x-auto"] {
+  flex-shrink: 0 !important;
+  min-height: 30px !important;
+}
+
+/* Keep the emoji grid in a keyboard-like scroll area. */
+[data-jalwa-emoji-sheet="true"] [class*="overflow-y-auto"] {
+  height: 270px !important;
+  min-height: 0 !important;
+  max-height: 270px !important;
 }
 
 @media (max-width: 430px) {
-  [class*="rounded-t-3xl"][class*="animate-slide-up"][class*="max-h-[60dvh]"] {
-    width: min(94vw, 360px) !important;
-    height: min(46vh, 390px) !important;
-    max-height: 390px !important;
-    bottom: 68px !important;
-    border-radius: 20px !important;
+  [data-jalwa-emoji-sheet="true"] {
+    inset: auto 0 calc(60px + env(safe-area-inset-bottom, 0px)) auto !important;
+    height: min(43vh, 320px) !important;
+    padding: 0 6px 6px 6px !important;
+  }
+
+  [data-jalwa-emoji-sheet="true"] > div {
+    width: min(94vw, 350px) !important;
+    height: min(100%, 310px) !important;
+    max-height: 310px !important;
+    border-radius: 16px !important;
+  }
+
+  [data-jalwa-emoji-sheet="true"] [class*="overflow-y-auto"] {
+    height: 250px !important;
+    max-height: 250px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  [data-jalwa-emoji-sheet="true"] > div {
+    width: calc(100vw - 12px) !important;
   }
 }
