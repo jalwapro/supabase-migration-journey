@@ -23,7 +23,13 @@ const TIERS: { key: "normal" | "vip"; label: string }[] = [
   { key: "vip", label: "👑 VIP" },
 ];
 
-export function ChatEmojiSheet({ open, onClose, onPick }: { open: boolean; onClose: () => void; onPick: (e: ChatEmoji) => void }) {
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onPick: (e: ChatEmoji) => void;
+};
+
+export function ChatEmojiSheet({ open, onClose, onPick }: Props) {
   const { profile, isAdmin } = useAuth();
   const [list, setList] = useState<ChatEmoji[]>([]);
   const [loading, setLoading] = useState(false);
@@ -51,7 +57,7 @@ export function ChatEmojiSheet({ open, onClose, onPick }: { open: boolean; onClo
     [list, tier],
   );
 
-  if (isVoiceRoom) return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} />;
+  if (isVoiceRoom) return <VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={onPick} embedded />;
   if (!open) return null;
 
   return (
