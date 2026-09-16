@@ -8,7 +8,7 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import {
   ArrowLeft, HelpCircle, Trophy, Star, Mic, Gift, Swords, Gem, Sparkles,
-  Flame, Globe2, ChevronDown, Crown, ShieldCheck, ArrowUpDown,
+  Flame, Globe2, ChevronDown, ShieldCheck, ArrowUpDown,
 } from "lucide-react";
 
 export const Route = createFileRoute("/rank")({
@@ -56,6 +56,12 @@ const COUNTRY_FLAG: Record<string, string> = {
   UAE: "🇦🇪", Turkey: "🇹🇷", Egypt: "🇪🇬", Indonesia: "🇮🇩", Malaysia: "🇲🇾",
   "United States": "🇺🇸", "United Kingdom": "🇬🇧", Philippines: "🇵🇭",
   Nigeria: "🇳🇬", Morocco: "🇲🇦", Iraq: "🇮🇶", Kuwait: "🇰🇼", Qatar: "🇶🇦",
+};
+
+const PODIUM_ASSETS: Record<1 | 2 | 3, string> = {
+  1: "/images/top1.png",
+  2: "/images/top2.png",
+  3: "/images/top3.png",
 };
 
 function RankPage() {
@@ -181,7 +187,7 @@ function RankPage() {
           <section className="relative z-10 mx-auto mt-3 max-w-[430px] px-3">
             <div className="relative overflow-hidden rounded-[22px] border border-white/10 bg-[#50070d]/75 px-2 pb-2 pt-7 shadow-[0_18px_50px_rgba(45,0,4,.35)] backdrop-blur-sm">
               <div aria-hidden className="absolute -top-16 left-1/2 h-32 w-[125%] -translate-x-1/2 rounded-[50%] border-b border-white/20 bg-[#a70b19]/45" />
-              <div className="relative grid grid-cols-3 items-end gap-2">
+              <div className="relative grid grid-cols-3 items-end gap-1.5 sm:gap-2">
                 <PodiumCard row={c2} place={2} />
                 <PodiumCard row={c1} place={1} />
                 <PodiumCard row={c3} place={3} />
@@ -221,18 +227,22 @@ function RankPage() {
 function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const isFirst = place === 1;
   const tone = place === 1
-    ? { card: "bg-[#a90b1b] border-[#e83248]", crown: "text-[#ffd45a]", crownBg: "bg-[#690714]", label: "bg-[#f1b41b] text-[#5b1d00]", avatar: "border-white", score: "text-[#ffe66b]" }
+    ? { card: "bg-[#a90b1b]/90 border-[#e83248]", label: "bg-[#f1b41b] text-[#5b1d00]", avatar: "border-white", score: "text-[#ffe66b]" }
     : place === 2
-    ? { card: "bg-[#10529d] border-[#2278c8]", crown: "text-[#7fd5ff]", crownBg: "bg-[#083b78]", label: "bg-[#1d70cf] text-white", avatar: "border-[#8ad7ff]", score: "text-[#ffe66b]" }
-    : { card: "bg-[#bd7106] border-[#e3a21d]", crown: "text-[#ffe56b]", crownBg: "bg-[#8d4d00]", label: "bg-[#e2a915] text-[#5b2100]", avatar: "border-[#ffe18a]", score: "text-[#ffe66b]" };
+    ? { card: "bg-[#10529d]/90 border-[#2278c8]", label: "bg-[#1d70cf] text-white", avatar: "border-[#8ad7ff]", score: "text-[#ffe66b]" }
+    : { card: "bg-[#bd7106]/90 border-[#e3a21d]", label: "bg-[#e2a915] text-[#5b2100]", avatar: "border-[#ffe18a]", score: "text-[#ffe66b]" };
 
   const content = (
-    <div className={`relative flex min-h-[128px] flex-col items-center rounded-[14px] border p-2 shadow-[0_12px_25px_rgba(0,0,0,.22)] ${tone.card} ${isFirst ? "min-h-[150px] -mt-3" : ""}`}>
-      <div className={`absolute -top-7 grid h-12 w-14 place-items-center rounded-full ${tone.crownBg} ${tone.crown}`}>
-        <Crown className="h-10 w-10 fill-current stroke-[1.4] drop-shadow-[0_3px_3px_rgba(0,0,0,.35)]" />
-      </div>
+    <div className={`relative flex min-h-[154px] w-full flex-col items-center rounded-[14px] border px-1.5 pb-2 pt-3 shadow-[0_12px_25px_rgba(0,0,0,.22)] ${tone.card} ${isFirst ? "min-h-[176px] -mt-3" : ""}`}>
+      {/* Custom Figma podium/crown artwork. Upload these exact files to public/images/. */}
+      <img
+        src={PODIUM_ASSETS[place]}
+        alt={`Top ${place}`}
+        className={`pointer-events-none absolute left-1/2 z-10 -translate-x-1/2 object-contain drop-shadow-[0_4px_5px_rgba(0,0,0,.35)] ${isFirst ? "-top-[58px] h-[118px] w-[118px]" : "-top-[50px] h-[100px] w-[100px]"}`}
+        draggable={false}
+      />
 
-      <div className={`relative mt-5 rounded-full border-2 bg-white p-[2px] shadow-[0_4px_12px_rgba(0,0,0,.28)] ${isFirst ? "h-[68px] w-[68px]" : "h-[58px] w-[58px]"} ${tone.avatar}`}>
+      <div className={`relative z-20 mt-8 rounded-full border-2 bg-white p-[2px] shadow-[0_4px_12px_rgba(0,0,0,.28)] ${isFirst ? "h-[68px] w-[68px]" : "h-[58px] w-[58px]"} ${tone.avatar}`}>
         <LevelAvatar
           src={row?.avatar ?? undefined}
           name={row?.username ?? undefined}
@@ -242,11 +252,11 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
         />
       </div>
 
-      <span className={`absolute left-1/2 top-[82px] -translate-x-1/2 whitespace-nowrap rounded-[2px] px-2 py-0.5 text-[8px] font-extrabold uppercase shadow-sm ${tone.label}`}>
+      <span className={`relative z-30 -mt-1 whitespace-nowrap rounded-[2px] px-2 py-0.5 text-[8px] font-extrabold uppercase shadow-sm ${tone.label}`}>
         TOP {place}
       </span>
 
-      <p className="mt-2 max-w-[92px] truncate text-center text-[10px] font-bold text-white">
+      <p className="mt-1 max-w-[94px] truncate text-center text-[10px] font-bold text-white">
         {row?.username ?? "—"}
       </p>
       <div className="mt-1 flex items-center gap-1 text-[8px] text-white/90">
@@ -260,7 +270,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   );
 
   if (!row) return <div className="opacity-35">{content}</div>;
-  return <Link to="/u/$userId" params={{ userId: row.user_id }} className="block">{content}</Link>;
+  return <Link to="/u/$userId" params={{ userId: row.user_id }} className="block min-w-0">{content}</Link>;
 }
 
 function RankItem({ row }: { row: Row }) {
