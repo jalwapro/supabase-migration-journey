@@ -16,71 +16,92 @@ function findSeat(index: number) {
   return document.querySelector<HTMLElement>(`[data-seat-index="${index}"]`);
 }
 
-function findSender(senderId: string | null, senderName: string | null) {
-  if (senderId) {
-    const byId = document.querySelector<HTMLElement>(`[data-user-dp="${CSS.escape(senderId)}"]`);
-    if (byId) return byId;
-  }
-  if (senderName) {
-    return Array.from(document.querySelectorAll<HTMLElement>("[data-user-dp]"))
-      .find((seat) => Array.from(seat.querySelectorAll<HTMLImageElement>("img[alt]"))
-        .some((img) => img.alt.trim() === senderName.trim())) ?? null;
-  }
-  return null;
-}
-
-function avatarCenter(element: HTMLElement | null) {
+function avatarRect(element: HTMLElement | null): DOMRect | null {
   if (!element) return null;
-  const candidates = [
-    element.querySelector<HTMLElement>("img[alt]"),
-    element.querySelector<HTMLElement>("img"),
-    element.querySelector<HTMLElement>("[data-avatar]"),
-    element,
-  ];
-  for (const candidate of candidates) {
-    const r = candidate?.getBoundingClientRect();
-    if (r && r.width > 0 && r.height > 0) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  }
-  return null;
+  const candidate = element.querySelector<HTMLElement>("img[alt], img, [data-avatar], video") ?? element;
+  const rect = candidate.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 ? rect : null;
 }
 
-function play(payload: VoiceRoomEmojiPlayback) {
+/**
+ * Voice-room emojis are seat reactions, not chat splashes. Render the selected
+ * emoji directly over the recipient's avatar for a short moment. This is also
+ * used by the sender locally so both sides use exactly the same renderer.
+ */
+export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "targetSeatIndex" | "emoji" | "url" | "clipPath">) {
   if (typeof document === "undefined") return;
   const startedAt = performance.now();
+
   const attempt = () => {
-    const target = findSeat(payload.targetSeatIndex);
-    const sender = findSender(payload.senderId, payload.senderName);
-    const start = avatarCenter(sender);
-    const end = avatarCenter(target);
-    if (!start || !end) {
+    const seat = findSeat(payload.targetSeatIndex);
+    const rect = avatarRect(seat);
+    if (!rect) {
       if (performance.now() - startedAt < 4000) window.requestAnimationFrame(attempt);
       return;
     }
 
     const layer = document.createElement("div");
-    Object.assign(layer.style, { position: "fixed", inset: "0", zIndex: "2147483647", pointerEvents: "none", overflow: "visible" });
-    layer.dataset.jalwaEmojiPlayback = payload.id;
+    Object.assign(layer.style, {
+      position: "fixed",
+      left: `${rect.left - 10}px`,
+      top: `${rect.top - 10}px`,
+      width: `${rect.width + 20}px`,
+      height: `${rect.height + 20}px`,
+      zIndex: "2147483647",
+      pointerEvents: "none",
+      display: "grid",
+      placeItems: "center",
+      borderRadius: "999px",
+      overflow: "visible",
+    });
+    layer.dataset.jalwaSeatEmoji = "true";
+
+    const glow = document.createElement("div");
+    Object.assign(glow.style, {
+      position: "absolute",
+      inset: "-4px",
+      borderRadius: "999px",
+      background: "radial-gradient(circle, rgba(251,191,36,.28), transparent 68%)",
+      boxShadow: "0 0 24px rgba(251,191,36,.55)",
+      pointerEvents: "none",
+    });
+    layer.appendChild(glow);
 
     const node = document.createElement("div");
     Object.assign(node.style, {
-      position: "fixed", left: `${start.x - 30}px`, top: `${start.y - 30}px`, width: "60px", height: "60px",
-      display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", willChange: "transform,opacity",
-      transform: "translate3d(0,0,0)", opacity: "1", pointerEvents: "none", isolation: "isolate",
+      position: "relative",
+      width: `${Math.max(42, Math.min(72, rect.width * 0.95))}px`,
+      height: `${Math.max(42, Math.min(72, rect.height * 0.95))}px`,
+      display: "grid",
+      placeItems: "center",
+      fontSize: `${Math.max(30, Math.min(52, rect.width * 0.72))}px`,
+      lineHeight: "1",
+      transform: "scale(.55)",
+      opacity: "0",
+      willChange: "transform,opacity",
+      pointerEvents: "none",
+      filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))",
     });
 
-    // Keep the Unicode emoji visible underneath the animated asset so a
-    // broken/transparent GIF/WebP never results in an invisible flight.
     const fallback = document.createElement("span");
     fallback.textContent = payload.emoji || "✨";
-    Object.assign(fallback.style, { position: "absolute", inset: "0", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", zIndex: "0", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
+    Object.assign(fallback.style, { display: "grid", placeItems: "center", width: "100%", height: "100%" });
     node.appendChild(fallback);
 
     const src = payload.url || payload.clipPath || "";
     if (src) {
       const img = document.createElement("img");
       img.src = src;
-      img.alt = payload.emoji || "Animated emoji";
-      Object.assign(img.style, { position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: "1", pointerEvents: "none", filter: "drop-shadow(0 0 10px rgba(255,215,0,.9))" });
+      img.alt = payload.emoji || "Emoji";
+      Object.assign(img.style, {
+        position: "absolute",
+        inset: "0",
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        display: "block",
+        pointerEvents: "none",
+      });
       img.onerror = () => img.remove();
       node.appendChild(img);
     }
@@ -88,46 +109,57 @@ function play(payload: VoiceRoomEmojiPlayback) {
     layer.appendChild(node);
     document.body.appendChild(layer);
 
-    const dx = end.x - start.x;
-    const dy = end.y - start.y;
     let animation: Animation | null = null;
     try {
-      animation = node.animate([
-        { transform: "translate3d(0,0,0) scale(.55) rotate(-10deg)", opacity: 1 },
-        { transform: `translate3d(${dx * .35}px,${dy * .35 - 30}px,0) scale(1.2) rotate(10deg)`, opacity: 1, offset: .3 },
-        { transform: `translate3d(${dx * .72}px,${dy * .72 + 8}px,0) scale(1.05) rotate(-5deg)`, opacity: 1, offset: .7 },
-        { transform: `translate3d(${dx}px,${dy}px,0) scale(.7)`, opacity: 1 },
-      ], { duration: 1000, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" });
+      animation = node.animate(
+        [
+          { transform: "scale(.55)", opacity: 0 },
+          { transform: "scale(1.08)", opacity: 1, offset: .22 },
+          { transform: "scale(1)", opacity: 1, offset: .72 },
+          { transform: "scale(.88)", opacity: 0 },
+        ],
+        { duration: 1250, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" },
+      );
     } catch {
-      node.style.transform = `translate3d(${dx}px,${dy}px,0) scale(.7)`;
+      node.style.transform = "scale(1)";
+      node.style.opacity = "1";
     }
 
-    const impact = document.createElement("div");
-    Object.assign(impact.style, { position: "fixed", left: `${end.x - 32}px`, top: `${end.y - 32}px`, width: "64px", height: "64px", borderRadius: "50%", border: "3px solid rgba(251,191,36,.95)", boxShadow: "0 0 28px rgba(251,191,36,.9)", opacity: "0", pointerEvents: "none" });
-    layer.appendChild(impact);
-    const impactAnimation = impact.animate([{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.5)" }], { duration: 300, delay: 950, easing: "ease-out", fill: "forwards" });
-    window.setTimeout(() => { animation?.cancel(); impactAnimation.cancel(); layer.remove(); }, 1400);
+    window.setTimeout(() => {
+      animation?.cancel();
+      layer.remove();
+    }, 1350);
   };
+
   attempt();
 }
 
-export function VoiceRoomEmojiRealtime({ roomId, userId }: { roomId: string; userId: string | null }) {
+export function VoiceRoomEmojiRealtime({ roomId }: { roomId: string; userId?: string | null }) {
   useEffect(() => {
     if (!roomId) return;
-    const channel = supabase.channel(`voice-emoji-player-${roomId}`, { config: { private: false, broadcast: { self: false } } });
-    channel.on("broadcast", { event: "emoji_play" }, ({ payload }) => {
-      if (!payload || typeof payload !== "object") return;
-      const p = payload as VoiceRoomEmojiPlayback;
-      if (p.roomId !== roomId || !p.id || p.senderId === userId || !Number.isInteger(p.targetSeatIndex)) return;
-      play(p);
-    }).subscribe();
+    const channel = supabase.channel(`voice-emoji-player-${roomId}`, {
+      config: { private: false, broadcast: { self: false } },
+    });
+
+    channel
+      .on("broadcast", { event: "emoji_play" }, ({ payload }) => {
+        if (!payload || typeof payload !== "object") return;
+        const p = payload as VoiceRoomEmojiPlayback;
+        if (p.roomId !== roomId || !p.id || !Number.isInteger(p.targetSeatIndex)) return;
+        playVoiceRoomEmojiAtSeat(p);
+      })
+      .subscribe();
+
     return () => { void supabase.removeChannel(channel); };
-  }, [roomId, userId]);
+  }, [roomId]);
+
   return null;
 }
 
 export async function broadcastVoiceRoomEmoji(payload: VoiceRoomEmojiPlayback) {
-  const channel = supabase.channel(`voice-emoji-player-${payload.roomId}`, { config: { private: false, broadcast: { self: false, ack: true } } });
+  const channel = supabase.channel(`voice-emoji-player-${payload.roomId}`, {
+    config: { private: false, broadcast: { self: false, ack: true } },
+  });
   try {
     await new Promise<void>((resolve, reject) => channel.subscribe((status, error) => {
       if (status === "SUBSCRIBED") resolve();
