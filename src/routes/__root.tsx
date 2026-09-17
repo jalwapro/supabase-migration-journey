@@ -15,6 +15,7 @@ import "../voice-room-mobile.css";
 import "../voice-room-mobile-final.css";
 import "../voice-room-mobile-components.css";
 import "../voice-room-mobile-content.css";
+import "../room-rank-frame-alignment.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { ThemeBackground } from "../components/ThemeBackground";
