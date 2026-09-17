@@ -21,12 +21,14 @@ export function ChatEmojiSheet({open,onClose,onPick}:Props){
  const filtered=useMemo(()=>list.filter(e=>tier==="normal"?(e.tier??"normal")==="normal":(e.tier??"normal")!=="normal"),[list,tier]);
  const handleVoicePick=async(e:ChatEmoji,targetSeatIndex?:number|null)=>{
    if(roomId&&targetSeatIndex!=null&&profile?.id){
-     // The room sender should see the same seat reaction immediately because
-     // the realtime channel intentionally uses self:false.
      playVoiceRoomEmojiAtSeat({targetSeatIndex,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null});
      try{
        await broadcastVoiceRoomEmoji({id:`emoji-${crypto.randomUUID()}`,roomId,senderId:profile.id,senderName:profile.username??"User",targetSeatIndex,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null});
      }catch(error){console.error("[VoiceRoomEmoji] broadcast failed",error);toast.error("Emoji send nahi ho saki");return;}
+     // Voice-room emoji is a realtime seat reaction. It must not also enter the
+     // normal VoiceRoomScreen chat/splash callback path.
+     onClose();
+     return;
    }
    onPick(e,targetSeatIndex);
  };
