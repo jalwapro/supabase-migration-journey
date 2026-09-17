@@ -40,13 +40,17 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
     const senderSeat = findSender(senderId, username);
     const senderRect = avatarRect(senderSeat);
     const targetRect = avatarRect(targetSeat);
-    if (!senderRect || !targetRect) {
+
+    // The sender seat can briefly be missing while the room re-renders.
+    // Never lose the emoji because of that: use a safe launch point and
+    // keep waiting for the real target DP so the impact still lands on it.
+    if (!targetRect) {
       if (performance.now() - startedAt < 3000) window.requestAnimationFrame(attempt);
       return;
     }
 
-    const startX = senderRect.left + senderRect.width / 2;
-    const startY = senderRect.top + senderRect.height / 2;
+    const startX = senderRect ? senderRect.left + senderRect.width / 2 : window.innerWidth / 2;
+    const startY = senderRect ? senderRect.top + senderRect.height / 2 : window.innerHeight - 110;
     const endX = targetRect.left + targetRect.width / 2;
     const endY = targetRect.top + targetRect.height / 2;
     const dx = endX - startX;
@@ -59,12 +63,27 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
     const node = document.createElement("div");
     Object.assign(node.style, { position: "fixed", left: `${startX - 28}px`, top: `${startY - 28}px`, width: "56px", height: "56px", display: "grid", placeItems: "center", fontSize: "42px", opacity: "1", willChange: "transform,opacity", pointerEvents: "none" });
 
+    // Keep a Unicode fallback visible immediately. If the GIF/WebP/PNG
+    // fails or is transparent, the user still sees the flying emoji.
+    node.textContent = emoji.emoji || "✨";
+
     const img = document.createElement("img");
     const src = emoji.url || emoji.clip_path || "";
     img.alt = emoji.name || "Animated emoji";
-    Object.assign(img.style, { width: "100%", height: "100%", objectFit: "contain", display: "block", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
-    img.onerror = () => { img.remove(); node.textContent = emoji.emoji || "✨"; };
-    if (src) { img.src = src; node.appendChild(img); } else node.textContent = emoji.emoji || "✨";
+    Object.assign(img.style, {
+      position: "absolute",
+      inset: "0",
+      width: "100%",
+      height: "100%",
+      objectFit: "contain",
+      display: "block",
+      filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))",
+    });
+    img.onerror = () => img.remove();
+    if (src) {
+      node.appendChild(img);
+      img.src = src;
+    }
 
     layer.appendChild(node);
     document.body.appendChild(layer);
