@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
+import { LevelAvatar } from "@/components/LevelAvatar";
+import { frameForLevel } from "@/lib/levelFrames";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const MIN_CAPACITY = 4;
 const MAX_CAPACITY = 20;
 const DEFAULT_SEAT_AVATAR = "https://png.pngtree.com/png-vector/20260330/ourmid/pngtree-luxurious-red-throne-chair-with-golden-lion-armrests-and-ornate-crown-png-image_18968101.webp";
+const EMPTY_SEAT_FRAME = frameForLevel(1);
 
 const normalizeCapacity = (value?: number) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(value ?? MAX_CAPACITY)) || MAX_CAPACITY));
 const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
@@ -23,6 +26,8 @@ export type RoomSeatUser = {
   avatarUrl?: string;
   avatar_frame_url?: string | null;
   frame_url?: string | null;
+  ring?: string | null;
+  level?: number;
   is_muted?: boolean;
   is_speaking?: boolean;
   mic?: "speaking" | "muted" | "off";
@@ -45,15 +50,23 @@ export type RoomParticipant = {
   avatar: string | null;
   avatar_frame_url?: string | null;
   frame_url?: string | null;
+  ring?: string | null;
   gift_score?: number;
   level?: number;
 };
 
 function EmptySeatArt({ locked }: { locked: boolean }) {
   return (
-    <span className="relative grid h-full w-full place-items-center overflow-hidden rounded-full border-2 border-amber-500 bg-transparent shadow-none">
-      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-cover rounded-full" draggable={false} />
-      {locked && <Lock className="absolute h-3.5 w-3.5 text-amber-400 drop-shadow" />}
+    <span className="relative flex h-full w-full items-center justify-center overflow-visible">
+      <LevelAvatar
+        src={DEFAULT_SEAT_AVATAR}
+        name="Empty seat"
+        level={1}
+        size="sm"
+        showBadge={false}
+        frame={EMPTY_SEAT_FRAME}
+      />
+      {locked && <Lock className="pointer-events-none absolute z-[20] h-3.5 w-3.5 text-amber-400 drop-shadow" />}
     </span>
   );
 }
@@ -65,17 +78,41 @@ export function Seat({ seat, onClick }: SeatProps) {
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
   const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
-  const frameUrl = user?.avatar_frame_url || user?.frame_url;
+  const frameUrl = user?.avatar_frame_url || user?.frame_url || null;
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
   const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
+  const [profileMedia, setProfileMedia] = useState<{ frame: string | null; ring: string | null; level: number | null } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const id = user?.id;
+    if (!id) {
+      setProfileMedia(null);
+      return;
+    }
+    void supabase
+      .from("profiles")
+      .select("frame,ring,vip_level")
+      .eq("id", id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        setProfileMedia({
+          frame: (data as { frame?: string | null } | null)?.frame ?? null,
+          ring: (data as { ring?: string | null } | null)?.ring ?? null,
+          level: Number((data as { vip_level?: number | null } | null)?.vip_level ?? 0),
+        });
+      });
+    return () => { active = false; };
+  }, [user?.id]);
 
   if (!user) {
     return (
       <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
         <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
           <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">{num}</span>
-          <span className="relative aspect-square w-full max-w-[56px] rounded-full p-0 bg-transparent"><EmptySeatArt locked={is_locked} /></span>
+          <span className="relative aspect-square w-full max-w-[56px] p-0 bg-transparent overflow-visible"><EmptySeatArt locked={is_locked} /></span>
           <span className="w-full truncate text-[9px] font-semibold text-white text-center leading-tight">No.{num}</span>
           <span className="flex items-center gap-0.5 text-[8px] text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />0</span>
         </button>
@@ -83,16 +120,25 @@ export function Seat({ seat, onClick }: SeatProps) {
     );
   }
 
+  const equippedFrame = frameUrl || profileMedia?.frame || null;
+  const equippedRing = user?.ring || profileMedia?.ring || null;
+  const level = user?.level ?? profileMedia?.level ?? 0;
+
   return (
     <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
-        <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent">
-          <span className={cn("relative block h-full w-full overflow-hidden rounded-full border-2 z-10 shadow-md bg-transparent", speaking ? "border-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : "border-amber-400")}>
-            <img src={avatar} alt={username} className="h-full w-full object-cover rounded-full" draggable={false} />
-            {speaking && <span className="absolute inset-0 rounded-full border-2 border-fuchsia-400 animate-pulse pointer-events-none" />}
-          </span>
-          {frameUrl && <img src={frameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />}
+        <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+          <LevelAvatar
+            src={avatar}
+            name={username}
+            level={level}
+            size="sm"
+            showBadge={false}
+            frame={equippedFrame}
+            ring={equippedRing}
+            className={speaking ? "ring-2 ring-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : ""}
+          />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
         <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
@@ -319,7 +365,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         index,
         seatNumber: index,
         isHost: true,
-        user: { id: host.id, username: host.username, avatar: host.avatar, avatar_frame_url: host.avatar_frame_url, frame_url: host.frame_url, gift_score: host.gift_score ?? 0 },
+        user: { id: host.id, username: host.username, avatar: host.avatar, avatar_frame_url: host.avatar_frame_url, frame_url: host.frame_url, ring: host.ring, level: host.level, gift_score: host.gift_score ?? 0 },
         is_locked: false,
       };
     }
@@ -342,7 +388,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                 <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                     <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
-                    <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent">
+                    <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
                       <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
                       {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />}
                     </span>
