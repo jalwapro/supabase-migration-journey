@@ -101,4 +101,37 @@ export async function broadcastGiftPlayback(
   await entry.ready;
   const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
   if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
+
+  // The sender must see the same playback even if the Realtime self-delivery
+  // semantics change between browser/channel instances. GiftAnimationPlayer
+  // deduplicates this event by the canonical gift_sends id.
+  if (typeof window !== "undefined") {
+    window.requestAnimationFrame(() => {
+      window.dispatchEvent(new CustomEvent("jalwa:gift-sent", {
+        detail: {
+          key: payload.id,
+          eventIds: payload.eventIds,
+          senderId: payload.senderId,
+          senderName: payload.senderName,
+          senderAvatar: payload.senderAvatar,
+          receiverId: payload.receiverId,
+          receiverIds: payload.receiverIds,
+          receiverName: payload.receiverName,
+          giftId: payload.giftId,
+          giftName: payload.giftName,
+          giftEmoji: payload.giftEmoji,
+          giftIcon: payload.giftIcon,
+          giftImageUrl: payload.giftImageUrl,
+          giftClipUrl: payload.giftClipPath,
+          giftClipType: payload.giftClipType,
+          durationMs: payload.giftDurationMs,
+          soundUrl: payload.giftSoundUrl ?? payload.giftAudioUrl,
+          quantity: payload.quantity,
+          renderConfig: payload.renderConfig,
+          local: true,
+          broadcast: true,
+        },
+      }));
+    });
+  }
 }
