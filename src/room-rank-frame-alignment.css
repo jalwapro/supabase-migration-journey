@@ -1,0 +1,19 @@
+/* Room Rank Frames belong to the host DP in the Top Hosts card, not to the
+   entire room-cover tile. RoomCard keeps the frame as a sibling overlay, so
+   anchor that overlay to the same 20px host avatar used by the host chip. */
+div.relative.aspect-square > img.pointer-events-none.absolute.inset-0.h-full.w-full.max-w-none.object-fill.select-none.z-30,
+div.relative.aspect-square > video.pointer-events-none.absolute.inset-0.h-full.w-full.max-w-none.object-fill.select-none.z-30 {
+  inset: auto;
+  left: 12px;
+  bottom: 16px;
+  top: auto;
+  right: auto;
+  width: 32px;
+  height: 32px;
+  max-width: none;
+  object-fit: fill;
+  z-index: 30;
+  transform: none;
+  transform-origin: center;
+  pointer-events: none;
+}
