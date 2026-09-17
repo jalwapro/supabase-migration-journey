@@ -22,10 +22,18 @@ function findSender(senderId: string | null, senderName: string | null) {
     if (byId) return byId;
   }
   if (senderName) {
-    return Array.from(document.querySelectorAll<HTMLImageElement>("img[alt]"))
-      .find((img) => img.alt.trim() === senderName.trim()) ?? null;
+    return Array.from(document.querySelectorAll<HTMLElement>("[data-user-dp]"))
+      .find((seat) => Array.from(seat.querySelectorAll<HTMLImageElement>("img[alt]"))
+        .some((img) => img.alt.trim() === senderName.trim())) ?? null;
   }
   return null;
+}
+
+function getAvatarRect(element: HTMLElement | null): DOMRect | null {
+  if (!element) return null;
+  const avatar = element.querySelector<HTMLElement>("img, [data-avatar], video");
+  const rect = (avatar ?? element).getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 ? rect : null;
 }
 
 function play(payload: VoiceRoomEmojiPlayback) {
@@ -34,16 +42,12 @@ function play(payload: VoiceRoomEmojiPlayback) {
   const attempt = () => {
     const target = findSeat(payload.targetSeatIndex);
     const sender = findSender(payload.senderId, payload.senderName);
-    if (!target || !sender) {
-      if (performance.now() - startedAt < 2500) {
-        window.requestAnimationFrame(attempt);
-      }
+    const sr = getAvatarRect(sender);
+    const tr = getAvatarRect(target);
+    if (!target || !sender || !sr || !tr) {
+      if (performance.now() - startedAt < 2500) window.requestAnimationFrame(attempt);
       return;
     }
-
-    const sr = sender.getBoundingClientRect();
-    const tr = target.getBoundingClientRect();
-    if (!sr.width || !sr.height || !tr.width || !tr.height) return;
 
     const layer = document.createElement("div");
     Object.assign(layer.style, { position: "fixed", inset: "0", zIndex: "2147483646", pointerEvents: "none" });
@@ -77,14 +81,22 @@ function play(payload: VoiceRoomEmojiPlayback) {
     layer.appendChild(node);
     document.body.appendChild(layer);
 
-    const dx = tr.left + tr.width / 2 - (sr.left + sr.width / 2);
-    const dy = tr.top + tr.height / 2 - (sr.top + sr.height / 2);
+    // Recalculate from the actual avatar center, not the seat wrapper/name row.
+    // This makes the final frame land directly on the recipient DP on mobile and desktop.
+    const startX = sr.left + sr.width / 2;
+    const startY = sr.top + sr.height / 2;
+    const endX = tr.left + tr.width / 2;
+    const endY = tr.top + tr.height / 2;
+    const dx = endX - startX;
+    const dy = endY - startY;
+
     const animation = node.animate([
       { transform: "translate3d(0,0,0) scale(.7) rotate(-8deg)", opacity: 0 },
       { transform: `translate3d(${dx * .4}px,${dy * .4 - 34}px,0) scale(1.15) rotate(8deg)`, opacity: 1, offset: .32 },
       { transform: `translate3d(${dx * .75}px,${dy * .75 + 8}px,0) scale(1.02) rotate(-4deg)`, opacity: 1, offset: .72 },
       { transform: `translate3d(${dx}px,${dy}px,0) scale(.65)`, opacity: 1 },
     ], { duration: 1000, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" });
+
     window.setTimeout(() => { animation.cancel(); layer.remove(); }, 1350);
   };
   attempt();
