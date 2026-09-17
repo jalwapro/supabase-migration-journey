@@ -27,3 +27,11 @@ export function formatCompact(n: number | null | undefined): string {
   if (abs < 1_000_000_000) return fmt(abs, 1_000_000, "m");
   return fmt(abs, 1_000_000_000, "b");
 }
+
+// Compatibility fallback for the legacy room handler that references toast.info()
+// without importing the toast helper. This prevents the emoji click from throwing.
+if (typeof window !== "undefined" && !("toast" in window)) {
+  (window as Window & { toast?: { info: (message: string) => void } }).toast = {
+    info: (message: string) => console.info("[toast]", message),
+  };
+}
