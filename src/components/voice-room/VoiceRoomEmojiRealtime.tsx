@@ -63,35 +63,50 @@ function play(payload: VoiceRoomEmojiPlayback) {
 
     const node = document.createElement("div");
     Object.assign(node.style, {
-      position: "fixed", left: `${start.x - 28}px`, top: `${start.y - 28}px`, width: "56px", height: "56px",
-      display: "grid", placeItems: "center", fontSize: "42px", willChange: "transform,opacity",
-      transform: "translate3d(0,0,0)", opacity: "1", pointerEvents: "none",
+      position: "fixed", left: `${start.x - 30}px`, top: `${start.y - 30}px`, width: "60px", height: "60px",
+      display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", willChange: "transform,opacity",
+      transform: "translate3d(0,0,0)", opacity: "1", pointerEvents: "none", isolation: "isolate",
     });
 
-    const img = document.createElement("img");
-    img.src = payload.url || payload.clipPath || "";
-    Object.assign(img.style, { width: "100%", height: "100%", objectFit: "contain", display: "block", filter: "drop-shadow(0 0 10px rgba(255,215,0,.9))" });
-    img.alt = payload.emoji || "Animated emoji";
-    img.onerror = () => { img.remove(); node.textContent = payload.emoji || "✨"; };
-    if (img.src) node.appendChild(img); else node.textContent = payload.emoji || "✨";
+    // Keep the Unicode emoji visible underneath the animated asset so a
+    // broken/transparent GIF/WebP never results in an invisible flight.
+    const fallback = document.createElement("span");
+    fallback.textContent = payload.emoji || "✨";
+    Object.assign(fallback.style, { position: "absolute", inset: "0", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", zIndex: "0", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
+    node.appendChild(fallback);
+
+    const src = payload.url || payload.clipPath || "";
+    if (src) {
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = payload.emoji || "Animated emoji";
+      Object.assign(img.style, { position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: "1", pointerEvents: "none", filter: "drop-shadow(0 0 10px rgba(255,215,0,.9))" });
+      img.onerror = () => img.remove();
+      node.appendChild(img);
+    }
 
     layer.appendChild(node);
     document.body.appendChild(layer);
 
     const dx = end.x - start.x;
     const dy = end.y - start.y;
-    const animation = node.animate([
-      { transform: "translate3d(0,0,0) scale(.55) rotate(-10deg)", opacity: 1 },
-      { transform: `translate3d(${dx * .35}px,${dy * .35 - 30}px,0) scale(1.2) rotate(10deg)`, opacity: 1, offset: .3 },
-      { transform: `translate3d(${dx * .72}px,${dy * .72 + 8}px,0) scale(1.05) rotate(-5deg)`, opacity: 1, offset: .7 },
-      { transform: `translate3d(${dx}px,${dy}px,0) scale(.7)`, opacity: 1 },
-    ], { duration: 1000, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" });
+    let animation: Animation | null = null;
+    try {
+      animation = node.animate([
+        { transform: "translate3d(0,0,0) scale(.55) rotate(-10deg)", opacity: 1 },
+        { transform: `translate3d(${dx * .35}px,${dy * .35 - 30}px,0) scale(1.2) rotate(10deg)`, opacity: 1, offset: .3 },
+        { transform: `translate3d(${dx * .72}px,${dy * .72 + 8}px,0) scale(1.05) rotate(-5deg)`, opacity: 1, offset: .7 },
+        { transform: `translate3d(${dx}px,${dy}px,0) scale(.7)`, opacity: 1 },
+      ], { duration: 1000, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" });
+    } catch {
+      node.style.transform = `translate3d(${dx}px,${dy}px,0) scale(.7)`;
+    }
 
     const impact = document.createElement("div");
     Object.assign(impact.style, { position: "fixed", left: `${end.x - 32}px`, top: `${end.y - 32}px`, width: "64px", height: "64px", borderRadius: "50%", border: "3px solid rgba(251,191,36,.95)", boxShadow: "0 0 28px rgba(251,191,36,.9)", opacity: "0", pointerEvents: "none" });
     layer.appendChild(impact);
     const impactAnimation = impact.animate([{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.5)" }], { duration: 300, delay: 950, easing: "ease-out", fill: "forwards" });
-    window.setTimeout(() => { animation.cancel(); impactAnimation.cancel(); layer.remove(); }, 1400);
+    window.setTimeout(() => { animation?.cancel(); impactAnimation.cancel(); layer.remove(); }, 1400);
   };
   attempt();
 }
