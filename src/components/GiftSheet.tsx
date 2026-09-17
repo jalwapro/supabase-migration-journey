@@ -24,7 +24,7 @@ function GiftPreview({gift,large=false}:{gift:Gift;large?:boolean}){const cls="h
 export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:()=>void;roomId:string;receivers:GiftReceiver[]}){
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
  useEffect(()=>{if(open&&receivers.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receivers.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receivers,profile?.id]);
- const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open});
+ const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open});
  const price=(g:Gift|null)=>(g?.price_coins??g?.price??0) as number;const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
  useEffect(()=>{if(!open)return;visibleGifts.forEach(g=>preloadGiftVideo(giftVideoUrl(g)));},[open,visibleGifts]);
@@ -39,11 +39,13 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
      if(!row?.id)throw new Error("Gift was charged but returned no canonical send id");
      await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,row.id,[row.id]);
    }else{
-     const{data,error}=await supabase.rpc("send_gift_multi",{_room_id:roomId,_receiver_ids:uniqueTargets,_gift_id:gift.id,_quantity:quantity} as any);
+     const{data,error}=await supabase.rpc("send_gift_multi_current",{_room_id:roomId,_receiver_ids:uniqueTargets,_gift_id:gift.id,_quantity:quantity} as any);
      if(error)throw error;
      const rows=Array.isArray(data)?data as Array<{id?:string;receiver_id?:string}>:[];
      if(rows.length!==uniqueTargets.length||rows.some((row)=>!row.id))throw new Error("Gift batch returned incomplete canonical send ids");
-     // Keep one durable row per recipient for accounting/history, but emit only one playback event.
+     // One durable send row is created per recipient, but only one realtime
+     // playback event is emitted with all recipient ids, so the animation is
+     // shown once rather than N times.
      await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,rows[0].id!,rows.map(row=>row.id!));
    }
    return{gift,quantity};
