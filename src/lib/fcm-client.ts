@@ -32,11 +32,56 @@ export function isFcmSupported(): boolean {
   );
 }
 
+function validateConfig(value: unknown): FirebaseConfig {
+  if (!value || typeof value !== "object") {
+    throw new Error("Firebase config response is invalid");
+  }
+
+  const cfg = value as Partial<FirebaseConfig>;
+  const required: Array<keyof FirebaseConfig> = [
+    "apiKey",
+    "authDomain",
+    "projectId",
+    "storageBucket",
+    "messagingSenderId",
+    "appId",
+    "vapidKey",
+  ];
+  const missing = required.filter((key) => !cfg[key]);
+  if (missing.length > 0) {
+    throw new Error(`Firebase config incomplete: ${missing.join(", ")}`);
+  }
+
+  return cfg as FirebaseConfig;
+}
+
 async function loadConfig(): Promise<FirebaseConfig> {
   if (cachedConfig) return cachedConfig;
-  const res = await fetch("/api/public/firebase-config");
-  if (!res.ok) throw new Error(`firebase-config fetch failed: ${res.status}`);
-  cachedConfig = (await res.json()) as FirebaseConfig;
+
+  const res = await fetch("/api/public/firebase-config", {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+
+  let body: unknown = null;
+  try {
+    body = await res.json();
+  } catch {
+    // Keep the status in the error below when the server did not return JSON.
+  }
+
+  if (!res.ok) {
+    const serverMessage =
+      body && typeof body === "object" && "message" in body
+        ? String((body as { message?: unknown }).message ?? "")
+        : "";
+    throw new Error(
+      serverMessage || `firebase-config fetch failed: ${res.status}`,
+    );
+  }
+
+  cachedConfig = validateConfig(body);
   return cachedConfig;
 }
 
@@ -49,7 +94,7 @@ async function ensureMessaging(): Promise<Messaging> {
 }
 
 async function registerSwWithConfig(cfg: FirebaseConfig): Promise<ServiceWorkerRegistration> {
-  // Pass config via query string so the SW can init without another fetch.
+  // Pass only publishable Firebase Web config to the SW.
   const params = new URLSearchParams({
     apiKey: cfg.apiKey,
     authDomain: cfg.authDomain,
@@ -59,7 +104,10 @@ async function registerSwWithConfig(cfg: FirebaseConfig): Promise<ServiceWorkerR
     appId: cfg.appId,
   });
   const swUrl = `/firebase-messaging-sw.js?${params.toString()}`;
-  return navigator.serviceWorker.register(swUrl, { scope: "/firebase-cloud-messaging-push-scope" });
+  return navigator.serviceWorker.register(swUrl, {
+    scope: "/firebase-cloud-messaging-push-scope",
+    updateViaCache: "none",
+  });
 }
 
 function bindForegroundHandler(m: Messaging) {
@@ -67,7 +115,6 @@ function bindForegroundHandler(m: Messaging) {
   foregroundBound = true;
   onMessage(m, (payload) => {
     playNotifySound();
-    // If we get a full notification row via data, open the popup.
     const data = payload.data ?? {};
     const notifId = data.notifId;
     if (notifId) {
@@ -94,12 +141,11 @@ function bindForegroundHandler(m: Messaging) {
  */
 export async function enableFcmForUser(userId: string): Promise<{ token: string } | null> {
   if (!isFcmSupported()) return null;
+
   const perm = await Notification.requestPermission();
   if (perm !== "granted") return null;
 
   const cfg = await loadConfig();
-  if (!cfg.apiKey) throw new Error("Firebase config not configured on server");
-
   const swReg = await registerSwWithConfig(cfg);
   const m = await ensureMessaging();
   bindForegroundHandler(m);
@@ -146,26 +192,35 @@ const AUTO_PROMPT_KEY = "jalwa_fcm_auto_prompted_v1";
 /**
  * Auto-enable notifications on login:
  * - If already granted → silently register token
- * - If denied → skip (user must re-enable from browser settings)
- * - If default → prompt ONCE per user (tracked in localStorage), after a
- *   short delay so it doesn't collide with other startup prompts.
+ * - If denied → skip
+ * - If default → prompt once per user after a short delay.
  */
 export async function autoEnableFcm(userId: string): Promise<void> {
   if (!isFcmSupported()) return;
   const perm = Notification.permission;
+
   if (perm === "granted") {
-    try { await enableFcmForUser(userId); } catch (e) { console.warn("FCM auto-init failed", e); }
+    try {
+      await enableFcmForUser(userId);
+    } catch (e) {
+      console.warn("FCM auto-init failed", e);
+    }
     return;
   }
+
   if (perm === "denied") return;
+
   try {
     const key = `${AUTO_PROMPT_KEY}:${userId}`;
     if (localStorage.getItem(key) === "1") return;
     localStorage.setItem(key, "1");
-  } catch { /* noop */ }
-  // Delay to avoid clashing with mic/camera install gate.
+  } catch {
+    // Ignore storage failures; notification setup can continue.
+  }
+
   window.setTimeout(() => {
-    void enableFcmForUser(userId).catch((e) => console.warn("FCM auto-enable failed", e));
+    void enableFcmForUser(userId).catch((e) =>
+      console.warn("FCM auto-enable failed", e),
+    );
   }, 2500);
 }
-
