@@ -7,6 +7,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { useThemeMode } from "@/hooks/useThemeMode";
 import { 
   ArrowLeft, HelpCircle, Trophy, Star, Mic, Gift, Swords, 
   Gem, Sparkles, Flame, Globe2, ShieldCheck, ArrowUpDown, 
@@ -56,6 +57,7 @@ const COUNTRY_FLAG: Record<string, string> = {
 function RankPage() {
   const router = useRouter();
   const { user, profile } = useAuth();
+  const { mode } = useThemeMode();
   const [category, setCategory] = useState<Category>("hosts");
   const [period, setPeriod] = useState<Period>("daily");
   const [country, setCountry] = useState("Global");
@@ -94,7 +96,7 @@ function RankPage() {
   return (
     <>
       <AppShell title="" subtitle="" showHeader={false}>
-        <main className="relative min-h-[100svh] overflow-x-clip bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
+        <main data-theme-mode={mode} className="relative min-h-[100svh] overflow-x-clip bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
           
           {/* Header Section */}
           <header className="relative z-20 px-3 pb-2" style={{ paddingTop: "max(14px, env(safe-area-inset-top))" }}>
@@ -281,7 +283,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   return <Link to="/u/$userId" params={{ userId: row.user_id }} className="block min-w-0">{content}</Link>;
 }
 
-function RankItem({ row }: { row: Row; index: number }) { 
+function RankItem({ row, index }: { row: Row; index?: number }) { 
   const special = row.rnk <= 10; 
   return (
     <Link 
@@ -376,7 +378,7 @@ function CountrySelect({ value, onChange, compact = false }: { value: string; on
     } 
   }); 
 
-  const options = useMemo(() => ["Global", ...(dbCountries ?? [])], [dbCountries]); 
+  const options = useMemo(() => ["Global", ...(dbCountries ?? [])], [dbCountries]);
 
   useEffect(() => { 
     const off = (e: MouseEvent) => { 
@@ -436,7 +438,7 @@ function EmptyState() {
 
 function HelpModal({ onClose }: { onClose: () => void }) { 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
+    <div className="fixed inset-0 z-50 grid place-items-center bg-background/80 p-4 backdrop-blur-md" onClick={onClose}>
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -463,7 +465,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         </p>
       </motion.div>
     </div>
-  ); 
+  );
 }
 
 function formatScore(n: number) { 
