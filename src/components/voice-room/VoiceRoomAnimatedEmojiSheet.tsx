@@ -12,93 +12,6 @@ const TIERS: { key: "normal" | "vip"; label: string }[] = [
 ];
 type Props = { open: boolean; onClose: () => void; onPick: (emoji: ChatEmoji, targetSeatIndex?: number | null) => void; embedded?: boolean };
 
-function avatarRect(element: HTMLElement | null): DOMRect | null {
-  if (!element) return null;
-  const avatar = element.querySelector<HTMLElement>("img[alt], img, [data-avatar], video");
-  const rect = (avatar ?? element).getBoundingClientRect();
-  return rect.width > 0 && rect.height > 0 ? rect : null;
-}
-
-function findSender(senderId?: string | null, username?: string | null) {
-  if (senderId) {
-    const seat = document.querySelector<HTMLElement>(`[data-user-dp="${CSS.escape(senderId)}"]`);
-    if (seat) return seat;
-  }
-  if (username) {
-    return Array.from(document.querySelectorAll<HTMLElement>("[data-user-dp]"))
-      .find((seat) => Array.from(seat.querySelectorAll<HTMLImageElement>("img[alt]"))
-        .some((img) => img.alt.trim() === username.trim())) ?? null;
-  }
-  return null;
-}
-
-function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | null, senderId?: string | null, username?: string | null) {
-  if (typeof document === "undefined" || targetSeatIndex == null) return;
-  const startedAt = performance.now();
-  const attempt = () => {
-    const targetSeat = document.querySelector<HTMLElement>(`[data-seat-index="${targetSeatIndex}"]`);
-    const senderSeat = findSender(senderId, username);
-    const senderRect = avatarRect(senderSeat);
-    const targetRect = avatarRect(targetSeat);
-    if (!senderRect || !targetRect) {
-      if (performance.now() - startedAt < 4000) window.requestAnimationFrame(attempt);
-      return;
-    }
-    const startX = senderRect.left + senderRect.width / 2;
-    const startY = senderRect.top + senderRect.height / 2;
-    const endX = targetRect.left + targetRect.width / 2;
-    const endY = targetRect.top + targetRect.height / 2;
-    const dx = endX - startX;
-    const dy = endY - startY;
-    const layer = document.createElement("div");
-    Object.assign(layer.style, { position: "fixed", inset: "0", zIndex: "2147483647", pointerEvents: "none", overflow: "visible" });
-    layer.dataset.jalwaFlyingEmoji = "true";
-    const node = document.createElement("div");
-    Object.assign(node.style, { position: "fixed", left: `${startX - 30}px`, top: `${startY - 30}px`, width: "60px", height: "60px", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", opacity: "1", willChange: "transform,opacity", pointerEvents: "none", isolation: "isolate" });
-    const fallback = document.createElement("span");
-    fallback.textContent = emoji.emoji || "✨";
-    Object.assign(fallback.style, { position: "absolute", inset: "0", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", zIndex: "0", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
-    node.appendChild(fallback);
-    const src = emoji.url || emoji.clip_path || "";
-    if (src) {
-      const img = document.createElement("img");
-      img.alt = emoji.name || "Animated emoji";
-      Object.assign(img.style, { position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "contain", display: "block", zIndex: "1", pointerEvents: "none", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
-      img.onerror = () => img.remove();
-      img.src = src;
-      node.appendChild(img);
-    }
-    layer.appendChild(node);
-    document.body.appendChild(layer);
-    const keyframes = [
-      { transform: "translate3d(0,0,0) scale(.55) rotate(-10deg)", opacity: 1 },
-      { transform: `translate3d(${dx * .35}px,${dy * .35 - 30}px,0) scale(1.2) rotate(10deg)`, opacity: 1, offset: .3 },
-      { transform: `translate3d(${dx * .72}px,${dy * .72 + 8}px,0) scale(1.05) rotate(-5deg)`, opacity: 1, offset: .7 },
-      { transform: `translate3d(${dx}px,${dy}px,0) scale(.7)`, opacity: 1 },
-    ];
-    let animation: Animation | null = null;
-    try {
-      animation = node.animate(keyframes, { duration: 1000, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" });
-    } catch {
-      node.style.transform = `translate3d(${dx}px,${dy}px,0) scale(.7)`;
-    }
-    const impact = document.createElement("div");
-    Object.assign(impact.style, { position: "fixed", left: `${endX - 32}px`, top: `${endY - 32}px`, width: "64px", height: "64px", borderRadius: "50%", border: "3px solid rgba(251,191,36,.95)", boxShadow: "0 0 28px rgba(251,191,36,.9)", opacity: "0", pointerEvents: "none" });
-    layer.appendChild(impact);
-    const impactAnimation = impact.animate([{ opacity: 0, transform: "scale(.4)" }, { opacity: 1, transform: "scale(1)" }, { opacity: 0, transform: "scale(1.5)" }], { duration: 300, delay: 950, easing: "ease-out", fill: "forwards" });
-    window.setTimeout(() => { animation?.cancel(); impactAnimation.cancel(); layer.remove(); }, 1400);
-  };
-  attempt();
-}
-
-function syncLegacyTargetSeat(targetSeatIndex: number) {
-  if (typeof document === "undefined") return;
-  const label = `Seat ${targetSeatIndex + 1}`;
-  const button = Array.from(document.querySelectorAll<HTMLButtonElement>("button"))
-    .find((candidate) => candidate.textContent?.includes(label));
-  button?.click();
-}
-
 export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = false }: Props) {
   const { isAdmin, profile } = useAuth();
   const [list, setList] = useState<ChatEmoji[]>([]);
@@ -144,18 +57,10 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
     const receiver = receivers.find((r) => r.id === selectedReceiver);
     const targetSeat = receiver?.seat_index ?? null;
     if (targetSeat == null) { toast.info("Pehle user select karein"); return; }
-
-    // The parent VoiceRoomScreen still has legacy target-seat state. Its React
-    // state update from the synthetic seat click is committed after this event,
-    // so hand the target to the parent on the next task. This keeps the new UX
-    // (receiver selection inside this sheet) while making the old callback see
-    // the selected seat and avoiding the legacy "select a seat first" toast.
-    syncLegacyTargetSeat(targetSeat);
-    playSeatToSeatAnimation(emoji, targetSeat, profile?.id, profile?.username);
-    window.setTimeout(() => {
-      onPick(emoji, targetSeat);
-      onClose();
-    }, 0);
+    // Voice-room playback is handled by ChatEmojiSheet -> realtime. Do not
+    // trigger the old VoiceRoomScreen center/splash animation here.
+    onPick(emoji, targetSeat);
+    onClose();
   };
 
   const content = (
