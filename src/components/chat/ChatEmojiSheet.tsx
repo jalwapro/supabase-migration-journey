@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { VoiceRoomAnimatedEmojiSheet } from "@/components/voice-room/VoiceRoomAnimatedEmojiSheet";
-import { VoiceRoomEmojiRealtime, broadcastVoiceRoomEmoji } from "@/components/voice-room/VoiceRoomEmojiRealtime";
+import { VoiceRoomEmojiRealtime, broadcastVoiceRoomEmoji, playVoiceRoomEmojiAtSeat } from "@/components/voice-room/VoiceRoomEmojiRealtime";
 
 export type ChatEmoji = { id:string; slug:string; emoji:string; name:string; category:string; clip_path:string; url?:string; sort_order:number; tier?:string|null; min_vip_level?:number|null };
 const TIERS:{key:"normal"|"vip";label:string}[]=[{key:"normal",label:"Normal"},{key:"vip",label:"👑 VIP"}];
@@ -20,7 +20,14 @@ export function ChatEmojiSheet({open,onClose,onPick}:Props){
  useEffect(()=>{if(isVoiceRoom||!open||list.length>0)return;setLoading(true);void supabase.from("chat_emojis").select("id,slug,emoji,name,category,clip_path,sort_order,tier,min_vip_level").eq("is_active",true).order("sort_order",{ascending:true}).then(({data,error})=>{if(error)toast.error("Chat emojis load nahi ho sake");setList((data??[])as ChatEmoji[]);setLoading(false);});},[isVoiceRoom,open,list.length]);
  const filtered=useMemo(()=>list.filter(e=>tier==="normal"?(e.tier??"normal")==="normal":(e.tier??"normal")!=="normal"),[list,tier]);
  const handleVoicePick=async(e:ChatEmoji,targetSeatIndex?:number|null)=>{
-   if(roomId&&targetSeatIndex!=null&&profile?.id){try{await broadcastVoiceRoomEmoji({id:`emoji-${crypto.randomUUID()}`,roomId,senderId:profile.id,senderName:profile.username??"User",targetSeatIndex,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null});}catch(error){console.error("[VoiceRoomEmoji] broadcast failed",error);toast.error("Emoji send nahi ho saki");return;}}
+   if(roomId&&targetSeatIndex!=null&&profile?.id){
+     // The room sender should see the same seat reaction immediately because
+     // the realtime channel intentionally uses self:false.
+     playVoiceRoomEmojiAtSeat({targetSeatIndex,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null});
+     try{
+       await broadcastVoiceRoomEmoji({id:`emoji-${crypto.randomUUID()}`,roomId,senderId:profile.id,senderName:profile.username??"User",targetSeatIndex,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null});
+     }catch(error){console.error("[VoiceRoomEmoji] broadcast failed",error);toast.error("Emoji send nahi ho saki");return;}
+   }
    onPick(e,targetSeatIndex);
  };
  if(isVoiceRoom)return <><VoiceRoomEmojiRealtime roomId={roomId??""} userId={profile?.id??null}/><VoiceRoomAnimatedEmojiSheet open={open} onClose={onClose} onPick={handleVoicePick}/></>;
