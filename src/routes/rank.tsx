@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { LevelAvatar } from "@/components/LevelAvatar";
@@ -95,14 +96,16 @@ function RankPage() {
       <AppShell title="" subtitle="" showHeader={false}>
         <main className="relative min-h-[100svh] overflow-x-clip bg-background text-foreground selection:bg-primary selection:text-primary-foreground">
           
+          {/* Header Section */}
           <header className="relative z-20 px-3 pb-2" style={{ paddingTop: "max(14px, env(safe-area-inset-top))" }}>
             <div className="mx-auto grid max-w-[430px] grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2 px-1 pt-1">
-              <button 
+              <motion.button 
+                whileTap={{ scale: 0.92 }}
                 onClick={() => router.history.back()} 
-                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-foreground backdrop-blur-xl shadow-sm transition active:scale-95"
+                className="grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-foreground backdrop-blur-xl shadow-sm"
               >
                 <ArrowLeft className="h-5 w-5" />
-              </button>
+              </motion.button>
 
               <div className="text-center">
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-0.5 border border-border">
@@ -114,14 +117,16 @@ function RankPage() {
                 </h1>
               </div>
 
-              <button 
+              <motion.button 
+                whileTap={{ scale: 0.92 }}
                 onClick={() => setHelpOpen(true)} 
-                className="ml-auto grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-foreground backdrop-blur-xl shadow-sm transition active:scale-95"
+                className="ml-auto grid h-10 w-10 place-items-center rounded-full border border-border bg-card text-foreground backdrop-blur-xl shadow-sm"
               >
                 <HelpCircle className="h-[18px] w-[18px]" />
-              </button>
+              </motion.button>
             </div>
 
+            {/* Category Navigation Bar */}
             <nav className="no-scrollbar mx-auto mt-4 max-w-[430px] overflow-x-auto px-1">
               <ul className="flex min-w-max items-center gap-[22px] border-b border-border pb-0 text-[10px] font-semibold text-muted-foreground">
                 {CATS.map(({ k, label, Icon }) => { 
@@ -135,7 +140,10 @@ function RankPage() {
                         <Icon className={`h-3.5 w-3.5 transition-colors ${active ? "text-primary" : "text-muted-foreground"}`} />
                         {label}
                         {active && (
-                          <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary shadow-sm" />
+                          <motion.span 
+                            layoutId="activeCategoryIndicator"
+                            className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-primary shadow-sm" 
+                          />
                         )}
                       </button>
                     </li>
@@ -144,6 +152,7 @@ function RankPage() {
               </ul>
             </nav>
 
+            {/* Period Filter & Country Selector */}
             <div className="mx-auto mt-3.5 flex max-w-[430px] items-center justify-between gap-2 px-1">
               <div className="flex items-center gap-1 rounded-full border border-border bg-card/50 p-1 shadow-inner backdrop-blur-xl">
                 {PERIODS.map(({ k, label }) => { 
@@ -163,6 +172,7 @@ function RankPage() {
             </div>
           </header>
 
+          {/* Top 3 Podium Section */}
           <section className="relative z-10 mx-auto mt-4 max-w-[430px] px-3">
             <div className="relative overflow-hidden rounded-[32px] border border-border bg-card px-2 pb-4 pt-9 shadow-lg">
               <div className="relative grid grid-cols-[1fr_1.15fr_1fr] items-end gap-1.5 sm:gap-2">
@@ -173,6 +183,7 @@ function RankPage() {
             </div>
           </section>
 
+          {/* Leaderboard List Section */}
           <section className="relative z-10 mx-auto mt-4 max-w-[430px] px-3 pb-36">
             <div className="mb-2.5 flex items-center justify-between px-1.5">
               <div className="flex items-center gap-1.5">
@@ -197,13 +208,21 @@ function RankPage() {
             ) : rest.length === 0 && list.length <= 3 ? (
               <EmptyState />
             ) : (
-              <ul className="space-y-2.5">
+              <motion.ul 
+                initial="hidden" 
+                animate="show" 
+                variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.04 } } }}
+                className="space-y-2.5"
+              >
                 {rest.map((r, index) => (
-                  <li key={r.user_id}>
+                  <motion.li 
+                    key={r.user_id}
+                    variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}
+                  >
                     <RankItem row={r} index={index + 4} />
-                  </li>
+                  </motion.li>
                 ))}
-              </ul>
+              </motion.ul>
             )}
           </section>
 
@@ -221,10 +240,15 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const first = place === 1;
   
   const content = (
-    <div className={`group relative flex min-h-[175px] w-full flex-col items-center overflow-visible rounded-[24px] border border-border bg-card px-1.5 pb-3.5 pt-4 shadow-md transition hover:-translate-y-1 ${first ? "min-h-[200px] -mt-5" : ""}`}>
+    <motion.div 
+      whileHover={{ y: -4, scale: 1.02 }}
+      className={`group relative flex min-h-[175px] w-full flex-col items-center overflow-visible rounded-[24px] border border-border bg-card px-1.5 pb-3.5 pt-4 shadow-md ${first ? "min-h-[200px] -mt-5" : ""}`}
+    >
       <div className="relative z-10 flex h-6 items-center justify-center">
         {first ? (
-          <Crown className="h-6 w-6 text-primary fill-primary animate-pulse" />
+          <motion.div animate={{ rotate: [0, -8, 8, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
+            <Crown className="h-6 w-6 text-primary fill-primary" />
+          </motion.div>
         ) : (
           <Medal className="h-4 w-4 text-muted-foreground" />
         )}
@@ -250,7 +274,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
       <p className="mt-1.5 text-[13px] font-black tracking-tight text-primary">
         {formatScore(row?.score ?? 0)}
       </p>
-    </div>
+    </motion.div>
   );
 
   if (!row) return <div className="opacity-30 filter grayscale">{content}</div>;
@@ -263,7 +287,7 @@ function RankItem({ row }: { row: Row; index: number }) {
     <Link 
       to="/u/$userId" 
       params={{ userId: row.user_id }} 
-      className="group grid grid-cols-[34px_48px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-[20px] border border-border bg-card px-3 py-2.5 shadow-sm transition-all duration-300 hover:border-primary/50 hover:bg-card/80 active:scale-[0.99]"
+      className="group grid grid-cols-[34px_48px_minmax(0,1fr)_auto] items-center gap-2.5 rounded-[20px] border border-border bg-card px-3 py-2.5 shadow-sm transition-all duration-300 hover:border-primary/50 hover:bg-card/80"
     >
       <div className={`text-center text-[13px] font-black ${special ? "text-primary" : "text-muted-foreground"}`}>
         {row.rnk}
@@ -302,7 +326,11 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
 
   return (
     <div className="fixed inset-x-0 bottom-16 z-40 px-3">
-      <div className="mx-auto max-w-[430px] rounded-[24px] border border-border bg-card p-3 shadow-xl backdrop-blur-2xl">
+      <motion.div 
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        className="mx-auto max-w-[430px] rounded-[24px] border border-border bg-card p-3 shadow-xl backdrop-blur-2xl"
+      >
         <div className="grid grid-cols-[46px_46px_minmax(0,1fr)_auto] items-center gap-2.5">
           <div className="text-center bg-secondary py-1 rounded-xl border border-border">
             <p className="text-[7px] font-black uppercase tracking-wider text-muted-foreground">My Rank</p>
@@ -326,7 +354,7 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
             {formatScore(row?.score ?? 0)}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   ); 
 }
@@ -360,28 +388,36 @@ function CountrySelect({ value, onChange, compact = false }: { value: string; on
 
   return (
     <div ref={ref} className="relative shrink-0">
-      <button 
+      <motion.button 
+        whileTap={{ scale: 0.95 }}
         onClick={() => setOpen(o => !o)} 
-        className={`${compact ? "px-3.5 py-1.5 text-[10px]" : "px-3 py-1.5 text-xs"} inline-flex items-center gap-1.5 rounded-full border border-border bg-card font-extrabold text-foreground shadow-sm transition active:scale-95`}
+        className={`${compact ? "px-3.5 py-1.5 text-[10px]" : "px-3 py-1.5 text-xs"} inline-flex items-center gap-1.5 rounded-full border border-border bg-card font-extrabold text-foreground shadow-sm`}
       >
         <span>{value === "Global" ? "🌐 Global" : `${COUNTRY_FLAG[value] ?? "🏳️"} ${value}`}</span>
         <ArrowUpDown className="h-3 w-3 text-primary" />
-      </button>
+      </motion.button>
 
-      {open && (
-        <div className="absolute right-0 z-50 mt-2 max-h-64 w-48 overflow-auto rounded-2xl border border-border bg-card p-1.5 shadow-2xl backdrop-blur-2xl no-scrollbar">
-          {options.map(c => (
-            <button 
-              key={c} 
-              onClick={() => { onChange(c); setOpen(false); }} 
-              className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${value === c ? "bg-primary/20 text-primary font-bold border border-primary/30" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
-            >
-              <span>{c === "Global" ? "🌐" : (COUNTRY_FLAG[c] ?? "🏳️")}</span>
-              <span className="truncate">{c}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute right-0 z-50 mt-2 max-h-64 w-48 overflow-auto rounded-2xl border border-border bg-card p-1.5 shadow-2xl backdrop-blur-2xl no-scrollbar"
+          >
+            {options.map(c => (
+              <button 
+                key={c} 
+                onClick={() => { onChange(c); setOpen(false); }} 
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${value === c ? "bg-primary/20 text-primary font-bold border border-primary/30" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+              >
+                <span>{c === "Global" ? "🌐" : (COUNTRY_FLAG[c] ?? "🏳️")}</span>
+                <span className="truncate">{c}</span>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   ); 
 }
@@ -401,7 +437,13 @@ function EmptyState() {
 function HelpModal({ onClose }: { onClose: () => void }) { 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
-      <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-6 shadow-2xl backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        className="w-full max-w-md rounded-[28px] border border-border bg-card p-6 shadow-2xl backdrop-blur-2xl" 
+        onClick={e => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-extrabold text-foreground">
             <ShieldCheck className="h-5 w-5 text-primary" /> Ranking Guidelines
@@ -419,7 +461,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         <p className="mt-5 text-center text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
           Resets Daily @ 00:00 UTC · Weekly on Monday · Monthly on the 1st
         </p>
-      </div>
+      </motion.div>
     </div>
   ); 
 }
