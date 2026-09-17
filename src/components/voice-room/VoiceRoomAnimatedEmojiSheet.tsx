@@ -18,16 +18,27 @@ type Props = {
   embedded?: boolean;
 };
 
-function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | null, username?: string | null) {
+function avatarRect(element: HTMLElement | null): DOMRect | null {
+  if (!element) return null;
+  const avatar = element.querySelector<HTMLElement>("img, [data-avatar], video");
+  const rect = (avatar ?? element).getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0 ? rect : null;
+}
+
+function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | null, senderId?: string | null, username?: string | null) {
   if (typeof document === "undefined" || targetSeatIndex == null) return;
-  const target = document.querySelector<HTMLElement>(`[data-seat-index="${targetSeatIndex}"]`);
-  if (!target) return;
-  const sender = username
-    ? Array.from(document.querySelectorAll<HTMLImageElement>("img[alt]"))
-        .find((img) => img.alt.trim() === username.trim())
-    : null;
-  const senderRect = sender?.getBoundingClientRect();
-  const targetRect = target.getBoundingClientRect();
+  const targetSeat = document.querySelector<HTMLElement>(`[data-seat-index="${targetSeatIndex}"]`);
+  if (!targetSeat) return;
+
+  const senderSeat = senderId
+    ? document.querySelector<HTMLElement>(`[data-user-dp="${CSS.escape(senderId)}"]`)
+    : username
+      ? Array.from(document.querySelectorAll<HTMLElement>("[data-user-dp]"))
+          .find((el) => el.querySelector<HTMLImageElement>(`img[alt="${CSS.escape(username)}"]`)) ?? null
+      : null;
+
+  const senderRect = avatarRect(senderSeat);
+  const targetRect = avatarRect(targetSeat);
   if (!senderRect || !targetRect) return;
 
   const startX = senderRect.left + senderRect.width / 2;
@@ -165,7 +176,7 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
       toast.info("Pehle user select karein");
       return;
     }
-    playSeatToSeatAnimation(emoji, targetSeat, profile?.username);
+    playSeatToSeatAnimation(emoji, targetSeat, profile?.id, profile?.username);
     onPick(emoji, targetSeat);
     onClose();
   };
