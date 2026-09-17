@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Gift } from "@/components/GiftSheet";
+import { resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 
 export type GiftBroadcastPayload = {
   id: string;
@@ -86,13 +87,13 @@ export async function broadcastGiftPlayback(
     giftId: gift.id,
     giftName: gift.name,
     giftEmoji: gift.emoji ?? null,
-    giftIcon: gift.icon ?? null,
-    giftImageUrl: gift.image_url ?? null,
-    giftClipPath: gift.clip_path ?? null,
+    giftIcon: resolveGiftImageUrl(gift.icon) ?? gift.icon ?? null,
+    giftImageUrl: resolveGiftImageUrl(gift.image_url),
+    giftClipPath: resolvePlayableGiftUrl(gift.clip_path),
     giftClipType: gift.clip_type ?? null,
     giftDurationMs: (gift as Gift & { duration_ms?: number | null }).duration_ms ?? null,
-    giftAudioUrl: gift.sound_url ?? null,
-    giftSoundUrl: gift.sound_url ?? null,
+    giftAudioUrl: resolvePlayableGiftUrl(gift.sound_url),
+    giftSoundUrl: resolvePlayableGiftUrl(gift.sound_url),
     giftLoop: (gift as Gift & { loop?: boolean | null }).loop ?? null,
     quantity,
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
