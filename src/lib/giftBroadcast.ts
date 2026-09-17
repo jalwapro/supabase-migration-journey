@@ -22,6 +22,8 @@ export type GiftBroadcastPayload = {
   giftDurationMs?: number | null;
   giftAudioUrl?: string | null;
   giftSoundUrl?: string | null;
+  giftAudioEnabled?: boolean | null;
+  giftAudioVolume?: number | null;
   giftLoop?: boolean | null;
   quantity: number;
   renderConfig?: Record<string, unknown> | null;
@@ -74,6 +76,12 @@ export async function broadcastGiftPlayback(
     entry = channels.get(roomId);
   }
   if (!entry) throw new Error("Unable to initialize gift broadcast channel");
+
+  const audioEnabled = gift.audio_enabled !== false;
+  const rawVolume = Number(gift.audio_volume ?? 1);
+  const audioVolume = Number.isFinite(rawVolume) ? Math.min(1, Math.max(0, rawVolume)) : 1;
+  const soundUrl = resolvePlayableGiftUrl(gift.sound_url);
+
   const payload: GiftBroadcastPayload = {
     id,
     eventIds: [...new Set(eventIds.filter(Boolean))],
@@ -82,7 +90,7 @@ export async function broadcastGiftPlayback(
     senderName: sender.name,
     senderAvatar: sender.avatar ?? null,
     receiverId: targets[0] ?? null,
-    receiverIds: targets,
+    receiverIds: [...new Set(targets.filter(Boolean))],
     receiverName: null,
     giftId: gift.id,
     giftName: gift.name,
@@ -92,19 +100,21 @@ export async function broadcastGiftPlayback(
     giftClipPath: resolvePlayableGiftUrl(gift.clip_path),
     giftClipType: gift.clip_type ?? null,
     giftDurationMs: (gift as Gift & { duration_ms?: number | null }).duration_ms ?? null,
-    giftAudioUrl: resolvePlayableGiftUrl(gift.sound_url),
-    giftSoundUrl: resolvePlayableGiftUrl(gift.sound_url),
+    giftAudioUrl: soundUrl,
+    giftSoundUrl: soundUrl,
+    giftAudioEnabled: audioEnabled,
+    giftAudioVolume: audioVolume,
     giftLoop: (gift as Gift & { loop?: boolean | null }).loop ?? null,
     quantity,
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
   };
+
   await entry.ready;
   const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
   if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
 
-  // The sender must see the same playback even if the Realtime self-delivery
-  // semantics change between browser/channel instances. GiftAnimationPlayer
-  // deduplicates this event by the canonical gift_sends id.
+  // The sender must see the same playback even when the channel is configured
+  // without self-delivery. The player deduplicates this canonical event id.
   if (typeof window !== "undefined") {
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("jalwa:gift-sent", {
@@ -126,6 +136,8 @@ export async function broadcastGiftPlayback(
           giftClipType: payload.giftClipType,
           durationMs: payload.giftDurationMs,
           soundUrl: payload.giftSoundUrl ?? payload.giftAudioUrl,
+          audioEnabled: payload.giftAudioEnabled,
+          audioVolume: payload.giftAudioVolume,
           quantity: payload.quantity,
           renderConfig: payload.renderConfig,
           local: true,
