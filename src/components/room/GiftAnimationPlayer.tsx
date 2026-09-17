@@ -58,6 +58,8 @@ export function GiftAnimationPlayer({ roomId }: Props) {
         giftClipType: typeof p.giftClipType === "string" ? p.giftClipType : null,
         durationMs: typeof p.giftDurationMs === "number" ? p.giftDurationMs : null,
         soundUrl: typeof p.giftSoundUrl === "string" ? p.giftSoundUrl : (typeof p.giftAudioUrl === "string" ? p.giftAudioUrl : null),
+        audioEnabled: p.giftAudioEnabled !== false,
+        audioVolume: typeof p.giftAudioVolume === "number" ? p.giftAudioVolume : 1,
         quantity: typeof p.quantity === "number" ? p.quantity : 1,
         renderConfig: p.renderConfig && typeof p.renderConfig === "object" ? p.renderConfig as Record<string, unknown> : null,
         local: true,
