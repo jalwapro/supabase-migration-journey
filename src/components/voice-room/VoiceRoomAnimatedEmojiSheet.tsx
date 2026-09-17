@@ -41,13 +41,17 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
     const senderRect = avatarRect(senderSeat);
     const targetRect = avatarRect(targetSeat);
 
-    if (!targetRect) {
+    // Never invent a launch position. The local animation must originate from
+    // the sender's actual seat/DP and terminate at the selected user's seat/DP.
+    // Seats can be temporarily unavailable while React finishes rendering, so
+    // wait for the real DOM anchors instead of falling back to the screen center.
+    if (!senderRect || !targetRect) {
       if (performance.now() - startedAt < 4000) window.requestAnimationFrame(attempt);
       return;
     }
 
-    const startX = senderRect ? senderRect.left + senderRect.width / 2 : window.innerWidth / 2;
-    const startY = senderRect ? senderRect.top + senderRect.height / 2 : window.innerHeight - 110;
+    const startX = senderRect.left + senderRect.width / 2;
+    const startY = senderRect.top + senderRect.height / 2;
     const endX = targetRect.left + targetRect.width / 2;
     const endY = targetRect.top + targetRect.height / 2;
     const dx = endX - startX;
