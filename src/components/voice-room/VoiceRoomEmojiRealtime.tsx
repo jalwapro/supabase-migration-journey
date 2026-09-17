@@ -18,67 +18,69 @@ function findSeat(index: number) {
 
 function avatarRect(element: HTMLElement | null): DOMRect | null {
   if (!element) return null;
-  const candidate = element.querySelector<HTMLElement>("img[alt], img, [data-avatar], video") ?? element;
+  const candidate = element.querySelector<HTMLElement>("[data-avatar], img:not([aria-hidden=\"true\"]), video") ?? element;
   const rect = candidate.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0 ? rect : null;
 }
 
+function findUserSeat(userId: string | null | undefined) {
+  if (!userId) return null;
+  const seats = Array.from(document.querySelectorAll<HTMLElement>("[data-seat-index]"));
+  return seats.find((seat) => seat.getAttribute("data-user-dp") === userId) ?? null;
+}
+
 /**
- * Voice-room emojis are seat reactions, not chat splashes. Render the selected
- * emoji directly over the recipient's avatar for a short moment. This is also
- * used by the sender locally so both sides use exactly the same renderer.
+ * Voice-room emojis are seat reactions. They fly from the sender's occupied
+ * seat to the selected recipient seat and finish on the recipient avatar.
  */
-export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "targetSeatIndex" | "emoji" | "url" | "clipPath">) {
+export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "targetSeatIndex" | "emoji" | "url" | "clipPath"> & { senderId?: string | null }) {
   if (typeof document === "undefined") return;
   const startedAt = performance.now();
 
   const attempt = () => {
-    const seat = findSeat(payload.targetSeatIndex);
-    const rect = avatarRect(seat);
-    if (!rect) {
+    const targetSeat = findSeat(payload.targetSeatIndex);
+    const targetRect = avatarRect(targetSeat);
+    if (!targetRect) {
       if (performance.now() - startedAt < 4000) window.requestAnimationFrame(attempt);
       return;
     }
 
+    const senderRect = avatarRect(findUserSeat(payload.senderId));
+    const startX = senderRect ? senderRect.left + senderRect.width / 2 : targetRect.left + targetRect.width / 2;
+    const startY = senderRect ? senderRect.top + senderRect.height / 2 : targetRect.top + targetRect.height / 2;
+    const endX = targetRect.left + targetRect.width / 2;
+    const endY = targetRect.top + targetRect.height / 2;
+
+    const size = Math.max(38, Math.min(68, Math.min(targetRect.width, targetRect.height) * 0.9));
     const layer = document.createElement("div");
     Object.assign(layer.style, {
       position: "fixed",
-      left: `${rect.left - 10}px`,
-      top: `${rect.top - 10}px`,
-      width: `${rect.width + 20}px`,
-      height: `${rect.height + 20}px`,
+      left: "0",
+      top: "0",
+      width: `${size}px`,
+      height: `${size}px`,
+      marginLeft: `${-size / 2}px`,
+      marginTop: `${-size / 2}px`,
       zIndex: "2147483647",
       pointerEvents: "none",
       display: "grid",
       placeItems: "center",
-      borderRadius: "999px",
       overflow: "visible",
+      transform: `translate3d(${startX}px, ${startY}px, 0) scale(.55)`,
+      opacity: "0",
+      willChange: "transform, opacity",
     });
     layer.dataset.jalwaSeatEmoji = "true";
-
-    const glow = document.createElement("div");
-    Object.assign(glow.style, {
-      position: "absolute",
-      inset: "-4px",
-      borderRadius: "999px",
-      background: "radial-gradient(circle, rgba(251,191,36,.28), transparent 68%)",
-      boxShadow: "0 0 24px rgba(251,191,36,.55)",
-      pointerEvents: "none",
-    });
-    layer.appendChild(glow);
 
     const node = document.createElement("div");
     Object.assign(node.style, {
       position: "relative",
-      width: `${Math.max(42, Math.min(72, rect.width * 0.95))}px`,
-      height: `${Math.max(42, Math.min(72, rect.height * 0.95))}px`,
+      width: "100%",
+      height: "100%",
       display: "grid",
       placeItems: "center",
-      fontSize: `${Math.max(30, Math.min(52, rect.width * 0.72))}px`,
+      fontSize: `${Math.max(28, Math.min(52, size * 0.8))}px`,
       lineHeight: "1",
-      transform: "scale(.55)",
-      opacity: "0",
-      willChange: "transform,opacity",
       pointerEvents: "none",
       filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))",
     });
@@ -102,33 +104,36 @@ export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "
         display: "block",
         pointerEvents: "none",
       });
-      img.onerror = () => img.remove();
+      img.onerror = () => { img.style.display = "none"; };
       node.appendChild(img);
     }
 
     layer.appendChild(node);
     document.body.appendChild(layer);
 
+    const travelX = endX - startX;
+    const travelY = endY - startY;
     let animation: Animation | null = null;
     try {
-      animation = node.animate(
+      animation = layer.animate(
         [
-          { transform: "scale(.55)", opacity: 0 },
-          { transform: "scale(1.08)", opacity: 1, offset: .22 },
-          { transform: "scale(1)", opacity: 1, offset: .72 },
-          { transform: "scale(.88)", opacity: 0 },
+          { transform: `translate3d(${startX}px, ${startY}px, 0) scale(.55)`, opacity: 0 },
+          { transform: `translate3d(${startX + travelX * .18}px, ${startY + travelY * .18 - 18}px, 0) scale(1.05)`, opacity: 1, offset: .18 },
+          { transform: `translate3d(${startX + travelX * .62}px, ${startY + travelY * .62 + 8}px, 0) scale(.94)`, opacity: 1, offset: .62 },
+          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(1.12)`, opacity: 1, offset: .9 },
+          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(.78)`, opacity: 0 },
         ],
-        { duration: 1250, easing: "cubic-bezier(.22,.75,.25,1)", fill: "forwards" },
+        { duration: 1050, easing: "cubic-bezier(.18,.72,.2,1)", fill: "forwards" },
       );
     } catch {
-      node.style.transform = "scale(1)";
-      node.style.opacity = "1";
+      layer.style.transform = `translate3d(${endX}px, ${endY}px, 0) scale(1)`;
+      layer.style.opacity = "1";
     }
 
     window.setTimeout(() => {
       animation?.cancel();
       layer.remove();
-    }, 1350);
+    }, 1150);
   };
 
   attempt();
