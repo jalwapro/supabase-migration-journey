@@ -40,37 +40,25 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
     const senderSeat = findSender(senderId, username);
     const senderRect = avatarRect(senderSeat);
     const targetRect = avatarRect(targetSeat);
-
-    // Never invent a launch position. The local animation must originate from
-    // the sender's actual seat/DP and terminate at the selected user's seat/DP.
     if (!senderRect || !targetRect) {
       if (performance.now() - startedAt < 4000) window.requestAnimationFrame(attempt);
       return;
     }
-
     const startX = senderRect.left + senderRect.width / 2;
     const startY = senderRect.top + senderRect.height / 2;
     const endX = targetRect.left + targetRect.width / 2;
     const endY = targetRect.top + targetRect.height / 2;
     const dx = endX - startX;
     const dy = endY - startY;
-
     const layer = document.createElement("div");
     Object.assign(layer.style, { position: "fixed", inset: "0", zIndex: "2147483647", pointerEvents: "none", overflow: "visible" });
     layer.dataset.jalwaFlyingEmoji = "true";
-
     const node = document.createElement("div");
-    Object.assign(node.style, {
-      position: "fixed", left: `${startX - 30}px`, top: `${startY - 30}px`, width: "60px", height: "60px",
-      display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", opacity: "1",
-      willChange: "transform,opacity", pointerEvents: "none", isolation: "isolate",
-    });
-
+    Object.assign(node.style, { position: "fixed", left: `${startX - 30}px`, top: `${startY - 30}px`, width: "60px", height: "60px", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", opacity: "1", willChange: "transform,opacity", pointerEvents: "none", isolation: "isolate" });
     const fallback = document.createElement("span");
     fallback.textContent = emoji.emoji || "✨";
     Object.assign(fallback.style, { position: "absolute", inset: "0", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", zIndex: "0", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
     node.appendChild(fallback);
-
     const src = emoji.url || emoji.clip_path || "";
     if (src) {
       const img = document.createElement("img");
@@ -80,10 +68,8 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
       img.src = src;
       node.appendChild(img);
     }
-
     layer.appendChild(node);
     document.body.appendChild(layer);
-
     const keyframes = [
       { transform: "translate3d(0,0,0) scale(.55) rotate(-10deg)", opacity: 1 },
       { transform: `translate3d(${dx * .35}px,${dy * .35 - 30}px,0) scale(1.2) rotate(10deg)`, opacity: 1, offset: .3 },
@@ -96,7 +82,6 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
     } catch {
       node.style.transform = `translate3d(${dx}px,${dy}px,0) scale(.7)`;
     }
-
     const impact = document.createElement("div");
     Object.assign(impact.style, { position: "fixed", left: `${endX - 32}px`, top: `${endY - 32}px`, width: "64px", height: "64px", borderRadius: "50%", border: "3px solid rgba(251,191,36,.95)", boxShadow: "0 0 28px rgba(251,191,36,.9)", opacity: "0", pointerEvents: "none" });
     layer.appendChild(impact);
@@ -106,9 +91,6 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
   attempt();
 }
 
-// The legacy VoiceRoomScreen has an older hidden target-seat state. Keep it
-// synchronized from the receiver selected inside this sheet so the existing
-// sendEmoji callback receives the same target without requiring a seat tap first.
 function syncLegacyTargetSeat(targetSeatIndex: number) {
   if (typeof document === "undefined") return;
   const label = `Seat ${targetSeatIndex + 1}`;
@@ -162,10 +144,18 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
     const receiver = receivers.find((r) => r.id === selectedReceiver);
     const targetSeat = receiver?.seat_index ?? null;
     if (targetSeat == null) { toast.info("Pehle user select karein"); return; }
+
+    // The parent VoiceRoomScreen still has legacy target-seat state. Its React
+    // state update from the synthetic seat click is committed after this event,
+    // so hand the target to the parent on the next task. This keeps the new UX
+    // (receiver selection inside this sheet) while making the old callback see
+    // the selected seat and avoiding the legacy "select a seat first" toast.
     syncLegacyTargetSeat(targetSeat);
     playSeatToSeatAnimation(emoji, targetSeat, profile?.id, profile?.username);
-    onPick(emoji, targetSeat);
-    onClose();
+    window.setTimeout(() => {
+      onPick(emoji, targetSeat);
+      onClose();
+    }, 0);
   };
 
   const content = (
