@@ -1,17 +1,26 @@
-/* Room Rank Frames belong to the host DP in the Top Hosts card, not to the
-   entire room-cover tile. RoomCard keeps the frame as a sibling overlay, so
-   anchor that overlay to the same 20px host avatar used by the host chip. */
+/*
+ * Room Rank Frame display contract
+ *
+ * Admin can upload any PNG/MP4/WebM frame asset, but the rendered frame
+ * always gets the same responsive square display box as the Top Host room
+ * artwork. The asset's intrinsic dimensions must never control its size.
+ *
+ * RoomCard intentionally keeps the room artwork inside inset-[7%]. Keep the
+ * frame on that exact same box so it surrounds the complete DP/artwork area
+ * without covering the outer card or shrinking to the asset's native size.
+ */
 div.relative.aspect-square > img.pointer-events-none.absolute.inset-0.h-full.w-full.max-w-none.object-fill.select-none.z-30,
 div.relative.aspect-square > video.pointer-events-none.absolute.inset-0.h-full.w-full.max-w-none.object-fill.select-none.z-30 {
-  inset: auto;
-  left: 12px;
-  bottom: 16px;
-  top: auto;
-  right: auto;
-  width: 32px;
-  height: 32px;
+  position: absolute;
+  inset: 7%;
+  width: 86%;
+  height: 86%;
   max-width: none;
+  max-height: none;
+  min-width: 0;
+  min-height: 0;
   object-fit: fill;
+  object-position: center;
   z-index: 30;
   transform: none;
   transform-origin: center;
