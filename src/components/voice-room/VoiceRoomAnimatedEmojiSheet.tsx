@@ -43,8 +43,6 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
 
     // Never invent a launch position. The local animation must originate from
     // the sender's actual seat/DP and terminate at the selected user's seat/DP.
-    // Seats can be temporarily unavailable while React finishes rendering, so
-    // wait for the real DOM anchors instead of falling back to the screen center.
     if (!senderRect || !targetRect) {
       if (performance.now() - startedAt < 4000) window.requestAnimationFrame(attempt);
       return;
@@ -68,8 +66,6 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
       willChange: "transform,opacity", pointerEvents: "none", isolation: "isolate",
     });
 
-    // Always render the Unicode emoji underneath. The animated asset is only an
-    // enhancement; a broken/transparent GIF/WebP must never make the flight invisible.
     const fallback = document.createElement("span");
     fallback.textContent = emoji.emoji || "✨";
     Object.assign(fallback.style, { position: "absolute", inset: "0", display: "grid", placeItems: "center", fontSize: "44px", lineHeight: "1", zIndex: "0", filter: "drop-shadow(0 0 10px rgba(255,215,0,.95))" });
@@ -108,6 +104,17 @@ function playSeatToSeatAnimation(emoji: ChatEmoji, targetSeatIndex: number | nul
     window.setTimeout(() => { animation?.cancel(); impactAnimation.cancel(); layer.remove(); }, 1400);
   };
   attempt();
+}
+
+// The legacy VoiceRoomScreen has an older hidden target-seat state. Keep it
+// synchronized from the receiver selected inside this sheet so the existing
+// sendEmoji callback receives the same target without requiring a seat tap first.
+function syncLegacyTargetSeat(targetSeatIndex: number) {
+  if (typeof document === "undefined") return;
+  const label = `Seat ${targetSeatIndex + 1}`;
+  const button = Array.from(document.querySelectorAll<HTMLButtonElement>("button"))
+    .find((candidate) => candidate.textContent?.includes(label));
+  button?.click();
 }
 
 export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = false }: Props) {
@@ -155,6 +162,7 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
     const receiver = receivers.find((r) => r.id === selectedReceiver);
     const targetSeat = receiver?.seat_index ?? null;
     if (targetSeat == null) { toast.info("Pehle user select karein"); return; }
+    syncLegacyTargetSeat(targetSeat);
     playSeatToSeatAnimation(emoji, targetSeat, profile?.id, profile?.username);
     onPick(emoji, targetSeat);
     onClose();
@@ -168,5 +176,5 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
     </div>
   );
   if (embedded) return content;
-  return <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/50 p-0" onClick={onClose} role="dialog" aria-modal="true"><div onClick={(event) => event.stopPropagation()} className="relative flex w-full max-w-lg h-[310px] flex-col overflow-hidden rounded-t-[20px] border border-white/10 bg-[#121212]/95 backdrop-blur-xl text-white shadow-2xl">{content}</div></div>;
+  return <div className="fixed inset-0 z-[2147483600] flex items-end justify-center bg-black/50 p-0" onClick={onClose} role="dialog" aria-modal="true"><div onClick={(event) => event.stopPropagation()} className="relative flex w-full max-w-lg h-[310px] flex-col overflow-hidden rounded-t-[20px] border border-white/10 bg-[#121212]/95 backdrop-blur-xl text-white shadow-2xl">{content}</div></div>;
 }
