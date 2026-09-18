@@ -33,6 +33,18 @@ function PrivacyPolicyPage() {
           <Section title="2. Google Sign-In">
             If you choose to sign in with Google, Jalwa receives authentication information provided by Google, such as your Google account identifier, email address, name, and profile image when available. Jalwa uses this information to create or authenticate your Jalwa account. Jalwa does not receive or store your Google password.
           </Section>
+          <Section title="Google User Data Policy">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-white">Google User Data: Access, Use, Storage, and Sharing</h3>
+              <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-white/65">
+                <li><strong className="text-white">Access:</strong> Jalwa Global Live uses Google OAuth to authenticate users. We only access the basic profile information provided by Google, which includes your name, email address, and profile picture.</li>
+                <li><strong className="text-white">Use:</strong> We use this Google user data solely to create your account, identify you within the Jalwa platform, and provide a personalized experience in our live voice rooms.</li>
+                <li><strong className="text-white">Storage:</strong> Your Google user data (email and name) is securely stored in our Supabase database. We apply strict security protocols to prevent unauthorized access.</li>
+                <li><strong className="text-white">Sharing:</strong> Jalwa Global Live strictly does not share, sell, or distribute your Google user data to any third-party organizations or advertisers.</li>
+                <li><strong className="text-white">Data Deletion:</strong> You can request the complete deletion of your account and associated Google user data at any time by contacting our support email (admin@jalwa.pro) or using the in-app deletion feature.</li>
+              </ul>
+            </div>
+          </Section>
           <Section title="3. Voice Rooms and Microphone">
             Jalwa provides real-time audio voice rooms. When you join a voice room and enable your microphone, microphone audio is transmitted through LiveKit so authorized participants in the room can hear you. Jalwa does not use the microphone when you have not granted the relevant permission or enabled the microphone feature. Jalwa voice rooms are audio-only.
           </Section>
@@ -70,7 +82,7 @@ function PrivacyPolicyPage() {
             We may update this Privacy Policy when our services, technology, legal requirements, or data practices change. The updated version will be published on this page with a revised update date.
           </Section>
           <Section title="15. Contact Us">
-            For privacy questions, account-data requests, or account deletion requests, please contact Jalwa at admin@jalwa.app or smartsoloutionservicess@gmail.com.
+            For privacy questions, account-data requests, or account deletion requests, please contact Jalwa at admin@jalwa.pro, admin@jalwa.app, or smartsoloutionservicess@gmail.com.
           </Section>
         </div>
 
