@@ -427,9 +427,15 @@ function AuthPage() {
         </div>
 
         <div className="mt-5 text-center">
-          <Link to="/" className="text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground">
-            ← Back to home
-          </Link>
+          <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+            <Link to="/" className="uppercase tracking-[0.25em] hover:text-foreground">
+              ← Back to home
+            </Link>
+            <span aria-hidden>•</span>
+            <Link to="/privacy" className="hover:text-foreground underline underline-offset-4">
+              Privacy Policy
+            </Link>
+          </div>
         </div>
       </div>
     </div>
