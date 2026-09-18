@@ -3,6 +3,7 @@ import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircl
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
+import { setVoiceRoomFullscreen } from "@/lib/native";
 import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
@@ -58,6 +59,12 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const effectiveSeatCount = normalizeCapacity(seatCount ?? liveSeatCount);
+
+  // Native VoiceRoom fullscreen: hide Android/iOS system bars only while the room is open.
+  useEffect(() => {
+    void setVoiceRoomFullscreen(true);
+    return () => { void setVoiceRoomFullscreen(false); };
+  }, []);
 
   // Global Escape & Back button handler
   useEffect(() => {
