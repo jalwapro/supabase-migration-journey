@@ -46,20 +46,18 @@ export function HostPopularitySheet({ roomId, open, onClose, hostName }: Props) 
       const followersPromise = supabase.from("follows").select("id", { count: "exact", head: true }).eq("following_id", hostId).gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
       const dayStart = new Date();
       dayStart.setHours(0, 0, 0, 0);
-      const giftsPromise = supabase.from("gift_sends").select("coins_spent").eq("receiver_id", hostId).gte("created_at", dayStart.toISOString());
+      const giftsPromise = supabase.from("gift_sends").select("diamonds_earned").eq("receiver_id", hostId).gte("created_at", dayStart.toISOString());
       const [profileResult, followersResult, giftsResult] = await Promise.all([profilePromise, followersPromise, giftsPromise]);
 
       const profile = profileResult.data as { level?: number | null; username?: string | null; full_name?: string | null; avatar?: string | null } | null;
       const row = statsResult.error || !statsResult.data ? null : (Array.isArray(statsResult.data) ? statsResult.data[0] : statsResult.data);
       const cumulativePop = Number(row?.cumulative_popularity) || 0;
       const baseToday = Number(row?.today_live_seconds) || 0;
-      const activeStartedAt = row?.active_session_started_at ? Date.parse(String(row.active_session_started_at)) : NaN;
-      const liveNow = Number.isFinite(activeStartedAt) ? Math.max(0, Math.floor((Date.now() - activeStartedAt) / 1000)) : 0;
-      const todayLiveSeconds = baseToday + liveNow;
-      const totalLiveSeconds = (Number(row?.total_live_seconds) || 0) + liveNow;
-      const weekLiveSeconds = (Number(row?.week_live_seconds) || 0) + liveNow;
+      const todayLiveSeconds = baseToday;
+      const totalLiveSeconds = Number(row?.total_live_seconds) || 0;
+      const weekLiveSeconds = Number(row?.week_live_seconds) || 0;
       const giftRows = Array.isArray(giftsResult.data) ? giftsResult.data : [];
-      const todayGifts = giftRows.reduce((sum, gift) => sum + Math.max(0, Number(gift.coins_spent) || 0), 0);
+      const todayGifts = giftRows.reduce((sum, gift) => sum + Math.max(0, Number(gift.diamonds_earned) || 0), 0);
       const next = { ...emptyData(hostId), host_id: hostId, cumulative_popularity: cumulativePop, total_live_seconds: totalLiveSeconds, today_live_seconds: todayLiveSeconds, week_live_seconds: weekLiveSeconds, gifts_power: Number(row?.gifts_power) || 0, tasks_completed: Number(row?.tasks_completed) || 0, task_target: Math.max(1, Number(row?.task_target) || 100), streak_days: Number(row?.streak_days) || 0, host_bonus: Number(row?.host_bonus) || 0, host_commission: Number(row?.host_commission) || 0, red_diamonds: Number(row?.red_diamonds) || 0, red_diamonds_pkr_value: Number(row?.red_diamonds_pkr_value) || 500, current_rank: getRank(cumulativePop), weekly_followers: followersResult.count ?? 0 } satisfies PopularityData;
 
       return {
