@@ -109,7 +109,7 @@ export function Seat({ seat, onClick }: SeatProps) {
 
   if (!user) {
     return (
-      <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
+      <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative z-10 flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0 overflow-visible", className)}>
         <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
           <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">{num}</span>
           <span className="relative aspect-square w-full max-w-[56px] p-0 bg-transparent overflow-visible"><EmptySeatArt locked={is_locked} /></span>
@@ -128,12 +128,12 @@ export function Seat({ seat, onClick }: SeatProps) {
     <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
-        <span data-avatar="true" className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+        <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
           <LevelAvatar
             src={avatar}
             name={username}
             level={level}
-            size="sm"
+            size="md"
             showBadge={false}
             frame={equippedFrame}
             ring={equippedRing}
@@ -378,8 +378,8 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   for (let i = 0; i < allSeats.length; i += SEATS_PER_ROW) rows.push(allSeats.slice(i, i + SEATS_PER_ROW));
 
   return (
-    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-transparent overflow-hidden" data-seat-capacity={capacity}>
-      <div className="flex w-full h-full flex-col items-center justify-evenly overflow-hidden px-1 bg-transparent">
+    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-transparent overflow-visible" data-seat-capacity={capacity}>
+      <div className="flex w-full h-full flex-col items-center justify-evenly overflow-visible px-1 bg-transparent">
         {rows.map((rowSeats, rowIndex) => (
           <div key={rowIndex} className="flex w-full items-center justify-evenly gap-1 bg-transparent">
             {rowSeats.map((seat) => {
@@ -388,9 +388,9 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                 <div key={seatIdx} data-seat-index={seatIdx} data-user-dp={seat.user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                     <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
-                    <span data-avatar="true" className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
-                      {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />}
+                    <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[1.04]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
+                      {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-4 h-[calc(100%+32px)] w-[calc(100%+32px)] pointer-events-none object-contain z-30 scale-[1.08]" draggable={false} />}
                     </span>
                     <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
                     <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span>
