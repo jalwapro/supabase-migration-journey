@@ -133,7 +133,7 @@ export function Seat({ seat, onClick }: SeatProps) {
             showBadge={false}
             frame={equippedFrame}
             ring={equippedRing}
-            className={speaking ? "ring-2 ring-fuchsia-400 shadow-[0_0_15px_rgba(236,72,153,0.8)]" : ""}
+            className={cn("scale-[1.14] origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")}
           />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
