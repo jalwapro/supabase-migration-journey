@@ -1,60 +1,55 @@
-# Jalwa Native Google OAuth Callback
+# Native Google Sign-In (Jalwa)
 
-The web app now uses the custom native redirect URI:
+Jalwa's Capacitor app now uses a Jalwa-branded login sheet followed by the native Google account picker on Android/iOS. It does not use the old browser OAuth callback for Google on native builds.
 
-`app.lovable.jalwa://auth/callback`
+## App flow
 
-## Supabase
+1. User taps **Continue with Google**.
+2. Jalwa opens its own bottom-sheet UI.
+3. User taps **Choose Google account**.
+4. Android/iOS opens Google's secure native account selector.
+5. The selected Google ID token is passed directly to Supabase `signInWithIdToken`.
+6. Jalwa receives the Supabase session and returns to the app home screen.
 
-In Supabase Dashboard → Authentication → URL Configuration, add this exact Redirect URL:
+The native Google plugin uses Android Credential Manager / iOS Google Sign-In SDK. The Google account selector itself is intentionally Google-controlled for security and cannot be replaced with a fake account picker. See the official plugin documentation for the native flow. https://capawesome.io/docs/sdks/capacitor/google-sign-in/
 
-`app.lovable.jalwa://auth/callback`
+## Required build configuration
 
-Keep the production web URL in the allow list as well:
+Set this Vite environment variable in Vercel and in the native build environment:
 
-`https://www.jalwa.pro/`
+`VITE_GOOGLE_WEB_CLIENT_ID=<Google Web OAuth Client ID>`
 
-## Google Cloud
+The plugin requires the Web client ID in `GoogleSignIn.initialize()` on Android and iOS.
 
-For the Google OAuth provider, the Google Authorized redirect URI remains the Supabase callback endpoint, not the native scheme:
+## Android Google Cloud setup
 
-`https://vfuiqjxgyptjqhbmzigk.supabase.co/auth/v1/callback`
+Create an Android OAuth client in the same Google Cloud project as the Web client:
 
-The native custom scheme is the post-login `redirectTo` handled by Supabase.
+- Package name: `app.lovable.jalwa`
+- SHA-1: debug signing certificate for local builds and Google Play app-signing certificate for Play builds.
+- Keep the Web OAuth client ID for `VITE_GOOGLE_WEB_CLIENT_ID`.
 
-## Android Studio
+A matching Android client + SHA-1 is required or account selection can succeed and sign-in can fail immediately afterward.
 
-The generated Capacitor Android project must register the custom scheme. In `android/app/src/main/AndroidManifest.xml`, add this intent filter inside the app's `MainActivity` activity:
+## iOS setup
 
-```xml
-<intent-filter>
-    <action android:name="android.intent.action.VIEW" />
-    <category android:name="android.intent.category.DEFAULT" />
-    <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="app.lovable.jalwa" android:host="auth" android:path="/callback" />
-</intent-filter>
-```
+In the generated native iOS project, add the Google iOS client ID as `GIDClientID` in `Info.plist` and add the reversed iOS client ID as the URL scheme.
 
-Do not remove the existing Capacitor launcher intent filter.
+## Native project sync
 
-Then run:
-
-```bash
-npx cap sync android
-```
-
-Build/install the Android app again. Google login should return from Chrome to the Jalwa app instead of staying in the browser.
-
-## iOS
-
-Register the same URL scheme `app.lovable.jalwa` in the iOS target's URL Types (Xcode → Target → Info → URL Types), then sync/rebuild with:
+The repository currently does not contain generated `android/` or `ios/` folders. On the machine used to build the native app, run:
 
 ```bash
-npx cap sync ios
+npm install
+npx cap sync
 ```
 
-The app already listens for Capacitor `appUrlOpen` and exchanges the Supabase authorization code for a session.
+Then build/run the Android or iOS project.
 
-## Important
+## Security
 
-The GitHub repository does not contain generated `android/` or `ios/` platform folders, so the native intent-filter / URL-Type registration must be applied to the generated Android Studio/Xcode projects. The web-side OAuth handling is committed in `src/routes/auth.tsx`.
+The app sends Google's ID token to Supabase using `signInWithIdToken`; it does not collect a Google password. Server-side verification is recommended before trusting token claims.
+
+## Web behavior
+
+The public website keeps the existing Supabase OAuth behavior. The native Capacitor app uses the native Google flow, so users do not leave the Jalwa app for a browser-based Google callback.
