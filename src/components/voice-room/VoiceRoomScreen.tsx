@@ -266,7 +266,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-        <div className="shrink-0 pt-2 px-3"><RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} /></div>
+        <div data-room-header="true" className="shrink-0 pt-[env(safe-area-inset-top)] px-3"><RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} /></div>
         <GiftAnimationPlayer roomId={roomId} />
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
           <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 px-1 no-scrollbar">
@@ -325,7 +325,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         </div>
       </div>
 
-      <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 flex h-[52px] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 box-border flex h-[calc(52px+env(safe-area-inset-bottom))] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5" style={{ color: accentThemeColor }} /></button>
