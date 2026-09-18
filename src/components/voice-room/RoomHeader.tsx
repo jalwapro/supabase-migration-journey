@@ -8,17 +8,19 @@ import { EntrancePlayer } from "@/components/room/EntrancePlayer";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-interface RoomHeaderProps { room: RoomState; roomCode: string; onlineCount: number; topGifterName?: string | null; topGifterCoins?: number; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; isHost?: boolean; }
+interface RoomHeaderProps { room: RoomState; roomCode: string; onlineCount: number; topGifterName?: string | null; topGifterCoins?: number; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; isHost?: boolean; exitMenuOpen?: boolean; onExitMenuOpenChange?: (open: boolean) => void; }
 type RoomMemberPreview = { id: string; username: string; avatar: string | null; level: number; host?: boolean; moderator?: boolean };
 type IncomingSeatInvite = { id: string; fromUser: string; inviterName: string; inviterAvatar: string | null; role: "Host" | "Moderator"; seatIndex: number | null };
 
-export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost: isHostProp = false }: RoomHeaderProps) {
+export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost: isHostProp = false, exitMenuOpen: exitMenuOpenProp, onExitMenuOpenChange }: RoomHeaderProps) {
   const { user } = useAuth();
   const isHost = isHostProp || user?.id === room.host.id;
   const { current: currentEntrance, done: finishEntrance } = useRoomEntrances(room.id, user?.id ?? null);
   const [roomTitle, setRoomTitle] = useState(room.title);
   const [roomDp, setRoomDp] = useState<string | null>(room.host.avatar);
-  const [exitMenuOpen, setExitMenuOpen] = useState(false);
+  const [internalExitMenuOpen, setInternalExitMenuOpen] = useState(false);
+  const exitMenuOpen = exitMenuOpenProp ?? internalExitMenuOpen;
+  const setExitMenuOpen = (open: boolean) => { setInternalExitMenuOpen(open); onExitMenuOpenChange?.(open); };
   const [hostExitConfirmOpen, setHostExitConfirmOpen] = useState(false);
   const [hostEndConfirmOpen, setHostEndConfirmOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
