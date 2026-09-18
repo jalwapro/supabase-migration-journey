@@ -46,13 +46,31 @@ function getConfig(): FirebaseWebConfig {
   const json = readJsonConfig();
 
   const config: FirebaseWebConfig = {
-    apiKey: json.apiKey || clean(process.env.GOOGLE_API_KEY),
-    authDomain: json.authDomain || clean(process.env.FIREBASE_AUTH_DOMAIN),
-    projectId: json.projectId || clean(process.env.FIREBASE_PROJECT_ID),
-    storageBucket: json.storageBucket || clean(process.env.FIREBASE_STORAGE_BUCKET),
+    apiKey:
+      json.apiKey ||
+      clean(process.env.FIREBASE_API_KEY) ||
+      clean(process.env.GOOGLE_API_KEY) ||
+      "AIzaSyDO0ovhZ84D-64RvAjbHGxOlP6mDkrw6pA",
+    authDomain:
+      json.authDomain ||
+      clean(process.env.FIREBASE_AUTH_DOMAIN) ||
+      "jalwa-84344.firebaseapp.com",
+    projectId:
+      json.projectId ||
+      clean(process.env.FIREBASE_PROJECT_ID) ||
+      "jalwa-84344",
+    storageBucket:
+      json.storageBucket ||
+      clean(process.env.FIREBASE_STORAGE_BUCKET) ||
+      "jalwa-84344.firebasestorage.app",
     messagingSenderId:
-      json.messagingSenderId || clean(process.env.FIREBASE_MESSAGING_SENDER_ID),
-    appId: json.appId || clean(process.env.FIREBASE_APP_ID),
+      json.messagingSenderId ||
+      clean(process.env.FIREBASE_MESSAGING_SENDER_ID) ||
+      "923506443706",
+    appId:
+      json.appId ||
+      clean(process.env.FIREBASE_APP_ID) ||
+      "1:923506443706:web:8ba07acae0d09cdd9a4983",
   };
 
   // Firebase Web config is publishable, but it must still be complete enough
