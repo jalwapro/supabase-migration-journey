@@ -2,7 +2,7 @@
 // back to no-ops on the web. All calls are lazy so nothing is pulled into
 // the web bundle beyond a tiny detection stub.
 
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, SystemBars } from "@capacitor/core";
 
 export const isNative = () => Capacitor.isNativePlatform();
 export const nativePlatform = () => Capacitor.getPlatform(); // "web" | "ios" | "android"
@@ -30,6 +30,24 @@ function closeActiveOverlay() {
     /* noop */
   }
   return true;
+}
+
+export async function setVoiceRoomFullscreen(enabled: boolean) {
+  if (!isNative()) return;
+
+  try {
+    if (enabled) {
+      // VoiceRoom is a true immersive screen in the native app.
+      // Hide both Android system bars so the room header/footer are not
+      // covered by the phone status/navigation controls.
+      await SystemBars.hide().catch(() => {});
+    } else {
+      // Restore normal system UI for every other screen.
+      await SystemBars.show().catch(() => {});
+    }
+  } catch {
+    /* noop */
+  }
 }
 
 export async function initNativeShell() {
