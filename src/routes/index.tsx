@@ -108,15 +108,6 @@ function Home() {
   }, [query]);
 
 
-  // Show splash once per browser session on domain open
-  useEffect(() => {
-    try {
-      if (!sessionStorage.getItem("splash_shown")) {
-        navigate({ to: "/splash", replace: true });
-      }
-    } catch { /* no-op */ }
-  }, [navigate]);
-
   // Live auto-refresh: any rooms / follows / banners change → refetch instantly.
   useRealtimeInvalidate("home-live", [
     { table: "live_rooms", invalidate: [["home-top-hosts"], ["home-rooms-page"], ["home-live-users"]] },
