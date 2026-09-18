@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Lock, MessageSquare, Mic, RefreshCw, Settings, Unlock, X, Users, VolumeX, Volume2, ShieldAlert, Music, Shield, Ban, Star, ArrowLeft, KeyRound, Headphones } from "lucide-react";
+import { Check, Lock, MessageSquare, Mic, RefreshCw, Settings, Unlock, X, Users, VolumeX, Volume2, ShieldAlert, Music, Shield, Ban, Star, ArrowLeft, KeyRound, Headphones, Gift } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { HostRoomManagementSheet } from "./HostRoomManagementSheet";
@@ -24,6 +24,7 @@ type Props = {
   onOpenMusic?: () => void;
   speakerMuted?: boolean;
   onToggleSpeaker?: () => void;
+  onToggleMic?: () => void;
 };
 
 const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, music_enabled: true, seat_count: 8, stage_locked: false, room_pin: null };
@@ -31,7 +32,7 @@ const defaults: RoomSettings = { is_locked: false, chat_enabled: true, gifts_ena
 type ActiveView = "main" | "kick" | "block" | "moderators";
 type ManagementMode = "kick" | "block" | "moderators" | null;
 
-export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOpenMusic, speakerMuted, onToggleSpeaker }: Props) {
+export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOpenMusic, speakerMuted, onToggleSpeaker, onToggleMic }: Props) {
   const [settings, setSettings] = useState<RoomSettings>(defaults);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -39,7 +40,6 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
   const [managementMode, setManagementMode] = useState<ManagementMode>(null);
   const [isAudioCenterOpen, setIsAudioCenterOpen] = useState(false);
-  const [hostMicMuted, setHostMicMuted] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -126,7 +126,13 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
         if (error) throw error;
         toast.success("All speakers muted");
       } else if (actionType === "clear_hands") {
-        toast.info("Hand raise queue cleared.");
+        const { data: members, error: memberError } = await supabase.from("room_members").select("user_id").eq("room_id", roomId);
+        if (memberError) throw memberError;
+        for (const member of members ?? []) {
+          const { error } = await supabase.rpc("moderate_room_user", { _room_id: roomId, _target_user: member.user_id, _action: "unmute" });
+          if (error) throw error;
+        }
+        toast.success("Room moderation queue cleared");
       }
     } catch (err: any) { toast.error(err?.message || "Action failed"); }
     finally { setSaving(null); }
@@ -138,11 +144,11 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
   };
 
   const audioController: AudioCenterController = {
-    muted: hostMicMuted,
+    muted: false,
     micBlocked: false,
     micError: null,
     micLevel: 0,
-    onToggleMic: () => setHostMicMuted(v => !v),
+    onToggleMic: () => onToggleMic?.(),
     speakerMuted: Boolean(speakerMuted),
     onToggleSpeaker: () => onToggleSpeaker?.(),
     speakerVolume: speakerMuted ? 0 : 1,
@@ -192,7 +198,7 @@ export function HostRoomSettings({ roomId, open, onClose, onSettingsChange, onOp
 
               <div><div className="mb-1 text-[9px] font-bold uppercase tracking-wider text-white/50">Quick Actions</div><div className="grid grid-cols-4 gap-1.5 text-center"><ActionButton icon={<VolumeX className="h-3.5 w-3.5 text-red-300" />} label="Mute All" onClick={() => void handleAction("mute_all")} busy={saving === "mute_all"} /><ActionButton icon={<ShieldAlert className="h-3.5 w-3.5 text-amber-300" />} label="Clear" onClick={() => void handleAction("clear_hands")} busy={saving === "clear_hands"} /><ActionButton icon={<Music className="h-3.5 w-3.5 text-pink-300" />} label="Music" onClick={() => { onClose(); onOpenMusic?.(); }} /><ActionButton icon={<Ban className="h-3.5 w-3.5 text-rose-400" />} label="Kick" onClick={() => void handleAction("kick_room")} busy={saving === "kick_room"} /><ActionButton icon={<Shield className="h-3.5 w-3.5 text-blue-300" />} label="Block" onClick={() => void handleAction("block_list")} /><ActionButton icon={<Star className="h-3.5 w-3.5 text-purple-300" />} label="Co-Hosts" onClick={() => void handleAction("co_hosts")} /></div></div>
 
-              <div className="space-y-1"><div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div><div className="grid grid-cols-3 gap-1.5"><ToggleMini icon={settings.is_locked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />} label="Lock" value={settings.is_locked} busy={saving === "is_locked"} onToggle={v => void update("is_locked", v)} /><ToggleMini icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" value={settings.chat_enabled} busy={saving === "chat_enabled"} onToggle={v => void update("chat_enabled", v)} /><ToggleMini icon={<Mic className="h-3.5 w-3.5" />} label="Mic" value={settings.guest_mic_enabled} busy={saving === "guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} /></div></div>
+              <div className="space-y-1"><div className="text-[9px] font-bold uppercase tracking-wider text-white/50">Preferences</div><div className="grid grid-cols-3 gap-1.5"><ToggleMini icon={settings.is_locked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />} label="Lock" value={settings.is_locked} busy={saving === "is_locked"} onToggle={v => void update("is_locked", v)} /><ToggleMini icon={<MessageSquare className="h-3.5 w-3.5" />} label="Chat" value={settings.chat_enabled} busy={saving === "chat_enabled"} onToggle={v => void update("chat_enabled", v)} /><ToggleMini icon={<Mic className="h-3.5 w-3.5" />} label="Mic" value={settings.guest_mic_enabled} busy={saving === "guest_mic_enabled"} onToggle={v => void update("guest_mic_enabled", v)} /><ToggleMini icon={<Gift className="h-3.5 w-3.5" />} label="Gifts" value={settings.gifts_enabled} busy={saving === "gifts_enabled"} onToggle={v => void update("gifts_enabled", v)} /></div></div>
             </> : <div className="flex flex-col items-center justify-center h-full py-6 text-center text-white/60">{activeView === "kick" && <div className="space-y-2"><Ban className="h-8 w-8 text-rose-400 mx-auto animate-pulse" /><p className="text-[11px] font-bold text-white">Select a participant from seats to kick</p><p className="text-[9px] text-white/40">Tap any user profile on stage to remove them.</p></div>}{activeView === "block" && <div className="space-y-2"><Shield className="h-8 w-8 text-blue-400 mx-auto" /><p className="text-[11px] font-bold text-white">No blocked users found</p><p className="text-[9px] text-white/40">Banned or blocked accounts will appear here.</p></div>}{activeView === "moderators" && <div className="space-y-2"><Star className="h-8 w-8 text-purple-400 mx-auto" /><p className="text-[11px] font-bold text-white">Promote Room Members</p><p className="text-[9px] text-white/40">Assign moderators to help manage this room.</p></div>}</div>}
           </div>
 
