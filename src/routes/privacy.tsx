@@ -28,22 +28,22 @@ function PrivacyPolicyPage() {
 
         <div className="space-y-5">
           <Section title="1. Information We Collect">
-            Jalwa may collect information you provide when you create or use an account, including your name, username, email address, profile photo, date of birth where required, and other profile information. We also collect information generated through use of the service, such as follows, blocked users, messages, room participation, reactions, gifts, rankings, notifications, and other in-app activity.
+            Jalwa may collect information you provide when you create or use an account, including your name, username, email address, profile photo, date of birth where required, and authentication identifiers. We also collect information generated through use of the service, such as follows, blocked users, messages, room participation, reactions, gifts, rankings, notifications, and other in-app activity.
           </Section>
           <Section title="2. Google Sign-In">
             If you choose to sign in with Google, Jalwa receives authentication information provided by Google, such as your Google account identifier, email address, name, and profile image when available. Jalwa uses this information to create or authenticate your Jalwa account. Jalwa does not receive or store your Google password.
           </Section>
           <Section title="3. Voice Rooms and Microphone">
-            Jalwa provides real-time audio voice rooms. When you join a voice room and enable your microphone, microphone audio is transmitted through the real-time communication service used by Jalwa so that other authorized participants can hear you. Jalwa uses LiveKit for real-time audio communication. Jalwa does not use the microphone when you have not granted the relevant permission or enabled the microphone feature.
+            Jalwa provides real-time audio voice rooms. When you join a voice room and enable your microphone, microphone audio is transmitted through LiveKit so authorized participants in the room can hear you. Jalwa does not use the microphone when you have not granted the relevant permission or enabled the microphone feature. Jalwa voice rooms are audio-only.
           </Section>
           <Section title="4. Messages, Rooms, Gifts, and Social Features">
             Information you submit or generate through chats, voice rooms, reactions, gifts, follows, profiles, rankings, and related social features may be stored and processed to provide those features, maintain service integrity, prevent abuse, and enforce our rules. Content may be visible to the users or room participants with whom you choose to share it.
           </Section>
           <Section title="5. Payments, Coins, and Financial Activity">
-            Jalwa may process information needed to manage virtual coins, diamonds, recharges, withdrawals, transaction references, and payment verification. Payment information is handled according to the payment method and provider involved. Jalwa does not need your full card number, CVV, or card expiry date to operate its hosted card-payment flow. Transaction and verification records may be retained for fraud prevention, accounting, dispute handling, and legal requirements.
+            Jalwa may process information needed to manage virtual coins, diamonds, recharges, withdrawals, transaction references, and payment verification. Payment information is handled according to the payment method and provider involved. Jalwa's hosted card-payment flow is designed so Jalwa does not receive or store your full card number, CVV, or card expiry date. Transaction and verification records may be retained for fraud prevention, accounting, dispute handling, and legal requirements.
           </Section>
           <Section title="6. Device, Technical, and Usage Information">
-            We may process technical information such as IP address, browser or device type, operating system, app version, language, network information, approximate location derived from technical data, and diagnostic or security logs. This information helps us operate, secure, troubleshoot, and improve Jalwa.
+            We may process technical information such as IP address, browser or device type, operating system, app version, language, network information, and diagnostic or security logs. This information helps us operate, secure, troubleshoot, and improve Jalwa.
           </Section>
           <Section title="7. Notifications and Push Services">
             If you enable notifications, Jalwa may use a push-notification service to deliver messages such as gifts, follows, room activity, security alerts, and other app notifications. You can control notification permissions through your device and available Jalwa settings.
@@ -51,26 +51,26 @@ function PrivacyPolicyPage() {
           <Section title="8. How We Use Information">
             We use information to authenticate accounts, provide voice rooms and social features, operate profiles and messaging, process recharges and withdrawals, deliver notifications, prevent fraud and abuse, protect users, maintain security, troubleshoot technical problems, improve the service, and comply with applicable legal obligations.
           </Section>
-          <Section title="9. Service Providers and Data Sharing">
-            Jalwa may use trusted service providers for authentication, database and storage services, hosting, real-time communication, notifications, analytics or diagnostics, and payment processing. We share information with providers only as reasonably necessary to provide, secure, or operate the relevant service. Jalwa does not sell personal information.
+          <Section title="9. Data Sharing & Service Providers">
+            Jalwa does not sell, rent, or trade personal information. We may share information with essential service providers as reasonably necessary to operate the service, including Google for authentication, Supabase for database and storage services, Vercel for hosting, Oracle Cloud Infrastructure for server infrastructure, LiveKit for real-time audio, push-notification providers, and payment processors. Providers receive only information reasonably necessary for their service.
           </Section>
           <Section title="10. Data Security">
-            Jalwa uses reasonable technical and organizational safeguards to protect information against unauthorized access, alteration, disclosure, or destruction. Data transmitted between your device and supported services is protected using encryption in transit where supported. No internet service can guarantee absolute security.
+            Jalwa uses reasonable technical and organizational safeguards to protect information against unauthorized access, alteration, disclosure, or destruction. Data transmitted between your device and supported services is protected using encryption in transit where supported. Database access is protected with access controls and row-level security where applicable. No internet service can guarantee absolute security.
           </Section>
           <Section title="11. Data Retention and Account Deletion">
             We retain information for as long as reasonably necessary to provide the service, maintain security, resolve disputes, keep financial and transaction records, and meet legal obligations. You may request deletion of your Jalwa account and associated personal information through the available account support or deletion process. Some information may need to be retained where required by law or for legitimate security and financial records.
           </Section>
-          <Section title="12. Your Choices and Rights">
-            Depending on your location and applicable law, you may have rights to access, correct, delete, or otherwise control certain personal information. You can also manage profile information, microphone permissions, notification permissions, and other available privacy controls through Jalwa or your device settings.
+          <Section title="12. Your Rights & Choices">
+            Depending on your location and applicable law, you may have rights to access, correct, delete, or otherwise control certain personal information. You can manage profile information, microphone permissions, notification permissions, and other available privacy controls through Jalwa or your device settings.
           </Section>
           <Section title="13. Children's Privacy">
-            Jalwa is not intended for children who are below the minimum age required to use the service under applicable law. We do not knowingly collect personal information from children in violation of applicable age requirements.
+            Jalwa is not intended for users under 18. We do not knowingly collect personal information from children or minors in violation of applicable law.
           </Section>
           <Section title="14. Changes to This Policy">
             We may update this Privacy Policy when our services, technology, legal requirements, or data practices change. The updated version will be published on this page with a revised update date.
           </Section>
-          <Section title="15. Contact Jalwa">
-            For privacy questions, account-data requests, or other privacy concerns, please use the support/contact channel provided inside the Jalwa app or website.
+          <Section title="15. Contact Us">
+            For privacy questions, account-data requests, or account deletion requests, please contact Jalwa at admin@jalwa.app or smartsoloutionservicess@gmail.com.
           </Section>
         </div>
 
