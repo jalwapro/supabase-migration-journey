@@ -175,6 +175,7 @@ function MePage() {
     toast.success("ID copied");
   };
   const [shareOpen, setShareOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false);
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://cloud-to-soul.lovable.app"}/u/${profile?.user_code ?? user?.id ?? ""}`;
   const handleShare = () => setShareOpen(true);
 
@@ -217,7 +218,7 @@ function MePage() {
               <ArrowLeft className="h-5 w-5" />
             </Link>
             <div className="flex items-center gap-2.5">
-              <IconBtn onClick={() => toast.info("QR code coming soon")} label="QR code"><QrCode className="h-[18px] w-[18px]" /></IconBtn>
+              <IconBtn onClick={() => setQrOpen(true)} label="QR code"><QrCode className="h-[18px] w-[18px]" /></IconBtn>
               <Link to="/settings" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 backdrop-blur-md transition hover:bg-black/70" aria-label="Edit profile">
                 <Pencil className="h-[18px] w-[18px]" />
               </Link>
@@ -364,6 +365,55 @@ function MePage() {
           </div>
         </div>
       </AppShell>
+      {qrOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Profile QR code">
+          <div className="relative w-full max-w-[360px] overflow-hidden rounded-[28px] border border-[#a855f7]/50 bg-[#0b0615] p-5 shadow-[0_0_50px_rgba(168,85,247,0.35)]">
+            <button
+              onClick={() => setQrOpen(false)}
+              aria-label="Close QR code"
+              className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-white/5 text-xl text-white/80"
+            >
+              ×
+            </button>
+            <div className="pt-2 text-center">
+              <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-[#a855f7]/15 text-[#c084fc]">
+                <QrCode className="h-7 w-7" />
+              </div>
+              <h2 className="mt-3 text-xl font-black text-white" style={HEADING}>My Jalwa QR</h2>
+              <p className="mt-1 text-xs text-white/55">Scan to open my Jalwa profile</p>
+            </div>
+            <div className="mx-auto mt-5 aspect-square w-full max-w-[270px] rounded-2xl bg-white p-3 shadow-[0_0_30px_rgba(255,255,255,0.12)]">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=600x600&margin=12&data=${encodeURIComponent(shareUrl)}`}
+                alt="QR code for Jalwa profile"
+                className="h-full w-full rounded-lg"
+                loading="eager"
+              />
+            </div>
+            <p className="mt-3 truncate text-center text-xs text-white/45">{shareUrl}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(shareUrl);
+                  toast.success("Profile link copied");
+                }}
+                className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-bold text-white transition active:scale-95"
+              >
+                Copy Link
+              </button>
+              <button
+                onClick={() => {
+                  setQrOpen(false);
+                  setShareOpen(true);
+                }}
+                className="rounded-2xl border border-[#a855f7]/50 bg-[#a855f7]/15 px-4 py-3 text-sm font-bold text-white transition active:scale-95"
+              >
+                Share Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <ShareSheet
         open={shareOpen}
         onOpenChange={setShareOpen}
