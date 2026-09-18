@@ -120,10 +120,11 @@ export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "
           { transform: `translate3d(${startX}px, ${startY}px, 0) scale(.55)`, opacity: 0 },
           { transform: `translate3d(${startX + travelX * .18}px, ${startY + travelY * .18 - 18}px, 0) scale(1.05)`, opacity: 1, offset: .18 },
           { transform: `translate3d(${startX + travelX * .62}px, ${startY + travelY * .62 + 8}px, 0) scale(.94)`, opacity: 1, offset: .62 },
-          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(1.12)`, opacity: 1, offset: .9 },
-          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(.78)`, opacity: 0 },
+          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(1.16)`, opacity: 1, offset: .82 },
+          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(1.06)`, opacity: 1, offset: .92 },
+          { transform: `translate3d(${endX}px, ${endY}px, 0) scale(.88)`, opacity: 0 },
         ],
-        { duration: 1050, easing: "cubic-bezier(.18,.72,.2,1)", fill: "forwards" },
+        { duration: 1800, easing: "cubic-bezier(.22,.72,.22,1)", fill: "forwards" },
       );
     } catch {
       layer.style.transform = `translate3d(${endX}px, ${endY}px, 0) scale(1)`;
@@ -133,7 +134,7 @@ export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "
     window.setTimeout(() => {
       animation?.cancel();
       layer.remove();
-    }, 1150);
+    }, 1950);
   };
 
   attempt();
