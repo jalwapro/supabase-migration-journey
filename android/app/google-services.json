@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "923506443706",
+    "project_id": "jalwa-84344",
+    "storage_bucket": "jalwa-84344.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:923506443706:android:476e21ca692b5bd29a4983",
+        "android_client_info": {
+          "package_name": "jalwa.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcEBF6Z_ksMO4rmTXnvbt03mhGP9DZhGE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
