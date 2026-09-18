@@ -142,7 +142,9 @@ body:has([data-jalwa-live-component="voice.seat-area"]) [role="button"] {
 
 
 /* Full-screen room isolation: never show the app chrome behind the live room. */
-body:has(main[data-jalwa-voice-room="true"]) [data-jalwa-global-nav] {
+body:has(main[data-jalwa-voice-room="true"]) [data-jalwa-global-nav],
+body:has(main[data-jalwa-voice-room="true"]) [data-jalwa-global-footer],
+body:has(main[data-jalwa-voice-room="true"]) footer:not(main footer) {
   display: none !important;
 }
 body:has(main[data-jalwa-voice-room="true"]) header:not([data-room-header="true"]) {
