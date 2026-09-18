@@ -10,7 +10,19 @@ import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 
 const JALWA_PRODUCTION_URL = "https://www.jalwa.pro/";
 const NATIVE_OAUTH_REDIRECT = "app.lovable.jalwa://auth/callback";
-const GOOGLE_WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined;
+const GOOGLE_WEB_CLIENT_ID =
+  (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ??
+  "516412597113-2plcc8mbokimpljcmjfdon3pdnos0v0d.apps.googleusercontent.com";
+
+let googleSignInInitialized = false;
+
+async function initializeGoogleSignIn() {
+  if (googleSignInInitialized) return;
+  await GoogleSignIn.initialize({
+    clientId: GOOGLE_WEB_CLIENT_ID,
+  });
+  googleSignInInitialized = true;
+}
 
 function getAuthRedirectUrl() {
   if (typeof window === "undefined") return JALWA_PRODUCTION_URL;
@@ -165,6 +177,42 @@ function AuthPage() {
     if (error) setErr(error.message);
   }
 
+  async function nativeGoogleSignIn() {
+    resetAlerts();
+    setBusy(true);
+
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        setGoogleSheetOpen(false);
+        await oauth("google");
+        return;
+      }
+
+      await initializeGoogleSignIn();
+      const result = await GoogleSignIn.signIn();
+
+      if (!result.idToken) {
+        throw new Error("Google did not return an ID token.");
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "google",
+        token: result.idToken,
+      });
+
+      if (error) throw error;
+      setGoogleSheetOpen(false);
+      navigate({ to: "/" });
+    } catch (error: unknown) {
+      const code = (error as { code?: string })?.code;
+      if (code !== GoogleErrorCode.SignInCanceled) {
+        setErr(error instanceof Error ? error.message : "Google sign-in failed. Please try again.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden px-4 py-10 flex items-center justify-center">
       <div
@@ -232,7 +280,10 @@ function AuthPage() {
           <div className="mt-6 grid gap-2.5">
             <button
               type="button"
-              onClick={() => oauth("google")}
+              onClick={() => {
+                resetAlerts();
+                setGoogleSheetOpen(true);
+              }}
               className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card py-3 font-medium hover:bg-muted transition-colors"
             >
               <GoogleIcon className="h-4 w-4" />
