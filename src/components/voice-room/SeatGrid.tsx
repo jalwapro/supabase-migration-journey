@@ -109,7 +109,7 @@ export function Seat({ seat, onClick }: SeatProps) {
 
   if (!user) {
     return (
-      <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
+      <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
         <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
           <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">{num}</span>
           <span className="relative aspect-square w-full max-w-[56px] p-0 bg-transparent overflow-visible"><EmptySeatArt locked={is_locked} /></span>
@@ -385,7 +385,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
             {rowSeats.map((seat) => {
               const seatIdx = seat.index ?? seat.seatNumber ?? 1;
               if (seat.isHost) return (
-                <div key={seatIdx} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
+                <div key={seatIdx} data-seat-index={seatIdx} data-user-dp={seat.user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                     <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                     <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
