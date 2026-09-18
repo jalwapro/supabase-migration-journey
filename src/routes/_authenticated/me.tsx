@@ -10,7 +10,6 @@ import {
   ArrowLeft,
   QrCode,
   Pencil,
-  MoreVertical,
   Copy,
   Mail,
   BadgeCheck,
@@ -222,7 +221,6 @@ function MePage() {
               <Link to="/settings" className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/50 backdrop-blur-md transition hover:bg-black/70" aria-label="Edit profile">
                 <Pencil className="h-[18px] w-[18px]" />
               </Link>
-              <IconBtn onClick={handleShare} label="More"><MoreVertical className="h-[18px] w-[18px]" /></IconBtn>
             </div>
           </div>
 
