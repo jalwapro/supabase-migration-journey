@@ -204,7 +204,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
   const confirmHostEnd = () => { void performEndRoom(); };
   const filteredMembers = members.filter(member => !memberSearch.trim() || member.username.toLowerCase().includes(memberSearch.trim().toLowerCase()));
 
-  return <header className="relative z-[60] flex shrink-0 flex-col px-2 pt-[calc(.2rem+env(safe-area-inset-top))] sm:px-2.5" style={{ pointerEvents: "auto", backgroundColor: "var(--primary)" }}>
+  return <header data-room-header="true" className="relative z-[60] flex shrink-0 flex-col px-2 pt-[calc(.2rem+env(safe-area-inset-top))] sm:px-2.5" style={{ pointerEvents: "auto", backgroundColor: "var(--primary)" }}>
     <div className="relative z-[61] flex min-h-[56px] items-center gap-1.5">
       <div role="button" tabIndex={0} onClick={hostProfileClick} onKeyDown={e => { if (e.key === "Enter" || e.key === " ") hostProfileClick(); }} className="relative z-[62] flex min-w-0 flex-1 items-center gap-2 rounded-[18px] border-2 border-[color:var(--secondary)]/75 bg-[color:var(--secondary)]/25 p-2 text-left shadow-[0_1px_10px_rgba(0,0,0,.35)] active:opacity-85" aria-label={`Open ${hostName} profile`}>
         {roomDp ? <img src={roomDp} alt="" className="h-11 w-11 shrink-0 rounded-[12px] border-2 border-[color:var(--secondary)] object-cover shadow-[0_1px_8px_rgba(0,0,0,.45)]" /> : <div className="grid h-11 w-11 shrink-0 place-items-center rounded-[12px] border-2 border-[color:var(--secondary)] bg-black/15 text-sm font-black">{hostName.charAt(0).toUpperCase()}</div>}
