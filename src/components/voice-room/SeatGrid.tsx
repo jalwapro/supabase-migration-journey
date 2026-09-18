@@ -125,10 +125,10 @@ export function Seat({ seat, onClick }: SeatProps) {
   const level = user?.level ?? profileMedia?.level ?? 0;
 
   return (
-    <div className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
+    <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
-        <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+        <span data-avatar="true" className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
           <LevelAvatar
             src={avatar}
             name={username}
@@ -388,7 +388,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                 <div key={seatIdx} data-seat-index={seatIdx} data-user-dp={seat.user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                     <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
-                    <span className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+                    <span data-avatar="true" className="relative aspect-square w-full max-w-[56px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
                       <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
                       {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-3 h-[calc(100%+24px)] w-[calc(100%+24px)] pointer-events-none object-contain z-30" draggable={false} />}
                     </span>
