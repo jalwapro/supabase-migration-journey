@@ -311,14 +311,6 @@ function Home() {
 
   const tabIndex = TABS.findIndex((t) => t.key === tab);
 
-  // Google OAuth requires the homepage to be publicly accessible and to
-  // clearly explain the app, its features, and why user data is requested.
-  // Keep the authenticated home unchanged; anonymous visitors get a public
-  // brand/feature/privacy landing page instead of being forced to log in.
-  if (!loading && !user) {
-    return <PublicHome />;
-  }
-
   return (
     <>
       <div className="min-h-[100dvh] pb-28">
@@ -1025,94 +1017,6 @@ function RoomListItem({ room }: { room: Room }) {
   );
 }
 
-function PublicHome() {
-  return (
-    <main className="min-h-[100dvh] bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col px-5 py-8 sm:px-8 sm:py-12">
-        <header className="flex items-center justify-between">
-          <Link to="/" aria-label="Jalwa home" className="flex items-center gap-3">
-            <img src={jalwaLogo} alt="Jalwa Global Live" className="h-12 w-12 rounded-2xl object-cover ring-2 ring-[color:var(--primary)]/40" />
-            <div>
-              <p className="text-lg font-black">Jalwa Global Live</p>
-              <p className="text-xs text-muted-foreground">Live social voice rooms</p>
-            </div>
-          </Link>
-          <Link
-            to="/auth"
-            className="rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-4 py-2 text-xs font-black text-primary-foreground"
-          >
-            Sign in
-          </Link>
-        </header>
-
-        <section className="flex flex-1 flex-col justify-center py-14">
-          <div className="mb-5 inline-flex w-fit items-center rounded-full border border-[color:var(--primary)]/30 bg-[color:var(--primary)]/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[color:var(--primary)]">
-            Jalwa Global Live
-          </div>
-          <h1 className="max-w-xl text-4xl font-black tracking-tight sm:text-5xl">
-            Connect, talk, and enjoy live voice rooms.
-          </h1>
-          <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground">
-            Jalwa is a social live-audio platform where people can join real-time voice rooms,
-            chat with other users, follow creators, send reactions and virtual gifts, take part
-            in rankings and PK battles, and manage their Jalwa coins and other in-app features.
-          </p>
-
-          <div className="mt-8 grid gap-3 sm:grid-cols-2">
-            {[
-              ["🎙️", "Live voice rooms", "Join audio-only rooms and participate with other listeners and speakers."],
-              ["💬", "Chat & social", "Profiles, follows, messaging, reactions, notifications, and community interaction."],
-              ["🎁", "Gifts & rankings", "Send virtual gifts, earn in-app rewards, and participate in rankings and room activities."],
-              ["⚔️", "PK battles & games", "Take part in supported PK battles and interactive entertainment features."],
-            ].map(([icon, title, description]) => (
-              <div key={title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-                <div className="text-xl">{icon}</div>
-                <h2 className="mt-2 text-sm font-black">{title}</h2>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-            <h2 className="text-sm font-black">Why Jalwa requests your information</h2>
-            <p className="mt-2 text-xs leading-6 text-muted-foreground">
-              Account information is used to create and secure your Jalwa account and provide
-              profiles, social features, and notifications. If you use Google Sign-In, Jalwa
-              receives authentication details such as your Google account identifier, email,
-              name, and profile image when available; Jalwa does not receive your Google password.
-              Microphone permission is requested only for voice-room audio so authorized room
-              participants can hear you. Technical and transaction information is used to operate,
-              secure, troubleshoot, and support the service.
-            </p>
-          </div>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              to="/auth"
-              className="rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-6 py-3 text-sm font-black text-primary-foreground"
-            >
-              Get started
-            </Link>
-            <Link
-              to="/privacy"
-              className="rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-bold"
-            >
-              Privacy Policy
-            </Link>
-          </div>
-        </section>
-
-        <footer className="border-t border-white/10 pt-5 text-xs leading-5 text-muted-foreground">
-          <p>Jalwa Global Live — live social voice rooms and community features.</p>
-          <p className="mt-1">
-            Privacy: <Link to="/privacy" className="font-semibold text-foreground underline">Privacy Policy</Link>
-            {" · "}Contact: admin@jalwa.app
-          </p>
-        </footer>
-      </div>
-    </main>
-  );
-}
 
 function EmptyRooms({ tab }: { tab: TabKey }) {
   const label =
