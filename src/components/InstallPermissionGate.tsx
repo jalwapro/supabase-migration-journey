@@ -41,7 +41,7 @@ export function InstallPermissionGate() {
     if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;
     // Google OAuth homepage and privacy policy must remain fully public and
     // free of permission prompts or other first-launch gates.
-    if (window.location.pathname === "/" || window.location.pathname === "/privacy") return;
+    if (window.location.pathname === "/" || window.location.pathname === "/splash" || window.location.pathname === "/privacy" || window.location.pathname === "/terms") return;
     // Show on native app, installed PWA, AND regular browser tab —
     // har user ko first-launch pe mic/camera/notif/location maangna hai.
     try {
