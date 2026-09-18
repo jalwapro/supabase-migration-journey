@@ -133,8 +133,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   useEffect(() => { let active = true; void supabase.from("room_messages").select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").eq("room_id", roomId).order("created_at", { ascending: true }).limit(50).then(({ data }) => { if (active && data) setRoomMessages(data as RoomChatMessage[]); }); return () => { active = false; }; }, [roomId]);
   useEffect(() => { if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight; }, [roomMessages]);
   
-  const sendRoomMessage = async () => { 
-    const value = draft.trim(); 
+  const sendRoomMessage = async (messageOverride?: string) => { 
+    const value = (messageOverride ?? draft).trim(); 
     if (!value || sending || !roomSettings.chat_enabled) return; 
     setSending(true); 
     setDraft(""); 
@@ -349,7 +349,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       {showMiniInputPopup && (
         <div className="absolute inset-0 z-[2147483500] flex items-end justify-center bg-black/30 backdrop-blur-md animate-fade-in p-0" onClick={() => setShowMiniInputPopup(false)}>
           <div className="w-full max-w-[480px] bg-[#120a1f]/90 border-t p-2.5 rounded-t-2xl shadow-2xl flex items-center gap-2 animate-slide-up backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }} onClick={e => e.stopPropagation()}>
-            <input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="url" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none" style={{ borderColor: primaryThemeColor }} />
+            <input value={miniDraft} onChange={e => setMiniDraft(e.target.value.slice(0, 500))} onKeyDown={async e => { if (e.key === "Enter") { e.preventDefault(); if (!miniDraft.trim()) return; setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(miniDraft); } }} placeholder="Type a comment..." autoFocus autoComplete="off" autoCorrect="off" autoCapitalize="none" spellCheck={false} enterKeyHint="send" inputMode="url" className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3.5 py-2 text-xs font-medium text-white placeholder:text-white/40 outline-none" style={{ borderColor: primaryThemeColor }} />
             <button type="button" onClick={async () => { if (!miniDraft.trim()) return; setDraft(miniDraft); setShowMiniInputPopup(false); setMiniDraft(""); await sendRoomMessage(); }} className="px-4 py-2 rounded-xl text-white font-extrabold text-xs shadow-lg active:scale-95 transition" style={{ background: `linear-gradient(90deg, ${primaryThemeColor}, ${accentThemeColor})` }}>Send</button>
           </div>
         </div>
