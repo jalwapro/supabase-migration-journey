@@ -277,7 +277,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-        <div data-room-header="true" className="relative z-[70] block w-full shrink-0 px-3 pt-[env(safe-area-inset-top)]"><RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} /></div>
+        <div data-room-header="true" className="relative z-[70] block w-full shrink-0 px-3 pt-[env(safe-area-inset-top)]"><RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} exitMenuOpen={exitMenuOpen} onExitMenuOpenChange={setExitMenuOpen} /></div>
         <GiftAnimationPlayer roomId={roomId} />
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
           <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 px-1 no-scrollbar">
