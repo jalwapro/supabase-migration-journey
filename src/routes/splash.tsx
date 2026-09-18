@@ -1,5 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Gift, Mic, ShieldCheck, Users, WalletCards, Gamepad2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { JALWA_LOGO as logo } from "@/lib/r2-static";
 
 export const Route = createFileRoute("/splash")({
@@ -24,6 +26,13 @@ export const Route = createFileRoute("/splash")({
 });
 
 function Splash() {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  useEffect(() => {
+    if (!loading && user) navigate({ to: "/", replace: true });
+  }, [loading, user, navigate]);
+
   return (
     <main className="min-h-[100dvh] bg-background text-foreground">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-5 py-8 sm:px-8">
