@@ -3,14 +3,12 @@ import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { LevelAvatar } from "@/components/LevelAvatar";
-import { frameForLevel } from "@/lib/levelFrames";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const MIN_CAPACITY = 4;
 const MAX_CAPACITY = 20;
 const DEFAULT_SEAT_AVATAR = "https://png.pngtree.com/png-vector/20260330/ourmid/pngtree-luxurious-red-throne-chair-with-golden-lion-armrests-and-ornate-crown-png-image_18968101.webp";
-const EMPTY_SEAT_FRAME = frameForLevel(1);
 
 const normalizeCapacity = (value?: number) => Math.min(MAX_CAPACITY, Math.max(MIN_CAPACITY, Math.floor(Number(value ?? MAX_CAPACITY)) || MAX_CAPACITY));
 const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : `${n}`;
@@ -58,13 +56,11 @@ export type RoomParticipant = {
 function EmptySeatArt({ locked }: { locked: boolean }) {
   return (
     <span className="relative flex h-full w-full items-center justify-center overflow-visible">
-      <LevelAvatar
+      <img
         src={DEFAULT_SEAT_AVATAR}
-        name="Empty seat"
-        level={1}
-        size="sm"
-        showBadge={false}
-        frame={EMPTY_SEAT_FRAME}
+        alt=""
+        className="h-full w-full rounded-full object-cover border-0 shadow-none"
+        draggable={false}
       />
       {locked && <Lock className="pointer-events-none absolute z-[20] h-3.5 w-3.5 text-amber-400 drop-shadow" />}
     </span>
