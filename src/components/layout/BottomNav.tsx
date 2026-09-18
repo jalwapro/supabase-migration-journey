@@ -64,7 +64,7 @@ export function BottomNav() {
   }, []);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} aria-label="Primary">
+    <nav data-jalwa-global-nav="true" className="fixed bottom-0 left-0 right-0 z-40 border-t border-border bg-background/95" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }} aria-label="Primary">
       <ul className="mx-auto grid max-w-md grid-cols-5 items-end px-2 pt-1.5 pb-1.5">
         {tabs.slice(0, 5).map((item) => {
           const to = item.route ?? "/";
