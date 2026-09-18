@@ -35,6 +35,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const [showMiniInputPopup, setShowMiniInputPopup] = useState(false);
   const [miniDraft, setMiniDraft] = useState("");
   const [privateChatOpen, setPrivateChatOpen] = useState(false);
+  const [exitMenuOpen, setExitMenuOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<VoiceRoomMemberProfile | null>(null);
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
   const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
@@ -71,6 +72,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     const handlePopState = (e: PopStateEvent) => {
       let closedSomething = false;
       if (generatedPin) { setGeneratedPin(null); closedSomething = true; }
+      else if (exitMenuOpen) { setExitMenuOpen(false); closedSomething = true; }
       else if (privateChatOpen) { setPrivateChatOpen(false); closedSomething = true; }
       else if (giftOpen) { setGiftOpen(false); closedSomething = true; }
       else if (emojiOpen) { setEmojiOpen(false); setSelectedTargetSeat(null); closedSomething = true; }
@@ -84,6 +86,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       else if (showHostFreePopup) { setShowHostFreePopup(false); closedSomething = true; }
       else if (showPinModal) { setShowPinModal(false); setEnteredPin(""); closedSomething = true; }
       else if (showRocketAnimation) { setShowRocketAnimation(false); closedSomething = true; }
+      else { setExitMenuOpen(true); closedSomething = true; }
       
       if (closedSomething) { 
         e.preventDefault(); 
@@ -107,6 +110,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         else if (showHostFreePopup) setShowHostFreePopup(false);
         else if (showPinModal) setShowPinModal(false);
         else if (showRocketAnimation) setShowRocketAnimation(false);
+        else setExitMenuOpen(true);
       }
     };
 
@@ -118,7 +122,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [privateChatOpen, giftOpen, emojiOpen, gamesOpen, popularityOpen, userMoreOpen, showMiniInputPopup, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin, showHostFreePopup, showPinModal, showRocketAnimation]);
+  }, [privateChatOpen, giftOpen, emojiOpen, gamesOpen, popularityOpen, userMoreOpen, showMiniInputPopup, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin, showHostFreePopup, showPinModal, showRocketAnimation, exitMenuOpen]);
 
   useEffect(() => { if (roomSettings.is_locked && !isHost && !isUnlockedByPin) setShowPinModal(true); else setShowPinModal(false); }, [roomSettings.is_locked, isHost, isUnlockedByPin]);
   useEffect(() => { let active = true; const fetchSlides = async () => { const { data, error } = await supabase.from("room_slides").select("id, title, image_url, link_url").eq("is_active", true).order("sort_order", { ascending: true }); if (active && !error && data && data.length > 0) setGameSlides(data); else if (active) setGameSlides([{ id: "1", title: "Jalwa Games", image_url: "/images/games/ludo-banner.jpg" }]); }; void fetchSlides(); const channel = supabase.channel("room-slides-sync").on("postgres_changes", { event: "*", schema: "public", table: "room_slides" }, () => void fetchSlides()).subscribe(); return () => { active = false; void supabase.removeChannel(channel); }; }, []);
