@@ -2,13 +2,15 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { Mail, KeyRound, Loader2, Sparkles } from "lucide-react";
+import { GoogleSignIn, ErrorCode as GoogleErrorCode } from "@capawesome/capacitor-google-sign-in";
+import { Mail, KeyRound, Loader2, Sparkles, ShieldCheck, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 
 const JALWA_PRODUCTION_URL = "https://www.jalwa.pro/";
 const NATIVE_OAUTH_REDIRECT = "app.lovable.jalwa://auth/callback";
+const GOOGLE_WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined;
 
 function getAuthRedirectUrl() {
   if (typeof window === "undefined") return JALWA_PRODUCTION_URL;
@@ -77,6 +79,7 @@ function AuthPage() {
   const [otp, setOtp] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [googleSheetOpen, setGoogleSheetOpen] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -172,6 +175,48 @@ function AuthPage() {
             "radial-gradient(60% 40% at 20% 10%, color-mix(in oklab, var(--primary) 30%, transparent) 0%, transparent 60%), radial-gradient(50% 40% at 90% 20%, color-mix(in oklab, var(--secondary) 30%, transparent) 0%, transparent 60%), radial-gradient(60% 50% at 50% 100%, color-mix(in oklab, var(--accent) 25%, transparent) 0%, transparent 70%)",
         }}
       />
+
+      {googleSheetOpen && (
+        <div className="fixed inset-0 z-[200] flex items-end justify-center bg-black/70 backdrop-blur-sm p-0 sm:items-center sm:p-6">
+          <div className="w-full max-w-md rounded-t-[2rem] border border-border bg-background p-6 shadow-2xl sm:rounded-[2rem]">
+            <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-muted" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-white shadow">
+                  <GoogleIcon className="h-6 w-6" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold">Continue with Google</h2>
+                  <p className="text-xs text-muted-foreground">Secure sign-in inside Jalwa</p>
+                </div>
+              </div>
+              <button type="button" onClick={() => setGoogleSheetOpen(false)} disabled={busy} className="rounded-full p-2 text-muted-foreground hover:bg-muted">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-5 rounded-2xl border border-border bg-card/60 p-4">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" />
+                <p className="text-xs leading-5 text-muted-foreground">
+                  Google account selection and verification is handled by the secure Google sign-in UI. Jalwa never asks for your Google password.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={nativeGoogleSignIn}
+              disabled={busy}
+              className="mt-5 flex w-full items-center justify-center gap-3 rounded-full bg-primary py-3.5 font-bold text-primary-foreground disabled:opacity-60"
+            >
+              <GoogleIcon className="h-5 w-5" />
+              {busy ? "Connecting securely…" : "Choose Google account"}
+            </button>
+            <p className="mt-3 text-center text-[10px] text-muted-foreground">
+              Your Google account stays protected by Google’s native sign-in system.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="w-full max-w-md">
         <div className="glass rounded-3xl p-8 shadow-2xl">
