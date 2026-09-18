@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Gift, Mic, ShieldCheck, Users, WalletCards, Gamepad2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
