@@ -201,7 +201,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   };
 
   return (
-    <main className="fixed inset-0 z-50 mx-auto flex w-full max-w-[480px] flex-col overflow-hidden bg-slate-950 text-foreground shadow-2xl h-[100svh]">
+    <main data-jalwa-voice-room="true" className="fixed inset-0 z-50 mx-auto flex w-full max-w-[480px] flex-col overflow-hidden bg-slate-950 text-foreground shadow-2xl h-[100svh]">
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover opacity-90" /></div> : null}
       
       {showPinModal && (
