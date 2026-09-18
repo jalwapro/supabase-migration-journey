@@ -1,230 +1,119 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { Mic, Video, Gift } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Gift, Mic, ShieldCheck, Users, WalletCards, Gamepad2 } from "lucide-react";
 import { JALWA_LOGO as logo } from "@/lib/r2-static";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/splash")({
   component: Splash,
   head: () => ({
     meta: [
-      { title: "Jalwa — Live Voice & Video Party" },
+      { title: "Jalwa Global Live — Live Voice Rooms & Social" },
       {
         name: "description",
         content:
-          "Jalwa: live voice and video party rooms. Create, share, and shine with gifts and games.",
+          "Jalwa Global Live is a social live-audio platform for voice rooms, real-time conversations, gifts, games, profiles, messaging, and virtual coins.",
       },
-      { property: "og:title", content: "Jalwa — Live Voice & Video Party" },
+      { property: "og:title", content: "Jalwa Global Live" },
       {
         property: "og:description",
-        content: "Join live voice & video rooms. Send gifts. Play games.",
+        content:
+          "Join live voice rooms, talk with communities, send gifts, play games, and connect with people on Jalwa.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
 });
 
-type SplashCfg = {
-  splash_enabled: boolean;
-  splash_video: string | null;
-  splash_video_poster: string | null;
-  splash_image: string | null;
-  splash_duration: number;
-};
-
 function Splash() {
-  const navigate = useNavigate();
-  const [progress, setProgress] = useState(0);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const embeddedPreview = typeof window !== "undefined" && window.self !== window.top;
-
-  // The customization studio embeds the real app in an iframe. Never leave
-  // that iframe on the splash screen; jump directly to the real Home UI.
-  useEffect(() => {
-    if (!embeddedPreview) return;
-    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
-    window.location.replace("/?adminPreview=1&customizationMode=design&previewIdentity=neutral");
-  }, [embeddedPreview]);
-
-  const cfg = useQuery({
-    queryKey: ["splash_cfg"],
-    queryFn: async () => {
-      // Progressive fallback: some deployments may not have every splash column yet.
-      const attempts = [
-        "splash_enabled,splash_video,splash_video_poster,splash_image,splash_duration",
-        "splash_video,splash_video_poster,splash_image",
-        "splash_image",
-      ];
-      for (const cols of attempts) {
-        const { data, error } = await supabase
-          .from("app_settings")
-          .select(cols)
-          .eq("id", "global")
-          .maybeSingle();
-        if (!error) return (data ?? null) as unknown as SplashCfg | null;
-      }
-      return null;
-    },
-    staleTime: 60_000,
-    retry: false,
-  });
-
-  const videoUrl = cfg.data?.splash_video ?? null;
-  const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
-  const [videoStarted, setVideoStarted] = useState(false);
-
-  function finishVideo() {
-    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
-    navigate({ to: "/" });
-  }
-
-  // If settings fetch hangs on a slow/offline network, don't trap the user on
-  // the black splash screen. Move into the app and let auth hydrate normally.
-  useEffect(() => {
-    if (embeddedPreview || !cfg.isLoading) return;
-    const t = window.setTimeout(finishVideo, 3500);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cfg.isLoading, embeddedPreview]);
-
-  // Start-watchdog: if the video hasn't begun playing within 10s (bad network
-  // / broken file), give up and move on. Once it starts, let it play through
-  // to its natural end — no total-duration cap.
-  useEffect(() => {
-    if (embeddedPreview || !videoUrl || videoStarted) return;
-    const t = window.setTimeout(finishVideo, 10000);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [videoUrl, videoStarted, embeddedPreview]);
-
-  // Fallback progress bar (used when no video)
-  useEffect(() => {
-    if (embeddedPreview || videoUrl) return;
-    const start = Date.now();
-    let raf = 0;
-    const tick = () => {
-      const p = Math.min(1, (Date.now() - start) / duration);
-      setProgress(p);
-      if (p < 1) raf = requestAnimationFrame(tick);
-      else {
-        try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
-        navigate({ to: "/" });
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [navigate, duration, videoUrl, embeddedPreview]);
-
-  if (embeddedPreview) {
-    return <main className="min-h-[100dvh] bg-background" aria-label="Loading app preview" />;
-  }
-
-  if (videoUrl) {
-    return (
-      <main
-        className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-black"
-        style={{
-          paddingTop: "env(safe-area-inset-top)",
-          paddingBottom: "env(safe-area-inset-bottom)",
-        }}
-      >
-        <video
-          ref={videoRef}
-          src={videoUrl}
-          poster={cfg.data?.splash_video_poster ?? undefined}
-          autoPlay
-          playsInline
-          preload="auto"
-          onEnded={finishVideo}
-          onError={finishVideo}
-          onCanPlay={() => {
-            const v = videoRef.current;
-            if (!v) return;
-            v.muted = false;
-            v.volume = 1;
-            v.play().catch(() => {
-              // Browser blocked audio autoplay — fall back to muted playback.
-              v.muted = true;
-              v.play().catch(() => {});
-            });
-          }}
-          onPlaying={() => setVideoStarted(true)}
-          className="h-full max-h-[100dvh] w-full max-w-[480px] object-contain"
-        />
-        {!videoStarted && (
-          <div className="pointer-events-none absolute inset-0 grid place-items-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
-          </div>
-        )}
-        <button
-          onClick={finishVideo}
-          className="absolute bottom-20 right-6 rounded-full bg-white/20 px-5 py-2 text-sm font-bold text-white backdrop-blur"
-          style={{ marginBottom: "env(safe-area-inset-bottom)" }}
-        >
-          Skip
-        </button>
-      </main>
-    );
-  }
-
-  // Config is still loading — show a plain black screen (no animated fallback)
-  // so users never see two splashes back-to-back before the video appears.
-  if (cfg.isLoading) {
-    return <main className="min-h-[100dvh] bg-black" />;
-  }
-
   return (
-    <main
-      className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-background px-6"
-      style={{
-        paddingTop: "env(safe-area-inset-top)",
-        paddingBottom: "env(safe-area-inset-bottom)",
-      }}
-    >
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full opacity-60 blur-3xl"
-        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--primary) 55%, transparent), transparent)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full opacity-50 blur-3xl"
-        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--secondary) 55%, transparent), transparent)" }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 left-1/3 h-80 w-80 rounded-full opacity-40 blur-3xl"
-        style={{ background: "radial-gradient(closest-side, color-mix(in oklab, var(--gold) 45%, transparent), transparent)" }}
-      />
+    <main className="min-h-[100dvh] bg-background text-foreground">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-5 py-8 sm:px-8">
+        <header className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={logo}
+              alt="Jalwa Global Live"
+              className="h-12 w-12 rounded-2xl object-cover shadow-lg"
+            />
+            <div>
+              <p className="text-lg font-black tracking-tight">Jalwa Global Live</p>
+              <p className="text-xs text-muted-foreground">Live voice & social community</p>
+            </div>
+          </div>
+          <Link
+            to="/auth"
+            className="rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-4 py-2 text-xs font-black text-primary-foreground"
+          >
+            Sign in
+          </Link>
+        </header>
 
-      <div className="relative z-10 flex w-full max-w-xs flex-col items-center">
-        <div
-          className="relative h-32 w-32 overflow-hidden rounded-[28px] border border-border shadow-[0_20px_60px_-20px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
-          style={{ background: "linear-gradient(135deg, var(--gold), var(--primary), var(--secondary))" }}
-        >
-          <img src={cfg.data?.splash_image || logo} alt="Jalwa" className="h-full w-full object-cover" draggable={false} />
-        </div>
-
-        <h1 className="mt-6 text-5xl font-black tracking-tight text-gradient">Jalwa</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Live Voice &amp; Video Party</p>
-
-        <div className="mt-8 flex items-center gap-8">
-          <Feature Icon={Mic} label="Voice" color="var(--secondary)" />
-          <Feature Icon={Video} label="Video" color="var(--primary)" />
-          <Feature Icon={Gift} label="Gifts" color="var(--gold)" />
-        </div>
-
-        <div className="mt-10 h-1.5 w-40 overflow-hidden rounded-full bg-card">
+        <section className="relative mt-10 overflow-hidden rounded-[2rem] border border-white/10 bg-card/60 p-7 shadow-2xl sm:p-10">
           <div
-            className="h-full rounded-full transition-[width] duration-100 ease-linear"
-            style={{
-              width: `${Math.round(progress * 100)}%`,
-              background: "linear-gradient(90deg, var(--primary), var(--gold), var(--secondary))",
-            }}
+            aria-hidden
+            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full blur-3xl"
+            style={{ background: "color-mix(in oklab, var(--primary) 25%, transparent)" }}
           />
-        </div>
+          <div className="relative max-w-2xl">
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-[color:var(--primary)]">
+              Welcome to Jalwa
+            </p>
+            <h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">
+              Connect. Talk. Share the moment.
+            </h1>
+            <p className="mt-5 max-w-xl text-sm leading-7 text-muted-foreground sm:text-base">
+              Jalwa is a social live-audio platform where people can join real-time voice
+              rooms, talk with communities, follow users, exchange messages and reactions,
+              send virtual gifts, play games, and manage virtual coins and diamonds.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                to="/auth"
+                className="rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-6 py-3 text-sm font-black text-primary-foreground"
+              >
+                Get started
+              </Link>
+              <Link
+                to="/privacy"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold"
+              >
+                <ShieldCheck className="h-4 w-4" />
+                Privacy Policy
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-3 sm:grid-cols-2">
+          <Feature Icon={Mic} title="Live voice rooms" text="Real-time audio conversations through LiveKit. Microphone access is used only for voice-room audio." />
+          <Feature Icon={Users} title="Social community" text="Profiles, follows, messaging, reactions, room participation, rankings, and notifications." />
+          <Feature Icon={Gift} title="Gifts & interactions" text="Send virtual gifts and reactions to other users during social interactions and live rooms." />
+          <Feature Icon={Gamepad2} title="Games & activities" text="Participate in in-app games and interactive community activities." />
+          <Feature Icon={WalletCards} title="Coins & wallet" text="Manage virtual coins, diamonds, recharges, withdrawals, and transaction records." />
+          <Feature Icon={ShieldCheck} title="Google Sign-In" text="Google Sign-In is used to authenticate your Jalwa account. Jalwa does not receive your Google password." />
+        </section>
+
+        <section className="mt-6 rounded-3xl border border-white/10 bg-white/[0.03] p-5 sm:p-6">
+          <h2 className="text-base font-black sm:text-lg">Why Jalwa requests your data</h2>
+          <p className="mt-2 text-sm leading-7 text-muted-foreground">
+            Account and Google authentication data is used to create and secure your account.
+            Microphone permission enables real-time voice participation. Profile, messaging,
+            room, gift, wallet, and device information is used to provide the features you
+            choose to use, maintain security, prevent abuse, process transactions, deliver
+            notifications, and improve the service.
+          </p>
+          <p className="mt-3 text-sm leading-7 text-muted-foreground">
+            Jalwa does not sell, rent, or trade personal information. Details about collection,
+            use, sharing, security, retention, and deletion are available in our Privacy Policy.
+          </p>
+        </section>
+
+        <footer className="mt-auto pt-8 text-center text-xs text-muted-foreground">
+          <div className="flex items-center justify-center gap-4">
+            <Link to="/privacy" className="hover:text-foreground">Privacy Policy</Link>
+            <Link to="/auth" className="hover:text-foreground">Sign in</Link>
+          </div>
+          <p className="mt-3">© 2026 Jalwa Global Live. All rights reserved.</p>
+        </footer>
       </div>
     </main>
   );
@@ -232,17 +121,20 @@ function Splash() {
 
 function Feature({
   Icon,
-  label,
-  color,
+  title,
+  text,
 }: {
-  Icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  label: string;
-  color: string;
+  Icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  text: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <Icon className="h-6 w-6" style={{ color }} />
-      <span className="text-[11px] text-muted-foreground">{label}</span>
-    </div>
+    <article className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+      <div className="grid h-10 w-10 place-items-center rounded-2xl bg-[color:var(--primary)]/10 text-[color:var(--primary)]">
+        <Icon className="h-5 w-5" />
+      </div>
+      <h2 className="mt-4 text-sm font-black">{title}</h2>
+      <p className="mt-1.5 text-xs leading-6 text-muted-foreground">{text}</p>
+    </article>
   );
 }
