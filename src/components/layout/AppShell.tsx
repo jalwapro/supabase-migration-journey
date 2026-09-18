@@ -25,7 +25,7 @@ export function AppShell({
 
 
   return (
-    <div className="min-h-[100dvh] pb-24">
+    <div className="min-h-[100dvh] pb-[calc(6rem+env(safe-area-inset-bottom,0px))]">
       {showHeader && (
         <header
           className="sticky top-0 z-30 border-b border-border bg-background/95"
