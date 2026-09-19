@@ -138,11 +138,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     const uid = nextSession.user.id;
+    // Keep auth loading until profile/roles are hydrated. Admin routes depend on
+    // roles and must not redirect during the brief hydration window.
     hydrateTimerRef.current = setTimeout(async () => {
       const [p, r] = await Promise.all([loadProfile(uid), loadRoles(uid)]);
       if (token !== hydrateTokenRef.current) return;
       setProfile(p);
       setRoles(r);
+      setLoading(false);
     }, 0);
   }, []);
 
@@ -160,7 +163,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     initialSessionLoadedRef.current = true;
     await hydrate(nextSession);
-    setLoading(false);
   }, [hydrate]);
 
   const refresh = useCallback(async () => {
@@ -186,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       if (event === "INITIAL_SESSION" && !s && !initialSessionLoadedRef.current) return;
       void hydrate(s);
-      if (event !== "SIGNED_OUT") setLoading(false);
     });
     void loadInitialSession();
     return () => sub.subscription.unsubscribe();
