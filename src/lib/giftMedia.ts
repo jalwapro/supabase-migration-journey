@@ -42,13 +42,6 @@ export function preloadGiftVideo(url: string | null | undefined) {
   if (!src || preloadedVideos.has(src) || typeof document === "undefined") return;
   preloadedVideos.add(src);
 
-  const link = document.createElement("link");
-  link.rel = "preload";
-  link.as = "video";
-  link.href = src;
-  link.crossOrigin = "anonymous";
-  document.head.appendChild(link);
-
   const video = document.createElement("video");
   video.preload = "auto";
   video.muted = true;
