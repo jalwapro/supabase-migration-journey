@@ -46,8 +46,53 @@ async function getR2() {
   };
 }
 
+function trimTrailingSlashes(value: string) {
+  let end = value.length;
+  while (end > 0 && value[end - 1] === "/") end -= 1;
+  return value.slice(0, end);
+}
+
 function decodeXml(value: string) {
-  return value.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+  return value.split("&amp;").join("&").split("&lt;").join("<").split("&gt;").join(">").split("&quot;").join('"').split("&#39;").join("'");
+}
+
+function extractTagValues(xml: string, tag: string) {
+  const open = "<" + tag + ">";
+  const close = "</" + tag + ">";
+  const values: string[] = [];
+  let cursor = 0;
+  while (true) {
+    const start = xml.indexOf(open, cursor);
+    if (start < 0) break;
+    const valueStart = start + open.length;
+    const end = xml.indexOf(close, valueStart);
+    if (end < 0) break;
+    values.push(xml.slice(valueStart, end));
+    cursor = end + close.length;
+  }
+  return values;
+}
+
+function extractTagValue(xml: string, tag: string) {
+  return extractTagValues(xml, tag)[0];
+}
+
+function normalizeR2Key(key: string) {
+  let normalized = key;
+  while (normalized.startsWith("/")) normalized = normalized.slice(1);
+  const prefix = "shop-assets/";
+  if (normalized.slice(0, prefix.length).toLowerCase() === prefix) normalized = normalized.slice(prefix.length);
+  return normalized;
+}
+
+function fileStem(filename: string) {
+  const dot = filename.lastIndexOf(".");
+  return dot > 0 ? filename.slice(0, dot) : filename;
+}
+
+function fileExt(filename: string) {
+  const dot = filename.lastIndexOf(".");
+  return dot > 0 ? filename.slice(dot + 1).toLowerCase() : "";
 }
 
 export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
