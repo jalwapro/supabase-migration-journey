@@ -95,7 +95,7 @@ async function listGiftAssets() {
       ...[...xml.matchAll(/<Key>([\\s\\S]*?)<\//Key>/g)].map((m) => decodeXml(m[1])),
     );
 
-    const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\//NextContinuationToken>/)?.[1];
+    const next = xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1];
     continuationToken =
       /<IsTruncated>true<\//IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
   } while (continuationToken);
