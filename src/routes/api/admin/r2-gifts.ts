@@ -164,10 +164,7 @@ async function listGiftAssets() {
 }
 
 function recoveredName(stem: string) {
-  const clean = stem
-    .split("-").join(" ").split("_").join(" ").trim();
-
-    .trim();
+  const clean = stem.split("-").join(" ").split("_").join(" ").trim();
   return clean ? clean.split(" ").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") : `Recovered Gift ${stem.slice(-6)}`;
 }
 
