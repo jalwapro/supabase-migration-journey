@@ -72,7 +72,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     const handlePopState = (e: PopStateEvent) => {
       let closedSomething = false;
       if (generatedPin) { setGeneratedPin(null); closedSomething = true; }
-      else if (exitMenuOpen) { setExitMenuOpen(false); closedSomething = true; }
+      else if (exitMenuOpen) { onExit(); closedSomething = true; }
       else if (privateChatOpen) { setPrivateChatOpen(false); closedSomething = true; }
       else if (giftOpen) { setGiftOpen(false); closedSomething = true; }
       else if (emojiOpen) { setEmojiOpen(false); setSelectedTargetSeat(null); closedSomething = true; }
