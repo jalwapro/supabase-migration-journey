@@ -216,6 +216,8 @@ export interface GiftGLVideoProps {
   onError?: () => void;
   onDuration?: (ms: number) => void;
   playbackKey?: string;
+  /** 0 = infinite, otherwise exact number of plays including the first play. */
+  loopCount?: number;
 }
 
 export function GiftGLVideo({
@@ -232,6 +234,7 @@ export function GiftGLVideo({
   onError,
   onDuration,
   playbackKey,
+  loopCount = 0,
 }: GiftGLVideoProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -243,6 +246,7 @@ export function GiftGLVideo({
   const [glFailed, setGlFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const readyOnce = useRef(false);
+  const completedLoopsRef = useRef(0);
 
   const markReady = useCallback(() => {
     setReady(true);
@@ -256,6 +260,7 @@ export function GiftGLVideo({
     readyOnce.current = false;
     setReady(false);
     detectedRef.current = null;
+    completedLoopsRef.current = 0;
     // Always try the WebGL renderer first. The R2 bucket now has CORS enabled,
     // which is required for uploading the video frame into a WebGL texture.
     setGlFailed(false);
@@ -474,7 +479,7 @@ export function GiftGLVideo({
         crossOrigin={glFailed ? undefined : "anonymous"}
         playsInline
         autoPlay
-        loop={loop}
+        loop={false}
         muted={muted}
         preload="auto"
         disablePictureInPicture
@@ -485,7 +490,16 @@ export function GiftGLVideo({
         }}
         onCanPlay={startPlayback}
         onPlaying={markReady}
-        onEnded={() => onEnded?.()}
+        onEnded={() => {
+          const shouldLoop = loop && (loopCount === 0 || completedLoopsRef.current + 1 < loopCount);
+          if (shouldLoop) {
+            completedLoopsRef.current += 1;
+            v.currentTime = 0;
+            void v.play().catch(() => {});
+            return;
+          }
+          onEnded?.();
+        }}
         onError={() => {
           if (!glFailed) setGlFailed(true); // retry without CORS, CSS path
           else onError?.();
