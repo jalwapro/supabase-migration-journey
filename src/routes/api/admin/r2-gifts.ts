@@ -159,15 +159,14 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
           process.env.SUPABASE_URL ||
           process.env.VITE_SUPABASE_URL ||
           "https://vfuiqjxgyptjqhbmzigk.supabase.co";
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!serviceKey) return json({ error: "Supabase service role is not configured" }, 503);
+        const dbKey = admin.token;
 
         try {
           const { assets } = await listGiftAssets();
 
           const existingRes = await fetch(
             `${supabaseUrl}/rest/v1/gifts?select=id,name,icon,emoji,price,price_coins,category,animation,sort_order,active,is_active,clip_path,image_url,audio_url,sound_url`,
-            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+            { headers: { apikey: dbKey, Authorization: `Bearer ${dbKey}` } },
           );
           if (!existingRes.ok) throw new Error(`gift catalog read failed: ${existingRes.status}`);
           const existing = (await existingRes.json()) as Array<Record<string, unknown>>;
