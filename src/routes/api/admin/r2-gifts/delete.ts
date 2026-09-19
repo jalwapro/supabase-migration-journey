@@ -123,10 +123,10 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             const keys = [...xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g)].map((m) => decodeXml(m[1]));
 
             for (const rawKey of keys) {
-              const key = rawKey.replace(/^\\/+/, "").replace(/^shop-assets\\//i, "");
+              const key = rawKey.replace(/^\/+/, "").replace(/^shop-assets\//i, "");
               if (!/^(?:gift-clips|gift-thumbs|gift-audio)\\//i.test(key)) continue;
               const filename = key.split("/").pop() ?? "";
-              const stem = filename.replace(/\\.[^.]+$/, "");
+              const stem = filename.replace(/\.[^.]+$/, "");
               if (!stems.has(stem)) continue;
 
               const deleteUrl = new URL(`${endpoint}/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`);
