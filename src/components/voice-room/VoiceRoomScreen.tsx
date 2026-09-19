@@ -207,8 +207,31 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
 
   const handleSeatTapForEmoji = (seatIndex: number) => {
     const seat = room.seats.find((s) => s.index === seatIndex);
-    if (seat?.user) setSelectedTargetSeat(seatIndex);
+    if (seat?.user) {
+      setSelectedTargetSeat(seatIndex);
+      setSelectedMember({
+        id: seat.user.id,
+        username: seat.user.username,
+        avatar: seat.user.avatar,
+        level: seat.user.level,
+        gift_score: seat.user.gift_score,
+        is_muted: seat.user.is_muted,
+      });
+    }
     onSeatTap(seatIndex);
+  };
+
+  const handleHostSeatProfileTap = () => {
+    const host = room.host;
+    if (!host?.id) return;
+    setSelectedMember({
+      id: host.id,
+      username: host.username,
+      avatar: host.avatar,
+      level: host.level,
+      gift_score: host.gift_score,
+      is_muted: false,
+    });
   };
 
   return (
@@ -281,7 +304,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <GiftAnimationPlayer roomId={roomId} />
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
           <div className="relative flex-1 min-h-0 overflow-y-auto bg-transparent pt-1 px-1 no-scrollbar">
-            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={onHostTap} />
+            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={handleHostSeatProfileTap} />
           </div>
           
           {activeFlyingEmoji && (
@@ -422,7 +445,24 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
 
       {gamesOpen && <RoomGamesSheet open={gamesOpen} onClose={() => setGamesOpen(false)} onOpenNative={slug => { setGamesOpen(false); onOpenNativeGame?.(slug); }} />}
       {popularityOpen && <HostPopularitySheet roomId={roomId} open={popularityOpen} onClose={() => setPopularityOpen(false)} popularityPct={popularityPct} hostName={room.host?.username} />}
-      {selectedMember && <VoiceRoomMemberSheet roomId={roomId} member={selectedMember} canModerate={isHost} isHost={isHost} onClose={() => setSelectedMember(null)} />}
+      {selectedMember && (
+        <VoiceRoomMemberSheet
+          roomId={roomId}
+          member={selectedMember}
+          canModerate={isHost && selectedMember.id !== room.host?.id}
+          isHost={isHost}
+          onClose={() => setSelectedMember(null)}
+          onOpenPublicChat={(member) => {
+            setSelectedMember(null);
+            setMiniDraft(`@${member.username ?? "user"} `);
+            setShowMiniInputPopup(true);
+          }}
+          onOpenHostControls={isHost && selectedMember.id === room.host?.id ? () => {
+            setSelectedMember(null);
+            setHostSettingsOpen(true);
+          } : undefined}
+        />
+      )}
       {isHost && <HostRoomSettings roomId={roomId} open={hostSettingsOpen} onClose={() => setHostSettingsOpen(false)} onSettingsChange={setRoomSettings} speakerMuted={speakerMuted} onToggleSpeaker={onToggleSpeaker} />}
       {isModerator && <ModeratorControls roomId={roomId} open={moderatorControlsOpen} onClose={() => setModeratorControlsOpen(false)} micOn={micOn} speakerMuted={speakerMuted} onToggleMic={onToggleMic} onToggleSpeaker={onToggleSpeaker} onOpenMusic={onOpenMusic} />}
     </main>
