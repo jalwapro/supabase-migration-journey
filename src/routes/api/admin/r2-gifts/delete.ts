@@ -29,7 +29,7 @@ async function getAdmin(request: Request) {
     body: JSON.stringify({ _user_id: user.id }),
   });
   if (!adminRes.ok || (await adminRes.json()) !== true) return null;
-  return user.id;
+  return { id: user.id, token };
 }
 
 async function getR2() {
@@ -59,8 +59,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         if (!admin) return json({ error: "admin authentication required" }, 401);
 
         const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
-        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-        if (!serviceKey) return json({ error: "Supabase service role is not configured" }, 503);
+        const dbKey = admin.token;
 
         let id = "";
         try {
@@ -71,7 +70,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         try {
           const giftRes = await fetch(
             `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}&select=id,clip_path,image_url,audio_url,sound_url`,
-            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+            { headers: { apikey: dbKey, Authorization: `Bearer ${dbKey}` } },
           );
           if (!giftRes.ok) return json({ error: `gift lookup failed: ${giftRes.status}` }, 502);
           const gifts = (await giftRes.json()) as Array<Record<string, unknown>>;
