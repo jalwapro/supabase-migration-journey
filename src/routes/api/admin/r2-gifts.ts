@@ -128,9 +128,9 @@ async function listGiftAssets() {
 function recoveredName(stem: string) {
   const clean = stem
     .replace(/[-_]+/g, " ")
-    .replace(/\\b[0-9a-f]{8} [0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{4} [0-9a-f]{12}\\b/i, "")
+    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i, "")
     .trim();
-  return clean ? clean.replace(/\\b\\w/g, (c) => c.toUpperCase()) : `Recovered Gift ${stem.slice(-6)}`;
+  return clean ? clean.replace(/\b\w/g, (c) => c.toUpperCase()) : `Recovered Gift ${stem.slice(-6)}`;
 }
 
 export const Route = createFileRoute("/api/admin/r2-gifts")({
