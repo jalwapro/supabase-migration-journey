@@ -94,10 +94,10 @@ async function listGiftAssets() {
     keys.push(
       ...[...xml.matchAll(/<Key>([\\s\\S]*?)<\//Key>/g)].map((m) => decodeXml(m[1])),
     );
-
+      ...[...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((m) => decodeXml(m[1])),
     const next = xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1];
     continuationToken =
-      /<IsTruncated>true<\//IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
+      /<IsTruncated>true<\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
   } while (continuationToken);
 
   const assets = keys
@@ -106,7 +106,7 @@ async function listGiftAssets() {
     .map((key) => {
       const filename = key.split("/").pop() ?? key;
       const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-      const stem = filename.replace(/\\.[^.]+$/, "");
+      const stem = filename.replace(/\.[^.]+$/, "");
       const kind = /^gift-clips\//i.test(key)
         ? "clip"
         : /^gift-thumbs\//i.test(key)
