@@ -14,7 +14,7 @@ function json(body: unknown, status = 200) {
 }
 
 async function getAdminUser(request: Request) {
-  const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  const raw = request.headers.get("authorization") ?? ""; const token = (raw.toLowerCase().startsWith("bearer ") ? raw.slice(7) : raw).trim();
   if (!token) return null;
 
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
@@ -48,7 +48,7 @@ async function r2Client() {
   const bucket = process.env.R2_BUCKET;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
-  const publicBase = (process.env.R2_PUBLIC_URL ?? "").replace(/\/+$/, "");
+  const publicBase = trimTrailingSlashes(process.env.R2_PUBLIC_URL ?? "");
 
   if (!endpoint || !bucket || !accessKeyId || !secretAccessKey || !publicBase) {
     throw new Error("R2 server configuration is incomplete");
@@ -61,7 +61,7 @@ async function r2Client() {
     service: "s3",
     region: "auto",
   });
-  return { endpoint: endpoint.replace(/\/+$/, ""), bucket, publicBase, client };
+  return { endpoint: trimTrailingSlashes(endpoint), bucket, publicBase, client };
 }
 
 function trimTrailingSlashes(value: string) {
@@ -138,12 +138,12 @@ async function listGiftAssets() {
   } while (continuationToken);
 
   const assets = keys
-    .map((key) => key.replace(/^\/+/, "").replace(/^shop-assets\\//i, ""))
-    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\//i.test(key))
+    .map((key) => normalizeR2Key(key))
+    .filter((key) => { const lower = key.toLowerCase(); return lower.startsWith("gift-clips/") || lower.startsWith("gift-thumbs/") || lower.startsWith("gift-audio/"); })
     .map((key) => {
       const filename = key.split("/").pop() ?? key;
-      const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-      const stem = filename.replace(/\.[^.]+$/, "");
+      const ext = fileExt(filename);
+      const stem = fileStem(filename);
       const lowerKey = key.toLowerCase();
       const kind = lowerKey.startsWith("gift-clips/")
         ? "clip"
@@ -165,10 +165,10 @@ async function listGiftAssets() {
 
 function recoveredName(stem: string) {
   const clean = stem
-    .replace(/[-_]+/g, " ")
-    .replace(/\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/i, "")
+    .split("-").join(" ").split("_").join(" ").trim();
+
     .trim();
-  return clean ? clean.replace(/\b\w/g, (c) => c.toUpperCase()) : `Recovered Gift ${stem.slice(-6)}`;
+  return clean ? clean.split(" ").filter(Boolean).map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ") : `Recovered Gift ${stem.slice(-6)}`;
 }
 
 export const Route = createFileRoute("/api/admin/r2-gifts")({
@@ -215,7 +215,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
               const value = gift[field];
               if (typeof value !== "string" || !value) continue;
               const filename = value.split("/").pop()?.split("?")[0] ?? "";
-              const stem = filename.replace(/\.[^.]+$/, "");
+      const stem = fileStem(filename);
               if (stem) existingStems.add(stem);
             }
           }
