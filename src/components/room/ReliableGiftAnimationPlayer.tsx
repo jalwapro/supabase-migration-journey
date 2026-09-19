@@ -63,7 +63,28 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => { const onGift = (event: Event) => { const detail = (event as CustomEvent<GiftEvent>).detail; if (!detail || typeof detail !== "object") return; enqueue(detail); }; window.addEventListener("jalwa:gift-sent", onGift as EventListener); return () => window.removeEventListener("jalwa:gift-sent", onGift as EventListener); }, [enqueue]);
   useEffect(() => () => { clearTimer(); stopAudio(); activeRef.current = null; queueRef.current = []; }, [clearTimer, stopAudio]);
   useEffect(() => { if (!active) return; const direct = [asUrl(active.giftClipUrl), resolveGiftImageUrl(asUrl(active.giftImageUrl)), resolveGiftImageUrl(asUrl(active.giftIcon))].filter((x): x is string => Boolean(x)); const canonical = giftAssetCandidates(active.giftName).map(asUrl).filter((x): x is string => Boolean(x)); const unique = [...new Set([...direct, ...canonical])]; setCandidates(unique); setCandidateIndex(0); const first = unique[0] ?? null; setResolvedSrc(first); setResolvedType(first ? typeOf(first, active.giftClipType) : null); }, [active?.key, active?.giftName, active?.giftClipUrl, active?.giftImageUrl, active?.giftIcon, active?.giftClipType]);
-  useEffect(() => { if (!active) return; setPlaybackStarted(false); clearTimer(); const cfg = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER); const declared = Number(active.durationMs ?? 0); const duration = cfg.endMs != null ? Math.max(800, cfg.endMs) : Math.min(180000, Math.max(2500, declared || 12000) + cfg.holdMs); timerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + duration + 400); return clearTimer; }, [active, clearTimer, finish]);
+  useEffect(() => {
+    if (!active) return;
+    setPlaybackStarted(false);
+    clearTimer();
+
+    const cfg = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER);
+    const declared = Number(active.durationMs ?? 0);
+    const duration = cfg.endMs != null
+      ? Math.max(800, cfg.endMs)
+      : Math.min(180000, Math.max(2500, declared || 12000) + cfg.holdMs);
+    const delay = Math.max(0, cfg.delayMs);
+
+    const start = () => {
+      setPlaybackStarted(true);
+      timerRef.current = window.setTimeout(finish, duration + 400);
+    };
+
+    if (delay === 0) start();
+    else timerRef.current = window.setTimeout(start, delay);
+
+    return clearTimer;
+  }, [active, clearTimer, finish]);
   useEffect(() => { if (!active || !playbackStarted) return; stopAudio(); const enabled = active.audioEnabled !== false; const src = asUrl(active.soundUrl); if (!enabled || !src || typeof window === "undefined") return; const volumeValue = Number(active.audioVolume ?? 1); const volume = Number.isFinite(volumeValue) ? Math.min(1, Math.max(0, volumeValue)) : 1; const audio = new Audio(src); audio.preload = "auto"; audio.volume = volume; audioRef.current = audio; void audio.play().catch(() => {}); return stopAudio; }, [active?.key, active?.soundUrl, active?.audioEnabled, active?.audioVolume, stopAudio]);
   if (!active) return null;
   const cfg: GiftRenderConfig = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER);
