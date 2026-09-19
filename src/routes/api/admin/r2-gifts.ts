@@ -70,36 +70,59 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
             region: "auto",
           });
 
-          const url = new URL(`${endpoint.replace(/\/+$/, "")}/${bucket}`);
-          url.searchParams.set("list-type", "2");
-          url.searchParams.set("prefix", "gift-");
-          url.searchParams.set("max-keys", "1000");
+          // List the whole bucket and paginate so gifts are not missed when the
+          // bucket contains more than 1,000 objects or uses a different top-level prefix.
+          const keys: string[] = [];
+          let continuationToken: string | undefined;
 
-          const signed = await client.sign(new Request(url.toString(), { method: "GET" }), {
-            aws: { signQuery: true },
-          });
-          const response = await fetch(signed.url);
-          if (!response.ok) return json({ error: `R2 list failed: ${response.status}` }, 502);
+          do {
+            const url = new URL(`${endpoint.replace(/\\/+$/, "")}/${bucket}`);
+            url.searchParams.set("list-type", "2");
+            url.searchParams.set("max-keys", "1000");
+            if (continuationToken) url.searchParams.set("continuation-token", continuationToken);
 
-          const xml = await response.text();
-          const keys = [...xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g)].map((m) =>
-            m[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"),
-          );
+            const signed = await client.sign(new Request(url.toString(), { method: "GET" }), {
+              aws: { signQuery: true },
+            });
+            const response = await fetch(signed.url);
+            if (!response.ok) return json({ error: `R2 list failed: ${response.status}` }, 502);
+
+            const xml = await response.text();
+            const pageKeys = [...xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g)].map((m) =>
+              m[1]
+                .replace(/&amp;/g, "&")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'"),
+            );
+            keys.push(...pageKeys);
+
+            const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\\/NextContinuationToken>/)?.[1];
+            const truncated = /<IsTruncated>true<\\/IsTruncated>/i.test(xml);
+            continuationToken = truncated && next ? next : undefined;
+          } while (continuationToken);
 
           const assets = keys
-            .filter((key) => /^(gift-clips|gift-thumbs|gift-audio)\//i.test(key))
+            .map((key) => key.replace(/^\\/+/, ""))
+            .filter((key) => /^(?:shop-assets\\/)?gift-(?:clips|thumbs|audio)\\//i.test(key))
             .map((key) => {
-              const filename = key.split("/").pop() ?? key;
+              const cleanKey = key.replace(/^shop-assets\\//i, "");
+              const filename = cleanKey.split("/").pop() ?? cleanKey;
               const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-              const stem = filename.replace(/\.[^.]+$/, "");
-              const kind = /^gift-clips\//i.test(key) ? "clip" : /^gift-thumbs\//i.test(key) ? "thumb" : "audio";
+              const stem = filename.replace(/\\.[^.]+$/, "");
+              const kind = /^gift-clips\\//i.test(cleanKey)
+                ? "clip"
+                : /^gift-thumbs\\//i.test(cleanKey)
+                  ? "thumb"
+                  : "audio";
               return {
-                key,
+                key: cleanKey,
                 filename,
                 stem,
                 ext,
                 kind,
-                url: `${publicBase}/${key}`,
+                url: `${publicBase}/${cleanKey}`,
               };
             });
 
