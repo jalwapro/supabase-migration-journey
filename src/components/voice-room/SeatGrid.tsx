@@ -164,7 +164,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [lockBusy, setLockBusy] = useState<number | null>(null);
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
-  const [targetShiftSeat, setTargetShiftSeat] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<"users" | "shift">("users");
   const [hostSeatIndex, setHostSeatIndex] = useState(1);
 
@@ -321,23 +320,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     setSelectedEmptySeat(null);
   };
 
-  const shiftUser = async () => {
-    if (!roomId || !selectedEmptySeat || !targetShiftSeat || !canManageSeats) return;
-    const source = Number(targetShiftSeat);
-    const target = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
-    if (source < 2 || source > capacity || source === target) { toast.error("Please enter a valid source seat number"); return; }
-    const sourceSeat = seats.find(s => (s.index ?? s.seatNumber) === source);
-    const userId = sourceSeat?.user?.id;
-    if (!userId) { toast.error("No user found on source seat"); return; }
-    const { error: clearError } = await supabase.from("room_members").update({ seat_index: null }).eq("room_id", roomId).eq("user_id", userId);
-    if (clearError) { toast.error(clearError.message || "Could not clear source seat"); return; }
-    const { error } = await supabase.from("room_members").update({ seat_index: target }).eq("room_id", roomId).eq("user_id", userId);
-    if (error) { toast.error(error.message || "Could not shift user"); return; }
-    toast.success(`User shifted to seat ${target}`);
-    setSelectedEmptySeat(null);
-    setTargetShiftSeat("");
-  };
-
   const byIndex = new Map(seats.filter(s => (s.index >= 2 && s.index <= capacity) || (s.seatNumber && s.seatNumber >= 2 && s.seatNumber <= capacity)).map(s => [s.index ?? s.seatNumber!, s]));
   const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => {
     const index = offset + 2;
@@ -353,7 +335,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       setActiveTab("users");
-      setTargetShiftSeat("");
       return;
     }
     if (isHost) {
@@ -426,13 +407,39 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       </div>
 
       {selectedEmptySeat && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in px-4" onClick={() => setSelectedEmptySeat(null)}>
-          <div className="relative flex flex-col max-w-sm w-full rounded-[28px] bg-slate-950/95 border border-white/10 p-5 shadow-[0_24px_80px_rgba(0,0,0,.55)] text-white backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between pb-3 border-b border-white/20"><div className="flex items-center gap-2"><Settings className="h-4 w-4 text-amber-400" /><span className="text-xs font-bold text-amber-300 uppercase tracking-wide">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span></div><button type="button" onClick={() => setSelectedEmptySeat(null)} className="text-white hover:text-amber-300"><X className="h-4 w-4" /></button></div>
-            <div className="py-3 flex items-center justify-between border-b border-white/20"><div className="flex items-center gap-2 text-xs font-semibold">{selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}<span>{selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}</span></div><button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="px-3 py-1 rounded-xl bg-[#2a1745] hover:bg-[#38205c] text-xs font-bold text-amber-300 border border-amber-500/50 transition">{selectedEmptySeat.is_locked ? "Unlock" : "Lock"}</button></div>
-            <div className="pt-3">
-              <div className="flex gap-2 mb-3"><button type="button" onClick={() => setActiveTab("users")} className={cn("flex-1 py-1.5 rounded-xl text-xs font-bold transition", activeTab === "users" ? "bg-amber-500 text-black shadow" : "bg-[#1e1238] text-white border border-white/20")}>Assign Viewer</button><button type="button" onClick={() => setActiveTab("shift")} className={cn("flex-1 py-1.5 rounded-xl text-xs font-bold transition", activeTab === "shift" ? "bg-amber-500 text-black shadow" : "bg-[#1e1238] text-white border border-white/20")}>Shift User</button></div>
-              {activeTab === "users" ? <div className="max-h-40 overflow-y-auto space-y-1.5"><p className="text-[10px] text-white mb-1 font-semibold">Select a viewer from room:</p>{roomViewers.length === 0 ? <p className="text-xs text-white text-center py-4">No viewers found</p> : roomViewers.map(viewer => <div key={viewer.id} className="flex items-center justify-between p-2 rounded-xl bg-[#1e1238] border border-white/20"><div className="flex items-center gap-2"><img src={viewer.avatar || DEFAULT_SEAT_AVATAR} alt="" className="h-7 w-7 rounded-full object-cover" /><span className="text-xs font-semibold text-white">{viewer.username}</span></div><button type="button" onClick={() => void assignViewer(viewer)} className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-[10px]">Assign</button></div>)}</div> : <div className="space-y-3 py-2"><p className="text-[10px] text-white font-semibold">Shift user from another seat to seat No. <span className="font-bold text-amber-300">{selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span>:</p><div className="flex gap-2"><input type="number" min={2} max={capacity} value={targetShiftSeat} onChange={e => setTargetShiftSeat(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Enter source seat (e.g. 3)" className="flex-1 bg-[#1e1238] border border-white/20 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-amber-400" /><button type="button" onClick={() => void shiftUser()} className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-purple-600 text-black font-extrabold text-xs shadow">Shift</button></div></div>}
+        <div className="absolute inset-0 z-50 flex items-end justify-center px-3 pb-3 pointer-events-none" onClick={() => setSelectedEmptySeat(null)}>
+          <div className="pointer-events-auto relative w-full max-w-sm rounded-[26px] border border-white/10 bg-slate-950/95 p-4 text-white shadow-2xl backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <div className="text-[11px] font-black uppercase tracking-wider text-amber-300">Seat Manager</div>
+                <div className="text-sm font-bold">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</div>
+              </div>
+              <button type="button" onClick={() => setSelectedEmptySeat(null)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"><X className="h-4 w-4" /></button>
+            </div>
+            <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-center gap-2 text-xs font-semibold">
+                {selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}
+                {selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}
+              </div>
+              <button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">
+                {selectedEmptySeat.is_locked ? "Unlock" : "Lock"}
+              </button>
+            </div>
+            <div className="mb-2 flex items-center gap-2">
+              <div className="h-px flex-1 bg-white/10" />
+              <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Assign Viewer</span>
+              <div className="h-px flex-1 bg-white/10" />
+            </div>
+            <div className="max-h-44 overflow-y-auto space-y-1.5">
+              {roomViewers.length === 0 ? <p className="py-5 text-center text-xs text-white/50">No viewers found</p> : roomViewers.map(viewer => (
+                <div key={viewer.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-2">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <img src={viewer.avatar || DEFAULT_SEAT_AVATAR} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
+                    <span className="truncate text-xs font-semibold">{viewer.username}</span>
+                  </div>
+                  <button type="button" onClick={() => void assignViewer(viewer)} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">Assign</button>
+                </div>
+              ))}
             </div>
           </div>
         </div>
