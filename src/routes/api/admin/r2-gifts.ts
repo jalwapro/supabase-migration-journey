@@ -91,22 +91,26 @@ async function listGiftAssets() {
     if (!response.ok) throw new Error(`R2 list failed: ${response.status}`);
 
     const xml = await response.text();
-    keys.push(
-    const next = xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1];
+    const matches = xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g);
+    for (const match of matches) {
+      if (match[1]) keys.push(decodeXml(match[1]));
+    }
+
+    const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\\/NextContinuationToken>/)?.[1];
     continuationToken =
-      /<IsTruncated>true<\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
+      /<IsTruncated>true<\\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
   } while (continuationToken);
 
   const assets = keys
-    .map((key) => key.replace(/^\/+/, "").replace(/^shop-assets\//i, ""))
-    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\//i.test(key))
+    .map((key) => key.replace(/^\\/+/, "").replace(/^shop-assets\\//i, ""))
+    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\\//i.test(key))
     .map((key) => {
       const filename = key.split("/").pop() ?? key;
       const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-      const stem = filename.replace(/\.[^.]+$/, "");
-      const kind = /^gift-clips\//i.test(key)
+      const stem = filename.replace(/\\.[^.]+$/, "");
+      const kind = /^gift-clips\\//i.test(key)
         ? "clip"
-        : /^gift-thumbs\//i.test(key)
+        : /^gift-thumbs\\//i.test(key)
           ? "thumb"
           : "audio";
       return {
@@ -168,16 +172,15 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
           if (!existingRes.ok) throw new Error(`gift catalog read failed: ${existingRes.status}`);
           const existing = (await existingRes.json()) as Array<Record<string, unknown>>;
 
-          const byStem = new Map<string, Record<string, unknown>>();
-          const addUrl = (url: unknown) => {
-            if (typeof url !== "string" || !url) return;
-            const filename = url.split("/").pop()?.split("?")[0] ?? "";
-            const stem = filename.replace(/\\.[^.]+$/, "");
-            if (stem) byStem.set(stem, { ...(byStem.get(stem) ?? {}), _url: url });
-          };
-            const stem = filename.replace(/\.[^.]+$/, "");
+          const existingStems = new Set<string>();
           for (const gift of existing) {
-            for (const field of ["clip_path", "image_url", "audio_url", "sound_url"]) addUrl(gift[field]);
+            for (const field of ["clip_path", "image_url", "audio_url", "sound_url"]) {
+              const value = gift[field];
+              if (typeof value !== "string" || !value) continue;
+              const filename = value.split("/").pop()?.split("?")[0] ?? "";
+              const stem = filename.replace(/\\.[^.]+$/, "");
+              if (stem) existingStems.add(stem);
+            }
           }
 
           const groups = new Map<string, typeof assets>();
