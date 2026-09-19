@@ -107,7 +107,7 @@ create table if not exists public.push_subscriptions (
   created_at timestamptz not null default now()
 );
 
-create unique index if not exists uq_push_web on public.push_subscriptions(user_id, endpoint) where endpoint is not null;
+create unique index if not exists uq_push_web on public.push_subscriptions(user_id, endpoint);
 create unique index if not exists uq_push_fcm on public.push_subscriptions(user_id, fcm_token) where fcm_token is not null;
 create index if not exists idx_push_user on public.push_subscriptions(user_id);
 
