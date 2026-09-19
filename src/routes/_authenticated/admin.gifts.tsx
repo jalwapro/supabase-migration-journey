@@ -195,6 +195,37 @@ function GiftsAdmin() {
 
   const r2Thumbs = useMemo(() => (r2Gifts.data ?? []).filter((a) => a.kind === "thumb"), [r2Gifts.data]);
   const r2Clips = useMemo(() => (r2Gifts.data ?? []).filter((a) => a.kind === "clip"), [r2Gifts.data]);
+
+  const syncR2 = useMutation({
+    mutationFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Admin session expired");
+      const res = await fetch("/api/admin/r2-gifts", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = (await res.json()) as { recovered?: number; r2Assets?: number; error?: string };
+      if (!res.ok) throw new Error(body.error || `R2 sync failed: ${res.status}`);
+      return body;
+    },
+    onSuccess: (result) => {
+      if ((result.recovered ?? 0) > 0) {
+        toast.success(`Recovered ${result.recovered} R2 gifts into Gifts Management`);
+      }
+      qc.invalidateQueries({ queryKey: ["admin_gifts"] });
+      qc.invalidateQueries({ queryKey: ["gifts"] });
+      qc.invalidateQueries({ queryKey: ["admin_r2_gifts"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    if (!syncR2.isPending) syncR2.mutate();
+    // Run once when the admin screen opens so orphan R2 assets are restored automatically.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const isEditing = Boolean(draft.id);
 
   const list = useQuery({
@@ -289,12 +320,26 @@ function GiftsAdmin() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("gifts").delete().eq("id", id);
-      if (error) throw error;
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Admin session expired");
+      const res = await fetch("/api/admin/r2-gifts/delete", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ id }),
+      });
+      const body = (await res.json()) as { error?: string; deletedR2?: number };
+      if (!res.ok) throw new Error(body.error || `Delete failed: ${res.status}`);
+      return body;
     },
-    onSuccess: () => {
-      toast.success("Deleted");
+    onSuccess: (result) => {
+      toast.success(`Deleted gift + ${result.deletedR2 ?? 0} R2 asset(s)`);
       qc.invalidateQueries({ queryKey: ["admin_gifts"] });
+      qc.invalidateQueries({ queryKey: ["gifts"] });
+      qc.invalidateQueries({ queryKey: ["admin_r2_gifts"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -410,7 +455,16 @@ function GiftsAdmin() {
             <p className="text-[11px] font-black uppercase tracking-widest text-[color:var(--gold)]">R2 Gift Library</p>
             <p className="text-[10px] text-muted-foreground">PNG thumbnails + animation clips from <code>gift-thumbs/</code> and <code>gift-clips/</code>.</p>
           </div>
-          <span className="rounded-full bg-[color:var(--gold)]/10 px-2 py-1 text-[10px] font-bold text-[color:var(--gold)]">{r2Gifts.data?.length ?? 0} R2 assets</span>
+          <div className="flex items-center gap-1.5">
+            <span className="rounded-full bg-[color:var(--gold)]/10 px-2 py-1 text-[10px] font-bold text-[color:var(--gold)]">{r2Gifts.data?.length ?? 0} R2 assets</span>
+            <button
+              onClick={() => syncR2.mutate()}
+              disabled={syncR2.isPending}
+              className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary disabled:opacity-50"
+            >
+              {syncR2.isPending ? "Syncing…" : "Sync R2"}
+            </button>
+          </div>
         </div>
         {r2Gifts.isLoading && <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>}
         {r2Gifts.error && <div className="rounded-xl bg-red-500/10 p-3 text-xs text-red-400">{(r2Gifts.error as Error).message}</div>}
