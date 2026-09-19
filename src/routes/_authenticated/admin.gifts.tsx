@@ -8,6 +8,8 @@ import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, Doll
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
 
+type R2GiftAsset = { key: string; filename: string; stem: string; ext: string; kind: "clip" | "thumb" | "audio"; url: string };
+
 
 export const Route = createFileRoute("/_authenticated/admin/gifts")({
   component: GiftsAdmin,
@@ -173,6 +175,26 @@ function GiftsAdmin() {
   const [activeCat, setActiveCat] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingPrice, setEditingPrice] = useState<{ id: string; value: string } | null>(null);
+
+  const r2Gifts = useQuery({
+    queryKey: ["admin_r2_gifts"],
+    queryFn: async () => {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Admin session expired");
+      const res = await fetch("/api/admin/r2-gifts", {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      const body = (await res.json()) as { assets?: R2GiftAsset[]; error?: string };
+      if (!res.ok) throw new Error(body.error || `R2 list failed: ${res.status}`);
+      return body.assets ?? [];
+    },
+    staleTime: 30_000,
+  });
+
+  const r2Thumbs = useMemo(() => (r2Gifts.data ?? []).filter((a) => a.kind === "thumb"), [r2Gifts.data]);
+  const r2Clips = useMemo(() => (r2Gifts.data ?? []).filter((a) => a.kind === "clip"), [r2Gifts.data]);
   const isEditing = Boolean(draft.id);
 
   const list = useQuery({
@@ -378,8 +400,46 @@ function GiftsAdmin() {
     <>
       <AdminPageHeader
         title="Gifts Management"
-        subtitle="Category-wise windows. Search, inline price edit, bulk hide/show and % price adjust."
+        subtitle="All database gifts plus every gift asset currently stored on Cloudflare R2."
       />
+
+      {/* R2 catalogue — read-only mirror of the actual gift assets in R2. */}
+      <section className="mb-4 rounded-2xl border border-[color:var(--gold)]/25 bg-card/40 p-3">
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-widest text-[color:var(--gold)]">R2 Gift Library</p>
+            <p className="text-[10px] text-muted-foreground">PNG thumbnails + animation clips from <code>gift-thumbs/</code> and <code>gift-clips/</code>.</p>
+          </div>
+          <span className="rounded-full bg-[color:var(--gold)]/10 px-2 py-1 text-[10px] font-bold text-[color:var(--gold)]">{r2Gifts.data?.length ?? 0} R2 assets</span>
+        </div>
+        {r2Gifts.isLoading && <div className="flex items-center justify-center py-6"><Loader2 className="h-5 w-5 animate-spin" /></div>}
+        {r2Gifts.error && <div className="rounded-xl bg-red-500/10 p-3 text-xs text-red-400">{(r2Gifts.error as Error).message}</div>}
+        {!r2Gifts.isLoading && !r2Gifts.error && (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+            {r2Thumbs.map((asset) => {
+              const clip = r2Clips.find((x) => x.stem === asset.stem) ?? r2Clips.find((x) => x.filename.toLowerCase().includes(asset.stem.toLowerCase()));
+              return (
+                <div key={asset.key} className="rounded-xl border border-border bg-black/30 p-1.5" title={asset.key}>
+                  <div className="grid aspect-square place-items-center overflow-hidden rounded-lg bg-black/40">
+                    <img src={asset.url} alt={asset.filename} loading="lazy" className="h-full w-full object-contain" />
+                  </div>
+                  <p className="mt-1 truncate text-[9px] font-bold">{asset.stem}</p>
+                  {clip && <p className="truncate text-[8px] text-emerald-400">✓ clip linked</p>}
+                </div>
+              );
+            })}
+            {r2Thumbs.length === 0 && r2Clips.map((asset) => (
+              <div key={asset.key} className="rounded-xl border border-border bg-black/30 p-1.5" title={asset.key}>
+                <div className="aspect-square overflow-hidden rounded-lg bg-black/40">
+                  <video src={asset.url} muted playsInline autoPlay loop className="h-full w-full object-contain" />
+                </div>
+                <p className="mt-1 truncate text-[9px] font-bold">{asset.stem}</p>
+              </div>
+            ))}
+            {r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}
+          </div>
+        )}
+      </section>
 
       {/* Category tabs */}
       <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
