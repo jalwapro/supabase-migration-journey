@@ -175,7 +175,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
             const stem = filename.replace(/\\.[^.]+$/, "");
             if (stem) byStem.set(stem, { ...(byStem.get(stem) ?? {}), _url: url });
           };
-
+            const stem = filename.replace(/\.[^.]+$/, "");
           for (const gift of existing) {
             for (const field of ["clip_path", "image_url", "audio_url", "sound_url"]) addUrl(gift[field]);
           }
