@@ -55,185 +55,36 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const seenRef = useRef(new Set<string>());
   const timerRef = useRef<number | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  const clearTimer = useCallback(() => {
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    timerRef.current = null;
-  }, []);
-
-  const stopAudio = useCallback(() => {
-    const audio = audioRef.current;
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
-      audioRef.current = null;
-    }
-  }, []);
-
-  const finish = useCallback(() => {
-    clearTimer();
-    stopAudio();
-    const next = queueRef.current.shift() ?? null;
-    activeRef.current = next;
-    setResolvedSrc(null);
-    setResolvedType(null);
-    setCandidateIndex(0);
-    setCandidates([]);
-    setActive(next);
-  }, [clearTimer, stopAudio]);
-
-  const enqueue = useCallback((event: GiftEvent) => {
-    if (!event.key || seenRef.current.has(event.key)) return;
-    seenRef.current.add(event.key);
-    if (seenRef.current.size > 500) seenRef.current.clear();
-    if (activeRef.current) queueRef.current.push(event);
-    else {
-      activeRef.current = event;
-      setResolvedSrc(null);
-      setResolvedType(null);
-      setCandidateIndex(0);
-      setCandidates([]);
-      setActive(event);
-    }
-  }, []);
-
-  useEffect(() => {
-    const onGift = (event: Event) => {
-      const detail = (event as CustomEvent<GiftEvent>).detail;
-      if (!detail || typeof detail !== "object") return;
-      enqueue(detail);
-    };
-    window.addEventListener("jalwa:gift-sent", onGift as EventListener);
-    return () => window.removeEventListener("jalwa:gift-sent", onGift as EventListener);
-  }, [enqueue]);
-
-  useEffect(() => () => {
-    clearTimer();
-    stopAudio();
-    activeRef.current = null;
-    queueRef.current = [];
-  }, [clearTimer, stopAudio]);
-
-  // Resolve the asset chain in this order: Gift Studio clip → gift image → icon
-  // → canonical legacy/R2 candidates. A broken clip therefore cannot make a
-  // valid gift invisible.
-  useEffect(() => {
-    if (!active) return;
-    const direct = [
-      asUrl(active.giftClipUrl),
-      resolveGiftImageUrl(asUrl(active.giftImageUrl)),
-      resolveGiftImageUrl(asUrl(active.giftIcon)),
-    ].filter((x): x is string => Boolean(x));
-    const canonical = giftAssetCandidates(active.giftName).map(asUrl).filter((x): x is string => Boolean(x));
-    const unique = [...new Set([...direct, ...canonical])];
-    setCandidates(unique);
-    setCandidateIndex(0);
-    const first = unique[0] ?? null;
-    setResolvedSrc(first);
-    setResolvedType(first ? typeOf(first, active.giftClipType) : null);
-  }, [active?.key, active?.giftName, active?.giftClipUrl, active?.giftImageUrl, active?.giftIcon, active?.giftClipType]);
-
-  useEffect(() => {
-    if (!active) return;
-    clearTimer();
-    const cfg = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER);
-    const declared = Number(active.durationMs ?? 0);
-    const duration = cfg.endMs != null
-      ? Math.max(800, cfg.endMs)
-      : Math.min(180000, Math.max(2500, declared || 12000) + cfg.holdMs);
-    timerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + duration + 400);
-    return clearTimer;
-  }, [active, clearTimer, finish]);
-
-  useEffect(() => {
-    if (!active) return;
-    stopAudio();
-    const enabled = active.audioEnabled !== false;
-    const src = asUrl(active.soundUrl);
-    if (!enabled || !src || typeof window === "undefined") return;
-    const volumeValue = Number(active.audioVolume ?? 1);
-    const volume = Number.isFinite(volumeValue) ? Math.min(1, Math.max(0, volumeValue)) : 1;
-    const audio = new Audio(src);
-    audio.preload = "auto";
-    audio.volume = volume;
-    audioRef.current = audio;
-    void audio.play().catch(() => {
-      // Browser autoplay policy may reject remote playback until the user has
-      // interacted with the room. The media animation itself still plays.
-    });
-    return stopAudio;
-  }, [active?.key, active?.soundUrl, active?.audioEnabled, active?.audioVolume, stopAudio]);
-
+  const clearTimer = useCallback(() => { if (timerRef.current !== null) window.clearTimeout(timerRef.current); timerRef.current = null; }, []);
+  const stopAudio = useCallback(() => { const audio = audioRef.current; if (audio) { audio.pause(); audio.currentTime = 0; audioRef.current = null; } }, []);
+  const finish = useCallback(() => { clearTimer(); stopAudio(); const next = queueRef.current.shift() ?? null; activeRef.current = next; setResolvedSrc(null); setResolvedType(null); setCandidateIndex(0); setCandidates([]); setActive(next); }, [clearTimer, stopAudio]);
+  const enqueue = useCallback((event: GiftEvent) => { if (!event.key || seenRef.current.has(event.key)) return; seenRef.current.add(event.key); if (seenRef.current.size > 500) seenRef.current.clear(); if (activeRef.current) queueRef.current.push(event); else { activeRef.current = event; setResolvedSrc(null); setResolvedType(null); setCandidateIndex(0); setCandidates([]); setActive(event); } }, []);
+  useEffect(() => { const onGift = (event: Event) => { const detail = (event as CustomEvent<GiftEvent>).detail; if (!detail || typeof detail !== "object") return; enqueue(detail); }; window.addEventListener("jalwa:gift-sent", onGift as EventListener); return () => window.removeEventListener("jalwa:gift-sent", onGift as EventListener); }, [enqueue]);
+  useEffect(() => () => { clearTimer(); stopAudio(); activeRef.current = null; queueRef.current = []; }, [clearTimer, stopAudio]);
+  useEffect(() => { if (!active) return; const direct = [asUrl(active.giftClipUrl), resolveGiftImageUrl(asUrl(active.giftImageUrl)), resolveGiftImageUrl(asUrl(active.giftIcon))].filter((x): x is string => Boolean(x)); const canonical = giftAssetCandidates(active.giftName).map(asUrl).filter((x): x is string => Boolean(x)); const unique = [...new Set([...direct, ...canonical])]; setCandidates(unique); setCandidateIndex(0); const first = unique[0] ?? null; setResolvedSrc(first); setResolvedType(first ? typeOf(first, active.giftClipType) : null); }, [active?.key, active?.giftName, active?.giftClipUrl, active?.giftImageUrl, active?.giftIcon, active?.giftClipType]);
+  useEffect(() => { if (!active) return; clearTimer(); const cfg = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER); const declared = Number(active.durationMs ?? 0); const duration = cfg.endMs != null ? Math.max(800, cfg.endMs) : Math.min(180000, Math.max(2500, declared || 12000) + cfg.holdMs); timerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + duration + 400); return clearTimer; }, [active, clearTimer, finish]);
+  useEffect(() => { if (!active) return; stopAudio(); const enabled = active.audioEnabled !== false; const src = asUrl(active.soundUrl); if (!enabled || !src || typeof window === "undefined") return; const volumeValue = Number(active.audioVolume ?? 1); const volume = Number.isFinite(volumeValue) ? Math.min(1, Math.max(0, volumeValue)) : 1; const audio = new Audio(src); audio.preload = "auto"; audio.volume = volume; audioRef.current = audio; void audio.play().catch(() => {}); return stopAudio; }, [active?.key, active?.soundUrl, active?.audioEnabled, active?.audioVolume, stopAudio]);
   if (!active) return null;
-
   const cfg: GiftRenderConfig = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER);
   const src = resolvedSrc;
   const kind = src ? resolvedType ?? typeOf(src, active.giftClipType) : "image";
   const stageStyle = renderConfigToStyle(cfg);
-  const mediaStyle: React.CSSProperties = {
-    width: "100%",
-    height: "100%",
-    display: "block",
-    objectFit: OBJECT_FIT[cfg.fit],
-  };
-  const advanceCandidate = () => {
-    const nextIndex = candidateIndex + 1;
-    if (nextIndex >= candidates.length) {
-      setResolvedSrc(null);
-      setResolvedType(null);
-      return;
-    }
-    const next = candidates[nextIndex]!;
-    setCandidateIndex(nextIndex);
-    setResolvedSrc(next);
-    setResolvedType(typeOf(next, null));
-  };
-
+  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit] };
+  const advanceCandidate = () => { const nextIndex = candidateIndex + 1; if (nextIndex >= candidates.length) { setResolvedSrc(null); setResolvedType(null); return; } const next = candidates[nextIndex]!; setCandidateIndex(nextIndex); setResolvedSrc(next); setResolvedType(typeOf(next, null)); };
   return (
-    <div
-      aria-live="polite"
-      data-jalwa-gift-player="true"
-      className="pointer-events-none fixed inset-0 z-[99999] overflow-visible"
-      style={{ pointerEvents: "none" }}
-    >
-      <div
-        className="absolute inset-0 overflow-visible"
-        style={{ ...stageStyle, inset: 0, width: "100%", height: "100%" }}
-      >
-        {kind === "video" && src ? (
-          <GiftGLVideo
-            key={`${active.key}:${src}`}
-            src={src}
-            config={cfg}
-            muted={active.audioEnabled !== false && Boolean(active.soundUrl)}
-            volume={active.audioEnabled === false ? 0 : Number(active.audioVolume ?? 1)}
-            loop={Boolean(cfg.loop && cfg.loopCount !== 1)}
-            className="h-full w-full"
-            style={mediaStyle}
-            objectFit={OBJECT_FIT[cfg.fit]}
-            playbackKey={active.key}
-            onEnded={finish}
-            onError={advanceCandidate}
-            onDuration={(ms) => {
-              clearTimer();
-              if (cfg.endMs == null && ms > 0) timerRef.current = window.setTimeout(finish, ms + cfg.holdMs + 500);
-            }}
-          />
-        ) : kind === "svga" && src ? (
-          <SvgaPlayer
-            key={`${active.key}:${src}`}
-            src={src}
-            loops={cfg.loop ? 0 : 1}
-            clearsAfterStop={false}
-            className="h-full w-full"
-            style={mediaStyle}
-            onFinished={finish}
-          />
-        ) : src ? (
-          <img key={`${active.key}:${src}`} src={src} alt={active.giftName ?? active.giftEmoji ?? "Gift"} className="h-full w-full object-contain" style={mediaStyle} onError={advanceCandidate} />
-        ) : (
-          <div className="text-7xl drop-shadow-2xl" aria-label={active.giftName ?? "Gift"}>{active.giftEmoji ?? "🎁"}</div>
-        )}
+    <div aria-live="polite" data-jalwa-gift-player="true" className="pointer-events-none fixed inset-0 z-[99999] overflow-hidden" style={{ pointerEvents: "none", width: "100vw", height: "100dvh", left: 0, top: 0 }}>
+      <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ width: "100%", height: "100%", left: 0, top: 0 }}>
+        <div className="relative flex items-center justify-center" style={{ ...stageStyle, margin: "auto", flexShrink: 0, transformOrigin: "center center" }}>
+          {kind === "video" && src ? (
+            <GiftGLVideo key={`${active.key}:${src}`} src={src} config={cfg} muted={active.audioEnabled !== false && Boolean(active.soundUrl)} volume={active.audioEnabled === false ? 0 : Number(active.audioVolume ?? 1)} loop={Boolean(cfg.loop && cfg.loopCount !== 1)} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} playbackKey={active.key} onEnded={finish} onError={advanceCandidate} onDuration={(ms) => { clearTimer(); if (cfg.endMs == null && ms > 0) timerRef.current = window.setTimeout(finish, ms + cfg.holdMs + 500); }} />
+          ) : kind === "svga" && src ? (
+            <SvgaPlayer key={`${active.key}:${src}`} src={src} loops={cfg.loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
+          ) : src ? (
+            <img key={`${active.key}:${src}`} src={src} alt={active.giftName ?? active.giftEmoji ?? "Gift"} className="h-full w-full object-contain" style={mediaStyle} onError={advanceCandidate} />
+          ) : (
+            <div className="text-7xl drop-shadow-2xl" aria-label={active.giftName ?? "Gift"}>{active.giftEmoji ?? "🎁"}</div>
+          )}
+        </div>
       </div>
     </div>
   );
