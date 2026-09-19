@@ -32,6 +32,8 @@ export function VoiceRoomMemberSheet({
   onKicked,
   onOpenProfile,
   onOpenMessage,
+  onOpenPublicChat,
+  onOpenHostControls,
 }: {
   roomId: string;
   member: VoiceRoomMemberProfile | null;
@@ -186,7 +188,9 @@ export function VoiceRoomMemberSheet({
 
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button type="button" onClick={() => void openProfile()} className="h-11 rounded-2xl bg-white/10 text-sm font-black">User Profile</button>
+          <button type="button" onClick={() => onOpenPublicChat?.(member)} className="h-11 rounded-2xl border border-cyan-400/30 bg-cyan-500/15 text-sm font-black text-cyan-100">Public Chat</button>
           <button type="button" onClick={() => { onOpenMessage?.(member.id); setMessageOpen(v => !v); }} className="h-11 rounded-2xl bg-[color:var(--primary)] text-sm font-black text-white">Private Message</button>
+          <button type="button" disabled={socialBusy} onClick={() => void toggleFollow()} className="h-11 rounded-2xl border border-white/10 bg-white/5 text-sm font-black disabled:opacity-50">{following ? "Following ✓" : "Follow"}</button>
         </div>
 
         {profileOpen && (
@@ -210,7 +214,9 @@ export function VoiceRoomMemberSheet({
           </div>
         )}
 
-        {(canModerate || isHost) && (
+        {onOpenHostControls ? (
+          <button type="button" onClick={onOpenHostControls} className="mt-3 flex h-11 w-full items-center justify-center rounded-2xl border border-amber-300/40 bg-amber-500/15 text-sm font-black text-amber-200">Host Controls & Settings</button>
+        ) : (canModerate || isHost) && (
           <button type="button" disabled={busy} onClick={() => void kick()} className="mt-3 flex h-11 w-full items-center justify-center rounded-2xl bg-red-500/90 text-sm font-black text-white disabled:opacity-50">{busy ? "Removing…" : "Host Control · Remove / Kick"}</button>
         )}
       </section>
