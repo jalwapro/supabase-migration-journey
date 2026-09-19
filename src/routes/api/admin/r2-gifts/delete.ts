@@ -89,18 +89,19 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
           // Delete only after the DB deletion succeeds. If the DB rejects the delete
           // (for example because a historical gift send still references it), R2 stays intact.
           const deleteDb = await fetch(
-            `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}`,
+            \`\${supabaseUrl}/rest/v1/gifts?id=eq.\${encodeURIComponent(id)}\`,
             {
               method: "DELETE",
               headers: {
                 apikey: dbKey,
-                Authorization: `Bearer ${dbKey}`,
+                Authorization: \`Bearer \${dbKey}\`,
+                Prefer: "return=minimal",
               },
             },
-            const keys = [...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((m) => decodeXml(m[1]));
+          );
           if (!deleteDb.ok) {
             const detail = await deleteDb.text();
-            return json({ error: `gift delete failed: ${detail.slice(0, 300)}` }, 409);
+            return json({ error: \`gift delete failed: \${detail.slice(0, 300)}\` }, 409);
           }
 
           if (!stems.size) return json({ ok: true, deletedGift: id, deletedR2: 0 });
@@ -110,35 +111,42 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
           const removed: string[] = [];
 
           do {
-            const listUrl = new URL(`${endpoint}/${bucket}`);
+            const listUrl = new URL(\`\${endpoint}/\${bucket}\`);
             listUrl.searchParams.set("list-type", "2");
             listUrl.searchParams.set("max-keys", "1000");
             if (token) listUrl.searchParams.set("continuation-token", token);
 
-            const signedList = await client.sign(new Request(listUrl.toString(), { method: "GET" }), { aws: { signQuery: true } });
+            const signedList = await client.sign(
+              new Request(listUrl.toString(), { method: "GET" }),
+              { aws: { signQuery: true } },
+            );
             const listRes = await fetch(signedList.url);
-            token = /<IsTruncated>true<\/IsTruncated>/i.test(xml)
-              ? xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1]
+            if (!listRes.ok) throw new Error(\`R2 list failed: \${listRes.status}\`);
+
             const xml = await listRes.text();
             const keys = [...xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g)].map((m) => decodeXml(m[1]));
 
             for (const rawKey of keys) {
-              const key = rawKey.replace(/^\/+/, "").replace(/^shop-assets\//i, "");
+              const key = rawKey.replace(/^\\/+/, "").replace(/^shop-assets\\//i, "");
               if (!/^(?:gift-clips|gift-thumbs|gift-audio)\\//i.test(key)) continue;
+
               const filename = key.split("/").pop() ?? "";
-              const stem = filename.replace(/\.[^.]+$/, "");
+              const stem = filename.replace(/\\.[^.]+$/, "");
               if (!stems.has(stem)) continue;
 
-              const deleteUrl = new URL(`${endpoint}/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`);
-              const signedDelete = await client.sign(new Request(deleteUrl.toString(), { method: "DELETE" }));
+              const deleteUrl = new URL(
+                \`\${endpoint}/\${bucket}/\${key.split("/").map(encodeURIComponent).join("/")}\`,
+              );
+              const signedDelete = await client.sign(
+                new Request(deleteUrl.toString(), { method: "DELETE" }),
+              );
               const deleteRes = await fetch(signedDelete.url);
-              if (!deleteRes.ok) throw new Error(`R2 delete failed for ${key}: ${deleteRes.status}`);
+              if (!deleteRes.ok) throw new Error(\`R2 delete failed for \${key}: \${deleteRes.status}\`);
               removed.push(key);
             }
 
-            token = /<IsTruncated>true<\\/IsTruncated>/i.test(xml)
-              ? xml.match(/<NextContinuationToken>([\\s\\S]*?)<\\/NextContinuationToken>/)?.[1]
-              : undefined;
+            const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\\/NextContinuationToken>/)?.[1];
+            token = /<IsTruncated>true<\\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
           } while (token);
 
           return json({ ok: true, deletedGift: id, deletedR2: removed.length, keys: removed });
