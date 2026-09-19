@@ -97,7 +97,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
                 Authorization: `Bearer ${dbKey}`,
               },
             },
-          );
+            const keys = [...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((m) => decodeXml(m[1]));
           if (!deleteDb.ok) {
             const detail = await deleteDb.text();
             return json({ error: `gift delete failed: ${detail.slice(0, 300)}` }, 409);
@@ -117,8 +117,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
 
             const signedList = await client.sign(new Request(listUrl.toString(), { method: "GET" }), { aws: { signQuery: true } });
             const listRes = await fetch(signedList.url);
-            if (!listRes.ok) throw new Error(`R2 list failed: ${listRes.status}`);
-
+            token = /<IsTruncated>true<\/IsTruncated>/i.test(xml)
+              ? xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1]
             const xml = await listRes.text();
             const keys = [...xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g)].map((m) => decodeXml(m[1]));
 
