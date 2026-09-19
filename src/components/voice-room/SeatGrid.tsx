@@ -288,11 +288,19 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   };
 
   const assignViewer = async (viewer: RoomViewer) => {
-    if (!roomId || !selectedEmptySeat || !canManageSeats) return;
+    if (!roomId || !selectedEmptySeat || !isHost) return;
     const seatIndex = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
-    const { error } = await supabase.from("seat_invites").insert({ room_id: roomId, from_user: host.id, to_user: viewer.id, seat_index: seatIndex });
-    if (error) { toast.error(error.message || "Could not send seat assignment"); return; }
-    toast.success(`${viewer.username} seat invite sent`);
+    if (selectedEmptySeat.is_locked) {
+      toast.error("Unlock this seat first");
+      return;
+    }
+    const { error } = await supabase.rpc("host_assign_seat", {
+      _room_id: roomId,
+      _user_id: viewer.id,
+      _seat_index: seatIndex,
+    });
+    if (error) { toast.error(error.message || "Could not assign seat"); return; }
+    toast.success(`${viewer.username} moved to seat ${seatIndex}`);
     setSelectedEmptySeat(null);
   };
 
