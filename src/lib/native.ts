@@ -3,6 +3,7 @@
 // the web bundle beyond a tiny detection stub.
 
 import { Capacitor, SystemBars } from "@capacitor/core";
+import { App } from "@capacitor/app";
 
 export const isNative = () => Capacitor.isNativePlatform();
 export const nativePlatform = () => Capacitor.getPlatform(); // "web" | "ios" | "android"
@@ -53,10 +54,9 @@ export async function setVoiceRoomFullscreen(enabled: boolean) {
 export async function initNativeShell() {
   if (!isNative()) return;
   try {
-    const [{ StatusBar, Style }, { SplashScreen }, { App }] = await Promise.all([
+    const [{ StatusBar, Style }, { SplashScreen }] = await Promise.all([
       import("@capacitor/status-bar"),
       import("@capacitor/splash-screen"),
-      import("@capacitor/app"),
     ]);
 
     await StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
