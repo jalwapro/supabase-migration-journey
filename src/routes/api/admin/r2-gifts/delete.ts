@@ -93,8 +93,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             {
               method: "DELETE",
               headers: {
-                apikey: serviceKey,
-                Authorization: `Bearer ${serviceKey}`,
+                apikey: dbKey,
+                Authorization: `Bearer ${dbKey}`,
               },
             },
           );
