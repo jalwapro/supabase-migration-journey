@@ -92,9 +92,6 @@ async function listGiftAssets() {
 
     const xml = await response.text();
     keys.push(
-      ...[...xml.matchAll(/<Key>([\\s\\S]*?)<\//Key>/g)].map((m) => decodeXml(m[1])),
-    );
-      ...[...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((m) => decodeXml(m[1])),
     const next = xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1];
     continuationToken =
       /<IsTruncated>true<\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
@@ -233,8 +230,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
               headers: {
                 "Content-Type": "application/json",
                 Prefer: "return=minimal",
-                apikey: serviceKey,
-                Authorization: `Bearer ${serviceKey}`,
+                apikey: dbKey,
+                Authorization: `Bearer ${dbKey}`,
               },
               body: JSON.stringify(payload),
             });
