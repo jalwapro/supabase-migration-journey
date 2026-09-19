@@ -127,8 +127,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             const value = gift[field];
             if (typeof value !== "string" || !value) continue;
             const filename = value.split("/").pop()?.split("?")[0] ?? "";
-            const stem = fileStem(filename);
-            if (stem) stems.add(stem);
+              const stem = fileStem(filename);
+              if (stem) stems.add(stem);
           }
 
           // Delete only after the DB deletion succeeds. If the DB rejects the delete
