@@ -63,11 +63,35 @@ export async function initNativeShell() {
     await StatusBar.setBackgroundColor({ color: "#1a0d2e" }).catch(() => {});
     await SplashScreen.hide().catch(() => {});
 
-    // Android hardware back button: navigate back or minimise app at root.
+    // Android hardware/gesture Back follows normal app navigation:
+    // 1) close an open popup/overlay first
+    // 2) on any non-home page, navigate back but never exit the app
+    // 3) on Home, require two Back presses within a short window to exit
+    let lastHomeBackAt = 0;
     App.addListener("backButton", ({ canGoBack }) => {
       if (closeActiveOverlay()) return;
-      if (canGoBack) window.history.back();
-      else App.exitApp().catch(() => {});
+
+      const pathname = window.location.pathname.replace(/\\/+$/, "") || "/";
+      const isHome = pathname === "/" || pathname === "/home";
+
+      if (!isHome) {
+        if (canGoBack || window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.assign("/");
+        }
+        return;
+      }
+
+      const now = Date.now();
+      if (now - lastHomeBackAt <= 1800) {
+        lastHomeBackAt = 0;
+        App.exitApp().catch(() => {});
+        return;
+      }
+
+      lastHomeBackAt = now;
+      window.dispatchEvent(new CustomEvent("jalwa:back-to-exit-warning"));
     });
   } catch (err) {
     console.warn("Native shell init failed", err);
