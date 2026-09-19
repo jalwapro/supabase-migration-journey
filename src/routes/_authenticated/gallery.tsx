@@ -47,11 +47,22 @@ function Page() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gallery_unlocks")
-        .select("id, viewer_id, status, created_at, viewer:profiles!gallery_unlocks_viewer_id_fkey(username,avatar)")
+        .select("id, viewer_id, status, created_at")
         .eq("owner_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as unknown as Unlock[];
+
+      const rows = (data ?? []) as Array<Omit<Unlock, "viewer">>;
+      const viewerIds = [...new Set(rows.map((row) => row.viewer_id))];
+      const { data: profiles, error: profilesError } = viewerIds.length
+        ? await supabase.from("profiles").select("id, username, avatar").in("id", viewerIds)
+        : { data: [], error: null };
+      if (profilesError) throw profilesError;
+
+      const profileMap = new Map(
+        (profiles ?? []).map((profile) => [profile.id, { username: profile.username, avatar: profile.avatar }]),
+      );
+      return rows.map((row) => ({ ...row, viewer: profileMap.get(row.viewer_id) ?? null })) as Unlock[];
     },
   });
 
