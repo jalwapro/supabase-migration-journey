@@ -14,7 +14,7 @@ function json(body: unknown, status = 200) {
 }
 
 async function getAdmin(request: Request) {
-  const token = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+  const raw = request.headers.get("authorization") ?? ""; const token = (raw.toLowerCase().startsWith("bearer ") ? raw.slice(7) : raw).trim();
   if (!token) return null;
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
   const anon = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || "";
@@ -40,7 +40,7 @@ async function getR2() {
   if (!endpoint || !bucket || !accessKeyId || !secretAccessKey) throw new Error("R2 server configuration is incomplete");
   const { AwsClient } = await import("aws4fetch");
   return {
-    endpoint: endpoint.replace(/\/+$/, ""),
+    endpoint: trimTrailingSlashes(endpoint),
     bucket,
     client: new AwsClient({ accessKeyId, secretAccessKey, service: "s3", region: "auto" }),
   };
@@ -127,7 +127,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             const value = gift[field];
             if (typeof value !== "string" || !value) continue;
             const filename = value.split("/").pop()?.split("?")[0] ?? "";
-            const stem = filename.replace(/\.[^.]+$/, "");
+            const stem = fileStem(filename);
             if (stem) stems.add(stem);
           }
 
@@ -169,14 +169,14 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             if (!listRes.ok) throw new Error(`R2 list failed: ${listRes.status}`);
 
             const xml = await listRes.text();
-            const keys = [...xml.matchAll(new RegExp(String.raw`<Key>([\\s\\S]*?)</Key>`, "g"))].map((m) => decodeXml(m[1]));
+            const keys = extractTagValues(xml, "Key").map(decodeXml);
 
             for (const rawKey of keys) {
-              const key = rawKey.replace(/^\\/+/, "").replace(/^shop-assets\\//i, "");
-              if (!/^(?:gift-clips|gift-thumbs|gift-audio)\//i.test(key)) continue;
+              const key = normalizeR2Key(rawKey);
+              const lowerKey = key.toLowerCase(); if (!(lowerKey.startsWith("gift-clips/") || lowerKey.startsWith("gift-thumbs/") || lowerKey.startsWith("gift-audio/"))) continue;
 
               const filename = key.split("/").pop() ?? "";
-              const stem = filename.replace(/\.[^.]+$/, "");
+            const stem = fileStem(filename);
               if (!stems.has(stem)) continue;
 
               const deleteUrl = new URL(
@@ -190,8 +190,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
               removed.push(key);
             }
 
-            const next = xml.match(new RegExp(String.raw`<NextContinuationToken>([\\s\\S]*?)</NextContinuationToken>`))?.[1];
-            token = new RegExp(String.raw`<IsTruncated>true</IsTruncated>`, "i").test(xml) && next ? decodeXml(next) : undefined;
+            const next = extractTagValue(xml, "NextContinuationToken");
+            token = xml.toLowerCase().includes("<istruncated>true</istruncated>") && next ? decodeXml(next) : undefined;
           } while (token);
 
           return json({ ok: true, deletedGift: id, deletedR2: removed.length, keys: removed });
