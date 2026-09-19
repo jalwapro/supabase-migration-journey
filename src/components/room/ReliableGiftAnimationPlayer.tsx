@@ -193,10 +193,13 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     <div
       aria-live="polite"
       data-jalwa-gift-player="true"
-      className="pointer-events-none fixed inset-0 z-[95] overflow-hidden"
-      style={{ ...stageStyle, pointerEvents: "none" }}
+      className="pointer-events-none fixed inset-0 z-[99999] overflow-visible"
+      style={{ pointerEvents: "none" }}
     >
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div
+        className="absolute inset-0 overflow-visible"
+        style={{ ...stageStyle, inset: 0, width: "100%", height: "100%" }}
+      >
         {kind === "video" && src ? (
           <GiftGLVideo
             key={`${active.key}:${src}`}
