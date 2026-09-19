@@ -92,24 +92,24 @@ async function listGiftAssets() {
 
     const xml = await response.text();
     keys.push(
-      ...[...xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g)].map((m) => decodeXml(m[1])),
+      ...[...xml.matchAll(/<Key>([\\s\\S]*?)<\//Key>/g)].map((m) => decodeXml(m[1])),
     );
 
-    const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\\/NextContinuationToken>/)?.[1];
+    const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\//NextContinuationToken>/)?.[1];
     continuationToken =
-      /<IsTruncated>true<\\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
+      /<IsTruncated>true<\//IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
   } while (continuationToken);
 
   const assets = keys
-    .map((key) => key.replace(/^\\/+/, "").replace(/^shop-assets\\//i, ""))
-    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\\//i.test(key))
+    .map((key) => key.replace(/^\/+/, "").replace(/^shop-assets\//i, ""))
+    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\//i.test(key))
     .map((key) => {
       const filename = key.split("/").pop() ?? key;
       const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
       const stem = filename.replace(/\\.[^.]+$/, "");
-      const kind = /^gift-clips\\//i.test(key)
+      const kind = /^gift-clips\//i.test(key)
         ? "clip"
-        : /^gift-thumbs\\//i.test(key)
+        : /^gift-thumbs\//i.test(key)
           ? "thumb"
           : "audio";
       return {
