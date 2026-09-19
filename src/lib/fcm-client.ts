@@ -159,7 +159,7 @@ export async function enableFcmForUser(userId: string): Promise<{ token: string 
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       user_id: userId,
-      platform: "fcm",
+      platform: "web",
       endpoint: `fcm:${token}`,
       fcm_token: token,
       p256dh: null,
