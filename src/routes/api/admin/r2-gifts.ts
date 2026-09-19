@@ -91,23 +91,23 @@ async function listGiftAssets() {
     if (!response.ok) throw new Error(`R2 list failed: ${response.status}`);
 
     const xml = await response.text();
-    const matches = xml.matchAll(/<Key>([\\s\\S]*?)<\\/Key>/g);
+    const matches = xml.matchAll(new RegExp(String.raw`<Key>([\\s\\S]*?)</Key>`, "g"));
     for (const match of matches) {
       if (match[1]) keys.push(decodeXml(match[1]));
     }
 
-    const next = xml.match(/<NextContinuationToken>([\\s\\S]*?)<\\/NextContinuationToken>/)?.[1];
+    const next = xml.match(new RegExp(String.raw`<NextContinuationToken>([\\s\\S]*?)</NextContinuationToken>`))?.[1];
     continuationToken =
-      /<IsTruncated>true<\\/IsTruncated>/i.test(xml) && next ? decodeXml(next) : undefined;
+      new RegExp(String.raw`<IsTruncated>true</IsTruncated>`, "i").test(xml) && next ? decodeXml(next) : undefined;
   } while (continuationToken);
 
   const assets = keys
-    .map((key) => key.replace(/^\\/+/, "").replace(/^shop-assets\\//i, ""))
-    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\\//i.test(key))
+    .map((key) => key.replace(/^\/+/, "").replace(/^shop-assets\\//i, ""))
+    .filter((key) => /^(?:gift-clips|gift-thumbs|gift-audio)\//i.test(key))
     .map((key) => {
       const filename = key.split("/").pop() ?? key;
       const ext = filename.includes(".") ? filename.split(".").pop()!.toLowerCase() : "";
-      const stem = filename.replace(/\\.[^.]+$/, "");
+      const stem = filename.replace(/\.[^.]+$/, "");
       const kind = /^gift-clips\\//i.test(key)
         ? "clip"
         : /^gift-thumbs\\//i.test(key)
@@ -178,7 +178,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
               const value = gift[field];
               if (typeof value !== "string" || !value) continue;
               const filename = value.split("/").pop()?.split("?")[0] ?? "";
-              const stem = filename.replace(/\\.[^.]+$/, "");
+              const stem = filename.replace(/\.[^.]+$/, "");
               if (stem) existingStems.add(stem);
             }
           }
