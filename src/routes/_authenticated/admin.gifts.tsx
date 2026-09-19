@@ -116,25 +116,31 @@ function GiftMediaPreview({
   imageUrl?: string | null;
   emoji?: string | null;
 }) {
-  const royalRose = isRoyalRoseGift(name) || (clipPath ?? "").includes("royal-rose");
-  const src = royalRose ? ROYAL_ROSE_THUMB_URL : resolveGiftMediaUrl(clipPath);
+  const royalRose = isRoyalRoseGift(name) || (clipPath ?? "").toLowerCase().includes("royal-rose");
+  const videoSrc = royalRose ? ROYAL_ROSE_MP4_URL : resolveGiftMediaUrl(clipPath);
   const fallbackImage = royalRose ? ROYAL_ROSE_THUMB_URL : resolveGiftMediaUrl(imageUrl);
   const [videoFailed, setVideoFailed] = useState(false);
+  const normalizedType = (clipType ?? "").toLowerCase();
+  const lowerPath = (clipPath ?? "").toLowerCase();
+  const isVideo =
+    normalizedType === "mp4" ||
+    normalizedType === "webm" ||
+    lowerPath.endsWith(".mp4") ||
+    lowerPath.endsWith(".webm");
 
-  if (src && (royalRose || clipType === "svg" || videoFailed)) {
-    return <img src={src} alt={name} className="h-full w-full object-contain" />;
-  }
-
-  if (src && (clipType === "mp4" || clipType === "webm")) {
+  if (videoSrc && isVideo && !videoFailed) {
     return (
       <video
-        src={src}
+        key={videoSrc}
+        src={videoSrc}
         poster={fallbackImage ?? undefined}
         autoPlay
         loop
         muted
         playsInline
-        preload="auto"
+        controls={false}
+        preload="metadata"
+        crossOrigin="anonymous"
         onError={() => setVideoFailed(true)}
         className="h-full w-full object-contain"
       />
@@ -143,6 +149,10 @@ function GiftMediaPreview({
 
   if (fallbackImage) {
     return <img src={fallbackImage} alt={name} className="h-full w-full object-contain" />;
+  }
+
+  if (videoSrc && !isVideo) {
+    return <img src={videoSrc} alt={name} className="h-full w-full object-contain" />;
   }
 
   return <span className="text-4xl">{emoji ?? "🎁"}</span>;
