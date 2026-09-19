@@ -238,10 +238,9 @@ export function GiftGLVideo({
   const cfgRef = useRef(config);
   cfgRef.current = config;
   const detectedRef = useRef<"green" | "black" | "none" | null>(null);
-  // Public R2 r2.dev assets may not send CORS headers. WebGL requires CORS,
-  // while a normal <video> element can still play the public media directly.
-  const corsUnsafe = /(?:r2\.dev|r2\.cloudflarestorage\.com)/i.test(src);
-  const [glFailed, setGlFailed] = useState(corsUnsafe);
+  // Gift Studio clips are rendered through WebGL so the saved chroma/crop/
+  // colour settings are actually applied. R2 must provide CORS for this path.
+  const [glFailed, setGlFailed] = useState(false);
   const [ready, setReady] = useState(false);
   const readyOnce = useRef(false);
 
@@ -257,9 +256,10 @@ export function GiftGLVideo({
     readyOnce.current = false;
     setReady(false);
     detectedRef.current = null;
-    // Do not attempt a WebGL texture upload for public R2 URLs without CORS.
-    setGlFailed(corsUnsafe);
-  }, [src, corsUnsafe]);
+    // Always try the WebGL renderer first. The R2 bucket now has CORS enabled,
+    // which is required for uploading the video frame into a WebGL texture.
+    setGlFailed(false);
+  }, [src]);
 
   // Auto-detect the backdrop once from the first frame (border sampling).
   const detect = useCallback((video: HTMLVideoElement) => {
