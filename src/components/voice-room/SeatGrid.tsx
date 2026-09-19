@@ -296,6 +296,23 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     setSelectedEmptySeat(null);
   };
 
+  const changeMySeat = async () => {
+    if (!roomId || !selectedEmptySeat || !isHost) return;
+    const target = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
+    if (selectedEmptySeat.is_locked) {
+      toast.error("Unlock this seat first");
+      return;
+    }
+    const { error } = await supabase.rpc("take_seat", { _room_id: roomId, _seat_index: target });
+    if (error) {
+      toast.error(error.message || "Could not change your seat");
+      return;
+    }
+    toast.success("You moved to seat " + target);
+    setHostSeatIndex(target);
+    setSelectedEmptySeat(null);
+  };
+
   const shiftUser = async () => {
     if (!roomId || !selectedEmptySeat || !targetShiftSeat || !canManageSeats) return;
     const source = Number(targetShiftSeat);
@@ -325,13 +342,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       onSeatTap?.(idx);
       return;
     }
-    if (isHost) {
-      onJoinSeat?.(idx);
-      return;
-    }
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
       setActiveTab("users");
+      setTargetShiftSeat("");
+      return;
+    }
+    if (isHost) {
+      onJoinSeat?.(idx);
       return;
     }
     if (seat.is_locked) {
@@ -401,7 +419,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
       {selectedEmptySeat && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fade-in px-4" onClick={() => setSelectedEmptySeat(null)}>
-          <div className="relative flex flex-col max-w-xs w-full rounded-3xl bg-[#120a1f] border border-amber-500 p-4 shadow-2xl text-white" onClick={e => e.stopPropagation()}>
+          <div className="relative flex flex-col max-w-sm w-full rounded-[28px] bg-slate-950/95 border border-white/10 p-5 shadow-[0_24px_80px_rgba(0,0,0,.55)] text-white backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between pb-3 border-b border-white/20"><div className="flex items-center gap-2"><Settings className="h-4 w-4 text-amber-400" /><span className="text-xs font-bold text-amber-300 uppercase tracking-wide">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</span></div><button type="button" onClick={() => setSelectedEmptySeat(null)} className="text-white hover:text-amber-300"><X className="h-4 w-4" /></button></div>
             <div className="py-3 flex items-center justify-between border-b border-white/20"><div className="flex items-center gap-2 text-xs font-semibold">{selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}<span>{selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}</span></div><button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="px-3 py-1 rounded-xl bg-[#2a1745] hover:bg-[#38205c] text-xs font-bold text-amber-300 border border-amber-500/50 transition">{selectedEmptySeat.is_locked ? "Unlock" : "Lock"}</button></div>
             <div className="pt-3">
@@ -414,8 +432,8 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
       {isHost && requests.length > 0 && (
         <div className="pointer-events-auto absolute left-3 right-3 top-1 z-[80] max-h-[42%] overflow-y-auto rounded-2xl border border-amber-500 bg-[#120a1f] p-2 shadow-2xl">
-          <div className="mb-1.5 flex items-center justify-between px-1"><span className="text-xs font-bold text-white">Seat requests ({requests.length})</span><span className="text-[9px] text-white">Approve or reject</span></div>
-          <div className="space-y-1.5">{requests.map(request => <div key={request.id} className="flex items-center gap-2 rounded-xl border border-amber-500/50 bg-[#1e1238] p-1.5">{request.avatar ? <img src={request.avatar} alt={request.username} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-amber-500" /> : <div className="grid h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black">{request.username[0]?.toUpperCase()}</div>}<div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-white">{request.username}</div><div className="truncate text-[8px] font-mono text-white">ID: {request.from_user}</div><div className="text-[9px] text-white">Requesting Seat {request.seat_index ?? "any"}</div></div><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, true)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white disabled:opacity-50" aria-label={`Accept ${request.username}'s seat request`}><Check className="h-4 w-4" /></button><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-red-500 text-white disabled:opacity-50" aria-label={`Reject ${request.username}'s seat request`}><X className="h-4 w-4" /></button></div>)}</div>
+          <div className="mb-2 flex items-center justify-between px-1"><div><span className="text-sm font-black text-white">Seat Requests</span><div className="text-[9px] text-white/50">Approve or reject pending requests</div></div><span className="rounded-full bg-amber-400/15 px-2 py-1 text-[9px] font-bold text-amber-300">{requests.length} pending</span></div>
+          <div className="space-y-1.5">{requests.map(request => <div key={request.id} className="flex items-center gap-2 rounded-xl border border-amber-500/50 bg-[#1e1238] p-1.5">{request.avatar ? <img src={request.avatar} alt={request.username} className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-amber-500" /> : <div className="grid h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500 text-[10px] font-bold text-black">{request.username[0]?.toUpperCase()}</div>}<div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold text-white">{request.username}</div><div className="truncate text-[9px] text-white/50">Wants to join a seat</div><div className="text-[9px] text-white">Requesting Seat {request.seat_index ?? "any"}</div></div><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, true)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white disabled:opacity-50" aria-label={`Accept ${request.username}'s seat request`}><Check className="h-4 w-4" /></button><button type="button" disabled={busyRequest === request.id} onClick={() => void respond(request, false)} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-red-500 text-white disabled:opacity-50" aria-label={`Reject ${request.username}'s seat request`}><X className="h-4 w-4" /></button></div>)}</div>
         </div>
       )}
     </section>
