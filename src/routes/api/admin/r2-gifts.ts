@@ -194,14 +194,27 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
           process.env.SUPABASE_URL ||
           process.env.VITE_SUPABASE_URL ||
           "https://vfuiqjxgyptjqhbmzigk.supabase.co";
-        const dbKey = admin.token;
+        // Supabase requires a project key in `apikey`; the user's JWT belongs
+        // only in `Authorization`. Using the JWT as the apikey causes 401.
+        const dbKey =
+          process.env.SUPABASE_SERVICE_ROLE_KEY ||
+          process.env.SUPABASE_ANON_KEY ||
+          process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+          process.env.VITE_SUPABASE_ANON_KEY ||
+          "";
+        if (!dbKey) throw new Error("Supabase server key is not configured");
 
         try {
           const { assets } = await listGiftAssets();
 
           const existingRes = await fetch(
             `${supabaseUrl}/rest/v1/gifts?select=id,name,icon,emoji,price,price_coins,category,animation,sort_order,active,is_active,clip_path,image_url,audio_url,sound_url`,
-            { headers: { apikey: dbKey, Authorization: `Bearer ${dbKey}` } },
+            {
+              headers: {
+                apikey: dbKey,
+                Authorization: `Bearer ${admin.token}`,
+              },
+            },
           );
           if (!existingRes.ok) throw new Error(`gift catalog read failed: ${existingRes.status}`);
           const existing = (await existingRes.json()) as Array<Record<string, unknown>>;
@@ -268,7 +281,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts")({
                 "Content-Type": "application/json",
                 Prefer: "return=minimal",
                 apikey: dbKey,
-                Authorization: `Bearer ${dbKey}`,
+                Authorization: `Bearer ${admin.token}`,
               },
               body: JSON.stringify(payload),
             });
