@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Sparkles, X } from "lucide-react";
 
 const DISMISS_KEY = "daily_spin_popup_dismissed_at";
@@ -43,7 +43,7 @@ export function DailySpinPopup() {
 
   return (
     <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : dismiss())}>
-      <DialogContent className="max-w-xs overflow-hidden border-[color:var(--gold)]/40 bg-gradient-to-br from-[color:var(--gold)]/20 via-[color:var(--primary)]/15 to-background p-0">
+      <DialogContent aria-describedby="daily-spin-description" className="max-w-xs overflow-hidden border-[color:var(--gold)]/40 bg-gradient-to-br from-[color:var(--gold)]/20 via-[color:var(--primary)]/15 to-background p-0">
         <button
           onClick={dismiss}
           aria-label="Close"
@@ -60,9 +60,9 @@ export function DailySpinPopup() {
               Your Daily Spin is Ready!
             </DialogTitle>
           </DialogHeader>
-          <p className="mt-1 text-xs text-muted-foreground">
+          <DialogDescription id="daily-spin-description" className="mt-1 text-xs text-muted-foreground">
             Spin the wheel and win coins, diamonds, frames or themes — free every 24 hours.
-          </p>
+          </DialogDescription>
           <Link
             to="/games/daily-spin"
             onClick={() => setOpen(false)}
