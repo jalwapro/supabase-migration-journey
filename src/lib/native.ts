@@ -71,7 +71,7 @@ export async function initNativeShell() {
     App.addListener("backButton", ({ canGoBack }) => {
       if (closeActiveOverlay()) return;
 
-      const pathname = window.location.pathname.replace(/\\/+$/, "") || "/";
+      const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
       const isHome = pathname === "/" || pathname === "/home";
 
       if (!isHome) {
