@@ -520,7 +520,10 @@ function GiftsAdmin() {
     </div>
   );
 })}
-{r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}{/* Category tabs */}
+{r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}
+          </div>
+        )}
+        {/* Category tabs */}
       <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {CATEGORY_TABS.map((c) => {
           const stat = catCounts[c] ?? { total: 0, active: 0 };
