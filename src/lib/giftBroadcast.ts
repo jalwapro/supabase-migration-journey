@@ -40,12 +40,20 @@ export function acquireGiftBroadcastChannel(roomId: string): GiftChannel {
     existing.refs += 1;
     return existing.channel;
   }
-  const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true, ack: true } } });
-  const ready = new Promise<void>((resolve, reject) => {
-    channel.subscribe((status, error) => {
-      if (status === "SUBSCRIBED") resolve();
-      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(error ?? new Error(`Gift channel ${status}`));
+  const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true, ack: false } } });
+  const ready = new Promise<void>((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    channel.subscribe((status) => {
+      // Broadcast is best-effort. Never make the paid send wait for a long
+      // Realtime timeout; the durable gift_sends row is the source of truth.
+      if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") finish();
     });
+    window.setTimeout(finish, 800);
   });
   channels.set(roomId, { channel, refs: 1, ready });
   return channel;
