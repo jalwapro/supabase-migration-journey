@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { App } from "@capacitor/app";
 import { Room, RoomEvent, Track, type RemoteTrack, type RemoteTrackPublication, type RemoteParticipant } from "livekit-client";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -17,11 +18,16 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
   const [error, setError] = useState<string | null>(null);
   const [muted, setMuted] = useState(!publish);
   const [remoteAudio, setRemoteAudio] = useState<Map<string, HTMLAudioElement>>(new Map());
+  const desiredMicEnabledRef = useRef(publish);
+  desiredMicEnabledRef.current = publish ? !muted : false;
 
   const disconnect = useCallback(async () => {
     const room = roomRef.current;
     roomRef.current = null;
-    if (room) await room.disconnect();
+    if (room) {
+      try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
+      await room.disconnect();
+    }
     setRemoteAudio((current) => {
       current.forEach((el) => { el.pause(); el.srcObject = null; el.remove(); });
       return new Map();
@@ -110,8 +116,10 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
         const mayPublish = body.canPublish === true;
         if (mayPublish && publish) {
           await room.localParticipant.setMicrophoneEnabled(true);
+          desiredMicEnabledRef.current = true;
           setMuted(false);
         } else {
+          desiredMicEnabledRef.current = false;
           setMuted(true);
         }
       } catch (e) {
@@ -122,11 +130,51 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
       }
     })();
 
+    const suspendForBackground = async () => {
+      if (room.state !== "connected") return;
+      try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
+      setRemoteAudio((current) => {
+        current.forEach((el) => { try { el.pause(); } catch {} });
+        return current;
+      });
+    };
+
+    const resumeFromBackground = async () => {
+      if (cancelled || room.state !== "connected") return;
+      if (publish && desiredMicEnabledRef.current) {
+        try { await room.localParticipant.setMicrophoneEnabled(true); } catch {}
+      }
+      setRemoteAudio((current) => {
+        current.forEach((el) => { void el.play().catch(() => undefined); });
+        return current;
+      });
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") void suspendForBackground();
+      else void resumeFromBackground();
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    let appStateHandle: { remove: () => Promise<void> } | undefined;
+    void App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) void resumeFromBackground();
+      else void suspendForBackground();
+    }).then((handle) => {
+      appStateHandle = handle;
+      if (cancelled) void handle.remove();
+    });
+
     return () => {
       cancelled = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      void appStateHandle?.remove();
       room.off(RoomEvent.TrackSubscribed, onSubscribed);
       room.off(RoomEvent.TrackUnsubscribed, onUnsubscribed);
-      void room.disconnect();
+      void (async () => {
+        try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
+        await room.disconnect();
+      })();
       if (roomRef.current === room) roomRef.current = null;
     };
   }, [roomId, enabled, publish, displayName, disconnect]);
@@ -135,6 +183,7 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     const room = roomRef.current;
     if (!room || room.state !== "connected") return;
     await room.localParticipant.setMicrophoneEnabled(enabledMic);
+    desiredMicEnabledRef.current = enabledMic;
     setMuted(!enabledMic);
   }, []);
 
