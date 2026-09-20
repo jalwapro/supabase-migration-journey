@@ -83,56 +83,30 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
     }
 
     try {
-      // Use the canonical batch RPC for multi-recipient combo taps so the
-      // database validates and records the complete recipient set in one call.
-      // A single-recipient tap keeps the normal send_gift path.
+      // Charge/log each recipient individually, but do not trigger playback here.
+      // Playback is broadcast once below for the whole recipient batch.
       let firstSendId: string | null = null;
-      let sendIds: string[] = [];
-
-      if (targets.length === 1) {
-        const { data, error } = await supabase.rpc("send_gift", {
-          _room_id: roomId,
-          _receiver_id: targets[0],
-          _gift_id: gift.id,
-          _quantity: 1,
-          _write_message: false,
-        });
+      for (const rid of targets) {
+        const { data, error } = await supabase.rpc("send_gift", { _room_id: roomId, _receiver_id: rid, _gift_id: gift.id, _quantity: 1, _write_message: false });
         if (error) throw error;
         const row = data as { id?: string } | null;
         if (!row?.id) throw new Error("Gift was charged but returned no canonical send id");
-        firstSendId = row.id;
-        sendIds = [row.id];
-      } else {
-        const { data, error } = await supabase.rpc("send_gift_multi_current", {
-          _room_id: roomId,
-          _receiver_ids: targets,
-          _gift_id: gift.id,
-          _quantity: 1,
-        });
-        if (error) throw error;
-        const rows = Array.isArray(data) ? data as Array<{ id?: string }> : [];
-        if (rows.length !== targets.length || rows.some((row) => !row.id)) {
-          throw new Error("Gift batch returned incomplete canonical send ids");
-        }
-        firstSendId = rows[0].id!;
-        sendIds = rows.map((row) => row.id!);
-      }
-
-      for (const rid of targets) {
+        if (!firstSendId) firstSendId = row.id;
         tapTotalsRef.current[rid] = (tapTotalsRef.current[rid] ?? 0) + 1;
       }
 
       // One unified animation event for the complete batch, regardless of how
-      // many recipients were charged. The durable rows remain the source of truth.
-      await broadcastGiftPlayback(
-        roomId,
-        gift,
-        targets,
-        { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null },
-        1,
-        firstSendId!,
-        sendIds,
-      );
+      // many recipients were charged above (e.g. 5 recipients => 1 playback).
+      if (firstSendId) {
+        await broadcastGiftPlayback(
+          roomId,
+          gift,
+          targets,
+          { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null },
+          1,
+          firstSendId,
+        );
+      }
       await refresh();
     } catch (e) {
       toast.error((e as Error).message);
