@@ -104,18 +104,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         if (!admin) return json({ error: "admin authentication required" }, 401);
 
         const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
-        const anon =
-          process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-          process.env.SUPABASE_ANON_KEY ||
-          process.env.VITE_SUPABASE_ANON_KEY ||
-          "";
-        const serviceKey =
-          process.env.SB_SERVICE_ROLE_KEY ||
-          process.env.SUPABASE_SERVICE_ROLE_KEY ||
-          process.env.SB_SECRET_KEY ||
-          "";
-        if (!anon) return json({ error: "Supabase publishable key is not configured" }, 500);
-        if (!serviceKey) return json({ error: "Supabase service role key is not configured" }, 500);
+        const dbKey = admin.token;
 
         let id = "";
         try {
@@ -126,9 +115,9 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         try {
           const giftRes = await fetch(
             `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}&select=id,clip_path,image_url,audio_url,sound_url`,
-            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+            { headers: { apikey: dbKey, Authorization: `Bearer ${dbKey}` } },
           );
-          if (!giftRes.ok) { const detail = await giftRes.text(); return json({ error: `gift lookup failed: ${giftRes.status}`, detail: detail.slice(0, 300) }, 502); }
+          if (!giftRes.ok) return json({ error: `gift lookup failed: ${giftRes.status}` }, 502);
           const gifts = (await giftRes.json()) as Array<Record<string, unknown>>;
           const gift = gifts[0];
           if (!gift) return json({ error: "gift not found" }, 404);
@@ -149,8 +138,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             {
               method: "DELETE",
               headers: {
-                apikey: serviceKey,
-                Authorization: `Bearer ${serviceKey}`,
+                apikey: dbKey,
+                Authorization: `Bearer ${dbKey}`,
                 Prefer: "return=minimal",
               },
             },
