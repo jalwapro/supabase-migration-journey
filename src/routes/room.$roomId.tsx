@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
 import { VoiceRoomScreen } from "@/components/voice-room/VoiceRoomScreen";
 import { useAuth } from "@/hooks/useAuth";
+import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import { frameForLevel } from "@/lib/levelFrames";
@@ -241,7 +242,20 @@ function formatGiftPoints(points: number) {
 function RoomPage() {
   const { roomId } = Route.useParams();
   const { user, profile, refresh } = useAuth();
+  const { updateRoom, clearRoom } = useVoiceRoomSession();
   const navigate = useNavigate();
+  useEffect(() => {
+    if (!user?.id) return;
+    updateRoom({
+      roomId,
+      roomRoute: `/room/${encodeURIComponent(roomId)}`,
+      userId: user.id,
+      userRole: "user",
+      isMinimized: false,
+      connectionState: "connected",
+      microphoneMuted: false,
+    });
+  }, [roomId, user?.id, updateRoom]);
   const qc = useQueryClient();
   const defaultBgVisibility = useDefaultBgOpacity();
 
@@ -1855,6 +1869,7 @@ function RoomPage() {
         .eq("room_id", roomId)
         .eq("user_id", user.id);
     }
+    clearRoom();
     setExitConfirmOpen(false);
     setExiting(true);
     // Let the exit animation play before navigating home.
