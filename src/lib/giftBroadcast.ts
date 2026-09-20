@@ -40,20 +40,12 @@ export function acquireGiftBroadcastChannel(roomId: string): GiftChannel {
     existing.refs += 1;
     return existing.channel;
   }
-  const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true, ack: false } } });
-  const ready = new Promise<void>((resolve) => {
-    let settled = false;
-    const finish = () => {
-      if (settled) return;
-      settled = true;
-      resolve();
-    };
-    channel.subscribe((status) => {
-      // Broadcast is best-effort. Never make the paid send wait for a long
-      // Realtime timeout; the durable gift_sends row is the source of truth.
-      if (status === "SUBSCRIBED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") finish();
+  const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true, ack: true } } });
+  const ready = new Promise<void>((resolve, reject) => {
+    channel.subscribe((status, error) => {
+      if (status === "SUBSCRIBED") resolve();
+      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(error ?? new Error(`Gift channel ${status}`));
     });
-    window.setTimeout(finish, 800);
   });
   channels.set(roomId, { channel, refs: 1, ready });
   return channel;
@@ -117,10 +109,12 @@ export async function broadcastGiftPlayback(
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
   };
 
-  // Realtime broadcast is an optional delivery path. The canonical gift_sends
-  // row is already durable, and room players also consume that row through
-  // postgres_changes. Never fail a paid gift just because Realtime is slow,
-  // disconnected, or the broadcast ACK times out.
+  await entry.ready;
+  const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
+  if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
+
+  // The sender must see the same playback even when the channel is configured
+  // without self-delivery. The player deduplicates this canonical event id.
   if (typeof window !== "undefined") {
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("jalwa:gift-sent", {
@@ -151,21 +145,5 @@ export async function broadcastGiftPlayback(
         },
       }));
     });
-  }
-
-  try {
-    await entry.ready;
-    const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
-    if (result !== "ok") {
-      console.warn("[gift] realtime broadcast not acknowledged:", result);
-    }
-  } catch (error) {
-    console.warn("[gift] realtime broadcast unavailable; durable gift send remains valid:", error);
-    // Drop a failed channel so the next gift can create a fresh subscription.
-    const current = channels.get(roomId);
-    if (current?.channel === entry.channel) {
-      channels.delete(roomId);
-      void supabase.removeChannel(entry.channel);
-    }
   }
 }
