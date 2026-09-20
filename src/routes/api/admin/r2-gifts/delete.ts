@@ -104,7 +104,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         if (!admin) return json({ error: "admin authentication required" }, 401);
 
         const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
-        const dbKey = admin.token;
+        const dbKey = process.env.SB_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SB_SECRET_KEY || "";\n        if (!dbKey) return json({ error: "Supabase service role key is not configured" }, 500);
 
         let id = "";
         try {
