@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
-import { ReliableGiftAnimationPlayer } from "./ReliableGiftAnimationPlayer";
 import { useAuth } from "@/hooks/useAuth";
 
 type Props = { roomId: string };
@@ -40,36 +39,7 @@ export function GiftAnimationPlayer({ roomId }: Props) {
         ]);
       }
 
-      const giftDetail = {
-        key: eventKey,
-        eventIds: Array.isArray(p.eventIds) ? p.eventIds.filter((x): x is string => typeof x === "string") : [eventKey],
-        senderId,
-        senderName: typeof p.senderName === "string" ? p.senderName : "User",
-        senderAvatar: typeof p.senderAvatar === "string" ? p.senderAvatar : null,
-        receiverId: typeof p.receiverId === "string" ? p.receiverId : null,
-        receiverIds,
-        receiverName: typeof p.receiverName === "string" ? p.receiverName : null,
-        giftId: p.giftId,
-        giftName: typeof p.giftName === "string" ? p.giftName : "Gift",
-        giftEmoji: typeof p.giftEmoji === "string" ? p.giftEmoji : "🎁",
-        giftIcon: typeof p.giftIcon === "string" ? p.giftIcon : null,
-        giftImageUrl: typeof p.giftImageUrl === "string" ? p.giftImageUrl : null,
-        giftClipUrl: typeof p.giftClipPath === "string" ? p.giftClipPath : null,
-        giftClipType: typeof p.giftClipType === "string" ? p.giftClipType : null,
-        durationMs: typeof p.giftDurationMs === "number" ? p.giftDurationMs : null,
-        soundUrl: typeof p.giftSoundUrl === "string" ? p.giftSoundUrl : (typeof p.giftAudioUrl === "string" ? p.giftAudioUrl : null),
-        audioEnabled: p.giftAudioEnabled !== false,
-        audioVolume: typeof p.giftAudioVolume === "number" ? p.giftAudioVolume : 1,
-        quantity: typeof p.quantity === "number" ? p.quantity : 1,
-        renderConfig: p.renderConfig && typeof p.renderConfig === "object" ? p.renderConfig as Record<string, unknown> : null,
-        local: true,
-        broadcast: true,
-      };
-
-      requestAnimationFrame(() => {
-        window.dispatchEvent(new CustomEvent("jalwa:gift-sent", { detail: giftDetail }));
-      });
-    });
+      // Playback is rendered by StableGiftAnimationPlayer from the durable gift_sends row.\n      // Keep this channel only for fast wallet/profile invalidation; do not create\n      // a second renderer here, otherwise one gift can animate twice.\n    });
 
     void subscription;
     return () => {
@@ -78,5 +48,5 @@ export function GiftAnimationPlayer({ roomId }: Props) {
     };
   }, [roomId, queryClient, user?.id]);
 
-  return <ReliableGiftAnimationPlayer roomId={roomId} />;
+  return null;
 }
