@@ -87,12 +87,12 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     let alive = true;
     const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
-      if (!alive || !localUserId) return;
+      if (!alive) return;
       const row = payload.new as GiftRow;
       if (!row?.id) return;
-      if (row.sender_id === localUserId) return;
-      const receiverIds = Array.isArray(row.receiver_ids) ? row.receiver_ids : (row.receiver_id ? [row.receiver_id] : []);
-      if (receiverIds.length && !receiverIds.includes(localUserId)) return;
+      // Room gifts are room-wide playback events. receiver_id/receiver_ids only
+      // identify the target seat; they must not prevent other room members from
+      // seeing the gift animation.
       if (localEchoRef.current.has(row.id)) return;
       void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
     }).subscribe();
