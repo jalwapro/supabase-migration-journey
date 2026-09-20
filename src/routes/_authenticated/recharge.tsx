@@ -29,6 +29,9 @@ function RechargePage() {
   const qrUrl = method === "easypaisa" ? accounts.data?.easypaisaQrUrl : method === "jazzcash" ? accounts.data?.jazzcashQrUrl : undefined;
   const tillId = method === "easypaisa" ? accounts.data?.easypaisaTillId : method === "jazzcash" ? accounts.data?.jazzcashTillId : undefined;
   const title = method === "easypaisa" ? accounts.data?.easypaisaTitle : method === "jazzcash" ? accounts.data?.jazzcashTitle : undefined;
+  const whatsappNumber = String(accounts.data?.whatsappRechargeNumber || "").trim();
+  const whatsappDigits = whatsappNumber.replace(/\\D/g, "");
+  const whatsappLink = whatsappDigits ? `https://wa.me/${whatsappDigits.startsWith("0") ? "92" + whatsappDigits.slice(1) : whatsappDigits}` : "";
 
   const cardSubmit = useMutation({ mutationFn: async () => {
     if (!selectedPkg) throw new Error("Choose a package");
@@ -61,6 +64,16 @@ function RechargePage() {
       <div className="flex gap-2 overflow-x-auto pb-1">{tiers.map(t => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}</div>
       <div className="grid grid-cols-2 gap-3">{tierPackages.map(p => { const active = selectedPkg?.id === p.id; return <button key={p.id} onClick={() => setSelectedPkg(p)} className={`relative rounded-2xl border p-4 text-left ${active ? "border-primary bg-primary/10 ring-2 ring-primary/30" : "border-border bg-card/60"}`}><div className="flex items-center gap-2"><Coin className="h-5 w-5" /><b className="text-lg">{(p.coins + p.bonus_coins).toLocaleString()}</b></div>{p.bonus_coins > 0 && <p className="text-[10px] font-bold text-emerald-400">+{p.bonus_coins.toLocaleString()} bonus</p>}<p className="mt-2 text-sm font-black">Rs {Number(p.price_pkr).toLocaleString()}</p>{p.label && <p className="text-[10px] text-muted-foreground">{p.label}</p>}</button>; })}</div>
       {selectedPkg && <>
+        {whatsappNumber && (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+            <p className="text-sm font-black">Recharge via WhatsApp</p>
+            <p className="mt-1 text-xs text-muted-foreground">Contact our recharge team on WhatsApp and send your package/payment details.</p>
+            <div className="mt-3 flex items-center gap-2">
+              <span className="flex-1 rounded-xl bg-background/50 px-3 py-2 text-sm font-bold">{whatsappNumber}</span>
+              {whatsappLink && <a href={whatsappLink} target="_blank" rel="noreferrer" className="rounded-xl bg-emerald-500 px-4 py-2 text-xs font-black text-white">WhatsApp</a>}
+            </div>
+          </div>
+        )}
         <div className="rounded-2xl bg-card/60 p-4"><p className="text-xs text-muted-foreground">You pay</p><p className="text-2xl font-black">Rs {Number(selectedPkg.price_pkr).toLocaleString()}</p><p className="text-sm font-bold text-emerald-400">Receive {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()} coins</p></div>
         <div className="grid grid-cols-2 gap-2">{(["card", "easypaisa", "jazzcash", "jazzcash_api"] as Method[]).map(m => <button key={m} onClick={() => setMethod(m)} className={`rounded-xl border p-3 text-xs font-black ${method === m ? "border-primary bg-primary/10" : "border-border bg-card/60"}`}><Smartphone className="mx-auto mb-1 h-5 w-5" />{m === "card" ? "Debit / Virtual Card" : m === "jazzcash_api" ? "JazzCash API" : m === "jazzcash" ? "JazzCash QR" : "Easypaisa QR"}</button>)}</div>
         {method === "card" ? <>
