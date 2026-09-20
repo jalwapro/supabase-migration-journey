@@ -103,18 +103,6 @@ function resolveGiftMediaUrl(url: string | null | undefined) {
   return value;
 }
 
-function resolveAdminR2VideoUrl(url: string | null | undefined) {
-  const value = resolveGiftMediaUrl(url);
-  if (!value) return null;
-  try {
-    const parsed = new URL(value, window.location.origin);
-    if (parsed.protocol === "https:" && parsed.hostname.endsWith(".r2.dev") && /\/gift-clips\//i.test(parsed.pathname)) {
-      return `/api/gift-media?url=${encodeURIComponent(parsed.toString())}`;
-    }
-  } catch {}
-  return value;
-}
-
 function GiftMediaPreview({
   name,
   clipPath,
@@ -493,34 +481,31 @@ function GiftsAdmin() {
         {!r2Gifts.isLoading && !r2Gifts.error && (
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
             {r2Thumbs.map((asset) => {
-  const clip = r2Clips.find((x) => x.stem === asset.stem) ?? r2Clips.find((x) => x.filename.toLowerCase().includes(asset.stem.toLowerCase()));
-  const clipSrc = resolveAdminR2VideoUrl(clip?.url);
-  return (
-    <div key={asset.key} className="rounded-xl border border-border bg-black/30 p-1.5" title={asset.key}>
-      <div className="grid aspect-square place-items-center overflow-hidden rounded-lg bg-black/40">
-        {clipSrc ? (
-          <video src={clipSrc} poster={asset.url} muted playsInline autoPlay loop preload="metadata" className="h-full w-full object-contain" />
-        ) : (
-          <img src={asset.url} alt={asset.filename} loading="lazy" className="h-full w-full object-contain" />
+              const clip = r2Clips.find((x) => x.stem === asset.stem) ?? r2Clips.find((x) => x.filename.toLowerCase().includes(asset.stem.toLowerCase()));
+              return (
+                <div key={asset.key} className="rounded-xl border border-border bg-black/30 p-1.5" title={asset.key}>
+                  <div className="grid aspect-square place-items-center overflow-hidden rounded-lg bg-black/40">
+                    <img src={asset.url} alt={asset.filename} loading="lazy" className="h-full w-full object-contain" />
+                  </div>
+                  <p className="mt-1 truncate text-[9px] font-bold">{asset.stem}</p>
+                  {clip && <p className="truncate text-[8px] text-emerald-400">✓ clip linked</p>}
+                </div>
+              );
+            })}
+            {r2Thumbs.length === 0 && r2Clips.map((asset) => (
+              <div key={asset.key} className="rounded-xl border border-border bg-black/30 p-1.5" title={asset.key}>
+                <div className="aspect-square overflow-hidden rounded-lg bg-black/40">
+                  <video src={asset.url} muted playsInline autoPlay loop className="h-full w-full object-contain" />
+                </div>
+                <p className="mt-1 truncate text-[9px] font-bold">{asset.stem}</p>
+              </div>
+            ))}
+            {r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}
+          </div>
         )}
-      </div>
-      <p className="mt-1 truncate text-[9px] font-bold">{asset.stem}</p>
-      {clip && <p className="truncate text-[8px] text-emerald-400">✓ video linked</p>}
-    </div>
-  );
-})}
-{r2Thumbs.length === 0 && r2Clips.map((asset) => {
-  const clipSrc = resolveAdminR2VideoUrl(asset.url);
-  return (
-    <div key={asset.key} className="rounded-xl border border-border bg-black/30 p-1.5" title={asset.key}>
-      <div className="aspect-square overflow-hidden rounded-lg bg-black/40">
-        <video src={clipSrc ?? asset.url} muted playsInline autoPlay loop preload="metadata" className="h-full w-full object-contain" />
-      </div>
-      <p className="mt-1 truncate text-[9px] font-bold">{asset.stem}</p>
-    </div>
-  );
-})}
-{r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}{/* Category tabs */}
+      </section>
+
+      {/* Category tabs */}
       <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {CATEGORY_TABS.map((c) => {
           const stat = catCounts[c] ?? { total: 0, active: 0 };
