@@ -87,12 +87,12 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     let alive = true;
     const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
-      if (!alive) return;
+      if (!alive || !localUserId) return;
       const row = payload.new as GiftRow;
       if (!row?.id) return;
       if (row.sender_id === localUserId) return;
-      // Room gifts are broadcast animations: every participant in the room should see them.
-      // receiver_id/receiver_ids identify the target seat only; they must not filter playback.
+      const receiverIds = Array.isArray(row.receiver_ids) ? row.receiver_ids : (row.receiver_id ? [row.receiver_id] : []);
+      if (receiverIds.length && !receiverIds.includes(localUserId)) return;
       if (localEchoRef.current.has(row.id)) return;
       void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
     }).subscribe();
