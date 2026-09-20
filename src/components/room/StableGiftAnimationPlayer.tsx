@@ -100,7 +100,10 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       const d = (event as CustomEvent).detail as Record<string, unknown> | undefined;
       if (!d) return;
       const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
-      if (targets.length && localUserId && !targets.includes(localUserId) && d.local !== true) return;
+      // The sender must always see their own gift animation. Targets are only
+      // used to locate the receiving seat, not to suppress sender playback.
+      const isLocalSender = localUserId && typeof d.senderId === "string" && d.senderId === localUserId;
+      if (targets.length && localUserId && !targets.includes(localUserId) && !isLocalSender && d.local !== true) return;
       const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`;
       const eventIds = Array.isArray(d.eventIds) ? d.eventIds.filter((x): x is string => typeof x === "string") : [key];
       for (const eventId of eventIds) { if (eventId === key) continue; seenRef.current.add(eventId); seenOrderRef.current.push(eventId); }
