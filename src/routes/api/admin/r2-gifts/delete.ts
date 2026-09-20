@@ -109,7 +109,13 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
           process.env.SUPABASE_ANON_KEY ||
           process.env.VITE_SUPABASE_ANON_KEY ||
           "";
+        const serviceKey =
+          process.env.SB_SERVICE_ROLE_KEY ||
+          process.env.SUPABASE_SERVICE_ROLE_KEY ||
+          process.env.SB_SECRET_KEY ||
+          "";
         if (!anon) return json({ error: "Supabase publishable key is not configured" }, 500);
+        if (!serviceKey) return json({ error: "Supabase service role key is not configured" }, 500);
 
         let id = "";
         try {
@@ -120,7 +126,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         try {
           const giftRes = await fetch(
             `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}&select=id,clip_path,image_url,audio_url,sound_url`,
-            { headers: { apikey: anon, Authorization: `Bearer ${admin.token}` } },
+            { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
           );
           if (!giftRes.ok) { const detail = await giftRes.text(); return json({ error: `gift lookup failed: ${giftRes.status}`, detail: detail.slice(0, 300) }, 502); }
           const gifts = (await giftRes.json()) as Array<Record<string, unknown>>;
@@ -143,8 +149,8 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             {
               method: "DELETE",
               headers: {
-                apikey: anon,
-                Authorization: `Bearer ${admin.token}`,
+                apikey: serviceKey,
+                Authorization: `Bearer ${serviceKey}`,
                 Prefer: "return=minimal",
               },
             },
