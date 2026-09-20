@@ -159,12 +159,16 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
 
           if (!stems.size) return json({ ok: true, deletedGift: id, deletedR2: 0 });
 
-          const { endpoint, bucket, client } = await getR2();
-          let token: string | undefined;
+          // DB deletion is the source of truth. R2 cleanup is best-effort so an R2
+          // credential/config problem cannot turn a successful delete into HTTP 500.
+          let r2Error: string | undefined;
           const removed: string[] = [];
+          try {
+            const { endpoint, bucket, client } = await getR2();
+            let token: string | undefined;
 
-          do {
-            const listUrl = new URL(`${endpoint}/${bucket}`);
+            do {
+              const listUrl = new URL(`${endpoint}/${bucket}`);
             listUrl.searchParams.set("list-type", "2");
             listUrl.searchParams.set("max-keys", "1000");
             if (token) listUrl.searchParams.set("continuation-token", token);
@@ -198,11 +202,21 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
               removed.push(key);
             }
 
-            const next = extractTagValue(xml, "NextContinuationToken");
-            token = xml.toLowerCase().includes("<istruncated>true</istruncated>") && next ? decodeXml(next) : undefined;
-          } while (token);
+              const next = extractTagValue(xml, "NextContinuationToken");
+              token = xml.toLowerCase().includes("<istruncated>true</istruncated>") && next ? decodeXml(next) : undefined;
+            } while (token);
+          } catch (e) {
+            r2Error = e instanceof Error ? e.message : "R2 cleanup failed";
+            console.error("[r2-gifts/delete] R2 cleanup failed after DB deletion:", r2Error);
+          }
 
-          return json({ ok: true, deletedGift: id, deletedR2: removed.length, keys: removed });
+          return json({
+            ok: true,
+            deletedGift: id,
+            deletedR2: removed.length,
+            keys: removed,
+            ...(r2Error ? { r2Warning: r2Error } : {}),
+          });
         } catch (e) {
           console.error("[r2-gifts/delete] failed:", e instanceof Error ? e.message : e);
           return json({ error: e instanceof Error ? e.message : "gift_delete_failed", partial: true }, 500);
