@@ -39,7 +39,10 @@ export function GiftAnimationPlayer({ roomId }: Props) {
         ]);
       }
 
-      // Playback is rendered by StableGiftAnimationPlayer from the durable gift_sends row.\n      // Keep this channel only for fast wallet/profile invalidation; do not create\n      // a second renderer here, otherwise one gift can animate twice.\n    });
+      // Playback is rendered by StableGiftAnimationPlayer from the durable gift_sends row.
+      // Keep this channel only for fast wallet/profile invalidation; do not create
+      // a second renderer here, otherwise one gift can animate twice.
+    });
 
     void subscription;
     return () => {
