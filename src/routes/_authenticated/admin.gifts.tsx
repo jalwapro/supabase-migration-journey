@@ -8,7 +8,6 @@ import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, Doll
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
 
-// Build trigger: keep admin gifts route aligned with the latest JSX fix.
 type R2GiftAsset = { key: string; filename: string; stem: string; ext: string; kind: "clip" | "thumb" | "audio"; url: string };
 
 
@@ -521,12 +520,7 @@ function GiftsAdmin() {
     </div>
   );
 })}
-{r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}
-          </div>
-        )}
-      </section>
-
-        {/* Category tabs */}
+{r2Thumbs.length === 0 && r2Clips.length === 0 && <p className="col-span-full py-6 text-center text-xs text-muted-foreground">No R2 gift assets found.</p>}{/* Category tabs */}
       <div className="mb-3 -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
         {CATEGORY_TABS.map((c) => {
           const stat = catCounts[c] ?? { total: 0, active: 0 };
