@@ -104,7 +104,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         if (!admin) return json({ error: "admin authentication required" }, 401);
 
         const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
-        const dbKey = process.env.SB_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SB_SECRET_KEY || "";
+        const dbKey = process.env.SB_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SB_SERVICE_ROLE_KEY || "";
         const dbHeaders: Record<string, string> = { apikey: dbKey };
         // New sb_secret_* keys are not JWTs, so do not send them as Bearer tokens.
         // Legacy service_role keys are JWTs and can use Authorization as well.
@@ -139,18 +139,22 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
           // Delete only after the DB deletion succeeds. If the DB rejects the delete
           // (for example because a historical gift send still references it), R2 stays intact.
           const deleteDb = await fetch(
-            `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}`,
+            `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}&select=id`,
             {
               method: "DELETE",
               headers: {
                 ...dbHeaders,
-                Prefer: "return=minimal",
+                Prefer: "return=representation",
               },
             },
           );
           if (!deleteDb.ok) {
             const detail = await deleteDb.text();
-            return json({ error: `gift delete failed: ${detail.slice(0, 300)}` }, 409);
+            return json({ error: `gift delete failed: ${detail.slice(0, 500)}` }, 409);
+          }
+          const deletedRows = (await deleteDb.json()) as Array<{ id?: string }>;
+          if (!deletedRows.some((row) => row?.id === id)) {
+            return json({ error: "gift delete did not remove the requested gift" }, 409);
           }
 
           if (!stems.size) return json({ ok: true, deletedGift: id, deletedR2: 0 });
