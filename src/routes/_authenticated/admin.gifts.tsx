@@ -8,6 +8,7 @@ import { Plus, Trash2, Loader2, Upload, Save, X, Play, Search, Eye, EyeOff, Doll
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
 
+// Build trigger: keep admin gifts route aligned with the latest JSX fix.
 type R2GiftAsset = { key: string; filename: string; stem: string; ext: string; kind: "clip" | "thumb" | "audio"; url: string };
 
 
