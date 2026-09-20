@@ -109,12 +109,10 @@ export async function broadcastGiftPlayback(
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
   };
 
-  await entry.ready;
-  const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
-  if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
-
-  // The sender must see the same playback even when the channel is configured
-  // without self-delivery. The player deduplicates this canonical event id.
+  // Realtime broadcast is an optional delivery path. The canonical gift_sends
+  // row is already durable, and room players also consume that row through
+  // postgres_changes. Never fail a paid gift just because Realtime is slow,
+  // disconnected, or the broadcast ACK times out.
   if (typeof window !== "undefined") {
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("jalwa:gift-sent", {
@@ -145,5 +143,21 @@ export async function broadcastGiftPlayback(
         },
       }));
     });
+  }
+
+  try {
+    await entry.ready;
+    const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
+    if (result !== "ok") {
+      console.warn("[gift] realtime broadcast not acknowledged:", result);
+    }
+  } catch (error) {
+    console.warn("[gift] realtime broadcast unavailable; durable gift send remains valid:", error);
+    // Drop a failed channel so the next gift can create a fresh subscription.
+    const current = channels.get(roomId);
+    if (current?.channel === entry.channel) {
+      channels.delete(roomId);
+      void supabase.removeChannel(entry.channel);
+    }
   }
 }
