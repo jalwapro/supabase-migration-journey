@@ -105,6 +105,10 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
 
         const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vfuiqjxgyptjqhbmzigk.supabase.co";
         const dbKey = process.env.SB_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SB_SECRET_KEY || "";
+        const dbHeaders: Record<string, string> = { apikey: dbKey };
+        // New sb_secret_* keys are not JWTs, so do not send them as Bearer tokens.
+        // Legacy service_role keys are JWTs and can use Authorization as well.
+        if (dbKey.startsWith("eyJ")) dbHeaders.Authorization = `Bearer ${dbKey}`;
         if (!dbKey) return json({ error: "Supabase service role key is not configured" }, 500);
 
         let id = "";
@@ -116,7 +120,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
         try {
           const giftRes = await fetch(
             `${supabaseUrl}/rest/v1/gifts?id=eq.${encodeURIComponent(id)}&select=id,clip_path,image_url,audio_url,sound_url`,
-            { headers: { apikey: dbKey, Authorization: `Bearer ${dbKey}` } },
+            { headers: dbHeaders },
           );
           if (!giftRes.ok) return json({ error: `gift lookup failed: ${giftRes.status}` }, 502);
           const gifts = (await giftRes.json()) as Array<Record<string, unknown>>;
@@ -139,8 +143,7 @@ export const Route = createFileRoute("/api/admin/r2-gifts/delete")({
             {
               method: "DELETE",
               headers: {
-                apikey: dbKey,
-                Authorization: `Bearer ${dbKey}`,
+                ...dbHeaders,
                 Prefer: "return=minimal",
               },
             },
