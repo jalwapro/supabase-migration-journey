@@ -87,7 +87,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     let alive = true;
     const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
-      if (!alive || !localUserId) return;
+      if (!alive) return;
       const row = payload.new as GiftRow;
       if (!row?.id) return;
       if (row.sender_id === localUserId) return;
