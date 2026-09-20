@@ -45,6 +45,7 @@ function PaymentAccounts() {
         jazzcashIpnUrl: setting.data.jazzcashIpnUrl || DEFAULT_JAZZCASH_IPN,
         jazzcashApiEnabled: setting.data.jazzcashApiEnabled ?? false,
         jazzcashApiMode: setting.data.jazzcashApiMode || "Mobile Account",
+        whatsappRechargeNumber: setting.data.whatsappRechargeNumber || "",
       });
     }
   }, [setting.data]);
