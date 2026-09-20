@@ -132,6 +132,8 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
 
     const suspendForBackground = async () => {
       if (room.state !== "connected") return;
+      // Release the microphone so another app such as WhatsApp can acquire Android audio input.
+      // Keep the LiveKit room connection alive so Jalwa can resume without rejoining.
       try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
       setRemoteAudio((current) => {
         current.forEach((el) => { try { el.pause(); } catch {} });
@@ -142,7 +144,12 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     const resumeFromBackground = async () => {
       if (cancelled || room.state !== "connected") return;
       if (publish && desiredMicEnabledRef.current) {
-        try { await room.localParticipant.setMicrophoneEnabled(true); } catch {}
+        try {
+          await room.localParticipant.setMicrophoneEnabled(true);
+          setMuted(false);
+        } catch (resumeError) {
+          console.warn("[LiveKit] Microphone resume deferred", resumeError);
+        }
       }
       setRemoteAudio((current) => {
         current.forEach((el) => { void el.play().catch(() => undefined); });
