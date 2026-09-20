@@ -305,7 +305,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
   const changeMySeat = async () => {
     if (!roomId || !selectedEmptySeat || !isHost) return;
-    const target = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
+    const target = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 1;
     if (selectedEmptySeat.is_locked) {
       toast.error("Unlock this seat first");
       return;
@@ -392,7 +392,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                   <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                     <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                     <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[1.04]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
+                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
                       {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-4 h-[calc(100%+32px)] w-[calc(100%+32px)] pointer-events-none object-contain z-30 scale-[1.08]" draggable={false} />}
                     </span>
                     <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
@@ -425,6 +425,15 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                 {selectedEmptySeat.is_locked ? "Unlock" : "Lock"}
               </button>
             </div>
+            {isHost && (selectedEmptySeat.index ?? selectedEmptySeat.seatNumber) === 1 && (
+              <button
+                type="button"
+                onClick={() => void changeMySeat()}
+                className="mb-3 w-full rounded-xl bg-amber-400 px-3 py-2.5 text-xs font-black text-black shadow-lg"
+              >
+                Take Host Seat 1
+              </button>
+            )}
             <div className="mb-2 flex items-center gap-2">
               <div className="h-px flex-1 bg-white/10" />
               <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Assign Viewer</span>
