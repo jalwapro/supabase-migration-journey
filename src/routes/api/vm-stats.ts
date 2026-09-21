@@ -18,22 +18,28 @@ function serviceKey() {
 }
 
 async function getUserId(token: string): Promise<string | null> {
-  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SB_JWT_SECRET || process.env.JWT_SECRET;
-  if (secret) {
-    try {
-      const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
-      return typeof payload.sub === "string" && (!payload.role || payload.role === "authenticated") ? payload.sub : null;
-    } catch {
-      return null;
-    }
+  // Always prefer Supabase Auth's server-side token validation when the
+  // privileged server key is available. This also works when the project
+  // uses a non-HS256 signing key or when the JWT secret has changed.
+  const key = serviceKey();
+  if (key) {
+    const { createClient } = await import("@supabase/supabase-js");
+    const sb = createClient(supabaseUrl(), key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await sb.auth.getUser(token);
+    if (!error && data.user) return data.user.id;
   }
 
-  const key = serviceKey();
-  if (!key) return null;
-  const { createClient } = await import("@supabase/supabase-js");
-  const sb = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data, error } = await sb.auth.getUser(token);
-  return error || !data.user ? null : data.user.id;
+  // Fallback for deployments that intentionally do not expose a server key.
+  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SB_JWT_SECRET || process.env.JWT_SECRET;
+  if (!secret) return null;
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
+    return typeof payload.sub === "string" && (!payload.role || payload.role === "authenticated") ? payload.sub : null;
+  } catch {
+    return null;
+  }
 }
 
 async function adminClient(token: string) {
