@@ -1,33 +1,13 @@
 import {
-  Dice1,
-  Dice2,
-  Dice3,
-  Dice4,
-  Dice5,
-  Dice6,
-  Gift,
-  Loader2,
-  Mic,
-  Smile,
-  Volume2,
-  Zap,
-  RotateCcw,
-  Bot,
-  X
+  Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Gift, Loader2, Mic,
+  Volume2, Smile, RotateCcw, Bot, X, Crown, Coins, Trophy,
 } from "lucide-react";
 import {
-  COLOR_HEX,
-  GRID_SIZE,
-  isSafeRingIndex,
-  ringCellCoord,
-  tokenCoord,
-  type LudoColor,
-  type LudoGameState,
+  COLOR_HEX, GRID_SIZE, isSafeRingIndex, ringCellCoord, tokenCoord,
+  type LudoColor, type LudoGameState,
 } from "@/lib/ludoEngine";
 
 const DICE_ICONS = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
-
-type AvatarMap = Record<string, string | null | undefined>;
 
 const HOME_CLASS: Record<LudoColor, string> = {
   red: "left-0 top-0",
@@ -37,17 +17,17 @@ const HOME_CLASS: Record<LudoColor, string> = {
 };
 
 const HOME_BG: Record<LudoColor, string> = {
-  red: "from-red-600/90 via-red-900/80 to-black/90",
-  blue: "from-blue-500/90 via-blue-900/80 to-black/90",
-  green: "from-emerald-500/90 via-emerald-900/80 to-black/90",
-  yellow: "from-amber-400/90 via-orange-700/80 to-black/90",
+  red: "from-red-500/90 via-red-800/85 to-red-950",
+  blue: "from-blue-500/90 via-blue-800/85 to-blue-950",
+  green: "from-emerald-500/90 via-emerald-800/85 to-emerald-950",
+  yellow: "from-amber-300/95 via-orange-600/90 to-amber-900",
 };
 
 const TOKEN_RING: Record<LudoColor, string> = {
-  red: "shadow-[0_0_16px_rgba(239,68,68,0.8)] border-red-300",
-  blue: "shadow-[0_0_16px_rgba(59,130,246,0.8)] border-blue-300",
-  green: "shadow-[0_0_16px_rgba(34,197,94,0.8)] border-emerald-300",
-  yellow: "shadow-[0_0_16px_rgba(234,179,8,0.8)] border-amber-300",
+  red: "border-red-200 shadow-[0_0_14px_rgba(239,68,68,.8)]",
+  blue: "border-blue-200 shadow-[0_0_14px_rgba(59,130,246,.8)]",
+  green: "border-emerald-200 shadow-[0_0_14px_rgba(34,197,94,.8)]",
+  yellow: "border-amber-100 shadow-[0_0_14px_rgba(234,179,8,.8)]",
 };
 
 export function LudoBoard({
@@ -56,325 +36,218 @@ export function LudoBoard({
   rolling,
   onRoll,
   onPickToken,
-  avatarByUserId = {},
+  onExit,
+  userCoins = 0,
+  roomBet = 0,
 }: {
   state: LudoGameState;
   myPlayerIndex: number | null;
   rolling: boolean;
   onRoll: () => void;
   onPickToken: (tokenIndex: number) => void;
-  avatarByUserId?: AvatarMap;
+  onExit?: () => void;
+  userCoins?: number;
+  roomBet?: number;
 }) {
   const myTurn = myPlayerIndex === state.turnIndex;
-  const DiceIcon =
-    state.dice && state.dice >= 1 && state.dice <= 6
-      ? DICE_ICONS[state.dice - 1]
-      : Dice5;
+  const DiceIcon = state.dice && state.dice >= 1 && state.dice <= 6
+    ? DICE_ICONS[state.dice - 1] : Dice5;
+  const activePlayer = state.players[state.turnIndex];
+  const topPlayers = state.players.slice(0, 2);
+  const bottomPlayers = state.players.slice(2, 4);
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#030307] text-white font-mono select-none flex flex-col justify-between p-2 max-w-[440px] mx-auto">
-      
-      {/* Top Header Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-black/50 rounded-2xl border border-cyan-500/30 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="relative grid h-8 w-8 place-items-center rounded-full bg-gradient-to-tr from-amber-500 to-yellow-300 text-black font-black shadow-[0_0_10px_rgba(234,179,8,0.6)]">
-            👑
+    <div className="relative mx-auto flex min-h-[min(92vh,760px)] w-full max-w-[480px] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[#070611] p-3 text-white shadow-[0_18px_70px_rgba(0,0,0,.65)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(168,85,247,.20),transparent_35%),radial-gradient(circle_at_0%_100%,rgba(6,182,212,.10),transparent_30%)]" />
+
+      <header className="relative z-10 mb-2 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[.045] px-3 py-2 backdrop-blur-xl">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-300 via-yellow-500 to-orange-600 text-black shadow-[0_0_18px_rgba(245,158,11,.35)]">
+            <Crown className="h-5 w-5" />
           </div>
-          <div>
-            <h1 className="text-xs font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-orange-500">
-              Jalwa Ludo
-            </h1>
-            <p className="text-[9px] text-cyan-300/80">Room Bet: 🪙 500</p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-black tracking-wide">Jalwa Ludo</p>
+            <p className="text-[9px] font-semibold uppercase tracking-[.18em] text-white/45">
+              {state.mode === "2v2" ? "Team Battle" : state.mode === "4p" ? "4 Player Battle" : "Head to Head"}
+            </p>
           </div>
         </div>
-
-        <div className="flex items-center gap-2.5">
-          <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/80 border border-amber-500/40 shadow-[0_0_10px_rgba(234,179,8,0.2)]">
-            <span className="text-amber-400 text-xs">🪙</span>
-            <span className="text-xs font-bold text-amber-300">12,450</span>
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1 rounded-full border border-amber-400/25 bg-amber-400/[.08] px-2.5 py-1">
+            <Coins className="h-3.5 w-3.5 text-amber-300" />
+            <span className="text-[10px] font-black text-amber-200">{userCoins.toLocaleString()}</span>
           </div>
-          <button className="grid h-7 w-7 place-items-center rounded-full bg-white/10 border border-white/20 hover:bg-white/20 transition">
-            <X className="h-4 w-4 text-white" />
-          </button>
+          {onExit && (
+            <button onClick={onExit} className="grid h-8 w-8 place-items-center rounded-full border border-white/10 bg-white/[.06] text-white/70 transition hover:bg-white/10" aria-label="Close Ludo">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </header>
+
+      <div className="relative z-10 mb-2 flex items-center justify-between px-1">
+        <div>
+          <p className="text-[9px] font-bold uppercase tracking-[.16em] text-white/35">Match pot</p>
+          <p className="text-xs font-black text-amber-300">🪙 {(roomBet * state.players.length).toLocaleString()}</p>
+        </div>
+        <div className="rounded-full border border-white/10 bg-white/[.04] px-2.5 py-1 text-[9px] font-bold text-white/55">
+          {activePlayer ? `${activePlayer.name ?? "Player"}'s turn` : "Waiting"}
         </div>
       </div>
 
-      {/* Top 2 Player Cards */}
-      <div className="grid grid-cols-2 gap-2 shrink-0">
-        {state.players.slice(0, 2).map((p, i) => (
-          <PlayerCard
-            key={p.color}
-            player={p}
-            active={state.turnIndex === i}
-            avatar={p.userId ? avatarByUserId[p.userId] : undefined}
-          />
-        ))}
-      </div>
+      {state.players.length > 2 && (
+        <div className="relative z-10 mb-2 grid grid-cols-2 gap-2">
+          {topPlayers.map((p, i) => <PlayerCard key={p.color} player={p} active={state.turnIndex === i} />)}
+        </div>
+      )}
 
-      {/* Main Cyberpunk Ludo Arena Container */}
-      <div className="relative mx-auto aspect-square w-full max-w-[340px] overflow-hidden rounded-[24px] border border-cyan-500/40 bg-[#030307] p-2 shadow-[0_0_40px_rgba(6,182,212,0.2),inset_0_0_50px_rgba(217,70,239,0.1)] my-auto shrink-0">
-        <div className="absolute inset-0 rounded-[24px] bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,0.15),transparent_60%)] pointer-events-none" />
-        <div className="pointer-events-none absolute inset-0 opacity-20" style={{ backgroundImage: "linear-gradient(rgba(6,182,212,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(217,70,239,0.1) 1px, transparent 1px)", backgroundSize: "36px 36px" }} />
-
-        <div
-          className="relative grid h-full w-full overflow-hidden rounded-[18px] border border-cyan-500/20 bg-[#080711]"
-          style={{
-            gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
-          }}
-        >
-          {/* Four Glossy Neon Yards */}
-          {(["red", "blue", "green", "yellow"] as LudoColor[]).map((color) => {
-            const player = state.players.find((p) => p.color === color);
-            return (
-              <div
-                key={`yard-${color}`}
-                className={`absolute z-[3] ${HOME_CLASS[color]} h-[42.85%] w-[42.85%] bg-gradient-to-br ${HOME_BG[color]} p-2.5 backdrop-blur-xl border border-white/10`}
-              >
-                <div className="flex h-full w-full items-center justify-center rounded-[14px] border border-white/20 bg-black/40 shadow-inner">
-                  <div className="grid grid-cols-2 gap-2.5 rounded-[10px] bg-black/60 p-2.5 border border-white/10 shadow-[inset_0_0_15px_rgba(0,0,0,0.8)]">
-                    {[0, 1, 2, 3].map((slot) => {
-                      const playerTokens = player?.tokens ?? [];
-                      const yardTokens = playerTokens
-                        .map((t, idx) => ({ ...t, originalIndex: idx }))
-                        .filter((t) => t.d === 0);
-                      
-                      const tokenObj = yardTokens[slot];
-                      const tokenIndex = tokenObj ? tokenObj.originalIndex : -1;
-                      const canPick = !!player && myTurn && state.awaitingMove && player.color === color && tokenIndex >= 0;
-
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          disabled={!canPick}
-                          onClick={() => tokenIndex >= 0 && onPickToken(tokenIndex)}
-                          className={`grid h-7 w-7 place-items-center rounded-full border-2 text-[9px] font-black text-white transition-all ${
-                            canPick 
-                              ? "animate-bounce scale-110 ring-4 ring-white/80 cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.9)]" 
-                              : "opacity-70 cursor-not-allowed hover:opacity-90"
-                          } ${TOKEN_RING[color]}`}
-                          style={{ backgroundColor: COLOR_HEX[color] }}
-                        >
-                          {tokenObj ? tokenIndex + 1 : ""}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Shared Track Ring */}
-          {Array.from({ length: 52 }).map((_, i) => {
-            const c = ringCellCoord(i);
-            const safe = isSafeRingIndex(i);
-            return (
-              <div
-                key={`ring-${i}`}
-                className={`z-[1] border border-white/10 transition-colors ${
-                  safe ? "bg-cyan-950/70 shadow-[inset_0_0_10px_rgba(6,182,212,0.6)] border-cyan-400/50" : "bg-[#11101d]/90 hover:bg-[#1a182d]"
-                }`}
-                style={{ gridRow: c.row + 1, gridColumn: c.col + 1 }}
-              >
-                {safe && (
-                  <div className="grid h-full w-full place-items-center text-[9px] font-black text-cyan-300 animate-pulse">
-                    ★
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Home-Stretch Glowing Lanes */}
-          {(["red", "blue", "yellow", "green"] as LudoColor[]).map((color) => {
-            const coords =
-              color === "red"
-                ? [5, 4, 3, 2, 1, 0].map((col) => ({ row: 7, col }))
-                : color === "blue"
-                  ? [5, 4, 3, 2, 1, 0].map((row) => ({ row, col: 7 }))
-                  : color === "yellow"
-                    ? [8, 9, 10, 11, 12, 13].map((col) => ({ row: 6, col }))
-                    : [8, 9, 10, 11, 12, 13].map((row) => ({ row, col: 6 }));
-
-            return coords.map((c, i) => (
-              <div
-                key={`${color}-lane-${i}`}
-                className="z-[2] border border-white/20 shadow-inner"
-                style={{
-                  gridRow: c.row + 1,
-                  gridColumn: c.col + 1,
-                  backgroundColor: `${COLOR_HEX[color]}bb`,
-                  boxShadow: `inset 0 0 8px ${COLOR_HEX[color]}`
-                }}
-              />
-            ));
-          })}
-
-          {/* Center Finish Zone with Players DPs Integration */}
-          <div className="absolute left-[42.85%] top-[42.85%] z-[4] h-[14.3%] w-[14.3%] overflow-hidden rounded-md shadow-[0_0_20px_rgba(255,255,255,0.4)] grid grid-cols-2 grid-rows-2 border border-cyan-400/50 bg-black">
-            {(["red", "blue", "yellow", "green"] as LudoColor[]).map((colorKey) => {
-              const player = state.players.find((p) => p.color === colorKey);
-              const userAvatar = player?.userId ? avatarByUserId[player.userId] : null;
-
+      <div className="relative z-10 mx-auto w-full max-w-[420px]">
+        <div className="relative aspect-square w-full rounded-[24px] border border-white/10 bg-black/50 p-1.5 shadow-[0_0_40px_rgba(168,85,247,.16)]">
+          <div className="relative grid h-full w-full overflow-hidden rounded-[19px] border border-cyan-300/15 bg-[#090914]"
+            style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0,1fr))`, gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0,1fr))` }}>
+            
+            {(["red","blue","green","yellow"] as LudoColor[]).map((color) => {
+              const player = state.players.find((p) => p.color === color);
+              const yardTokens = player?.tokens.map((t, idx) => ({...t, originalIndex: idx})).filter(t => t.d === 0) ?? [];
               return (
-                <div 
-                  key={colorKey} 
-                  className="relative flex items-center justify-center overflow-hidden border border-white/20"
-                  style={{ backgroundColor: COLOR_HEX[colorKey] }}
-                >
-                  {userAvatar ? (
-                    <img src={userAvatar} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-[8px] font-black text-white/80">
-                      {(player?.name ?? colorKey).slice(0, 1).toUpperCase()}
+                <div key={`yard-${color}`} className={`absolute z-[3] ${HOME_CLASS[color]} h-[42.85%] w-[42.85%] bg-gradient-to-br ${HOME_BG[color]} p-[2.5%]`}>
+                  <div className="flex h-full w-full items-center justify-center rounded-[13px] border border-white/20 bg-black/20 shadow-[inset_0_0_20px_rgba(0,0,0,.45)]">
+                    <div className="grid grid-cols-2 gap-[8%] rounded-xl border border-white/10 bg-black/25 p-[8%]">
+                      {[0,1,2,3].map(slot => {
+                        const tokenObj = yardTokens[slot];
+                        const tokenIndex = tokenObj?.originalIndex ?? -1;
+                        const canPick = !!player && myTurn && state.awaitingMove && player.color === activePlayer?.color && tokenIndex >= 0;
+                        return (
+                          <button key={slot} type="button" disabled={!canPick} onClick={() => tokenIndex >= 0 && onPickToken(tokenIndex)}
+                            className={`grid aspect-square w-[clamp(17px,4.7vw,27px)] place-items-center rounded-full border-2 text-[8px] font-black text-white transition-all ${TOKEN_RING[color]} ${canPick ? "scale-110 animate-pulse ring-2 ring-white/70" : "opacity-80"}`}
+                            style={{backgroundColor: COLOR_HEX[color]}}>
+                            {tokenObj ? tokenIndex + 1 : ""}
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                  </div>
                 </div>
               );
             })}
-          </div>
 
-          {/* Active Board Tokens */}
-          {state.players.flatMap((p, pIdx) =>
-            p.tokens.map((t, tIdx) => {
-              const coord = tokenCoord(p.color, t.d);
+            {Array.from({length:52}).map((_, i) => {
+              const c = ringCellCoord(i);
+              const safe = isSafeRingIndex(i);
+              return (
+                <div key={`ring-${i}`} className={`z-[1] border border-white/[.07] ${safe ? "bg-cyan-950/70 border-cyan-300/30" : "bg-white/[.025]"}`}
+                  style={{gridRow:c.row+1,gridColumn:c.col+1}}>
+                  {safe && <div className="grid h-full w-full place-items-center text-[8px] text-cyan-200/80">★</div>}
+                </div>
+              );
+            })}
+
+            {(["red","blue","yellow","green"] as LudoColor[]).flatMap(color => {
+              const coords = color === "red"
+                ? [5,4,3,2,1,0].map(col => ({row:7,col}))
+                : color === "blue"
+                ? [5,4,3,2,1,0].map(row => ({row,col:7}))
+                : color === "yellow"
+                ? [8,9,10,11,12,13].map(col => ({row:6,col}))
+                : [8,9,10,11,12,13].map(row => ({row,col:6}));
+              return coords.map((c,i) => (
+                <div key={`${color}-lane-${i}`} className="z-[2] border border-white/15"
+                  style={{gridRow:c.row+1,gridColumn:c.col+1,backgroundColor:`${COLOR_HEX[color]}99`,boxShadow:`inset 0 0 8px ${COLOR_HEX[color]}`}} />
+              ));
+            })}
+
+            <div className="absolute left-[42.85%] top-[42.85%] z-[4] grid h-[14.3%] w-[14.3%] grid-cols-2 grid-rows-2 overflow-hidden rounded-lg border border-white/30 bg-black shadow-[0_0_18px_rgba(255,255,255,.25)]">
+              {(["red","blue","yellow","green"] as LudoColor[]).map(color => {
+                const player = state.players.find(p => p.color === color);
+                return <div key={color} className="overflow-hidden border border-white/15" style={{backgroundColor:COLOR_HEX[color]}}>
+                  <span className="grid h-full w-full place-items-center text-[7px] font-black text-white">{player?.name?.slice(0,1).toUpperCase() ?? color.slice(0,1).toUpperCase()}</span>
+                </div>;
+              })}
+            </div>
+
+            {state.players.flatMap((p,pIdx) => p.tokens.map((t,tIdx) => {
+              const coord = tokenCoord(p.color,t.d);
               if (!coord) return null;
               const canPick = myTurn && myPlayerIndex === pIdx && state.awaitingMove;
-
-              return (
-                <button
-                  key={`${p.color}-${tIdx}`}
-                  type="button"
-                  disabled={!canPick}
-                  onClick={() => onPickToken(tIdx)}
-                  className={`z-[20] grid place-items-center rounded-full border-2 border-white text-[9px] font-black text-white transition-all ${
-                    canPick ? "cursor-pointer animate-pulse scale-125 ring-4 ring-cyan-300 shadow-[0_0_25px_rgba(6,182,212,1)]" : "cursor-default hover:scale-105"
-                  } ${TOKEN_RING[p.color]}`}
-                  style={{
-                    gridRow: coord.row + 1,
-                    gridColumn: coord.col + 1,
-                    margin: "2px",
-                    background: `linear-gradient(135deg, ${COLOR_HEX[p.color]}, #000)`,
-                  }}
-                >
-                  {tIdx + 1}
-                </button>
-              );
-            }),
-          )}
+              return <button key={`${p.color}-${tIdx}`} type="button" disabled={!canPick} onClick={() => onPickToken(tIdx)}
+                className={`z-[20] grid aspect-square min-w-0 place-items-center rounded-full border-2 border-white text-[8px] font-black text-white transition-transform ${canPick ? "scale-125 animate-pulse ring-2 ring-cyan-200" : ""} ${TOKEN_RING[p.color]}`}
+                style={{gridRow:coord.row+1,gridColumn:coord.col+1,margin:"10%",background:`linear-gradient(135deg,${COLOR_HEX[p.color]},#08080d)`}}>
+                {tIdx+1}
+              </button>;
+            }))}
+          </div>
         </div>
       </div>
 
-      {/* Bottom 2 Player Cards */}
-      <div className="grid grid-cols-2 gap-2 shrink-0">
-        {state.players.slice(2, 4).map((p, i) => (
-          <PlayerCard
-            key={p.color}
-            player={p}
-            active={state.turnIndex === i + 2}
-            avatar={p.userId ? avatarByUserId[p.userId] : undefined}
-          />
-        ))}
-      </div>
+      {state.players.length > 2 && (
+        <div className="relative z-10 mt-2 grid grid-cols-2 gap-2">
+          {bottomPlayers.map((p,i) => <PlayerCard key={p.color} player={p} active={state.turnIndex === i+2} />)}
+        </div>
+      )}
 
-      {/* Control Deck */}
-      <div className="flex items-center justify-between gap-2 rounded-xl border border-cyan-500/30 bg-black/60 p-2.5 backdrop-blur-xl shrink-0">
-        <button type="button" className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-bold transition-all hover:bg-white/10 hover:border-cyan-400/50">
-          <RotateCcw className="h-3 w-3 text-cyan-400" /> Undo
+      {state.players.length <= 2 && (
+        <div className="relative z-10 mt-2 grid grid-cols-2 gap-2">
+          {topPlayers.map((p,i) => <PlayerCard key={p.color} player={p} active={state.turnIndex === i} />)}
+        </div>
+      )}
+
+      <div className="relative z-10 mt-2 flex items-center justify-between rounded-2xl border border-white/10 bg-white/[.045] px-3 py-2.5 backdrop-blur-xl">
+        <button type="button" className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[.05] text-white/50" aria-label="Undo">
+          <RotateCcw className="h-4 w-4" />
         </button>
-
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={onRoll}
-            disabled={!myTurn || state.awaitingMove || rolling || !!state.winnerIndex}
-            className="relative group grid h-16 w-16 place-items-center rounded-full border-2 border-cyan-400 bg-gradient-to-br from-cyan-400 via-purple-600 to-fuchsia-600 text-white shadow-[0_0_25px_rgba(168,85,247,0.8)] transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed mx-auto"
-            aria-label="Roll dice"
-          >
-            <div className="absolute inset-0 rounded-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
-            {rolling ? <Loader2 className="h-7 w-7 animate-spin text-white drop-shadow-[0_0_10px_white]" /> : <DiceIcon className="h-8 w-8 drop-shadow-[0_0_12px_rgba(255,255,255,0.9)] animate-pulse" />}
+        <div className="flex flex-col items-center">
+          <button type="button" onClick={onRoll} disabled={!myTurn || state.awaitingMove || rolling || state.winnerIndex !== null}
+            className="grid h-[58px] w-[58px] place-items-center rounded-full border-2 border-fuchsia-300/80 bg-gradient-to-br from-white via-slate-100 to-fuchsia-100 text-slate-900 shadow-[0_0_30px_rgba(217,70,239,.45)] transition active:scale-90 disabled:opacity-35">
+            {rolling ? <Loader2 className="h-6 w-6 animate-spin" /> : <DiceIcon className="h-7 w-7" />}
           </button>
-          <p className="mt-1 text-[9px] font-bold tracking-wider text-cyan-300 uppercase">
-            {state.awaitingMove ? "⚡ Pick a Token" : myTurn ? "🎲 Tap to Roll" : "⏳ Opponent's Turn"}
-          </p>
+          <span className="mt-1 text-[9px] font-black uppercase tracking-wider text-fuchsia-200">
+            {state.winnerIndex !== null ? "Winner" : state.awaitingMove ? "Pick token" : myTurn ? "Roll dice" : "Opponent"}
+          </span>
         </div>
-
-        <button type="button" className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-bold transition-all hover:bg-white/10 hover:border-fuchsia-400/50">
-          <Bot className="h-3.5 w-3.5 text-fuchsia-400" /> Auto Move
+        <button type="button" className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[.05] text-fuchsia-300" aria-label="Auto move">
+          <Bot className="h-4 w-4" />
         </button>
       </div>
 
-      {/* Voice & Action Toolbar */}
-      <div className="flex items-center gap-2 rounded-xl border border-cyan-500/20 bg-[#06050e]/95 p-2 shrink-0">
-        <div className="flex-1">
-          <p className="text-[10px] font-black flex items-center gap-1 text-cyan-300">
-            <Zap className="h-3 w-3 text-emerald-400 animate-pulse" /> VOICE STREAM <span className="text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.2 rounded text-[8px]">ACTIVE</span>
-          </p>
-          <p className="text-[8px] text-cyan-100/60">Secure audio channel connected</p>
+      <div className="relative z-10 mt-2 flex items-center gap-2 rounded-2xl border border-emerald-400/15 bg-emerald-400/[.035] px-2.5 py-2">
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-1 text-[10px] font-black"><span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_7px_#34d399]" /> Voice room active</p>
+          <p className="truncate text-[8px] text-white/35">Talk while you play</p>
         </div>
-        <button className="grid h-8 w-8 place-items-center rounded-xl border border-emerald-400/40 bg-emerald-500/10 text-emerald-300 transition hover:bg-emerald-500/20">
-          <Mic className="h-4 w-4" />
-        </button>
-        <button className="grid h-8 w-8 place-items-center rounded-xl border border-cyan-400/40 bg-cyan-500/10 text-cyan-300 transition hover:bg-cyan-500/20">
-          <Volume2 className="h-4 w-4" />
-        </button>
-        <button className="flex h-8 items-center gap-1 rounded-xl border border-amber-400/40 bg-amber-500/10 px-2.5 text-[10px] font-bold text-amber-300 transition hover:bg-amber-500/20">
-          <Smile className="h-3.5 w-3.5" /> Emoji
-        </button>
-        <button className="flex h-8 items-center gap-1 rounded-xl border border-rose-500/40 bg-rose-500/10 px-2.5 text-[10px] font-bold text-rose-300 transition hover:bg-rose-500/20">
-          Exit
-        </button>
+        <button className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-400/20 bg-emerald-400/[.08] text-emerald-300"><Mic className="h-3.5 w-3.5"/></button>
+        <button className="grid h-8 w-8 place-items-center rounded-lg border border-cyan-400/20 bg-cyan-400/[.08] text-cyan-300"><Volume2 className="h-3.5 w-3.5"/></button>
+        <button className="grid h-8 w-8 place-items-center rounded-lg border border-amber-400/20 bg-amber-400/[.08] text-amber-300"><Smile className="h-3.5 w-3.5"/></button>
       </div>
 
+      {state.winnerIndex !== null && (
+        <div className="relative z-10 mt-2 flex items-center justify-center gap-2 rounded-2xl border border-amber-300/30 bg-amber-300/[.08] p-2.5 text-center">
+          <Trophy className="h-5 w-5 text-amber-300" />
+          <p className="text-xs font-black text-amber-100">
+            {state.mode === "2v2" ? `Team ${state.winningTeam} wins!` : `${state.players[state.winnerIndex]?.name ?? "Player"} wins!`}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-function PlayerCard({
-  player,
-  active,
-  avatar,
-}: {
-  player: LudoGameState["players"][number];
-  active: boolean;
-  avatar?: string | null;
-}) {
+function PlayerCard({player,active}:{player:LudoGameState["players"][number];active:boolean}) {
+  const color = COLOR_HEX[player.color];
+  const finished = player.tokens.filter(t => t.d === 58).length;
   return (
-    <div
-      className={`flex min-w-0 items-center gap-2 rounded-2xl border p-2 backdrop-blur-xl transition-all ${
-        active ? "border-cyan-400 bg-cyan-950/30 shadow-[0_0_15px_rgba(6,182,212,0.25)]" : "border-white/10 bg-black/40 hover:border-white/20"
-      }`}
-      style={{ borderColor: active ? COLOR_HEX[player.color] : undefined }}
-    >
-      {avatar ? (
-        <img
-          src={avatar}
-          alt=""
-          className="h-9 w-9 shrink-0 rounded-full border-2 object-cover shadow-[0_0_10px_rgba(255,255,255,0.3)]"
-          style={{ borderColor: COLOR_HEX[player.color] }}
-        />
-      ) : (
-        <div
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 text-xs font-black shadow-md"
-          style={{ borderColor: COLOR_HEX[player.color], backgroundColor: `${COLOR_HEX[player.color]}44` }}
-        >
-          {(player.name ?? player.color).slice(0, 1).toUpperCase()}
-        </div>
-      )}
-
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[11px] font-black tracking-wide text-white">{player.name ?? player.color}</p>
-        <p className="text-[9px] font-mono text-cyan-300/80 mt-0.5">🪙 {player.tokens.filter((t) => t.d === 58).length * 1000 + 7200}</p>
+    <div className="flex min-w-0 items-center gap-2 rounded-2xl border bg-white/[.035] px-2 py-1.5 backdrop-blur-xl"
+      style={{borderColor:active ? `${color}99` : "rgba(255,255,255,.08)",boxShadow:active ? `0 0 18px ${color}22` : undefined}}>
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full border-2 text-[11px] font-black text-white"
+        style={{borderColor:color,background:`linear-gradient(135deg,${color}88,#09090f)`}}>
+        {(player.name ?? player.color).slice(0,1).toUpperCase()}
       </div>
-
-      <button 
-        type="button" 
-        className="rounded-xl border border-white/10 bg-white/5 p-1.5 transition hover:bg-white/10"
-        title="Send Gift"
-      >
-        <Gift className="h-3.5 w-3.5 shrink-0 transition-transform hover:scale-110" style={{ color: COLOR_HEX[player.color] }} />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[10px] font-black">{player.name ?? player.color}</p>
+        <p className="text-[8px] font-semibold text-white/40">{finished}/4 home</p>
+      </div>
+      {active && <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />}
+      <button type="button" className="grid h-7 w-7 place-items-center rounded-full border border-white/10 bg-white/[.04]" aria-label={`Gift to ${player.name ?? player.color}`}>
+        <Gift className="h-3.5 w-3.5" style={{color}} />
       </button>
     </div>
   );
