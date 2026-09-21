@@ -253,21 +253,34 @@ export function botChooseToken(
 
 export const GRID_SIZE = 15;
 
+const TRACK_COORDS: { row: number; col: number }[] = [
+  ...[0, 1, 2, 3, 4, 5].map((col) => ({ row: 6, col })),
+  ...[5, 4, 3, 2, 1, 0].map((row) => ({ row, col: 6 })),
+  { row: 0, col: 7 },
+  { row: 0, col: 8 },
+  ...[1, 2, 3, 4, 5].map((row) => ({ row, col: 8 })),
+  ...[9, 10, 11, 12, 13, 14].map((col) => ({ row: 6, col })),
+  { row: 7, col: 14 },
+  { row: 8, col: 14 },
+  ...[13, 12, 11, 10, 9].map((col) => ({ row: 8, col })),
+  ...[9, 10, 11, 12, 13, 14].map((row) => ({ row, col: 8 })),
+  { row: 14, col: 7 },
+  { row: 14, col: 6 },
+  ...[13, 12, 11, 10, 9].map((row) => ({ row, col: 6 })),
+  ...[5, 4, 3, 2, 1, 0].map((col) => ({ row: 8, col })),
+  { row: 7, col: 0 },
+];
+
 export function ringCellCoord(idx: number): { row: number; col: number } {
-  const i = ((idx % 52) + 52) % 52;
-  if (i <= 13) return { row: 0, col: i };
-  if (i <= 26) return { row: i - 13, col: 13 };
-  if (i <= 39) return { row: 13, col: 39 - i };
-  return { row: 52 - i, col: 0 };
+  return TRACK_COORDS[((idx % 52) + 52) % 52];
 }
 
 const HOME_STRETCH: Record<LudoColor, { row: number; col: number }[]> = {
-  red: [1, 2, 3, 4, 5, 6].map((n) => ({ row: n, col: n })),
-  green: [1, 2, 3, 4, 5, 6].map((n) => ({ row: n, col: 13 - n })),
-  yellow: [1, 2, 3, 4, 5, 6].map((n) => ({ row: 12 - n, col: 12 - n })),
-  blue: [1, 2, 3, 4, 5, 6].map((n) => ({ row: 12 - n, col: 1 + n })),
+  red: [1, 2, 3, 4, 5, 6].map((col) => ({ row: 7, col })),
+  green: [1, 2, 3, 4, 5, 6].map((row) => ({ row, col: 7 })),
+  yellow: [13, 12, 11, 10, 9, 8].map((col) => ({ row: 7, col })),
+  blue: [13, 12, 11, 10, 9, 8].map((row) => ({ row, col: 7 })),
 };
-
 const FINISH_SPOT: Record<LudoColor, { row: number; col: number }> = {
   red: { row: 6, col: 6 },
   green: { row: 6, col: 7 },
