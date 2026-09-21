@@ -258,7 +258,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     setBusyRequest(null);
     if (error) { toast.error(error.message || "Could not respond to seat request"); return; }
     setRequests(prev => prev.filter(r => r.id !== request.id));
-    if (accept) toast.success(`${request.username} approved for seat ${Number(data) + 1}`);
+    if (accept) toast.success(`${request.username} approved for seat ${Number(data)}`);
     else toast.success(`${request.username}'s seat request rejected`);
   };
 
