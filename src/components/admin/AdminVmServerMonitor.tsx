@@ -106,7 +106,12 @@ export default function AdminVmServerMonitor() {
     <div className="relative overflow-hidden rounded-2xl bg-[#07070c] p-1 text-white">
       <div className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: "linear-gradient(rgba(139,92,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px)", backgroundSize: "34px 34px" }} />
       <div className="relative space-y-5 p-3 sm:p-5">
-me}` : ""}{livekit.url ? ` · ${livekit.url}` : ""}</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.22em] text-cyan-300/70"><Server className="h-4 w-4" /> LIVE SERVER DASHBOARD</div>
+            <h2 className="mt-1 text-2xl font-black tracking-tight">JALWA VM COMMAND CENTER</h2>
+            <p className="mt-1 text-xs text-white/45">LiveKit media server · {server.hostname || "jalwa-pro"}{livekit.url ? ` · ${livekit.url}` : ""}</p>
+          </div>
         </div>
         <button onClick={fetchStats} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200 disabled:opacity-60">{refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
       </div>
