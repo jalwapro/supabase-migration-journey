@@ -11,9 +11,16 @@ const DICE_ICONS = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
 
 const HOME_CLASS: Record<LudoColor, string> = {
   red: "left-0 top-0",
-  blue: "right-0 top-0",
-  green: "left-0 bottom-0",
+  green: "right-0 top-0",
   yellow: "right-0 bottom-0",
+  blue: "left-0 bottom-0",
+};
+
+const HOME_LANES: Record<LudoColor, { row: number; col: number }[]> = {
+  red: [1, 2, 3, 4, 5, 6].map((col) => ({ row: 7, col })),
+  green: [1, 2, 3, 4, 5, 6].map((row) => ({ row, col: 7 })),
+  yellow: [13, 12, 11, 10, 9, 8].map((col) => ({ row: 7, col })),
+  blue: [13, 12, 11, 10, 9, 8].map((row) => ({ row, col: 7 })),
 };
 
 const HOME_BG: Record<LudoColor, string> = {
@@ -110,7 +117,7 @@ export function LudoBoard({
               const player = state.players.find((p) => p.color === color);
               const yardTokens = player?.tokens.map((t, idx) => ({...t, originalIndex: idx})).filter(t => t.d === 0) ?? [];
               return (
-                <div key={`yard-${color}`} className={`absolute z-[3] ${HOME_CLASS[color]} h-[42.85%] w-[42.85%] bg-gradient-to-br ${HOME_BG[color]} p-[2.5%]`}>
+                <div key={`yard-${color}`} className={`absolute z-[3] ${HOME_CLASS[color]} h-[40%] w-[40%] bg-gradient-to-br ${HOME_BG[color]} p-[2.5%]`}>
                   <div className="flex h-full w-full items-center justify-center rounded-[13px] border border-white/20 bg-black/20 shadow-[inset_0_0_20px_rgba(0,0,0,.45)]">
                     <div className="grid grid-cols-2 gap-[8%] rounded-xl border border-white/10 bg-black/25 p-[8%]">
                       {[0,1,2,3].map(slot => {
@@ -142,27 +149,28 @@ export function LudoBoard({
               );
             })}
 
-            {(["red","blue","yellow","green"] as LudoColor[]).flatMap(color => {
-              const coords = color === "red"
-                ? [5,4,3,2,1,0].map(col => ({row:7,col}))
-                : color === "blue"
-                ? [5,4,3,2,1,0].map(row => ({row,col:7}))
-                : color === "yellow"
-                ? [8,9,10,11,12,13].map(col => ({row:6,col}))
-                : [8,9,10,11,12,13].map(row => ({row,col:6}));
-              return coords.map((c,i) => (
-                <div key={`${color}-lane-${i}`} className="z-[2] border border-white/15"
-                  style={{gridRow:c.row+1,gridColumn:c.col+1,backgroundColor:`${COLOR_HEX[color]}99`,boxShadow:`inset 0 0 8px ${COLOR_HEX[color]}`}} />
-              ));
-            })}
+            {(["red","green","yellow","blue"] as LudoColor[]).flatMap(color =>
+              HOME_LANES[color].map((c, i) => (
+                <div key={color + "-home-" + i} className="z-[2] border border-white/20"
+                  style={{
+                    gridRow: c.row + 1,
+                    gridColumn: c.col + 1,
+                    background: "linear-gradient(135deg," + COLOR_HEX[color] + "d9," + COLOR_HEX[color] + "66)",
+                    boxShadow: "inset 0 0 10px " + COLOR_HEX[color] + "66",
+                  }}
+                />
+              ))
+            )}
 
-            <div className="absolute left-[42.85%] top-[42.85%] z-[4] grid h-[14.3%] w-[14.3%] grid-cols-2 grid-rows-2 overflow-hidden rounded-lg border border-white/30 bg-black shadow-[0_0_18px_rgba(255,255,255,.25)]">
-              {(["red","blue","yellow","green"] as LudoColor[]).map(color => {
+            <div className="absolute left-[40%] top-[40%] z-[4] h-[20%] w-[20%] overflow-hidden rounded-lg border border-white/35 bg-black shadow-[0_0_22px_rgba(255,255,255,.28)]">
+              {(["red","green","yellow","blue"] as LudoColor[]).map((color, i) => {
                 const player = state.players.find(p => p.color === color);
-                return <div key={color} className="overflow-hidden border border-white/15" style={{backgroundColor:COLOR_HEX[color]}}>
-                  <span className="grid h-full w-full place-items-center text-[7px] font-black text-white">{player?.name?.slice(0,1).toUpperCase() ?? color.slice(0,1).toUpperCase()}</span>
+                const clips = ["polygon(0 0,100% 0,50% 100%)","polygon(100% 0,100% 100%,0 50%)","polygon(100% 100%,0 100%,50% 0)","polygon(0 100%,0 0,100% 50%)"];
+                return <div key={color} className="absolute inset-0" style={{backgroundColor:COLOR_HEX[color], clipPath:clips[i], opacity:.92}}>
+                  <span className="grid h-full w-full place-items-center pb-1 text-[7px] font-black text-white drop-shadow">{player?.name?.slice(0,1).toUpperCase() ?? color.slice(0,1).toUpperCase()}</span>
                 </div>;
               })}
+              <div className="absolute left-1/2 top-1/2 grid h-[22%] w-[22%] -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/50 bg-white/15 text-[7px] font-black text-white">★</div>
             </div>
 
             {state.players.flatMap((p,pIdx) => p.tokens.map((t,tIdx) => {
