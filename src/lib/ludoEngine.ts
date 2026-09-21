@@ -56,7 +56,7 @@ export function activeColorsForMode(mode: LudoMode): LudoColor[] {
 
 export function createGame(
   mode: LudoMode,
-  seatInputs: { color: LudoColor; kind: SeatKind; userId?: string; name?: string }[],
+  seatInputs: { color: LudoColor; kind: SeatKind; userId?: string; name?: string; avatar?: string | null }[],
 ): LudoGameState {
   const colors = activeColorsForMode(mode);
   const players: LudoPlayer[] = colors.map((color) => {
