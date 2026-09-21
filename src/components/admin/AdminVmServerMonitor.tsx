@@ -112,11 +112,10 @@ export default function AdminVmServerMonitor() {
             <h2 className="mt-1 text-2xl font-black tracking-tight">JALWA VM COMMAND CENTER</h2>
             <p className="mt-1 text-xs text-white/45">LiveKit media server · {server.hostname || "jalwa-pro"}{livekit.url ? ` · ${livekit.url}` : ""}</p>
           </div>
+          <button onClick={fetchStats} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200 disabled:opacity-60">{refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
         </div>
-        <button onClick={fetchStats} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200 disabled:opacity-60">{refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
         <StatusPill status={livekit.status} label="LiveKit" />
         <StatusPill status={vm.status} label="VM agent" />
         {livekit.latencyMs !== null && <span className="rounded-full border border-border bg-card px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">API latency {livekit.latencyMs} ms</span>}
