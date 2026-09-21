@@ -46,27 +46,22 @@ function pct(value?: number) {
 }
 
 function StatusPill({ status, label }: { status: ServiceStatus; label: string }) {
-  const tone = status === "online" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500" : status === "offline" ? "border-red-500/40 bg-red-500/10 text-red-500" : "border-amber-500/40 bg-amber-500/10 text-amber-500";
-  const text = status === "online" ? "Running" : status === "offline" ? "Offline" : "Not configured";
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${tone}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${status === "online" ? "animate-pulse bg-emerald-500" : status === "offline" ? "bg-red-500" : "bg-amber-500"}`} />
-      {label}: {text}
-    </span>
-  );
+  const tone = status === "online" ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-300" : status === "offline" ? "border-red-400/30 bg-red-400/10 text-red-300" : "border-amber-400/30 bg-amber-400/10 text-amber-300";
+  const text = status === "online" ? "ONLINE" : status === "offline" ? "OFFLINE" : "SETUP";
+  return <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${tone}`}><span className={`h-1.5 w-1.5 rounded-full ${status === "online" ? "animate-pulse bg-emerald-300" : status === "offline" ? "bg-red-300" : "bg-amber-300"}`} />{label} · {text}</span>;
 }
-
-function MetricCard({ icon: Icon, label, value, sub, percent }: { icon: typeof Cpu; label: string; value: string; sub?: string; percent?: number }) {
-  return (
-    <div className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
-      <div className="flex items-center gap-2 text-muted-foreground"><Icon className="h-4 w-4" /><span className="text-xs font-semibold uppercase tracking-wider">{label}</span></div>
-      <div className="mt-2 text-2xl font-black">{value}</div>
-      {sub && <div className="mt-1 text-[11px] text-muted-foreground">{sub}</div>}
-      {typeof percent === "number" && <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: pct(percent) }} /></div>}
-    </div>
-  );
+function HudCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return <div className={`relative overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_12px_50px_rgba(0,0,0,0.22)] ${className}`}>{children}</div>;
 }
-
+function MetricCard({ icon: Icon, label, value, sub, percent, accent = "violet" }: { icon: typeof Cpu; label: string; value: string; sub?: string; percent?: number; accent?: "violet" | "cyan" | "green" | "amber" }) {
+  const iconClass = { violet: "text-violet-300 bg-violet-400/10 border-violet-400/20", cyan: "text-cyan-300 bg-cyan-400/10 border-cyan-400/20", green: "text-emerald-300 bg-emerald-400/10 border-emerald-400/20", amber: "text-amber-300 bg-amber-400/10 border-amber-400/20" }[accent];
+  return <HudCard className="group p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20">
+    <div className="flex items-center justify-between"><div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/45"><Icon className="h-4 w-4 text-white/65" />{label}</div><div className={`rounded-lg border p-1.5 ${iconClass}`}><Activity className="h-3.5 w-3.5" /></div></div>
+    <div className="mt-4 text-3xl font-black tracking-tight text-white">{value}</div>
+    {sub && <div className="mt-1 text-[10px] font-medium text-white/40">{sub}</div>}
+    {typeof percent === "number" && <div className="mt-4 h-1 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full bg-gradient-to-r from-violet-500 via-fuchsia-400 to-cyan-300 transition-all duration-700" style={{ width: pct(percent) }} /></div>}
+  </HudCard>;
+}
 export default function AdminVmServerMonitor() {
   const [stats, setStats] = useState<VmStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -108,13 +103,13 @@ export default function AdminVmServerMonitor() {
   const vmDown = vm.status !== "online";
 
   return (
-    <div className="space-y-5">
+    <div className="relative overflow-hidden rounded-2xl bg-[#07070c] p-1 text-white"><div className="pointer-events-none absolute inset-0 opacity-40" style={{backgroundImage:"linear-gradient(rgba(139,92,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px)",backgroundSize:"34px 34px"}} /><div className="relative space-y-5 p-3 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold"><Server className="h-5 w-5 text-primary" /> Live Server Dashboard</h2>
-          <p className="text-xs text-muted-foreground">LiveKit media server{server.hostname ? ` · ${server.hostname}` : ""}{livekit.url ? ` · ${livekit.url}` : ""}</p>
+          <h2 className="flex items-center gap-2 text-lg font-bold"><Server className="h-5 w-5 text-primary" /> Live Server Command Center</h2>
+          <p className="text-xs text-muted-foreground">JALWA // LIVEKIT CORE{server.hostname ? ` · ${server.hostname}` : ""}{livekit.url ? ` · ${livekit.url}` : ""}</p>
         </div>
-        <button onClick={fetchStats} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold disabled:opacity-60">{refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
+        <button onClick={fetchStats} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200 disabled:opacity-60">{refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -146,7 +141,7 @@ export default function AdminVmServerMonitor() {
         <MetricCard icon={Network} label="Network" value={vmDown ? "—" : `${Number(server.network?.totalMbps ?? 0).toFixed(2)} Mbps`} sub={vmDown ? "VM agent offline" : `↓ ${Number(server.network?.rxMbps ?? 0).toFixed(2)} · ↑ ${Number(server.network?.txMbps ?? 0).toFixed(2)}`} />
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/30 p-4 backdrop-blur-xl">
         <div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-bold">Active rooms (live)</h3><span className="text-[11px] text-muted-foreground">{livekit.rooms.length} shown</span></div>
         {livekit.rooms.length === 0 ? (
           <p className="py-6 text-center text-xs text-muted-foreground">No active LiveKit rooms right now.</p>
@@ -169,11 +164,11 @@ export default function AdminVmServerMonitor() {
         )}
       </div>
 
-      <div className={`rounded-2xl border p-5 ${insightClass}`}>
-        <div className="flex items-start gap-3"><InsightIcon className="mt-0.5 h-5 w-5 shrink-0" /><div className="min-w-0"><p className="text-sm font-bold">Capacity Insight</p><p className="mt-1 text-sm text-muted-foreground">{insights.recommendation}</p><div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground"><span>CPU headroom: <b className="text-foreground">{pct(insights.headroom.cpuPercent)}</b></span><span>RAM headroom: <b className="text-foreground">{pct(insights.headroom.memoryPercent)}</b></span><span>Disk headroom: <b className="text-foreground">{pct(insights.headroom.diskPercent)}</b></span></div></div></div>
+      <div className={`rounded-xl border p-5 backdrop-blur-xl ${insightClass}`}>
+        <div className="flex items-start gap-3"><InsightIcon className="mt-0.5 h-5 w-5 shrink-0" /><div className="min-w-0"><p className="text-sm font-bold">CAPACITY // CORE HEADROOM</p><p className="mt-1 text-sm text-muted-foreground">{insights.recommendation}</p><div className="mt-3 grid grid-cols-3 gap-2 text-[11px] text-muted-foreground"><span>CPU headroom: <b className="text-foreground">{pct(insights.headroom.cpuPercent)}</b></span><span>RAM headroom: <b className="text-foreground">{pct(insights.headroom.memoryPercent)}</b></span><span>Disk headroom: <b className="text-foreground">{pct(insights.headroom.diskPercent)}</b></span></div></div></div>
       </div>
 
-      <p className="text-[10px] text-muted-foreground">Auto-refresh: 5s · Last sample: {new Date(stats.generatedAt).toLocaleTimeString()}</p>
+      <p className="text-[10px] text-muted-foreground">TELEMETRY LINK · Auto-refresh: 5s · Last sample: {new Date(stats.generatedAt).toLocaleTimeString()}</p>
     </div>
   );
 }
