@@ -103,11 +103,10 @@ export default function AdminVmServerMonitor() {
   const vmDown = vm.status !== "online";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#07070c] p-1 text-white"><div className="pointer-events-none absolute inset-0 opacity-40" style={{backgroundImage:"linear-gradient(rgba(139,92,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px)",backgroundSize:"34px 34px"}} /><div className="relative space-y-5 p-3 sm:p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 className="flex items-center gap-2 text-lg font-bold"><Server className="h-5 w-5 text-primary" /> Live Server Command Center</h2>
-          <p className="text-xs text-muted-foreground">JALWA // LIVEKIT CORE{server.hostname ? ` · ${server.hostname}` : ""}{livekit.url ? ` · ${livekit.url}` : ""}</p>
+    <div className="relative overflow-hidden rounded-2xl bg-[#07070c] p-1 text-white">
+      <div className="pointer-events-none absolute inset-0 opacity-40" style={{ backgroundImage: "linear-gradient(rgba(139,92,246,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(34,211,238,0.05) 1px, transparent 1px)", backgroundSize: "34px 34px" }} />
+      <div className="relative space-y-5 p-3 sm:p-5">
+me}` : ""}{livekit.url ? ` · ${livekit.url}` : ""}</p>
         </div>
         <button onClick={fetchStats} disabled={refreshing} className="inline-flex items-center gap-2 rounded-lg border border-violet-400/20 bg-violet-400/10 px-3 py-2 text-[10px] font-black uppercase tracking-[0.16em] text-violet-200 disabled:opacity-60">{refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Refresh</button>
       </div>
@@ -169,6 +168,8 @@ export default function AdminVmServerMonitor() {
       </div>
 
       <p className="text-[10px] text-muted-foreground">TELEMETRY LINK · Auto-refresh: 5s · Last sample: {new Date(stats.generatedAt).toLocaleTimeString()}</p>
+    
+      </div>
     </div>
   );
 }
