@@ -31,24 +31,24 @@ const DICE_ICONS = [Dice1, Dice2, Dice3, Dice4, Dice5, Dice6];
 type AvatarMap = Record<string, string | null | undefined>;
 
 const HOME_CLASS: Record<LudoColor, string> = {
-  red: "left-0 top-0",
-  blue: "right-0 top-0",
-  green: "left-0 bottom-0",
-  yellow: "right-0 bottom-0",
+  red: "right-0 top-0",
+  blue: "left-0 top-0",
+  green: "right-0 bottom-0",
+  yellow: "left-0 bottom-0",
 };
 
 const HOME_BG: Record<LudoColor, string> = {
-  red: "from-red-600/90 via-red-900/80 to-black/90",
-  blue: "from-blue-500/90 via-blue-900/80 to-black/90",
-  green: "from-emerald-500/90 via-emerald-900/80 to-black/90",
-  yellow: "from-amber-400/90 via-orange-700/80 to-black/90",
+  red: "bg-red-600",
+  blue: "bg-blue-600",
+  green: "bg-emerald-600",
+  yellow: "bg-amber-400",
 };
 
 const TOKEN_RING: Record<LudoColor, string> = {
-  red: "shadow-[0_0_16px_rgba(239,68,68,0.8)] border-red-300",
-  blue: "shadow-[0_0_16px_rgba(59,130,246,0.8)] border-blue-300",
-  green: "shadow-[0_0_16px_rgba(34,197,94,0.8)] border-emerald-300",
-  yellow: "shadow-[0_0_16px_rgba(234,179,8,0.8)] border-amber-300",
+  red: "shadow-[0_0_12px_rgba(239,68,68,0.8)] border-red-300",
+  blue: "shadow-[0_0_12px_rgba(59,130,246,0.8)] border-blue-300",
+  green: "shadow-[0_0_12px_rgba(34,197,94,0.8)] border-emerald-300",
+  yellow: "shadow-[0_0_12px_rgba(234,179,8,0.8)] border-amber-300",
 };
 
 export function LudoBoard({
@@ -112,27 +112,38 @@ export function LudoBoard({
         ))}
       </div>
 
-      {/* Main Ludo Arena Container */}
-      <div className="relative mx-auto aspect-square w-full max-w-[340px] overflow-hidden rounded-[20px] border border-cyan-500/40 bg-[#030307] p-1.5 shadow-[0_0_30px_rgba(6,182,212,0.2)] my-auto shrink-0">
-        <div className="absolute inset-0 rounded-[20px] bg-[radial-gradient(circle_at_50%_50%,rgba(168,85,247,0.15),transparent_60%)] pointer-events-none" />
+      {/* Main Standard Ludo Arena Container (Matching Reference Image Layout) */}
+      <div className="relative mx-auto aspect-square w-full max-w-[330px] overflow-hidden rounded-[12px] border-4 border-red-600 bg-white p-1 shadow-2xl my-auto shrink-0">
         
         <div
-          className="relative grid h-full w-full overflow-hidden rounded-[14px] border border-cyan-500/20 bg-[#080711]"
+          className="relative grid h-full w-full overflow-hidden bg-white"
           style={{
             gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
             gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0, 1fr))`,
           }}
         >
-          {/* Four Yards */}
-          {(["red", "blue", "green", "yellow"] as LudoColor[]).map((color) => {
+          {/* Four Base Yards with Center User DP / Avatar Circle (Replacing A-B-C-D) */}
+          {(["blue", "red", "yellow", "green"] as LudoColor[]).map((color) => {
             const player = state.players.find((p) => p.color === color);
+            const userAvatar = player?.userId ? avatarByUserId[player.userId] : null;
+
             return (
               <div
                 key={`yard-${color}`}
-                className={`absolute z-[3] ${HOME_CLASS[color]} h-[42.85%] w-[42.85%] bg-gradient-to-br ${HOME_BG[color]} p-2 backdrop-blur-xl border border-white/10`}
+                className={`absolute z-[3] ${HOME_CLASS[color]} h-[40%] w-[40%] ${HOME_BG[color]} p-2 border-2 border-black/20 flex items-center justify-center`}
               >
-                <div className="flex h-full w-full items-center justify-center rounded-[12px] border border-white/20 bg-black/40">
-                  <div className="grid grid-cols-2 gap-2 rounded-[10px] bg-black/60 p-2.5 border border-white/10">
+                {/* Big White Circular Area where A, B, C, D was written[cite: 3] */}
+                <div className="relative h-[82%] w-[82%] rounded-full bg-white border-2 border-black/10 flex items-center justify-center shadow-inner overflow-hidden">
+                  {userAvatar ? (
+                    <img src={userAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-sm font-black text-gray-400">
+                      {(player?.name ?? color).slice(0, 1).toUpperCase()}
+                    </div>
+                  )}
+
+                  {/* Tokens inside the yard around or overlaid on DP */}
+                  <div className="absolute inset-0 grid grid-cols-2 gap-1 p-3 bg-black/20 backdrop-blur-[1px]">
                     {[0, 1, 2, 3].map((slot) => {
                       const playerTokens = player?.tokens ?? [];
                       const yardTokens = playerTokens
@@ -149,10 +160,10 @@ export function LudoBoard({
                           type="button"
                           disabled={!canPick}
                           onClick={() => tokenIndex >= 0 && onPickToken(tokenIndex)}
-                          className={`grid h-7 w-7 place-items-center rounded-full border-2 text-[9px] font-black text-white transition-all ${
+                          className={`grid h-5 w-5 place-items-center rounded-full border border-white text-[7px] font-black text-white transition-all m-auto ${
                             canPick 
-                              ? "animate-bounce scale-110 ring-2 ring-white/80 cursor-pointer shadow-[0_0_15px_rgba(255,255,255,0.9)]" 
-                              : "opacity-70 cursor-not-allowed"
+                              ? "animate-bounce scale-110 ring-2 ring-cyan-300 cursor-pointer shadow-lg" 
+                              : "opacity-80 cursor-not-allowed"
                           } ${TOKEN_RING[color]}`}
                           style={{ backgroundColor: COLOR_HEX[color] }}
                         >
@@ -173,13 +184,13 @@ export function LudoBoard({
             return (
               <div
                 key={`ring-${i}`}
-                className={`z-[1] border border-white/10 ${
-                  safe ? "bg-cyan-950/70 border-cyan-400/50" : "bg-[#11101d]/90"
+                className={`z-[1] border border-gray-300 ${
+                  safe ? "bg-gray-200 font-bold" : "bg-white"
                 }`}
                 style={{ gridRow: c.row + 1, gridColumn: c.col + 1 }}
               >
                 {safe && (
-                  <div className="grid h-full w-full place-items-center text-[9px] font-black text-cyan-300">
+                  <div className="grid h-full w-full place-items-center text-[8px] text-gray-500">
                     ★
                   </div>
                 )}
@@ -201,22 +212,22 @@ export function LudoBoard({
             return coords.map((c, i) => (
               <div
                 key={`${color}-lane-${i}`}
-                className="z-[2] border border-white/20"
+                className="z-[2] border border-gray-300"
                 style={{
                   gridRow: c.row + 1,
                   gridColumn: c.col + 1,
-                  backgroundColor: `${COLOR_HEX[color]}bb`,
+                  backgroundColor: COLOR_HEX[color],
                 }}
               />
             ));
           })}
 
-          {/* Center Finish Zone */}
-          <div className="absolute left-[42.85%] top-[42.85%] z-[4] h-[14.3%] w-[14.3%] overflow-hidden">
+          {/* Center Home Triangle Finish Zone */}
+          <div className="absolute left-[40%] top-[40%] z-[4] h-[20%] w-[20%] overflow-hidden border border-gray-300 shadow-inner">
             <div className="absolute inset-0 bg-red-600" style={{ clipPath: "polygon(0 0,100% 0,50% 50%)" }} />
-            <div className="absolute inset-0 bg-blue-600" style={{ clipPath: "polygon(100% 0,100% 100%,50% 50%)" }} />
-            <div className="absolute inset-0 bg-amber-500" style={{ clipPath: "polygon(100% 100%,0 100%,50% 50%)" }} />
-            <div className="absolute inset-0 bg-emerald-600" style={{ clipPath: "polygon(0 100%,0 0,50% 50%)" }} />
+            <div className="absolute inset-0 bg-blue-600" style={{ clipPath: "polygon(0 0,0 100%,50% 50%)" }} />
+            <div className="absolute inset-0 bg-amber-400" style={{ clipPath: "polygon(0 100%,100% 100%,50% 50%)" }} />
+            <div className="absolute inset-0 bg-emerald-600" style={{ clipPath: "polygon(100% 0,100% 100%,50% 50%)" }} />
           </div>
 
           {/* Active Board Tokens */}
@@ -232,8 +243,8 @@ export function LudoBoard({
                   type="button"
                   disabled={!canPick}
                   onClick={() => onPickToken(tIdx)}
-                  className={`z-[20] grid place-items-center rounded-full border-2 border-white text-[9px] font-black text-white transition-all ${
-                    canPick ? "cursor-pointer animate-pulse scale-110 ring-2 ring-cyan-300 shadow-[0_0_15px_rgba(6,182,212,1)]" : ""
+                  className={`z-[20] grid place-items-center rounded-full border-2 border-white text-[8px] font-black text-white transition-all ${
+                    canPick ? "cursor-pointer animate-pulse scale-110 ring-2 ring-black shadow-lg" : ""
                   } ${TOKEN_RING[p.color]}`}
                   style={{
                     gridRow: coord.row + 1,
@@ -273,11 +284,11 @@ export function LudoBoard({
             type="button"
             onClick={onRoll}
             disabled={!myTurn || state.awaitingMove || rolling || !!state.winnerIndex}
-            className="relative group grid h-14 w-14 place-items-center rounded-full border-2 border-cyan-400 bg-gradient-to-br from-cyan-400 via-purple-600 to-fuchsia-600 text-white shadow-[0_0_20px_rgba(168,85,247,0.8)] disabled:opacity-40"
+            className="relative group grid h-12 w-12 place-items-center rounded-full border-2 border-cyan-400 bg-gradient-to-br from-cyan-400 via-purple-600 to-fuchsia-600 text-white shadow-[0_0_15px_rgba(168,85,247,0.8)] disabled:opacity-40"
           >
-            {rolling ? <Loader2 className="h-6 w-6 animate-spin text-white" /> : <DiceIcon className="h-7 w-7 animate-pulse" />}
+            {rolling ? <Loader2 className="h-5 w-5 animate-spin text-white" /> : <DiceIcon className="h-6 w-6 animate-pulse" />}
           </button>
-          <span className="mt-0.5 text-[9px] font-bold tracking-wider text-cyan-300 uppercase">
+          <span className="mt-0.5 text-[8px] font-bold tracking-wider text-cyan-300 uppercase">
             {state.awaitingMove ? "⚡ Pick Token" : myTurn ? "Tap to Roll" : "Waiting..."}
           </span>
         </div>
@@ -290,21 +301,21 @@ export function LudoBoard({
       {/* Voice & Action Toolbar */}
       <div className="flex items-center gap-2 rounded-xl border border-cyan-500/20 bg-[#06050e]/95 p-2 shrink-0">
         <div className="flex-1">
-          <p className="text-[10px] font-black flex items-center gap-1 text-cyan-300">
+          <p className="text-[9px] font-black flex items-center gap-1 text-cyan-300">
             <Zap className="h-3 w-3 text-emerald-400" /> VOICE ROOM ACTIVE
           </p>
-          <p className="text-[8px] text-cyan-100/60">You can talk while playing</p>
+          <p className="text-[7px] text-cyan-100/60">You can talk while playing</p>
         </div>
-        <button className="grid h-8 w-8 place-items-center rounded-lg border border-emerald-400/40 bg-emerald-500/10 text-emerald-300">
-          <Mic className="h-3.5 w-3.5" />
+        <button className="grid h-7 w-7 place-items-center rounded-lg border border-emerald-400/40 bg-emerald-500/10 text-emerald-300">
+          <Mic className="h-3 w-3" />
         </button>
-        <button className="grid h-8 w-8 place-items-center rounded-lg border border-cyan-400/40 bg-cyan-500/10 text-cyan-300">
-          <Volume2 className="h-3.5 w-3.5" />
+        <button className="grid h-7 w-7 place-items-center rounded-lg border border-cyan-400/40 bg-cyan-500/10 text-cyan-300">
+          <Volume2 className="h-3 w-3" />
         </button>
-        <button className="flex h-8 items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2 text-[10px] font-bold text-amber-300">
+        <button className="flex h-7 items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-500/10 px-2 text-[9px] font-bold text-amber-300">
           <Smile className="h-3 w-3" /> Emoji
         </button>
-        <button className="flex h-8 items-center gap-1 rounded-lg border border-rose-500/40 bg-rose-500/10 px-2 text-[10px] font-bold text-rose-300">
+        <button className="flex h-7 items-center gap-1 rounded-lg border border-rose-500/40 bg-rose-500/10 px-2 text-[9px] font-bold text-rose-300">
           Exit
         </button>
       </div>
@@ -324,7 +335,7 @@ function PlayerCard({
 }) {
   return (
     <div
-      className={`flex min-w-0 items-center gap-2 rounded-xl border p-2 backdrop-blur-xl transition-all ${
+      className={`flex min-w-0 items-center gap-2 rounded-xl border p-1.5 backdrop-blur-xl transition-all ${
         active ? "border-cyan-400 bg-cyan-950/30 shadow-[0_0_15px_rgba(6,182,212,0.25)]" : "border-white/10 bg-black/40"
       }`}
       style={{ borderColor: active ? COLOR_HEX[player.color] : undefined }}
@@ -333,12 +344,12 @@ function PlayerCard({
         <img
           src={avatar}
           alt=""
-          className="h-8 w-8 shrink-0 rounded-full border-2 object-cover"
+          className="h-7 w-7 shrink-0 rounded-full border-2 object-cover"
           style={{ borderColor: COLOR_HEX[player.color] }}
         />
       ) : (
         <div
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-full border-2 text-xs font-black"
+          className="grid h-7 w-7 shrink-0 place-items-center rounded-full border-2 text-[10px] font-black"
           style={{ borderColor: COLOR_HEX[player.color], backgroundColor: `${COLOR_HEX[player.color]}44` }}
         >
           {(player.name ?? player.color).slice(0, 1).toUpperCase()}
@@ -347,11 +358,11 @@ function PlayerCard({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[10px] font-black tracking-wide text-white">{player.name ?? player.color}</p>
-        <p className="text-[9px] font-mono text-cyan-300/80">🪙 {player.tokens.filter((t) => t.d === 58).length * 1000 + 7200}</p>
+        <p className="text-[8px] font-mono text-cyan-300/80">🪙 {player.tokens.filter((t) => t.d === 58).length * 1000 + 7200}</p>
       </div>
 
-      <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-1.5">
-        <Gift className="h-3.5 w-3.5 shrink-0" style={{ color: COLOR_HEX[player.color] }} />
+      <button type="button" className="rounded-lg border border-white/10 bg-white/5 p-1">
+        <Gift className="h-3 w-3 shrink-0" style={{ color: COLOR_HEX[player.color] }} />
       </button>
     </div>
   );
