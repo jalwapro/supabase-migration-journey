@@ -127,6 +127,10 @@ function PaymentAccounts() {
   const easypaisaQrUrl = String(values.easypaisaQrUrl || "");
   const jazzcashQrUrl = String(values.jazzcashQrUrl || DEFAULT_JAZZCASH_QR);
   const apiEnabled = Boolean(values.jazzcashApiEnabled);
+  const cardGatewayEnabled = Boolean(values.cardGatewayEnabled ?? true);
+  const cardGatewayName = String(values.cardGatewayName || "Safepay");
+  const cardGatewayBaseUrl = String(values.cardGatewayBaseUrl || "https://getsafepay.com");
+  const whatsappRechargeNumber = String(values.whatsappRechargeNumber || "");
 
   return (
     <div>
