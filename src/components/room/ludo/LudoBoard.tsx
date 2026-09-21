@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   Dice1,
   Dice2,
@@ -100,7 +99,7 @@ export function LudoBoard({
         </div>
       </div>
 
-      {/* Top 2 Player Cards (Arslan & Areeba) */}
+      {/* Top 2 Player Cards */}
       <div className="grid grid-cols-2 gap-2 shrink-0">
         {state.players.slice(0, 2).map((p, i) => (
           <PlayerCard
@@ -268,7 +267,7 @@ export function LudoBoard({
         </div>
       </div>
 
-      {/* Bottom 2 Player Cards (Hamza & Sana) */}
+      {/* Bottom 2 Player Cards */}
       <div className="grid grid-cols-2 gap-2 shrink-0">
         {state.players.slice(2, 4).map((p, i) => (
           <PlayerCard
@@ -280,7 +279,7 @@ export function LudoBoard({
         ))}
       </div>
 
-      {/* Control Deck (Undo, Animated Dice Roll, Auto-Move) */}
+      {/* Control Deck */}
       <div className="flex items-center justify-between gap-2 rounded-xl border border-cyan-500/30 bg-black/60 p-2.5 backdrop-blur-xl shrink-0">
         <button type="button" className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-[10px] font-bold transition-all hover:bg-white/10 hover:border-cyan-400/50">
           <RotateCcw className="h-3 w-3 text-cyan-400" /> Undo
