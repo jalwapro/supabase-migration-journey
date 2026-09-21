@@ -34,14 +34,9 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    setMediaFailed(false); setFallbackSrc(null); setFallbackType(null); setFlyTarget(null);
+    let cancelled = false; setMediaFailed(false); setFallbackSrc(null); setFallbackType(null); setFlyTarget(null);
     if (!active) return;
-    if (isSmallGift(active)) {
-      const svg = svgCandidates(active)[0];
-      if (svg && !cancelled) setFallbackSrc(svg);
-      return () => { cancelled = true; };
-    }
+    if (isSmallGift(active)) { const svg = svgCandidates(active)[0]; if (svg && !cancelled) setFallbackSrc(svg); return () => { cancelled = true; }; }
     const primary = assetUrl(active.gift_clip_path) ?? assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon);
     if (primary) return;
     const candidates = giftAssetCandidates(active.gift_name);
@@ -51,8 +46,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     if (!active || !mediaFailed || isSmallGift(active)) return;
-    let cancelled = false;
-    const candidates = giftAssetCandidates(active.gift_name);
+    let cancelled = false; const candidates = giftAssetCandidates(active.gift_name);
     (async () => { for (const candidate of candidates) { if (assetUrl(active.gift_clip_path) === candidate) continue; try { const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" }); if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); setMediaFailed(false); return; } } catch {} } })();
     return () => { cancelled = true; };
   }, [mediaFailed, active?.id, active?.gift_name, active?.gift_clip_path, active?.gift_price_coins]);
@@ -61,23 +55,15 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     let cancelled = false;
     const resolveTarget = async () => {
       if (!active || !isSmallGift(active)) return;
-      const targetId = active.receiver_ids?.find(Boolean) ?? active.receiver_id ?? null;
-      if (!targetId) return;
-      const { data: profile } = await supabase.from("profiles").select("username,avatar").eq("id", targetId).maybeSingle();
-      if (cancelled) return;
-      const username = typeof profile?.username === "string" ? profile.username : null;
-      const avatar = typeof profile?.avatar === "string" ? profile.avatar : null;
+      const targetId = active.receiver_ids?.find(Boolean) ?? active.receiver_id ?? null; if (!targetId) return;
+      const { data: profile } = await supabase.from("profiles").select("username,avatar").eq("id", targetId).maybeSingle(); if (cancelled) return;
+      const username = typeof profile?.username === "string" ? profile.username : null; const avatar = typeof profile?.avatar === "string" ? profile.avatar : null;
       let target: HTMLElement | null = null;
       if (avatar) target = document.querySelector<HTMLElement>(`img[src="${CSS.escape(avatar)}"]`);
       if (!target && username) target = document.querySelector<HTMLElement>(`img[alt="${CSS.escape(username)}"]`);
-      if (!target) { setFlyTarget(null); return; }
-      const rect = target.getBoundingClientRect();
-      setFlyTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+      if (!target) { setFlyTarget(null); return; } const rect = target.getBoundingClientRect(); setFlyTarget({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
     };
-    void resolveTarget();
-    const timer = window.setTimeout(() => void resolveTarget(), 100);
-    window.addEventListener("resize", resolveTarget);
-    window.addEventListener("scroll", resolveTarget, true);
+    void resolveTarget(); const timer = window.setTimeout(() => void resolveTarget(), 100); window.addEventListener("resize", resolveTarget); window.addEventListener("scroll", resolveTarget, true);
     return () => { cancelled = true; window.clearTimeout(timer); window.removeEventListener("resize", resolveTarget); window.removeEventListener("scroll", resolveTarget, true); };
   }, [active?.id, active?.receiver_id, active?.receiver_ids, active?.gift_price_coins]);
 
@@ -91,45 +77,29 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
         if (!alive) return;
         const d = (message.payload ?? {}) as Record<string, unknown>;
         if (typeof d.roomId === "string" && d.roomId !== roomId) return;
-        const id = typeof d.id === "string" ? d.id : null;
-        if (!id || localEchoRef.current.has(id)) return;
+        const id = typeof d.id === "string" ? d.id : null; if (!id || localEchoRef.current.has(id)) return;
         const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
         const row: GiftRow = {
-          id, room_id: roomId,
-          sender_id: typeof d.senderId === "string" ? d.senderId : null,
-          receiver_id: typeof d.receiverId === "string" ? d.receiverId : null,
-          receiver_ids: targets,
-          gift_id: typeof d.giftId === "string" ? d.giftId : null,
-          gift_name: typeof d.giftName === "string" ? d.giftName : "Gift",
-          gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁",
-          gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null,
-          gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null,
-          gift_clip_path: typeof d.giftClipPath === "string" ? d.giftClipPath : null,
-          gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null,
-          gift_price_coins: num(d.giftPriceCoins, 0) || null,
-          gift_duration_ms: num(d.giftDurationMs, 0) || null,
-          gift_audio_url: typeof d.giftAudioUrl === "string" ? d.giftAudioUrl : null,
-          gift_sound_url: typeof d.giftSoundUrl === "string" ? d.giftSoundUrl : null,
-          gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null,
-          gift_loop: typeof d.giftLoop === "boolean" ? d.giftLoop : false,
-          quantity: num(d.quantity, 1),
-          sender_username: typeof d.senderName === "string" ? d.senderName : "User",
+          id, room_id: roomId, sender_id: typeof d.senderId === "string" ? d.senderId : null, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets,
+          gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁",
+          gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipPath === "string" ? d.giftClipPath : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null,
+          gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_duration_ms: num(d.giftDurationMs, 0) || null, gift_audio_url: typeof d.giftAudioUrl === "string" ? d.giftAudioUrl : null, gift_sound_url: typeof d.giftSoundUrl === "string" ? d.giftSoundUrl : null,
+          gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: typeof d.giftLoop === "boolean" ? d.giftLoop : false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User",
         };
-        void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+        // Broadcast already contains the complete render/media payload. Do not
+        // wait for a per-client gifts-table query: that made sender/receiver
+        // start at different times. The database listener remains the fallback.
+        enqueue(row);
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
         if (!alive) return;
-        const row = payload.new as GiftRow;
-        if (!row?.id || localEchoRef.current.has(row.id)) return;
+        const row = payload.new as GiftRow; if (!row?.id || localEchoRef.current.has(row.id)) return;
         void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
       })
       .subscribe();
     const onLocalGift = (event: Event) => {
-      const d = (event as CustomEvent).detail as Record<string, unknown> | undefined;
-      if (!d) return;
+      const d = (event as CustomEvent).detail as Record<string, unknown> | undefined; if (!d) return;
       const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
-      // The sender must always see their own gift animation. Targets are only
-      // used to locate the receiving seat, not to suppress sender playback.
       const isLocalSender = localUserId && typeof d.senderId === "string" && d.senderId === localUserId;
       if (targets.length && localUserId && !targets.includes(localUserId) && !isLocalSender && d.local !== true) return;
       const key = typeof d.key === "string" ? d.key : `local-${crypto.randomUUID()}`;
@@ -137,7 +107,9 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       for (const eventId of eventIds) { if (eventId === key) continue; seenRef.current.add(eventId); seenOrderRef.current.push(eventId); }
       localEchoRef.current.add(key);
       const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_icon_path: null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" };
-      void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+      // Use the broadcast payload directly so the sender does not wait for a
+      // second database read before starting playback.
+      enqueue(row);
     };
     window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
     return () => { alive = false; void supabase.removeChannel(channel); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
@@ -147,18 +119,14 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
   if (!active) return null;
-  const small = isSmallGift(active);
-  const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
-  const primaryClip = assetUrl(active.gift_clip_path);
-  const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
+  const small = isSmallGift(active); const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
+  const primaryClip = assetUrl(active.gift_clip_path); const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
   const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (primaryClip ?? fallbackSrc);
   const mediaType = fallbackSrc && !primaryClip ? fallbackType : giftAssetType(src ?? "");
   const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
   const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
-  const image = svg ? src : primaryImage;
-  const fallbackImage = assetUrl(active.gift_icon);
-  const stageStyle = renderConfigToStyle(cfg);
+  const image = svg ? src : primaryImage; const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
   const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
   const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" ");
   const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop };
@@ -168,15 +136,9 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const handleSvgError = () => { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(finish, 1200); };
 
   if (small) {
-    const startX = typeof window !== "undefined" ? window.innerWidth * 0.5 : 0;
-    const startY = typeof window !== "undefined" ? window.innerHeight * 0.72 : 0;
-    const endX = flyTarget?.x ?? startX;
-    const endY = flyTarget?.y ?? startY;
-    const deltaX = endX - startX;
-    const deltaY = endY - startY;
-    return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite">
-      {src && <img key={`${active.id}:${src}:${endX}:${endY}`} src={src} alt={active.gift_name ?? "Gift"} className="absolute h-14 w-14 object-contain drop-shadow-[0_4px_12px_rgba(255,255,255,0.45)]" style={{ left: startX - 28, top: startY - 28, transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${flyTarget ? 0.38 : 1})`, opacity: flyTarget ? 0.15 : 1, transition: flyTarget ? "transform 850ms cubic-bezier(.2,.8,.2,1), opacity 850ms ease" : "none" }} onError={handleSvgError} />}
-    </div>);
+    const startX = typeof window !== "undefined" ? window.innerWidth * 0.5 : 0; const startY = typeof window !== "undefined" ? window.innerHeight * 0.72 : 0;
+    const endX = flyTarget?.x ?? startX; const endY = flyTarget?.y ?? startY; const deltaX = endX - startX; const deltaY = endY - startY;
+    return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite">{src && <img key={`${active.id}:${src}:${endX}:${endY}`} src={src} alt={active.gift_name ?? "Gift"} className="absolute h-14 w-14 object-contain drop-shadow-[0_4px_12px_rgba(255,255,255,0.45)]" style={{ left: startX - 28, top: startY - 28, transform: `translate3d(${deltaX}px, ${deltaY}px, 0) scale(${flyTarget ? 0.38 : 1})`, opacity: flyTarget ? 0.15 : 1, transition: flyTarget ? "transform 850ms cubic-bezier(.2,.8,.2,1), opacity 850ms ease" : "none" }} onError={handleSvgError} />}</div>);
   }
 
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
