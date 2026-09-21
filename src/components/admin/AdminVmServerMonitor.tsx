@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Activity, Cpu, HardDrive, Loader2, MemoryStick, Network, RefreshCw, Server, Users, Radio, AlertTriangle, CheckCircle2, Mic, ShieldAlert } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -50,7 +50,7 @@ function StatusPill({ status, label }: { status: ServiceStatus; label: string })
   const text = status === "online" ? "ONLINE" : status === "offline" ? "OFFLINE" : "SETUP";
   return <span className={`inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] ${tone}`}><span className={`h-1.5 w-1.5 rounded-full ${status === "online" ? "animate-pulse bg-emerald-300" : status === "offline" ? "bg-red-300" : "bg-amber-300"}`} />{label} · {text}</span>;
 }
-function HudCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+function HudCard({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`relative overflow-hidden rounded-xl border border-white/10 bg-black/30 backdrop-blur-xl shadow-[0_12px_50px_rgba(0,0,0,0.22)] ${className}`}>{children}</div>;
 }
 function MetricCard({ icon: Icon, label, value, sub, percent, accent = "violet" }: { icon: typeof Cpu; label: string; value: string; sub?: string; percent?: number; accent?: "violet" | "cyan" | "green" | "amber" }) {
