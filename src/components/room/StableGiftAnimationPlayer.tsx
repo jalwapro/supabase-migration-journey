@@ -86,16 +86,44 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     let alive = true;
-    const channel = supabase.channel(`gift-player-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
-      if (!alive) return;
-      const row = payload.new as GiftRow;
-      if (!row?.id) return;
-      // Room gifts are room-wide playback events. receiver_id/receiver_ids only
-      // identify the target seat; they must not prevent other room members from
-      // seeing the gift animation.
-      if (localEchoRef.current.has(row.id)) return;
-      void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
-    }).subscribe();
+    const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true } } })
+      .on("broadcast", { event: "gift_play" }, (message) => {
+        if (!alive) return;
+        const d = (message.payload ?? {}) as Record<string, unknown>;
+        if (typeof d.roomId === "string" && d.roomId !== roomId) return;
+        const id = typeof d.id === "string" ? d.id : null;
+        if (!id || localEchoRef.current.has(id)) return;
+        const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
+        const row: GiftRow = {
+          id, room_id: roomId,
+          sender_id: typeof d.senderId === "string" ? d.senderId : null,
+          receiver_id: typeof d.receiverId === "string" ? d.receiverId : null,
+          receiver_ids: targets,
+          gift_id: typeof d.giftId === "string" ? d.giftId : null,
+          gift_name: typeof d.giftName === "string" ? d.giftName : "Gift",
+          gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁",
+          gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null,
+          gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null,
+          gift_clip_path: typeof d.giftClipPath === "string" ? d.giftClipPath : null,
+          gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null,
+          gift_price_coins: num(d.giftPriceCoins, 0) || null,
+          gift_duration_ms: num(d.giftDurationMs, 0) || null,
+          gift_audio_url: typeof d.giftAudioUrl === "string" ? d.giftAudioUrl : null,
+          gift_sound_url: typeof d.giftSoundUrl === "string" ? d.giftSoundUrl : null,
+          gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null,
+          gift_loop: typeof d.giftLoop === "boolean" ? d.giftLoop : false,
+          quantity: num(d.quantity, 1),
+          sender_username: typeof d.senderName === "string" ? d.senderName : "User",
+        };
+        void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+      })
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
+        if (!alive) return;
+        const row = payload.new as GiftRow;
+        if (!row?.id || localEchoRef.current.has(row.id)) return;
+        void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+      })
+      .subscribe();
     const onLocalGift = (event: Event) => {
       const d = (event as CustomEvent).detail as Record<string, unknown> | undefined;
       if (!d) return;
