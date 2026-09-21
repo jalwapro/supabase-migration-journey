@@ -512,8 +512,8 @@ export function GiftGLVideo({
                 objectFit,
                 filter: cssFilter,
                 mixBlendMode: mode === 2 ? "screen" : undefined,
-                opacity: ready ? 1 : 0,
-                transition: "opacity 240ms ease-out",
+                opacity: 1,
+                transition: "none",
               }
             : { position: "absolute", width: 1, height: 1, opacity: 0, pointerEvents: "none" }
         }
@@ -525,8 +525,8 @@ export function GiftGLVideo({
           style={{
             ...style,
             objectFit,
-            opacity: ready ? 1 : 0,
-            transition: "opacity 240ms ease-out",
+            opacity: 1,
+            transition: "none",
             willChange: "opacity",
           }}
         />
