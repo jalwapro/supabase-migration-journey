@@ -14,6 +14,13 @@ const isSvga = (src: string | null, type?: string | null) => { const s = cleanUr
 const isSvg = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svg") || (type ?? "").toLowerCase() === "svg"); };
 const isSmallGift = (row: GiftRow) => { const price = Number(row.gift_price_coins); return Number.isFinite(price) && price >= 10 && price <= 300; };
 const svgCandidates = (row: GiftRow) => [row.gift_clip_path, row.gift_icon_path, row.gift_image_url, row.gift_icon, ...giftAssetCandidates(row.gift_name)].map(assetUrl).filter((v): v is string => !!v && isSvg(v));
+const requiresGpuGiftRenderer = (cfg: GiftRenderConfig) => Boolean(
+  (cfg.chromaMode !== "off" && cfg.chromaMode !== "auto") ||
+  cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ||
+  cfg.brightness || cfg.contrast || cfg.temperature || cfg.tint || cfg.highlights || cfg.shadows ||
+  cfg.exposure || cfg.hue || cfg.blurRadius || cfg.blurTop || cfg.blurBottom || cfg.blurLeft || cfg.blurRight ||
+  cfg.sharpness || cfg.denoise || cfg.edgeCleanup || cfg.spillSuppression || cfg.colorRecovery || cfg.contrastRecovery
+);
 
 export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [active, setActive] = useState<GiftRow | null>(null);
@@ -143,7 +150,11 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
     {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
-      : video && src && !mediaFailed ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} />
+      : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} />
+      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={false} loop={false} className="h-full w-full" style={mediaStyle}
+          onLoadedMetadata={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) handleDuration(Math.ceil(d * 1000)); }}
+          onCanPlay={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
+          onEnded={finish} onError={handleMediaError} />
       : svg && image && !mediaFailed ? <img key={`${active.id}:${image}`} src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={handleSvgError} />
       : image && !mediaFailed ? <img src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={() => { if (fallbackImage && image !== fallbackImage) { setFallbackSrc(fallbackImage); setFallbackType("image"); setMediaFailed(false); return; } finish(); }} />
       : src && !mediaFailed ? <img src={src} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={finish} />
