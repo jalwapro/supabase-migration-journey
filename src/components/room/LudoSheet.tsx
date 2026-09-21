@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { LudoBoard } from "@/components/room/ludo/LudoBoard";
 import { LudoBetModal } from "@/components/room/LudoBetModal";
-import { JalwaLudoUIWrapper } from "@/components/room/JalwaLudoUIWrapper";
 import { activeColorsForMode, applyMove, applyRoll, botChooseToken, createGame, rollDice, type LudoGameState, type LudoMode, type SeatKind } from "@/lib/ludoEngine";
 
 export type LudoPlayer = { id: string; username: string | null; avatar: string | null };
@@ -47,12 +46,8 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
       const packet = payload as RevisionedState | undefined;
       const incoming = packet?.state;
       const revision = Number(packet?.revision);
-      if (!incoming || !Number.isFinite(revision)) return;
-      if (revision <= lastRemoteRevisionRef.current) return;
-      lastRemoteRevisionRef.current = revision;
-      revisionRef.current = revision;
-      setGame(incoming);
-      setStep("play");
+      if (!incoming || !Number.isFinite(revision) || revision <= lastRemoteRevisionRef.current) return;
+      lastRemoteRevisionRef.current = revision; revisionRef.current = revision; setGame(incoming); setStep("play");
     });
     ch.on("broadcast", { event: "sync-request" }, () => {
       if (!isAuthority.current || !gameRef.current) return;
@@ -103,19 +98,14 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     setRolling(true);
     const dice = await serverRoll(state);
     if (dice === null) { setRolling(false); return; }
-    const next = applyRoll(state, dice);
-    setGame(next);
-    broadcastLater(next);
-    setRolling(false);
+    const next = applyRoll(state, dice); setGame(next); broadcastLater(next); setRolling(false);
   }
 
   async function processMove(tokenIndex: number) {
     const state = gameRef.current;
     if (!state || !isAuthority.current || state.winnerIndex !== null || !state.awaitingMove) return;
     if (!(await serverMove(state, tokenIndex))) return;
-    const next = applyMove(state, tokenIndex);
-    setGame(next);
-    broadcastLater(next);
+    const next = applyMove(state, tokenIndex); setGame(next); broadcastLater(next);
   }
 
   useEffect(() => {
@@ -139,7 +129,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     if (!winner) return;
     payoutSettledRef.current = true;
     void supabase.rpc("ludo_close_match", { p_match: matchIdRef.current, p_winner: winner, p_status: "finished" }).then(({ error, data }) => {
-      if (error) { payoutSettledRef.current = false; toast.error("Winner payout could not be settled yet."); console.error("Ludo payout failed", error); return; }
+      if (error) { payoutSettledRef.current = false; toast.error("Winner payout could not be settled yet."); return; }
       toast.success(`Ludo payout settled: ${Number(data ?? 0).toLocaleString()} coins`);
     });
   }, [game]);
@@ -201,19 +191,25 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
 
   return (
     <>
-      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={exit} />
-      <div data-jalwa-overlay-content="true" className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-border bg-card p-5 shadow-2xl" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)", maxHeight: "88vh", overflowY: "auto" }}>
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
-        <div className="mb-4 flex items-center justify-between"><h2 className="flex items-center gap-2 text-lg font-extrabold"><Dice5 className="h-5 w-5 text-[color:var(--primary)]" /> Ludo Battle</h2><button onClick={exit} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full border border-border bg-background/60"><X className="h-4 w-4" /></button></div>
-        {step === "mode" && <ModePicker onPickSolo={startSolo} onPickFriends={openBetModal} />}
-        {step === "waiting" && <div className="grid place-items-center gap-3 py-10"><Loader2 className="h-6 w-6 animate-spin text-[color:var(--gold)]" /><p className="text-xs text-muted-foreground">Waiting for the match to start…</p><button onClick={() => setStep("mode")} className="text-xs text-muted-foreground underline">Back</button></div>}
-        {step === "play" && game && <div>
-          <button onClick={() => setStep("mode")} className="mb-2 flex items-center gap-1 text-[11px] text-muted-foreground"><ArrowLeft className="h-3 w-3" /> New match</button>
-          <JalwaLudoUIWrapper state={game} myPlayerIndex={myPlayerIndex} rolling={rolling} onRoll={onRoll} onExit={exit} userCoins={balance} roomBet={activeBet}>
-            <LudoBoard state={game} myPlayerIndex={myPlayerIndex} rolling={rolling} onRoll={onRoll} onPickToken={onPickToken} />
-          </JalwaLudoUIWrapper>
-          {game.winnerIndex !== null && <div className="mt-3 rounded-2xl border border-[color:var(--gold)]/50 bg-[color:var(--gold)]/10 p-3 text-center"><Trophy className="mx-auto mb-1 h-5 w-5 text-[color:var(--gold)]" /><p className="text-sm font-black">{game.mode === "2v2" ? `Team ${game.winningTeam} wins!` : `${game.players[game.winnerIndex].name ?? game.players[game.winnerIndex].color} wins!`}</p></div>}
-        </div>}
+      <div data-jalwa-overlay="true" className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md" onClick={exit} />
+      <div data-jalwa-overlay-content="true" className="fixed inset-x-0 bottom-0 z-50 mx-auto w-full max-w-[500px] overflow-y-auto rounded-t-[30px] border-t border-white/10 bg-[#090811] shadow-[0_-20px_80px_rgba(0,0,0,.65)]" style={{ paddingBottom: "env(safe-area-inset-bottom)", maxHeight: "96vh" }}>
+        <div className="mx-auto mt-2 mb-1 h-1 w-10 rounded-full bg-white/15" />
+        {step === "mode" && (
+          <div className="p-5">
+            <div className="mb-5 flex items-center justify-between">
+              <div><p className="text-[10px] font-black uppercase tracking-[.2em] text-fuchsia-300">Jalwa Games</p><h2 className="mt-1 text-xl font-black">Ludo Battle</h2></div>
+              <button onClick={exit} className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/[.05]"><X className="h-4 w-4"/></button>
+            </div>
+            <ModePicker onPickSolo={startSolo} onPickFriends={openBetModal} />
+          </div>
+        )}
+        {step === "waiting" && <div className="grid place-items-center gap-3 p-12"><Loader2 className="h-7 w-7 animate-spin text-fuchsia-300"/><p className="text-xs text-white/50">Waiting for the match to start…</p><button onClick={() => setStep("mode")} className="text-xs text-white/45 underline">Back</button></div>}
+        {step === "play" && game && (
+          <div className="p-2">
+            <button onClick={() => setStep("mode")} className="mb-1 ml-2 flex items-center gap-1 text-[10px] font-bold text-white/40"><ArrowLeft className="h-3 w-3"/> New match</button>
+            <LudoBoard state={game} myPlayerIndex={myPlayerIndex} rolling={rolling} onRoll={onRoll} onPickToken={onPickToken} onExit={exit} userCoins={balance} roomBet={activeBet} />
+          </div>
+        )}
       </div>
       <LudoBetModal open={betModalOpen} balance={balance} onClose={() => setBetModalOpen(false)} onConfirm={(value) => startWithFriends(pendingMode, value)} />
     </>
@@ -228,5 +224,28 @@ const LUDO_MODES: { mode: LudoMode; label: string; hint: string }[] = [
 
 function ModePicker({ onPickSolo, onPickFriends }: { onPickSolo: (mode: LudoMode) => void; onPickFriends: (mode: LudoMode) => void }) {
   const [mode, setMode] = useState<LudoMode>("2p");
-  return <div className="space-y-4"><div><p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-muted-foreground">Mode</p><div className="grid grid-cols-3 gap-2">{LUDO_MODES.map((m) => <button key={m.mode} onClick={() => setMode(m.mode)} className={`rounded-2xl border px-2 py-3 text-center transition active:scale-95 ${m.mode === mode ? "border-[color:var(--primary)] bg-[color:var(--primary)]/15" : "border-border bg-background/50"}`}><p className="text-sm font-black">{m.label}</p><p className="text-[10px] text-muted-foreground">{m.hint}</p></button>)}</div></div><div className="rounded-2xl border border-border bg-background/40 p-3 text-xs text-muted-foreground">Room betting charges every seated human player atomically. The complete funded pool is paid to the verified winner.</div><div className="grid grid-cols-2 gap-2"><button onClick={() => onPickSolo(mode)} className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-background/60 py-3 text-sm font-black active:scale-95"><Bot className="h-4 w-4" /> Practice</button><button onClick={() => onPickFriends(mode)} className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] py-3 text-sm font-black text-primary-foreground active:scale-95"><Users className="h-4 w-4" /> Bet & Play</button></div></div>;
+  const selected = LUDO_MODES.find(m => m.mode === mode)!;
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-2">
+        {LUDO_MODES.map(m => (
+          <button key={m.mode} onClick={() => setMode(m.mode)}
+            className={`rounded-2xl border p-3 text-center transition active:scale-[.98] ${m.mode === mode ? "border-fuchsia-400/60 bg-fuchsia-400/10 shadow-[0_0_22px_rgba(217,70,239,.12)]" : "border-white/10 bg-white/[.03]"}`}>
+            <p className="text-sm font-black">{m.label}</p><p className="mt-0.5 text-[9px] text-white/40">{m.hint}</p>
+          </button>
+        ))}
+      </div>
+      <div className="rounded-2xl border border-white/10 bg-white/[.03] p-4">
+        <div className="flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-fuchsia-500/20 to-cyan-400/10 text-xl">🎲</div>
+          <div><p className="text-sm font-black">{selected.label} Ludo</p><p className="text-[10px] text-white/45">{selected.hint} • fast rounds • voice room</p></div>
+        </div>
+        <p className="mt-3 text-[10px] leading-relaxed text-white/35">Practice is free. Bet & Play uses the selected room wager and pays the verified winner.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <button onClick={() => onPickSolo(mode)} className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[.04] py-3.5 text-sm font-black transition active:scale-[.98]"><Bot className="h-4 w-4 text-cyan-300"/> Practice</button>
+        <button onClick={() => onPickFriends(mode)} className="flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-violet-600 py-3.5 text-sm font-black text-white shadow-[0_8px_28px_rgba(168,85,247,.25)] transition active:scale-[.98]"><Users className="h-4 w-4"/> Bet & Play</button>
+      </div>
+    </div>
+  );
 }
