@@ -179,9 +179,14 @@ export function LudoBoard({
               if (!coord) return null;
               const canPick = myTurn && myPlayerIndex === pIdx && state.awaitingMove;
               return <button key={`${p.color}-${tIdx}`} type="button" disabled={!canPick} onClick={() => onPickToken(tIdx)}
-                className={`z-[20] grid aspect-square min-w-0 place-items-center rounded-full border-2 border-white text-[8px] font-black text-white transition-transform ${canPick ? "scale-125 animate-pulse ring-2 ring-cyan-200" : ""} ${TOKEN_RING[p.color]}`}
-                style={{gridRow:coord.row+1,gridColumn:coord.col+1,margin:"10%",background:`linear-gradient(135deg,${COLOR_HEX[p.color]},#08080d)`,transform:"translateZ(18px)",boxShadow:`inset -2px -3px 4px rgba(0,0,0,.45),0 6px 8px rgba(0,0,0,.5),0 0 14px ${COLOR_HEX[p.color]}88`}}>
-                {tIdx+1}
+                className={`group relative z-[20] min-w-0 rounded-full border-2 border-white transition-all ${canPick ? "scale-125 animate-pulse ring-2 ring-cyan-200" : ""} ${TOKEN_RING[p.color]}`}
+                style={{gridRow:coord.row+1,gridColumn:coord.col+1,margin:"3%",aspectRatio:"1",background:`linear-gradient(145deg,${COLOR_HEX[p.color]} 10%,#08080d 85%)`,transform:"translateZ(22px)",boxShadow:`inset 3px 3px 5px rgba(255,255,255,.35),inset -4px -5px 7px rgba(0,0,0,.55),0 8px 10px rgba(0,0,0,.65),0 0 16px ${COLOR_HEX[p.color]}aa`}}>
+                <span className="absolute inset-[10%] overflow-hidden rounded-full border border-white/70 bg-black/30 shadow-[inset_0_2px_4px_rgba(255,255,255,.3)]">
+                  {p.avatar ? <img src={p.avatar} alt="" className="h-full w-full object-cover" /> : <span className="grid h-full w-full place-items-center text-[clamp(7px,1.8vw,11px)] font-black text-white">{(p.name ?? p.color).slice(0,1).toUpperCase()}</span>}
+                </span>
+                <span className="absolute -top-[48%] left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/15 bg-black/85 px-1.5 py-0.5 text-[clamp(6px,1.5vw,9px)] font-black text-white shadow-lg">{p.name ?? p.color}</span>
+                <span className="absolute -bottom-[10%] -right-[10%] grid h-[30%] w-[30%] min-h-[9px] min-w-[9px] place-items-center rounded-full border border-black/60 bg-emerald-500 text-white shadow-lg"><Mic2 className="h-[65%] w-[65%]" /></span>
+                <span className="sr-only">{p.name ?? p.color} token {tIdx+1}</span>
               </button>;
             }))}
           </div>
