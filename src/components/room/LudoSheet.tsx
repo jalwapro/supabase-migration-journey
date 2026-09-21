@@ -56,7 +56,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
         kind: "human" as SeatKind,
         userId: row?.userId,
         name: seated?.username ?? (row?.userId === user?.id ? myName : "Player"),
-        avatar: seated?.avatar ?? (row?.userId === user?.id ? (profile?.avatar_url ?? null) : null),
+        avatar: seated?.avatar ?? (row?.userId === user?.id ? (profile?.avatar ?? null) : null),
         tokens: (Array.isArray(row?.tokens) ? row.tokens : [0,0,0,0]).slice(0, 4).map(d => ({ d: Number(d) || 0 })),
       };
     });
