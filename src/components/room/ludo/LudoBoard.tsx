@@ -110,7 +110,8 @@ export function LudoBoard({
 
       <div className="relative z-10 mx-auto w-full max-w-[420px]" style={{ perspective: "1200px" }}>
         <div className="relative aspect-square w-full rounded-[24px] border border-white/10 bg-black/50 p-1.5 shadow-[0_18px_45px_rgba(0,0,0,.55)]" style={{ transform: "rotateX(7deg)", transformStyle: "preserve-3d" }}>
-          <div className="absolute inset-x-2 -bottom-2 h-3 rounded-b-[20px] bg-[#171426] shadow-[0_10px_20px_rgba(0,0,0,.65)]" />\n          <div className="relative z-[2] grid h-full w-full overflow-hidden rounded-[19px] border border-cyan-300/15 bg-[#090914] shadow-[inset_0_0_28px_rgba(255,255,255,.06),0_8px_18px_rgba(0,0,0,.45)]"
+          <div className="absolute inset-x-2 -bottom-2 h-3 rounded-b-[20px] bg-[#171426] shadow-[0_10px_20px_rgba(0,0,0,.65)]" />
+          <div className="relative z-[2] grid h-full w-full overflow-hidden rounded-[19px] border border-cyan-300/15 bg-[#090914] shadow-[inset_0_0_28px_rgba(255,255,255,.06),0_8px_18px_rgba(0,0,0,.45)]"
             style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0,1fr))`, gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0,1fr))` }}>
             
             {(["red","blue","green","yellow"] as LudoColor[]).map((color) => {
