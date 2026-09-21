@@ -251,7 +251,7 @@ export function botChooseToken(
   return scored[0].i;
 }
 
-export const GRID_SIZE = 14;
+export const GRID_SIZE = 15;
 
 export function ringCellCoord(idx: number): { row: number; col: number } {
   const i = ((idx % 52) + 52) % 52;
