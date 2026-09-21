@@ -1502,7 +1502,13 @@ function RoomPage() {
       toast.error("Sign in first");
       return;
     }
-    if (seatIndex === 0 && !isHost) {
+    // Voice rooms use canonical human-facing seat numbers 1..20.
+    // Video rooms keep their existing 0-based internal convention.
+    if (!isVideo && (seatIndex < 1 || seatIndex > 20)) {
+      toast.error("Invalid voice seat number");
+      return;
+    }
+    if (!isVideo && seatIndex === 1 && !isHost) {
       toast.error("Seat 1 is for the host");
       return;
     }
@@ -1573,7 +1579,7 @@ function RoomPage() {
       toast.error(error.message);
       return;
     }
-    toast.success(`Joined seat ${Number(data) + 1} 🎤`);
+    toast.success(`Joined seat ${Number(data)} 🎤`);
   }
 
 
@@ -2171,7 +2177,7 @@ onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost &
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
-onHostTap={() => void onSeatTap(0)}
+onHostTap={() => void onSeatTap(1)}
 onReport={async () => {
   const reason = window.prompt("Report this room?");
   if (reason && reason.trim().length >= 3) {
