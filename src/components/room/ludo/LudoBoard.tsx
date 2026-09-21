@@ -109,8 +109,8 @@ export function LudoBoard({
       )}
 
       <div className="relative z-10 mx-auto w-full max-w-[420px]">
-        <div className="relative aspect-square w-full rounded-[24px] border border-white/10 bg-black/50 p-1.5 shadow-[0_0_40px_rgba(168,85,247,.16)]">
-          <div className="relative grid h-full w-full overflow-hidden rounded-[19px] border border-cyan-300/15 bg-[#090914]"
+        <div className="relative aspect-square w-full rounded-[24px] border border-white/10 bg-black/50 p-1.5 shadow-[0_18px_45px_rgba(0,0,0,.55)]" style={{ transform: "rotateX(7deg)", transformStyle: "preserve-3d" }}>
+          <div className="absolute inset-x-2 -bottom-2 h-3 rounded-b-[20px] bg-[#171426] shadow-[0_10px_20px_rgba(0,0,0,.65)]" />\n          <div className="relative z-[2] grid h-full w-full overflow-hidden rounded-[19px] border border-cyan-300/15 bg-[#090914] shadow-[inset_0_0_28px_rgba(255,255,255,.06),0_8px_18px_rgba(0,0,0,.45)]"
             style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0,1fr))`, gridTemplateRows: `repeat(${GRID_SIZE}, minmax(0,1fr))` }}>
             
             {(["red","blue","green","yellow"] as LudoColor[]).map((color) => {
@@ -179,7 +179,7 @@ export function LudoBoard({
               const canPick = myTurn && myPlayerIndex === pIdx && state.awaitingMove;
               return <button key={`${p.color}-${tIdx}`} type="button" disabled={!canPick} onClick={() => onPickToken(tIdx)}
                 className={`z-[20] grid aspect-square min-w-0 place-items-center rounded-full border-2 border-white text-[8px] font-black text-white transition-transform ${canPick ? "scale-125 animate-pulse ring-2 ring-cyan-200" : ""} ${TOKEN_RING[p.color]}`}
-                style={{gridRow:coord.row+1,gridColumn:coord.col+1,margin:"10%",background:`linear-gradient(135deg,${COLOR_HEX[p.color]},#08080d)`}}>
+                style={{gridRow:coord.row+1,gridColumn:coord.col+1,margin:"10%",background:`linear-gradient(135deg,${COLOR_HEX[p.color]},#08080d)`,transform:"translateZ(18px)",boxShadow:`inset -2px -3px 4px rgba(0,0,0,.45),0 6px 8px rgba(0,0,0,.5),0 0 14px ${COLOR_HEX[p.color]}88`}}>
                 {tIdx+1}
               </button>;
             }))}
