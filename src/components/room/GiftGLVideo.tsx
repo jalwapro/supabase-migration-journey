@@ -489,13 +489,17 @@ export function GiftGLVideo({
           if (onDuration && isFinite(d) && d > 0) onDuration(Math.ceil(d * 1000));
         }}
         onCanPlay={startPlayback}
+        onWaiting={startPlayback}
+        onStalled={startPlayback}
         onPlaying={markReady}
         onEnded={() => {
           const shouldLoop = loop && (loopCount === 0 || completedLoopsRef.current + 1 < loopCount);
           if (shouldLoop) {
             completedLoopsRef.current += 1;
-            v.currentTime = 0;
-            void v.play().catch(() => {});
+            const video = videoRef.current;
+            if (!video) return;
+            video.currentTime = 0;
+            void video.play().catch(() => {});
             return;
           }
           onEnded?.();
