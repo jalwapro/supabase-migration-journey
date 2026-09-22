@@ -8,7 +8,7 @@ import { CheckCircle2, Copy, CreditCard, Image as ImageIcon, Loader2, Smartphone
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
-type Method = "easypaisa" | "jazzcash" | "jazzcash_api" | "card";
+type Method = "easypaisa" | "easypaisa_api" | "jazzcash" | "jazzcash_api" | "card";
 type Tier = "starter" | "popular" | "vip" | "whale";
 type Pkg = { id: string; coins: number; bonus_coins: number; price_pkr: number; label: string | null; badge: string | null; tier: Tier };
 const tiers: { key: Tier; label: string }[] = [{ key: "starter", label: "Starter" }, { key: "popular", label: "Popular" }, { key: "vip", label: "VIP" }, { key: "whale", label: "Whale" }];
@@ -20,7 +20,7 @@ function RechargePage() {
   const [tier, setTier] = useState<Tier>("popular"); const [selectedPkg, setSelectedPkg] = useState<Pkg | null>(null);
   const [method, setMethod] = useState<Method>("card"); const [senderAccount, setSenderAccount] = useState(""); const [cnicLast6, setCnicLast6] = useState("");
   const [txnReference, setTxnReference] = useState(""); const [proofFile, setProofFile] = useState<File | null>(null);
-  const [apiStarted, setApiStarted] = useState(false); const [submitted, setSubmitted] = useState(false);
+  const [apiStarted, setApiStarted] = useState(false); const [easypaisaStarted, setEasypaisaStarted] = useState(false); const [submitted, setSubmitted] = useState(false);
 
   const accounts = useQuery({ queryKey: ["app_kv", "payments"], queryFn: async () => { const { data, error } = await supabase.from("app_kv").select("value").eq("key", "payments").maybeSingle(); if (error) throw error; return (data?.value ?? {}) as Record<string, string>; } });
   const packages = useQuery({ queryKey: ["coin_packages_v2"], queryFn: async () => { const { data, error } = await supabase.from("coin_packages").select("id,coins,bonus_coins,price_pkr,label,badge,tier").eq("active", true).order("sort_order"); if (error) throw error; return (data ?? []) as Pkg[]; } });
@@ -60,7 +60,16 @@ function RechargePage() {
     if (error) throw error; if (!data?.ok) throw new Error(data?.error || data?.response?.pp_ResponseMessage || "JazzCash payment could not be started"); return data;
   }, onSuccess: (data) => { setApiStarted(true); toast.success(`JazzCash request sent: ${data.transactionRef}`); }, onError: (e: Error) => toast.error(e.message) });
 
-  const reset = () => { setSelectedPkg(null); setSenderAccount(""); setCnicLast6(""); setTxnReference(""); setProofFile(null); setApiStarted(false); setSubmitted(false); };
+  const easypaisaSubmit = useMutation({ mutationFn: async () => {
+    if (!selectedPkg) throw new Error("Choose a package");
+    if (!/^03\\d{9}$/.test(senderAccount.trim())) throw new Error("Enter a valid 03xxxxxxxxx Easypaisa number");
+    const { data, error } = await supabase.functions.invoke("easypaisa-gateway", { body: { action: "create_checkout", packageId: selectedPkg.id, mobile: senderAccount.trim() } });
+    if (error) throw error;
+    if (!data?.ok) throw new Error(data?.error || "Easypaisa payment could not be started");
+    return data;
+  }, onSuccess: (data) => { setEasypaisaStarted(true); toast.success(data.message || "Easypaisa payment request sent"); }, onError: (e: Error) => toast.error(e.message) });
+
+  const reset = () => { setSelectedPkg(null); setSenderAccount(""); setCnicLast6(""); setTxnReference(""); setProofFile(null); setApiStarted(false); setEasypaisaStarted(false); setSubmitted(false); };
   return <><AppShell title="Recharge Coins" subtitle="Cards + QR + JazzCash"><div className="space-y-5 px-4 pt-4 pb-8">
     {submitted ? <Success onReset={reset} onWallet={() => navigate({ to: "/wallet" })} /> : <>
       <div className="flex gap-2 overflow-x-auto pb-1">{tiers.map(t => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}</div>
@@ -77,8 +86,12 @@ function RechargePage() {
           </div>
         )}
         <div className="rounded-2xl bg-card/60 p-4"><p className="text-xs text-muted-foreground">You pay</p><p className="text-2xl font-black">Rs {Number(selectedPkg.price_pkr).toLocaleString()}</p><p className="text-sm font-bold text-emerald-400">Receive {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()} coins</p></div>
-        <div className="grid grid-cols-2 gap-2">{(["card", "easypaisa", "jazzcash", "jazzcash_api"] as Method[]).map(m => <button key={m} onClick={() => setMethod(m)} className={`rounded-xl border p-3 text-xs font-black ${method === m ? "border-primary bg-primary/10" : "border-border bg-card/60"}`}><Smartphone className="mx-auto mb-1 h-5 w-5" />{m === "card" ? "Debit / Virtual Card" : m === "jazzcash_api" ? "JazzCash API" : m === "jazzcash" ? "JazzCash QR" : "Easypaisa QR"}</button>)}</div>
-        {method === "card" ? <>
+        <div className="grid grid-cols-2 gap-2">{(["card", "easypaisa_api", "easypaisa", "jazzcash", "jazzcash_api"] as Method[]).map(m => <button key={m} onClick={() => setMethod(m)} className={`rounded-xl border p-3 text-xs font-black ${method === m ? "border-primary bg-primary/10" : "border-border bg-card/60"}`}><Smartphone className="mx-auto mb-1 h-5 w-5" />{m === "card" ? "Debit / Virtual Card" : m === "jazzcash_api" ? "JazzCash API" : m === "easypaisa_api" ? "Easypaisa API" : m === "jazzcash" ? "JazzCash QR" : "Easypaisa QR"}</button>)}</div>
+        {method === "easypaisa_api" ? <>
+          <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4"><div className="flex items-center gap-2"><WalletCards className="h-5 w-5" /><b>Easypaisa API Payment</b></div><p className="mt-2 text-xs text-muted-foreground">Your payment request is created on the server with the selected package amount. Jalwa does not receive your Easypaisa PIN.</p><p className="mt-2 text-[11px] text-muted-foreground">Coins are added only after Easypaisa confirms the transaction; starting a payment request does not credit your wallet.</p></div>
+          <input value={senderAccount} onChange={e => setSenderAccount(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="Your Easypaisa mobile number (03xxxxxxxxx)" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
+          <button disabled={easypaisaSubmit.isPending || easypaisaStarted || !/^03\d{9}$/.test(senderAccount)} onClick={() => easypaisaSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{easypaisaSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}{easypaisaStarted ? "Payment Request Sent" : "Pay with Easypaisa"}</button>
+        </> : method === "card" ? <>
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4"><div className="flex items-center gap-2"><CreditCard className="h-5 w-5" /><b>Secure Card Checkout</b></div><p className="mt-2 text-xs text-muted-foreground">Pay with Visa/Mastercard debit, credit or eligible virtual cards through the secure hosted gateway. Jalwa never receives or stores your card number, CVV or expiry.</p><p className="mt-2 text-[11px] text-muted-foreground">3-D Secure/authentication may be requested by your bank. Coins are added only after the provider confirms payment server-to-server.</p></div>
           <button disabled={cardSubmit.isPending} onClick={() => cardSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{cardSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}{cardSubmit.isPending ? "Opening secure checkout…" : `Pay Rs ${Number(selectedPkg.price_pkr).toLocaleString()} by Card`}</button>
         </> : manualMethod ? <>
