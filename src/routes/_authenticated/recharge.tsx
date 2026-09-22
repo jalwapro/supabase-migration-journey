@@ -18,7 +18,7 @@ const Coin = ({ className = "h-5 w-5" }: { className?: string }) => <img src={co
 function RechargePage() {
   const navigate = useNavigate(); const qc = useQueryClient();
   const [tier, setTier] = useState<Tier>("popular"); const [selectedPkg, setSelectedPkg] = useState<Pkg | null>(null);
-  const [method, setMethod] = useState<Method>("card"); const [senderAccount, setSenderAccount] = useState("");
+  const [method, setMethod] = useState<Method>("card"); const [senderAccount, setSenderAccount] = useState(""); const [cnicLast6, setCnicLast6] = useState("");
   const [txnReference, setTxnReference] = useState(""); const [proofFile, setProofFile] = useState<File | null>(null);
   const [apiStarted, setApiStarted] = useState(false); const [submitted, setSubmitted] = useState(false);
 
@@ -52,13 +52,12 @@ function RechargePage() {
   }, onSuccess: () => { setSubmitted(true); toast.success("Payment submitted for verification"); qc.invalidateQueries({ queryKey: ["profile"] }); }, onError: (e: Error) => toast.error(e.message) });
 
   const apiSubmit = useMutation({ mutationFn: async () => {
-    if (!selectedPkg) throw new Error("Choose a package"); if (!senderAccount.trim()) throw new Error("Enter your JazzCash mobile number"); if (!/^03\d{9}$/.test(senderAccount.trim())) throw new Error("Enter a valid 03xxxxxxxxx JazzCash number");
-    const ref = `JALWA${Date.now()}`;
-    const { data, error } = await supabase.functions.invoke("jazzcash-initiate", { body: { amountPkr: Number(selectedPkg.price_pkr), mobileNumber: senderAccount.trim(), transactionRef: ref, billReference: `RECHARGE-${selectedPkg.id}`, description: `Jalwa Pro ${selectedPkg.price_pkr} PKR recharge` } });
+    if (!selectedPkg) throw new Error("Choose a package"); if (!senderAccount.trim()) throw new Error("Enter your JazzCash mobile number"); if (!/^03\d{9}$/.test(senderAccount.trim())) throw new Error("Enter a valid 03xxxxxxxxx JazzCash number"); if (!/^\d{6}$/.test(cnicLast6.trim())) throw new Error("Enter the last 6 CNIC digits");
+    const { data, error } = await supabase.functions.invoke("jazzcash-initiate", { body: { packageId: selectedPkg.id, mobileNumber: senderAccount.trim(), cnicLast6: cnicLast6.trim() } });
     if (error) throw error; if (!data?.ok) throw new Error(data?.error || data?.response?.pp_ResponseMessage || "JazzCash payment could not be started"); return data;
   }, onSuccess: (data) => { setApiStarted(true); toast.success(`JazzCash request sent: ${data.transactionRef}`); }, onError: (e: Error) => toast.error(e.message) });
 
-  const reset = () => { setSelectedPkg(null); setSenderAccount(""); setTxnReference(""); setProofFile(null); setApiStarted(false); setSubmitted(false); };
+  const reset = () => { setSelectedPkg(null); setSenderAccount(""); setCnicLast6(""); setTxnReference(""); setProofFile(null); setApiStarted(false); setSubmitted(false); };
   return <><AppShell title="Recharge Coins" subtitle="Cards + QR + JazzCash"><div className="space-y-5 px-4 pt-4 pb-8">
     {submitted ? <Success onReset={reset} onWallet={() => navigate({ to: "/wallet" })} /> : <>
       <div className="flex gap-2 overflow-x-auto pb-1">{tiers.map(t => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}</div>
@@ -85,8 +84,8 @@ function RechargePage() {
           <label className="block cursor-pointer rounded-xl border border-dashed border-border bg-card/40 p-4"><div className="flex items-center gap-2 text-sm font-bold"><Upload className="h-4 w-4" />{proofFile ? proofFile.name : "Upload payment screenshot"}</div><input type="file" accept="image/*" className="hidden" onChange={e => setProofFile(e.target.files?.[0] ?? null)} /></label><p className="text-[11px] text-muted-foreground">QR payments remain pending until admin verification. Coins are not credited automatically.</p><button disabled={manualSubmit.isPending || !proofFile || !senderAccount || !txnReference} onClick={() => manualSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{manualSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />} Submit QR Payment</button>
         </> : <>
           <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4"><div className="flex items-center gap-2"><WalletCards className="h-5 w-5" /><b>JazzCash API Payment</b></div><p className="mt-2 text-xs text-muted-foreground">This sends the selected amount to JazzCash through the backend. Your API credentials stay server-side.</p></div>
-          <input value={senderAccount} onChange={e => setSenderAccount(e.target.value)} placeholder="Your JazzCash mobile number (03xxxxxxxxx)" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
-          <p className="text-[11px] text-muted-foreground">Transaction reference is generated by Jalwa. Coins are credited only after verified JazzCash success; an accepted API request is not itself a successful payment.</p><button disabled={apiSubmit.isPending || apiStarted || !senderAccount} onClick={() => apiSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{apiSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}{apiStarted ? "Payment Request Sent" : "Pay with JazzCash API"}</button>
+          <input value={senderAccount} onChange={e => setSenderAccount(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="Your JazzCash mobile number (03xxxxxxxxx)" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" /><input value={cnicLast6} onChange={e => setCnicLast6(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="Last 6 digits of CNIC" inputMode="numeric" maxLength={6} className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
+          <p className="text-[11px] text-muted-foreground">Transaction reference is generated by Jalwa. Coins are credited only after verified JazzCash success; an accepted API request is not itself a successful payment.</p><button disabled={apiSubmit.isPending || apiStarted || !senderAccount || cnicLast6.length !== 6} onClick={() => apiSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{apiSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}{apiStarted ? "Payment Request Sent" : "Pay with JazzCash API"}</button>
         </>}
       </>}
     </>}
