@@ -186,18 +186,28 @@ export function useGlobalRealtime() {
       },
     ]);
 
-    const catalogSubs: Sub[] = APP_REALTIME_TABLES.map((table) => ({ table, filter: "", keys: ["__global_catalog_realtime__"] }));
-    const chCatalog = supabase
-      .channel(`app-catalog:${uid}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "*" }, () => {
-        void qc.invalidateQueries({ refetchType: "active" });
-      })
-      .subscribe((status, error) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          console.warn("[Realtime] app-catalog", status, error);
+    let chCatalog = supabase.channel(`app-catalog:${uid}`);
+    for (const table of APP_REALTIME_TABLES) {
+      chCatalog = (
+        chCatalog as unknown as {
+          on: (
+            type: string,
+            cfg: Record<string, unknown>,
+            cb: () => void,
+          ) => typeof chCatalog;
         }
-        if (status === "SUBSCRIBED") void qc.invalidateQueries({ refetchType: "active" });
-      });
+      ).on(
+        "postgres_changes",
+        { event: "*", schema: "public", table },
+        () => void qc.invalidateQueries({ refetchType: "active" }),
+      );
+    }
+    chCatalog.subscribe((status, error) => {
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        console.warn("[Realtime] app-catalog", status, error);
+      }
+      if (status === "SUBSCRIBED") void qc.invalidateQueries({ refetchType: "active" });
+    });
 
     const ch4 = subscribe(qc, `assets:${uid}`, [
       {
