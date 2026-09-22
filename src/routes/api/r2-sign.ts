@@ -142,6 +142,7 @@ const USER_SCOPED_PREFIXES = [
   "voice-notes",
   "moments",
   "proofs",
+  "recharge-proofs",
   "kyc",
 ];
 
