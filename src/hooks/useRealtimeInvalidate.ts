@@ -41,9 +41,29 @@ export function useRealtimeInvalidate(channelName: string, subs: Sub[]) {
         },
       );
     }
-    ch.subscribe();
+    ch.subscribe((status, error) => {
+      if (status === "SUBSCRIBED") {
+        for (const key of subs.flatMap((s) => s.invalidate)) {
+          void qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key], refetchType: "active" });
+        }
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        console.warn("[Realtime]", channelName, status, error);
+      }
+    });
+
+    const reconcile = () => {
+      if (document.visibilityState !== "visible") return;
+      for (const key of subs.flatMap((s) => s.invalidate)) {
+        void qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key], refetchType: "active" });
+      }
+    };
+    window.addEventListener("online", reconcile);
+    document.addEventListener("visibilitychange", reconcile);
+
     return () => {
       void supabase.removeChannel(ch);
+      window.removeEventListener("online", reconcile);
+      document.removeEventListener("visibilitychange", reconcile);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [channelName, JSON.stringify(subs)]);
