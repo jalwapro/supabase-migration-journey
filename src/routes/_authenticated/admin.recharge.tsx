@@ -18,6 +18,7 @@ function extractProofPath(url: string): string | null {
   const marker = "/recharge-proofs/";
   const i = url.indexOf(marker);
   if (i >= 0) return url.slice(i + marker.length).split("?")[0];
+  if (url.startsWith("storage://recharge-proofs/")) return url.slice("storage://recharge-proofs/".length).split("?")[0];
   // Already a bare path.
   if (!url.startsWith("http")) return url.replace(/^\/+/, "");
   return null;
