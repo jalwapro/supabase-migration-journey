@@ -178,9 +178,12 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
     {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
       : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} />
-      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={false} loop={false} className="h-full w-full" style={mediaStyle}
+      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={false} loop={loop} className="h-full w-full" style={mediaStyle}
           onLoadedMetadata={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) handleDuration(Math.ceil(d * 1000)); }}
+          onLoadedData={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
           onCanPlay={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
+          onWaiting={e => { const v = e.currentTarget; window.setTimeout(() => { if (!v.paused && !v.ended) return; void v.play().catch(() => {}); }, 250); }}
+          onStalled={e => { const v = e.currentTarget; window.setTimeout(() => { if (!v.paused && !v.ended) return; void v.play().catch(() => {}); }, 500); }}
           onEnded={finish} onError={handleMediaError} />
       : svg && image && !mediaFailed ? <img key={`${active.id}:${image}`} src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={handleSvgError} />
       : image && !mediaFailed ? <img src={image} alt={active.gift_name ?? "Gift"} className="h-full w-full" style={mediaStyle} onError={() => { if (fallbackImage && image !== fallbackImage) { setFallbackSrc(fallbackImage); setFallbackType("image"); setMediaFailed(false); return; } finish(); }} />
