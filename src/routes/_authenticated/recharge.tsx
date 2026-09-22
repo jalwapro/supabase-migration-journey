@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
@@ -20,7 +20,7 @@ function RechargePage() {
   const [tier, setTier] = useState<Tier>("popular"); const [selectedPkg, setSelectedPkg] = useState<Pkg | null>(null);
   const [method, setMethod] = useState<Method>("card"); const [senderAccount, setSenderAccount] = useState(""); const [cnicLast6, setCnicLast6] = useState("");
   const [txnReference, setTxnReference] = useState(""); const [proofFile, setProofFile] = useState<File | null>(null);
-  const [apiStarted, setApiStarted] = useState(false); const [easypaisaStarted, setEasypaisaStarted] = useState(false); const [submitted, setSubmitted] = useState(false);
+  const [apiStarted, setApiStarted] = useState(false); const [easypaisaStarted, setEasypaisaStarted] = useState(false); const [easypaisaOrderId, setEasypaisaOrderId] = useState<string | null>(null); const [submitted, setSubmitted] = useState(false);
 
   const accounts = useQuery({ queryKey: ["app_kv", "payments"], queryFn: async () => { const { data, error } = await supabase.from("app_kv").select("value").eq("key", "payments").maybeSingle(); if (error) throw error; return (data?.value ?? {}) as Record<string, string>; } });
   const packages = useQuery({ queryKey: ["coin_packages_v2"], queryFn: async () => { const { data, error } = await supabase.from("coin_packages").select("id,coins,bonus_coins,price_pkr,label,badge,tier").eq("active", true).order("sort_order"); if (error) throw error; return (data ?? []) as Pkg[]; } });
@@ -67,9 +67,30 @@ function RechargePage() {
     if (error) throw error;
     if (!data?.ok) throw new Error(data?.error || "Easypaisa payment could not be started");
     return data;
-  }, onSuccess: (data) => { setEasypaisaStarted(true); toast.success(data.message || "Easypaisa payment request sent"); }, onError: (e: Error) => toast.error(e.message) });
+  }, onSuccess: (data) => { setEasypaisaStarted(true); setEasypaisaOrderId(data.orderId); toast.success(data.message || "Easypaisa payment request sent"); }, onError: (e: Error) => toast.error(e.message) });
 
-  const reset = () => { setSelectedPkg(null); setSenderAccount(""); setCnicLast6(""); setTxnReference(""); setProofFile(null); setApiStarted(false); setEasypaisaStarted(false); setSubmitted(false); };
+  useEffect(() => {
+    if (!easypaisaStarted || !easypaisaOrderId) return;
+    let stopped = false;
+    let attempts = 0;
+    const check = async () => {
+      if (stopped || attempts++ >= 36) return;
+      try {
+        const { data, error } = await supabase.functions.invoke("easypaisa-gateway", { body: { action: "verify", orderId: easypaisaOrderId } });
+        if (error) throw error;
+        if (data?.status === "PAID") {
+          stopped = true; setEasypaisaStarted(false); setSubmitted(true); qc.invalidateQueries({ queryKey: ["profile"] }); toast.success("Easypaisa payment verified and coins credited");
+        } else if (data?.status === "FAILED" || data?.status === "REVERSED" || data?.status === "BLOCKED" || data?.status === "EXPIRED") {
+          stopped = true; setEasypaisaStarted(false); toast.error("Easypaisa payment was not completed");
+        }
+      } catch {}
+    };
+    check();
+    const timer = window.setInterval(check, 5000);
+    return () => { stopped = true; window.clearInterval(timer); };
+  }, [easypaisaStarted, easypaisaOrderId, qc]);
+
+  const reset = () => { setSelectedPkg(null); setSenderAccount(""); setCnicLast6(""); setTxnReference(""); setProofFile(null); setApiStarted(false); setEasypaisaStarted(false); setEasypaisaOrderId(null); setSubmitted(false); };
   return <><AppShell title="Recharge Coins" subtitle="Cards + QR + JazzCash"><div className="space-y-5 px-4 pt-4 pb-8">
     {submitted ? <Success onReset={reset} onWallet={() => navigate({ to: "/wallet" })} /> : <>
       <div className="flex gap-2 overflow-x-auto pb-1">{tiers.map(t => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}</div>
