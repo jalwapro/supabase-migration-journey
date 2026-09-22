@@ -25,6 +25,7 @@ async function save(req:Request,body:any){
   const u=await userFromRequest(req); if(!u)return json({error:"Authentication required"},401);
   if(!(await isAdmin(u.id)))return json({error:"Admin access required"},403);
   const c=body.config??{},s=body.secret??{};
+  const {data:existingSecret}=await admin.from("payment_gateway_secrets").select("merchant_id,store_id,hash_key,partner_username,partner_password,rsa_private_key").eq("provider","easypaisa").maybeSingle();
   const value={
     enabled:!!c.enabled,
     environment:c.environment==="production"?"production":"sandbox",
@@ -40,9 +41,9 @@ async function save(req:Request,body:any){
   const {error}=await admin.from("app_kv").upsert({key:"easypaisa_gateway",value});
   if(error)return json({error:"Unable to save Easypaisa configuration"},400);
   const {error:secretError}=await admin.from("payment_gateway_secrets").upsert({
-    provider:"easypaisa",merchant_id:s.merchantId||c.merchantId||null,store_id:s.storeId||c.storeId||null,
-    hash_key:s.hashKey||null,partner_username:s.partnerUsername||null,partner_password:s.partnerPassword||null,
-    rsa_private_key:s.rsaPrivateKey||null,updated_at:new Date().toISOString(),updated_by:u.id
+    provider:"easypaisa",merchant_id:s.merchantId||c.merchantId||existingSecret?.merchant_id||null,store_id:s.storeId||c.storeId||existingSecret?.store_id||null,
+    hash_key:s.hashKey||existingSecret?.hash_key||null,partner_username:s.partnerUsername||existingSecret?.partner_username||null,partner_password:s.partnerPassword||existingSecret?.partner_password||null,
+    rsa_private_key:s.rsaPrivateKey||existingSecret?.rsa_private_key||null,updated_at:new Date().toISOString(),updated_by:u.id
   });
   if(secretError)return json({error:"Unable to save private gateway credentials"},400);
   return json({ok:true,message:"Easypaisa gateway configuration saved"});
