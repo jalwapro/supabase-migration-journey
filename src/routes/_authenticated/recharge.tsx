@@ -53,7 +53,10 @@ function RechargePage() {
 
   const apiSubmit = useMutation({ mutationFn: async () => {
     if (!selectedPkg) throw new Error("Choose a package"); if (!senderAccount.trim()) throw new Error("Enter your JazzCash mobile number"); if (!/^03\d{9}$/.test(senderAccount.trim())) throw new Error("Enter a valid 03xxxxxxxxx JazzCash number"); if (!/^\d{6}$/.test(cnicLast6.trim())) throw new Error("Enter the last 6 CNIC digits");
-    const { data, error } = await supabase.functions.invoke("jazzcash-initiate", { body: { packageId: selectedPkg.id, mobileNumber: senderAccount.trim(), cnicLast6: cnicLast6.trim() } });
+    const ref = `JALWA${Date.now()}`;
+    const { error: orderError } = await supabase.rpc("create_jazzcash_recharge_order", { _package_id: selectedPkg.id, _account_ref: senderAccount.trim(), _gateway_order_ref: ref });
+    if (orderError) throw orderError;
+    const { data, error } = await supabase.functions.invoke("jazzcash-initiate", { body: { amountPkr: Number(selectedPkg.price_pkr), mobileNumber: senderAccount.trim(), cnicLast6: cnicLast6.trim(), transactionRef: ref, billReference: `RECHARGE-${selectedPkg.id}`, description: `Jalwa Pro ${selectedPkg.price_pkr} PKR recharge` } });
     if (error) throw error; if (!data?.ok) throw new Error(data?.error || data?.response?.pp_ResponseMessage || "JazzCash payment could not be started"); return data;
   }, onSuccess: (data) => { setApiStarted(true); toast.success(`JazzCash request sent: ${data.transactionRef}`); }, onError: (e: Error) => toast.error(e.message) });
 
