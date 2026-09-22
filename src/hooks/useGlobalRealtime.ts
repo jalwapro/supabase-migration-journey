@@ -279,18 +279,11 @@ export function useGlobalRealtime() {
       )
       .subscribe();
 
-    return () => {
-      void supabase.removeChannel(ch1);
-      void supabase.removeChannel(ch2);
-      void supabase.removeChannel(ch3);
-      void supabase.removeChannel(ch3b);
-      void supabase.removeChannel(ch3c);
-      void supabase.removeChannel(chPopularity);
-      void supabase.removeChannel(ch4);
-      void supabase.removeChannel(chCatalog);
-      void supabase.removeChannel(chNotif);
+    const reconcile = () => {
+      if (document.visibilityState === "visible") {
+        void qc.invalidateQueries({ refetchType: "active" });
+      }
     };
-    const reconcile = () => { if (document.visibilityState === "visible") void qc.invalidateQueries({ refetchType: "active" }); };
     window.addEventListener("online", reconcile);
     document.addEventListener("visibilitychange", reconcile);
 
