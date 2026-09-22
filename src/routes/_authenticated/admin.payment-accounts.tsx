@@ -34,6 +34,7 @@ function PaymentAccounts() {
 
   const [values, setValues] = useState<Payments>({});
   const [uploading, setUploading] = useState(false);
+  const [easypaisaSecret, setEasypaisaSecret] = useState("");
 
   useEffect(() => {
     if (setting.data) {
@@ -87,6 +88,29 @@ function PaymentAccounts() {
         .maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("Payment settings could not be saved. Admin permission is required.");
+      const ep = {
+        enabled: Boolean(values.easypaisaGatewayEnabled),
+        environment: String(values.easypaisaGatewayEnvironment || "sandbox"),
+        storeId: String(values.easypaisaGatewayStoreId || ""),
+        accountNum: String(values.easypaisaGatewayAccountNum || ""),
+        accountTitle: String(values.easypaisaGatewayTitle || "Jalwa Pro"),
+      };
+      if (ep.enabled || ep.storeId || ep.accountNum || easypaisaSecret) {
+        const { data: epData, error: epError } = await supabase.functions.invoke("easypaisa-gateway", {
+          body: {
+            action: "save",
+            config: ep,
+            secret: {
+              storeId: ep.storeId,
+              partnerUsername: String(values.easypaisaGatewayUsername || ""),
+              partnerPassword: easypaisaSecret,
+            },
+          },
+        });
+        if (epError) throw epError;
+        if (!epData?.ok) throw new Error(epData?.error || "Easypaisa gateway settings could not be saved");
+        setEasypaisaSecret("");
+      }
     },
     onSuccess: () => {
       toast.success("Payment accounts saved");
@@ -149,6 +173,30 @@ function PaymentAccounts() {
             <label className="block text-xs">QR Code Image URL<input value={easypaisaQrUrl} onChange={(e) => setValues((v) => ({ ...v, easypaisaQrUrl: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="https://..." /></label>
             <label className="block text-xs">Merchant Till ID<input value={String(values.easypaisaTillId ?? "MR-14442")} onChange={(e) => setValues((v) => ({ ...v, easypaisaTillId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
             <label className="block text-xs">Account Title<input value={String(values.easypaisaTitle ?? "Jalwa Pro")} onChange={(e) => setValues((v) => ({ ...v, easypaisaTitle: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" /></label>
+          </div>
+        </section>
+
+        <section className="glass max-w-2xl rounded-2xl p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-base font-black">Easypaisa Automatic API</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Server-side Mobile Account integration with provider status verification before wallet credit.</p>
+            </div>
+            <button type="button" onClick={() => setValues((v) => ({ ...v, easypaisaGatewayEnabled: !Boolean(v.easypaisaGatewayEnabled) }))} className={`rounded-full px-4 py-2 text-xs font-bold ${Boolean(values.easypaisaGatewayEnabled) ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              {Boolean(values.easypaisaGatewayEnabled) ? "Enabled" : "Disabled"}
+            </button>
+          </div>
+          <div className="mt-4 space-y-4">
+            <label className="block text-xs">Environment
+              <select value={String(values.easypaisaGatewayEnvironment || "sandbox")} onChange={(e) => setValues((v) => ({ ...v, easypaisaGatewayEnvironment: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm">
+                <option value="sandbox">Sandbox / Test</option><option value="production">Production</option>
+              </select>
+            </label>
+            <label className="block text-xs">Store ID<input value={String(values.easypaisaGatewayStoreId || "")} onChange={(e) => setValues((v) => ({ ...v, easypaisaGatewayStoreId: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="Easypaisa Store ID" /></label>
+            <label className="block text-xs">EWP Account # / Account Number<input value={String(values.easypaisaGatewayAccountNum || "")} onChange={(e) => setValues((v) => ({ ...v, easypaisaGatewayAccountNum: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="Required for transaction status verification" /></label>
+            <label className="block text-xs">Partner Username<input value={String(values.easypaisaGatewayUsername || "")} onChange={(e) => setValues((v) => ({ ...v, easypaisaGatewayUsername: e.target.value }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="Issued by Easypaisa" /></label>
+            <label className="block text-xs">Partner Password<input type="password" value={easypaisaSecret} onChange={(e) => setEasypaisaSecret(e.target.value)} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="Leave blank to keep existing password" autoComplete="new-password" /></label>
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-muted-foreground"><ShieldCheck className="mr-2 inline h-4 w-4 text-amber-400" />Credentials are sent only to the protected backend function. The browser never receives the stored partner password.</div>
           </div>
         </section>
 
