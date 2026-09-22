@@ -16,6 +16,17 @@ const formatCount = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1
 type SeatRequest = { id: string; from_user: string; seat_index: number | null; created_at: string; username: string; avatar: string | null };
 type RoomViewer = { id: string; username: string; avatar: string | null };
 
+function EmptySeatArt({ locked }: { locked: boolean }) {
+  return (
+    <span className="relative flex h-full w-full items-center justify-center overflow-visible">
+      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full rounded-full object-cover border-0 shadow-none" draggable={false} />
+      {locked && <Lock className="pointer-events-none absolute z-[20] h-3.5 w-3.5 text-amber-400 drop-shadow" />}
+    </span>
+  );
+}
+
+type SeatProps = { seat: RoomSeat; onClick: () => void };
+
 export type RoomSeatUser = {
   id?: string;
   name?: string;
@@ -53,22 +64,6 @@ export type RoomParticipant = {
   level?: number;
 };
 
-function EmptySeatArt({ locked }: { locked: boolean }) {
-  return (
-    <span className="relative flex h-full w-full items-center justify-center overflow-visible">
-      <img
-        src={DEFAULT_SEAT_AVATAR}
-        alt=""
-        className="h-full w-full rounded-full object-cover border-0 shadow-none"
-        draggable={false}
-      />
-      {locked && <Lock className="pointer-events-none absolute z-[20] h-3.5 w-3.5 text-amber-400 drop-shadow" />}
-    </span>
-  );
-}
-
-type SeatProps = { seat: RoomSeat; onClick: () => void };
-
 export function Seat({ seat, onClick }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
@@ -87,28 +82,23 @@ export function Seat({ seat, onClick }: SeatProps) {
       setProfileMedia(null);
       return;
     }
-    void supabase
-      .from("profiles")
-      .select("frame,ring,vip_level")
-      .eq("id", id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (!active) return;
-        setProfileMedia({
-          frame: (data as { frame?: string | null } | null)?.frame ?? null,
-          ring: (data as { ring?: string | null } | null)?.ring ?? null,
-          level: Number((data as { vip_level?: number | null } | null)?.vip_level ?? 0),
-        });
+    void supabase.from("profiles").select("frame,ring,vip_level").eq("id", id).maybeSingle().then(({ data }) => {
+      if (!active) return;
+      setProfileMedia({
+        frame: (data as { frame?: string | null } | null)?.frame ?? null,
+        ring: (data as { ring?: string | null } | null)?.ring ?? null,
+        level: Number((data as { vip_level?: number | null } | null)?.vip_level ?? 0),
       });
+    });
     return () => { active = false; };
   }, [user?.id]);
 
   if (!user) {
     return (
-      <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative z-10 flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0 overflow-visible", className)}>
+      <div data-seat-index={num} className={cn("relative z-10 flex min-w-0 w-full flex-col items-center justify-center p-0.5 overflow-visible", className)}>
         <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
-          <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">{num}</span>
-          <span className="relative aspect-square w-full max-w-[56px] p-0 bg-transparent overflow-visible"><EmptySeatArt locked={is_locked} /></span>
+          <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">{num}</span>
+          <span className="relative aspect-square w-full max-w-[64px] p-0 bg-transparent overflow-visible"><EmptySeatArt locked={is_locked} /></span>
           <span className="w-full truncate text-[9px] font-semibold text-white text-center leading-tight">No.{num}</span>
           <span className="flex items-center gap-0.5 text-[8px] text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />0</span>
         </button>
@@ -121,20 +111,11 @@ export function Seat({ seat, onClick }: SeatProps) {
   const level = user?.level ?? profileMedia?.level ?? 0;
 
   return (
-    <div data-seat-index={num} data-user-dp={user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0", className)}>
+    <div data-seat-index={num} className={cn("relative flex min-w-0 w-full flex-col items-center justify-center p-0.5", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
-        <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
+        <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-          <LevelAvatar
-            src={avatar}
-            name={username}
-            level={level}
-            size="sm"
-            showBadge={false}
-            frame={equippedFrame}
-            ring={equippedRing}
-            className={cn("scale-[0.9] origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")}
-          />
+          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} className={cn("scale-[0.9] origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")} />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
         <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
@@ -251,17 +232,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     return () => { active = false; void supabase.removeChannel(channel); };
   }, [roomId, isHost]);
 
-  const respond = async (request: SeatRequest, accept: boolean) => {
-    if (busyRequest) return;
-    setBusyRequest(request.id);
-    const { data, error } = await supabase.rpc("respond_seat_request", { _request_id: request.id, _accept: accept });
-    setBusyRequest(null);
-    if (error) { toast.error(error.message || "Could not respond to seat request"); return; }
-    setRequests(prev => prev.filter(r => r.id !== request.id));
-    if (accept) toast.success(`${request.username} approved for seat ${Number(data)}`);
-    else toast.success(`${request.username}'s seat request rejected`);
-  };
-
   useEffect(() => {
     if (!roomId || !selectedEmptySeat) return;
     let active = true;
@@ -293,11 +263,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       toast.error("Unlock this seat first");
       return;
     }
-    const { error } = await supabase.rpc("host_assign_seat", {
-      _room_id: roomId,
-      _user_id: viewer.id,
-      _seat_index: seatIndex,
-    });
+    const { error } = await supabase.rpc("host_assign_seat", { _room_id: roomId, _user_id: viewer.id, _seat_index: seatIndex });
     if (error) { toast.error(error.message || "Could not assign seat"); return; }
     toast.success(`${viewer.username} moved to seat ${seatIndex}`);
     setSelectedEmptySeat(null);
@@ -376,76 +342,45 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
   });
 
-  const SEATS_PER_ROW = 5;
-  let rows: (typeof allSeats)[] = [];
-  for (let i = 0; i < allSeats.length; i += SEATS_PER_ROW) rows.push(allSeats.slice(i, i + SEATS_PER_ROW));
-
   return (
-    <section className="relative flex w-full max-w-[480px] h-[480px] flex-col items-center justify-center p-2 bg-transparent overflow-visible" data-seat-capacity={capacity}>
-      <div className="flex w-full h-full flex-col items-center justify-evenly overflow-visible px-1 bg-transparent">
-        {rows.map((rowSeats, rowIndex) => (
-          <div key={rowIndex} className="flex w-full items-center justify-evenly gap-1 bg-transparent">
-            {rowSeats.map((seat) => {
-              const seatIdx = seat.index ?? seat.seatNumber ?? 1;
-              if (seat.isHost) return (
-                <div key={seatIdx} data-seat-index={seatIdx} data-user-dp={seat.user?.id ?? undefined} className={cn("relative flex flex-col items-center justify-center p-0.5 bg-transparent flex-1 min-w-0")}>
-                  <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
-                    <span className="absolute left-1 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
-                    <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                      <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
-                      {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-4 h-[calc(100%+32px)] w-[calc(100%+32px)] pointer-events-none object-contain z-30 scale-[1.08]" draggable={false} />}
-                    </span>
-                    <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
-                    <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span>
-                  </div>
-                </div>
-              );
-              return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} onClick={() => void handleSeatClick(seat)} />;
-            })}
-          </div>
-        ))}
+    <section className="relative mx-auto flex w-full max-w-[480px] min-h-0 flex-col items-center justify-center px-1 py-1 bg-transparent overflow-visible" data-seat-capacity={capacity}>
+      <div className="grid w-full grid-cols-5 items-center justify-items-center gap-x-1 gap-y-1 bg-transparent">
+        {allSeats.map((seat) => {
+          const seatIdx = seat.index ?? seat.seatNumber ?? 1;
+          if (seat.isHost) return (
+            <div key={seatIdx} data-seat-index={seatIdx} className="relative flex w-full min-w-0 flex-col items-center justify-center p-0.5">
+              <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
+                <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
+                <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+                  <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
+                  {hostFrameUrl && <img src={hostFrameUrl} alt="" className="absolute -inset-4 h-[calc(100%+32px)] w-[calc(100%+32px)] pointer-events-none object-contain z-30 scale-[1.08]" draggable={false} />}
+                </span>
+                <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
+                <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span>
+              </div>
+            </div>
+          );
+          return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} onClick={() => void handleSeatClick(seat)} />;
+        })}
       </div>
 
       {selectedEmptySeat && (
         <div className="absolute inset-0 z-50 flex items-end justify-center px-3 pb-3 pointer-events-none" onClick={() => setSelectedEmptySeat(null)}>
           <div className="pointer-events-auto relative w-full max-w-sm rounded-[26px] border border-white/10 bg-slate-950/95 p-4 text-white shadow-2xl backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
-              <div>
-                <div className="text-[11px] font-black uppercase tracking-wider text-amber-300">Seat Manager</div>
-                <div className="text-sm font-bold">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</div>
-              </div>
+              <div><div className="text-[11px] font-black uppercase tracking-wider text-amber-300">Seat Manager</div><div className="text-sm font-bold">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</div></div>
               <button type="button" onClick={() => setSelectedEmptySeat(null)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"><X className="h-4 w-4" /></button>
             </div>
             <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-3">
-              <div className="flex items-center gap-2 text-xs font-semibold">
-                {selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}
-                {selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}
-              </div>
-              <button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">
-                {selectedEmptySeat.is_locked ? "Unlock" : "Lock"}
-              </button>
+              <div className="flex items-center gap-2 text-xs font-semibold">{selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}{selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}</div>
+              <button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">{selectedEmptySeat.is_locked ? "Unlock" : "Lock"}</button>
             </div>
-            {isHost && (selectedEmptySeat.index ?? selectedEmptySeat.seatNumber) === 1 && (
-              <button
-                type="button"
-                onClick={() => void changeMySeat()}
-                className="mb-3 w-full rounded-xl bg-amber-400 px-3 py-2.5 text-xs font-black text-black shadow-lg"
-              >
-                Take Host Seat 1
-              </button>
-            )}
-            <div className="mb-2 flex items-center gap-2">
-              <div className="h-px flex-1 bg-white/10" />
-              <span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Assign Viewer</span>
-              <div className="h-px flex-1 bg-white/10" />
-            </div>
+            {isHost && (selectedEmptySeat.index ?? selectedEmptySeat.seatNumber) === 1 && <button type="button" onClick={() => void changeMySeat()} className="mb-3 w-full rounded-xl bg-amber-400 px-3 py-2.5 text-xs font-black text-black shadow-lg">Take Host Seat 1</button>}
+            <div className="mb-2 flex items-center gap-2"><div className="h-px flex-1 bg-white/10" /><span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Assign Viewer</span><div className="h-px flex-1 bg-white/10" /></div>
             <div className="max-h-44 overflow-y-auto space-y-1.5">
               {roomViewers.length === 0 ? <p className="py-5 text-center text-xs text-white/50">No viewers found</p> : roomViewers.map(viewer => (
                 <div key={viewer.id} className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 p-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <img src={viewer.avatar || DEFAULT_SEAT_AVATAR} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-                    <span className="truncate text-xs font-semibold">{viewer.username}</span>
-                  </div>
+                  <div className="flex min-w-0 items-center gap-2"><img src={viewer.avatar || DEFAULT_SEAT_AVATAR} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" /><span className="truncate text-xs font-semibold">{viewer.username}</span></div>
                   <button type="button" onClick={() => void assignViewer(viewer)} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">Assign</button>
                 </div>
               ))}
