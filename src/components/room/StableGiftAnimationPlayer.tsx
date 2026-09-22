@@ -103,7 +103,34 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
         const row = payload.new as GiftRow; if (!row?.id || localEchoRef.current.has(row.id)) return;
         void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
       })
-      .subscribe();
+      .subscribe((status) => {
+        // Recover gifts missed while a low-bandwidth client temporarily
+        // loses the Realtime connection.
+        if (status === "SUBSCRIBED") {
+          const recoveryKey = `jalwa:gift-recovery:${roomId}`;
+          const hasConnectedBefore = sessionStorage.getItem(recoveryKey) === "1";
+          sessionStorage.setItem(recoveryKey, "1");
+          if (hasConnectedBefore) {
+            const since = new Date(Date.now() - 60_000).toISOString();
+            void supabase
+              .from("gift_sends")
+              .select("*")
+              .eq("room_id", roomId)
+              .gte("created_at", since)
+              .order("created_at", { ascending: true })
+              .limit(100)
+              .then(({ data, error }) => {
+                if (!alive || error || !data) return;
+                for (const recovered of data as GiftRow[]) {
+                  if (!recovered?.id || localEchoRef.current.has(recovered.id)) continue;
+                  void hydrateRenderConfig(recovered).then((ready) => {
+                    if (alive) enqueue(ready);
+                  });
+                }
+              });
+          }
+        }
+      });
     const onLocalGift = (event: Event) => {
       const d = (event as CustomEvent).detail as Record<string, unknown> | undefined; if (!d) return;
       const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
