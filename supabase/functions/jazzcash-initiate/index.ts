@@ -68,10 +68,28 @@ Deno.serve(async (req: Request) => {
       return json({ ok: false, error: "JazzCash automatic gateway is not fully configured. Add API URL and Merchant ID in Admin, and keep Password/Integrity Salt in backend secrets." }, 503);
     }
 
-    // The documented JazzCash Mobile Account REST APIs require pp_CNIC.
-    // We do not fake or bypass a gateway-required field.
     if (!/^\d{6}$/.test(cnicLast6)) {
       return json({ ok: false, error: "The configured JazzCash Mobile Account API requires the customer's last 6 CNIC digits." }, 400);
+    }
+
+    const baseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    const authHeader = req.headers.get("authorization") || "";
+    if (!baseUrl || !serviceKey || !authHeader.toLowerCase().startsWith("bearer ")) return json({ ok: false, error: "Login required" }, 401);
+
+    const userRes = await fetch(baseUrl + "/auth/v1/user", {
+      headers: { apikey: serviceKey, Authorization: authHeader },
+    });
+    if (!userRes.ok) return json({ ok: false, error: "Login required" }, 401);
+
+    const orderRes = await fetch(baseUrl + "/rest/v1/rpc/create_jazzcash_recharge_order", {
+      method: "POST",
+      headers: { apikey: serviceKey, Authorization: "Bearer " + serviceKey, "Content-Type": "application/json" },
+      body: JSON.stringify({ _package_id: String(body.packageId || ""), _account_ref: mobileNumber, _gateway_order_ref: transactionRef }),
+    });
+    if (!orderRes.ok) {
+      console.error("create JazzCash order failed", await orderRes.text());
+      return json({ ok: false, error: "Could not create recharge order" }, 400);
     }
 
     const now = new Date();
@@ -117,6 +135,13 @@ Deno.serve(async (req: Request) => {
     let response: unknown = text;
     try { response = JSON.parse(text); } catch { /* keep raw response */ }
 
+    if (!upstream.ok) {
+      await fetch(baseUrl + "/rest/v1/rpc/gateway_credit_recharge_by_ref", {
+        method: "POST",
+        headers: { apikey: serviceKey, Authorization: "Bearer " + serviceKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ _provider: "jazzcash", _order_ref: transactionRef, _provider_txn: transactionRef, _status: "failed", _amount_pkr: amountPkr, _raw: response }),
+      }).catch(() => undefined);
+    }
     return json({ ok: upstream.ok, upstreamStatus: upstream.status, transactionRef, response }, upstream.ok ? 200 : 502);
   } catch (error) {
     console.error("jazzcash-initiate error", error);
