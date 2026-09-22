@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppShell } from "@/components/layout/AppShell";
@@ -64,6 +64,7 @@ function statusMeta(effective: string) {
 function RechargeHistoryPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   // Orders capture the OTP journey — they may still be "pending_otp".
   const orders = useQuery({
@@ -97,7 +98,7 @@ function RechargeHistoryPage() {
     },
   });
 
-  const loading = orders.isLoading || requests.isLoading;
+  useEffect(() => {\n    const channel = supabase\n      .channel("recharge_history_rt")\n      .on("postgres_changes", { event: "*", schema: "public", table: "recharge_requests", filter: user ? "user_id=eq." + user.id : undefined }, () => {\n        qc.invalidateQueries({ queryKey: ["recharge_requests_self", user?.id] });\n      })\n      .on("postgres_changes", { event: "*", schema: "public", table: "recharge_orders", filter: user ? "user_id=eq." + user.id : undefined }, () => {\n        qc.invalidateQueries({ queryKey: ["recharge_orders", user?.id] });\n      })\n      .subscribe();\n    return () => { void supabase.removeChannel(channel); };\n  }, [qc, user?.id]);\n\n  const loading = orders.isLoading || requests.isLoading;
   const pendingOtpOrders = (orders.data ?? []).filter(
     (o) => o.status === "pending_otp" || o.status === "pending",
   );
