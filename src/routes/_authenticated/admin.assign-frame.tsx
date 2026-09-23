@@ -90,7 +90,7 @@ function AssignFrameAdmin() {
     mutationFn: async (userId: string) => {
       const { error } = await supabase
         .from("profiles")
-        .update({ frame: null, theme_id: null, frame_expires_at: null })
+        .update({ frame: null, frame_expires_at: null })
         .eq("id", userId);
       if (error) throw error;
     },
