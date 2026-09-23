@@ -99,7 +99,20 @@ function RechargeHistoryPage() {
     },
   });
 
-  useEffect(() => {\n    const channel = supabase\n      .channel("recharge_history_rt")\n      .on("postgres_changes", { event: "*", schema: "public", table: "recharge_requests", filter: user ? "user_id=eq." + user.id : undefined }, () => {\n        qc.invalidateQueries({ queryKey: ["recharge_requests_self", user?.id] });\n      })\n      .on("postgres_changes", { event: "*", schema: "public", table: "recharge_orders", filter: user ? "user_id=eq." + user.id : undefined }, () => {\n        qc.invalidateQueries({ queryKey: ["recharge_orders", user?.id] });\n      })\n      .subscribe();\n    return () => { void supabase.removeChannel(channel); };\n  }, [qc, user?.id]);\n\n  const loading = orders.isLoading || requests.isLoading;
+  useEffect(() => {
+    const channel = supabase
+      .channel("recharge_history_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "recharge_requests", filter: user ? "user_id=eq." + user.id : undefined }, () => {
+        qc.invalidateQueries({ queryKey: ["recharge_requests_self", user?.id] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "recharge_orders", filter: user ? "user_id=eq." + user.id : undefined }, () => {
+        qc.invalidateQueries({ queryKey: ["recharge_orders", user?.id] });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [qc, user?.id]);
+
+  const loading = orders.isLoading || requests.isLoading;
   const pendingOtpOrders = (orders.data ?? []).filter(
     (o) => o.status === "pending_otp" || o.status === "pending",
   );
