@@ -93,13 +93,7 @@ function SupportPage() {
         body,
       });
       if (error) throw error;
-      // Ask the server-side JALWA AI after the user message is stored.
-      // The AI function validates the signed-in user and writes the bot reply in the same realtime chat.
-      const { error: aiError } = await supabase.functions.invoke("support-ai", {
-        body: { conversation_id: conversationId, body },
-      });
-      if (aiError) {\n        const detail = aiError.message || "AI support request failed";\n        throw new Error(detail);\n      }
-      await supabase.from("support_conversations").update({ unread_for_user: 0 }).eq("id", conversationId);
+      // Bot replies are generated server-side by the support_messages trigger.\n      await supabase.from("support_conversations").update({ unread_for_user: 0 }).eq("id", conversationId);
     },
     onSuccess: () => {
       setText("");
