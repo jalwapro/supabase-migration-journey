@@ -98,7 +98,7 @@ function SupportPage() {
       const { error: aiError } = await supabase.functions.invoke("support-ai", {
         body: { conversation_id: conversationId, body },
       });
-      if (aiError) throw aiError;
+      if (aiError) {\n        const detail = aiError.message || "AI support request failed";\n        throw new Error(detail);\n      }
       await supabase.from("support_conversations").update({ unread_for_user: 0 }).eq("id", conversationId);
     },
     onSuccess: () => {
