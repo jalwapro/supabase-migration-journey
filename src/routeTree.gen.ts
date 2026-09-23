@@ -30,6 +30,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
+import { Route as ApiDataDeletionRouteImport } from './routes/api/data-deletion'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiVmStatsRouteImport } from './routes/api/vm-stats'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
@@ -236,6 +237,11 @@ const RoomRoomIdRoute = RoomRoomIdRouteImport.update({
 const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   id: '/messages_/$peerId',
   path: '/messages/$peerId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDataDeletionRoute = ApiDataDeletionRouteImport.update({
+  id: '/api/data-deletion',
+  path: '/api/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
@@ -2715,6 +2721,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRtcVerifyRoute: ApiRtcVerifyRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
   ApiVmStatsRoute: ApiVmStatsRoute,
+  ApiDataDeletionRoute: ApiDataDeletionRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
