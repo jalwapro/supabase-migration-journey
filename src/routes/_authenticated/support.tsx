@@ -93,11 +93,13 @@ function SupportPage() {
         body,
       });
       if (error) throw error;
-      // reset agent-unread on user reply
-      await supabase
-        .from("support_conversations")
-        .update({ unread_for_user: 0 })
-        .eq("id", conversationId);
+      // Ask the server-side JALWA AI after the user message is stored.
+      // The AI function validates the signed-in user and writes the bot reply in the same realtime chat.
+      const { error: aiError } = await supabase.functions.invoke("support-ai", {
+        body: { conversation_id: conversationId, body },
+      });
+      if (aiError) throw aiError;
+      await supabase.from("support_conversations").update({ unread_for_user: 0 }).eq("id", conversationId);
     },
     onSuccess: () => {
       setText("");
@@ -265,9 +267,9 @@ function SupportPage() {
               {(messages.data ?? []).length === 0 && (
                 <div className="grid place-items-center py-16 text-center">
                   <LifeBuoy className="mb-2 h-10 w-10 text-[color:var(--primary)]" />
-                  <p className="font-bold">How can we help?</p>
+                  <p className="font-bold">JALWA AI Support</p>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Send us a message and a support agent will reply here.
+                    Ask JALWA AI about the app. If it cannot verify the answer, it will escalate to admin support.
                   </p>
                 </div>
               )}
