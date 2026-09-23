@@ -53,7 +53,15 @@ function UsersAdmin() {
         .order("last_seen", { ascending: false, nullsFirst: false })
         .limit(50);
       if (q.trim()) {
-        query = query.or(`username.ilike.%${q}%,full_name.ilike.%${q}%,user_code.ilike.%${q}%`);
+        const term = q.trim();
+        // User IDs are UUIDs, so use an exact ID filter instead of ilike.
+        // This makes the UUID copied from WhatsApp directly searchable.
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(term);
+        if (isUuid) {
+          query = query.eq("id", term);
+        } else {
+          query = query.or(`username.ilike.%${term}%,full_name.ilike.%${term}%,user_code.ilike.%${term}%`);
+        }
       }
       const { data, error } = await query;
       if (error) throw error;
