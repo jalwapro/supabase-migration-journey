@@ -11,7 +11,11 @@ export function getInitialThemeMode(): ThemeMode {
   } catch {
     /* no-op */
   }
-  return "dark";
+  try {
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  } catch {
+    return "dark";
+  }
 }
 
 export function applyThemeMode(mode: ThemeMode) {
