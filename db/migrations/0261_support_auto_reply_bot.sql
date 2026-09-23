@@ -31,9 +31,9 @@ begin
     raise exception 'not authorized';
   end if;
 
-  if b ~ '\\m(recharge|recharge coins|coins|coin)\\M' then
+  if b ~ E'\\\\m(recharge|recharge coins|coins|coin)\\\\M' then
     reply := 'Aap Recharge Coins page par ja kar apna package select karein aur WhatsApp ya manual method se payment verify karwayein.';
-  elsif b ~ '\\m(withdraw|withdrawal|cashout|cash out)\\M' then
+  elsif b ~ E'\\\\m(withdraw|withdrawal|cashout|cash out)\\\\M' then
     reply := 'Aap withdrawal request section mein ja kar apni details enter karein, admin jald process kar dega.';
   else
     return;
