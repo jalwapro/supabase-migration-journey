@@ -24,7 +24,7 @@ type Conv = {
 type Msg = {
   id: string;
   body: string;
-  sender_kind: "user" | "agent";
+  sender_kind: "user" | "agent" | "bot";
   created_at: string;
 };
 
@@ -204,7 +204,7 @@ function SupportChatAdmin() {
               </div>
               <div ref={scroller} className="flex-1 space-y-2 overflow-y-auto p-3">
                 {messages.data?.map((m) => {
-                  const agent = m.sender_kind === "agent";
+                  const agent = m.sender_kind === "agent";\n                  const bot = m.sender_kind === "bot";
                   return (
                     <div key={m.id} className={`flex ${agent ? "justify-end" : "justify-start"}`}>
                       <div className={`max-w-[75%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm ${
