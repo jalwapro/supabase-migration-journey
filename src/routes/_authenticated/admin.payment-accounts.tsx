@@ -47,6 +47,7 @@ function PaymentAccounts() {
         jazzcashApiEnabled: setting.data.jazzcashApiEnabled ?? false,
         jazzcashApiMode: setting.data.jazzcashApiMode || "Mobile Account",
         whatsappRechargeNumber: setting.data.whatsappRechargeNumber || "",
+        whatsappRechargeEnabled: setting.data.whatsappRechargeEnabled ?? true,
       });
     }
   }, [setting.data]);
@@ -160,6 +161,20 @@ function PaymentAccounts() {
     <div>
       <AdminPageHeader title="Payment Accounts" subtitle="Manual QR deposits and automatic gateway configuration" />
       <div className="space-y-5">
+        <section className="glass max-w-2xl rounded-2xl p-5">
+          <h2 className="text-base font-black">WhatsApp Manual Recharge</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Users can contact your recharge WhatsApp number directly. You verify payment manually and then credit coins from the existing admin recharge approval flow.</p>
+          <div className="mt-4 space-y-4">
+            <button type="button" onClick={() => setValues((v) => ({ ...v, whatsappRechargeEnabled: !Boolean(v.whatsappRechargeEnabled) }))} className={`rounded-full px-4 py-2 text-xs font-bold ${Boolean(values.whatsappRechargeEnabled) ? "bg-emerald-500 text-white" : "bg-muted text-muted-foreground"}`}>
+              {Boolean(values.whatsappRechargeEnabled) ? "Enabled" : "Disabled"}
+            </button>
+            <label className="block text-xs">WhatsApp Recharge Number
+              <input value={String(values.whatsappRechargeNumber || "")} onChange={(e) => setValues((v) => ({ ...v, whatsappRechargeNumber: e.target.value.replace(/\\D/g, "").slice(0, 15) }))} className="mt-1 w-full rounded-xl border bg-input px-3 py-2.5 text-sm" placeholder="923xxxxxxxxx" inputMode="tel" />
+            </label>
+            <p className="text-[11px] text-muted-foreground">Use international format without + or spaces, for example 923xxxxxxxxx. Never ask users for their Easypaisa/JazzCash PIN.</p>
+          </div>
+        </section>
+
         <section className="glass max-w-2xl rounded-2xl p-5">
           <h2 className="text-base font-black">Easypaisa Manual QR</h2>
           <p className="mt-1 text-xs text-muted-foreground">Upload the merchant QR to Cloudflare R2. Users will see this QR during manual recharge.</p>
