@@ -23,7 +23,7 @@ type Ticket = {
 type Msg = {
   id: string;
   body: string;
-  sender_kind: "user" | "agent";
+  sender_kind: "user" | "agent" | "bot";
   created_at: string;
 };
 
@@ -272,7 +272,7 @@ function SupportPage() {
                 </div>
               )}
               {messages.data?.map((m) => {
-                const mine = m.sender_kind === "user";
+                const mine = m.sender_kind === "user";\n                const bot = m.sender_kind === "bot";
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
