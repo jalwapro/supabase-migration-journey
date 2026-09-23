@@ -6,7 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { uploadPrivateToUserFolder } from "@/lib/uploads";
-import { CheckCircle2, Copy, Image as ImageIcon, Loader2, Smartphone, Upload, WalletCards } from "lucide-react";
+import { CheckCircle2, Copy, Image as ImageIcon, Loader2, Smartphone, Upload, WalletCards, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/recharge")({ component: RechargePage });
@@ -36,6 +36,8 @@ function RechargePage() {
   const [txnReference, setTxnReference] = useState("");
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const whatsappNumber = (accounts.data?.whatsappRechargeNumber ?? "").replace(/\D/g, "");
+  const whatsappEnabled = accounts.data?.whatsappRechargeEnabled !== "false" && whatsappNumber.length >= 10;
 
   const accounts = useQuery({
     queryKey: ["app_kv", "payments"],
@@ -107,7 +109,7 @@ function RechargePage() {
                 </button>;
               })}
             </div>
-            {selectedPkg && <>
+              {whatsappEnabled && (\n                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">\n                  <div className="flex items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-400" /><b>Manual WhatsApp Recharge</b></div>\n                  <p className="mt-2 text-xs text-muted-foreground">Contact our recharge team on WhatsApp. Send your selected package, payment details and receipt. An admin will verify the payment and add the coins manually.</p>\n                  <button type="button" onClick={() => { const msg = selectedPkg ? "Jalwa coin recharge - Package: Rs " + Number(selectedPkg.price_pkr).toLocaleString() + " - Coins: " + (selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString() + "\\nUser ID: " + (user?.id ?? "") : "Jalwa coin recharge"; window.open("https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(msg), "_blank", "noopener,noreferrer"); }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 py-3 text-sm font-black text-white"><MessageCircle className="h-4 w-4" />Chat on WhatsApp</button>\n                </div>\n              )}\n            {selectedPkg && <>
               <div className="rounded-2xl bg-card/60 p-4"><p className="text-xs text-muted-foreground">You pay</p><p className="text-2xl font-black">Rs {Number(selectedPkg.price_pkr).toLocaleString()}</p><p className="text-sm font-bold text-emerald-400">Receive {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()} coins</p></div>
               <div className="grid grid-cols-2 gap-2">
                 {(["easypaisa", "jazzcash"] as Method[]).map((m) => <button key={m} onClick={() => setMethod(m)} className={`rounded-xl border p-3 text-xs font-black ${method === m ? "border-primary bg-primary/10" : "border-border bg-card/60"}`}><Smartphone className="mx-auto mb-1 h-5 w-5" />{m === "easypaisa" ? "Easypaisa QR / Till" : "JazzCash QR / Till"}</button>)}
