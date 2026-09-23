@@ -272,7 +272,8 @@ function SupportPage() {
                 </div>
               )}
               {messages.data?.map((m) => {
-                const mine = m.sender_kind === "user";\n                const bot = m.sender_kind === "bot";
+                const mine = m.sender_kind === "user";
+                const bot = m.sender_kind === "bot";
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
