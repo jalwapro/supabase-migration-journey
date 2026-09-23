@@ -110,14 +110,13 @@ function RechargePage() {
                 </button>;
               })}
             </div>
-              {whatsappEnabled && (
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-                  <div className="flex items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-400" /><b>Manual WhatsApp Recharge</b></div>
-                  <p className="mt-2 text-xs text-muted-foreground">Contact our recharge team on WhatsApp. Send your selected package, payment details and receipt. An admin will verify the payment and add the coins manually.</p>
-                  <button type="button" onClick={() => { const msg = selectedPkg ? "Jalwa coin recharge - Package: Rs " + Number(selectedPkg.price_pkr).toLocaleString() + " - Coins: " + (selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString() + "\
-User ID: " + (user?.id ?? "") : "Jalwa coin recharge"; window.open("https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(msg), "_blank", "noopener,noreferrer"); }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 py-3 text-sm font-black text-white"><MessageCircle className="h-4 w-4" />Chat on WhatsApp</button>
-                </div>
-              )}
+            {selectedPkg && whatsappEnabled && (
+              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+                <div className="flex items-center gap-2"><MessageCircle className="h-5 w-5 text-emerald-400" /><b>Manual WhatsApp Recharge</b></div>
+                <p className="mt-2 text-xs text-muted-foreground">Contact our recharge team on WhatsApp. Send your selected package, payment details and receipt. An admin will verify the payment and add the coins manually.</p>
+                <button type="button" onClick={() => { const msg = "Jalwa coin recharge - Package: Rs " + Number(selectedPkg.price_pkr).toLocaleString() + " - Coins: " + (selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString() + "\nUser ID: " + (user?.id ?? ""); window.open("https://wa.me/" + whatsappNumber + "?text=" + encodeURIComponent(msg), "_blank", "noopener,noreferrer"); }} className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-emerald-500 py-3 text-sm font-black text-white"><MessageCircle className="h-4 w-4" />Chat on WhatsApp</button>
+              </div>
+            )}
             {selectedPkg && <>
               <div className="rounded-2xl bg-card/60 p-4"><p className="text-xs text-muted-foreground">You pay</p><p className="text-2xl font-black">Rs {Number(selectedPkg.price_pkr).toLocaleString()}</p><p className="text-sm font-bold text-emerald-400">Receive {(selectedPkg.coins + selectedPkg.bonus_coins).toLocaleString()} coins</p></div>
               <div className="grid grid-cols-2 gap-2">
