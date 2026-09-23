@@ -7,6 +7,7 @@ import { useRoomEntrances } from "@/hooks/useRoomEntrances";
 import { EntrancePlayer } from "@/components/room/EntrancePlayer";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
 
 interface RoomHeaderProps { room: RoomState; roomCode: string; onlineCount: number; topGifterName?: string | null; topGifterCoins?: number; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; isHost?: boolean; exitMenuOpen?: boolean; onExitMenuOpenChange?: (open: boolean) => void; }
 type RoomMemberPreview = { id: string; username: string; avatar: string | null; level: number; host?: boolean; moderator?: boolean };
@@ -14,6 +15,7 @@ type IncomingSeatInvite = { id: string; fromUser: string; inviterName: string; i
 
 export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGifterCoins, onHostTap, onReport, onShare, onExit, onHome, onRanking, isHost: isHostProp = false, exitMenuOpen: exitMenuOpenProp, onExitMenuOpenChange }: RoomHeaderProps) {
   const { user } = useAuth();
+  const { minimizeRoom: saveMinimizedRoom } = useVoiceRoomSession();
   const isHost = isHostProp || user?.id === room.host.id;
   const { current: currentEntrance, done: finishEntrance } = useRoomEntrances(room.id, user?.id ?? null);
   const [roomTitle, setRoomTitle] = useState(room.title);
@@ -173,7 +175,22 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
     catch (e) { toast.error(`Unable to upload room DP: ${(e as Error).message || "Cloud storage error"}`); }
   };
   const openExitMenu = () => setExitMenuOpen(true);
-  const minimizeRoom = () => { setExitMenuOpen(false); onHome(); };
+  const minimizeRoom = () => {
+    setExitMenuOpen(false);
+    if (user?.id) {
+      saveMinimizedRoom({
+        roomId: room.id,
+        roomName: room.title,
+        roomAvatar: room.host.avatar,
+        roomRoute: `/room/${encodeURIComponent(room.id)}`,
+        userId: user.id,
+        userRole: isHost ? "host" : "user",
+        connectionState: "connected",
+        microphoneMuted: false,
+      });
+    }
+    onHome();
+  };
   const performExit = async () => {
     if (exiting) return;
     setExiting(true);
