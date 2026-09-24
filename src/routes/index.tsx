@@ -775,7 +775,7 @@ type TopFrameRow = {
   slot: 1 | 2;
   media_url: string;
   media_type: "png" | "svga" | "mp4" | "webm" | "gif";
-  chromakey: "none" | "green" | "black" | "luma";
+  chromakey: "none" | "green" | "black" | "luma" | "checkerboard";
 };
 
 function useTopRankFrames() {
@@ -805,7 +805,7 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const src = row?.media_url ?? fallback;
   const mediaType = row?.media_type ?? "png";
   const isVideo = mediaType === "mp4" || mediaType === "webm";
-  const chromakey = row?.chromakey ?? "none";
+  const chromakey = row?.chromakey ?? (isVideo ? "checkerboard" : "none");
   const commonClass =
     "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
 
