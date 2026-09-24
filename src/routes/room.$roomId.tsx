@@ -1878,10 +1878,10 @@ function RoomPage() {
     clearRoom();
     setExitConfirmOpen(false);
     setExiting(true);
-    // Let the exit animation play before navigating home.
-    setTimeout(() => {
-      navigate({ to: "/" });
-    }, 950);
+    // Navigate immediately after the room membership/session is cleared.
+    // Do not require a page reload and do not leave the user stuck on the
+    // room route while an exit animation timer is pending.
+    void navigate({ to: "/", replace: true });
   }
 
 
@@ -2193,7 +2193,7 @@ onReport={async () => {
 }}
 onShare={share}
 onExit={leaveRoom}
-onHome={() => void navigate({ to: "/" })}
+onHome={() => void navigate({ to: "/", replace: true })}
 onRanking={() => void navigate({ to: "/rank" })}
 onOpenGames={() => setGamesSheetOpen(true)}
 />
