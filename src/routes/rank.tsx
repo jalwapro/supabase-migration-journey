@@ -247,11 +247,13 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const ring = first ? "border-yellow-400/80 bg-yellow-500/20" : "border-white/20 bg-[#2A154A]"; 
   const medalClass = first ? "h-7 w-7 text-yellow-400 drop-shadow-md" : "h-5 w-5 text-white/70";
   const rankImage = place === 1 ? "/images/top1.jpg" : place === 2 ? "/images/top 2.jpg" : "/images/top 3.jpg";
+  const cardWidth = first ? "min-w-0" : "min-w-0";
+  const avatarOuter = first ? "h-[82px] w-[82px] sm:h-[92px] sm:w-[92px]" : "h-[68px] w-[68px] sm:h-[76px] sm:w-[76px]";
   
   const content = (
-    <motion.div whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: .98 }} className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl backdrop-blur-xl ${cardHeight}`}>
-      <img src={rankImage} alt={`Top ${place} ranking`} className="pointer-events-none absolute inset-0 h-full w-full rounded-[26px] object-cover opacity-90" />
-      <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[#120624]/35" />
+    <motion.div whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: .98 }} className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl backdrop-blur-xl ${cardHeight} ${cardWidth}`}>
+      <img src={rankImage} alt={`Top ${place} ranking`} className="pointer-events-none absolute inset-0 h-full w-full rounded-[26px] object-cover opacity-55" />
+      <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-gradient-to-b from-[#120624]/45 via-[#120624]/65 to-[#08010F]/90" />
       
       {first && (
         <>
@@ -272,7 +274,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
         )}
       </div>
       
-      <div className={`relative z-10 rounded-full border-2 p-[3px] shadow-lg ${avatarSize} ${ring}`}>
+      <div className={`relative z-10 shrink-0 rounded-full border-2 p-[3px] shadow-lg ${avatarOuter} ${ring}`}>
         {/* Ideal container for inserting 3D regal lion frames later based on platform assets */}
         {first && <motion.div animate={{ rotate: 360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute -inset-1 rounded-full border-2 border-dashed border-yellow-400/50" />}
         <div className="relative h-full w-full overflow-visible rounded-full bg-[#1A0B2E]">
@@ -285,15 +287,15 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
         <span className="text-[9px] font-black tracking-[.18em]">#{place}</span>
       </div>
       
-      <span className={`mt-2 text-[7px] font-black uppercase tracking-[.2em] ${first ? "text-yellow-400" : "text-white/60"}`}>{rankLabel}</span>
-      <p className={`mt-1 max-w-[112px] truncate text-center font-extrabold text-white ${first ? "text-[13px]" : "text-[11px]"}`}>{row?.username ?? "—"}</p>
+      <span className={`mt-2 rounded-full bg-black/45 px-2 py-0.5 text-[7px] font-black uppercase tracking-[.16em] shadow-sm ${first ? "text-yellow-300" : "text-white/80"}`}>{rankLabel}</span>
+      <p className={`mt-1 w-full max-w-[112px] truncate rounded-lg bg-black/35 px-1 text-center font-extrabold leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)] ${first ? "text-[13px]" : "text-[11px]"}`}>{row?.username ?? "—"}</p>
       
-      <div className="mt-0.5 flex items-center gap-1 text-[8px] font-semibold text-white/50">
+      <div className="mt-0.5 flex items-center gap-1 rounded-full bg-black/30 px-2 py-0.5 text-[8px] font-semibold text-white/80">
         <span>LVL {row?.level ?? 1}</span>
         {row?.country && <><span>•</span><span>{COUNTRY_FLAG[row.country] ?? "🌐"}</span></>}
       </div>
       
-      <div className={`mt-2 rounded-full border px-3 py-1 ${first ? "border-yellow-500/40 bg-yellow-500/10" : "border-white/10 bg-white/5"}`}>
+      <div className={`mt-2 max-w-full rounded-full border px-2.5 py-1 ${first ? "border-yellow-500/50 bg-[#120624]/75" : "border-white/20 bg-[#120624]/75"}`}>
         <p className={`text-[13px] font-black tracking-tight ${first ? "text-yellow-400 drop-shadow-md" : "text-white"}`}>{formatScore(row?.score ?? 0)}</p>
       </div>
       
