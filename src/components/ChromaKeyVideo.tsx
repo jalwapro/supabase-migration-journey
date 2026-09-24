@@ -51,12 +51,10 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
           [0, canvas.height - 1],
           [canvas.width - 1, canvas.height - 1],
         ];
-        let br = 0, bg = 0, bb = 0;
-        for (const [x, y] of points) {
+        const cornerColors = points.map(([x, y]) => {
           const i = (y * canvas.width + x) * 4;
-          br += p[i]; bg += p[i + 1]; bb += p[i + 2];
-        }
-        br /= 4; bg /= 4; bb /= 4;
+          return [p[i], p[i + 1], p[i + 2]] as const;
+        });
 
         for (let i = 0; i < p.length; i += 4) {
           const r = p[i];
@@ -88,8 +86,9 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
             // remove pixels close to either shade. This is more reliable than
             // a fixed gray threshold because video encoding shifts RGB values.
             const cornerDistance = Math.min(
-              Math.sqrt((r - br) ** 2 + (g - bg) ** 2 + (b - bb) ** 2),
-              Math.sqrt((r - bg) ** 2 + (g - br) ** 2 + (b - bb) ** 2),
+              ...cornerColors.map(([cr, cg, cb]) =>
+                Math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2),
+              ),
             );
             const chroma = max - min;
             const neutral = chroma < 70;
