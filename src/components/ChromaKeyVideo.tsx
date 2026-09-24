@@ -83,17 +83,24 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
           } else if (chromakey === "luma") {
             alpha = clamp((lum - 38) * 7);
           } else if (chromakey === "checkerboard") {
-            // Remove common editor-style transparent/checkerboard grids.
-            // The grid is near-neutral; the golden frame is saturated.
+            // MP4/WebM checkerboards are baked into the video pixels. Use the
+            // four corners to learn the actual two background shades, then
+            // remove pixels close to either shade. This is more reliable than
+            // a fixed gray threshold because video encoding shifts RGB values.
+            const cornerDistance = Math.min(
+              Math.sqrt((r - br) ** 2 + (g - bg) ** 2 + (b - bb) ** 2),
+              Math.sqrt((r - bg) ** 2 + (g - br) ** 2 + (b - bb) ** 2),
+            );
             const chroma = max - min;
-            // Checkerboard grids are made from two nearly-neutral shades.
-            // Remove both bright and dark squares, including compressed-video
-            // variants. Keep saturated/golden foreground artwork opaque.
-            const neutral = chroma < 58;
-            const veryLightSquare = neutral && lum > 165;
-            const midGraySquare = neutral && lum >= 55 && lum <= 165;
-            const nearBlackSquare = max < 58;
-            alpha = veryLightSquare || midGraySquare || nearBlackSquare ? 0 : 255;
+            const neutral = chroma < 70;
+            const checkerLight = neutral && lum > 145;
+            const checkerGray = neutral && lum >= 42 && lum <= 145;
+            const nearBlackSquare = max < 55;
+            const cornerMatched = cornerDistance < 52;
+            alpha =
+              cornerMatched || checkerLight || checkerGray || nearBlackSquare
+                ? 0
+                : 255;
           } else {
             const cornerBg = distance < 58;
             const blackBg = max < 42;
