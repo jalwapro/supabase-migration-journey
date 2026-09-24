@@ -54,7 +54,7 @@ function CreateRoom() {
     setBusy(true);
     try {
       const { data: roomId, error } = await supabase.rpc("create_voice_room", {
-        _title: `${hostName}'s Voice Room`,
+        _title: hostName,
         _category_id: categoryId,
         _is_locked: locked,
         _password: locked ? password || null : null,
