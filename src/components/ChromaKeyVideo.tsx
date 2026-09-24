@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export type ChromaKeyMode = "none" | "green" | "black" | "luma";
+export type ChromaKeyMode = "none" | "green" | "black" | "luma" | "checkerboard";
 
 type Props = {
   src: string;
@@ -82,6 +82,14 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
             alpha = clamp((lum - 28) * 8);
           } else if (chromakey === "luma") {
             alpha = clamp((lum - 38) * 7);
+          } else if (chromakey === "checkerboard") {
+            // Remove common editor-style transparent/checkerboard grids.
+            // The grid is near-neutral; the golden frame is saturated.
+            const chroma = max - min;
+            const neutral = chroma < 34;
+            const lightSquare = neutral && lum > 185;
+            const graySquare = neutral && lum > 70 && lum < 185;
+            alpha = lightSquare || graySquare ? 0 : 255;
           } else {
             const cornerBg = distance < 58;
             const blackBg = max < 42;
@@ -98,6 +106,7 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
 
           // Preserve opaque, colourful foreground pixels.
           if (min < 8 && max > 90 && chromakey === "green") alpha = Math.max(alpha, 220);
+          if (chromakey === "checkerboard" && max - min > 42) alpha = 255;
           p[i + 3] = alpha;
         }
 
