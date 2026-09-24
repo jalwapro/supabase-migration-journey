@@ -256,6 +256,22 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     setLockBusy(null);
   };
 
+  const respond = async (request: SeatRequest, accept: boolean) => {
+    if (!roomId || !canManageSeats || busyRequest !== null) return;
+    setBusyRequest(request.id);
+    const { error } = await supabase.rpc("respond_seat_request", {
+      _request_id: request.id,
+      _accept: accept,
+    });
+    if (error) {
+      toast.error(error.message || (accept ? "Could not approve seat request" : "Could not reject seat request"));
+    } else {
+      setRequests(prev => prev.filter(r => r.id !== request.id));
+      toast.success(accept ? `${request.username} approved for Seat ${request.seat_index ?? "the next available seat"}` : `${request.username}'s seat request rejected`);
+    }
+    setBusyRequest(null);
+  };
+
   const assignViewer = async (viewer: RoomViewer) => {
     if (!roomId || !selectedEmptySeat || !isHost) return;
     const seatIndex = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2;
