@@ -6,13 +6,14 @@ import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Loader2, Save, X, Pencil, Crown, Medal } from "lucide-react";
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
+import { ChromaKeyVideo } from "@/components/ChromaKeyVideo";
 
 export const Route = createFileRoute("/_authenticated/admin/room-frames")({
   component: RoomFramesAdmin,
 });
 
 type MediaType = "png" | "svga" | "mp4" | "webm" | "gif";
-type Chromakey = "none" | "green" | "black" | "luma";
+type Chromakey = "none" | "green" | "black" | "luma" | "checkerboard";
 
 type Frame = {
   id: string;
@@ -52,20 +53,15 @@ function detectMediaType(url: string): MediaType {
 
 function FramePreview({ frame, size = 120 }: { frame: Pick<Frame, "media_url" | "media_type" | "chromakey">; size?: number }) {
   const style: React.CSSProperties = { width: size, height: size };
-  const filter = frame.chromakey === "green" ? "url(#room-frame-green-key)" : frame.chromakey === "luma" ? "url(#room-frame-luma-key)" : undefined;
   if (frame.media_type === "mp4" || frame.media_type === "webm") {
+    const key = frame.chromakey === "none" ? "checkerboard" : frame.chromakey;
     return (
-      <video
-        src={frame.media_url}
-        muted
-        autoPlay
-        loop
-        playsInline
-        style={{ ...style, filter, objectFit: "contain" }}
-        className="rounded-xl bg-black"
-      />
+      <div style={style} className="relative overflow-visible">
+        <ChromaKeyVideo src={frame.media_url} chromakey={key} className="rounded-xl" />
+      </div>
     );
   }
+  const filter = frame.chromakey === "green" ? "url(#room-frame-green-key)" : frame.chromakey === "luma" ? "url(#room-frame-luma-key)" : undefined;
   // png/gif/svga fallback preview
   return (
     <img
@@ -91,7 +87,7 @@ function DraftFields({ d, set }: { d: Draft; set: (d: Draft) => void }) {
             bucket="shop-assets"
             folder="room-frames"
             accept="image/png,image/gif,image/webp,video/mp4,video/webm,application/octet-stream,.svga"
-            label="Upload PNG / SVGA / MP4 / WebM (green background OK)"
+            label="Upload PNG / SVGA / MP4 / WebM (checkerboard/green background OK)"
             value={d.media_url}
             onChange={(url) => set({ ...d, media_url: url ?? "", media_type: url ? detectMediaType(url) : d.media_type })}
             previewKind="auto"
@@ -123,6 +119,7 @@ function DraftFields({ d, set }: { d: Draft; set: (d: Draft) => void }) {
             <option value="green">Green screen — remove</option>
             <option value="black">Black — screen blend</option>
             <option value="luma">Dark — luma key</option>
+            <option value="checkerboard">Checkered transparent grid — remove</option>
           </select>
         </label>
         <input
