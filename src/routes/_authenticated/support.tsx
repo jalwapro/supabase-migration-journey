@@ -63,14 +63,28 @@ function SupportPage() {
     },
   });
 
-  // Realtime
   useEffect(() => {
     if (!conversationId) return;
     const ch = supabase
       .channel(`support:${conversationId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "support_messages", filter: `conversation_id=eq.${conversationId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "support_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        () => qc.invalidateQueries({ queryKey: ["support-msgs", conversationId] }),
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "support_messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
         () => qc.invalidateQueries({ queryKey: ["support-msgs", conversationId] }),
       )
       .subscribe();
@@ -86,6 +100,7 @@ function SupportPage() {
   const send = useMutation({
     mutationFn: async (body: string) => {
       if (!conversationId || !user) return;
+
       const { error } = await supabase.from("support_messages").insert({
         conversation_id: conversationId,
         sender_id: user.id,
@@ -93,7 +108,29 @@ function SupportPage() {
         body,
       });
       if (error) throw error;
-      // Bot replies are generated server-side by the support_messages trigger.\n      await supabase.from("support_conversations").update({ unread_for_user: 0 }).eq("id", conversationId);
+
+      await supabase
+        .from("support_conversations")
+        .update({ unread_for_user: 0 })
+        .eq("id", conversationId);
+
+      // AI is intentionally non-blocking: the user's message is already sent.
+      // The DB trigger creates a safe fallback reply; support-ai upgrades it to a
+      // full JALWA AI reply when the OpenAI key/model is available.
+      void supabase.functions
+        .invoke("support-ai", {
+          body: { conversation_id: conversationId, body },
+        })
+        .then(({ error: aiError }) => {
+          if (aiError) {
+            console.warn("support-ai unavailable; fallback reply remains active", aiError.message);
+            return;
+          }
+          qc.invalidateQueries({ queryKey: ["support-msgs", conversationId] });
+        })
+        .catch((error) => {
+          console.warn("support-ai request failed; fallback reply remains active", error);
+        });
     },
     onSuccess: () => {
       setText("");
@@ -152,7 +189,6 @@ function SupportPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   return (
     <>
       <AppShell title="Customer Support" subtitle="Chat with our team">
@@ -170,6 +206,7 @@ function SupportPage() {
             </span>
             <Radio className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
           </Link>
+
           <div className="flex items-center gap-2 border-b border-border px-3 py-2">
             <button
               type="button"
@@ -199,9 +236,7 @@ function SupportPage() {
                       {t.status}
                     </span>
                   </div>
-                  {t.admin_reply && (
-                    <p className="mt-0.5 text-muted-foreground">Reply: {t.admin_reply}</p>
-                  )}
+                  {t.admin_reply && <p className="mt-0.5 text-muted-foreground">Reply: {t.admin_reply}</p>}
                 </div>
               ))}
             </div>
@@ -269,7 +304,6 @@ function SupportPage() {
               )}
               {messages.data?.map((m) => {
                 const mine = m.sender_kind === "user";
-                const bot = m.sender_kind === "bot";
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
                     <div
