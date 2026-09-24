@@ -873,6 +873,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
     : "shadow-[0_10px_30px_-15px_rgba(0,0,0,0.6)]";
   return (
     <div className="relative aspect-square">
+      {frameTone && <RoomFrameSquare tone={frameTone} />}
       <Link
         to="/room/$roomId"
         params={{ roomId: room.id }}
@@ -949,9 +950,6 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
         </h3>
       </div>
       </Link>
-      {/* Rank frame paints ON TOP of the cover so its ornaments stay visible. */}
-      {frameTone && <RoomFrameSquare tone={frameTone} />}
-
     </div>
 
   );
