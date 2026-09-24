@@ -9,7 +9,13 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
   const { user } = useAuth();
   const [activeRoom, setActiveRoom] = useState<ActiveVoiceRoom | null>(() => { try { const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return null; const parsed = JSON.parse(raw) as ActiveVoiceRoom; return parsed?.roomId && parsed?.userId ? parsed : null; } catch { return null; } });
   useEffect(() => { if (!user?.id) { setActiveRoom(null); try { localStorage.removeItem(STORAGE_KEY); } catch {} return; } if (activeRoom && activeRoom.userId !== user.id) { setActiveRoom(null); try { localStorage.removeItem(STORAGE_KEY); } catch {} return; } try { if (activeRoom) localStorage.setItem(STORAGE_KEY, JSON.stringify(activeRoom)); else localStorage.removeItem(STORAGE_KEY); } catch {} }, [activeRoom, user?.id]);
-  const minimizeRoom = useCallback((room: Omit<ActiveVoiceRoom, 'isMinimized'>) => { if (!user?.id || room.userId !== user.id) return; setActiveRoom({ ...room, isMinimized: true }); }, [user?.id]);
+  const minimizeRoom = useCallback((room: Omit<ActiveVoiceRoom, 'isMinimized'>) => {
+    if (!user?.id || room.userId !== user.id || !room.roomId || !room.roomRoute) return;
+    const next: ActiveVoiceRoom = { ...room, isMinimized: true };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch {}
+    setActiveRoom(next);
+    window.dispatchEvent(new CustomEvent('jalwa:voice-room-minimized', { detail: next }));
+  }, [user?.id]);
   const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
   const clearRoom = useCallback(() => setActiveRoom(null), []);
   const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => setActiveRoom(r => r ? { ...r, ...patch } : r), []);
