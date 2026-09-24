@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { ChromaKeyVideo } from "@/components/ChromaKeyVideo";
 import { Loader2, Users, Mic, Video, Flame, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/room-frames-preview")({
@@ -104,7 +105,7 @@ function FrameOverlay({ row, tone }: { row: TopFrameRow | null; tone: "gold" | "
   const cls =
     "pointer-events-none absolute -inset-[7%] h-[114%] w-[114%] max-w-none object-contain select-none z-30";
   return isVideo ? (
-    <video src={row.media_url} autoPlay loop muted playsInline aria-hidden style={{ filter }} className={cls} />
+    <ChromaKeyVideo src={row.media_url} chromakey={ck} className="!absolute !-inset-[7%] !h-[114%] !w-[114%]" />
   ) : (
     <img src={row.media_url} alt="" aria-hidden style={{ filter }} className={cls} />
   );
