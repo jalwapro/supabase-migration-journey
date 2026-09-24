@@ -148,6 +148,7 @@ function Home() {
   const banners = useQuery({
     queryKey: ["banners"],
     staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const nowIso = new Date().toISOString();
       const { data, error } = await supabase
@@ -176,8 +177,9 @@ function Home() {
     },
     // Realtime handles updates via useRealtimeInvalidate above; a slow safety
     // poll is enough — 10s was hammering the DB and jittering the UI.
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 90_000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   // Top hosts: small server-side query (top 10 by viewer_count) re-ranked by
@@ -219,8 +221,9 @@ function Home() {
         )
         .slice(0, 2);
     },
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 90_000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const topHosts = useMemo(() => {
@@ -261,8 +264,9 @@ function Home() {
     },
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    refetchInterval: 90_000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const restRooms = useMemo(() => {
@@ -298,6 +302,7 @@ function Home() {
   });
 
 
+  // Search results are short-lived; avoid duplicate requests while typing/navigation settles.
   // Auto-advance banners every 3s (fixed slider, transform-based)
   useEffect(() => {
     const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS;
