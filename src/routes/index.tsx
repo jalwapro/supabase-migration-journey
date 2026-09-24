@@ -810,7 +810,7 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
     "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
 
   if (isVideo) {
-    return <TransparentVideoFrame src={src} chromakey={chromakey} />;
+    return <ChromaKeyVideo src={src} chromakey={chromakey} />;
   }
 
   return (

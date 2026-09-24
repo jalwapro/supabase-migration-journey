@@ -6,7 +6,6 @@ import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Plus, Trash2, Loader2, Save, X, Pencil, Crown, Medal } from "lucide-react";
 import { toast } from "sonner";
 import { FileUploader } from "@/components/FileUploader";
-import { ChromaKeyVideo } from "@/components/ChromaKeyVideo";
 
 export const Route = createFileRoute("/_authenticated/admin/room-frames")({
   component: RoomFramesAdmin,
@@ -56,9 +55,15 @@ function FramePreview({ frame, size = 120 }: { frame: Pick<Frame, "media_url" | 
   const filter = frame.chromakey === "green" ? "url(#room-frame-green-key)" : frame.chromakey === "luma" ? "url(#room-frame-luma-key)" : undefined;
   if (frame.media_type === "mp4" || frame.media_type === "webm") {
     return (
-      <div style={style} className="relative overflow-visible">
-        <ChromaKeyVideo src={frame.media_url} chromakey={frame.chromakey} className="!absolute !inset-0 !h-full !w-full" />
-      </div>
+      <video
+        src={frame.media_url}
+        muted
+        autoPlay
+        loop
+        playsInline
+        style={{ ...style, filter, objectFit: "contain" }}
+        className="rounded-xl bg-black"
+      />
     );
   }
   // png/gif/svga fallback preview
