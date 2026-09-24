@@ -805,7 +805,9 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const src = row?.media_url ?? fallback;
   const mediaType = row?.media_type ?? "png";
   const isVideo = mediaType === "mp4" || mediaType === "webm";
-  const chromakey = row?.chromakey ?? (isVideo ? "checkerboard" : "none");
+  const chromakey = isVideo
+    ? (row?.chromakey && row.chromakey !== "none" ? row.chromakey : "checkerboard")
+    : "none";
   const commonClass =
     "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
 
