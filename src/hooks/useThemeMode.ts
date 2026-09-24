@@ -11,11 +11,9 @@ export function getInitialThemeMode(): ThemeMode {
   } catch {
     /* no-op */
   }
-  try {
-    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-  } catch {
-    return "dark";
-  }
+  // Jalwa defaults to dark mode. Only an explicit saved user choice
+  // (light/dark) should override the default; never inherit the device theme.
+  return "dark";
 }
 
 export function applyThemeMode(mode: ThemeMode) {
