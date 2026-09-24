@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { ChromaKeyVideo } from "@/components/ChromaKeyVideo";
 import { Loader2, Users, Mic, Video, Flame, RefreshCw } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/room-frames-preview")({
@@ -16,7 +17,7 @@ type TopFrameRow = {
   name: string;
   media_url: string;
   media_type: "png" | "svga" | "mp4" | "webm" | "gif";
-  chromakey: "none" | "green" | "black" | "luma";
+  chromakey: "none" | "green" | "black" | "luma" | "checkerboard";
 };
 
 type Room = {
@@ -94,17 +95,16 @@ function useTopLiveRooms(tab: Tab) {
 function FrameOverlay({ row, tone }: { row: TopFrameRow | null; tone: "gold" | "violet" }) {
   if (!row) return null;
   const isVideo = row.media_type === "mp4" || row.media_type === "webm";
-  const ck = row.chromakey;
+  const ck = isVideo && row.chromakey === "none" ? "checkerboard" : row.chromakey;
   const filter =
-    ck === "green" || ck === "luma" || (isVideo && ck !== "none")
-      ? "url(#preview-frame-green-key)"
-      : ck === "black"
-        ? "url(#preview-frame-luma-key)"
-        : undefined;
+    ck === "green" ? "url(#preview-frame-green-key)" :
+    ck === "luma" ? "url(#preview-frame-luma-key)" :
+    ck === "black" ? "url(#preview-frame-luma-key)" :
+    undefined;
   const cls =
     "pointer-events-none absolute -inset-[7%] h-[114%] w-[114%] max-w-none object-contain select-none z-30";
   return isVideo ? (
-    <video src={row.media_url} autoPlay loop muted playsInline aria-hidden style={{ filter }} className={cls} />
+    <ChromaKeyVideo src={row.media_url} chromakey={ck} className={cls} />
   ) : (
     <img src={row.media_url} alt="" aria-hidden style={{ filter }} className={cls} />
   );
