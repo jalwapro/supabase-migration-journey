@@ -33,7 +33,8 @@ function SupportPage() {
   const [text, setText] = useState("");
   const [ticketOpen, setTicketOpen] = useState(false);
   const [subject, setSubject] = useState("");
-  const [detail, setDetail] = useState("");\n  const [quickHelpOpen, setQuickHelpOpen] = useState(true);
+  const [detail, setDetail] = useState("");
+  const [quickHelpOpen, setQuickHelpOpen] = useState(true);
   const quickHelp = [
     { id: "recharge", label: "💰 Recharge problem", prompt: "Mera recharge/coins ka issue check karo." },
     { id: "payment", label: "💳 Payment / Transaction", prompt: "Meri payment/transaction ka issue check karo." },
