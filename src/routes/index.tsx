@@ -796,6 +796,115 @@ function useTopRankFrames() {
   });
 }
 
+function TransparentVideoFrame({ src, chromakey }: { src: string; chromakey: TopFrameRow["chromakey"] }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    if (!video || !canvas) return;
+
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return;
+
+    let raf = 0;
+    let running = true;
+
+    const render = () => {
+      if (!running) return;
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+        }
+
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const p = image.data;
+
+        for (let i = 0; i < p.length; i += 4) {
+          const r = p[i];
+          const g = p[i + 1];
+          const b = p[i + 2];
+
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const greenDominance = g - Math.max(r, b);
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+          // MP4 has no reliable alpha channel in normal browser playback.
+          // Build the transparent layer pixel-by-pixel so the room DP remains visible.
+          let alpha = 255;
+
+          if (chromakey === "green") {
+            if (greenDominance > 18 && g > 55) {
+              alpha = Math.max(0, Math.min(255, (greenDominance - 18) * 12));
+            }
+          } else if (chromakey === "black") {
+            alpha = Math.max(0, Math.min(255, (luminance - 12) * 9));
+          } else if (chromakey === "luma") {
+            alpha = Math.max(0, Math.min(255, (luminance - 18) * 7));
+          } else {
+            // Auto mode for MP4/WebM: remove obvious black/green backing screens.
+            const isBlackScreen = max < 24;
+            const isGreenScreen = greenDominance > 20 && g > 50 && g > b * 1.18 && g > r * 1.18;
+            if (isBlackScreen) alpha = 0;
+            else if (isGreenScreen) alpha = 0;
+            else if (greenDominance > 10 && g > 45) {
+              alpha = Math.max(0, Math.min(255, 255 - (greenDominance - 10) * 14));
+            }
+          }
+
+          p[i + 3] = alpha;
+          // Reduce green spill around the keyed edge.
+          if (greenDominance > 10 && g > r * 1.12 && g > b * 1.08) {
+            p[i + 1] = Math.min(g, Math.max(r, b) + 10);
+          }
+        }
+
+        ctx.putImageData(image, 0, 0);
+      }
+      raf = requestAnimationFrame(render);
+    };
+
+    const start = () => {
+      void video.play().catch(() => {});
+      raf = requestAnimationFrame(render);
+    };
+
+    if (video.readyState >= 2) start();
+    else video.addEventListener("loadeddata", start, { once: true });
+
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+      video.removeEventListener("loadeddata", start);
+    };
+  }, [src, chromakey]);
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
+      <video
+        ref={videoRef}
+        src={src}
+        crossOrigin="anonymous"
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden
+        className="absolute h-0 w-0 opacity-0"
+      />
+      <canvas
+        ref={canvasRef}
+        aria-hidden
+        className="absolute inset-0 h-full w-full max-w-none object-fill select-none"
+      />
+    </div>
+  );
+}
+
 function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const { data } = useTopRankFrames();
   const slot: 1 | 2 = tone === "gold" ? 1 : 2;
@@ -805,45 +914,18 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const mediaType = row?.media_type ?? "png";
   const isVideo = mediaType === "mp4" || mediaType === "webm";
   const chromakey = row?.chromakey ?? "none";
-  // Video frames are green-screen sourced — always key unless admin says none.
-  const filter =
-    chromakey === "green"
-      ? "url(#room-frame-green-key)"
-      : chromakey === "luma"
-      ? "url(#room-frame-luma-key)"
-      : chromakey === "black"
-      ? "url(#room-frame-black-key)"
-      : isVideo
-      ? "url(#room-frame-auto-key)"
-      : undefined;
-  // The frame overlays the whole card tile (the cover is inset inside it), so
-  // crown / corner ornaments always render fully.
   const commonClass =
     "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
 
-
-
-
-  if (mediaType === "mp4" || mediaType === "webm") {
-    return (
-      <video
-        src={src}
-        autoPlay
-        loop
-        muted
-        playsInline
-        aria-hidden
-        style={{ filter }}
-        className={commonClass}
-      />
-    );
+  if (isVideo) {
+    return <TransparentVideoFrame src={src} chromakey={chromakey} />;
   }
+
   return (
     <img
       src={src}
       alt=""
       aria-hidden
-      style={{ filter }}
       className={commonClass}
     />
   );
