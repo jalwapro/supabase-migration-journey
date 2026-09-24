@@ -33,7 +33,19 @@ function SupportPage() {
   const [text, setText] = useState("");
   const [ticketOpen, setTicketOpen] = useState(false);
   const [subject, setSubject] = useState("");
-  const [detail, setDetail] = useState("");
+  const [detail, setDetail] = useState("");\n  const [quickHelpOpen, setQuickHelpOpen] = useState(true);
+  const quickHelp = [
+    { id: "recharge", label: "💰 Recharge problem", prompt: "Mera recharge/coins ka issue check karo." },
+    { id: "payment", label: "💳 Payment / Transaction", prompt: "Meri payment/transaction ka issue check karo." },
+    { id: "withdrawal", label: "💸 Withdrawal problem", prompt: "Meri withdrawal ka status check karo." },
+    { id: "gift", label: "🎁 Gift problem", prompt: "Mera gift/animation ka issue check karo." },
+    { id: "room", label: "🎙️ Voice Room / Mic", prompt: "Mera Voice Room/mic/audio issue check karo." },
+    { id: "seat", label: "💺 Seat / Seat Request", prompt: "Mera seat/seat request issue check karo." },
+    { id: "login", label: "🔐 Login / Google Login", prompt: "Mera login issue check karo." },
+    { id: "profile", label: "👤 Profile / DP / Frame", prompt: "Mera profile/DP/frame issue check karo." },
+    { id: "game", label: "🎮 Game / Ludo", prompt: "Mera game/Ludo issue check karo." },
+    { id: "other", label: "🛠️ Other problem", prompt: "" },
+  ];
   const scroller = useRef<HTMLDivElement>(null);
 
   const conv = useQuery({
@@ -239,6 +251,32 @@ function SupportPage() {
                   {t.admin_reply && <p className="mt-0.5 text-muted-foreground">Reply: {t.admin_reply}</p>}
                 </div>
               ))}
+            </div>
+          )}
+
+          {quickHelpOpen && (
+            <div data-jalwa-overlay className="fixed inset-0 z-50 grid place-items-center bg-black/65 p-5" onClick={() => setQuickHelpOpen(false)}>
+              <div className="w-full max-w-sm rounded-3xl border border-[color:var(--primary)]/30 bg-card p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-3">
+                  <p className="text-lg font-black">How can we help?</p>
+                  <p className="text-xs text-muted-foreground">Select your problem for a faster answer.</p>
+                </div>
+                <div className="grid gap-2">
+                  {quickHelp.map((item) => (
+                    <button key={item.id} type="button"
+                      onClick={() => {
+                        setQuickHelpOpen(false);
+                        if (item.prompt) send.mutate(item.prompt);
+                        else setText("");
+                      }}
+                      className="flex items-center rounded-2xl border border-border bg-background/60 px-3 py-3 text-left text-sm font-semibold transition hover:border-primary/50 active:scale-[0.99]"
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <button type="button" onClick={() => setQuickHelpOpen(false)} className="mt-3 w-full rounded-full px-3 py-2 text-xs text-muted-foreground">Close</button>
+              </div>
             </div>
           )}
 
