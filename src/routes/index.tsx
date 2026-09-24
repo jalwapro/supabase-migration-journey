@@ -807,10 +807,14 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
   const chromakey = row?.chromakey ?? "none";
   // Video frames are green-screen sourced — always key unless admin says none.
   const filter =
-    chromakey === "green" || chromakey === "luma" || (isVideo && chromakey !== "none")
+    chromakey === "green"
       ? "url(#room-frame-green-key)"
-      : chromakey === "black"
+      : chromakey === "luma"
       ? "url(#room-frame-luma-key)"
+      : chromakey === "black"
+      ? "url(#room-frame-black-key)"
+      : isVideo
+      ? "url(#room-frame-auto-key)"
       : undefined;
   // The frame overlays the whole card tile (the cover is inset inside it), so
   // crown / corner ornaments always render fully.
@@ -856,6 +860,18 @@ function RoomFrameFilters() {
         <filter id="room-frame-luma-key" colorInterpolationFilters="sRGB">
           <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.2126 0.7152 0.0722 0 0" />
           <feComponentTransfer><feFuncA type="linear" slope="5.2" intercept="-0.48" /></feComponentTransfer>
+        </filter>
+        <filter id="room-frame-black-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0 1" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0.12 0.55 1" />
+          </feComponentTransfer>
+        </filter>
+        <filter id="room-frame-auto-key" colorInterpolationFilters="sRGB">
+          <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0.2126 0.7152 0.0722 0 0" />
+          <feComponentTransfer>
+            <feFuncA type="table" tableValues="0 0 0.08 0.35 0.72 1" />
+          </feComponentTransfer>
         </filter>
       </defs>
     </svg>
