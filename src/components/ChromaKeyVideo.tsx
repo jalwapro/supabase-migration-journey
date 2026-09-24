@@ -41,8 +41,21 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
           canvas.height = video.videoHeight;
         }
 
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        try {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch {
+          raf = requestAnimationFrame(render);
+          return;
+        }
+        let image: ImageData;
+        try {
+          image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        } catch {
+          // If R2/CORS prevents canvas pixel access, keep the native video
+          // visible instead of leaving a blank frame.
+          raf = requestAnimationFrame(render);
+          return;
+        }
         const p = image.data;
 
         const points = [
@@ -64,10 +77,6 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
           const min = Math.min(r, g, b);
           const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
           const greenDominance = g - Math.max(r, b);
-          const distance = Math.sqrt(
-            (r - br) ** 2 + (g - bg) ** 2 + (b - bb) ** 2,
-          );
-
           let alpha = 255;
 
           if (chromakey === "green") {
@@ -156,7 +165,7 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
         muted
         playsInline
         aria-hidden
-        className="absolute h-0 w-0 opacity-0"
+        className="absolute inset-0 h-full w-full object-contain opacity-0"
       />
       <canvas
         ref={canvasRef}
