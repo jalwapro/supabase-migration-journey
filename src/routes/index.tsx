@@ -823,43 +823,65 @@ function TransparentVideoFrame({ src, chromakey }: { src: string; chromakey: Top
         const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const p = image.data;
 
+        // MP4/WebM cannot carry the transparent overlay the way a PNG/SVGA can.
+        // Detect the actual backing-screen color from the four corners and key it out.
+        const samplePoints = [
+          [0, 0],
+          [Math.max(0, canvas.width - 1), 0],
+          [0, Math.max(0, canvas.height - 1)],
+          [Math.max(0, canvas.width - 1), Math.max(0, canvas.height - 1)],
+        ];
+        let br = 0, bg = 0, bb = 0;
+        for (const [sx, sy] of samplePoints) {
+          const si = (sy * canvas.width + sx) * 4;
+          br += p[si]; bg += p[si + 1]; bb += p[si + 2];
+        }
+        br /= samplePoints.length;
+        bg /= samplePoints.length;
+        bb /= samplePoints.length;
+
         for (let i = 0; i < p.length; i += 4) {
           const r = p[i];
           const g = p[i + 1];
           const b = p[i + 2];
-
           const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
           const greenDominance = g - Math.max(r, b);
           const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+          const bgDistance = Math.sqrt(
+            (r - br) * (r - br) +
+            (g - bg) * (g - bg) +
+            (b - bb) * (b - bb),
+          );
 
-          // MP4 has no reliable alpha channel in normal browser playback.
-          // Build the transparent layer pixel-by-pixel so the room DP remains visible.
           let alpha = 255;
 
           if (chromakey === "green") {
-            if (greenDominance > 18 && g > 55) {
-              alpha = Math.max(0, Math.min(255, (greenDominance - 18) * 12));
+            if (greenDominance > 12 && g > 40) {
+              alpha = Math.max(0, Math.min(255, (greenDominance - 12) * 16));
             }
           } else if (chromakey === "black") {
-            alpha = Math.max(0, Math.min(255, (luminance - 12) * 9));
+            alpha = Math.max(0, Math.min(255, (luminance - 42) * 7));
           } else if (chromakey === "luma") {
-            alpha = Math.max(0, Math.min(255, (luminance - 18) * 7));
+            alpha = Math.max(0, Math.min(255, (luminance - 24) * 8));
           } else {
-            // Auto mode for MP4/WebM: remove obvious black/green backing screens.
-            const isBlackScreen = max < 24;
-            const isGreenScreen = greenDominance > 20 && g > 50 && g > b * 1.18 && g > r * 1.18;
-            if (isBlackScreen) alpha = 0;
-            else if (isGreenScreen) alpha = 0;
-            else if (greenDominance > 10 && g > 45) {
-              alpha = Math.max(0, Math.min(255, 255 - (greenDominance - 10) * 14));
+            // Auto mode: aggressively key out the common black/green backing
+            // while preserving brighter frame artwork.
+            const nearBlack = max < 55;
+            const nearCornerBackground = bgDistance < 52;
+            const greenScreen = greenDominance > 12 && g > 42 && g > b * 1.10 && g > r * 1.10;
+
+            if (nearBlack || nearCornerBackground || greenScreen) {
+              alpha = 0;
+            } else if (luminance < 78) {
+              alpha = Math.max(0, Math.min(255, (luminance - 42) * 7));
+            } else if (greenDominance > 8 && g > 42) {
+              alpha = Math.max(0, Math.min(255, 255 - (greenDominance - 8) * 18));
             }
           }
 
           p[i + 3] = alpha;
-          // Reduce green spill around the keyed edge.
-          if (greenDominance > 10 && g > r * 1.12 && g > b * 1.08) {
-            p[i + 1] = Math.min(g, Math.max(r, b) + 10);
+          if (greenDominance > 8 && g > r * 1.10 && g > b * 1.06) {
+            p[i + 1] = Math.min(g, Math.max(r, b) + 8);
           }
         }
 
