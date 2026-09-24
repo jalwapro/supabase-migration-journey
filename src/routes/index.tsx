@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RoomRecoveryCard } from "@/components/room/RoomRecoveryCard";
+import { ChromaKeyVideo } from "@/components/ChromaKeyVideo";
 import {
   Radio,
   Users,
@@ -794,137 +795,6 @@ function useTopRankFrames() {
     staleTime: 15_000,
     refetchOnWindowFocus: true,
   });
-}
-
-function TransparentVideoFrame({ src, chromakey }: { src: string; chromakey: TopFrameRow["chromakey"] }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas) return;
-
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return;
-
-    let raf = 0;
-    let running = true;
-
-    const render = () => {
-      if (!running) return;
-      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-        }
-
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const p = image.data;
-
-        // MP4/WebM cannot carry the transparent overlay the way a PNG/SVGA can.
-        // Detect the actual backing-screen color from the four corners and key it out.
-        const samplePoints = [
-          [0, 0],
-          [Math.max(0, canvas.width - 1), 0],
-          [0, Math.max(0, canvas.height - 1)],
-          [Math.max(0, canvas.width - 1), Math.max(0, canvas.height - 1)],
-        ];
-        let br = 0, bg = 0, bb = 0;
-        for (const [sx, sy] of samplePoints) {
-          const si = (sy * canvas.width + sx) * 4;
-          br += p[si]; bg += p[si + 1]; bb += p[si + 2];
-        }
-        br /= samplePoints.length;
-        bg /= samplePoints.length;
-        bb /= samplePoints.length;
-
-        for (let i = 0; i < p.length; i += 4) {
-          const r = p[i];
-          const g = p[i + 1];
-          const b = p[i + 2];
-          const max = Math.max(r, g, b);
-          const greenDominance = g - Math.max(r, b);
-          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-          const bgDistance = Math.sqrt(
-            (r - br) * (r - br) +
-            (g - bg) * (g - bg) +
-            (b - bb) * (b - bb),
-          );
-
-          let alpha = 255;
-
-          if (chromakey === "green") {
-            if (greenDominance > 12 && g > 40) {
-              alpha = Math.max(0, Math.min(255, (greenDominance - 12) * 16));
-            }
-          } else if (chromakey === "black") {
-            alpha = Math.max(0, Math.min(255, (luminance - 42) * 7));
-          } else if (chromakey === "luma") {
-            alpha = Math.max(0, Math.min(255, (luminance - 24) * 8));
-          } else {
-            // Auto mode: aggressively key out the common black/green backing
-            // while preserving brighter frame artwork.
-            const nearBlack = max < 55;
-            const nearCornerBackground = bgDistance < 52;
-            const greenScreen = greenDominance > 12 && g > 42 && g > b * 1.10 && g > r * 1.10;
-
-            if (nearBlack || nearCornerBackground || greenScreen) {
-              alpha = 0;
-            } else if (luminance < 78) {
-              alpha = Math.max(0, Math.min(255, (luminance - 42) * 7));
-            } else if (greenDominance > 8 && g > 42) {
-              alpha = Math.max(0, Math.min(255, 255 - (greenDominance - 8) * 18));
-            }
-          }
-
-          p[i + 3] = alpha;
-          if (greenDominance > 8 && g > r * 1.10 && g > b * 1.06) {
-            p[i + 1] = Math.min(g, Math.max(r, b) + 8);
-          }
-        }
-
-        ctx.putImageData(image, 0, 0);
-      }
-      raf = requestAnimationFrame(render);
-    };
-
-    const start = () => {
-      void video.play().catch(() => {});
-      raf = requestAnimationFrame(render);
-    };
-
-    if (video.readyState >= 2) start();
-    else video.addEventListener("loadeddata", start, { once: true });
-
-    return () => {
-      running = false;
-      cancelAnimationFrame(raf);
-      video.removeEventListener("loadeddata", start);
-    };
-  }, [src, chromakey]);
-
-  return (
-    <div className="pointer-events-none absolute inset-0 z-30 overflow-visible">
-      <video
-        ref={videoRef}
-        src={src}
-        crossOrigin="anonymous"
-        autoPlay
-        loop
-        muted
-        playsInline
-        aria-hidden
-        className="absolute h-0 w-0 opacity-0"
-      />
-      <canvas
-        ref={canvasRef}
-        aria-hidden
-        className="absolute inset-0 h-full w-full max-w-none object-fill select-none"
-      />
-    </div>
-  );
 }
 
 function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
