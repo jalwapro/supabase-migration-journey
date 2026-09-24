@@ -86,10 +86,14 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
             // Remove common editor-style transparent/checkerboard grids.
             // The grid is near-neutral; the golden frame is saturated.
             const chroma = max - min;
-            const neutral = chroma < 34;
-            const lightSquare = neutral && lum > 185;
-            const graySquare = neutral && lum > 70 && lum < 185;
-            alpha = lightSquare || graySquare ? 0 : 255;
+            // Checkerboard grids are made from two nearly-neutral shades.
+            // Remove both bright and dark squares, including compressed-video
+            // variants. Keep saturated/golden foreground artwork opaque.
+            const neutral = chroma < 58;
+            const veryLightSquare = neutral && lum > 165;
+            const midGraySquare = neutral && lum >= 55 && lum <= 165;
+            const nearBlackSquare = max < 58;
+            alpha = veryLightSquare || midGraySquare || nearBlackSquare ? 0 : 255;
           } else {
             const cornerBg = distance < 58;
             const blackBg = max < 42;
@@ -106,7 +110,11 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
 
           // Preserve opaque, colourful foreground pixels.
           if (min < 8 && max > 90 && chromakey === "green") alpha = Math.max(alpha, 220);
-          if (chromakey === "checkerboard" && max - min > 42) alpha = 255;
+          if (chromakey === "checkerboard") {
+            // Saturated artwork (gold/orange/colored frame details) always wins
+            // over the neutral checkerboard classification.
+            if (max - min > 58) alpha = 255;
+          }
           p[i + 3] = alpha;
         }
 
