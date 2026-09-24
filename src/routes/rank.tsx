@@ -246,9 +246,12 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const avatarSize = first ? "h-[88px] w-[88px]" : "h-[72px] w-[72px]"; 
   const ring = first ? "border-yellow-400/80 bg-yellow-500/20" : "border-white/20 bg-[#2A154A]"; 
   const medalClass = first ? "h-7 w-7 text-yellow-400 drop-shadow-md" : "h-5 w-5 text-white/70";
+  const rankImage = place === 1 ? "/images/top1.jpg" : place === 2 ? "/images/top 2.jpg" : "/images/top 3.jpg";
   
   const content = (
     <motion.div whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: .98 }} className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl backdrop-blur-xl ${cardHeight}`}>
+      <img src={rankImage} alt={`Top ${place} ranking`} className="pointer-events-none absolute inset-0 h-full w-full rounded-[26px] object-cover opacity-90" />
+      <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-[#120624]/35" />
       
       {first && (
         <>
