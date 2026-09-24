@@ -110,7 +110,12 @@ export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Prop
                 ? 0
                 : 255;
           } else {
-            const cornerBg = distance < 58;
+            const cornerDistance = Math.min(
+            ...cornerColors.map(([cr, cg, cb]) =>
+              Math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2),
+            ),
+          );
+          const cornerBg = cornerDistance < 58;
             const blackBg = max < 42;
             const greenBg = greenDominance > 18 && g > 48 && g > r * 1.10 && g > b * 1.08;
             if (cornerBg || blackBg || greenBg) alpha = 0;
