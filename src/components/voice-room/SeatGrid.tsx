@@ -288,6 +288,11 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const changeMySeat = async () => {
     if (!roomId || !selectedEmptySeat || !isHost) return;
     const target = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 1;
+    // Host always stays on voice Seat 1; seats 2..20 are user seats.
+    if (target !== 1) {
+      toast.error("Host sirf Seat 1 par beth sakta hai");
+      return;
+    }
     if (selectedEmptySeat.is_locked) {
       toast.error("Unlock this seat first");
       return;
