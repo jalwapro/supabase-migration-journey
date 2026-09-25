@@ -347,7 +347,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   };
 
   const hostFrameUrl = host.avatar_frame_url || host.frame_url;
-  const safeHostSeatIndex = Math.min(capacity, Math.max(1, hostSeatIndex));
+  const safeHostSeatIndex = 1;
   const allSeats: (RoomSeat & { isHost?: boolean })[] = Array.from({ length: capacity }, (_, offset) => {
     const index = offset + 1;
     if (index === safeHostSeatIndex) {
