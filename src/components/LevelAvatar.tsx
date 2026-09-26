@@ -55,7 +55,7 @@ export function LevelAvatar({
   const ringUrl = resolveAssetUrl(ring);
   const frameMeta = (() => {
     try {
-      const u = new URL(frameUrl ?? "", window.location.href);
+      const u = new URL(effectiveFrame ?? "", window.location.href);
       const hash = u.hash.startsWith("#jalwa-chroma=") ? u.hash.slice("#jalwa-chroma=".length) : "";
       if (!hash) return null;
       const p = new URLSearchParams(hash);
