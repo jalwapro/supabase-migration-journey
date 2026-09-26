@@ -1,182 +1,119 @@
 import { useEffect, useRef } from "react";
 
-export type ChromaKeyMode = "none" | "green" | "black" | "luma" | "checkerboard";
+export type ChromaKeyMode = "none" | "green" | "black" | "white" | "luma" | "checkerboard" | "custom";
 
 type Props = {
   src: string;
   chromakey?: ChromaKeyMode;
+  color?: string;
+  tolerance?: number;
+  softness?: number;
   className?: string;
 };
 
-function clamp(v: number) {
-  return Math.max(0, Math.min(255, v));
+function clamp(v: number) { return Math.max(0, Math.min(255, v)); }
+
+function hexRgb(hex?: string): [number, number, number] {
+  const raw = (hex ?? "#00ff00").replace("#", "").trim();
+  const value = raw.length === 3 ? raw.split("").map((x) => x + x).join("") : raw.padEnd(6, "0");
+  return [parseInt(value.slice(0, 2), 16) || 0, parseInt(value.slice(2, 4), 16) || 0, parseInt(value.slice(4, 6), 16) || 0];
 }
 
-/**
- * Plays a normal MP4/WebM frame asset through a canvas and removes its
- * backing screen per-pixel. This gives room-rank frames real transparency
- * instead of relying on an SVG/CSS filter (which cannot key video frames).
- */
-export function ChromaKeyVideo({ src, chromakey = "none", className = "" }: Props) {
+function keyAlpha(r: number, g: number, b: number, mode: ChromaKeyMode, color?: string, tolerance = 48, softness = 12) {
+  if (mode === "none") return 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  if (mode === "green") color = "#00ff00";
+  if (mode === "black") color = "#000000";
+  if (mode === "white") color = "#ffffff";
+  if (mode === "custom") {
+    const [cr, cg, cb] = hexRgb(color);
+    const d = Math.hypot(r - cr, g - cg, b - cb);
+    if (d <= tolerance) return 0;
+    if (d <= tolerance + softness) return clamp(((d - tolerance) / Math.max(1, softness)) * 255);
+    return 255;
+  }
+  if (mode === "black") return clamp((lum - tolerance) * (255 / Math.max(1, softness + 1)));
+  if (mode === "luma") return clamp((lum - 38) * 7);
+  if (mode === "white") return clamp((255 - lum - tolerance) * (255 / Math.max(1, softness + 1)));
+  if (mode === "green") {
+    const greenDominance = g - Math.max(r, b);
+    const start = Math.max(8, tolerance * 0.35);
+    const end = start + Math.max(18, tolerance);
+    if (g < 45 || g <= r * 1.08 || g <= b * 1.06) return 255;
+    return greenDominance <= start ? 255 : 255 - clamp(((greenDominance - start) / (end - start)) * 255);
+  }
+  return 255;
+}
+
+function processPixels(image: ImageData, mode: ChromaKeyMode, color?: string, tolerance = 48, softness = 12) {
+  const p = image.data;
+  for (let i = 0; i < p.length; i += 4) {
+    p[i + 3] = keyAlpha(p[i], p[i + 1], p[i + 2], mode, color, tolerance, softness);
+  }
+  return image;
+}
+
+/** Canvas-based manual chroma key for animated frame assets. */
+export function ChromaKeyVideo({ src, chromakey = "none", color, tolerance = 48, softness = 12, className = "" }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
+    const video = videoRef.current, canvas = canvasRef.current;
     if (!video || !canvas) return;
-
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
-
-    let raf = 0;
-    let disposed = false;
-
+    let raf = 0, disposed = false;
     const render = () => {
       if (disposed) return;
-
       if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
         if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
+          canvas.width = video.videoWidth; canvas.height = video.videoHeight;
         }
-
         try {
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        } catch {
-          raf = requestAnimationFrame(render);
-          return;
-        }
-        let image: ImageData;
-        try {
-          image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        } catch {
-          // If R2/CORS prevents canvas pixel access, keep the native video
-          // visible instead of leaving a blank frame.
-          raf = requestAnimationFrame(render);
-          return;
-        }
-        const p = image.data;
-
-        const points = [
-          [0, 0],
-          [canvas.width - 1, 0],
-          [0, canvas.height - 1],
-          [canvas.width - 1, canvas.height - 1],
-        ];
-        const cornerColors = points.map(([x, y]) => {
-          const i = (y * canvas.width + x) * 4;
-          return [p[i], p[i + 1], p[i + 2]] as const;
-        });
-
-        for (let i = 0; i < p.length; i += 4) {
-          const r = p[i];
-          const g = p[i + 1];
-          const b = p[i + 2];
-          const max = Math.max(r, g, b);
-          const min = Math.min(r, g, b);
-          const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-          const greenDominance = g - Math.max(r, b);
-          let alpha = 255;
-
-          if (chromakey === "green") {
-            // Higher green dominance means MORE background, therefore LESS alpha.
-            const start = 18;
-            const end = 72;
-            alpha = greenDominance <= start ? 255 : 255 - clamp(((greenDominance - start) / (end - start)) * 255);
-            if (g < 45 || g <= r * 1.08 || g <= b * 1.06) alpha = 255;
-          } else if (chromakey === "black") {
-            alpha = clamp((lum - 28) * 8);
-          } else if (chromakey === "luma") {
-            alpha = clamp((lum - 38) * 7);
-          } else if (chromakey === "checkerboard") {
-            // MP4/WebM checkerboards are baked into the video pixels. Use the
-            // four corners to learn the actual two background shades, then
-            // remove pixels close to either shade. This is more reliable than
-            // a fixed gray threshold because video encoding shifts RGB values.
-            const cornerDistance = Math.min(
-              ...cornerColors.map(([cr, cg, cb]) =>
-                Math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2),
-              ),
-            );
-            const chroma = max - min;
-            const neutral = chroma < 70;
-            const checkerLight = neutral && lum > 145;
-            const checkerGray = neutral && lum >= 42 && lum <= 145;
-            const nearBlackSquare = max < 55;
-            const cornerMatched = cornerDistance < 52;
-            alpha =
-              cornerMatched || checkerLight || checkerGray || nearBlackSquare
-                ? 0
-                : 255;
-          } else {
-            const cornerDistance = Math.min(
-            ...cornerColors.map(([cr, cg, cb]) =>
-              Math.sqrt((r - cr) ** 2 + (g - cg) ** 2 + (b - cb) ** 2),
-            ),
-          );
-          const cornerBg = cornerDistance < 58;
-            const blackBg = max < 42;
-            const greenBg = greenDominance > 18 && g > 48 && g > r * 1.10 && g > b * 1.08;
-            if (cornerBg || blackBg || greenBg) alpha = 0;
-            else if (lum < 78) alpha = clamp((lum - 42) * 7);
-          }
-
-          // Green spill suppression keeps edges from retaining a green halo.
-          if (greenDominance > 8 && g > r * 1.06 && g > b * 1.04) {
-            const neutral = Math.max(r, b);
-            p[i + 1] = Math.min(g, neutral + 10);
-          }
-
-          // Preserve opaque, colourful foreground pixels.
-          if (min < 8 && max > 90 && chromakey === "green") alpha = Math.max(alpha, 220);
-          if (chromakey === "checkerboard") {
-            // Saturated artwork (gold/orange/colored frame details) always wins
-            // over the neutral checkerboard classification.
-            if (max - min > 58) alpha = 255;
-          }
-          p[i + 3] = alpha;
-        }
-
-        ctx.putImageData(image, 0, 0);
+          const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          ctx.putImageData(processPixels(image, chromakey, color, tolerance, softness), 0, 0);
+        } catch { /* CORS/decoder errors are retried on the next frame. */ }
       }
-
       raf = requestAnimationFrame(render);
     };
-
-    const start = () => {
-      void video.play().catch(() => undefined);
-      raf = requestAnimationFrame(render);
-    };
-
-    if (video.readyState >= 2) start();
-    else video.addEventListener("loadeddata", start, { once: true });
-
-    return () => {
-      disposed = true;
-      cancelAnimationFrame(raf);
-      video.removeEventListener("loadeddata", start);
-    };
-  }, [src, chromakey]);
+    const start = () => { void video.play().catch(() => undefined); raf = requestAnimationFrame(render); };
+    if (video.readyState >= 2) start(); else video.addEventListener("loadeddata", start, { once: true });
+    return () => { disposed = true; cancelAnimationFrame(raf); video.removeEventListener("loadeddata", start); };
+  }, [src, chromakey, color, tolerance, softness]);
 
   return (
-    <div className={`pointer-events-none absolute -inset-[7%] z-30 h-[114%] w-[114%] overflow-visible ${className}`}>
-      <video
-        ref={videoRef}
-        src={src}
-        crossOrigin="anonymous"
-        autoPlay
-        loop
-        muted
-        playsInline
-        aria-hidden
-        className="absolute inset-0 h-full w-full object-contain opacity-0"
-      />
-      <canvas
-        ref={canvasRef}
-        aria-hidden
-        className="absolute inset-0 h-full w-full max-w-none object-contain select-none"
-      />
+    <div className={`pointer-events-none absolute inset-0 h-full w-full overflow-visible ${className}`}>
+      <video ref={videoRef} src={src} crossOrigin="anonymous" autoPlay loop muted playsInline aria-hidden className="absolute inset-0 h-full w-full object-contain opacity-0" />
+      <canvas ref={canvasRef} aria-hidden className="absolute inset-0 h-full w-full max-w-none object-contain select-none" />
     </div>
   );
+}
+
+/** Canvas-based manual chroma key for uploaded PNG/WebP/JPG frame assets. */
+export function ChromaKeyImage({ src, color, tolerance = 48, softness = 12, className = "" }: Omit<Props, "chromakey">) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    let disposed = false;
+    img.onload = () => {
+      if (disposed) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      try {
+        ctx.drawImage(img, 0, 0);
+        ctx.putImageData(processPixels(ctx.getImageData(0, 0, canvas.width, canvas.height), "custom", color, tolerance, softness), 0, 0);
+      } catch { /* CORS errors leave the canvas empty rather than painting a solid key color. */ }
+    };
+    img.src = src;
+    return () => { disposed = true; };
+  }, [src, color, tolerance, softness]);
+  return <canvas ref={canvasRef} aria-hidden className={`absolute inset-0 h-full w-full object-contain select-none ${className}`} />;
 }
