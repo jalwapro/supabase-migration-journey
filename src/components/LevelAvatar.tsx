@@ -157,27 +157,14 @@ export function LevelAvatar({
             }}
             aria-hidden
           >
-            {frameIsVideo ? (
-              <video
-                key={frameUrl}
-                src={cleanFrameUrl}
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="auto"
-                className="h-full w-full object-contain"
-                style={{ backgroundColor: "transparent", objectPosition: "center" }}
-                onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
-              />
+            {frameMeta && frameIsVideo ? (
+              <ChromaKeyVideo src={cleanFrameUrl!} chromakey="custom" color={frameMeta.color} tolerance={frameMeta.tolerance} softness={frameMeta.softness} />
+            ) : frameMeta ? (
+              <ChromaKeyImage src={cleanFrameUrl!} color={frameMeta.color} tolerance={frameMeta.tolerance} softness={frameMeta.softness} />
+            ) : frameIsVideo ? (
+              <video key={cleanFrameUrl} src={cleanFrameUrl} autoPlay muted loop playsInline preload="auto" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center" }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
             ) : (
-              <img
-                src={frameUrl}
-                alt=""
-                className="h-full w-full object-contain"
-                style={{ objectPosition: "center" }}
-                draggable={false}
-              />
+              <img src={cleanFrameUrl} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center" }} draggable={false} />
             )}
           </div>
         );
