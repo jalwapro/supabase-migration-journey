@@ -316,6 +316,27 @@ function ThemesAdmin() {
             )}
           </button>
 
+          <div className="col-span-2 rounded-lg border border-border bg-input p-2 text-xs">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-semibold">Manual Chroma Key (Frame)</span>
+              <button type="button" onClick={() => setDraft((d) => ({ ...d, chromakey_color: "" }))} className="text-[10px] text-muted-foreground hover:text-foreground">None</button>
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="color" value={draft.chromakey_color || "#00ff00"} onChange={(e) => setDraft((d) => ({ ...d, chromakey_color: e.target.value }))} className="h-9 w-12 cursor-pointer rounded bg-transparent" />
+              <input value={draft.chromakey_color} onChange={(e) => setDraft((d) => ({ ...d, chromakey_color: e.target.value }))} placeholder="#00ff00" className="min-w-0 flex-1 rounded border border-border bg-background px-2 py-1.5 font-mono text-[11px]" />
+              {["#00ff00","#000000","#ffffff"].map((c) => <button key={c} type="button" onClick={() => setDraft((d) => ({ ...d, chromakey_color: c }))} className="rounded border border-border px-2 py-1 text-[10px]">{c === "#00ff00" ? "Green" : c === "#000000" ? "Black" : "White"}</button>)}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="text-[10px] text-muted-foreground">Tolerance
+                <input type="range" min="1" max="180" value={draft.chromakey_tolerance} onChange={(e) => setDraft((d) => ({ ...d, chromakey_tolerance: Number(e.target.value) }))} className="w-full" />
+              </label>
+              <label className="text-[10px] text-muted-foreground">Softness
+                <input type="range" min="0" max="80" value={draft.chromakey_softness} onChange={(e) => setDraft((d) => ({ ...d, chromakey_softness: Number(e.target.value) }))} className="w-full" />
+              </label>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">Select the exact background color manually. No auto detection.</p>
+          </div>
+
           <textarea
             placeholder="Description (optional)"
             value={draft.description}
@@ -676,6 +697,16 @@ function EditItemModal({
               </button>
             );
           })}
+
+          <div className="col-span-2 rounded-lg border border-border bg-input p-2 text-xs">
+            <div className="mb-2 flex items-center justify-between"><span className="font-semibold">Manual Chroma Key (Frame)</span><button type="button" onClick={() => setForm((f) => ({ ...f, chromakey_color: "" }))} className="text-[10px] text-muted-foreground">None</button></div>
+            <div className="flex items-center gap-2">
+              <input type="color" value={form.chromakey_color || "#00ff00"} onChange={(e) => setForm((f) => ({ ...f, chromakey_color: e.target.value }))} className="h-9 w-12 cursor-pointer rounded bg-transparent" />
+              <input value={form.chromakey_color} onChange={(e) => setForm((f) => ({ ...f, chromakey_color: e.target.value }))} placeholder="#00ff00" className="min-w-0 flex-1 rounded border border-border bg-background px-2 py-1.5 font-mono text-[11px]" />
+              {["#00ff00","#000000","#ffffff"].map((c) => <button key={c} type="button" onClick={() => setForm((f) => ({ ...f, chromakey_color: c }))} className="rounded border border-border px-2 py-1 text-[10px]">{c === "#00ff00" ? "Green" : c === "#000000" ? "Black" : "White"}</button>)}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2"><label className="text-[10px] text-muted-foreground">Tolerance<input type="range" min="1" max="180" value={form.chromakey_tolerance} onChange={(e) => setForm((f) => ({ ...f, chromakey_tolerance: Number(e.target.value) }))} className="w-full" /></label><label className="text-[10px] text-muted-foreground">Softness<input type="range" min="0" max="80" value={form.chromakey_softness} onChange={(e) => setForm((f) => ({ ...f, chromakey_softness: Number(e.target.value) }))} className="w-full" /></label></div>
+          </div>
 
           {(["preview_url", "animation_url", "bg_image"] as const).map((field) => (
             <input
