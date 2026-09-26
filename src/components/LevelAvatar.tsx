@@ -59,7 +59,7 @@ export function LevelAvatar({
       const hash = u.hash.startsWith("#jalwa-chroma=") ? u.hash.slice("#jalwa-chroma=".length) : "";
       if (!hash) return null;
       const p = new URLSearchParams(hash);
-      const color = p.get("color");
+      const color = p.get("color") ?? hash.split("&")[0];
       return color ? { color: `#${color.replace("#", "")}`, tolerance: Number(p.get("t")) || 48, softness: Number(p.get("s")) || 12 } : null;
     } catch { return null; }
   })();
