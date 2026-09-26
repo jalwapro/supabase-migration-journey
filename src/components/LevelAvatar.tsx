@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { frameForLevel } from "@/lib/levelFrames";
 import { calibForLevel, DEFAULT_FRAME_CALIB } from "@/lib/frameCalibration";
+import { ChromaKeyVideo, ChromaKeyImage } from "@/components/ChromaKeyVideo";
 
 // Every equipped/auto DP frame is normalised so the visible ring is exactly
 // TARGET_FRAME_RATIO × avatar diameter, centred perfectly on the avatar disc.
@@ -52,7 +53,18 @@ export function LevelAvatar({
   const effectiveFrame = frame ?? autoFrame;
   const frameUrl = resolveAssetUrl(effectiveFrame);
   const ringUrl = resolveAssetUrl(ring);
-  const frameIsVideo = !!frameUrl && /\.(mp4|webm|mov)($|\?)/i.test(frameUrl);
+  const frameMeta = (() => {
+    try {
+      const u = new URL(frameUrl ?? "", window.location.href);
+      const hash = u.hash.startsWith("#jalwa-chroma=") ? u.hash.slice("#jalwa-chroma=".length) : "";
+      if (!hash) return null;
+      const p = new URLSearchParams(hash);
+      const color = p.get("color");
+      return color ? { color: `#${color.replace("#", "")}`, tolerance: Number(p.get("t")) || 48, softness: Number(p.get("s")) || 12 } : null;
+    } catch { return null; }
+  })();
+  const cleanFrameUrl = frameUrl ? frameUrl.split("#")[0] : frameUrl;
+  const frameIsVideo = !!cleanFrameUrl && /\.(mp4|webm|mov)($|\?)/i.test(cleanFrameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
 
   const Wrapper: any = userId ? Link : "div";
@@ -148,7 +160,7 @@ export function LevelAvatar({
             {frameIsVideo ? (
               <video
                 key={frameUrl}
-                src={frameUrl}
+                src={cleanFrameUrl}
                 autoPlay
                 muted
                 loop
