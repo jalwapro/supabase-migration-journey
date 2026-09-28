@@ -109,6 +109,10 @@ export default function RenderStudio({
   const [dirty, setDirty] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [safeAreaOn, setSafeAreaOn] = useState(true);
+  const [showProfilePreview, setShowProfilePreview] = useState(false);
+  const [profileScale, setProfileScale] = useState(1);
+  const [profileX, setProfileX] = useState(0);
+  const [profileY, setProfileY] = useState(0);
   const [replayKey, setReplayKey] = useState(0);
   const undoStack = useRef<GiftRenderConfig[]>([]);
   const redoStack = useRef<GiftRenderConfig[]>([]);
@@ -344,6 +348,15 @@ export default function RenderStudio({
               }} />
           )}
 
+          {showProfilePreview && (
+            <div
+              className="absolute left-1/2 top-1/2 z-[80] aspect-square w-[38%] overflow-hidden rounded-full border-2 border-white/20 bg-gradient-to-br from-violet-500 to-fuchsia-700 shadow-xl"
+              style={{ transform: "translate(calc(-50% + " + profileX + "%), calc(-50% + " + profileY + "%)) scale(" + profileScale + ")" }}
+            >
+              <div className="grid h-full w-full place-items-center text-3xl font-bold text-white">DP</div>
+            </div>
+          )}
+
           {/* the asset itself */}
           {clipUrl && isVideo ? (
             <div style={renderConfigToStyle(cfg)}>
@@ -434,6 +447,7 @@ export default function RenderStudio({
             <TabsTrigger value="blur">Blur</TabsTrigger>
             <TabsTrigger value="layer">Layer</TabsTrigger>
             <TabsTrigger value="timing">Timing</TabsTrigger>
+            <TabsTrigger value="profile">Profile Frame</TabsTrigger>
           </TabsList>
 
           <TabsContent value="transform" className="max-h-[62vh] overflow-y-auto pr-1">
@@ -552,6 +566,15 @@ export default function RenderStudio({
             {cfg.loop && (
               <SliderRow label="Loop count" value={cfg.loopCount} min={0} max={10} onChange={(v) => setCfg({ loopCount: v }, true)} suffix={cfg.loopCount === 0 ? " (∞)" : "x"} />
             )}
+          </TabsContent>
+          <TabsContent value="profile" className="max-h-[62vh] overflow-y-auto pr-1">
+            <Row label="Preview">
+              <Switch checked={showProfilePreview} onCheckedChange={setShowProfilePreview} />
+            </Row>
+            <SliderRow label="Profile scale" value={profileScale} min={0.5} max={1.8} step={0.01} onChange={setProfileScale} suffix="x" />
+            <SliderRow label="Profile X" value={profileX} min={-40} max={40} step={0.5} onChange={setProfileX} suffix="%" />
+            <SliderRow label="Profile Y" value={profileY} min={-40} max={40} step={0.5} onChange={setProfileY} suffix="%" />
+            <p className="mt-2 text-[11px] text-muted-foreground">The sample profile is placed behind the selected frame. Use the existing transform and chroma controls to align the frame around it.</p>
           </TabsContent>
         </Tabs>
       </div>
