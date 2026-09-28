@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { VipBadge } from "@/components/vip/VipBadge";
+import LevelAvatar from "@/components/LevelAvatar";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -2894,31 +2895,16 @@ function Seat({
                 }}
               />
             )}
-            {displayAvatar && !remote?.videoTrack ? (
-              <img
+            {displayAvatar || displayFrame ? (
+              <LevelAvatar
                 src={displayAvatar}
-                alt=""
-                className={`relative rounded-full border border-white/30 object-cover shadow-lg h-full w-full`}
+                name={displayName}
+                size={64}
+                frame={displayFrame}
+                className="relative h-full w-full"
               />
-            ) : remote?.videoTrack ? (
-              <div ref={videoRef} className="relative h-full w-full overflow-hidden rounded-full" />
             ) : (
-              <span className="relative text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">
-                📹
-              </span>
-            )}
-            {displayFrame && (
-              <div
-                className="pointer-events-none absolute inset-[-30%] z-10"
-                style={{ transform: "translateY(-6%)" }}
-                aria-hidden
-              >
-                {frameIsVideo ? (
-                  <video src={displayFrame} autoPlay muted loop playsInline className="h-full w-full object-contain" />
-                ) : (
-                  <img src={displayFrame} alt="" className="h-full w-full object-contain" draggable={false} />
-                )}
-              </div>
+              <span className="relative text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">📹</span>
             )}
           </div>
         </div>
