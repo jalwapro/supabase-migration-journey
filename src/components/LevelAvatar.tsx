@@ -80,7 +80,25 @@ export function LevelAvatar({
     } catch { return null; }
   })();
   const cleanFrameUrl = frameUrl ? frameUrl.split("#")[0] : frameUrl;
-  const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.scaleX ?? 1) * Number(renderConfig?.scaleY ?? 1) * Number(renderConfig?.zoom ?? 1);
+
+  // Shop Render Studio is the single source of truth for an equipped frame.
+  // Support both the persisted studio config and the legacy URL chroma hash.
+  const studioChroma = (() => {
+    if (!renderConfig) return null;
+    const mode = String(renderConfig.chromaMode ?? "off");
+    if (mode === "off") return null;
+    const color = String(renderConfig.keyColor ?? (mode === "green" ? "#00ff00" : mode === "black" ? "#000000" : mode === "white" ? "#ffffff" : "#00aaff"));
+    return {
+      color,
+      tolerance: Number(renderConfig.greenTolerance ?? 48),
+      softness: Number(renderConfig.edgeSoftness ?? 12),
+    };
+  })();
+  const effectiveChroma = studioChroma ?? frameMeta;
+  const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.zoom ?? 1);
+  const frameScaleX = frameScale * Number(renderConfig?.scaleX ?? 1);
+  const frameScaleY = frameScale * Number(renderConfig?.scaleY ?? 1);
+  const positionUnit = String(renderConfig?.positionUnit ?? "percent");
   const frameX = Number(renderConfig?.positionX ?? 0);
   const frameY = Number(renderConfig?.positionY ?? 0);
   const frameRotation = Number(renderConfig?.rotation ?? 0);
@@ -180,20 +198,22 @@ export function LevelAvatar({
             style={{
               width: overlayPx,
               height: overlayPx,
-              transform: `translate(calc(-50% + ${frameX}%), calc(-50% + ${shiftY}px + ${frameY}%)) rotate(${frameRotation}deg) scale(${frameScale})`,
+              transform: positionUnit === "px"
+                ? `translate(calc(-50% + ${frameX}px), calc(-50% + ${shiftY}px + ${frameY}px)) rotate(${frameRotation}deg) scale(${frameScaleX}, ${frameScaleY})`
+                : `translate(calc(-50% + ${frameX}%), calc(-50% + ${shiftY}px + ${frameY}%)) rotate(${frameRotation}deg) scale(${frameScaleX}, ${frameScaleY})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
             }}
             aria-hidden
           >
-            {frameMeta && frameIsVideo ? (
-              <ChromaKeyVideo src={cleanFrameUrl!} chromakey="custom" color={frameMeta.color} tolerance={frameMeta.tolerance} softness={frameMeta.softness} />
-            ) : frameMeta ? (
-              <ChromaKeyImage src={cleanFrameUrl!} color={frameMeta.color} tolerance={frameMeta.tolerance} softness={frameMeta.softness} />
+            {effectiveChroma && frameIsVideo ? (
+              <ChromaKeyVideo src={cleanFrameUrl!} chromakey="custom" color={effectiveChroma.color} tolerance={effectiveChroma.tolerance} softness={effectiveChroma.softness} />
+            ) : effectiveChroma ? (
+              <ChromaKeyImage src={cleanFrameUrl!} color={effectiveChroma.color} tolerance={effectiveChroma.tolerance} softness={effectiveChroma.softness} />
             ) : frameIsVideo ? (
-              <video key={cleanFrameUrl} src={cleanFrameUrl} autoPlay muted loop playsInline preload="auto" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center" }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
+              <video key={cleanFrameUrl} src={cleanFrameUrl} autoPlay muted loop playsInline preload="auto" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
             ) : (
-              <img src={cleanFrameUrl} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center" }} draggable={false} />
+              <img src={cleanFrameUrl} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
             )}
           </div>
         );
