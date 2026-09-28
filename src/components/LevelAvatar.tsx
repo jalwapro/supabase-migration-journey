@@ -1,4 +1,6 @@
 import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
@@ -52,6 +54,20 @@ export function LevelAvatar({
   const autoFrame = frameForLevel(level);
   const effectiveFrame = frame ?? autoFrame;
   const frameUrl = resolveAssetUrl(effectiveFrame);
+  const { data: shopFrameConfig } = useQuery({
+    queryKey: ["shop-frame-render-configs"],
+    enabled: !!frame && effectiveFrame !== autoFrame,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("themes").select("animation_url,preview_url,bg_image,render_config");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const baseFrame = (effectiveFrame ?? "").split("#")[0];
+  const renderConfig = (shopFrameConfig ?? []).find((t) =>
+    [t.animation_url, t.preview_url, t.bg_image].some((u) => (u ?? "").split("#")[0] === baseFrame)
+  )?.render_config as Record<string, unknown> | undefined;
   const ringUrl = resolveAssetUrl(ring);
   const frameMeta = (() => {
     try {
@@ -64,6 +80,17 @@ export function LevelAvatar({
     } catch { return null; }
   })();
   const cleanFrameUrl = frameUrl ? frameUrl.split("#")[0] : frameUrl;
+  const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.scaleX ?? 1) * Number(renderConfig?.scaleY ?? 1) * Number(renderConfig?.zoom ?? 1);
+  const frameX = Number(renderConfig?.positionX ?? 0);
+  const frameY = Number(renderConfig?.positionY ?? 0);
+  const frameRotation = Number(renderConfig?.rotation ?? 0);
+  const frameOpacity = Number(renderConfig?.opacity ?? 100) / 100;
+  const frameFilter = [
+    renderConfig?.brightness !== undefined ? `brightness(${1 + Number(renderConfig.brightness) / 100})` : "",
+    renderConfig?.contrast !== undefined ? `contrast(${1 + Number(renderConfig.contrast) / 100})` : "",
+    renderConfig?.saturation !== undefined ? `saturate(${Number(renderConfig.saturation)})` : "",
+    renderConfig?.hue !== undefined ? `hue-rotate(${Number(renderConfig.hue)}deg)` : "",
+  ].filter(Boolean).join(" ");
   const frameIsVideo = !!cleanFrameUrl && /\.(mp4|webm|mov)($|\?)/i.test(cleanFrameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
 
@@ -153,7 +180,9 @@ export function LevelAvatar({
             style={{
               width: overlayPx,
               height: overlayPx,
-              transform: `translate(-50%, calc(-50% + ${shiftY}px))`,
+              transform: `translate(calc(-50% + ${frameX}%), calc(-50% + ${shiftY + frameY}%)) rotate(${frameRotation}deg) scale(${frameScale})`,
+              opacity: frameOpacity,
+              filter: frameFilter || undefined,
             }}
             aria-hidden
           >
