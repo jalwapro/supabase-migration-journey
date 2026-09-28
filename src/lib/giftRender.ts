@@ -105,6 +105,13 @@ export interface GiftRenderConfig {
   endMs: number | null; // hard cut-off; null = clip length
   loop: boolean;
   loopCount: number;   // 0 = infinite while visible
+
+  // --- DP frame studio preview ---
+  dpPreview: boolean;
+  dpAvatarUrl: string;
+  dpAvatarScale: number;
+  dpAvatarX: number;
+  dpAvatarY: number;
 }
 
 
@@ -173,6 +180,12 @@ export const DEFAULT_GIFT_RENDER: GiftRenderConfig = {
   endMs: null,
   loop: false,
   loopCount: 0,
+
+  dpPreview: false,
+  dpAvatarUrl: "",
+  dpAvatarScale: 1,
+  dpAvatarX: 0,
+  dpAvatarY: 0,
 };
 
 
