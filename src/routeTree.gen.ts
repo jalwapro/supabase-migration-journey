@@ -84,6 +84,7 @@ import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
+import { Route as AuthenticatedAdminShopStudioRouteImport } from './routes/_authenticated/admin.shop-studio'
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
 import { Route as AuthenticatedAdminSupportRoomRouteImport } from './routes/_authenticated/admin.support-room'
 import { Route as AuthenticatedAdminSupportChatRouteImport } from './routes/_authenticated/admin.support-chat'
@@ -523,6 +524,11 @@ const AuthenticatedAdminThemesRoute =
     path: '/themes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminShopStudioRoute = AuthenticatedAdminShopStudioRouteImport.update({
+  id: '/shop-studio',
+  path: '/shop-studio',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminThemeCategoriesRoute =
   AuthenticatedAdminThemeCategoriesRouteImport.update({
     id: '/theme-categories',
@@ -920,6 +926,7 @@ export interface FileRoutesByFullPath {
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
+  '/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
@@ -1170,6 +1177,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/_authenticated/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
+  '/_authenticated/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
@@ -2118,6 +2126,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/shop-studio': {
+      id: '/_authenticated/admin/shop-studio'
+      path: '/shop-studio'
+      fullPath: '/admin/shop-studio'
+      preLoaderRoute: typeof AuthenticatedAdminShopStudioRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/themes': {
       id: '/_authenticated/admin/themes'
       path: '/themes'
@@ -2528,6 +2543,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSupportChatRoute: typeof AuthenticatedAdminSupportChatRoute
   AuthenticatedAdminSupportRoomRoute: typeof AuthenticatedAdminSupportRoomRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
+  AuthenticatedAdminShopStudioRoute: typeof AuthenticatedAdminShopStudioRoute
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
@@ -2595,6 +2611,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSupportRoomRoute: AuthenticatedAdminSupportRoomRoute,
   AuthenticatedAdminThemeCategoriesRoute:
     AuthenticatedAdminThemeCategoriesRoute,
+  AuthenticatedAdminShopStudioRoute: AuthenticatedAdminShopStudioRoute,
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
