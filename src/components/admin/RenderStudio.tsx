@@ -102,6 +102,7 @@ export default function RenderStudio({
   emptyLabel?: string;
 }) {
   const qc = useQueryClient();
+  // DP frame preview controls
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [cfg, setCfgState] = useState<GiftRenderConfig>(DEFAULT_GIFT_RENDER);
