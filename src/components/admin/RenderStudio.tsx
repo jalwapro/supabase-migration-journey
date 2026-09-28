@@ -241,6 +241,7 @@ export default function RenderStudio({
 
   const clipUrl = selected?.clipUrl ?? null;
   const clipType = selected?.clipType ?? null;
+  const sampleAvatar = "";
   // Better video detection - use clipType from database and extension check
   const isVideo = !!clipUrl && (
     clipType === "mp4" || clipType === "webm" || clipType === "mov" ||
