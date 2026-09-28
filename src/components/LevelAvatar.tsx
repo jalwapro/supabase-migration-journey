@@ -180,7 +180,7 @@ export function LevelAvatar({
             style={{
               width: overlayPx,
               height: overlayPx,
-              transform: `translate(calc(-50% + ${frameX}%), calc(-50% + ${shiftY + frameY}%)) rotate(${frameRotation}deg) scale(${frameScale})`,
+              transform: `translate(calc(-50% + ${frameX}%), calc(-50% + ${shiftY}px + ${frameY}%)) rotate(${frameRotation}deg) scale(${frameScale})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
             }}
