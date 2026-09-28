@@ -197,24 +197,29 @@ export function LevelAvatar({
         // survives every DP size and every page.
         const studioWidth = Number(renderConfig.width ?? 0);
         const studioHeight = Number(renderConfig.height ?? 0);
-        const stageBase = Math.max(studioWidth || 0, studioHeight || 0);
-        const avatarBase = px * 2;
-        const stageToAvatar = stageBase > 0 ? avatarBase / stageBase : 1;
-        const configuredSize = stageBase > 0
-          ? Math.max(avatarBase, stageBase * stageToAvatar)
-          : avatarBase * calibratedRatio;
-        const overlayPx = Math.max(px * 1.25, configuredSize * calibratedRatio * frameScale);
-        const shiftY = (0.5 - calib.cy) * overlayPx;
+        const STUDIO_STAGE_W = 340;
+        const STUDIO_STAGE_H = 604;
+        // RenderStudio's profile preview uses a 38% avatar on this stage.
+        // Keep that same reference when converting the studio asset into a DP.
+        const studioFrameW = studioWidth > 0 ? studioWidth : STUDIO_STAGE_W;
+        const studioFrameH = studioHeight > 0 ? studioHeight : STUDIO_STAGE_H;
+        const studioAvatarW = STUDIO_STAGE_W * 0.38;
+        const studioAvatarH = STUDIO_STAGE_W * 0.38;
+        const baseW = (studioFrameW / studioAvatarW) * px;
+        const baseH = (studioFrameH / studioAvatarH) * px;
+        const overlayW = Math.max(px * 1.1, baseW * calibratedRatio * frameScale);
+        const overlayH = Math.max(px * 1.1, baseH * calibratedRatio * frameScale);
+        const shiftY = (0.5 - calib.cy) * overlayH;
         const configuredX = Number(renderConfig.positionX ?? 0);
         const configuredY = Number(renderConfig.positionY ?? 0);
-        const xOffset = positionUnit === "px" ? configuredX * stageToAvatar : (configuredX / 100) * px;
-        const yOffset = positionUnit === "px" ? configuredY * stageToAvatar : (configuredY / 100) * px;
+        const xOffset = positionUnit === "px" ? (configuredX / STUDIO_STAGE_W) * px : (configuredX / 100) * px;
+        const yOffset = positionUnit === "px" ? (configuredY / STUDIO_STAGE_H) * px : (configuredY / 100) * px;
         return (
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-[2] flex items-center justify-center"
             style={{
-              width: overlayPx,
-              height: overlayPx,
+              width: overlayW,
+              height: overlayH,
               transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${shiftY + yOffset}px)) rotate(${frameRotation}deg) scale(${frameScaleX / Math.max(frameScale, 0.001)}, ${frameScaleY / Math.max(frameScale, 0.001)})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
