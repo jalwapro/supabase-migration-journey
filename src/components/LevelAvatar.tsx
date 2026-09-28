@@ -5,6 +5,7 @@ import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 import { frameForLevel } from "@/lib/levelFrames";
+import { normalizeRenderConfig } from "@/lib/giftRender";
 import { calibForLevel, DEFAULT_FRAME_CALIB } from "@/lib/frameCalibration";
 import { ChromaKeyVideo, ChromaKeyImage } from "@/components/ChromaKeyVideo";
 
@@ -65,9 +66,10 @@ export function LevelAvatar({
     },
   });
   const baseFrame = (effectiveFrame ?? "").split("#")[0];
-  const renderConfig = (shopFrameConfig ?? []).find((t) =>
+  const rawRenderConfig = (shopFrameConfig ?? []).find((t) =>
     [t.animation_url, t.preview_url, t.bg_image].some((u) => (u ?? "").split("#")[0] === baseFrame)
-  )?.render_config as Record<string, unknown> | undefined;
+  )?.render_config;
+  const renderConfig = normalizeRenderConfig(rawRenderConfig) as unknown as Record<string, unknown>;
   const ringUrl = resolveAssetUrl(ring);
   const frameMeta = (() => {
     try {
@@ -189,18 +191,31 @@ export function LevelAvatar({
         // If the frame is the auto level frame, we have exact calibration.
         // Custom shop frames fall back to a sane default.
         const calib = effectiveFrame === autoFrame ? calibForLevel(level) : DEFAULT_FRAME_CALIB;
-        const overlayPx = (TARGET_FRAME_RATIO * px) / calib.fill;
-        // Shift so visible content centre lands on the avatar centre.
+        const calibratedRatio = (TARGET_FRAME_RATIO / Math.max(calib.fill, 0.1));
+        // Shop Render Studio is stage-based; the profile renderer converts that
+        // stage transform into avatar-relative units so the same saved config
+        // survives every DP size and every page.
+        const studioWidth = Number(renderConfig.width ?? 0);
+        const studioHeight = Number(renderConfig.height ?? 0);
+        const stageBase = Math.max(studioWidth || 0, studioHeight || 0);
+        const avatarBase = px * 2;
+        const stageToAvatar = stageBase > 0 ? avatarBase / stageBase : 1;
+        const configuredSize = stageBase > 0
+          ? Math.max(avatarBase, stageBase * stageToAvatar)
+          : avatarBase * calibratedRatio;
+        const overlayPx = Math.max(px * 1.25, configuredSize * calibratedRatio * frameScale);
         const shiftY = (0.5 - calib.cy) * overlayPx;
+        const configuredX = Number(renderConfig.positionX ?? 0);
+        const configuredY = Number(renderConfig.positionY ?? 0);
+        const xOffset = positionUnit === "px" ? configuredX * stageToAvatar : (configuredX / 100) * px;
+        const yOffset = positionUnit === "px" ? configuredY * stageToAvatar : (configuredY / 100) * px;
         return (
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-[2] flex items-center justify-center"
             style={{
               width: overlayPx,
               height: overlayPx,
-              transform: positionUnit === "px"
-                ? `translate(calc(-50% + ${frameX}px), calc(-50% + ${shiftY}px + ${frameY}px)) rotate(${frameRotation}deg) scale(${frameScaleX}, ${frameScaleY})`
-                : `translate(calc(-50% + ${frameX}%), calc(-50% + ${shiftY}px + ${frameY}%)) rotate(${frameRotation}deg) scale(${frameScaleX}, ${frameScaleY})`,
+              transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${shiftY + yOffset}px)) rotate(${frameRotation}deg) scale(${frameScaleX / Math.max(frameScale, 0.001)}, ${frameScaleY / Math.max(frameScale, 0.001)})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
             }}
