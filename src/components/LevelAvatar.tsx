@@ -254,3 +254,5 @@ export function LevelAvatar({
 
   );
 }
+
+export default LevelAvatar;
