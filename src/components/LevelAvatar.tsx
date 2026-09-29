@@ -205,7 +205,9 @@ export function LevelAvatar({
         // the Studio width/height are used only to preserve the asset aspect.
         const studioWidth = Number(renderConfig.width ?? 0);
         const studioHeight = Number(renderConfig.height ?? 0);
-        const configuredAspect = studioWidth > 0 && studioHeight > 0
+        const STUDIO_STAGE_W = 340;
+    const STUDIO_STAGE_H = 604;
+    const configuredAspect = studioWidth > 0 && studioHeight > 0
           ? studioWidth / studioHeight
           : 1;
         const baseSize = px * TARGET_FRAME_RATIO * calibratedRatio * frameScale;
