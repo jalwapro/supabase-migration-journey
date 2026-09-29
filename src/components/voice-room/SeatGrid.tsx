@@ -372,7 +372,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                 <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                 <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[72px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                  <span className="relative block h-full w-full overflow-hidden rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
+                  <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
 
                 </span>
                 <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
