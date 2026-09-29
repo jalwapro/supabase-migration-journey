@@ -20,15 +20,14 @@ export function HostCard({ host, onTap }: { host: HostCardData; onTap?: () => vo
   const active = host.is_muted !== true;
   const speaking = host.is_speaking === true && active;
   const [resolvedFrame, setResolvedFrame] = useState<string | null>(host.avatar_frame_url || host.frame_url || null);
-  const [renderConfig, setRenderConfig] = useState<unknown>({});
+  const [renderConfig, setRenderConfig] = useState<unknown>(null);
 
   useEffect(() => {
     const direct = host.avatar_frame_url || host.frame_url;
-    if (direct) { setResolvedFrame(direct); return; }
     let activeRequest = true;
     void supabase.from("profiles").select("frame,frame_render_config").eq("id", host.id).maybeSingle().then(({ data }) => {
       if (activeRequest) {
-        setResolvedFrame((data as { frame?: string | null } | null)?.frame ?? null);
+        setResolvedFrame(direct || (data as { frame?: string | null } | null)?.frame ?? null);
         setRenderConfig((data as { frame_render_config?: unknown } | null)?.frame_render_config ?? {});
       }
     });
