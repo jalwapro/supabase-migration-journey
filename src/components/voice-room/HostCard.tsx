@@ -27,7 +27,7 @@ export function HostCard({ host, onTap }: { host: HostCardData; onTap?: () => vo
     let activeRequest = true;
     void supabase.from("profiles").select("frame,frame_render_config").eq("id", host.id).maybeSingle().then(({ data }) => {
       if (activeRequest) {
-        setResolvedFrame(direct || (data as { frame?: string | null } | null)?.frame ?? null);
+        setResolvedFrame(direct || ((data as { frame?: string | null } | null)?.frame ?? null));
         setRenderConfig((data as { frame_render_config?: unknown } | null)?.frame_render_config ?? {});
       }
     });
