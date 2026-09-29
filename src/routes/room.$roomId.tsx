@@ -10,7 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
-import { frameForLevel } from "@/lib/levelFrames";
 import hostThroneAsset from "@/assets/room/host-throne.png.asset.json";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 const HOST_THRONE_URL = resolveAssetUrl(hostThroneAsset.url)!;
@@ -2884,7 +2883,7 @@ function Seat({
           </span>
         )}
         <div className="absolute inset-x-0 top-[28%] grid place-items-center">
-          <div className={`relative ${displayFrame ? "h-8 w-8" : "h-10 w-10"}`}>
+          <div className="relative h-10 w-10">
             {speaking && (
               <span
                 aria-hidden
@@ -2899,8 +2898,8 @@ function Seat({
               <LevelAvatar
                 src={displayAvatar}
                 name={displayName}
-                size={64}
-                frame={displayFrame}
+                size="sm"
+                frame={member?.user?.frame ?? fallbackUser?.frame ?? null}
                 className="relative h-full w-full"
               />
             ) : (
@@ -2968,43 +2967,31 @@ function Seat({
         />
 
         {/* Inner disc (avatar / content) */}
-        <div className="absolute inset-[15%] overflow-hidden rounded-full bg-gradient-to-b from-white/10 to-black/60">
-          {displayAvatar && !remote?.videoTrack && (
-            <img src={displayAvatar} alt="" className="absolute inset-0 h-full w-full object-cover" />
-          )}
-          {remote?.videoTrack && <div ref={videoRef} className="absolute inset-0" />}
-          {!displayAvatar && !remote?.videoTrack && !hostAwayFromSeat && (
-            <div className="absolute inset-0 grid place-items-center">
-              {locked ? (
-                <span className="text-xl">🔒</span>
-              ) : (
-                <Plus className="h-5 w-5 text-white/40" />
-              )}
+        <div className="absolute inset-[15%] overflow-visible rounded-full">
+          {remote?.videoTrack ? (
+            <div ref={videoRef} className="absolute inset-0 overflow-hidden rounded-full" />
+          ) : displayAvatar ? (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <LevelAvatar
+                src={displayAvatar}
+                name={displayName}
+                level={member?.user?.vip_level ?? fallbackUser?.vip_level ?? 0}
+                size="sm"
+                showBadge={false}
+                frame={member?.user?.frame ?? fallbackUser?.frame ?? null}
+              />
             </div>
-          )}
-
+          ) : !hostAwayFromSeat ? (
+            <div className="absolute inset-0 grid place-items-center">
+              {locked ? <span className="text-xl">🔒</span> : <Plus className="h-5 w-5 text-white/40" />}
+            </div>
+          ) : null}
           {hostAwayFromSeat && (
             <div className="absolute inset-0 grid place-items-center bg-red-600/30 backdrop-blur-sm">
-              <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">
-                Host
-              </span>
+              <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">Host</span>
             </div>
           )}
         </div>
-
-        {/* Shop frame overlay */}
-        {displayFrame && (
-          <div
-            className="pointer-events-none absolute inset-[-8%] z-[15]"
-            aria-hidden
-          >
-            {frameIsVideo ? (
-              <video src={displayFrame} autoPlay muted loop playsInline className="h-full w-full object-contain" />
-            ) : (
-              <img src={displayFrame} alt="" className="h-full w-full object-contain" draggable={false} />
-            )}
-          </div>
-        )}
 
         {/* Seat number badge (top-left) */}
         <span className="absolute -top-1 -left-1 grid h-4 w-4 place-items-center rounded-full border border-white/30 bg-black/80 text-[8px] font-bold text-white">
