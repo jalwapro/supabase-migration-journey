@@ -172,9 +172,13 @@ export function LevelAvatar({
       )}
 
 
-      {/* Inner disc — sits BEHIND the frame overlay (z-[2]) so the frame's
-          ornaments always paint on top of the photo. */}
-      <div className="absolute inset-0 z-[1] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40">
+      {/* Inner DP disc stays centered inside a small safe-area so frame
+          ornaments never crop the user's face/photo. The frame itself keeps
+          its existing size and exact center alignment. */}
+      <div
+        className="absolute left-1/2 top-1/2 z-[1] overflow-hidden rounded-full bg-gradient-to-br from-[color:var(--primary)]/70 to-[color:var(--secondary)]/70 ring-2 ring-black/40"
+        style={{ width: "90%", height: "90%", transform: "translate(-50%, -50%)" }}
+      >
 
         {src ? (
           <img src={src} alt="" className="h-full w-full object-cover" />
