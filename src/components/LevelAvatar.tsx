@@ -203,48 +203,22 @@ export function LevelAvatar({
         // as frame height, making a 40px seat frame render roughly 4-5x too tall.
         // For profile/room DPs, the frame is sized relative to the avatar and
         // the Studio width/height are used only to preserve the asset aspect.
-        const studioWidth = Number(renderConfig.width ?? 0);
-        const studioHeight = Number(renderConfig.height ?? 0);
-        const STUDIO_STAGE_W = 340;
-    const STUDIO_STAGE_H = 604;
-    const configuredAspect = studioWidth > 0 && studioHeight > 0
-          ? studioWidth / studioHeight
-          : 1;
-        const baseSize = px * TARGET_FRAME_RATIO * calibratedRatio * frameScale;
-        const aspectRoot = Math.sqrt(Math.max(configuredAspect, 0.25));
-        let overlayW = baseSize * aspectRoot;
-        let overlayH = baseSize / aspectRoot;
-        // Keep decorative frames close to the DP; never allow Studio canvas
-        // dimensions to turn a small VoiceRoom seat into a giant overlay.
-        const maxDim = px * 2.1;
-        const maxOverlay = Math.max(overlayW, overlayH);
-        if (maxOverlay > maxDim) {
-          const ratio = maxDim / maxOverlay;
-          overlayW *= ratio;
-          overlayH *= ratio;
-        }
-        // Professional DP layout: keep the frame visually attached to the
-        // avatar and reserve the entire lower edge for the name/status row.
-        // Studio Y is allowed, but it is clamped so the frame can never drift
-        // below the avatar's bottom edge and cover text.
-        const visualScaleY = frameScaleY / Math.max(frameScale, 0.001);
-        const visualH = overlayH * visualScaleY;
-        const autoBottomAlignY = (px - visualH) / 2;
-        const baseShiftY = autoBottomAlignY + (0.5 - calib.cy) * visualH;
-        const configuredX = Number(renderConfig.positionX ?? 0);
-        const configuredY = Number(renderConfig.positionY ?? 0);
-        const xOffset = positionUnit === "px" ? (configuredX / STUDIO_STAGE_W) * px : (configuredX / 100) * px;
-        const rawYOffset = positionUnit === "px" ? (configuredY / STUDIO_STAGE_H) * px : (configuredY / 100) * px;
-        const maxDown = Math.max(0, (px - visualH) / 2);
-        const maxUp = Math.max(0, (px - visualH) / 2);
-        const finalShiftY = Math.min(maxDown, Math.max(-maxUp, baseShiftY + rawYOffset));
+        // DP frame geometry is always avatar-centered. The avatar itself is
+        // the source of truth: a square DP sits exactly in the center circle,
+        // while the frame grows evenly on all four sides. Studio X/Y are not
+        // allowed to move a DP frame away from that circle.
+        const baseSize = px * TARGET_FRAME_RATIO * frameScale;
+        const overlayW = baseSize;
+        const overlayH = baseSize;
+        const finalScaleX = frameScaleX / Math.max(frameScale, 0.001);
+        const finalScaleY = frameScaleY / Math.max(frameScale, 0.001);
         return (
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-[2] flex items-center justify-center"
             style={{
               width: overlayW,
               height: overlayH,
-              transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${finalShiftY}px)) rotate(${frameRotation}deg) scale(${frameScaleX / Math.max(frameScale, 0.001)}, ${frameScaleY / Math.max(frameScale, 0.001)})`,
+              transform: `translate(-50%, -50%) rotate(${frameRotation}deg) scale(${finalScaleX}, ${finalScaleY})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
             }}
