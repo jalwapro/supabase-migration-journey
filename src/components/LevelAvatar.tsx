@@ -103,11 +103,6 @@ export function LevelAvatar({
   const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.zoom ?? 1);
   const frameScaleX = frameScale * Number(renderConfig?.scaleX ?? 1);
   const frameScaleY = frameScale * Number(renderConfig?.scaleY ?? 1);
-  // Reserve the frame's visual overflow so the following name/status row
-  // is never covered by a decorative DP frame.
-  const frameLayoutGap = frameUrl
-    ? Math.min(px * 0.9, Math.max(0, px * (0.58 * Math.max(frameScaleY, 1) - 0.02)))
-    : 0;
   const positionUnit = String(renderConfig?.positionUnit ?? "percent");
   const frameX = Number(renderConfig?.positionX ?? 0);
   const frameY = Number(renderConfig?.positionY ?? 0);
@@ -228,21 +223,28 @@ export function LevelAvatar({
           overlayW *= ratio;
           overlayH *= ratio;
         }
-        // Auto-anchor the frame to the DP box: decorative overflow goes upward,
-        // never down over the name/status row. Studio Y is then applied on top.
-        const autoBottomAlignY = (px - overlayH) / 2;
-        const shiftY = autoBottomAlignY + (0.5 - calib.cy) * overlayH;
+        // Professional DP layout: keep the frame visually attached to the
+        // avatar and reserve the entire lower edge for the name/status row.
+        // Studio Y is allowed, but it is clamped so the frame can never drift
+        // below the avatar's bottom edge and cover text.
+        const visualScaleY = frameScaleY / Math.max(frameScale, 0.001);
+        const visualH = overlayH * visualScaleY;
+        const autoBottomAlignY = (px - visualH) / 2;
+        const baseShiftY = autoBottomAlignY + (0.5 - calib.cy) * visualH;
         const configuredX = Number(renderConfig.positionX ?? 0);
         const configuredY = Number(renderConfig.positionY ?? 0);
         const xOffset = positionUnit === "px" ? (configuredX / STUDIO_STAGE_W) * px : (configuredX / 100) * px;
-        const yOffset = positionUnit === "px" ? (configuredY / STUDIO_STAGE_H) * px : (configuredY / 100) * px;
+        const rawYOffset = positionUnit === "px" ? (configuredY / STUDIO_STAGE_H) * px : (configuredY / 100) * px;
+        const maxDown = Math.max(0, (px - visualH) / 2);
+        const maxUp = Math.max(0, (px - visualH) / 2);
+        const finalShiftY = Math.min(maxDown, Math.max(-maxUp, baseShiftY + rawYOffset));
         return (
           <div
             className="pointer-events-none absolute left-1/2 top-1/2 z-[2] flex items-center justify-center"
             style={{
               width: overlayW,
               height: overlayH,
-              transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${shiftY + yOffset}px)) rotate(${frameRotation}deg) scale(${frameScaleX / Math.max(frameScale, 0.001)}, ${frameScaleY / Math.max(frameScale, 0.001)})`,
+              transform: `translate(calc(-50% + ${xOffset}px), calc(-50% + ${finalShiftY}px)) rotate(${frameRotation}deg) scale(${frameScaleX / Math.max(frameScale, 0.001)}, ${frameScaleY / Math.max(frameScale, 0.001)})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
             }}
@@ -261,7 +263,7 @@ export function LevelAvatar({
         );
       })()}
       {frameUrl && (
-        <span className="pointer-events-none absolute inset-[-30%] z-[6]" aria-hidden>
+        <span className="pointer-events-none absolute inset-[-8%] z-[3] overflow-hidden" aria-hidden>
           <span className="dp-sparkle dp-sparkle-a" />
           <span className="dp-sparkle dp-sparkle-b" />
           <span className="dp-sparkle dp-sparkle-c" />
