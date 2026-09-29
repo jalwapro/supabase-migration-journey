@@ -136,7 +136,7 @@ export function LevelAvatar({
     <Wrapper
       {...wrapperProps}
       className={`relative z-0 block shrink-0 ${userId ? "cursor-pointer" : ""} ${className}`}
-      style={{ width: px, height: px, marginBottom: frameLayoutGap }}
+      style={{ width: px, height: px }}
     >
 
       {/* Equipped aura ring behind avatar */}
@@ -228,7 +228,10 @@ export function LevelAvatar({
           overlayW *= ratio;
           overlayH *= ratio;
         }
-        const shiftY = (0.5 - calib.cy) * overlayH;
+        // Auto-anchor the frame to the DP box: decorative overflow goes upward,
+        // never down over the name/status row. Studio Y is then applied on top.
+        const autoBottomAlignY = (px - overlayH) / 2;
+        const shiftY = autoBottomAlignY + (0.5 - calib.cy) * overlayH;
         const configuredX = Number(renderConfig.positionX ?? 0);
         const configuredY = Number(renderConfig.positionY ?? 0);
         const xOffset = positionUnit === "px" ? (configuredX / STUDIO_STAGE_W) * px : (configuredX / 100) * px;
