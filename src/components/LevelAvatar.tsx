@@ -31,6 +31,7 @@ export function LevelAvatar({
   ring,
   className = "",
   userId,
+  renderConfigOverride,
 }: {
 
   src?: string | null;
@@ -45,6 +46,8 @@ export function LevelAvatar({
   className?: string;
   /** If provided, avatar becomes a Link to that user's profile. */
   userId?: string | null;
+  /** Persisted per-profile Shop Render Studio config; takes precedence over asset lookup. */
+  renderConfigOverride?: unknown;
 }) {
 
   const tier = tierForLevel(level);
@@ -69,7 +72,7 @@ export function LevelAvatar({
   const rawRenderConfig = (shopFrameConfig ?? []).find((t) =>
     [t.animation_url, t.preview_url, t.bg_image].some((u) => (u ?? "").split("#")[0] === baseFrame)
   )?.render_config;
-  const renderConfig = normalizeRenderConfig(rawRenderConfig) as unknown as Record<string, unknown>;
+  const renderConfig = normalizeRenderConfig(renderConfigOverride ?? rawRenderConfig) as unknown as Record<string, unknown>;
   const ringUrl = resolveAssetUrl(ring);
   const frameMeta = (() => {
     try {
