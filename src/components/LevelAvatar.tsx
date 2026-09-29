@@ -103,6 +103,11 @@ export function LevelAvatar({
   const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.zoom ?? 1);
   const frameScaleX = frameScale * Number(renderConfig?.scaleX ?? 1);
   const frameScaleY = frameScale * Number(renderConfig?.scaleY ?? 1);
+  // Reserve the frame's visual overflow so the following name/status row
+  // is never covered by a decorative DP frame.
+  const frameLayoutGap = frameUrl
+    ? Math.min(px * 0.9, Math.max(0, px * (0.58 * Math.max(frameScaleY, 1) - 0.02)))
+    : 0;
   const positionUnit = String(renderConfig?.positionUnit ?? "percent");
   const frameX = Number(renderConfig?.positionX ?? 0);
   const frameY = Number(renderConfig?.positionY ?? 0);
@@ -130,8 +135,8 @@ export function LevelAvatar({
   return (
     <Wrapper
       {...wrapperProps}
-      className={`relative block shrink-0 ${userId ? "cursor-pointer" : ""} ${className}`}
-      style={{ width: px, height: px }}
+      className={`relative z-0 block shrink-0 ${userId ? "cursor-pointer" : ""} ${className}`}
+      style={{ width: px, height: px, marginBottom: frameLayoutGap }}
     >
 
       {/* Equipped aura ring behind avatar */}
