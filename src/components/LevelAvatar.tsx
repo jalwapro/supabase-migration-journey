@@ -195,20 +195,29 @@ export function LevelAvatar({
         // Shop Render Studio is stage-based; the profile renderer converts that
         // stage transform into avatar-relative units so the same saved config
         // survives every DP size and every page.
+        // A VoiceRoom DP is a square avatar, not the 340x604 Render Studio
+        // playback stage. The previous conversion used the full studio HEIGHT
+        // as frame height, making a 40px seat frame render roughly 4-5x too tall.
+        // For profile/room DPs, the frame is sized relative to the avatar and
+        // the Studio width/height are used only to preserve the asset aspect.
         const studioWidth = Number(renderConfig.width ?? 0);
         const studioHeight = Number(renderConfig.height ?? 0);
-        const STUDIO_STAGE_W = 340;
-        const STUDIO_STAGE_H = 604;
-        // RenderStudio's profile preview uses a 38% avatar on this stage.
-        // Keep that same reference when converting the studio asset into a DP.
-        const studioFrameW = studioWidth > 0 ? studioWidth : STUDIO_STAGE_W;
-        const studioFrameH = studioHeight > 0 ? studioHeight : STUDIO_STAGE_H;
-        const studioAvatarW = STUDIO_STAGE_W * 0.38;
-        const studioAvatarH = STUDIO_STAGE_W * 0.38;
-        const baseW = (studioFrameW / studioAvatarW) * px;
-        const baseH = (studioFrameH / studioAvatarH) * px;
-        const overlayW = Math.max(px * 1.1, baseW * calibratedRatio * frameScale);
-        const overlayH = Math.max(px * 1.1, baseH * calibratedRatio * frameScale);
+        const configuredAspect = studioWidth > 0 && studioHeight > 0
+          ? studioWidth / studioHeight
+          : 1;
+        const baseSize = px * TARGET_FRAME_RATIO * calibratedRatio * frameScale;
+        const aspectRoot = Math.sqrt(Math.max(configuredAspect, 0.25));
+        let overlayW = baseSize * aspectRoot;
+        let overlayH = baseSize / aspectRoot;
+        // Keep decorative frames close to the DP; never allow Studio canvas
+        // dimensions to turn a small VoiceRoom seat into a giant overlay.
+        const maxDim = px * 2.1;
+        const maxOverlay = Math.max(overlayW, overlayH);
+        if (maxOverlay > maxDim) {
+          const ratio = maxDim / maxOverlay;
+          overlayW *= ratio;
+          overlayH *= ratio;
+        }
         const shiftY = (0.5 - calib.cy) * overlayH;
         const configuredX = Number(renderConfig.positionX ?? 0);
         const configuredY = Number(renderConfig.positionY ?? 0);
