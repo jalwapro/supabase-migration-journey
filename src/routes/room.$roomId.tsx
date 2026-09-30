@@ -4262,15 +4262,15 @@ function MiniProfileSheet({
     <>
       <div
         data-jalwa-overlay="true"
-        className="fixed inset-0 z-[70] bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
       <div
         data-jalwa-overlay-content="true"
-        className="fixed bottom-0 left-1/2 z-[71] w-full max-w-[480px] -translate-x-1/2 rounded-t-3xl border-t border-white/10 p-5 text-white shadow-2xl"
+        className="fixed bottom-0 left-1/2 z-50 flex w-full max-w-[480px] -translate-x-1/2 flex-col rounded-t-3xl border-t border-border bg-card p-5 text-foreground shadow-2xl"
         style={{
+          maxHeight: "85vh",
           paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)",
-          backgroundImage: "linear-gradient(to bottom, #1a0b2e, #2d0b4d, #0a0114)",
         }}
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/25" />
