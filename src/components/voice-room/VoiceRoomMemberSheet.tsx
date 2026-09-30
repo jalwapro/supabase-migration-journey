@@ -25,7 +25,7 @@ type PublicProfile = {
   user_code: string | null;
 };
 
-type LevelFrameConfig = { level: number; frame_url: string | null };
+type LevelFrameConfig = { level: number; frame_url: string | null; popup_frame_url: string | null };
 
 export function VoiceRoomMemberSheet({
   roomId,
@@ -57,6 +57,7 @@ export function VoiceRoomMemberSheet({
   const [message, setMessage] = useState("");
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [levelFrame, setLevelFrame] = useState<string | null>(null);
+  const [popupFrame, setPopupFrame] = useState<string | null>(null);
 
   useEffect(() => {
     setProfileOpen(false);
@@ -64,6 +65,7 @@ export function VoiceRoomMemberSheet({
     setMessage("");
     setProfile(null);
     setLevelFrame(null);
+    setPopupFrame(null);
     setFollowing(false);
     setBlocked(false);
   }, [member?.id]);
@@ -77,12 +79,13 @@ export function VoiceRoomMemberSheet({
       const level = Math.max(1, Math.floor(Number(member.level ?? 0)) || 1);
       const { data } = await supabase
         .from("vip_level_config")
-        .select("level,frame_url")
+        .select("level,frame_url,popup_frame_url")
         .eq("level", level)
         .maybeSingle();
       if (!active) return;
       const row = data as LevelFrameConfig | null;
       setLevelFrame(row?.frame_url || frameForLevel(level));
+      setPopupFrame(row?.popup_frame_url || frameForLevel(level));
     };
     void loadLevelFrame();
     return () => { active = false; };
@@ -191,8 +194,8 @@ export function VoiceRoomMemberSheet({
 
   const displayName = profile?.username ?? profile?.full_name ?? member.username ?? "User";
   const displayLevel = Math.max(1, Math.floor(Number(profile?.vip_level ?? member.level ?? 0)) || 1);
-  const popupFrame = levelFrame || frameForLevel(displayLevel);
-  const popupFrameUrl = resolveAssetUrl(popupFrame);
+  const popupFrameValue = popupFrame || frameForLevel(displayLevel);
+  const popupFrameUrl = resolveAssetUrl(popupFrameValue);
 
   return (
     <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center" onClick={onClose} role="presentation">
