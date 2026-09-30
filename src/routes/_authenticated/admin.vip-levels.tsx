@@ -21,6 +21,7 @@ type Row = {
   title: string;
   badge_url: string | null;
   frame_url: string | null;
+  popup_frame_url: string | null;
   bubble_url: string | null;
   entrance_url: string | null;
   name_color: string | null;
@@ -95,6 +96,7 @@ function VipLevelsAdmin() {
           title: row.title,
           badge_url: row.badge_url,
           frame_url: row.frame_url,
+          popup_frame_url: row.popup_frame_url,
           bubble_url: row.bubble_url,
           entrance_url: row.entrance_url,
           name_color: row.name_color,
@@ -307,23 +309,6 @@ function EditModal({
           </Field>
           <Field label="Badge URL">
             <input value={draft.badge_url ?? ""} onChange={(e) => set("badge_url", e.target.value || null)} className={input} />
-          </Field>
-          <Field label="Level Frame URL · DP + Voice Room Popup (blank = automatic level frame)">
-            <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} />
-            <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
-              <FramePreview
-                url={draft.frame_url || frameForLevel(draft.level)}
-                label={seriesForLevel(draft.level) ?? "—"}
-                size={72}
-              />
-              <div className="text-[11px] text-muted-foreground">
-                <p className="font-bold text-foreground">{seriesForLevel(draft.level) ?? "—"}</p>
-                <p>Level {draft.level}</p>
-                <p className="mt-0.5 opacity-70">
-                  {draft.frame_url ? "Custom frame — DP + popup" : "Auto — exact level frame"}
-                </p>
-              </div>
-            </div>
           </Field>
           <Field label="Bubble URL">
             <input value={draft.bubble_url ?? ""} onChange={(e) => set("bubble_url", e.target.value || null)} className={input} />
