@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import LevelAvatar from "@/components/LevelAvatar";
+import { frameForLevel } from "@/lib/levelFrames";
+import { resolveAssetUrl } from "@/lib/assetUrl";
 
 export type VoiceRoomMemberProfile = {
   id: string;
@@ -22,6 +25,8 @@ type PublicProfile = {
   vip_level: number;
   user_code: string | null;
 };
+
+type LevelFrameConfig = { level: number; frame_url: string | null };
 
 export function VoiceRoomMemberSheet({
   roomId,
@@ -52,15 +57,37 @@ export function VoiceRoomMemberSheet({
   const [socialBusy, setSocialBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [profile, setProfile] = useState<PublicProfile | null>(null);
+  const [levelFrame, setLevelFrame] = useState<string | null>(null);
 
   useEffect(() => {
     setProfileOpen(false);
     setMessageOpen(false);
     setMessage("");
     setProfile(null);
+    setLevelFrame(null);
     setFollowing(false);
     setBlocked(false);
   }, [member?.id]);
+
+  // The admin VIP Levels table is the source of truth for the popup frame.
+  // A level-specific custom frame wins; otherwise the built-in level frame is used.
+  useEffect(() => {
+    if (!member?.id) return;
+    let active = true;
+    const loadLevelFrame = async () => {
+      const level = Math.max(1, Math.floor(Number(member.level ?? 0)) || 1);
+      const { data } = await supabase
+        .from("vip_level_config")
+        .select("level,frame_url")
+        .eq("level", level)
+        .maybeSingle();
+      if (!active) return;
+      const row = data as LevelFrameConfig | null;
+      setLevelFrame(row?.frame_url || frameForLevel(level));
+    };
+    void loadLevelFrame();
+    return () => { active = false; };
+  }, [member?.id, member?.level]);
 
   useEffect(() => {
     if (!member) return;
@@ -164,10 +191,23 @@ export function VoiceRoomMemberSheet({
   };
 
   const displayName = profile?.username ?? profile?.full_name ?? member.username ?? "User";
+  const displayLevel = Math.max(1, Math.floor(Number(profile?.vip_level ?? member.level ?? 0)) || 1);
+  const popupFrame = levelFrame || frameForLevel(displayLevel);
+  const popupFrameUrl = resolveAssetUrl(popupFrame);
 
   return (
     <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center" onClick={onClose} role="presentation">
-      <section className="w-full max-w-sm max-h-[92dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0d0616] p-4 text-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
+      <section className="relative w-full max-w-sm max-h-[92dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0d0616] p-4 text-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
+        {popupFrameUrl ? (
+          <div aria-hidden className="pointer-events-none absolute -inset-5 z-0 overflow-hidden rounded-[2rem]">
+            {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
+              <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-fill opacity-95" />
+            ) : (
+              <img src={popupFrameUrl} alt="" className="h-full w-full object-fill opacity-95" />
+            )}
+          </div>
+        ) : null}
+        <div className="relative z-10 rounded-[1.55rem] bg-[#0d0616]/88 p-1 backdrop-blur-[2px]">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
         <div className="flex items-center gap-3">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[color:var(--primary)] bg-white/5">
@@ -219,6 +259,7 @@ export function VoiceRoomMemberSheet({
         ) : (canModerate || isHost) && (
           <button type="button" disabled={busy} onClick={() => void kick()} className="mt-3 flex h-11 w-full items-center justify-center rounded-2xl bg-red-500/90 text-sm font-black text-white disabled:opacity-50">{busy ? "Removing…" : "Host Control · Remove / Kick"}</button>
         )}
+        </div>
       </section>
     </div>
   );
