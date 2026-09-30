@@ -197,16 +197,17 @@ export function VoiceRoomMemberSheet({
   return (
     <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center" onClick={onClose} role="presentation">
       <section className="relative w-full max-w-sm max-h-[92dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0d0616] p-4 text-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
-        {popupFrameUrl ? (
-          <div aria-hidden className="pointer-events-none absolute -inset-5 z-0 overflow-hidden rounded-[2rem]">
-            {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
-              <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-fill opacity-95" />
-            ) : (
-              <img src={popupFrameUrl} alt="" className="h-full w-full object-fill opacity-95" />
-            )}
-          </div>
-        ) : null}
-        <div className="relative z-10 rounded-[1.55rem] bg-[#0d0616]/88 p-1 backdrop-blur-[2px]">
+        <div className="relative z-10">
+          {popupFrameUrl ? (
+            <div aria-hidden className="pointer-events-none absolute -inset-7 z-20 overflow-visible">
+              {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
+                <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-fill" />
+              ) : (
+                <img src={popupFrameUrl} alt="" className="h-full w-full object-fill" />
+              )}
+            </div>
+          ) : null}
+          <div className="relative z-10 rounded-[1.55rem] bg-[#0d0616] p-1">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
         <div className="flex items-center gap-3">
           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[color:var(--primary)] bg-white/5">
