@@ -198,42 +198,42 @@ export function VoiceRoomMemberSheet({
   const popupFrameUrl = resolveAssetUrl(popupFrameValue);
 
   return (
-    <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/60 p-2 backdrop-blur-sm sm:items-center" onClick={onClose} role="presentation">
-      <section className="relative w-full max-w-sm max-h-[92dvh] overflow-y-auto rounded-3xl border border-white/15 bg-[#0d0616] p-4 text-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
-        <div className="relative z-10">
+    <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/65 backdrop-blur-md" onClick={onClose} role="presentation">
+      <section className="relative flex w-full max-w-[480px] max-h-[88dvh] flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d0616] p-0 text-white shadow-[0_-18px_60px_rgba(0,0,0,.55)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
+        <div className="relative z-10 flex min-h-0 flex-col">
           {popupFrameUrl ? (
-            <div aria-hidden className="pointer-events-none absolute -inset-7 z-20 overflow-visible">
+            <div aria-hidden className="pointer-events-none absolute -inset-4 z-0 overflow-visible">
               {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
-                <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-fill" />
+                <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-contain" />
               ) : (
                 <img src={popupFrameUrl} alt="" className="h-full w-full object-fill" />
               )}
             </div>
           ) : null}
-          <div className="relative z-10 rounded-[1.55rem] bg-[#0d0616] p-1">
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" />
-        <div className="flex items-center gap-3">
-          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border-2 border-[color:var(--primary)] bg-white/5">
+          <div className="relative z-10 flex min-h-0 flex-col overflow-y-auto rounded-t-[28px] bg-[#0d0616] p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+        <div className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-white/20" />
+        <div className="mb-1 flex items-center gap-4">
+          <div className="relative z-20 h-[76px] w-[76px] shrink-0 overflow-hidden rounded-full border-2 border-white/20 bg-black shadow-lg">
             {member.avatar ? <img src={member.avatar} alt={displayName} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black">{displayName.slice(0, 1).toUpperCase()}</div>}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-base font-black">{displayName}</div>
-            <div className="mt-1 text-xs text-white/60">VIP Level {profile?.vip_level ?? member.level ?? 0}</div>
-            <div className="mt-1 text-[10px] text-white/45">Room member · Seat user</div>
+            <div className="truncate text-xl font-black">{displayName}</div>
+            <div className="mt-1 text-xs font-semibold text-white/55">VIP Level {displayLevel}</div>
+            <div className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-200">● {member.is_muted ? "Microphone muted" : "Microphone active"}</div>
           </div>
-          <button type="button" onClick={onClose} className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white/70" aria-label="Close profile">×</button>
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/10 text-lg text-white/60" aria-label="Close profile">×</button>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Gift Score</div><div className="mt-1 text-sm font-black">{Number(member.gift_score ?? 0).toLocaleString()}</div></div>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <div className="rounded-2xl border border-white/10 bg-white/[.045] p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Gift Score</div><div className="mt-1 text-sm font-black">{Number(member.gift_score ?? 0).toLocaleString()}</div></div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Microphone</div><div className="mt-1 text-sm font-black">{member.is_muted ? "Muted" : "On"}</div></div>
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => void openProfile()} className="h-11 rounded-2xl bg-white/10 text-sm font-black">User Profile</button>
-          <button type="button" onClick={() => onOpenPublicChat?.(member)} className="h-11 rounded-2xl border border-cyan-400/30 bg-cyan-500/15 text-sm font-black text-cyan-100">Public Chat</button>
-          <button type="button" onClick={() => { onOpenMessage?.(member.id); setMessageOpen(v => !v); }} className="h-11 rounded-2xl bg-[color:var(--primary)] text-sm font-black text-white">Private Message</button>
-          <button type="button" disabled={socialBusy} onClick={() => void toggleFollow()} className="h-11 rounded-2xl border border-white/10 bg-white/5 text-sm font-black disabled:opacity-50">{following ? "Following ✓" : "Follow"}</button>
+          <button type="button" onClick={() => void openProfile()} className="h-12 rounded-2xl border border-white/10 bg-white/7 text-sm font-black">User Profile</button>
+          <button type="button" onClick={() => onOpenPublicChat?.(member)} className="h-12 rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-sm font-black text-cyan-100">Public Chat</button>
+          <button type="button" onClick={() => { onOpenMessage?.(member.id); setMessageOpen(v => !v); }} className="h-12 rounded-2xl bg-[color:var(--primary)] text-sm font-black text-white shadow-lg shadow-[color:var(--primary)]/20">Private Message</button>
+          <button type="button" disabled={socialBusy} onClick={() => void toggleFollow()} className="h-12 rounded-2xl border border-white/10 bg-white/7 text-sm font-black disabled:opacity-50">{following ? "Following ✓" : "Follow"}</button>
         </div>
 
         {profileOpen && (
