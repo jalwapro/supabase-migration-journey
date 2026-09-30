@@ -310,6 +310,22 @@ function EditModal({
           <Field label="Badge URL">
             <input value={draft.badge_url ?? ""} onChange={(e) => set("badge_url", e.target.value || null)} className={input} />
           </Field>
+          <Field label="DP Frame URL (blank = automatic level frame)">
+            <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} />
+            <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
+              <FramePreview url={draft.frame_url || frameForLevel(draft.level)} label={seriesForLevel(draft.level) ?? "—"} size={72} />
+              <div className="text-[11px] text-muted-foreground">
+                <p className="font-bold text-foreground">Level {draft.level}</p>
+                <p>{draft.frame_url ? "Custom DP frame" : "Automatic level frame"}</p>
+              </div>
+            </div>
+          </Field>
+          <Field label="Voice Room Profile Popup Outer Frame URL (MP4/WebM/image)">
+            <input value={draft.popup_frame_url ?? ""} onChange={(e) => set("popup_frame_url", e.target.value || null)} className={input} />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              This frame wraps the entire user profile popup. Leave blank to use the level frame automatically.
+            </p>
+          </Field>
           <Field label="Bubble URL">
             <input value={draft.bubble_url ?? ""} onChange={(e) => set("bubble_url", e.target.value || null)} className={input} />
           </Field>
