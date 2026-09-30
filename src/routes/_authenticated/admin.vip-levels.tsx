@@ -150,10 +150,10 @@ function VipLevelsAdmin() {
         <div className="mb-3 flex items-center justify-between">
           <div>
             <p className="text-sm font-black tracking-wide text-[color:var(--gold,#f5c542)]">
-              JALWA · LEVEL 1 → 100 DP FRAME COLLECTION
+              JALWA · LEVEL 1 → 100 FRAME SYSTEM
             </p>
             <p className="text-[10px] text-muted-foreground">
-              10 premium series · auto-assigned per level · users equip via level-up
+              Admin sets one frame for each level. That exact frame is used for the user DP and Voice Room profile popup.
             </p>
           </div>
           <span className="rounded-full bg-[color:var(--gold,#f5c542)]/15 px-2 py-0.5 text-[10px] font-bold text-[color:var(--gold,#f5c542)]">
@@ -308,7 +308,7 @@ function EditModal({
           <Field label="Badge URL">
             <input value={draft.badge_url ?? ""} onChange={(e) => set("badge_url", e.target.value || null)} className={input} />
           </Field>
-          <Field label="Frame URL (leave blank to auto-use level series frame)">
+          <Field label="Level Frame URL · DP + Voice Room Popup (blank = automatic level frame)">
             <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} />
             <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
               <FramePreview
@@ -320,7 +320,7 @@ function EditModal({
                 <p className="font-bold text-foreground">{seriesForLevel(draft.level) ?? "—"}</p>
                 <p>Level {draft.level}</p>
                 <p className="mt-0.5 opacity-70">
-                  {draft.frame_url ? "Custom frame" : "Auto (exact level frame)"}
+                  {draft.frame_url ? "Custom frame — DP + popup" : "Auto — exact level frame"}
                 </p>
               </div>
             </div>
