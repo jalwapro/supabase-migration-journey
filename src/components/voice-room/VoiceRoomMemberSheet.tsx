@@ -263,6 +263,7 @@ export function VoiceRoomMemberSheet({
           <button type="button" disabled={busy} onClick={() => void kick()} className="mt-3 flex h-11 w-full items-center justify-center rounded-2xl bg-red-500/90 text-sm font-black text-white disabled:opacity-50">{busy ? "Removing…" : "Host Control · Remove / Kick"}</button>
         )}
         </div>
+        </div>
       </section>
     </div>
   );
