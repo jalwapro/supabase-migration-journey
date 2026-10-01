@@ -145,9 +145,9 @@ function Page() {
     <div className="mx-auto max-w-6xl p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-black">User Profile Frames</h1>
+          <h1 className="text-2xl font-black">User DP Frames</h1>
           <p className="text-xs text-muted-foreground">
-            {list.data?.length ?? 0} user profile frames · Square PNG/SVG assets served from Cloudflare R2
+            {list.data?.length ?? 0} user DP frames · PNG/SVG assets served from Cloudflare R2
           </p>
         </div>
         <div className="flex gap-2">
@@ -277,7 +277,7 @@ function Page() {
             <div className="mb-3 flex items-center gap-3 rounded-xl border border-border bg-background/60 p-3">
               <FramePreview frame={editing} size={110} />
               <div className="text-xs text-muted-foreground">
-                This is the User Profile Frame used on the user profile card and VoiceRoom profile popup. Upload a square 1024×1024 PNG/SVG with transparent center.
+                This is the User DP Frame system. Keep these frames separate from Profile Card Frames and VoiceRoom Popup Frames. Upload a square 1024×1024 PNG/SVG with transparent center.
               </div>
             </div>
 
