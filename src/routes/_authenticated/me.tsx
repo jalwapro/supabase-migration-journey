@@ -324,7 +324,7 @@ function MePage() {
                   <StatBox icon={<Star className="h-4 w-4" />} color="#22c55e" value={profile?.xp ?? 0} label="Points" />
                   <StatBox to="/wallet" icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
                   <StatBox to="/wallet" icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
-                  <StatBox to="/rank" icon={<Trophy className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
+                  <StatBox to="/rank" icon={<Star className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
                   <StatBox to="/vip" icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Host Lv" />
                   <StatBox to="/my-rooms" icon={<Home className="h-4 w-4" />} color="#38bdf8" value={counts?.liveRooms ?? 0} label="Live Rooms" />
                 </div>
