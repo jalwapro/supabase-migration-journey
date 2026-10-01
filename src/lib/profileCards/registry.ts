@@ -10,7 +10,7 @@ export type ProfileCard = {
   bg_media_url:string; bg_media_type:ProfileCardMediaType; bg_chromakey:ProfileCardChroma;
   thumbnail_url:string|null; frame_media_url:string|null; frame_media_type:ProfileCardFrameMediaType; frame_chromakey:ProfileCardChroma;
   frame_effect:ProfileCardFrame; accent_color:string; glow_color:string; particle_style:ProfileCardParticle;
-  price_coins:number; price_diamonds:number; min_vip_level:number; duration_days:number|null;
+  price_coins:number; price_diamonds:number; min_vip_level:number; profile_frame_required_level:number; duration_days:number|null;
   is_active:boolean; is_limited:boolean; starts_at:string|null; ends_at:string|null; sort_order:number;
 };
 export const PROFILE_CARD_CATEGORIES=["Basic","VIP","Royal","Luxury","Fantasy","Galaxy","Nature","Neon","Event"];
