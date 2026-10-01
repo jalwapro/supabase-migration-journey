@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { uploadFileAtPath } from "@/lib/uploads";
 import { AppShell } from "@/components/layout/AppShell";
-import { PremiumProfileCard } from "@/components/profile/PremiumProfileCard";
+import { PremiumProfileCard, ProfileCardFrame } from "@/components/profile/PremiumProfileCard";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -243,6 +243,11 @@ function MePage() {
               className="me-profile-card relative rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4 pt-10"
               style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
             >
+              {equippedCard.data && (
+                <div className="pointer-events-none absolute -inset-[2px] z-20 overflow-visible rounded-[28px]" aria-hidden>
+                  <ProfileCardFrame card={equippedCard.data} />
+                </div>
+              )}
               <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[28px]">
                 <CornerBrackets />
                 <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-[#a855f7]/25 blur-3xl" />
