@@ -189,7 +189,7 @@ function MePage() {
           {/* Header background — equipped Profile Card wins, else cyberpunk skyline */}
           <div data-keep-dark aria-hidden className="absolute inset-x-0 top-0 h-[360px] overflow-hidden">
             {equippedCard.data ? (
-              <PremiumProfileCard card={equippedCard.data} rounded="rounded-none" className="h-full w-full" />
+              <PremiumProfileCard card={equippedCard.data} rounded="rounded-none" className="h-full w-full" showFrame={false} />
             ) : (
               <>
                 <div className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_0%,#3b1360_0%,#1a0733_40%,#080812_85%)]" />
