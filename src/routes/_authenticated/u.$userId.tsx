@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
-import { PremiumProfileCard } from "@/components/profile/PremiumProfileCard";
+import { PremiumProfileCard, ProfileCardFrame } from "@/components/profile/PremiumProfileCard";
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { vipTierForLevel } from "@/lib/vip-levels";
+import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,6 +105,8 @@ function UserProfilePage() {
       qc.invalidateQueries({ queryKey: ["profile-visitors", userId] });
     });
   }, [me, isMe, userId, qc]);
+
+  const { data: effectiveProfileFrame } = useAutoProfileCardFrame(userId, prof.data?.vip_level ?? prof.data?.level ?? 0);
 
   const stats = useQuery({
     queryKey: ["public-profile-stats", userId],
@@ -394,6 +397,7 @@ function UserProfilePage() {
               card={equippedCard.data as any}
               rounded="rounded-none"
               className="h-full w-full"
+              showFrame={false}
             />
           ) : (
             <>
@@ -468,6 +472,11 @@ function UserProfilePage() {
         {/* Hero card */}
         <div className="relative z-10 mx-4 mt-3">
           <div className="relative rounded-[28px] border border-white/10 bg-white/[0.04] p-5 pt-10 backdrop-blur-2xl shadow-[0_20px_60px_-20px_rgba(168,85,247,0.55)]">
+            {effectiveProfileFrame ? (
+              <div className="pointer-events-none absolute -inset-[2px] z-30 overflow-visible rounded-[28px]" aria-hidden>
+                <ProfileCardFrame card={effectiveProfileFrame} />
+              </div>
+            ) : null}
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden rounded-[28px]">
               {/* Gold corner brackets */}
               <CornerBrackets />
