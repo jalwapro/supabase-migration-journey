@@ -35,15 +35,39 @@ export function PremiumProfileCard({ card, rounded = "rounded-[28px]", className
 
 export function ProfileCardFrame({ card }: { card: Pick<ProfileCard, "frame_media_url" | "frame_media_type" | "frame_chromakey" | "frame_effect" | "accent_color" | "glow_color"> }) {
   const frameUrl = resolveAssetUrl(card.frame_media_url) ?? "";
-  if (frameUrl && card.frame_media_type !== "none") {
-    const isVideo = card.frame_media_type === "mp4" || card.frame_media_type === "webm";
-    const filter = card.frame_chromakey === "green" ? "saturate(1.1)" : undefined;
+  const hasUploadedFrame = !!frameUrl && card.frame_media_type !== "none";
+  const isVideo = card.frame_media_type === "mp4" || card.frame_media_type === "webm";
+
+  if (hasUploadedFrame) {
+    // Keep the uploaded frame in its own top layer. It must decorate the
+    // rectangular Profile Card only; it must never become the avatar frame.
     return (
-      <div aria-hidden className="pointer-events-none absolute -inset-[10px] z-30 overflow-visible rounded-[inherit]">
-        {isVideo ? <video src={frameUrl} autoPlay muted loop playsInline className="h-full w-full object-fill" style={{ filter }} /> : <img src={frameUrl} alt="" className="h-full w-full object-fill" style={{ filter }} />}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-30 overflow-visible rounded-[inherit]"
+      >
+        {isVideo ? (
+          <video
+            src={frameUrl}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute inset-0 h-full w-full rounded-[inherit] object-fill"
+          />
+        ) : (
+          <img
+            src={frameUrl}
+            alt=""
+            draggable={false}
+            className="absolute inset-0 h-full w-full rounded-[inherit] object-fill"
+          />
+        )}
       </div>
     );
   }
+
   return <FrameOrnament effect={card.frame_effect} accent={card.accent_color} glow={card.glow_color} />;
 }
 
