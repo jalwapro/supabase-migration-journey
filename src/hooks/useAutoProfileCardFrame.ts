@@ -44,3 +44,6 @@ export function useEffectiveProfileCardFrame(userId: string | null | undefined, 
     },
   });
 }
+
+// Backward-compatible export for existing routes.
+export const useAutoProfileCardFrame = useEffectiveProfileCardFrame;
