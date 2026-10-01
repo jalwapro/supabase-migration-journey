@@ -7,9 +7,10 @@ type Props = {
   rounded?: string;
   className?: string;
   children?: React.ReactNode;
+  showFrame?: boolean;
 };
 
-export function PremiumProfileCard({ card, rounded = "rounded-[28px]", className = "", children }: Props) {
+export function PremiumProfileCard({ card, rounded = "rounded-[28px]", className = "", children, showFrame = true }: Props) {
   const url = resolveAssetUrl(card.bg_media_url) ?? "";
   const isBuiltin = hasBuiltinProfileCard(card.bg_media_url);
   const isVideo = card.bg_media_type === "mp4" || card.bg_media_type === "webm";
@@ -27,7 +28,7 @@ export function PremiumProfileCard({ card, rounded = "rounded-[28px]", className
         {isBuiltin ? <BuiltinProfileCardBg mediaUrl={card.bg_media_url} /> : isVideo ? <video src={url} autoPlay muted loop playsInline className="h-full w-full object-cover" style={chromaFilter ? { filter: chromaFilter } : undefined} /> : isImage ? <img src={url} alt="" className="h-full w-full object-cover" style={chromaFilter ? { filter: chromaFilter } : undefined} /> : <div className="absolute inset-0 bg-gradient-to-br from-[#1a0b2e] via-[#0f0620] to-black" />}
       </div>
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10" style={{ background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)" }} />
-      <ProfileCardFrame card={card} />
+      {showFrame ? <ProfileCardFrame card={card} /> : null}
       {children && <div className="relative">{children}</div>}
     </div>
   );
