@@ -26,6 +26,7 @@ type Card = {
   price_coins: number;
   price_diamonds: number;
   min_vip_level: number;
+  profile_frame_required_level: number;
   duration_days: number | null;
   is_active: boolean;
   is_limited: boolean;
@@ -54,6 +55,7 @@ const blank: Partial<Card> = {
   price_coins: 0,
   price_diamonds: 0,
   min_vip_level: 0,
+  profile_frame_required_level: 0,
   duration_days: null,
   is_active: true,
   is_limited: false,
@@ -231,7 +233,7 @@ function Page() {
         <div>
           <h1 className="text-2xl font-black">Profile Card Frames</h1>
           <p className="text-xs text-muted-foreground">
-            Outer card frame assets are separate from User DP Frames.
+            Outer card frames are automatic level rewards. Users cannot manually equip them. User DP Frames stay completely separate.
           </p>
         </div>
 
@@ -267,7 +269,7 @@ function Page() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {card.category} · {card.rarity}
+              {card.category} · {card.rarity} · Auto Lv {card.profile_frame_required_level ?? 0}
             </p>
 
             <div className="mt-2 flex gap-2">
@@ -400,6 +402,21 @@ function Page() {
                   />
                 ) : null}
               </div>
+
+              <label className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                <span className="text-xs font-bold">Automatic Profile Card Frame Level</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={edit.profile_frame_required_level ?? 0}
+                  onChange={(event) => setField("profile_frame_required_level", Math.max(0, Number(event.target.value) || 0))}
+                  className="mt-1 w-full rounded-lg border bg-background p-2"
+                />
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  When the user reaches this level, this outer frame is automatically applied. The user cannot equip it manually.
+                </p>
+              </label>
 
               <label>
                 <span className="text-xs">Frame Media Type</span>
