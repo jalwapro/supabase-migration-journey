@@ -18,9 +18,7 @@ import {
   Star,
   Coins,
   ChevronRight,
-  Mic,
   Home,
-  Swords,
   Gamepad2,
   ShoppingBag,
   Image as ImageIcon,
@@ -358,8 +356,6 @@ function MePage() {
               <FeatureCard to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
               <FeatureCard to="/games" icon={Gamepad2} title="Games" sub="Game Center · 10 mini games" color="#8b5cf6" />
               <FeatureCard to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
-              <FeatureCard to="/create-room" icon={Mic} title="Go Live" sub="Start a voice room now" color="#8b5cf6" />
-              <FeatureCard to="/pk-history" icon={Swords} title="PK History" sub="Battle wins & losses" color="#ff2d95" />
               <FeatureCard to="/friends" icon={Users} title="Friends" sub="Followers & following" color="#8b5cf6" />
               <FeatureCard to="/notifications" icon={Bell} title="Notifications" sub="Gifts, follows & room alerts" color="#ff2d95" />
               <FeatureCard to="/settings/notifications" icon={SlidersHorizontal} title="Notification Settings" sub="Choose what alerts you get" color="#ff2d95" />
