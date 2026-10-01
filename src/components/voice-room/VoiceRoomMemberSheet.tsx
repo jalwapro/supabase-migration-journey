@@ -199,21 +199,22 @@ export function VoiceRoomMemberSheet({
 
   return (
     <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/65 backdrop-blur-md" onClick={onClose} role="presentation">
-      <section className="relative flex w-full max-w-[480px] max-h-[88dvh] flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d0616] p-0 text-white shadow-[0_-18px_60px_rgba(0,0,0,.55)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
+      <div className="relative w-full max-w-[480px]">
+        {popupFrameUrl ? (
+          <div aria-hidden className="pointer-events-none absolute -inset-3 z-0 overflow-visible">
+            {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
+              <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-fill" />
+            ) : (
+              <img src={popupFrameUrl} alt="" className="h-full w-full object-fill" />
+            )}
+          </div>
+        ) : null}
+        <section className="relative z-10 flex w-full max-h-[88dvh] flex-col overflow-hidden rounded-t-[28px] border border-white/10 bg-[#0d0616] p-0 text-white shadow-[0_-18px_60px_rgba(0,0,0,.55)]" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Room member profile">
         <div className="relative z-10 flex min-h-0 flex-col">
                     <div className="relative z-10 flex min-h-0 flex-col overflow-y-auto rounded-t-[28px] bg-[#0d0616] p-5 pb-[calc(env(safe-area-inset-bottom)+20px)]">
         <div className="mx-auto mb-4 h-1.5 w-11 rounded-full bg-white/20" />
         <div className="mb-1 flex items-center gap-4">
           <div className="relative h-[84px] w-[84px] shrink-0">
-            {popupFrameUrl ? (
-              <div aria-hidden className="pointer-events-none absolute -inset-4 z-0">
-                {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
-                  <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-contain" />
-                ) : (
-                  <img src={popupFrameUrl} alt="" className="h-full w-full object-contain" />
-                )}
-              </div>
-            ) : null}
             <div className="absolute inset-[4px] z-10 overflow-hidden rounded-full border-2 border-white/20 bg-black shadow-lg">
               {member.avatar ? <img src={member.avatar} alt={displayName} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black">{displayName.slice(0, 1).toUpperCase()}</div>}
             </div>
@@ -266,7 +267,8 @@ export function VoiceRoomMemberSheet({
         )}
         </div>
         </div>
-      </section>
+        </section>
+      </div>
     </div>
   );
 }
