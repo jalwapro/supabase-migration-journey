@@ -289,16 +289,18 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const changeMySeat = async () => {
     if (!roomId || !selectedEmptySeat || !isHost) return;
     const target = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 1;
-    // Host always stays on voice Seat 1; seats 2..20 are user seats.
-    if (target !== 1) {
-      toast.error("Host sirf Seat 1 par beth sakta hai");
+    if (target < 1 || target > capacity) {
+      toast.error("Invalid host seat");
       return;
     }
-    if (selectedEmptySeat.is_locked) {
+    if (selectedEmptySeat.is_locked && target !== 1) {
       toast.error("Unlock this seat first");
       return;
     }
-    const { error } = await supabase.rpc("take_seat", { _room_id: roomId, _seat_index: target });
+    const { error } = await supabase.rpc("take_seat", {
+      _room_id: roomId,
+      _seat_index: target,
+    });
     if (error) {
       toast.error(error.message || "Could not change your seat");
       return;
@@ -308,7 +310,12 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     setSelectedEmptySeat(null);
   };
 
-  const byIndex = new Map(seats.filter(s => (s.index >= 2 && s.index <= capacity) || (s.seatNumber && s.seatNumber >= 2 && s.seatNumber <= capacity)).map(s => [s.index ?? s.seatNumber!, s]));
+  const byIndex = new Map(
+    seats
+      .filter(s => (s.index >= 2 && s.index <= capacity) || (s.seatNumber && s.seatNumber >= 2 && s.seatNumber <= capacity))
+      .filter(s => s.user?.id !== host.id)
+      .map(s => [s.index ?? s.seatNumber!, s]),
+  );
   const participantSlots = Array.from({ length: Math.max(0, capacity - 1) }, (_, offset): RoomSeat => {
     const index = offset + 2;
     return byIndex.get(index) ?? { index, seatNumber: index, user: null, is_locked: false, is_requested: false };
@@ -316,6 +323,10 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
   const handleSeatClick = async (seat: RoomSeat) => {
     const idx = seat.index ?? seat.seatNumber ?? 1;
+    if (idx === 1 && !isHost) {
+      toast.error("Seat 1 is reserved for the host");
+      return;
+    }
     if (seat.user) {
       onSeatTap?.(idx);
       return;
@@ -347,7 +358,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     onJoinSeat?.(idx);
   };
 
-  const safeHostSeatIndex = 1;
+  const safeHostSeatIndex = Math.min(capacity, Math.max(1, hostSeatIndex));
   const allSeats: (RoomSeat & { isHost?: boolean })[] = Array.from({ length: capacity }, (_, offset) => {
     const index = offset + 1;
     if (index === safeHostSeatIndex) {
@@ -355,7 +366,16 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         index,
         seatNumber: index,
         isHost: true,
-        user: { id: host.id, username: host.username, avatar: host.avatar, avatar_frame_url: host.avatar_frame_url, frame_url: host.frame_url, ring: host.ring, level: host.level, gift_score: host.gift_score ?? 0 },
+        user: {
+          id: host.id,
+          username: host.username,
+          avatar: host.avatar,
+          avatar_frame_url: host.avatar_frame_url,
+          frame_url: host.frame_url,
+          ring: host.ring,
+          level: host.level,
+          gift_score: host.gift_score ?? 0,
+        },
         is_locked: false,
       };
     }
@@ -396,7 +416,9 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               <div className="flex items-center gap-2 text-xs font-semibold">{selectedEmptySeat.is_locked ? <Lock className="h-4 w-4 text-amber-400" /> : <Unlock className="h-4 w-4 text-emerald-400" />}{selectedEmptySeat.is_locked ? "Seat is Locked" : "Seat is Unlocked"}</div>
               <button type="button" disabled={lockBusy !== null} onClick={() => { const idx = selectedEmptySeat.index ?? selectedEmptySeat.seatNumber ?? 2; void toggleSeatLock(idx, selectedEmptySeat.is_locked); }} className="rounded-xl bg-amber-400 px-3 py-1.5 text-[10px] font-black text-black">{selectedEmptySeat.is_locked ? "Unlock" : "Lock"}</button>
             </div>
-            {isHost && (selectedEmptySeat.index ?? selectedEmptySeat.seatNumber) === 1 && <button type="button" onClick={() => void changeMySeat()} className="mb-3 w-full rounded-xl bg-amber-400 px-3 py-2.5 text-xs font-black text-black shadow-lg">Take Host Seat 1</button>}
+            {isHost && <button type="button" onClick={() => void changeMySeat()} className="mb-3 w-full rounded-xl bg-amber-400 px-3 py-2.5 text-xs font-black text-black shadow-lg">
+              {(selectedEmptySeat.index ?? selectedEmptySeat.seatNumber) === 1 ? "Move to Host Seat 1" : "Change Host Seat → " + (selectedEmptySeat.index ?? selectedEmptySeat.seatNumber)}
+            </button>}
             <div className="mb-2 flex items-center gap-2"><div className="h-px flex-1 bg-white/10" /><span className="text-[9px] font-bold uppercase tracking-wider text-white/40">Assign Viewer</span><div className="h-px flex-1 bg-white/10" /></div>
             <div className="max-h-44 overflow-y-auto space-y-1.5">
               {roomViewers.length === 0 ? <p className="py-5 text-center text-xs text-white/50">No viewers found</p> : roomViewers.map(viewer => (
