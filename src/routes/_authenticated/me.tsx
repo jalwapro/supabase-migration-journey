@@ -19,18 +19,14 @@ import {
   Coins,
   ChevronRight,
   Home,
-  Gamepad2,
   ShoppingBag,
   Image as ImageIcon,
-  Trophy,
   LayoutGrid,
   ShieldCheck,
-  Wallet,
   Receipt,
   Gem,
   Palette,
   Crown,
-  Bell,
   SlidersHorizontal,
   UserX,
   Settings as SettingsIcon,
@@ -316,9 +312,6 @@ function MePage() {
                 </div>
 
                 <div className="mt-3 grid w-full grid-cols-2 gap-2.5">
-                  <Link to="/settings" className="flex items-center justify-center gap-2 rounded-2xl border border-[#8b5cf6]/50 bg-[#1a0733]/70 px-3 py-2.5 text-[13px] font-bold text-white shadow-[0_0_14px_rgba(139,92,246,0.35)] transition active:scale-95" style={HEADING}>
-                    <Pencil className="h-4 w-4 text-[#a855f7]" /> Edit Profile
-                  </Link>
                   <button onClick={handleShare} className="flex items-center justify-center gap-2 rounded-2xl border border-[#c88a2b]/60 bg-gradient-to-b from-[#3d1f08] to-[#1a0a02] px-3 py-2.5 text-[13px] font-bold text-[#fbbf24] shadow-[0_0_14px_rgba(200,138,43,0.35)] transition active:scale-95" style={HEADING}>
                     <ChevronRight className="h-4 w-4 rotate-[-45deg]" /> Share Profile
                   </button>
@@ -347,17 +340,12 @@ function MePage() {
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
               <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
-              <FeatureCard to="/wallet" icon={Wallet} title="Wallet & Coins" sub="Recharge your balance" color="#fbbf24" />
               <FeatureCard to="/recharge-history" icon={Receipt} title="Recharge History" sub="Your top-up requests & status" color="#38bdf8" />
               <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
               <FeatureCard to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
               <FeatureCard to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
-              <FeatureCard to="/vip" icon={Crown} title="VIP Membership" sub="Upgrade & unlock milestone rewards" color="#fbbf24" />
-              <FeatureCard to="/rank" icon={Trophy} title="Rankings" sub="Top hosts, gifters & wealth" color="#38bdf8" />
-              <FeatureCard to="/games" icon={Gamepad2} title="Games" sub="Game Center · 10 mini games" color="#8b5cf6" />
               <FeatureCard to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
               <FeatureCard to="/friends" icon={Users} title="Friends" sub="Followers & following" color="#8b5cf6" />
-              <FeatureCard to="/notifications" icon={Bell} title="Notifications" sub="Gifts, follows & room alerts" color="#ff2d95" />
               <FeatureCard to="/settings/notifications" icon={SlidersHorizontal} title="Notification Settings" sub="Choose what alerts you get" color="#ff2d95" />
               <FeatureCard to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
               <FeatureCard to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
