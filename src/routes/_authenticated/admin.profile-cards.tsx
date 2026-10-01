@@ -107,6 +107,20 @@ function mediaTypeForFile(file: File) {
   return "image";
 }
 
+function extensionForFile(file: File) {
+  const mime = file.type.toLowerCase().split(";")[0];
+  const byMime: Record<string, string> = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/webp": "webp",
+    "image/gif": "gif",
+    "image/svg+xml": "svg",
+    "video/mp4": "mp4",
+    "video/webm": "webm",
+  };
+  return byMime[mime] ?? "";
+}
+
 function Page() {
   const [rows, setRows] = useState<Card[]>([]);
   const [edit, setEdit] = useState<Partial<Card> | null>(null);
@@ -156,8 +170,21 @@ function Page() {
     }
 
     try {
-      const safeName = file.name.replace(/[^\\w.-]+/g, "_");
-      const path = `profile-cards/${Date.now()}_${safeName}`;
+      // Some macOS-created files can have names like "._" (AppleDouble
+      // metadata). Use the browser MIME type for the stored extension so a
+      // valid PNG/JPG/MP4/WebM is never rejected just because its filename
+      // has no usable extension.
+      const ext = extensionForFile(file);
+      if (!ext) {
+        throw new Error("Unsupported file. Please choose a PNG, JPG, WebP, MP4 or WebM frame.");
+      }
+
+      const baseName = file.name
+        .replace(/^\._/, "")
+        .replace(/\.[^.]*$/, "")
+        .replace(/[^a-zA-Z0-9_-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "profile-card-frame";
+      const path = `profile-cards/${Date.now()}_${baseName}.${ext}`;
       const url = await uploadFileAtPath("shop-assets", path, file);
 
       setField(key, url);
