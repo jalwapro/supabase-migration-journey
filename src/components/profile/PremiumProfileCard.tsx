@@ -105,7 +105,7 @@ export function PremiumProfileCard({
       />
 
       {/* Decorative frame ornaments */}
-      <FrameOrnament effect={card.frame_effect} accent={card.accent_color} glow={card.glow_color} />
+      <ProfileCardFrame card={card} />
 
       {/* Content */}
       {children && <div className="relative">{children}</div>}
@@ -113,7 +113,7 @@ export function PremiumProfileCard({
   );
 }
 
-function FrameOrnament({
+export function ProfileCardFrame({ card }: { card: Pick<ProfileCard, "frame_effect" | "accent_color" | "glow_color"> }) {\n  return <FrameOrnament effect={card.frame_effect} accent={card.accent_color} glow={card.glow_color} />;\n}\n\nfunction FrameOrnament({
   effect,
   accent,
   glow,
