@@ -142,8 +142,8 @@ function MePage() {
   });
 
   const vipLevel = vip?.row.vip_level ?? profile?.vip_level ?? profile?.level ?? 0;
-  const { data: autoProfileFrame } = useAutoProfileCardFrame(vipLevel);
-  const purchasedCardHasFrame = !!equippedCard.data?.frame_media_url && equippedCard.data?.frame_media_type !== "none";
+  const { data: autoProfileFrame } = useAutoProfileCardFrame(user?.id, vipLevel);
+
   const tier = vipTierForLevel(vipLevel);
   const p = vipProgressFor(Number(vip?.row.total_gifted_coins ?? 0), vipLevel);
   const nextMilestone =
@@ -246,11 +246,7 @@ function MePage() {
               className="me-profile-card relative rounded-[28px] border border-[#a855f7]/40 bg-gradient-to-br from-[#150726]/95 via-[#0d0420]/95 to-[#080212]/95 p-4 pt-10"
               style={{ boxShadow: "0 0 0 1px rgba(168,85,247,0.25), 0 0 40px rgba(168,85,247,0.35), inset 0 0 30px rgba(139,92,246,0.12)" }}
             >
-              {equippedCard.data && purchasedCardHasFrame ? (
-                <div className="pointer-events-none absolute -inset-[2px] z-20 overflow-visible rounded-[28px]" aria-hidden>
-                  <ProfileCardFrame card={equippedCard.data} />
-                </div>
-              ) : autoProfileFrame ? (
+              {autoProfileFrame ? (
                 <div className="pointer-events-none absolute -inset-[2px] z-20 overflow-visible rounded-[28px]" aria-hidden>
                   <ProfileCardFrame card={autoProfileFrame} />
                 </div>
