@@ -85,16 +85,22 @@ export type FcmResult = { ok: boolean; status: number; token: string; error?: st
 
 export async function sendFcmMessage(msg: FcmMessage): Promise<FcmResult> {
   const sa = loadServiceAccount();
-  const projectId = process.env.FCM_PROJECT_ID || sa.project_id;
+  // The service account project is authoritative; using a stale override can cause
+  // FCM SENDER_ID_MISMATCH for tokens registered by the current Firebase project.
+  const projectId = sa.project_id;
   const accessToken = await getAccessToken();
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+  const data = Object.fromEntries(
+    Object.entries(msg.data ?? {}).filter(([key]) => key !== "from" && key !== "gcm" && !key.startsWith("google."))
+  );
   const payload = {
     message: {
       token: msg.token,
       notification: { title: msg.title, body: msg.body },
-      data: msg.data ?? {},
+      data,
       android: {
         priority: "HIGH" as const,
+        ttl: "2419200s",
         notification: {
           sound: "default",
           channel_id: "jalwa_default",
