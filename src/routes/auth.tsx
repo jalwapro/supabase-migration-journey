@@ -27,9 +27,7 @@ async function initializeGoogleSignIn() {
 function getAuthRedirectUrl() {
   if (typeof window === "undefined") return JALWA_PRODUCTION_URL;
   if (Capacitor.isNativePlatform()) return NATIVE_OAUTH_REDIRECT;
-  const hostname = window.location.hostname;
-  const isLocalhost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "[::1]";
-  return isLocalhost ? `${window.location.origin}/` : JALWA_PRODUCTION_URL;
+  return `${window.location.origin}/`;
 }
 
 async function finishNativeOAuthUrl(url: string) {
