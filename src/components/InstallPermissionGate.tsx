@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
-import { Mic, Video, Bell, MapPin, Loader2, Check, X } from "lucide-react";
+import { Mic, Bell, MapPin, Loader2, Check, X } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { isNative } from "@/lib/native";
 
-const FLAG_KEY = "jalwa_install_perms_asked_v6";
+const FLAG_KEY = "jalwa_install_perms_asked_v7";
 const PREVIEW_ONLY_PATHS = new Set(["/svga-preview", "/svga-frames-preview", "/frames-preview", "/lottie-preview"]);
 
 type PermState = "idle" | "asking" | "granted" | "denied";
-type PermKey = "mic" | "camera" | "notifications" | "location";
+type PermKey = "mic" | "notifications" | "location";
 
 const LABELS: Record<PermKey, { title: string; sub: string; Icon: typeof Mic }> = {
   mic: { title: "Microphone", sub: "Voice rooms & voice messages", Icon: Mic },
-  camera: { title: "Camera", sub: "Video rooms & profile photos", Icon: Video },
   notifications: { title: "Notifications", sub: "New messages, gifts & follows", Icon: Bell },
   location: { title: "Location", sub: "Nearby rooms & regional ranks", Icon: MapPin },
 };
@@ -30,27 +30,29 @@ function isStandalone(): boolean {
  * - Normal browser tab: hidden.
  */
 export function InstallPermissionGate() {
+  const { user, loading: authLoading } = useAuth();
   const [needsAsk, setNeedsAsk] = useState(false);
   const [states, setStates] = useState<Record<PermKey, PermState>>({
-    mic: "idle", camera: "idle", notifications: "idle", location: "idle",
+    mic: "idle", notifications: "idle", location: "idle",
   });
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined" || authLoading || !user?.id) {
+      setNeedsAsk(false);
+      return;
+    }
     if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;
-    // Google OAuth homepage and privacy policy must remain fully public and
-    // free of permission prompts or other first-launch gates.
     if (window.location.pathname === "/" || window.location.pathname === "/splash" || window.location.pathname === "/privacy" || window.location.pathname === "/terms") return;
-    // Show on native app, installed PWA, AND regular browser tab —
-    // har user ko first-launch pe mic/camera/notif/location maangna hai.
-    try {
-      if (localStorage.getItem(FLAG_KEY) === "1") return;
-    } catch { /* no-op */ }
-    // Small delay so it doesn't clash with splash/auth redirect.
-    const t = setTimeout(() => setNeedsAsk(true), 800);
-    return () => clearTimeout(t);
-  }, []);
+    let cancelled = false;
+    const schedule = window.setTimeout(() => {
+      if (!cancelled) setNeedsAsk(true);
+    }, 350);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(schedule);
+    };
+  }, [user?.id, authLoading]);
 
   function setOne(k: PermKey, s: PermState) {
     setStates((prev) => ({ ...prev, [k]: s }));
@@ -66,21 +68,7 @@ export function InstallPermissionGate() {
     } catch { setOne("mic", "denied"); }
   }
 
-  async function askCamera(): Promise<void> {
-    setOne("camera", "asking");
-    try {
-      if (isNative()) {
-        const { Camera } = await import("@capacitor/camera");
-        const res = await Camera.requestPermissions();
-        setOne("camera", res.camera === "granted" ? "granted" : "denied");
-        return;
-      }
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("no cam");
-      const s = await navigator.mediaDevices.getUserMedia({ video: true });
-      s.getTracks().forEach((t) => t.stop());
-      setOne("camera", "granted");
-    } catch { setOne("camera", "denied"); }
-  }
+
 
   /**
    * Ask mic + camera in ONE getUserMedia call — mobile browsers (Chrome
@@ -89,28 +77,7 @@ export function InstallPermissionGate() {
    * combined `{audio, video}` prompt covers both with a single gesture.
    * Falls back to individual asks on failure.
    */
-  async function askMicAndCamera(): Promise<void> {
-    if (isNative()) {
-      // Native path: request Android/iOS runtime permissions explicitly.
-      // The generated Android manifest is patched by ensure-android-permissions.mjs.
-      await askCamera();
-      await askMic();
-      return;
-    }
-    setOne("mic", "asking");
-    setOne("camera", "asking");
-    try {
-      if (!navigator.mediaDevices?.getUserMedia) throw new Error("no media");
-      const s = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      s.getTracks().forEach((t) => t.stop());
-      setOne("mic", "granted");
-      setOne("camera", "granted");
-    } catch {
-      // Combined failed (device may lack one). Try each individually.
-      await askMic();
-      await askCamera();
-    }
-  }
+
 
   async function askNotifications(): Promise<void> {
     setOne("notifications", "asking");
@@ -149,9 +116,9 @@ export function InstallPermissionGate() {
 
   async function askAll() {
     setBusy(true);
-    // 1) Mic + Camera together (single prompt on mobile — critical).
-    await askMicAndCamera();
-    // 2) Notifications (its own OS prompt, doesn't need gesture on Android).
+    // 1) Microphone — required for VoiceRoom audio.
+    await askMic();
+    // 2) Notifications.
     await askNotifications();
     // 3) Location.
     await askLocation();
@@ -173,7 +140,7 @@ export function InstallPermissionGate() {
         <div className="relative mx-auto grid h-20 w-20 place-items-center">
           <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--primary)]/25" />
           <div className="relative grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_10px_30px_-6px_rgba(236,72,153,0.6)]">
-            <Mic className="h-8 w-8 text-white" />
+            <Bell className="h-8 w-8 text-white" />
           </div>
         </div>
         <h2 className="mt-5 text-center text-xl font-extrabold">Welcome to Jalwa</h2>
