@@ -459,6 +459,10 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
             setMiniDraft(`@${member.username ?? "user"} `);
             setShowMiniInputPopup(true);
           }}
+          onOpenGift={(member: VoiceRoomMemberProfile) => {
+            setSelectedMember(null);
+            openGifts();
+          }}
           onOpenHostControls={isHost && selectedMember.id === room.host?.id ? () => {
             setSelectedMember(null);
             setHostSettingsOpen(true);
