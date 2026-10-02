@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import webpush from "web-push";
+import { createHash } from "node:crypto";
 
 type NotifRow = {
   id: string;
@@ -40,10 +41,33 @@ export const Route = createFileRoute("/api/public/push-webhook")({
         const serviceAuthorized =
           !!serviceKey &&
           (authorization === `Bearer ${serviceKey}` || apiKey === serviceKey);
-        const secretAuthorized = !!secret && secret === process.env.PUSH_WEBHOOK_SECRET;
-        if (!serviceAuthorized && !secretAuthorized) {
+
+        let dbSecretAuthorized = false;
+        if (secret) {
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const authAdmin = supabaseAdmin as any;
+            const { data: config } = await authAdmin
+              .schema("private")
+              .from("push_webhook_config")
+              .select("secret_hash")
+              .eq("id", true)
+              .maybeSingle();
+            const hash = createHash("sha256").update(secret).digest("hex");
+            dbSecretAuthorized = !!config?.secret_hash && config.secret_hash === hash;
+          } catch (e) {
+            console.error("Webhook secret verification failed:", e);
+          }
+        }
+
+        const envSecretAuthorized =
+          !!secret && !!process.env.PUSH_WEBHOOK_SECRET && secret === process.env.PUSH_WEBHOOK_SECRET;
+
+        if (!serviceAuthorized && !dbSecretAuthorized && !envSecretAuthorized) {
           return new Response("Unauthorized", { status: 401 });
         }
+
         let payload: WebhookPayload;
         try { payload = (await request.json()) as WebhookPayload; }
         catch { return new Response("Bad JSON", { status: 400 }); }
