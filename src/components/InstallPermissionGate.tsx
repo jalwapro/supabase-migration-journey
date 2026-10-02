@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Mic, Video, Bell, MapPin, Loader2, Check, X } from "lucide-react";
 import { isNative } from "@/lib/native";
 
-const FLAG_KEY = "jalwa_install_perms_asked_v5";
+const FLAG_KEY = "jalwa_install_perms_asked_v6";
 const PREVIEW_ONLY_PATHS = new Set(["/svga-preview", "/svga-frames-preview", "/frames-preview", "/lottie-preview"]);
 
 type PermState = "idle" | "asking" | "granted" | "denied";
