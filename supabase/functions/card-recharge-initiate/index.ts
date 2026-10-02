@@ -17,7 +17,6 @@ Deno.serve(async (req) => {
     const safepaySecret = Deno.env.get("SAFEPAY_SECRET_KEY") || Deno.env.get("SAFE_PAY_SECRET_KEY");
     const safepayMerchantKey = Deno.env.get("SAFEPAY_PUBLIC_KEY") || Deno.env.get("SAFE_PAY_MERCHANT_API_KEY");
     const safepayBase = Deno.env.get("SAFEPAY_BASE_URL") || Deno.env.get("SAFE_PAY_BASE_URL") || "https://sandbox.api.getsafepay.com";
-    const appBase = Deno.env.get("APP_BASE_URL") || "https://www.jalwa.pro";
     if (!safepaySecret || !safepayMerchantKey) throw new Error("Card payment gateway is not configured");
 
     const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: auth } } });
@@ -29,6 +28,8 @@ Deno.serve(async (req) => {
     if (!packageId) throw new Error("packageId is required");
 
     const admin = createClient(supabaseUrl, serviceKey);
+    const { data: runtimeRow } = await admin.from("app_kv").select("value").eq("key", "runtime_config").maybeSingle();
+    const appBase = String((runtimeRow?.value as Record<string, unknown> | null)?.primary_domain ?? Deno.env.get("APP_BASE_URL") ?? "https://www.jalwa.pro");
     const { data: order, error: orderError } = await userClient.rpc("create_card_recharge_order", { _package_id: packageId });
     if (orderError || !order) throw new Error(orderError?.message || "Unable to create payment order");
 
