@@ -302,10 +302,10 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-hidden bg-transparent">
-        <div data-room-header="true" className="relative z-[70] block w-full shrink-0 px-3 pt-[env(safe-area-inset-top)]"><RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} exitMenuOpen={exitMenuOpen} onExitMenuOpenChange={setExitMenuOpen} /></div>
+        <div data-room-header="true" data-jalwa-live-component="voice.room-header" className="relative z-[70] block w-full shrink-0 px-2 pt-0"><RoomHeader room={room} roomCode={roomCode} onlineCount={onlineCount} topGifterName={topGifterName} topGifterCoins={topGifterCoins} onHostTap={onHostTap} onReport={onReport} onShare={onShare} onExit={onExit} onHome={onHome} onRanking={onRanking} exitMenuOpen={exitMenuOpen} onExitMenuOpenChange={setExitMenuOpen} /></div>
         <GiftAnimationPlayer roomId={roomId} />
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-visible justify-between">
-          <div className="relative flex-1 min-h-0 overflow-visible bg-transparent pt-1 px-1 no-scrollbar">
+        <div data-jalwa-live-component="voice.room-content" className="relative flex min-h-0 flex-1 flex-col overflow-visible justify-between">
+          <div data-jalwa-live-component="voice.seat-area" className="relative flex-1 min-h-0 overflow-visible bg-transparent pt-0 px-1 no-scrollbar">
             <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={handleHostSeatProfileTap} />
           </div>
           
@@ -316,7 +316,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
             </div>
           )}
 
-          <div className="shrink-0 flex flex-col gap-1.5 px-3 pb-1">
+          <div data-jalwa-live-component="voice.announcement" className="shrink-0 flex flex-col gap-1 px-2 pb-0.5">
             <section className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
                 <div className="flex h-6 shrink-0 items-center gap-1.5 border-b border-white/10 px-2 bg-amber-500/10 text-amber-200">
@@ -361,7 +361,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         </div>
       </div>
 
-      <nav style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 box-border flex h-[calc(52px+env(safe-area-inset-bottom))] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
+      <nav data-jalwa-live-component="voice.bottom-nav" style={{ backgroundColor: "rgba(10, 10, 15, 0.95)" }} className="relative z-20 box-border flex h-[calc(52px+env(safe-area-inset-bottom))] shrink-0 items-center justify-around border-t border-white/15 px-1 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
         <button type="button" onClick={tap(onToggleMic)} disabled={!isHost && !roomSettings.guest_mic_enabled} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white disabled:opacity-40")} aria-label={micOn ? "Mute microphone" : "Unmute microphone"}>{micOn ? <Mic className="h-4 w-4 text-emerald-400" /> : <MicOff className="h-4 w-4 text-rose-400" />}</button>
         <button type="button" onClick={openAnimatedEmojis} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Animated Emojis" aria-expanded={emojiOpen}><Smile className="h-3.5 w-3.5" style={{ color: primaryThemeColor }} /></button>
         <button type="button" onClick={openGamesModal} className={cn(buttonClass,"grid h-8 w-8 place-items-center rounded-full border border-white/20 bg-white/10 text-white")} aria-label="Games" aria-expanded={gamesOpen}><Gamepad2 className="h-3.5 w-3.5" style={{ color: accentThemeColor }} /></button>
