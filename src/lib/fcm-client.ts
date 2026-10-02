@@ -68,6 +68,16 @@ async function enableNativeFcmForUser(userId: string): Promise<{ token: string }
       const currentUserId = nativeCurrentUserId;
       if (!currentUserId) return;
 
+      // A native FCM token belongs to the current app installation. If the
+      // same installation was previously logged in as another account, remove
+      // the old ownership first so one device token cannot silently remain
+      // attached to multiple users.
+      await supabase
+        .from("push_subscriptions")
+        .delete()
+        .eq("fcm_token", token.value)
+        .neq("user_id", currentUserId);
+
       const { error } = await supabase.from("push_subscriptions").upsert(
         {
           user_id: currentUserId,
