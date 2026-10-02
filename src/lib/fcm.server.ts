@@ -109,14 +109,36 @@ export async function sendFcmMessage(msg: FcmMessage): Promise<FcmResult> {
       apns: { payload: { aps: { sound: "default" } } },
     },
   };
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  async function send(access: string) {
+    return fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  let res = await send(accessToken);
+
+  // Refresh once when a Vercel instance has a stale cached OAuth token.
+  // This prevents background pushes from being lost after credentials rotate.
+  if (res.status === 401) {
+    cachedToken = null;
+    try {
+      const freshToken = await getAccessToken();
+      res = await send(freshToken);
+    } catch (e) {
+      return {
+        ok: false,
+        status: 401,
+        token: msg.token,
+        error: e instanceof Error ? e.message : String(e),
+      };
+    }
+  }
+
   if (res.ok) return { ok: true, status: res.status, token: msg.token };
   const errText = await res.text();
   return { ok: false, status: res.status, token: msg.token, error: errText };
