@@ -26,7 +26,15 @@ type Settings = {
   default_bg_opacity: number;
 };
 
-function Field({ label, children }: { label: string; children: ReactNode }) { return <div><p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>{children}</div>; }\n\nfunction RuntimeStatus({ label, value }: { label: string; value: string }) { return <div className="rounded-xl border border-border/60 bg-card/40 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-1 truncate text-xs font-mono">{value}</p></div>; }\n\nfunction SettingsAdmin() {
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return <div><p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>{children}</div>;
+}
+
+function RuntimeStatus({ label, value }: { label: string; value: string }) {
+  return <div className="rounded-xl border border-border/60 bg-card/40 p-3"><p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p><p className="mt-1 truncate text-xs font-mono">{value}</p></div>;
+}
+
+function SettingsAdmin() {
   const qc = useQueryClient();
   const q = useQuery({
     queryKey: ["admin_settings"],
@@ -44,7 +52,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) { re
       if (error) throw error;
       const value = (data?.value ?? {}) as Partial<RuntimeConfig>;
       return {
-        primary_domain: String(value.primary_domain ?? "https://www.jalwa.pro").replace(/\\/$/, ""),
+        primary_domain: String(value.primary_domain ?? "https://www.jalwa.pro").replace(/\/$/, ""),
         alternate_domains: Array.isArray(value.alternate_domains) ? value.alternate_domains.map(String).filter(Boolean) : [],
         native_bootstrap_domain: String(value.native_bootstrap_domain ?? value.primary_domain ?? "https://www.jalwa.pro").replace(/\\/$/, ""),
         canonical_redirect: Boolean(value.canonical_redirect ?? false),
