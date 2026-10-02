@@ -332,7 +332,25 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       return;
     }
     if (isHost) {
-      onJoinSeat?.(idx);
+      if (!roomId) {
+        onJoinSeat?.(idx);
+        return;
+      }
+      if (seat.is_locked && idx !== 1) {
+        toast.error("Unlock this seat first");
+        return;
+      }
+      const { error } = await supabase.rpc("take_seat", {
+        _room_id: roomId,
+        _seat_index: idx,
+      });
+      if (error) {
+        toast.error(error.message || "Could not change your seat");
+        return;
+      }
+      setHostSeatIndex(idx);
+      setSelectedEmptySeat(null);
+      toast.success("You moved to seat " + idx);
       return;
     }
     if (canManageSeats) {
