@@ -169,11 +169,22 @@ function AuthPage() {
 
   async function oauth(provider: "google" | "apple") {
     resetAlerts();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: getAuthRedirectUrl() },
-    });
-    if (error) setErr(error.message);
+    setBusy(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: getAuthRedirectUrl(),
+          skipBrowserRedirect: false,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      setErr(error instanceof Error ? error.message : `Continue with ${provider} failed. Please try again.`);
+      setBusy(false);
+    }
   }
 
   async function nativeGoogleSignIn() {
@@ -246,7 +257,10 @@ function AuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => oauth("apple")}
+              disabled={busy}
+              onClick={() => {
+                void oauth("apple");
+              }}
               className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card py-3 font-medium hover:bg-muted transition-colors"
             >
               <AppleIcon className="h-4 w-4" />
