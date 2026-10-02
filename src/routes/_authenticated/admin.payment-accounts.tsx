@@ -15,7 +15,7 @@ type Payments = Record<string, string | boolean>;
 const DEFAULT_JAZZCASH_QR = "/payment-qr/jazzcash-merchant-qr.svg";
 const DEFAULT_JAZZCASH_TILL = "984021661";
 const DEFAULT_JAZZCASH_TITLE = "JALWA PRO";
-const DEFAULT_JAZZCASH_IPN = "https://jalwa.pro/api/jazzcash/ipn";
+const DEFAULT_JAZZCASH_IPN = "/api/jazzcash/ipn";
 
 function PaymentAccounts() {
   const qc = useQueryClient();
