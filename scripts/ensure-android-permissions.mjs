@@ -22,11 +22,6 @@ const missing = permissions.filter(
   (permission) => !xml.includes(`android:name="${permission}"`),
 );
 
-if (missing.length === 0) {
-  console.log("✓ Android microphone, location and notification permissions already declared.");
-  process.exit(0);
-}
-
 const declarations = missing
   .map((permission) => `    <uses-permission android:name="${permission}" />`)
   .join("\n");
