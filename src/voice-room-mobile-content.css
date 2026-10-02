@@ -21,3 +21,69 @@ body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-compone
 }
 @media(max-width:350px){body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.bottom-nav"]{padding-left:4px!important;padding-right:4px!important}body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.room-header"]>div:first-child>button{flex-basis:34px!important;width:34px!important}}
 @media(prefers-reduced-motion:reduce){body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.bottom-nav"] *,body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.announcement"] *{transition:none!important;animation:none!important}}
+
+/* Explicit VoiceRoom layout contract. The previous generic selectors were too broad and
+   left stale safe-area/header spacing on some Android WebViews. */
+@media (max-width:430px){
+  body:has([data-jalwa-live-component="voice.seat-area"]){
+    --room-mobile-side:clamp(5px,2vw,9px);
+  }
+  body:has([data-jalwa-live-component="voice.room-header"]) [data-room-header="true"]{
+    padding-top:0 !important;
+    margin:0 !important;
+  }
+  body:has([data-jalwa-live-component="voice.room-header"]) [data-room-header="true"] > div:first-child{
+    min-height:42px !important;
+    padding:3px 0 !important;
+    gap:4px !important;
+  }
+  body:has([data-jalwa-live-component="voice.room-header"]) [data-room-header="true"] button{
+    min-width:32px !important;
+    min-height:32px !important;
+  }
+  body:has([data-jalwa-live-component="voice.room-header"]) [data-room-header="true"] img{
+    width:32px !important;
+    height:32px !important;
+  }
+  body:has([data-jalwa-live-component="voice.room-header"]) [data-room-header="true"] > div:nth-child(2){
+    min-height:24px !important;
+    height:24px !important;
+    border-bottom-width:1px !important;
+  }
+  body:has([data-jalwa-live-component="voice.room-header"]) [data-room-header="true"] > div:nth-child(2) > button{
+    min-height:24px !important;
+    padding:2px 4px !important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid]{
+    padding-inline:clamp(2px,1.5vw,7px) !important;
+    padding-top:0 !important;
+    padding-bottom:0 !important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div{
+    gap:clamp(2px,1vw,6px) !important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat]{
+    min-height:0 !important;
+    overflow:visible !important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"]{
+    width:clamp(48px,14vw,68px) !important;
+    max-width:68px !important;
+  }
+  body:has([data-jalwa-live-component="voice.announcement"]){
+    padding-bottom:0 !important;
+    margin-top:0 !important;
+  }
+  body:has([data-jalwa-live-component="voice.announcement"]) [data-jalwa-live-component="voice.announcement"] > section{
+    gap:4px !important;
+  }
+  body:has([data-jalwa-live-component="voice.bottom-nav"]) [data-jalwa-live-component="voice.bottom-nav"]{
+    height:calc(50px + env(safe-area-inset-bottom)) !important;
+    min-height:calc(50px + env(safe-area-inset-bottom)) !important;
+    padding-top:2px !important;
+  }
+  body:has([data-jalwa-live-component="voice.bottom-nav"]) [data-jalwa-live-component="voice.bottom-nav"] button{
+    min-width:38px !important;
+    min-height:38px !important;
+  }
+}
