@@ -36,6 +36,18 @@ if (applicationIndex === -1) {
   throw new Error("Could not find <application> in AndroidManifest.xml");
 }
 
+// FCM may receive a notification while the WebView/app process is not running.
+// Declare the same channel used by the server as the native FCM fallback channel.
+// Capacitor creates the channel at runtime on normal app startup as well.
+const fcmChannelMeta =
+  '    <meta-data android:name="com.google.firebase.messaging.default_notification_channel_id" android:value="jalwa_default" />';
+
+if (!xml.includes("com.google.firebase.messaging.default_notification_channel_id")) {
+  const closeIndex = xml.indexOf(">", applicationIndex);
+  if (closeIndex === -1) throw new Error("Could not parse <application> in AndroidManifest.xml");
+  xml = xml.slice(0, closeIndex + 1) + "\n" + fcmChannelMeta + xml.slice(closeIndex + 1);
+}
+
 xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
 writeFileSync(manifestPath, xml);
 console.log(`✓ Added Android permissions: ${missing.join(", ")}`);
