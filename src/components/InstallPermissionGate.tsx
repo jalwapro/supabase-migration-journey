@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Mic, Bell, MapPin, Loader2, Check, X } from "lucide-react";
+import { Mic, Bell, MapPin, Loader2, Check, X, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { isNative } from "@/lib/native";
 
-const FLAG_KEY = "jalwa_install_perms_asked_v7";
 const PREVIEW_ONLY_PATHS = new Set(["/svga-preview", "/svga-frames-preview", "/frames-preview", "/lottie-preview"]);
 
 type PermState = "idle" | "asking" | "granted" | "denied";
@@ -43,20 +42,61 @@ export function InstallPermissionGate() {
       return;
     }
     if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;
-    if (window.location.pathname === "/" || window.location.pathname === "/splash" || window.location.pathname === "/privacy" || window.location.pathname === "/terms") return;
-    try {
-      if (localStorage.getItem(FLAG_KEY) === "1") return;
-    } catch {}
+    if (window.location.pathname === "/splash" || window.location.pathname === "/privacy" || window.location.pathname === "/terms") {
+      setNeedsAsk(false);
+      return;
+    }
+
     let cancelled = false;
-    const schedule = window.setTimeout(() => {
-      if (!cancelled) setNeedsAsk(true);
-    }, 350);
+
+    const readPermissions = async () => {
+      const next: Record<PermKey, PermState> = {
+        mic: "idle",
+        notifications: "idle",
+        location: "idle",
+      };
+
+      try {
+        if (isNative()) {
+          const { PushNotifications } = await import("@capacitor/push-notifications");
+          const push = await PushNotifications.checkPermissions();
+          next.notifications = push.receive === "granted" ? "granted" : "idle";
+
+          const { Geolocation } = await import("@capacitor/geolocation");
+          const geo = await Geolocation.checkPermissions();
+          next.location = geo.location === "granted" ? "granted" : "idle";
+        } else {
+          if ("Notification" in window && Notification.permission === "granted") {
+            next.notifications = "granted";
+          }
+          if ("permissions" in navigator) {
+            try {
+              const mic = await navigator.permissions.query({ name: "microphone" as PermissionName });
+              next.mic = mic.state === "granted" ? "granted" : "idle";
+            } catch {}
+            try {
+              const geo = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+              next.location = geo.state === "granted" ? "granted" : "idle";
+            } catch {}
+          }
+        }
+      } catch {}
+
+      if (cancelled) return;
+      setStates(next);
+      setNeedsAsk(Object.values(next).some((state) => state !== "granted"));
+    };
+
+    void readPermissions();
+    const onFocus = () => void readPermissions();
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onFocus);
     return () => {
       cancelled = true;
-      window.clearTimeout(schedule);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onFocus);
     };
   }, [user?.id, authLoading]);
-
   function setOne(k: PermKey, s: PermState) {
     setStates((prev) => ({ ...prev, [k]: s }));
   }
@@ -117,29 +157,35 @@ export function InstallPermissionGate() {
     } catch { setOne("location", "denied"); }
   }
 
-  async function askAll() {
+  async function askOne(k: PermKey): Promise<void> {
+    if (busy) return;
     setBusy(true);
-    // 1) Microphone — required for VoiceRoom audio.
-    await askMic();
-    // 2) Notifications.
-    await askNotifications();
-    // 3) Location.
-    await askLocation();
-    try { localStorage.setItem(FLAG_KEY, "1"); } catch { /* no-op */ }
-    setBusy(false);
-    setTimeout(() => setNeedsAsk(false), 600);
+    try {
+      if (k === "mic") await askMic();
+      else if (k === "notifications") await askNotifications();
+      else await askLocation();
+    } finally {
+      setBusy(false);
+    }
   }
 
+  async function askAll() {
+    // Keep each request in the same visible gate. Native/mobile OS prompts are
+    // more reliable when each permission can also be launched by its own button.
+    for (const key of ["mic", "notifications", "location"] as PermKey[]) {
+      if (states[key] !== "granted") await askOne(key);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  }
   function skip() {
-    try { localStorage.setItem(FLAG_KEY, "1"); } catch { /* no-op */ }
     setNeedsAsk(false);
   }
 
   if (!needsAsk) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-background/95 backdrop-blur-md px-6">
-      <div className="w-full max-w-sm rounded-3xl border border-[color:var(--gold)]/30 bg-gradient-to-b from-background via-background to-[color:var(--secondary)]/10 p-6 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]">
+    <div className="fixed inset-0 z-[2147483600] flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-md px-3 pb-[max(12px,env(safe-area-inset-bottom))] sm:p-6">
+      <div className="w-full max-w-sm rounded-t-[28px] sm:rounded-3xl border border-[color:var(--gold)]/30 bg-gradient-to-b from-background via-background to-[color:var(--secondary)]/10 p-6 shadow-[0_20px_60px_-10px_rgba(0,0,0,0.8)]">
         <div className="relative mx-auto grid h-20 w-20 place-items-center">
           <span className="absolute inset-0 animate-ping rounded-full bg-[color:var(--primary)]/25" />
           <div className="relative grid h-20 w-20 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_10px_30px_-6px_rgba(236,72,153,0.6)]">
@@ -167,19 +213,14 @@ export function InstallPermissionGate() {
                   <p className="text-sm font-bold">{title}</p>
                   <p className="truncate text-[11px] text-muted-foreground">{sub}</p>
                 </div>
-                <div className="shrink-0">
-                  {st === "asking" && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-                  {st === "granted" && (
-                    <span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-500/20 text-emerald-400">
-                      <Check className="h-3.5 w-3.5" />
-                    </span>
-                  )}
-                  {st === "denied" && (
-                    <span className="grid h-6 w-6 place-items-center rounded-full bg-red-500/15 text-red-400">
-                      <X className="h-3.5 w-3.5" />
-                    </span>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => void askOne(k)}
+                  disabled={busy || st === "granted"}
+                  className="shrink-0 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-extrabold text-foreground disabled:opacity-50"
+                >
+                  {st === "asking" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : st === "granted" ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : "Allow"}
+                </button>
               </li>
             );
           })}
@@ -201,7 +242,7 @@ export function InstallPermissionGate() {
           Not now
         </button>
         <p className="mt-3 text-center text-[10px] text-muted-foreground">
-          Baad me OS settings → App info → Permissions se bhi manage kar sakte ho
+          Agar kisi permission ko pehle deny kiya hai to Android App info → Permissions se bhi enable kar sakte ho
         </p>
       </div>
     </div>
