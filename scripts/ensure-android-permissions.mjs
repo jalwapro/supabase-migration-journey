@@ -9,8 +9,8 @@ if (!existsSync(manifestPath)) {
 }
 
 let xml = readFileSync(manifestPath, "utf8");
+xml = xml.replace(/\s*<uses-permission android:name="android\.permission\.CAMERA"\s*\/\>/g, "");
 const permissions = [
-  "android.permission.CAMERA",
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.ACCESS_FINE_LOCATION",
@@ -23,7 +23,7 @@ const missing = permissions.filter(
 );
 
 if (missing.length === 0) {
-  console.log("✓ Android camera, microphone, location and notification permissions already declared.");
+  console.log("✓ Android microphone, location and notification permissions already declared.");
   process.exit(0);
 }
 
