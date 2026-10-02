@@ -41,6 +41,9 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: "native",
     },
+    PushNotifications: {
+      presentationOptions: ["alert", "sound", "badge"],
+    },
   },
 };
 
