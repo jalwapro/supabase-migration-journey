@@ -44,6 +44,9 @@ export function InstallPermissionGate() {
     }
     if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;
     if (window.location.pathname === "/" || window.location.pathname === "/splash" || window.location.pathname === "/privacy" || window.location.pathname === "/terms") return;
+    try {
+      if (localStorage.getItem(FLAG_KEY) === "1") return;
+    } catch {}
     let cancelled = false;
     const schedule = window.setTimeout(() => {
       if (!cancelled) setNeedsAsk(true);
