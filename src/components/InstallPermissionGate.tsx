@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Mic, Bell, MapPin, Loader2, Check, X, Settings } from "lucide-react";
+import { Mic, Bell, MapPin, Loader2, Check, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { isNative } from "@/lib/native";
 
