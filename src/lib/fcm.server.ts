@@ -101,7 +101,11 @@ export async function sendFcmMessage(msg: FcmMessage): Promise<FcmResult> {
       android: {
         priority: "HIGH" as const,
         ttl: "2419200s",
-        restricted_package_name: "app.lovable.jalwa",
+        // Do not hard-restrict delivery to a package name here. The native
+        // Firebase app registration and the Capacitor application id have
+        // historically differed in this project; an FCM package restriction
+        // can turn an otherwise valid token into INVALID_ARGUMENT. The token
+        // itself already identifies the target Android installation.
         notification: {
           sound: "default",
           channel_id: "jalwa_default",
