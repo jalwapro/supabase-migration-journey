@@ -88,7 +88,7 @@ export const Route = createFileRoute("/api/data-deletion")({
           // The Jalwa account-deletion workflow handles the actual deletion.
           const code = confirmationCode();
           return json({
-            url: "https://www.jalwa.pro/api/data-deletion",
+            url: new URL("/api/data-deletion", request.url).toString(),
             confirmation_code: code,
           });
         } catch (error) {
