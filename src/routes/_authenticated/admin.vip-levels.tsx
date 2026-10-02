@@ -7,6 +7,7 @@ import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins, vipTierForLevel } from "@/lib/vip-levels";
 import { frameForLevel, seriesForLevel, LEVEL_FRAMES } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
+import { uploadFileAtPath } from "@/lib/uploads";
 import { Loader2, Save, Search, Crown, TrendingUp, Users, Coins } from "lucide-react";
 import { toast } from "sonner";
 
@@ -136,8 +137,8 @@ function VipLevelsAdmin() {
   return (
     <>
       <AdminPageHeader
-        title="VIP Levels"
-        subtitle="Manage all 101 gifting levels — thresholds, titles, rewards, privileges"
+        title="VIP Frames & Levels"
+        subtitle="Manage all 101 levels — DP frames, Voice Room popup frames, thresholds, rewards and privileges"
       />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -276,7 +277,24 @@ function EditModal({
   saving: boolean;
 }) {
   const [draft, setDraft] = useState<Row>(row);
+  const [uploading, setUploading] = useState<"dp" | "popup" | null>(null);
   const set = <K extends keyof Row>(k: K, v: Row[K]) => setDraft((d) => ({ ...d, [k]: v }));
+
+  const uploadFrame = async (kind: "dp" | "popup", file: File) => {
+    const mime = file.type.toLowerCase().split(";")[0];
+    const ext = ({ "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "video/mp4": "mp4", "video/webm": "webm" } as Record<string,string>)[mime];
+    if (!ext) { toast.error("Use PNG, JPG, WebP, MP4 or WebM."); return; }
+    setUploading(kind);
+    try {
+      const base = file.name.replace(/\.[^.]*$/, "").replace(/[^a-zA-Z0-9_-]+/g, "_") || (kind + "-frame");
+      const path = `vip-levels/${draft.level}/${Date.now()}_${base}.${ext}`;
+      const url = await uploadFileAtPath("shop-assets", path, file);
+      set(kind === "dp" ? "frame_url" : "popup_frame_url", url);
+      toast.success((kind === "dp" ? "DP" : "Popup") + " frame uploaded");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed");
+    } finally { setUploading(null); }
+  };
 
   return (
     <>
@@ -288,6 +306,16 @@ function EditModal({
           <div>
             <p className="text-lg font-bold">Level {row.level}</p>
             <p className="text-[11px] text-muted-foreground">Edit tier, title, threshold, rewards</p>
+          </div>
+        </div>
+
+        <div className="mb-3 rounded-2xl border border-primary/20 bg-primary/5 p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[10px] font-black uppercase tracking-widest text-primary">Live Frame Preview</span>
+            <span className="text-[9px] text-muted-foreground">Unsaved changes are shown immediately</span>
+          </div>
+          <div className="flex items-center justify-center rounded-xl bg-black/40 p-4">
+            <FramePreview url={draft.popup_frame_url || draft.frame_url || frameForLevel(draft.level)} label={"VIP Level " + draft.level} size={150} />
           </div>
         </div>
 
@@ -310,8 +338,14 @@ function EditModal({
           <Field label="Badge URL">
             <input value={draft.badge_url ?? ""} onChange={(e) => set("badge_url", e.target.value || null)} className={input} />
           </Field>
-          <Field label="DP Frame URL (blank = automatic level frame)">
-            <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} />
+          <Field label="DP Frame — upload or URL">
+            <div className="flex gap-2">
+              <input value={draft.frame_url ?? ""} onChange={(e) => set("frame_url", e.target.value || null)} className={input} placeholder="PNG / MP4 / WebM URL" />
+              <label className="grid h-8 w-9 shrink-0 place-items-center rounded-lg border border-border cursor-pointer">
+                {uploading === "dp" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <span className="text-xs">↑</span>}
+                <input type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" className="hidden" disabled={!!uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadFrame("dp", file); e.currentTarget.value = ""; }} />
+              </label>
+            </div>
             <div className="mt-2 flex items-center gap-3 rounded-xl border border-border bg-card/40 p-2">
               <FramePreview url={draft.frame_url || frameForLevel(draft.level)} label={seriesForLevel(draft.level) ?? "—"} size={72} />
               <div className="text-[11px] text-muted-foreground">
@@ -320,8 +354,14 @@ function EditModal({
               </div>
             </div>
           </Field>
-          <Field label="Voice Room Profile Popup Outer Frame URL (MP4/WebM/image)">
-            <input value={draft.popup_frame_url ?? ""} onChange={(e) => set("popup_frame_url", e.target.value || null)} className={input} />
+          <Field label="Voice Room Popup Frame — upload or URL">
+            <div className="flex gap-2">
+              <input value={draft.popup_frame_url ?? ""} onChange={(e) => set("popup_frame_url", e.target.value || null)} className={input} placeholder="PNG / MP4 / WebM URL" />
+              <label className="grid h-8 w-9 shrink-0 place-items-center rounded-lg border border-border cursor-pointer">
+                {uploading === "popup" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <span className="text-xs">↑</span>}
+                <input type="file" accept="image/png,image/jpeg,image/webp,video/mp4,video/webm" className="hidden" disabled={!!uploading} onChange={(e) => { const file = e.target.files?.[0]; if (file) void uploadFrame("popup", file); e.currentTarget.value = ""; }} />
+              </label>
+            </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
               This frame wraps the entire user profile popup. Leave blank to use the level frame automatically.
             </p>
