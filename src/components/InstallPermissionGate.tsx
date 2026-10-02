@@ -71,7 +71,7 @@ export function InstallPermissionGate() {
     try {
       if (isNative()) {
         const { Camera } = await import("@capacitor/camera");
-        const res = await Camera.requestPermissions({ permissions: ["camera"] });
+        const res = await Camera.requestPermissions();
         setOne("camera", res.camera === "granted" ? "granted" : "denied");
         return;
       }
@@ -91,9 +91,10 @@ export function InstallPermissionGate() {
    */
   async function askMicAndCamera(): Promise<void> {
     if (isNative()) {
-      // Native path: Capacitor plugins don't share the gesture issue.
-      await askMic();
+      // Native path: request Android/iOS runtime permissions explicitly.
+      // The generated Android manifest is patched by ensure-android-permissions.mjs.
       await askCamera();
+      await askMic();
       return;
     }
     setOne("mic", "asking");
@@ -131,7 +132,7 @@ export function InstallPermissionGate() {
     try {
       if (isNative()) {
         const { Geolocation } = await import("@capacitor/geolocation");
-        const res = await Geolocation.requestPermissions({ permissions: ["location"] });
+        const res = await Geolocation.requestPermissions();
         setOne("location", res.location === "granted" ? "granted" : "denied");
         return;
       }
