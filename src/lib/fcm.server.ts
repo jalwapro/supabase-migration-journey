@@ -93,7 +93,13 @@ export async function sendFcmMessage(msg: FcmMessage): Promise<FcmResult> {
       token: msg.token,
       notification: { title: msg.title, body: msg.body },
       data: msg.data ?? {},
-      android: { priority: "HIGH" as const, notification: { sound: "default" } },
+      android: {
+        priority: "HIGH" as const,
+        notification: {
+          sound: "default",
+          channel_id: "jalwa_default",
+        },
+      },
       apns: { payload: { aps: { sound: "default" } } },
     },
   };
