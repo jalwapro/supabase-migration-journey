@@ -36,10 +36,16 @@ async function enableNativeFcmForUser(userId: string): Promise<{ token: string }
     if (requested.receive !== "granted") return null;
   }
 
+  let registeredToken: string | null = null;
+  let resolveRegistration: ((token: string) => void) | null = null;
+  const registrationPromise = new Promise<string>((resolve) => { resolveRegistration = resolve; });
+
   if (!nativePushBound) {
     nativePushBound = true;
 
     await PushNotifications.addListener("registration", async (token) => {
+      registeredToken = token.value;
+      resolveRegistration?.(token.value);
       try {
         await supabase.from("push_subscriptions").upsert(
           {
@@ -87,7 +93,14 @@ async function enableNativeFcmForUser(userId: string): Promise<{ token: string }
 
   await PushNotifications.register();
 
-  return null;
+  if (!registeredToken) {
+    registeredToken = await Promise.race([
+      registrationPromise,
+      new Promise<string>((_, reject) => setTimeout(() => reject(new Error("FCM registration timeout")), 10000)),
+    ]).catch(() => null);
+  }
+
+  return registeredToken ? { token: registeredToken } : null;
 }
 
 export function isFcmSupported(): boolean {
