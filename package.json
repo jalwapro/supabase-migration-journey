@@ -12,8 +12,8 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "cap:sync": "vite build && cap sync",
-    "cap:android": "vite build && cap sync android && cap open android",
+    "cap:sync": "vite build && cap sync && node scripts/ensure-android-permissions.mjs",
+    "cap:android": "vite build && cap sync android && node scripts/ensure-android-permissions.mjs && cap open android",
     "cap:ios": "vite build && cap sync ios && cap open ios",
     "cache:gifts": "node scripts/cache-top-gifts.mjs",
     "monitor:oracle": "node scripts/oracle-vm-monitor.mjs"
