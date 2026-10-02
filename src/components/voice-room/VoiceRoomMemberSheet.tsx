@@ -47,6 +47,8 @@ export function VoiceRoomMemberSheet({
   onKicked?: (userId: string) => void;
   onOpenProfile?: (user: VoiceRoomMemberProfile) => void;
   onOpenMessage?: (userId: string) => void;
+  onOpenPublicChat?: (member: VoiceRoomMemberProfile) => void;
+  onOpenHostControls?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);

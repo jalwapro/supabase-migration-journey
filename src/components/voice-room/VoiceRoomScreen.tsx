@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Lock, KeyRound, VolumeX, Volume2, Share2, Flag, LogOut, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
 import { setVoiceRoomFullscreen } from "@/lib/native";
@@ -453,7 +454,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           canModerate={isHost && selectedMember.id !== room.host?.id}
           isHost={isHost}
           onClose={() => setSelectedMember(null)}
-          onOpenPublicChat={(member) => {
+          onOpenPublicChat={(member: VoiceRoomMemberProfile) => {
             setSelectedMember(null);
             setMiniDraft(`@${member.username ?? "user"} `);
             setShowMiniInputPopup(true);

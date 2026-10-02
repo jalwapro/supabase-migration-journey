@@ -93,7 +93,7 @@ function multiAudioFacade(tracks: AnyTrack[]): RemoteAudioTrack {
         audio.autoplay = true;
         audio.controls = false;
         audio.muted = false;
-        audio.playsInline = true;
+        audio.setAttribute("playsinline", "");
         audio.volume = volume;
         audio.style.display = "none";
         document.body.appendChild(audio);
@@ -183,7 +183,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       const videoPub = Array.from(participant.trackPublications.values()).find((pub) => pub.kind === Track.Kind.Video && hasAttach(pub.track));
       setRemotes((current) => {
         current.get(id)?.audioTrack?.stop();
-        const audioTracks = audioPubs.map((pub) => pub.track).filter(hasAttach);
+        const audioTracks = audioPubs.map((pub) => pub.track as unknown).filter(hasAttach) as AnyTrack[];
         const audioTrack = audioTracks.length ? multiAudioFacade(audioTracks) : undefined;
         const videoTrack = videoPub?.track && hasAttach(videoPub.track) ? videoFacade(videoPub.track) : undefined;
         if (audioTrack) {

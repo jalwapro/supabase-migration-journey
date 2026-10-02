@@ -113,6 +113,9 @@ function ThemesAdmin() {
     primary_color: "#e94560",
     accent_color: "#9b72cf",
     sort: 0,
+    chromakey_color: "",
+    chromakey_tolerance: 60,
+    chromakey_softness: 20,
   });
   const [uploading, setUploading] = useState<string | null>(null);
 
@@ -581,6 +584,9 @@ function EditItemModal({
     is_premium: item.is_premium,
     is_active: item.is_active,
     sort: item.sort,
+    chromakey_color: ((item as any).chromakey_color ?? "") as string,
+    chromakey_tolerance: Number((item as any).chromakey_tolerance ?? 60),
+    chromakey_softness: Number((item as any).chromakey_softness ?? 20),
   });
   const [uploading, setUploading] = useState<string | null>(null);
 

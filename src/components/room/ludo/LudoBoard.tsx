@@ -1,7 +1,7 @@
 import {
   Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Gift, Loader2, Mic,
   Volume2, Smile, RotateCcw, Bot, X, Crown, Coins, Trophy,
-} from "lucide-react";
+, Mic2 } from "lucide-react";
 import {
   COLOR_HEX, GRID_SIZE, isSafeRingIndex, ringCellCoord, tokenCoord,
   type LudoColor, type LudoGameState,

@@ -235,7 +235,7 @@ export function LevelAvatar({
             ) : frameIsVideo ? (
               <video key={cleanFrameUrl} src={cleanFrameUrl} autoPlay muted loop playsInline preload="auto" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
             ) : (
-              <img src={cleanFrameUrl} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
+              <img src={cleanFrameUrl ?? undefined} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
             )}
           </div>
         );

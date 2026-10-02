@@ -232,7 +232,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
       }
     } catch {}
     const colors = activeColorsForMode(mode);
-    const seats = colors.map((color, i) => ({ color, kind: (i === 0 ? "human" : "bot") as SeatKind, userId: i === 0 ? user?.id : undefined, name: i === 0 ? myName : `Computer ${i}`, avatar: i === 0 ? (profile?.avatar_url ?? null) : null }));
+    const seats = colors.map((color, i) => ({ color, kind: (i === 0 ? "human" : "bot") as SeatKind, userId: i === 0 ? user?.id : undefined, name: i === 0 ? myName : `Computer ${i}`, avatar: i === 0 ? ((profile as any)?.avatar_url ?? null) : null }));
     isAuthority.current = true; matchIdRef.current = null; revisionRef.current = 0; lastRemoteRevisionRef.current = 0; setActiveBet(0); setGame(createGame(mode, seats)); setStep("play");
   }
 
