@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Mic, Bell, MapPin, Loader2, Check, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { isNative } from "@/lib/native";
+import { initFcmIfGranted } from "@/lib/fcm-client";
 
 const PREVIEW_ONLY_PATHS = new Set(["/svga-preview", "/svga-frames-preview", "/frames-preview", "/lottie-preview"]);
 
@@ -85,6 +86,15 @@ export function InstallPermissionGate() {
       if (cancelled) return;
       setStates(next);
       setNeedsAsk(Object.values(next).some((state) => state !== "granted"));
+
+      // A previously granted Android notification permission must still
+      // register/refresh the FCM token on every app start. Without this,
+      // a user who closes the app can have no current native FCM subscription.
+      if (next.notifications === "granted" && user?.id) {
+        void initFcmIfGranted(user.id).catch((error) => {
+          console.warn("FCM startup registration failed", error);
+        });
+      }
     };
 
     void readPermissions();
@@ -128,7 +138,11 @@ export function InstallPermissionGate() {
       if (isNative()) {
         const { PushNotifications } = await import("@capacitor/push-notifications");
         const res = await PushNotifications.requestPermissions();
-        setOne("notifications", res.receive === "granted" ? "granted" : "denied");
+        const granted = res.receive === "granted";
+        setOne("notifications", granted ? "granted" : "denied");
+        if (granted && user?.id) {
+          await initFcmIfGranted(user.id);
+        }
         return;
       }
       if (!("Notification" in window)) throw new Error("no notif");
