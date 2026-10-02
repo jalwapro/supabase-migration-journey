@@ -31,8 +31,15 @@ export const Route = createFileRoute("/api/public/push-webhook")({
       POST: async ({ request }) => {
         const secret = request.headers.get("x-webhook-secret");
         const authorization = request.headers.get("authorization") || "";
-        const serviceKey = process.env.SB_SERVICE_ROLE_KEY || "";
-        const serviceAuthorized = !!serviceKey && authorization === `Bearer ${serviceKey}`;
+        const apiKey = request.headers.get("apikey") || "";
+        const serviceKey =
+          process.env.SUPABASE_SECRET_KEY ||
+          process.env.SB_SERVICE_ROLE_KEY ||
+          process.env.SUPABASE_SERVICE_ROLE_KEY ||
+          "";
+        const serviceAuthorized =
+          !!serviceKey &&
+          (authorization === `Bearer ${serviceKey}` || apiKey === serviceKey);
         const secretAuthorized = !!secret && secret === process.env.PUSH_WEBHOOK_SECRET;
         if (!serviceAuthorized && !secretAuthorized) {
           return new Response("Unauthorized", { status: 401 });
