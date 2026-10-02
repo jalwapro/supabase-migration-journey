@@ -5,6 +5,7 @@ import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging";
 import { supabase } from "@/integrations/supabase/client";
 import { openNotification } from "@/components/NotificationPopup";
+import { isNative, nativePlatform } from "@/lib/native";
 import { playNotifySound } from "@/lib/notify-sound";
 import type { NotificationRow } from "@/hooks/useNotifications";
 
@@ -22,6 +23,72 @@ let cachedConfig: FirebaseConfig | null = null;
 let app: FirebaseApp | null = null;
 let messaging: Messaging | null = null;
 let foregroundBound = false;
+let nativePushBound = false;
+
+
+
+async function enableNativeFcmForUser(userId: string): Promise<{ token: string } | null> {
+  const { PushNotifications } = await import("@capacitor/push-notifications");
+
+  const permission = await PushNotifications.checkPermissions();
+  if (permission.receive !== "granted") {
+    const requested = await PushNotifications.requestPermissions();
+    if (requested.receive !== "granted") return null;
+  }
+
+  if (!nativePushBound) {
+    nativePushBound = true;
+
+    await PushNotifications.addListener("registration", async (token) => {
+      try {
+        await supabase.from("push_subscriptions").upsert(
+          {
+            user_id: userId,
+            platform: nativePlatform() === "ios" ? "ios" : "android",
+            endpoint: `fcm:${token.value}`,
+            fcm_token: token.value,
+            p256dh: null,
+            auth: null,
+            user_agent: typeof navigator !== "undefined" ? navigator.userAgent : "Jalwa native",
+            last_seen: new Date().toISOString(),
+          },
+          { onConflict: "user_id,endpoint" },
+        );
+      } catch (error) {
+        console.warn("Native FCM token save failed", error);
+      }
+    });
+
+    await PushNotifications.addListener("registrationError", (error) => {
+      console.warn("Native FCM registration failed", error);
+    });
+
+    await PushNotifications.addListener("pushNotificationReceived", (notification) => {
+      playNotifySound();
+      const data = notification.data ?? {};
+      const notifId = data.notifId;
+      if (notifId) {
+        openNotification({
+          id: String(notifId),
+          user_id: userId,
+          actor_id: (data.sender_id as string) ?? null,
+          kind: ((data.kind as string) ?? "system_broadcast") as NotificationRow["kind"],
+          title: notification.title ?? (data.title as string) ?? "New notification",
+          body: notification.body ?? (data.body as string) ?? null,
+          entity_type: (data.entity_type as string) ?? null,
+          entity_id: (data.entity_id as string) ?? null,
+          data: data as Record<string, unknown>,
+          read_at: null,
+          created_at: new Date().toISOString(),
+        });
+      }
+    });
+  }
+
+  await PushNotifications.register();
+
+  return null;
+}
 
 export function isFcmSupported(): boolean {
   return (
@@ -140,6 +207,7 @@ function bindForegroundHandler(m: Messaging) {
  * Idempotent — safe to call on every app start after login.
  */
 export async function enableFcmForUser(userId: string): Promise<{ token: string } | null> {
+  if (isNative()) return enableNativeFcmForUser(userId);
   if (!isFcmSupported()) return null;
 
   const perm = await Notification.requestPermission();
@@ -178,6 +246,10 @@ export async function enableFcmForUser(userId: string): Promise<{ token: string 
  * handler if permission is already granted. Does NOT prompt.
  */
 export async function initFcmIfGranted(userId: string): Promise<void> {
+  if (isNative()) {
+    try { await enableNativeFcmForUser(userId); } catch (e) { console.warn("Native FCM init failed", e); }
+    return;
+  }
   if (!isFcmSupported()) return;
   if (Notification.permission !== "granted") return;
   try {
@@ -196,6 +268,10 @@ const AUTO_PROMPT_KEY = "jalwa_fcm_auto_prompted_v1";
  * - If default → prompt once per user after a short delay.
  */
 export async function autoEnableFcm(userId: string): Promise<void> {
+  if (isNative()) {
+    try { await enableNativeFcmForUser(userId); } catch (e) { console.warn("Native FCM auto-init failed", e); }
+    return;
+  }
   if (!isFcmSupported()) return;
   const perm = Notification.permission;
 
