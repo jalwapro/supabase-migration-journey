@@ -255,17 +255,6 @@ function AuthPage() {
               <GoogleIcon className="h-4 w-4" />
               Continue with Google
             </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => {
-                void oauth("apple");
-              }}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-border bg-card py-3 font-medium hover:bg-muted transition-colors"
-            >
-              <AppleIcon className="h-4 w-4" />
-              Continue with Apple
-            </button>
           </div>
 
           <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-[0.25em] text-muted-foreground">
@@ -418,14 +407,6 @@ function GoogleIcon({ className }: { className?: string }) {
         fill="#EA4335"
         d="M12 10.2v3.9h5.5c-.24 1.4-1.66 4.1-5.5 4.1-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.9 3.5 14.7 2.5 12 2.5 6.8 2.5 2.6 6.7 2.6 12s4.2 9.5 9.4 9.5c5.4 0 9-3.8 9-9.1 0-.6-.1-1.1-.2-1.6H12z"
       />
-    </svg>
-  );
-}
-
-function AppleIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} aria-hidden fill="currentColor">
-      <path d="M16.365 12.86c-.02-2.09 1.71-3.09 1.78-3.14-.97-1.42-2.48-1.62-3.02-1.64-1.29-.13-2.51.76-3.16.76-.65 0-1.66-.74-2.73-.72-1.4.02-2.7.82-3.42 2.07-1.46 2.53-.37 6.28 1.05 8.34.7 1 1.52 2.13 2.6 2.09 1.04-.04 1.43-.67 2.69-.67 1.25 0 1.6.67 2.71.65 1.12-.02 1.83-1.02 2.51-2.02.79-1.16 1.12-2.29 1.14-2.35-.03-.01-2.18-.84-2.2-3.33zM14.3 6.65c.57-.69.96-1.65.85-2.6-.82.03-1.82.55-2.41 1.24-.53.61-1 1.59-.87 2.53.92.07 1.86-.47 2.43-1.17z" />
     </svg>
   );
 }
