@@ -160,9 +160,18 @@ export const Route = createFileRoute("/api/public/push-webhook")({
               ),
             );
             results.forEach((r, i) => {
-              if (r.status === "fulfilled" && r.value.ok) delivered++;
-              else {
+              if (r.status === "fulfilled" && r.value.ok) {
+                delivered++;
+              } else {
                 failed++;
+                const detail =
+                  r.status === "fulfilled"
+                    ? { status: r.value.status, error: r.value.error }
+                    : { error: String(r.reason) };
+                console.error("FCM push delivery failed", {
+                  subscriptionId: fcmSubs[i].id,
+                  ...detail,
+                });
                 if (r.status === "fulfilled" && isDeadFcmError(r.value.status, r.value.error)) {
                   dead.push(fcmSubs[i].id);
                 }
