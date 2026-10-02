@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Lock, KeyRound, VolumeX, Volume2, Share2, Flag, LogOut, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { RoomState } from "@/types/room";
 import { setVoiceRoomFullscreen } from "@/lib/native";
@@ -135,7 +136,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   useEffect(() => { if (!isHost) setHostSettingsOpen(false); }, [isHost]);
   useEffect(() => { if (!messages.length) return; setRoomMessages(prev => { const map = new Map(prev.map(m => [m.id, m])); messages.forEach(m => map.set(m.id, m)); return Array.from(map.values()).slice(-50); }); }, [messages]);
   useEffect(() => { let active = true; const channel = supabase.channel(`voice-chat-${roomId}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => { const row = p.new as RoomChatMessage; if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev.filter(m => !m.pending), row].slice(-50)); }).on("postgres_changes", { event: "UPDATE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => { const row = p.new as RoomChatMessage; if (active) setRoomMessages(prev => prev.some(m => m.id === row.id) ? prev.map(m => m.id === row.id ? { ...m, ...row, pending: false, failed: false } : m) : [...prev, row].slice(-50)); }).on("postgres_changes", { event: "DELETE", schema: "public", table: "room_messages", filter: `room_id=eq.${roomId}` }, p => { const row = p.old as { id: string }; if (active) setRoomMessages(prev => prev.filter(m => m.id !== row.id)); }).subscribe(); return () => { active = false; void supabase.removeChannel(channel); }; }, [roomId]);
-  useEffect(() => { let active = true; void supabase.from("room_messages").select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").eq("room_id", roomId).order("created_at", { ascending: true }).limit(50).then(({ data }) => { if (active && data) setRoomMessages(data as RoomChatMessage[]); }); return () => { active = false; }; }, [roomId]);
+  useEffect(() => { let active = true; void supabase.from("room_messages").select("id,user_id,kind,text,message,created_at,sender_username,sender_avatar").eq("room_id", roomId).order("created_at", { ascending: true }).limit(50).then(({ data }) => { if (!active || !data) return; setRoomMessages(prev => { const map = new Map<string, RoomChatMessage>(); for (const row of data as RoomChatMessage[]) map.set(row.id, row); for (const row of prev) { if (row.pending || row.failed || !map.has(row.id)) map.set(row.id, row); } return Array.from(map.values()).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()).slice(-50); }); }); return () => { active = false; }; }, [roomId]);
   useEffect(() => { if (chatContainerRef.current) chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight; }, [roomMessages]);
   
   const sendRoomMessage = async (messageOverride?: string) => { 
@@ -453,7 +454,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
           canModerate={isHost && selectedMember.id !== room.host?.id}
           isHost={isHost}
           onClose={() => setSelectedMember(null)}
-          onOpenPublicChat={(member) => {
+          onOpenPublicChat={(member: VoiceRoomMemberProfile) => {
             setSelectedMember(null);
             setMiniDraft(`@${member.username ?? "user"} `);
             setShowMiniInputPopup(true);

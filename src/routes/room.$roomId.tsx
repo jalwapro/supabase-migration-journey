@@ -2890,8 +2890,9 @@ function Seat({
                 }}
               />
             )}
-            {displayAvatar || displayFrame ? (
+            {displayAvatar || (member?.user?.frame ?? fallbackUser?.frame) ? (
               <LevelAvatar
+                level={Number((member?.user as any)?.level ?? (fallbackUser as any)?.level ?? 0)}
                 src={displayAvatar}
                 name={displayName}
                 size="sm"

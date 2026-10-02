@@ -27,6 +27,7 @@ export type LudoPlayer = {
   kind: SeatKind;
   userId?: string;
   name?: string;
+  avatar?: string | null;
   tokens: LudoToken[];
 };
 export type LudoGameState = {

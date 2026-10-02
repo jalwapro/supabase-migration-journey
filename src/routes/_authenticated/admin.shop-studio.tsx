@@ -66,7 +66,7 @@ function ShopStudio() {
     () =>
       rows.map((t) => {
         const source = t.animation_url || t.preview_url || t.bg_image;
-        const clipUrl = resolveAssetUrl(source);
+        const clipUrl = resolveAssetUrl(source) ?? null;
         return {
           id: t.id,
           name: t.name,

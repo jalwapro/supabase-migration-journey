@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as TestLivekitRouteImport } from './routes/test-livekit'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SvgaPreviewRouteImport } from './routes/svga-preview'
 import { Route as SvgaFramesPreviewRouteImport } from './routes/svga-frames-preview'
 import { Route as SplashRouteImport } from './routes/splash'
@@ -19,6 +20,7 @@ import { Route as RoomPreviewRouteImport } from './routes/room-preview'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RankRouteImport } from './routes/rank'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as LottiePreviewRouteImport } from './routes/lottie-preview'
 import { Route as GiftPreviewRouteImport } from './routes/gift-preview'
@@ -30,7 +32,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
-import { Route as ApiDataDeletionRouteImport } from './routes/api/data-deletion'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as ApiVmStatsRouteImport } from './routes/api/vm-stats'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
@@ -41,6 +43,8 @@ import { Route as ApiR2SignRouteImport } from './routes/api/r2-sign'
 import { Route as ApiLivekitTokenRouteImport } from './routes/api/livekit-token'
 import { Route as ApiLivekitRoomRouteImport } from './routes/api/livekit-room'
 import { Route as ApiLivekitPermissionsRouteImport } from './routes/api/livekit-permissions'
+import { Route as ApiGiftMediaRouteImport } from './routes/api/gift-media'
+import { Route as ApiDataDeletionRouteImport } from './routes/api/data-deletion'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
@@ -53,7 +57,6 @@ import { Route as AuthenticatedShopEntrancesRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedRechargeHistoryRouteImport } from './routes/_authenticated/recharge-history'
 import { Route as AuthenticatedRechargeRouteImport } from './routes/_authenticated/recharge'
-import { Route as AuthenticatedPrivacyRouteImport } from './routes/_authenticated/privacy'
 import { Route as AuthenticatedPartnerRouteImport } from './routes/_authenticated/partner'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedMyRoomsRouteImport } from './routes/_authenticated/my-rooms'
@@ -71,6 +74,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
 import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
+import { Route as ApiAdminR2GiftsRouteImport } from './routes/api/admin/r2-gifts'
 import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-test'
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings_.notifications'
@@ -84,7 +88,6 @@ import { Route as AuthenticatedAdminVipLevelsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminVipRouteImport } from './routes/_authenticated/admin.vip'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminThemesRouteImport } from './routes/_authenticated/admin.themes'
-import { Route as AuthenticatedAdminShopStudioRouteImport } from './routes/_authenticated/admin.shop-studio'
 import { Route as AuthenticatedAdminThemeCategoriesRouteImport } from './routes/_authenticated/admin.theme-categories'
 import { Route as AuthenticatedAdminSupportRoomRouteImport } from './routes/_authenticated/admin.support-room'
 import { Route as AuthenticatedAdminSupportChatRouteImport } from './routes/_authenticated/admin.support-chat'
@@ -92,6 +95,7 @@ import { Route as AuthenticatedAdminSupportRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminSpotlightsRouteImport } from './routes/_authenticated/admin.spotlights'
 import { Route as AuthenticatedAdminSplashRouteImport } from './routes/_authenticated/admin.splash'
 import { Route as AuthenticatedAdminSpinPrizesRouteImport } from './routes/_authenticated/admin.spin-prizes'
+import { Route as AuthenticatedAdminShopStudioRouteImport } from './routes/_authenticated/admin.shop-studio'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminRoomsRouteImport } from './routes/_authenticated/admin.rooms'
 import { Route as AuthenticatedAdminRoomSlidesRouteImport } from './routes/_authenticated/admin.room-slides'
@@ -104,7 +108,9 @@ import { Route as AuthenticatedAdminReportsRouteImport } from './routes/_authent
 import { Route as AuthenticatedAdminRechargeRouteImport } from './routes/_authenticated/admin.recharge'
 import { Route as AuthenticatedAdminRankingsRouteImport } from './routes/_authenticated/admin.rankings'
 import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
+import { Route as AuthenticatedAdminProfileCardsRouteImport } from './routes/_authenticated/admin.profile-cards'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
+import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_authenticated/admin.notifications'
@@ -134,6 +140,7 @@ import { Route as AuthenticatedAdminAppStudioLiveRoomsRouteImport } from './rout
 import { Route as AuthenticatedAdminAppStudioAssetsRouteImport } from './routes/_authenticated/admin.app-studio-assets'
 import { Route as AuthenticatedAdminAppCustomizationRouteImport } from './routes/_authenticated/admin.app-customization'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
+import { Route as ApiAdminR2GiftsDeleteRouteImport } from './routes/api/admin/r2-gifts/delete'
 import { Route as AuthenticatedGamesPlaySlugRouteImport } from './routes/_authenticated/games.play.$slug'
 
 const VoiceRoomRedesignRoute = VoiceRoomRedesignRouteImport.update({
@@ -144,6 +151,11 @@ const VoiceRoomRedesignRoute = VoiceRoomRedesignRouteImport.update({
 const TestLivekitRoute = TestLivekitRouteImport.update({
   id: '/test-livekit',
   path: '/test-livekit',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SvgaPreviewRoute = SvgaPreviewRouteImport.update({
@@ -184,6 +196,11 @@ const RankRoute = RankRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MessagesRoute = MessagesRouteImport.update({
@@ -240,10 +257,10 @@ const MessagesPeerIdRoute = MessagesPeerIdRouteImport.update({
   path: '/messages/$peerId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiDataDeletionRoute = ApiDataDeletionRouteImport.update({
-  id: '/api/data-deletion',
-  path: '/api/data-deletion',
-  getParentRoute: () => rootRouteImport,
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/callback',
+  path: '/callback',
+  getParentRoute: () => AuthRoute,
 } as any)
 const ApiZegoTokenRoute = ApiZegoTokenRouteImport.update({
   id: '/api/zego-token',
@@ -293,6 +310,16 @@ const ApiLivekitRoomRoute = ApiLivekitRoomRouteImport.update({
 const ApiLivekitPermissionsRoute = ApiLivekitPermissionsRouteImport.update({
   id: '/api/livekit-permissions',
   path: '/api/livekit-permissions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGiftMediaRoute = ApiGiftMediaRouteImport.update({
+  id: '/api/gift-media',
+  path: '/api/gift-media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDataDeletionRoute = ApiDataDeletionRouteImport.update({
+  id: '/api/data-deletion',
+  path: '/api/data-deletion',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
@@ -356,11 +383,6 @@ const AuthenticatedRechargeHistoryRoute =
 const AuthenticatedRechargeRoute = AuthenticatedRechargeRouteImport.update({
   id: '/recharge',
   path: '/recharge',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedPrivacyRoute = AuthenticatedPrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPartnerRoute = AuthenticatedPartnerRouteImport.update({
@@ -450,6 +472,11 @@ const ApiPublicFirebaseConfigRoute = ApiPublicFirebaseConfigRouteImport.update({
   path: '/api/public/firebase-config',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminR2GiftsRoute = ApiAdminR2GiftsRouteImport.update({
+  id: '/api/admin/r2-gifts',
+  path: '/api/admin/r2-gifts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminPushTestRoute = ApiAdminPushTestRouteImport.update({
   id: '/api/admin/push-test',
   path: '/api/admin/push-test',
@@ -524,11 +551,6 @@ const AuthenticatedAdminThemesRoute =
     path: '/themes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
-const AuthenticatedAdminShopStudioRoute = AuthenticatedAdminShopStudioRouteImport.update({
-  id: '/shop-studio',
-  path: '/shop-studio',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
 const AuthenticatedAdminThemeCategoriesRoute =
   AuthenticatedAdminThemeCategoriesRouteImport.update({
     id: '/theme-categories',
@@ -569,6 +591,12 @@ const AuthenticatedAdminSpinPrizesRoute =
   AuthenticatedAdminSpinPrizesRouteImport.update({
     id: '/spin-prizes',
     path: '/spin-prizes',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminShopStudioRoute =
+  AuthenticatedAdminShopStudioRouteImport.update({
+    id: '/shop-studio',
+    path: '/shop-studio',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminSettingsRoute =
@@ -640,12 +668,23 @@ const AuthenticatedAdminPushRoute = AuthenticatedAdminPushRouteImport.update({
   path: '/push',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminProfileCardsRoute =
+  AuthenticatedAdminProfileCardsRouteImport.update({
+    id: '/profile-cards',
+    path: '/profile-cards',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminProfileAdminRoute =
   AuthenticatedAdminProfileAdminRouteImport.update({
     id: '/profile-admin',
     path: '/profile-admin',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminPkRoute = AuthenticatedAdminPkRouteImport.update({
+  id: '/pk',
+  path: '/pk',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPaymentAccountsRoute =
   AuthenticatedAdminPaymentAccountsRouteImport.update({
     id: '/payment-accounts',
@@ -814,6 +853,11 @@ const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
   path: '/ads',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const ApiAdminR2GiftsDeleteRoute = ApiAdminR2GiftsDeleteRouteImport.update({
+  id: '/delete',
+  path: '/delete',
+  getParentRoute: () => ApiAdminR2GiftsRoute,
+} as any)
 const AuthenticatedGamesPlaySlugRoute =
   AuthenticatedGamesPlaySlugRouteImport.update({
     id: '/play/$slug',
@@ -824,12 +868,13 @@ const AuthenticatedGamesPlaySlugRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ar-test': typeof ArTestRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/frames-preview': typeof FramesPreviewRoute
   '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -838,6 +883,7 @@ export interface FileRoutesByFullPath {
   '/splash': typeof SplashRoute
   '/svga-frames-preview': typeof SvgaFramesPreviewRoute
   '/svga-preview': typeof SvgaPreviewRoute
+  '/terms': typeof TermsRoute
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -852,7 +898,6 @@ export interface FileRoutesByFullPath {
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/partner': typeof AuthenticatedPartnerRoute
-  '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -865,6 +910,8 @@ export interface FileRoutesByFullPath {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/data-deletion': typeof ApiDataDeletionRoute
+  '/api/gift-media': typeof ApiGiftMediaRoute
   '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
   '/api/livekit-room': typeof ApiLivekitRoomRoute
   '/api/livekit-token': typeof ApiLivekitTokenRoute
@@ -875,6 +922,7 @@ export interface FileRoutesByFullPath {
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -906,7 +954,9 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
   '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
@@ -919,6 +969,7 @@ export interface FileRoutesByFullPath {
   '/admin/room-slides': typeof AuthenticatedAdminRoomSlidesRoute
   '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
@@ -926,7 +977,6 @@ export interface FileRoutesByFullPath {
   '/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
-  '/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/admin/vip': typeof AuthenticatedAdminVipRoute
@@ -940,22 +990,25 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
+  '/api/admin/r2-gifts': typeof ApiAdminR2GiftsRouteWithChildren
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/games/': typeof AuthenticatedGamesIndexRoute
   '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
+  '/api/admin/r2-gifts/delete': typeof ApiAdminR2GiftsDeleteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ar-test': typeof ArTestRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/frames-preview': typeof FramesPreviewRoute
   '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -964,6 +1017,7 @@ export interface FileRoutesByTo {
   '/splash': typeof SplashRoute
   '/svga-frames-preview': typeof SvgaFramesPreviewRoute
   '/svga-preview': typeof SvgaPreviewRoute
+  '/terms': typeof TermsRoute
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/blocked': typeof AuthenticatedBlockedRoute
@@ -976,7 +1030,6 @@ export interface FileRoutesByTo {
   '/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
   '/partner': typeof AuthenticatedPartnerRoute
-  '/privacy': typeof AuthenticatedPrivacyRoute
   '/recharge': typeof AuthenticatedRechargeRoute
   '/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -989,6 +1042,8 @@ export interface FileRoutesByTo {
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/data-deletion': typeof ApiDataDeletionRoute
+  '/api/gift-media': typeof ApiGiftMediaRoute
   '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
   '/api/livekit-room': typeof ApiLivekitRoomRoute
   '/api/livekit-token': typeof ApiLivekitTokenRoute
@@ -999,6 +1054,7 @@ export interface FileRoutesByTo {
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -1030,7 +1086,9 @@ export interface FileRoutesByTo {
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
   '/admin/push': typeof AuthenticatedAdminPushRoute
   '/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/admin/recharge': typeof AuthenticatedAdminRechargeRoute
@@ -1043,6 +1101,7 @@ export interface FileRoutesByTo {
   '/admin/room-slides': typeof AuthenticatedAdminRoomSlidesRoute
   '/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
@@ -1063,24 +1122,27 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
+  '/api/admin/r2-gifts': typeof ApiAdminR2GiftsRouteWithChildren
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/games': typeof AuthenticatedGamesIndexRoute
   '/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
+  '/api/admin/r2-gifts/delete': typeof ApiAdminR2GiftsDeleteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/ar-test': typeof ArTestRoute
-  '/auth': typeof AuthRoute
+  '/auth': typeof AuthRouteWithChildren
   '/frames-preview': typeof FramesPreviewRoute
   '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
   '/lottie-preview': typeof LottiePreviewRoute
   '/messages': typeof MessagesRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/rank': typeof RankRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -1089,6 +1151,7 @@ export interface FileRoutesById {
   '/splash': typeof SplashRoute
   '/svga-frames-preview': typeof SvgaFramesPreviewRoute
   '/svga-preview': typeof SvgaPreviewRoute
+  '/terms': typeof TermsRoute
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
@@ -1103,7 +1166,6 @@ export interface FileRoutesById {
   '/_authenticated/my-rooms': typeof AuthenticatedMyRoomsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/partner': typeof AuthenticatedPartnerRoute
-  '/_authenticated/privacy': typeof AuthenticatedPrivacyRoute
   '/_authenticated/recharge': typeof AuthenticatedRechargeRoute
   '/_authenticated/recharge-history': typeof AuthenticatedRechargeHistoryRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -1116,6 +1178,8 @@ export interface FileRoutesById {
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/data-deletion': typeof ApiDataDeletionRoute
+  '/api/gift-media': typeof ApiGiftMediaRoute
   '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
   '/api/livekit-room': typeof ApiLivekitRoomRoute
   '/api/livekit-token': typeof ApiLivekitTokenRoute
@@ -1126,6 +1190,7 @@ export interface FileRoutesById {
   '/api/send-email': typeof ApiSendEmailRoute
   '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
@@ -1157,7 +1222,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
+  '/_authenticated/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
   '/_authenticated/admin/push': typeof AuthenticatedAdminPushRoute
   '/_authenticated/admin/rankings': typeof AuthenticatedAdminRankingsRoute
   '/_authenticated/admin/recharge': typeof AuthenticatedAdminRechargeRoute
@@ -1170,6 +1237,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/room-slides': typeof AuthenticatedAdminRoomSlidesRoute
   '/_authenticated/admin/rooms': typeof AuthenticatedAdminRoomsRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
+  '/_authenticated/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/_authenticated/admin/spin-prizes': typeof AuthenticatedAdminSpinPrizesRoute
   '/_authenticated/admin/splash': typeof AuthenticatedAdminSplashRoute
   '/_authenticated/admin/spotlights': typeof AuthenticatedAdminSpotlightsRoute
@@ -1177,7 +1245,6 @@ export interface FileRoutesById {
   '/_authenticated/admin/support-chat': typeof AuthenticatedAdminSupportChatRoute
   '/_authenticated/admin/support-room': typeof AuthenticatedAdminSupportRoomRoute
   '/_authenticated/admin/theme-categories': typeof AuthenticatedAdminThemeCategoriesRoute
-  '/_authenticated/admin/shop-studio': typeof AuthenticatedAdminShopStudioRoute
   '/_authenticated/admin/themes': typeof AuthenticatedAdminThemesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/admin/vip': typeof AuthenticatedAdminVipRoute
@@ -1191,12 +1258,14 @@ export interface FileRoutesById {
   '/_authenticated/settings_/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
+  '/api/admin/r2-gifts': typeof ApiAdminR2GiftsRouteWithChildren
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/games/': typeof AuthenticatedGamesIndexRoute
   '/_authenticated/games/play/$slug': typeof AuthenticatedGamesPlaySlugRoute
+  '/api/admin/r2-gifts/delete': typeof ApiAdminR2GiftsDeleteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -1209,6 +1278,7 @@ export interface FileRouteTypes {
     | '/gift-preview'
     | '/lottie-preview'
     | '/messages'
+    | '/privacy'
     | '/profile'
     | '/rank'
     | '/reset-password'
@@ -1217,6 +1287,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/svga-frames-preview'
     | '/svga-preview'
+    | '/terms'
     | '/test-livekit'
     | '/voice-room-redesign'
     | '/admin'
@@ -1231,7 +1302,6 @@ export interface FileRouteTypes {
     | '/my-rooms'
     | '/notifications'
     | '/partner'
-    | '/privacy'
     | '/recharge'
     | '/recharge-history'
     | '/settings'
@@ -1244,6 +1314,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/data-deletion'
+    | '/api/gift-media'
     | '/api/livekit-permissions'
     | '/api/livekit-room'
     | '/api/livekit-token'
@@ -1254,6 +1326,7 @@ export interface FileRouteTypes {
     | '/api/send-email'
     | '/api/vm-stats'
     | '/api/zego-token'
+    | '/auth/callback'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -1285,7 +1358,9 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/partners'
     | '/admin/payment-accounts'
+    | '/admin/pk'
     | '/admin/profile-admin'
+    | '/admin/profile-cards'
     | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
@@ -1298,6 +1373,7 @@ export interface FileRouteTypes {
     | '/admin/room-slides'
     | '/admin/rooms'
     | '/admin/settings'
+    | '/admin/shop-studio'
     | '/admin/spin-prizes'
     | '/admin/splash'
     | '/admin/spotlights'
@@ -1318,12 +1394,14 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/u/$userId'
     | '/api/admin/push-test'
+    | '/api/admin/r2-gifts'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/admin/'
     | '/games/'
     | '/games/play/$slug'
+    | '/api/admin/r2-gifts/delete'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -1334,6 +1412,7 @@ export interface FileRouteTypes {
     | '/gift-preview'
     | '/lottie-preview'
     | '/messages'
+    | '/privacy'
     | '/profile'
     | '/rank'
     | '/reset-password'
@@ -1342,6 +1421,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/svga-frames-preview'
     | '/svga-preview'
+    | '/terms'
     | '/test-livekit'
     | '/voice-room-redesign'
     | '/blocked'
@@ -1354,7 +1434,6 @@ export interface FileRouteTypes {
     | '/my-rooms'
     | '/notifications'
     | '/partner'
-    | '/privacy'
     | '/recharge'
     | '/recharge-history'
     | '/settings'
@@ -1367,6 +1446,8 @@ export interface FileRouteTypes {
     | '/visitors'
     | '/wallet'
     | '/withdraw'
+    | '/api/data-deletion'
+    | '/api/gift-media'
     | '/api/livekit-permissions'
     | '/api/livekit-room'
     | '/api/livekit-token'
@@ -1377,6 +1458,7 @@ export interface FileRouteTypes {
     | '/api/send-email'
     | '/api/vm-stats'
     | '/api/zego-token'
+    | '/auth/callback'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
@@ -1408,7 +1490,9 @@ export interface FileRouteTypes {
     | '/admin/notifications'
     | '/admin/partners'
     | '/admin/payment-accounts'
+    | '/admin/pk'
     | '/admin/profile-admin'
+    | '/admin/profile-cards'
     | '/admin/push'
     | '/admin/rankings'
     | '/admin/recharge'
@@ -1421,6 +1505,7 @@ export interface FileRouteTypes {
     | '/admin/room-slides'
     | '/admin/rooms'
     | '/admin/settings'
+    | '/admin/shop-studio'
     | '/admin/spin-prizes'
     | '/admin/splash'
     | '/admin/spotlights'
@@ -1441,12 +1526,14 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/u/$userId'
     | '/api/admin/push-test'
+    | '/api/admin/r2-gifts'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/admin'
     | '/games'
     | '/games/play/$slug'
+    | '/api/admin/r2-gifts/delete'
   id:
     | '__root__'
     | '/'
@@ -1458,6 +1545,7 @@ export interface FileRouteTypes {
     | '/gift-preview'
     | '/lottie-preview'
     | '/messages'
+    | '/privacy'
     | '/profile'
     | '/rank'
     | '/reset-password'
@@ -1466,6 +1554,7 @@ export interface FileRouteTypes {
     | '/splash'
     | '/svga-frames-preview'
     | '/svga-preview'
+    | '/terms'
     | '/test-livekit'
     | '/voice-room-redesign'
     | '/_authenticated/admin'
@@ -1480,7 +1569,6 @@ export interface FileRouteTypes {
     | '/_authenticated/my-rooms'
     | '/_authenticated/notifications'
     | '/_authenticated/partner'
-    | '/_authenticated/privacy'
     | '/_authenticated/recharge'
     | '/_authenticated/recharge-history'
     | '/_authenticated/settings'
@@ -1493,6 +1581,8 @@ export interface FileRouteTypes {
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
     | '/_authenticated/withdraw'
+    | '/api/data-deletion'
+    | '/api/gift-media'
     | '/api/livekit-permissions'
     | '/api/livekit-room'
     | '/api/livekit-token'
@@ -1503,6 +1593,7 @@ export interface FileRouteTypes {
     | '/api/send-email'
     | '/api/vm-stats'
     | '/api/zego-token'
+    | '/auth/callback'
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
@@ -1534,7 +1625,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/notifications'
     | '/_authenticated/admin/partners'
     | '/_authenticated/admin/payment-accounts'
+    | '/_authenticated/admin/pk'
     | '/_authenticated/admin/profile-admin'
+    | '/_authenticated/admin/profile-cards'
     | '/_authenticated/admin/push'
     | '/_authenticated/admin/rankings'
     | '/_authenticated/admin/recharge'
@@ -1547,6 +1640,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/room-slides'
     | '/_authenticated/admin/rooms'
     | '/_authenticated/admin/settings'
+    | '/_authenticated/admin/shop-studio'
     | '/_authenticated/admin/spin-prizes'
     | '/_authenticated/admin/splash'
     | '/_authenticated/admin/spotlights'
@@ -1567,24 +1661,27 @@ export interface FileRouteTypes {
     | '/_authenticated/settings_/notifications'
     | '/_authenticated/u/$userId'
     | '/api/admin/push-test'
+    | '/api/admin/r2-gifts'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
     | '/_authenticated/admin/'
     | '/_authenticated/games/'
     | '/_authenticated/games/play/$slug'
+    | '/api/admin/r2-gifts/delete'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   ArTestRoute: typeof ArTestRoute
-  AuthRoute: typeof AuthRoute
+  AuthRoute: typeof AuthRouteWithChildren
   FramesPreviewRoute: typeof FramesPreviewRoute
   FramesShowcaseRoute: typeof FramesShowcaseRoute
   GiftPreviewRoute: typeof GiftPreviewRoute
   LottiePreviewRoute: typeof LottiePreviewRoute
   MessagesRoute: typeof MessagesRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   RankRoute: typeof RankRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -1593,8 +1690,11 @@ export interface RootRouteChildren {
   SplashRoute: typeof SplashRoute
   SvgaFramesPreviewRoute: typeof SvgaFramesPreviewRoute
   SvgaPreviewRoute: typeof SvgaPreviewRoute
+  TermsRoute: typeof TermsRoute
   TestLivekitRoute: typeof TestLivekitRoute
   VoiceRoomRedesignRoute: typeof VoiceRoomRedesignRoute
+  ApiDataDeletionRoute: typeof ApiDataDeletionRoute
+  ApiGiftMediaRoute: typeof ApiGiftMediaRoute
   ApiLivekitPermissionsRoute: typeof ApiLivekitPermissionsRoute
   ApiLivekitRoomRoute: typeof ApiLivekitRoomRoute
   ApiLivekitTokenRoute: typeof ApiLivekitTokenRoute
@@ -1608,6 +1708,7 @@ export interface RootRouteChildren {
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
   RoomRoomIdRoute: typeof RoomRoomIdRoute
   ApiAdminPushTestRoute: typeof ApiAdminPushTestRoute
+  ApiAdminR2GiftsRoute: typeof ApiAdminR2GiftsRouteWithChildren
   ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
   ApiPublicPushWebhookRoute: typeof ApiPublicPushWebhookRoute
   ApiPublicSmtpVerifyRoute: typeof ApiPublicSmtpVerifyRoute
@@ -1627,6 +1728,13 @@ declare module '@tanstack/react-router' {
       path: '/test-livekit'
       fullPath: '/test-livekit'
       preLoaderRoute: typeof TestLivekitRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/svga-preview': {
@@ -1683,6 +1791,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/messages': {
@@ -1762,6 +1877,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessagesPeerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof AuthRoute
+    }
     '/api/zego-token': {
       id: '/api/zego-token'
       path: '/api/zego-token'
@@ -1830,6 +1952,20 @@ declare module '@tanstack/react-router' {
       path: '/api/livekit-permissions'
       fullPath: '/api/livekit-permissions'
       preLoaderRoute: typeof ApiLivekitPermissionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gift-media': {
+      id: '/api/gift-media'
+      path: '/api/gift-media'
+      fullPath: '/api/gift-media'
+      preLoaderRoute: typeof ApiGiftMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/data-deletion': {
+      id: '/api/data-deletion'
+      path: '/api/data-deletion'
+      fullPath: '/api/data-deletion'
+      preLoaderRoute: typeof ApiDataDeletionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/withdraw': {
@@ -1914,13 +2050,6 @@ declare module '@tanstack/react-router' {
       path: '/recharge'
       fullPath: '/recharge'
       preLoaderRoute: typeof AuthenticatedRechargeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/privacy': {
-      id: '/_authenticated/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof AuthenticatedPrivacyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/partner': {
@@ -2042,6 +2171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicFirebaseConfigRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/r2-gifts': {
+      id: '/api/admin/r2-gifts'
+      path: '/api/admin/r2-gifts'
+      fullPath: '/api/admin/r2-gifts'
+      preLoaderRoute: typeof ApiAdminR2GiftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/push-test': {
       id: '/api/admin/push-test'
       path: '/api/admin/push-test'
@@ -2126,13 +2262,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/shop-studio': {
-      id: '/_authenticated/admin/shop-studio'
-      path: '/shop-studio'
-      fullPath: '/admin/shop-studio'
-      preLoaderRoute: typeof AuthenticatedAdminShopStudioRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/themes': {
       id: '/_authenticated/admin/themes'
       path: '/themes'
@@ -2187,6 +2316,13 @@ declare module '@tanstack/react-router' {
       path: '/spin-prizes'
       fullPath: '/admin/spin-prizes'
       preLoaderRoute: typeof AuthenticatedAdminSpinPrizesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/shop-studio': {
+      id: '/_authenticated/admin/shop-studio'
+      path: '/shop-studio'
+      fullPath: '/admin/shop-studio'
+      preLoaderRoute: typeof AuthenticatedAdminShopStudioRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/settings': {
@@ -2273,11 +2409,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminPushRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/profile-cards': {
+      id: '/_authenticated/admin/profile-cards'
+      path: '/profile-cards'
+      fullPath: '/admin/profile-cards'
+      preLoaderRoute: typeof AuthenticatedAdminProfileCardsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/profile-admin': {
       id: '/_authenticated/admin/profile-admin'
       path: '/profile-admin'
       fullPath: '/admin/profile-admin'
       preLoaderRoute: typeof AuthenticatedAdminProfileAdminRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/pk': {
+      id: '/_authenticated/admin/pk'
+      path: '/pk'
+      fullPath: '/admin/pk'
+      preLoaderRoute: typeof AuthenticatedAdminPkRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/payment-accounts': {
@@ -2483,6 +2633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/admin/r2-gifts/delete': {
+      id: '/api/admin/r2-gifts/delete'
+      path: '/delete'
+      fullPath: '/api/admin/r2-gifts/delete'
+      preLoaderRoute: typeof ApiAdminR2GiftsDeleteRouteImport
+      parentRoute: typeof ApiAdminR2GiftsRoute
+    }
     '/_authenticated/games/play/$slug': {
       id: '/_authenticated/games/play/$slug'
       path: '/play/$slug'
@@ -2523,7 +2680,9 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminNotificationsRoute: typeof AuthenticatedAdminNotificationsRoute
   AuthenticatedAdminPartnersRoute: typeof AuthenticatedAdminPartnersRoute
   AuthenticatedAdminPaymentAccountsRoute: typeof AuthenticatedAdminPaymentAccountsRoute
+  AuthenticatedAdminPkRoute: typeof AuthenticatedAdminPkRoute
   AuthenticatedAdminProfileAdminRoute: typeof AuthenticatedAdminProfileAdminRoute
+  AuthenticatedAdminProfileCardsRoute: typeof AuthenticatedAdminProfileCardsRoute
   AuthenticatedAdminPushRoute: typeof AuthenticatedAdminPushRoute
   AuthenticatedAdminRankingsRoute: typeof AuthenticatedAdminRankingsRoute
   AuthenticatedAdminRechargeRoute: typeof AuthenticatedAdminRechargeRoute
@@ -2536,6 +2695,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminRoomSlidesRoute: typeof AuthenticatedAdminRoomSlidesRoute
   AuthenticatedAdminRoomsRoute: typeof AuthenticatedAdminRoomsRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
+  AuthenticatedAdminShopStudioRoute: typeof AuthenticatedAdminShopStudioRoute
   AuthenticatedAdminSpinPrizesRoute: typeof AuthenticatedAdminSpinPrizesRoute
   AuthenticatedAdminSplashRoute: typeof AuthenticatedAdminSplashRoute
   AuthenticatedAdminSpotlightsRoute: typeof AuthenticatedAdminSpotlightsRoute
@@ -2543,7 +2703,6 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminSupportChatRoute: typeof AuthenticatedAdminSupportChatRoute
   AuthenticatedAdminSupportRoomRoute: typeof AuthenticatedAdminSupportRoomRoute
   AuthenticatedAdminThemeCategoriesRoute: typeof AuthenticatedAdminThemeCategoriesRoute
-  AuthenticatedAdminShopStudioRoute: typeof AuthenticatedAdminShopStudioRoute
   AuthenticatedAdminThemesRoute: typeof AuthenticatedAdminThemesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminVipRoute: typeof AuthenticatedAdminVipRoute
@@ -2588,7 +2747,9 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
+  AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
+  AuthenticatedAdminProfileCardsRoute: AuthenticatedAdminProfileCardsRoute,
   AuthenticatedAdminPushRoute: AuthenticatedAdminPushRoute,
   AuthenticatedAdminRankingsRoute: AuthenticatedAdminRankingsRoute,
   AuthenticatedAdminRechargeRoute: AuthenticatedAdminRechargeRoute,
@@ -2603,6 +2764,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminRoomSlidesRoute: AuthenticatedAdminRoomSlidesRoute,
   AuthenticatedAdminRoomsRoute: AuthenticatedAdminRoomsRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
+  AuthenticatedAdminShopStudioRoute: AuthenticatedAdminShopStudioRoute,
   AuthenticatedAdminSpinPrizesRoute: AuthenticatedAdminSpinPrizesRoute,
   AuthenticatedAdminSplashRoute: AuthenticatedAdminSplashRoute,
   AuthenticatedAdminSpotlightsRoute: AuthenticatedAdminSpotlightsRoute,
@@ -2611,7 +2773,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminSupportRoomRoute: AuthenticatedAdminSupportRoomRoute,
   AuthenticatedAdminThemeCategoriesRoute:
     AuthenticatedAdminThemeCategoriesRoute,
-  AuthenticatedAdminShopStudioRoute: AuthenticatedAdminShopStudioRoute,
   AuthenticatedAdminThemesRoute: AuthenticatedAdminThemesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminVipRoute: AuthenticatedAdminVipRoute,
@@ -2658,7 +2819,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMyRoomsRoute: typeof AuthenticatedMyRoomsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedPartnerRoute: typeof AuthenticatedPartnerRoute
-  AuthenticatedPrivacyRoute: typeof AuthenticatedPrivacyRoute
   AuthenticatedRechargeRoute: typeof AuthenticatedRechargeRoute
   AuthenticatedRechargeHistoryRoute: typeof AuthenticatedRechargeHistoryRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -2688,7 +2848,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMyRoomsRoute: AuthenticatedMyRoomsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedPartnerRoute: AuthenticatedPartnerRoute,
-  AuthenticatedPrivacyRoute: AuthenticatedPrivacyRoute,
   AuthenticatedRechargeRoute: AuthenticatedRechargeRoute,
   AuthenticatedRechargeHistoryRoute: AuthenticatedRechargeHistoryRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
@@ -2709,16 +2868,39 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AuthRouteChildren {
+  AuthCallbackRoute: typeof AuthCallbackRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthCallbackRoute: AuthCallbackRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
+interface ApiAdminR2GiftsRouteChildren {
+  ApiAdminR2GiftsDeleteRoute: typeof ApiAdminR2GiftsDeleteRoute
+}
+
+const ApiAdminR2GiftsRouteChildren: ApiAdminR2GiftsRouteChildren = {
+  ApiAdminR2GiftsDeleteRoute: ApiAdminR2GiftsDeleteRoute,
+}
+
+const ApiAdminR2GiftsRouteWithChildren = ApiAdminR2GiftsRoute._addFileChildren(
+  ApiAdminR2GiftsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   ArTestRoute: ArTestRoute,
-  AuthRoute: AuthRoute,
+  AuthRoute: AuthRouteWithChildren,
   FramesPreviewRoute: FramesPreviewRoute,
   FramesShowcaseRoute: FramesShowcaseRoute,
   GiftPreviewRoute: GiftPreviewRoute,
   LottiePreviewRoute: LottiePreviewRoute,
   MessagesRoute: MessagesRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   RankRoute: RankRoute,
   ResetPasswordRoute: ResetPasswordRoute,
@@ -2727,8 +2909,11 @@ const rootRouteChildren: RootRouteChildren = {
   SplashRoute: SplashRoute,
   SvgaFramesPreviewRoute: SvgaFramesPreviewRoute,
   SvgaPreviewRoute: SvgaPreviewRoute,
+  TermsRoute: TermsRoute,
   TestLivekitRoute: TestLivekitRoute,
   VoiceRoomRedesignRoute: VoiceRoomRedesignRoute,
+  ApiDataDeletionRoute: ApiDataDeletionRoute,
+  ApiGiftMediaRoute: ApiGiftMediaRoute,
   ApiLivekitPermissionsRoute: ApiLivekitPermissionsRoute,
   ApiLivekitRoomRoute: ApiLivekitRoomRoute,
   ApiLivekitTokenRoute: ApiLivekitTokenRoute,
@@ -2738,11 +2923,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRtcVerifyRoute: ApiRtcVerifyRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
   ApiVmStatsRoute: ApiVmStatsRoute,
-  ApiDataDeletionRoute: ApiDataDeletionRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
   RoomRoomIdRoute: RoomRoomIdRoute,
   ApiAdminPushTestRoute: ApiAdminPushTestRoute,
+  ApiAdminR2GiftsRoute: ApiAdminR2GiftsRouteWithChildren,
   ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
   ApiPublicPushWebhookRoute: ApiPublicPushWebhookRoute,
   ApiPublicSmtpVerifyRoute: ApiPublicSmtpVerifyRoute,
