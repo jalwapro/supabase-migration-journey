@@ -3,10 +3,14 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const APP_URL = Deno.env.get("APP_URL") ?? "https://www.jalwa.pro";
+const DEFAULT_APP_URL = "https://www.jalwa.pro";
 const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 const cors = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS"};
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
+async function getAppUrl(){
+  const {data}=await admin.from("app_kv").select("value").eq("key","runtime_config").maybeSingle();
+  return String((data?.value as Record<string, unknown> | null)?.primary_domain ?? Deno.env.get("APP_URL") ?? DEFAULT_APP_URL).replace(/\/$/,"");
+}
 
 async function userFromRequest(req:Request){
   const token=req.headers.get("Authorization")?.replace(/^Bearer\s+/i,"");
@@ -25,6 +29,7 @@ async function save(req:Request,body:any){
   const u=await userFromRequest(req); if(!u)return json({error:"Authentication required"},401);
   if(!(await isAdmin(u.id)))return json({error:"Admin access required"},403);
   const c=body.config??{},s=body.secret??{};
+  const appUrl=await getAppUrl();
   const {data:existingSecret}=await admin.from("payment_gateway_secrets").select("merchant_id,store_id,hash_key,partner_username,partner_password,rsa_private_key").eq("provider","easypaisa").maybeSingle();
   const value={
     enabled:!!c.enabled,
@@ -35,7 +40,7 @@ async function save(req:Request,body:any){
     tid:c.tid||s.tid||null,
     msisdn:c.msisdn||s.msisdn||null,
     accountTitle:c.accountTitle||null,
-    returnUrl:c.returnUrl||`${APP_URL}/recharge`,
+    returnUrl:c.returnUrl||`${appUrl}/recharge`,
     updatedAt:new Date().toISOString(),updatedBy:u.id
   };
   const {error}=await admin.from("app_kv").upsert({key:"easypaisa_gateway",value});
