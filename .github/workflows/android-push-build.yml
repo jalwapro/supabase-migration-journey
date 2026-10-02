@@ -1,0 +1,75 @@
+name: Android Push Notification Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  android-debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Generate fresh Capacitor Android project
+        shell: bash
+        run: |
+          mkdir -p .native-build
+          if [ -f android/app/google-services.json ]; then
+            cp android/app/google-services.json .native-build/google-services.json
+          fi
+          rm -rf android
+          npx cap add android
+          if [ -f .native-build/google-services.json ]; then
+            cp .native-build/google-services.json android/app/google-services.json
+          fi
+
+      - name: Sync Capacitor and enforce Android permissions
+        run: |
+          npx cap sync android
+          node scripts/ensure-android-permissions.mjs
+
+      - name: Verify native Firebase configuration
+        shell: bash
+        run: |
+          test -f android/app/google-services.json
+          grep -q 'app.lovable.jalwa' android/app/google-services.json
+          grep -q 'jalwa_default' android/app/src/main/AndroidManifest.xml
+          grep -q 'POST_NOTIFICATIONS' android/app/src/main/AndroidManifest.xml
+          grep -q 'RECORD_AUDIO' android/app/src/main/AndroidManifest.xml
+
+      - name: Build debug APK
+        run: |
+          cd android
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: jalwa-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
