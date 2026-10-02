@@ -49,14 +49,9 @@ export const Route = createFileRoute("/api/public/push-webhook")({
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const authAdmin = supabaseAdmin as any;
-            const { data: config } = await authAdmin
-              .schema("private")
-              .from("push_webhook_config")
-              .select("secret_hash")
-              .eq("id", true)
-              .maybeSingle();
+            const { data: rpcHash } = await authAdmin.rpc("get_push_webhook_secret_hash");
             const hash = secret ? createHash("sha256").update(secret).digest("hex") : secretHashHeader;
-            dbSecretAuthorized = !!config?.secret_hash && config.secret_hash === hash;
+            dbSecretAuthorized = typeof rpcHash === "string" && rpcHash === hash;
           } catch (e) {
             console.error("Webhook secret verification failed:", e);
           }
