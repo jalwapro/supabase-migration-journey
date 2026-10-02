@@ -87,7 +87,7 @@ export async function sendFcmMessage(msg: FcmMessage): Promise<FcmResult> {
   const sa = loadServiceAccount();
   // The service account project is authoritative; using a stale override can cause
   // FCM SENDER_ID_MISMATCH for tokens registered by the current Firebase project.
-  const projectId = process.env.FIREBASE_PROJECT_ID?.trim() || sa.project_id || "jalwa-84344";
+  const projectId = sa.project_id?.trim() || process.env.FIREBASE_PROJECT_ID?.trim() || "jalwa-84344";
   const accessToken = await getAccessToken();
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
   const data = Object.fromEntries(
