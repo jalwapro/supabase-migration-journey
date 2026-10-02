@@ -70,7 +70,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) { re
       const normalize = (value: string) => {
         const v = value.trim();
         if (!v) return "";
-        const url = new URL(/^https?:\\/\\//i.test(v) ? v : `https://${v}`);
+        const url = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`);
         return url.origin;
       };
       const primary = normalize(runtime.primary_domain);
