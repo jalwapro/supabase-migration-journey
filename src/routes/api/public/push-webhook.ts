@@ -111,6 +111,7 @@ export const Route = createFileRoute("/api/public/push-webhook")({
         });
 
         const dead: string[] = [];
+        const fcmFailures: Array<{ status: number; error: string }> = [];
         let delivered = 0;
         let failed = 0;
 
@@ -168,6 +169,17 @@ export const Route = createFileRoute("/api/public/push-webhook")({
                   subscriptionId: fcmSubs[i].id,
                   ...detail,
                 });
+                if (r.status === "fulfilled") {
+                  fcmFailures.push({
+                    status: r.value.status,
+                    error: r.value.error || "FCM request failed",
+                  });
+                } else {
+                  fcmFailures.push({
+                    status: 0,
+                    error: String(r.reason),
+                  });
+                }
                 if (r.status === "fulfilled" && isDeadFcmError(r.value.status, r.value.error)) {
                   dead.push(fcmSubs[i].id);
                 }
@@ -189,6 +201,7 @@ export const Route = createFileRoute("/api/public/push-webhook")({
           pruned: dead.length,
           web: webSubs.length,
           fcm: fcmSubs.length,
+          fcm_failures: fcmFailures.slice(0, 10),
         });
 
       },
