@@ -37,6 +37,7 @@ export function VoiceRoomMemberSheet({
   onOpenProfile,
   onOpenMessage,
   onOpenPublicChat,
+  onOpenGift,
   onOpenHostControls,
 }: {
   roomId: string;
@@ -48,6 +49,7 @@ export function VoiceRoomMemberSheet({
   onOpenProfile?: (user: VoiceRoomMemberProfile) => void;
   onOpenMessage?: (userId: string) => void;
   onOpenPublicChat?: (member: VoiceRoomMemberProfile) => void;
+  onOpenGift?: (member: VoiceRoomMemberProfile) => void;
   onOpenHostControls?: () => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -234,11 +236,10 @@ export function VoiceRoomMemberSheet({
           <div className="rounded-2xl border border-white/10 bg-white/5 p-3"><div className="text-[9px] uppercase tracking-wider text-white/40">Microphone</div><div className="mt-1 text-sm font-black">{member.is_muted ? "Muted" : "On"}</div></div>
         </div>
 
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => void openProfile()} className="h-12 rounded-2xl border border-white/10 bg-white/7 text-sm font-black">User Profile</button>
-          <button type="button" onClick={() => onOpenPublicChat?.(member)} className="h-12 rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-sm font-black text-cyan-100">Public Chat</button>
-          <button type="button" onClick={() => { onOpenMessage?.(member.id); setMessageOpen(v => !v); }} className="h-12 rounded-2xl bg-[color:var(--primary)] text-sm font-black text-white shadow-lg shadow-[color:var(--primary)]/20">Private Message</button>
-          <button type="button" disabled={socialBusy} onClick={() => void toggleFollow()} className="h-12 rounded-2xl border border-white/10 bg-white/7 text-sm font-black disabled:opacity-50">{following ? "Following ✓" : "Follow"}</button>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <button type="button" onClick={() => void openProfile()} className="h-11 rounded-2xl border border-white/10 bg-white/7 text-xs font-black">Profile</button>
+          <button type="button" onClick={() => onOpenGift?.(member)} className="h-11 rounded-2xl border border-amber-300/20 bg-amber-400/10 text-xs font-black text-amber-100">Gift</button>
+          <button type="button" disabled={socialBusy} onClick={() => void toggleFollow()} className="h-11 rounded-2xl border border-white/10 bg-white/7 text-xs font-black disabled:opacity-50">{following ? "Following ✓" : "Follow"}</button>
         </div>
 
         {profileOpen && (
