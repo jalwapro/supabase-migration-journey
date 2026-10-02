@@ -54,7 +54,7 @@ function SettingsAdmin() {
       return {
         primary_domain: String(value.primary_domain ?? "https://www.jalwa.pro").replace(/\/$/, ""),
         alternate_domains: Array.isArray(value.alternate_domains) ? value.alternate_domains.map(String).filter(Boolean) : [],
-        native_bootstrap_domain: String(value.native_bootstrap_domain ?? value.primary_domain ?? "https://www.jalwa.pro").replace(/\\/$/, ""),
+        native_bootstrap_domain: String(value.native_bootstrap_domain ?? value.primary_domain ?? "https://www.jalwa.pro").replace(/\/$/, ""),
         canonical_redirect: Boolean(value.canonical_redirect ?? false),
         support_email: String(value.support_email ?? "admin@jalwa.pro"),
       } satisfies RuntimeConfig;
