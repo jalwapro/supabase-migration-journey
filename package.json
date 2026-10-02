@@ -16,7 +16,8 @@
     "cap:android": "vite build && cap sync android && node scripts/ensure-android-permissions.mjs && cap open android",
     "cap:ios": "vite build && cap sync ios && cap open ios",
     "cache:gifts": "node scripts/cache-top-gifts.mjs",
-    "monitor:oracle": "node scripts/oracle-vm-monitor.mjs"
+    "monitor:oracle": "node scripts/oracle-vm-monitor.mjs",
+    "cap:android:bootstrap": "vite build && node scripts/bootstrap-android.mjs"
   },
   "dependencies": {
     "@capacitor-community/keep-awake": "^8.0.1",
