@@ -31,6 +31,7 @@ export const Route = createFileRoute("/api/public/push-webhook")({
     handlers: {
       POST: async ({ request }) => {
         const secret = request.headers.get("x-webhook-secret");
+        const secretHashHeader = request.headers.get("x-webhook-secret-hash");
         const authorization = request.headers.get("authorization") || "";
         const apiKey = request.headers.get("apikey") || "";
         const serviceKey =
@@ -43,7 +44,7 @@ export const Route = createFileRoute("/api/public/push-webhook")({
           (authorization === `Bearer ${serviceKey}` || apiKey === serviceKey);
 
         let dbSecretAuthorized = false;
-        if (secret) {
+        if (secret || secretHashHeader) {
           try {
             const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -54,7 +55,7 @@ export const Route = createFileRoute("/api/public/push-webhook")({
               .select("secret_hash")
               .eq("id", true)
               .maybeSingle();
-            const hash = createHash("sha256").update(secret).digest("hex");
+            const hash = secret ? createHash("sha256").update(secret).digest("hex") : secretHashHeader;
             dbSecretAuthorized = !!config?.secret_hash && config.secret_hash === hash;
           } catch (e) {
             console.error("Webhook secret verification failed:", e);
