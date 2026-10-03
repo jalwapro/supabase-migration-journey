@@ -10,12 +10,6 @@ import { Outlet, Link, createRootRouteWithContext, useRouterState, useNavigate, 
 import { useEffect, useState, type ReactNode } from "react";
 import { Toaster } from "sonner";
 import appCss from "../styles.css?url";
-import "../voice-room-reference.css";
-import "../voice-room-mobile.css";
-import "../voice-room-mobile-final.css";
-import "../voice-room-mobile-components.css";
-import "../voice-room-mobile-content.css";
-import "../room-rank-frame-alignment.css";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "../hooks/useAuth";
 import { ThemeChrome } from "../components/ThemeChrome";
