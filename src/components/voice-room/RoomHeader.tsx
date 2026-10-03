@@ -72,7 +72,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       } finally { polling = false; }
     };
     void loadPending();
-    const interval = window.setInterval(() => { if (!incomingInvite) void loadPending(); }, 2500);
+    const interval = window.setInterval(() => { if (!incomingInvite) void loadPending(); }, 10000);
     const channel = supabase.channel(`voice-seat-invites-${room.id}-${user.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "seat_invites", filter: `room_id=eq.${room.id}` }, payload => {
         const row = payload.new as { id: string; from_user: string; to_user: string; seat_index: number | null; status: string };
