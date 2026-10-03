@@ -28,7 +28,7 @@ export function UserProfileCard({ user, assetsOverride, children }: { user: Prof
       {a.cardBgUrl && <div className="absolute inset-0 opacity-70"><FramedMedia url={a.cardBgUrl} /></div>}
       <div className="absolute inset-0 bg-gradient-to-b from-background/10 via-background/40 to-background/85" />
       <div className="relative flex flex-col items-center text-center">
-        <UserAvatarWithFrame avatarUrl={user.avatarUrl} name={user.name} vipLevel={a.level} size="xl" frameOverride={a.dpFrameUrl} />
+        <UserAvatarWithFrame avatarUrl={user.avatarUrl} name={user.name} vipLevel={a.level} size="xl" frameOverride={a.dpFrameUrl} profileCardFrameBlend />
         <p className="mt-3 text-lg font-black" style={{ color: a.color }}>{user.name ?? "User"}</p>
         {user.code && <p className="text-[11px] text-muted-foreground">ID: {user.code}</p>}
         <span
