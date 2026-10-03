@@ -1288,7 +1288,7 @@ function RoomPage() {
 
   useEffect(() => {
     if (!user || !room.data?.id) return;
-    const seatIndex = isHost ? 0 : null;
+    const seatIndex = isHost ? 1 : null;
     void (async () => {
       // Preserve existing seat_index on refresh — only insert a fresh row
       // when this user is not already a member of the room. An upsert with
