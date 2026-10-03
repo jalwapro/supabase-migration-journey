@@ -35,14 +35,22 @@ export function InstallPermissionGate() {
   const [states, setStates] = useState<Record<PermKey, PermState>>({
     mic: "idle", notifications: "idle", location: "idle",
   });
-  const [busy, setBusy] = useState(false);\n  const PERMISSION_GATE_KEY = "jalwa_permission_gate_completed_v2";
+  const [busy, setBusy] = useState(false);
+  const PERMISSION_GATE_KEY = "jalwa_permission_gate_completed_v2";
 
   useEffect(() => {
     if (typeof window === "undefined" || authLoading || !user?.id) {
       setNeedsAsk(false);
       return;
     }
-    if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;\n    // Once the user has completed the in-app permission gate, do not show it\n    // again on every room/app render. Individual OS permissions are still\n    // requested only when a feature actually needs them.\n    if (window.localStorage.getItem(PERMISSION_GATE_KEY) === "1") {\n      setNeedsAsk(false);\n      return;\n    }
+    if (PREVIEW_ONLY_PATHS.has(window.location.pathname)) return;
+    // Once the user has completed the in-app permission gate, do not show it
+    // again on every room/app render. Individual OS permissions are still
+    // requested only when a feature actually needs them.
+    if (window.localStorage.getItem(PERMISSION_GATE_KEY) === "1") {
+      setNeedsAsk(false);
+      return;
+    }
     if (window.location.pathname === "/splash" || window.location.pathname === "/privacy" || window.location.pathname === "/terms") {
       setNeedsAsk(false);
       return;
@@ -85,7 +93,13 @@ export function InstallPermissionGate() {
 
       if (cancelled) return;
       setStates(next);
-      // Do not treat native microphone as perpetually "idle": this gate cannot\n      // reliably query Android mic state from the WebView. The mic permission\n      // is requested by the voice-room feature when it is actually needed.\n      const nativeGatePending = isNative()\n        ? next.notifications !== "granted" || next.location !== "granted"\n        : Object.values(next).some((state) => state !== "granted");\n      setNeedsAsk(nativeGatePending);
+      // Do not treat native microphone as perpetually "idle": this gate cannot
+      // reliably query Android mic state from the WebView. The mic permission
+      // is requested by the voice-room feature when it is actually needed.
+      const nativeGatePending = isNative()
+        ? next.notifications !== "granted" || next.location !== "granted"
+        : Object.values(next).some((state) => state !== "granted");
+      setNeedsAsk(nativeGatePending);
 
       // A previously granted Android notification permission must still
       // register/refresh the FCM token on every app start. Without this,
@@ -189,7 +203,11 @@ export function InstallPermissionGate() {
     for (const key of ["mic", "notifications", "location"] as PermKey[]) {
       if (states[key] !== "granted") await askOne(key);
     }
-    await new Promise((resolve) => setTimeout(resolve, 150));\n    // The gate has completed its one-time flow. Do not reopen it merely because\n    // Android/WebView cannot report microphone state here.\n    window.localStorage.setItem(PERMISSION_GATE_KEY, "1");\n    setNeedsAsk(false);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    // The gate has completed its one-time flow. Do not reopen it merely because
+    // Android/WebView cannot report microphone state here.
+    window.localStorage.setItem(PERMISSION_GATE_KEY, "1");
+    setNeedsAsk(false);
   }
   function skip() {
     setNeedsAsk(false);
