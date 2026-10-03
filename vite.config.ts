@@ -30,6 +30,9 @@ const stripTanStackSourceMarkers = () => ({
 const isVercel = !!process.env.VERCEL;
 
 export default defineConfig({
+  tanstackRouter: {
+    autoCodeSplitting: true,
+  },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     server: { entry: "server" },
