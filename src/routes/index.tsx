@@ -118,7 +118,7 @@ function Home() {
 
     queryKey: ["home-mutual-friends-online", user?.id],
     enabled: !!user?.id && friendsOpen,
-    refetchInterval: friendsOpen ? 15_000 : false,
+    refetchInterval: friendsOpen ? 30_000 : false,
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const uid = user!.id;
