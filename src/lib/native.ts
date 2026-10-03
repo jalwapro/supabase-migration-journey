@@ -59,8 +59,13 @@ export async function initNativeShell() {
       import("@capacitor/splash-screen"),
     ]);
 
+    // Never let the native status bar sit on top of the web content. This is
+    // especially important on newer Android versions where edge-to-edge can
+    // otherwise make the WebView draw underneath system bars.
+    await StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
     await StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
     await StatusBar.setBackgroundColor({ color: "#1a0d2e" }).catch(() => {});
+    document.documentElement.dataset.jalwaNativeShell = "true";
     await SplashScreen.hide().catch(() => {});
 
     // Android hardware/gesture Back follows normal app navigation:
