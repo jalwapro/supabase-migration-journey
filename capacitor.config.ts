@@ -33,6 +33,11 @@ const config: CapacitorConfig = {
       showSpinner: false,
       androidSplashResourceName: "splash",
     },
+    SystemBars: {
+      // Capacitor 8 handles Android edge-to-edge through CSS insets.
+      // Keep the injected safe-area variables available to the web app.
+      insetsHandling: "css",
+    },
     StatusBar: {
       style: "DARK",
       backgroundColor: "#1a0d2e",
