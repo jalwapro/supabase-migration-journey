@@ -106,10 +106,15 @@ export function ChromaKeyVideo({ src, chromakey = "none", color, tolerance = 48,
     const observer = typeof IntersectionObserver !== "undefined"
       ? new IntersectionObserver(([entry]) => {
           visible = entry?.isIntersecting ?? true;
-          if (visible && !timer) schedule();
-          if (!visible && timer) {
-            window.clearTimeout(timer);
-            timer = null;
+          if (visible) {
+            void video.play().catch(() => undefined);
+            if (!timer) schedule();
+          } else {
+            video.pause();
+            if (timer) {
+              window.clearTimeout(timer);
+              timer = null;
+            }
           }
         }, { threshold: 0.01 })
       : null;
