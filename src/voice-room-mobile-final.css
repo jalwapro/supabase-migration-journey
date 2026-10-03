@@ -56,14 +56,14 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
 /* Dedicated clearance between the room header/ranking banner and the first seat row. */
 [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.seat-area"]{
   margin-top:0!important;
-  padding-top:20px!important;
+  padding-top:36px!important;
   box-sizing:border-box!important;
 }
 [data-jalwa-voice-room-root="true"] [data-seat-grid-root="true"]{
   margin-top:0!important;
 }
 @media(max-width:359px){
-  [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.seat-area"]{padding-top:14px!important}
+  [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.seat-area"]{padding-top:28px!important}
 }
 @media(max-width:359px){
   [data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden > [data-jalwa-live-component="voice.room-header"]{margin-bottom:10px!important}
