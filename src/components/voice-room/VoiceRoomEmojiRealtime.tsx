@@ -7,6 +7,8 @@ export type VoiceRoomEmojiPlayback = {
   senderId: string | null;
   senderName: string | null;
   targetSeatIndex: number;
+  targetUserId?: string | null;
+  targetName?: string | null;
   emoji: string;
   url: string | null;
   clipPath: string | null;
@@ -33,7 +35,7 @@ function findUserSeat(userId: string | null | undefined) {
  * Voice-room emojis are seat reactions. They fly from the sender's occupied
  * seat to the selected recipient seat and finish on the recipient avatar.
  */
-export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "targetSeatIndex" | "emoji" | "url" | "clipPath"> & { senderId?: string | null }) {
+export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "targetSeatIndex" | "emoji" | "url" | "clipPath" | "senderName" | "targetName"> & { senderId?: string | null }) {
   if (typeof document === "undefined") return;
   const startedAt = performance.now();
 
@@ -110,6 +112,32 @@ export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "
 
     layer.appendChild(node);
     document.body.appendChild(layer);
+
+    const routeLabel = document.createElement("div");
+    routeLabel.textContent = payload.targetName
+      ? `${payload.senderName ?? "User"} → ${payload.targetName}`
+      : payload.senderName ?? "User";
+    Object.assign(routeLabel.style, {
+      position: "absolute",
+      left: "50%",
+      top: "100%",
+      transform: "translateX(-50%)",
+      marginTop: "4px",
+      maxWidth: "150px",
+      padding: "3px 7px",
+      borderRadius: "999px",
+      background: "rgba(0,0,0,.78)",
+      color: "#fff",
+      fontSize: "10px",
+      fontWeight: "800",
+      lineHeight: "1.1",
+      whiteSpace: "nowrap",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      textAlign: "center",
+      boxShadow: "0 2px 10px rgba(0,0,0,.35)",
+    });
+    node.appendChild(routeLabel);
 
     const travelX = endX - startX;
     const travelY = endY - startY;
