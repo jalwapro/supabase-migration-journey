@@ -33,6 +33,7 @@ export function LevelAvatar({
   className = "",
   userId,
   renderConfigOverride,
+  profileCardFrameBlend = false,
 }: {
 
   src?: string | null;
@@ -253,6 +254,7 @@ export function LevelAvatar({
               transform: `translate(-50%, -50%) rotate(${frameRotation}deg) scale(${finalScaleX}, ${finalScaleY})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
+              mixBlendMode: profileCardFrameBlend ? "screen" : undefined,
             }}
             aria-hidden
           >
