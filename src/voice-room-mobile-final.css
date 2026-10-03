@@ -28,3 +28,31 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
 @media(min-width:481px){body:has(main[data-jalwa-voice-room-root="true"]){background:#020106!important}}
 @media(max-width:359px){[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{gap:3px 1px!important}[data-jalwa-voice-room-root="true"] [data-seat-media="true"],[data-jalwa-voice-room-root="true"] [data-seat-empty-art]{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;flex-basis:44px!important}[data-jalwa-voice-room-root="true"] [data-seat-empty-art-image]{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.announcement"]{padding-inline:4px}}
 @media(prefers-reduced-motion:reduce){[data-jalwa-voice-room-root="true"] *{animation-duration:.001ms!important;transition-duration:.001ms!important}}
+/* VoiceRoomScreen has an inner flex wrapper around header + content. Keep them in normal flow so DP frames cannot slide underneath the header. */
+[data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden {
+  display:flex!important;
+  flex-direction:column!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+[data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden > [data-jalwa-live-component="voice.room-header"]{
+  position:relative!important;
+  z-index:70!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  margin:0 0 14px!important;
+  padding-top:4px!important;
+}
+[data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden > [data-jalwa-live-component="voice.room-content"]{
+  position:relative!important;
+  z-index:10!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+[data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden > [data-jalwa-live-component="voice.room-content"] > [data-jalwa-live-component="voice.seat-area"]{
+  padding-top:0!important;
+}
+@media(max-width:359px){
+  [data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden > [data-jalwa-live-component="voice.room-header"]{margin-bottom:10px!important}
+}
