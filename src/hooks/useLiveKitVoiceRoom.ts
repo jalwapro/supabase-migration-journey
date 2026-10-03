@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { App } from "@capacitor/app";
-import { Room, RoomEvent, Track, type RemoteTrack, type RemoteTrackPublication, type RemoteParticipant } from "livekit-client";
+import type { Room, RemoteTrack, RemoteTrackPublication, RemoteParticipant } from "livekit-client";
 import { supabase } from "@/integrations/supabase/client";
 
 export type LiveKitVoiceStatus = "idle" | "connecting" | "connected" | "error" | "disabled";
@@ -25,7 +25,7 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     const room = roomRef.current;
     roomRef.current = null;
     if (room) {
-      try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
+      try { await room?.localParticipant.setMicrophoneEnabled(false); } catch {}
       await room.disconnect();
     }
     setRemoteAudio((current) => {
@@ -42,8 +42,17 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     }
 
     let cancelled = false;
-    const room = new Room({ adaptiveStream: true, dynacast: true });
-    roomRef.current = room;
+    let room: Room | null = null;
+    let RoomEvent: typeof import("livekit-client").RoomEvent;
+    let Track: typeof import("livekit-client").Track;
+    const roomReady = import("livekit-client").then((livekit) => {
+      if (cancelled) return null;
+      RoomEvent = livekit.RoomEvent;
+      Track = livekit.Track;
+      room = new livekit.Room({ adaptiveStream: true, dynacast: true });
+      roomRef.current = room;
+      return room;
+    });
     setStatus("connecting");
     setError(null);
 
@@ -93,9 +102,9 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
       });
     };
 
-    room.on(RoomEvent.TrackSubscribed, onSubscribed);
-    room.on(RoomEvent.TrackUnsubscribed, onUnsubscribed);
-    room.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); });
+    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent.TrackSubscribed, onSubscribed); });
+    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent.TrackUnsubscribed, onUnsubscribed); });
+    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); }); });
 
     (async () => {
       try {
@@ -110,12 +119,14 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
         const body = await response.json() as { server_url?: string; participant_token?: string; canPublish?: boolean; error?: string };
         if (!response.ok || !body.server_url || !body.participant_token) throw new Error(body.error ?? "LiveKit token request failed");
         if (cancelled) return;
-        await room.connect(body.server_url, body.participant_token, { autoSubscribe: true });
+        const readyRoom = await roomReady;
+        if (!readyRoom) return;
+        await readyRoom.connect(body.server_url, body.participant_token, { autoSubscribe: true });
         if (cancelled) return;
         setStatus("connected");
         const mayPublish = body.canPublish === true;
         if (mayPublish && publish) {
-          await room.localParticipant.setMicrophoneEnabled(true);
+          await readyRoom.localParticipant.setMicrophoneEnabled(true);
           desiredMicEnabledRef.current = true;
           setMuted(false);
         } else {
@@ -126,12 +137,12 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
         if (cancelled) return;
         setStatus("error");
         setError(e instanceof Error ? e.message : "LiveKit connection failed");
-        await room.disconnect();
+        await readyRoom.disconnect();
       }
     })();
 
     const suspendForBackground = async () => {
-      if (room.state !== "connected") return;
+      if (room?.state !== "connected") return;
       // Release the microphone so another app such as WhatsApp can acquire Android audio input.
       // Keep the LiveKit room connection alive so Jalwa can resume without rejoining.
       try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
@@ -142,10 +153,10 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     };
 
     const resumeFromBackground = async () => {
-      if (cancelled || room.state !== "connected") return;
+      if (cancelled || room?.state !== "connected") return;
       if (publish && desiredMicEnabledRef.current) {
         try {
-          await room.localParticipant.setMicrophoneEnabled(true);
+          await room?.localParticipant.setMicrophoneEnabled(true);
           setMuted(false);
         } catch (resumeError) {
           console.warn("[LiveKit] Microphone resume deferred", resumeError);
@@ -176,11 +187,13 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibilityChange);
       void appStateHandle?.remove();
-      room.off(RoomEvent.TrackSubscribed, onSubscribed);
-      room.off(RoomEvent.TrackUnsubscribed, onUnsubscribed);
+      void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.off(RoomEvent.TrackSubscribed, onSubscribed); });
+      void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.off(RoomEvent.TrackUnsubscribed, onUnsubscribed); });
       void (async () => {
-        try { await room.localParticipant.setMicrophoneEnabled(false); } catch {}
-        await room.disconnect();
+        const readyRoom = await roomReady;
+        if (!readyRoom) return;
+        try { await readyRoom.localParticipant.setMicrophoneEnabled(false); } catch {}
+        await readyRoom.disconnect();
       })();
       if (roomRef.current === room) roomRef.current = null;
     };
