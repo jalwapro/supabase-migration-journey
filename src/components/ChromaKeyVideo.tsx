@@ -65,24 +65,64 @@ export function ChromaKeyVideo({ src, chromakey = "none", color, tolerance = 48,
     if (!video || !canvas) return;
     const ctx = canvas.getContext("2d", { willReadFrequently: true });
     if (!ctx) return;
-    let raf = 0, disposed = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let disposed = false;
+    let visible = true;
+    let lastVideoTime = -1;
+    const MAX_PROCESS_WIDTH = 720;
+
+    // Decorative frame processing is capped at ~15fps and 720px wide to avoid
+    // sustained Android CPU heat when several animated frames are mounted.
+    const schedule = () => {
+      if (disposed || !visible) return;
+      timer = window.setTimeout(render, 66);
+    };
+
     const render = () => {
-      if (disposed) return;
-      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-        if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-          canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      if (disposed || !visible) return;
+      if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0 && video.currentTime !== lastVideoTime) {
+        lastVideoTime = video.currentTime;
+        const scale = Math.min(1, MAX_PROCESS_WIDTH / video.videoWidth);
+        const width = Math.max(1, Math.round(video.videoWidth * scale));
+        const height = Math.max(1, Math.round(video.videoHeight * scale));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
         }
         try {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(video, 0, 0, width, height);
+          const image = ctx.getImageData(0, 0, width, height);
           ctx.putImageData(processPixels(image, chromakey, color, tolerance, softness), 0, 0);
-        } catch { /* CORS/decoder errors are retried on the next frame. */ }
+        } catch { /* CORS/decoder errors are retried on the next scheduled frame. */ }
       }
-      raf = requestAnimationFrame(render);
+      schedule();
     };
-    const start = () => { void video.play().catch(() => undefined); raf = requestAnimationFrame(render); };
+
+    const start = () => {
+      void video.play().catch(() => undefined);
+      schedule();
+    };
+
+    const observer = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(([entry]) => {
+          visible = entry?.isIntersecting ?? true;
+          if (visible && !timer) schedule();
+          if (!visible && timer) {
+            window.clearTimeout(timer);
+            timer = null;
+          }
+        }, { threshold: 0.01 })
+      : null;
+
+    observer?.observe(canvas);
     if (video.readyState >= 2) start(); else video.addEventListener("loadeddata", start, { once: true });
-    return () => { disposed = true; cancelAnimationFrame(raf); video.removeEventListener("loadeddata", start); };
+    return () => {
+      disposed = true;
+      if (timer) window.clearTimeout(timer);
+      timer = null;
+      observer?.disconnect();
+      video.removeEventListener("loadeddata", start);
+    };
   }, [src, chromakey, color, tolerance, softness]);
 
   return (
