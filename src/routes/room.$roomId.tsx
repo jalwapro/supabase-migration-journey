@@ -2236,14 +2236,15 @@ className="shrink-0 border-t border-white/10 bg-gradient-to-t from-black via-bla
 style={{ paddingBottom: `calc(${keyboardOffset}px + 12px)` }}
 >
 <ReplyBar reply={replyTo} onCancel={() => setReplyTo(null)} />
-<div className="flex items-end gap-2">
-<div className="relative flex-1">
+<div className="flex h-11 min-h-11 max-h-11 items-center gap-2">
+<div className="relative h-11 min-h-11 max-h-11 min-w-0 flex-1">
 <textarea
 autoFocus
 placeholder="Say something..."
 value={text}
 onChange={(e) => setText(e.target.value)}
-className="max-h-32 w-full resize-none rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white focus:outline-none focus:ring-1 focus:ring-fuchsia-500/50"
+rows={1}
+className="h-11 min-h-11 max-h-11 w-full resize-none overflow-y-auto rounded-2xl border border-white/10 bg-white/5 p-3 pr-10 text-sm leading-5 text-white focus:outline-none focus:ring-1 focus:ring-fuchsia-500/50"
 onKeyDown={(e) => {
 if (e.key === "Enter" && !e.shiftKey) {
 e.preventDefault();
