@@ -96,3 +96,60 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
   [data-jalwa-voice-room-root="true"] [data-seat-cell="true"] > div{height:84px!important;min-height:84px!important;max-height:84px!important;}
   [data-jalwa-voice-room-root="true"] [data-seat-media="true"]{width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important;max-width:58px!important;max-height:58px!important;flex-basis:58px!important;}
 }
+
+
+/* Final responsive geometry: the 20-seat grid scales from 320px phones to
+   larger screens without horizontal overflow or changing seat proportions. */
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.seat-area"]{
+  padding-top:clamp(12px,7vw,28px)!important;
+  padding-left:clamp(2px,1.2vw,6px)!important;
+  padding-right:clamp(2px,1.2vw,6px)!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{
+  grid-auto-rows:clamp(70px,20vw,84px)!important;
+  row-gap:clamp(5px,1.8vw,12px)!important;
+  column-gap:clamp(1px,.55vw,3px)!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]{
+  height:clamp(70px,20vw,84px)!important;
+  min-height:clamp(70px,20vw,84px)!important;
+  max-height:clamp(70px,20vw,84px)!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>button,
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>div{
+  height:clamp(70px,20vw,84px)!important;
+  min-height:clamp(70px,20vw,84px)!important;
+  max-height:clamp(70px,20vw,84px)!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-media="true"],
+[data-jalwa-voice-room-root="true"] [data-seat-empty-art]{
+  width:clamp(44px,15.2vw,62px)!important;
+  height:clamp(44px,15.2vw,62px)!important;
+  min-width:clamp(44px,15.2vw,62px)!important;
+  min-height:clamp(44px,15.2vw,62px)!important;
+  max-width:clamp(44px,15.2vw,62px)!important;
+  max-height:clamp(44px,15.2vw,62px)!important;
+  flex-basis:clamp(44px,15.2vw,62px)!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-empty-art-image]{
+  width:clamp(44px,15.2vw,62px)!important;
+  height:clamp(44px,15.2vw,62px)!important;
+  min-width:clamp(44px,15.2vw,62px)!important;
+  min-height:clamp(44px,15.2vw,62px)!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-media]+span{
+  height:clamp(11px,3vw,12px)!important;
+  min-height:clamp(11px,3vw,12px)!important;
+  line-height:clamp(11px,3vw,12px)!important;
+}
+@media(max-height:680px){
+  [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.seat-area"]{padding-top:10px!important}
+  [data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{grid-auto-rows:clamp(66px,18vw,76px)!important}
+  [data-jalwa-voice-room-root="true"] [data-seat-cell="true"],
+  [data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>button,
+  [data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>div{
+    height:clamp(66px,18vw,76px)!important;
+    min-height:clamp(66px,18vw,76px)!important;
+    max-height:clamp(66px,18vw,76px)!important;
+  }
+}
