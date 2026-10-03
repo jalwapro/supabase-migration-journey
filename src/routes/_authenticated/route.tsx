@@ -6,12 +6,15 @@ function AuthedShell() {
 }
 
 async function waitForStoredSession() {
-  for (const delay of [0, 150, 350, 700, 1200]) {
-    if (delay) await new Promise((r) => setTimeout(r, delay));
+  // Supabase persists the session locally. A single getSession() is enough for
+  // route protection; the auth listener in AuthProvider handles later refreshes.
+  // Retrying here added up to ~2.4s to every authenticated cold navigation.
+  try {
     const { data } = await supabase.auth.getSession();
-    if (data.session?.user) return data.session;
+    return data.session ?? null;
+  } catch {
+    return null;
   }
-  return null;
 }
 
 export const Route = createFileRoute("/_authenticated")({
