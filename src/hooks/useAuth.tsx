@@ -207,7 +207,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) console.warn("[useAuth] presence", error);
       });
     };
-    tick();
+    // Do not compete with the first interactive render for network/database
+    // bandwidth. Presence is eventually consistent and does not need to run
+    // during the startup critical path.
+    const firstTick = window.setTimeout(tick, 10_000);
     heartbeatRef.current = setInterval(tick, 15_000);
     const onFocus = () => tick();
     const onVisible = () => { if (document.visibilityState === "visible") tick(); };
