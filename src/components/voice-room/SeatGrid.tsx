@@ -68,7 +68,7 @@ export function Seat({ seat, onClick }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
-  const avatar = user?.avatar || user?.avatarUrl || DEFAULT_SEAT_AVATAR;
+  const avatar = user?.avatar || user?.avatarUrl || "";
   const frameUrl = user?.avatar_frame_url || user?.frame_url || null;
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
@@ -116,7 +116,7 @@ export function Seat({ seat, onClick }: SeatProps) {
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" className="relative z-20 aspect-square h-[46px] w-[46px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("scale-[0.9] origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")} />
+          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")} />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
         <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
@@ -146,8 +146,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [lockBusy, setLockBusy] = useState<number | null>(null);
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
-  const [activeTab, setActiveTab] = useState<"users" | "shift">("users");
-  const [hostSeatIndex, setHostSeatIndex] = useState(1);
+    const [hostSeatIndex, setHostSeatIndex] = useState(1);
 
   useEffect(() => {
     if (!roomId) return;
@@ -355,7 +354,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     }
     if (canManageSeats) {
       setSelectedEmptySeat(seat);
-      setActiveTab("users");
       return;
     }
     if (seat.is_locked) {
@@ -411,7 +409,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                 <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                 <span data-avatar="true" className="relative z-20 h-[46px] w-[46px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                  <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
+                  <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
 
                 </span>
                 <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
