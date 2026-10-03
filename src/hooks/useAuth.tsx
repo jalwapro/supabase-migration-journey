@@ -151,15 +151,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadInitialSession = useCallback(async () => {
     let nextSession: Session | null = null;
-    for (const delay of [0, 150, 350, 700, 1200]) {
-      if (delay) await new Promise((resolve) => setTimeout(resolve, delay));
-      try {
-        const { data } = await supabase.auth.getSession();
-        nextSession = data.session;
-        if (nextSession?.user) break;
-      } catch (error) {
-        console.warn("[useAuth] initial session", error);
-      }
+    try {
+      // Session is persisted locally by Supabase, so avoid serial retry delays
+      // during app startup. onAuthStateChange remains the source of truth for
+      // refresh/sign-in/sign-out changes after the initial read.
+      const { data } = await supabase.auth.getSession();
+      nextSession = data.session;
+    } catch (error) {
+      console.warn("[useAuth] initial session", error);
     }
     initialSessionLoadedRef.current = true;
     await hydrate(nextSession);
