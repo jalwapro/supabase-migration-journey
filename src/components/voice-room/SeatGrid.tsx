@@ -112,7 +112,7 @@ export function Seat({ seat, onClick }: SeatProps) {
   const level = user?.level ?? profileMedia?.level ?? 0;
 
   return (
-    <div data-seat-index={num} data-seat="true" data-seat-cell="true" className={cn("relative flex h-[84px] min-h-[84px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible", className)}>
+    <div data-seat-index={num} data-user-dp={user.id ?? ""} data-seat="true" data-seat-cell="true" className={cn("relative flex h-[84px] min-h-[84px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
@@ -419,7 +419,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         {allSeats.map((seat) => {
           const seatIdx = seat.index ?? seat.seatNumber ?? 1;
           if (seat.isHost) return (
-            <div key={seatIdx} data-seat="true" data-seat-cell="true" data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex h-[68px] min-h-[68px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible">
+            <div key={seatIdx} data-seat="true" data-seat-cell="true" data-user-dp={host.id} data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex h-[68px] min-h-[68px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible">
               <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                 <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                 <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
