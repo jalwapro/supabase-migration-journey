@@ -112,10 +112,10 @@ export function Seat({ seat, onClick }: SeatProps) {
   const level = user?.level ?? profileMedia?.level ?? 0;
 
   return (
-    <div data-seat-index={num} data-seat="true" className={cn("relative flex min-w-0 w-full min-h-[82px] flex-col items-center justify-start p-0.5", className)}>
+    <div data-seat-index={num} data-seat="true" className={cn("relative flex min-w-0 w-full min-h-[68px] flex-col items-center justify-start p-0.5", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
-        <span data-avatar="true" className="relative z-20 aspect-square w-[clamp(44px,12vw,58px)] max-w-[58px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
+        <span data-avatar="true" className="relative z-20 aspect-square w-[clamp(42px,10.5vw,52px)] max-w-[52px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
           <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("scale-[0.9] origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")} />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
@@ -403,14 +403,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
   return (
     <section data-seat-grid="true" className="relative mx-auto flex w-full max-w-[480px] min-h-0 flex-col items-center justify-center px-[clamp(2px,1.2vw,8px)] py-1 bg-transparent overflow-visible" data-seat-capacity={capacity}>
-      <div className="grid w-full grid-cols-5 items-start justify-items-center gap-x-[clamp(2px,0.9vw,6px)] gap-y-[clamp(6px,1.6vw,12px)] bg-transparent [grid-auto-rows:minmax(82px,auto)]">
+      <div className="grid w-full grid-cols-5 items-start justify-items-center gap-x-[clamp(1px,0.5vw,4px)] gap-y-[clamp(3px,0.8vw,6px)] bg-transparent [grid-auto-rows:minmax(68px,auto)]">
         {allSeats.map((seat) => {
           const seatIdx = seat.index ?? seat.seatNumber ?? 1;
           if (seat.isHost) return (
-            <div key={seatIdx} data-seat="true" data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex w-full min-w-0 min-h-[82px] flex-col items-center justify-start p-0.5">
+            <div key={seatIdx} data-seat="true" data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex w-full min-w-0 min-h-[68px] flex-col items-center justify-start p-0.5">
               <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                 <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
-                <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[58px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible shrink-0">
+                <span data-avatar="true" className="relative z-20 aspect-square w-full max-w-[52px] p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible shrink-0">
                   <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md scale-[0.78]"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
 
                 </span>
