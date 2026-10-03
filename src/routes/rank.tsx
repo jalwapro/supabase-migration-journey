@@ -1,3 +1,4 @@
+import "../room-rank-frame-alignment.css";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
