@@ -71,7 +71,8 @@ function Splash() {
     retry: false,
   });
 
-  const videoUrl = cfg.data?.splash_video ?? null;
+  const splashEnabled = cfg.data?.splash_enabled !== false;
+  const videoUrl = splashEnabled ? (cfg.data?.splash_video ?? null) : null;
   const duration = Math.max(1, cfg.data?.splash_duration ?? 3) * 1000;
   const [videoStarted, setVideoStarted] = useState(false);
 
@@ -89,12 +90,12 @@ function Splash() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.isLoading, embeddedPreview]);
 
-  // Start-watchdog: if the video hasn't begun playing within 10s (bad network
+  // Start-watchdog: if the video hasn't begun playing within 15s (bad network
   // / broken file), give up and move on. Once it starts, let it play through
   // to its natural end — no total-duration cap.
   useEffect(() => {
     if (embeddedPreview || !videoUrl || videoStarted) return;
-    const t = window.setTimeout(finishVideo, 10000);
+    const t = window.setTimeout(finishVideo, 15000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoUrl, videoStarted, embeddedPreview]);
@@ -136,19 +137,25 @@ function Splash() {
           poster={cfg.data?.splash_video_poster ?? undefined}
           autoPlay
           playsInline
+          muted
           preload="auto"
           onEnded={finishVideo}
           onError={finishVideo}
+          onLoadedData={() => {
+            const v = videoRef.current;
+            if (!v) return;
+            // Muted autoplay is allowed on Android/WebView. Start the actual
+            // splash video immediately; audio is enabled only when the runtime
+            // permits it, without ever preventing the video from starting.
+            v.muted = true;
+            v.volume = 1;
+            void v.play().then(() => setVideoStarted(true)).catch(() => {});
+          }}
           onCanPlay={() => {
             const v = videoRef.current;
             if (!v) return;
-            v.muted = false;
-            v.volume = 1;
-            v.play().catch(() => {
-              // Browser blocked audio autoplay — fall back to muted playback.
-              v.muted = true;
-              v.play().catch(() => {});
-            });
+            v.muted = true;
+            void v.play().catch(() => {});
           }}
           onPlaying={() => setVideoStarted(true)}
           className="h-full max-h-[100dvh] w-full max-w-[480px] object-contain"
