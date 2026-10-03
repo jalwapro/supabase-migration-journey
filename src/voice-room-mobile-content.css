@@ -67,8 +67,26 @@ body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-compone
     overflow:visible !important;
   }
   body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"]{
-    width:clamp(48px,14vw,68px) !important;
-    max-width:68px !important;
+    width:46px !important;
+    height:46px !important;
+    min-width:46px !important;
+    min-height:46px !important;
+    max-width:46px !important;
+    flex:0 0 46px !important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art]{
+    width:46px !important;
+    height:46px !important;
+    min-width:46px !important;
+    min-height:46px !important;
+    flex:0 0 46px !important;
+    overflow:visible !important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image]{
+    width:46px !important;
+    height:46px !important;
+    max-width:none !important;
+    object-fit:contain !important;
   }
   body:has([data-jalwa-live-component="voice.announcement"]){
     padding-bottom:0 !important;
