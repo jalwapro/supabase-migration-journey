@@ -35,6 +35,11 @@ async function enableNativeFcmForUser(userId: string): Promise<{ token: string }
 
   nativeCurrentUserId = userId;
 
+  // Avoid re-registering the same native installation on every focus,
+  // permission check, or auth refresh. Repeated register() calls can wake the
+  // Android Firebase/Capacitor stack unnecessarily.
+  if (nativeFcmToken) return { token: nativeFcmToken };
+
   let resolveRegistration: ((token: string) => void) | null = null;
   const registrationPromise = new Promise<string>((resolve) => {
     resolveRegistration = resolve;
