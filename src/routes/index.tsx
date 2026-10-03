@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ShareSheet } from "@/components/ShareSheet";
 import { RoomRecoveryCard } from "@/components/room/RoomRecoveryCard";
-import { ChromaKeyVideo } from "@/components/ChromaKeyVideo";
+const ChromaKeyVideo = lazy(() => import("@/components/ChromaKeyVideo").then((m) => ({ default: m.ChromaKeyVideo })));
 import {
   Radio,
   Users,
@@ -817,7 +817,7 @@ function RoomFrameSquare({ tone }: { tone: "gold" | "violet" }) {
     "pointer-events-none absolute inset-0 h-full w-full max-w-none object-fill select-none z-30";
 
   if (isVideo) {
-    return <ChromaKeyVideo src={src} chromakey={chromakey} />;
+    return <Suspense fallback={null}><ChromaKeyVideo src={src} chromakey={chromakey} /></Suspense>;
   }
 
   return (
