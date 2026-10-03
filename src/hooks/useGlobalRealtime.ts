@@ -20,6 +20,18 @@ type Sub = {
 
 function subscribe(qc: QueryClient, channelName: string, subs: Sub[], onStatus?: (status: string, error?: unknown) => void) {
   let ch = supabase.channel(channelName);
+  const pendingKeys = new Map<string, string>();
+  let flushTimer: number | null = null;
+  const queueKeys = (keys: string[]) => {
+    for (const key of keys) pendingKeys.set(key, key);
+    if (flushTimer !== null) return;
+    flushTimer = window.setTimeout(() => {
+      flushTimer = null;
+      const keys = [...pendingKeys.values()];
+      pendingKeys.clear();
+      for (const key of keys) void qc.invalidateQueries({ queryKey: [key], refetchType: "active" });
+    }, 75);
+  };
   for (const s of subs) {
     ch = (
       ch as unknown as {
@@ -32,18 +44,14 @@ function subscribe(qc: QueryClient, channelName: string, subs: Sub[], onStatus?:
     ).on(
       "postgres_changes",
       { event: "*", schema: "public", table: s.table, filter: s.filter },
-      () => {
-        for (const k of s.keys) qc.invalidateQueries({ queryKey: [k] });
-      },
+      () => queueKeys(s.keys),
     );
   }
   ch.subscribe((status, error) => {
     onStatus?.(status, error);
     if (status === "SUBSCRIBED") {
       // Reconcile any writes that happened while the socket was reconnecting.
-      for (const s of subs) for (const k of s.keys) {
-        void qc.invalidateQueries({ queryKey: [k], refetchType: "active" });
-      }
+      queueKeys(subs.flatMap((s) => s.keys))
     } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
       console.warn("[Realtime]", channelName, status, error);
     }
@@ -203,7 +211,7 @@ export function useGlobalRealtime() {
         ).on(
           "postgres_changes",
           { event: "*", schema: "public", table },
-          () => void qc.invalidateQueries({ refetchType: "active" }),
+          () => queueKeys(["__catalog__"]),
         );
       }
       chCatalog = channel;
@@ -284,8 +292,18 @@ export function useGlobalRealtime() {
       )
       .subscribe();
 
+    let lastOnlineReconcile = 0;
     const reconcile = () => {
-      void qc.invalidateQueries({ refetchType: "active" });
+      const now = Date.now();
+      if (now - lastOnlineReconcile < 15_000) return;
+      lastOnlineReconcile = now;
+      queueKeys([
+        "me", "me-counts", "profile", "public-profile", "auth-profile", "wallet", "wallet_tx",
+        "friends", "dm", "dm_index", "dm-thread", "dm-threads", "dm-unread", "messages",
+        "conversations", "msg-notif-count", "notifications", "notif-unread", "notif-feed",
+        "my-rooms", "rooms", "gallery", "gallery-unlocks", "album-access", "user-themes",
+        "recharge", "recharge-history", "withdraw", "withdraw-history", "host-popularity",
+      ]);
     };
     window.addEventListener("online", reconcile);
 
@@ -298,6 +316,8 @@ export function useGlobalRealtime() {
       void supabase.removeChannel(chPopularity);
       void supabase.removeChannel(ch4);
       window.clearTimeout(catalogTimer);
+      if (flushTimer !== null) window.clearTimeout(flushTimer);
+      pendingKeys.clear();
       if (chCatalog) void supabase.removeChannel(chCatalog);
       void supabase.removeChannel(chNotif);
       window.removeEventListener("online", reconcile);
