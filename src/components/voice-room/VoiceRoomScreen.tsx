@@ -249,7 +249,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       {hostMedia ? <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden"><img src={hostMedia} alt="" draggable={false} className="h-full w-full object-cover opacity-90" /></div> : null}
       
       {showPinModal && (
-        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-md px-4 animate-fade-in">
+        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40 backdrop-blur-md px-4 animate-fade-in">
           <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900/90 border p-6 shadow-2xl text-center backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }}>
             <div className="h-16 w-16 rounded-full flex items-center justify-center mb-4 shadow-lg" style={{ backgroundColor: `${primaryThemeColor}20`, color: primaryThemeColor, border: `1px solid ${primaryThemeColor}` }}>
               <Lock className="h-8 w-8 animate-pulse" />
@@ -266,7 +266,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       {generatedPin && isHost && (
-        <div className="absolute inset-0 z-[90] flex items-center justify-center bg-black/40 backdrop-blur-md px-4 animate-fade-in">
+        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40 backdrop-blur-md px-4 animate-fade-in">
           <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900/90 border p-6 shadow-2xl text-center backdrop-blur-xl" style={{ borderColor: `${accentThemeColor}66` }}>
             <div className="h-14 w-14 rounded-full flex items-center justify-center mb-3 shadow-lg" style={{ backgroundColor: `${accentThemeColor}20`, color: accentThemeColor, border: `1px solid ${accentThemeColor}` }}>
               <KeyRound className="h-7 w-7" />
@@ -280,7 +280,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       {showHostFreePopup && isHost && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in px-4">
+        <div className="absolute inset-0 z-[2147483000] flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in px-4">
           <div className="relative flex flex-col items-center max-w-sm w-full rounded-3xl bg-slate-900/90 border p-6 shadow-2xl text-center backdrop-blur-xl" style={{ borderColor: `${primaryThemeColor}66` }}>
             <div className="absolute -top-10 animate-bounce">
               <div className="h-20 w-20 rounded-full p-1 shadow-xl" style={{ background: `linear-gradient(135deg, ${primaryThemeColor}, ${accentThemeColor})` }}>
@@ -298,7 +298,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       )}
 
       {showRocketAnimation && (
-        <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in">
+        <div className="absolute inset-0 z-[2147483100] pointer-events-none flex items-center justify-center bg-black/40 backdrop-blur-md animate-fade-in">
           <div className="flex flex-col items-center">
             <div className="relative animate-bounce">
               <div className="absolute -inset-8 rounded-full opacity-90 blur-2xl animate-pulse" style={{ background: `linear-gradient(90deg, ${primaryThemeColor}, ${accentThemeColor})` }} />
@@ -395,7 +395,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
       
       {emojiOpen && (
-        <div className="absolute inset-0 z-50 flex flex-col justify-end bg-black/30 backdrop-blur-md animate-fade-in">
+        <div className="absolute inset-0 z-[2147483000] flex flex-col justify-end bg-black/30 backdrop-blur-md animate-fade-in">
           <div className="absolute inset-0" onClick={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} />
           <div className="relative z-10 w-full rounded-t-3xl bg-slate-900/90 border-t p-4 shadow-2xl backdrop-blur-xl animate-slide-up max-h-[60dvh] flex flex-col" style={{ borderColor: `${primaryThemeColor}55` }}>
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-700" />
