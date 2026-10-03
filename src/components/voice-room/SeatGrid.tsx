@@ -330,6 +330,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       onSeatTap?.(idx);
       return;
     }
+    // Hosts/moderators must get the Seat Manager first. The manager contains
+    // lock/unlock and host assignment controls; moving the host is an action
+    // inside that popup. Previously the host branch ran first and swallowed
+    // the popup click, making seat lock/assign appear broken.
+    if (canManageSeats) {
+      setSelectedEmptySeat(seat);
+      return;
+    }
     if (isHost) {
       if (!roomId) {
         onJoinSeat?.(idx);
@@ -350,10 +358,6 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       setHostSeatIndex(idx);
       setSelectedEmptySeat(null);
       toast.success("You moved to seat " + idx);
-      return;
-    }
-    if (canManageSeats) {
-      setSelectedEmptySeat(seat);
       return;
     }
     if (seat.is_locked) {
