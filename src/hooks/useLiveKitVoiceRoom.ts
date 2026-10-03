@@ -43,12 +43,10 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
 
     let cancelled = false;
     let room: Room | null = null;
-    let RoomEvent: typeof import("livekit-client").RoomEvent;
-    let Track: typeof import("livekit-client").Track;
+    let RoomEvent: typeof import("livekit-client").RoomEvent | null = null;
     const roomReady = import("livekit-client").then((livekit) => {
       if (cancelled) return null;
       RoomEvent = livekit.RoomEvent;
-      Track = livekit.Track;
       room = new livekit.Room({ adaptiveStream: true, dynacast: true });
       roomRef.current = room;
       return room;
@@ -57,7 +55,7 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     setError(null);
 
     const onSubscribed = (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
-      if (track.kind !== Track.Kind.Audio) return;
+      if (track.kind !== "audio") return;
 
       // LiveKit can emit a subscription during track lifecycle transitions where
       // the track object is already stale. Never call attach on an invalid track.
@@ -86,7 +84,7 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
     };
 
     const onUnsubscribed = (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
-      if (track.kind !== Track.Kind.Audio) return;
+      if (track.kind !== "audio") return;
       try {
         track.detach().forEach((el) => el.remove());
       } catch (detachError) {
@@ -137,7 +135,8 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
         if (cancelled) return;
         setStatus("error");
         setError(e instanceof Error ? e.message : "LiveKit connection failed");
-        await readyRoom.disconnect();
+        const readyRoom = await roomReady;
+        if (readyRoom) await readyRoom.disconnect();
       }
     })();
 
