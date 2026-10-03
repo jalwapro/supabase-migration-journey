@@ -26,6 +26,15 @@ export function GlobalMinimizedVoiceRoom() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [recoveryReady, setRecoveryReady] = useState(false);
+
+  // This recovery check is only needed for a minimized/recoverable room.
+  // Keep it off the first render so normal Home/Login startup does not wait on
+  // another Supabase RPC/query cycle.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setRecoveryReady(true), 2000);
+    return () => window.clearTimeout(timer);
+  }, []);
   const [position, setPosition] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(POSITION_KEY) || 'null') as { x?: number; y?: number } | null;
@@ -42,16 +51,16 @@ export function GlobalMinimizedVoiceRoom() {
   const offset = useRef({ x: 0, y: 0 });
 
   const recovery = useQuery({
-    enabled: !!user?.id && !activeRoom,
+    enabled: recoveryReady && !!user?.id && !activeRoom,
     queryKey: ['global-room-recovery', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_my_recoverable_room');
       if (error) throw error;
       return (Array.isArray(data) && data.length ? data[0] as RecoverableRoom : null);
     },
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
-    staleTime: 5_000,
+    staleTime: 10_000,
   });
 
   const room = activeRoom ?? (recovery.data ? {
@@ -79,8 +88,8 @@ export function GlobalMinimizedVoiceRoom() {
       if (error) throw error;
       return (data as unknown as SeatPresence | null) ?? null;
     },
-    refetchInterval: 5_000,
-    staleTime: 2_000,
+    refetchInterval: 10_000,
+    staleTime: 5_000,
   });
 
   const seatedAvatar = seatPresence.data?.seat_index != null ? seatPresence.data.profile?.avatar : null;
