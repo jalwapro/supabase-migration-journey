@@ -76,3 +76,11 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
 [data-jalwa-voice-room-root="true"] [data-seat-cell="true"] > div{isolation:isolate!important;}
 [data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{row-gap:12px!important;}
 @media(max-width:359px){[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{row-gap:10px!important}}
+
+/* DP frame must never cover the seat metadata (name, score, badges/points). */
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"] > button,
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"] > div{position:relative!important;overflow:visible!important;}
+[data-jalwa-voice-room-root="true"] [data-seat-media="true"]{z-index:2!important;}
+[data-jalwa-voice-room-root="true"] [data-seat-media="true"] + span,
+[data-jalwa-voice-room-root="true"] [data-seat-media="true"] + span + span{position:relative!important;z-index:20!important;}
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"] [data-seat-media="true"] ~ span{isolation:isolate!important;}
