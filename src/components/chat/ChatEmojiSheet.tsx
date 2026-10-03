@@ -21,7 +21,7 @@ export function ChatEmojiSheet({open,onClose,onPick}:Props){
  const filtered=useMemo(()=>list.filter(e=>tier==="normal"?(e.tier??"normal")==="normal":(e.tier??"normal")!=="normal"),[list,tier]);
  const handleVoicePick=async(e:ChatEmoji,targetSeatIndex?:number|null)=>{
    if(roomId&&targetSeatIndex!=null&&profile?.id){
-     const payload={id:`emoji-${crypto.randomUUID()}`,roomId,senderId:profile.id,senderName:profile.username??"User",targetSeatIndex,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null};
+     const payload={id:`emoji-${crypto.randomUUID()}`,roomId,senderId:profile.id,senderName:profile.username??"User",targetSeatIndex,targetName:targetUser?.username??"User",targetUserId:targetUser?.id??null,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null};
      playVoiceRoomEmojiAtSeat(payload);
      try{
        await broadcastVoiceRoomEmoji(payload);
