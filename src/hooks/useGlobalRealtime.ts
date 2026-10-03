@@ -328,9 +328,6 @@ export function useGlobalRealtime() {
       void supabase.removeChannel(chPopularity);
       void supabase.removeChannel(ch4);
       window.clearTimeout(catalogTimer);
-      if (flushTimer !== null) window.clearTimeout(flushTimer);
-      pendingKeys.clear();
-      flushAllActive = false;
       if (chCatalog) void supabase.removeChannel(chCatalog);
       void supabase.removeChannel(chNotif);
       window.removeEventListener("online", reconcile);
