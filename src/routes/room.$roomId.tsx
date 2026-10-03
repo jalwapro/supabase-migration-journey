@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { VipBadge } from "@/components/vip/VipBadge";
-import LevelAvatar from "@/components/LevelAvatar";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,7 @@ import hostThroneAsset from "@/assets/room/host-throne.png.asset.json";
 import { resolveAssetUrl } from "@/lib/assetUrl";
 const HOST_THRONE_URL = resolveAssetUrl(hostThroneAsset.url)!;
 
-import { useZegoRoom as useAgoraRoom, type RemoteUser, type RemoteVideoTrack } from "@/hooks/useZegoRoom";
+import { useZegoRoom as useAgoraRoom } from "@/hooks/useZegoRoom";
 import { useRoomHeartbeat } from "@/hooks/useRoomHeartbeat";
 import { RoomDiagnostics } from "@/components/room/RoomDiagnostics";
 import {
@@ -226,14 +225,6 @@ function shortRoomCode(id: string) {
   return String(num).padStart(8, "0");
 }
 
-function formatGiftPoints(points: number) {
-  const safe = Math.max(0, Math.floor(Number(points) || 0));
-  if (safe >= 1_000_000) return `${(safe / 1_000_000).toFixed(safe >= 10_000_000 ? 0 : 1)}M`;
-  if (safe >= 1_000) return `${(safe / 1_000).toFixed(safe >= 10_000 ? 0 : 1)}K`;
-  return safe.toLocaleString();
-}
-
-
 
 // (Removed unused QUICK_GIFTS strip — it was inserting a chat row with
 // kind:"gift" without charging the sender or crediting the receiver.
@@ -396,7 +387,6 @@ function RoomPage() {
   }, []);
 
   const [members, setMembers] = useState<Member[]>([]);
-  const [seatLikes, setSeatLikes] = useState<Record<number, number>>({});
   const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
     coin_score: 0,
     like_count: 0,
@@ -2785,257 +2775,6 @@ function KingThroneIcon({ className, variant = "red" }: { className?: string; va
   );
 }
 
-function Seat({
-
-  index,
-  member,
-  remote,
-  isHostSeat,
-  cover,
-  fallbackUser,
-  onClaim,
-  likeCount,
-  onLike,
-  giftPoints,
-  recentlyGifted,
-  videoStyle,
-  glowing,
-  locked,
-  onEmptyManage,
-  isKing = false,
-  currentUserId,
-  localMuted,
-  onOpenGifters,
-  isSpeaking,
-}: {
-  index: number;
-  member?: Member;
-  remote?: RemoteUser;
-  isHostSeat: boolean;
-  cover: string | null;
-  fallbackUser?: { username: string | null; avatar: string | null; frame?: string | null; vip_level?: number | null } | null;
-  onClaim: () => void;
-  likeCount: number;
-  onLike: () => void;
-  giftPoints?: number;
-  recentlyGifted?: boolean;
-  videoStyle?: boolean;
-  glowing?: boolean;
-  locked?: boolean;
-  onEmptyManage?: () => void;
-  isKing?: boolean;
-  currentUserId?: string;
-  localMuted?: boolean;
-  onOpenGifters?: () => void;
-  isSpeaking?: boolean;
-}) {
-  const videoRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (remote?.videoTrack && videoRef.current) {
-      remote.videoTrack.play(videoRef.current, { fit: "cover" });
-    }
-    return () => {
-      remote?.videoTrack?.stop();
-    };
-  }, [remote?.videoTrack]);
-
-  const label = `No.${index + 1}`;
-  const isSelf = !!(member && currentUserId && member.user_id === currentUserId);
-  // Prefer live Agora signal over stale DB `is_muted`.
-  const effectiveMuted = isSelf
-    ? !!localMuted
-    : remote
-      ? !remote.hasAudio
-      : !!member?.is_muted;
-  const speaking = !!isSpeaking && !effectiveMuted;
-
-
-  const displayAvatar = member?.user?.avatar ?? fallbackUser?.avatar ?? null;
-  const displayName = member?.user?.username ?? fallbackUser?.username ?? null;
-
-  const ringClass = isHostSeat
-    ? "ring-2 ring-[color:var(--gold)] shadow-[0_0_18px_-2px_color-mix(in_oklab,var(--gold)_60%,transparent)]"
-    : speaking
-      ? "ring-2 ring-[color:var(--primary)]"
-      : "ring-1 ring-white/15";
-
-  if (videoStyle) {
-    const numberLabel = String(index + 1).padStart(2, "0");
-    return (
-      <button
-        data-seat-index={index}
-        data-user-dp={member?.user_id ?? ""}
-        onClick={() => (member ? undefined : onClaim())}
-        className="relative aspect-[1.02/1] overflow-hidden rounded-xl border border-violet-300/55 bg-[radial-gradient(circle_at_50%_35%,rgba(139,92,246,0.22),rgba(5,7,24,0.78)_60%),linear-gradient(145deg,rgba(255,255,255,0.07),rgba(255,255,255,0.015))] shadow-[inset_0_0_22px_rgba(255,255,255,0.035)]"
-        aria-label={member ? `Seat ${numberLabel}` : `Take seat ${numberLabel}`}
-      >
-        <span className="absolute left-1.5 top-1 text-[11px] font-medium leading-none text-white/90">
-          {numberLabel}
-        </span>
-        {isHostSeat && (
-          <span className="absolute right-1.5 top-1 rounded-full bg-[color:var(--gold)]/20 px-1 text-[9px] text-[color:var(--gold)]">
-            ♛
-          </span>
-        )}
-        <div className="absolute inset-x-0 top-[28%] grid place-items-center">
-          <div className="relative h-10 w-10">
-            {speaking && (
-              <span
-                aria-hidden
-                className="pointer-events-none absolute inset-[-25%] rounded-full animate-pulse"
-                style={{
-                  background: "radial-gradient(circle, rgba(103,232,249,0.55) 0%, transparent 70%)",
-                  filter: "blur(5px)",
-                }}
-              />
-            )}
-            {displayAvatar || (member?.user?.frame ?? fallbackUser?.frame) ? (
-              <LevelAvatar
-                level={Number((member?.user as any)?.level ?? (fallbackUser as any)?.level ?? 0)}
-                src={displayAvatar}
-                name={displayName}
-                size="sm"
-                frame={member?.user?.frame ?? fallbackUser?.frame ?? null}
-                className="relative h-full w-full"
-              />
-            ) : (
-              <span className="relative text-4xl leading-none drop-shadow-[0_10px_12px_rgba(0,0,0,0.55)]">📹</span>
-            )}
-          </div>
-        </div>
-
-        {effectiveMuted && (
-          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1">
-            <MicOff className="h-3 w-3 text-[color:var(--destructive)]" />
-          </div>
-        )}
-
-        {member?.is_moderator && !isHostSeat && (
-          <span
-            title="Moderator"
-            className="absolute right-1.5 bottom-1.5 grid h-2.5 w-2.5 place-items-center rounded-full bg-sky-500 ring-2 ring-black shadow-[0_0_8px_rgba(56,189,248,0.9)]"
-          />
-        )}
-      </button>
-    );
-  }
-
-  // Host seat (index 0) turns red + locked when the host is NOT sitting on it.
-  const hostAwayFromSeat = isHostSeat && !member;
-  const seatNo = index + 1;
-  const activeRing = !!member || isHostSeat;
-
-  return (
-    <div
-      data-seat-index={index}
-      data-user-dp={member?.user_id ?? ""}
-      className={`relative flex flex-col items-center gap-1.5 ${
-        glowing ? "drop-shadow-[0_0_18px_rgba(255,209,102,0.75)] animate-pulse" : ""
-      }`}
-    >
-      <button
-        onClick={() => {
-          if (member) return onLike();
-          if (locked && onEmptyManage) return onEmptyManage();
-          if (locked) return;
-          if (onEmptyManage) return onEmptyManage();
-          return onClaim();
-        }}
-        className="relative aspect-square w-full"
-        aria-label={member ? `Manage seat No.${seatNo}` : hostAwayFromSeat ? "Return to host seat" : locked ? `Locked No.${seatNo}` : `Take No.${seatNo}`}
-      >
-        {/* Speaking pulse ring — neon */}
-        {speaking && (
-          <span className="pointer-events-none absolute -inset-1.5 rounded-full bg-fuchsia-500/30 animate-ping" />
-        )}
-
-        {/* Neon circular border */}
-        <div
-          className={`pointer-events-none absolute inset-0 rounded-full border-2 transition-colors duration-300 ${
-            isHostSeat
-              ? "border-amber-400 shadow-[0_0_20px_-2px_rgba(251,191,36,0.7)]"
-              : speaking
-                ? "border-fuchsia-400 shadow-[0_0_18px_-2px_rgba(232,60,220,0.75)]"
-                : activeRing
-                  ? "border-fuchsia-500/70 shadow-[0_0_14px_-2px_rgba(191,0,255,0.5)]"
-                  : "border-dashed border-white/15 opacity-70"
-          }`}
-        />
-
-        {/* Inner disc (avatar / content) */}
-        <div className="absolute inset-[15%] overflow-visible rounded-full">
-          {remote?.videoTrack ? (
-            <div ref={videoRef} className="absolute inset-0 overflow-hidden rounded-full" />
-          ) : displayAvatar ? (
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-              <LevelAvatar
-                src={displayAvatar}
-                name={displayName}
-                level={member?.user?.vip_level ?? fallbackUser?.vip_level ?? 0}
-                size="sm"
-                showBadge={false}
-                frame={member?.user?.frame ?? fallbackUser?.frame ?? null}
-              />
-            </div>
-          ) : !hostAwayFromSeat ? (
-            <div className="absolute inset-0 grid place-items-center">
-              {locked ? <span className="text-xl">🔒</span> : <Plus className="h-5 w-5 text-white/40" />}
-            </div>
-          ) : null}
-          {hostAwayFromSeat && (
-            <div className="absolute inset-0 grid place-items-center bg-red-600/30 backdrop-blur-sm">
-              <span className="text-[9px] font-black uppercase tracking-wider text-white drop-shadow">Host</span>
-            </div>
-          )}
-        </div>
-
-        {/* Seat number badge (top-left) */}
-        <span className="absolute -top-1 -left-1 grid h-4 w-4 place-items-center rounded-full border border-white/30 bg-black/80 text-[8px] font-bold text-white">
-          {seatNo}
-        </span>
-
-        {/* Heart/like count (bottom-right) */}
-        <span className="absolute -bottom-1 right-1 flex items-center gap-0.5 rounded-full bg-black/70 px-1 py-[1px] text-[7px] font-bold text-white/80 backdrop-blur">
-          <Heart className="h-1.5 w-1.5 fill-rose-400 text-rose-400" />
-          {likeCount}
-        </span>
-
-        {/* Mic status */}
-        {member || (isHostSeat && displayAvatar) ? (
-          <span
-            className={`absolute bottom-0.5 right-0.5 z-20 grid h-3 w-3 place-items-center rounded-full ${
-              effectiveMuted ? "bg-red-500" : "bg-emerald-500"
-            }`}
-          >
-            {effectiveMuted ? (
-              <MicOff className="h-1.5 w-1.5 text-white" />
-            ) : (
-              <Mic className="h-1.5 w-1.5 text-white" />
-            )}
-          </span>
-        ) : null}
-
-        {/* Host crown */}
-        {isHostSeat && (
-          <span className="absolute -top-1 -right-1 grid h-4 w-4 place-items-center rounded-full bg-gradient-to-br from-[color:var(--gold)] to-orange-500 text-[10px] leading-none shadow-[0_0_10px_rgba(255,215,0,0.6)]">
-            👑
-          </span>
-        )}
-      </button>
-
-      {/* Username below seat */}
-      {member && displayName && (
-        <span className="max-w-[60px] truncate text-[10px] font-semibold text-white">
-          {displayName}
-        </span>
-      )}
-      {!member && (
-        <span className="text-[10px] text-white/35">No.{seatNo}</span>
-      )}
-    </div>
-  );
-}
 
 function SeatsSheet({
   open,
