@@ -103,8 +103,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
 
     const handlePopState = (e: PopStateEvent) => {
       e.preventDefault();
-      closeTopOverlay();
-      if (!closeTopOverlay()) setExitMenuOpen(true);
+      const closed = closeTopOverlay();
+      if (!closed) setExitMenuOpen(true);
       window.history.pushState(null, "", window.location.href);
     };
 
