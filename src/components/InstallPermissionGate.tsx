@@ -210,6 +210,7 @@ export function InstallPermissionGate() {
     setNeedsAsk(false);
   }
   function skip() {
+    window.localStorage.setItem(PERMISSION_GATE_KEY, "1");
     setNeedsAsk(false);
   }
 
