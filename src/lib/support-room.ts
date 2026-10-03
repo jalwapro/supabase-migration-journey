@@ -30,7 +30,7 @@ export type SupportRoomState = {
 };
 
 /** Live state of the single permanent 24/7 support room. */
-export function useSupportRoomState(pollMs = 4000) {
+export function useSupportRoomState(pollMs = 8000) {
   return useQuery({
     queryKey: ["support_room_state"],
     refetchInterval: pollMs,
@@ -109,7 +109,7 @@ export function useSupportActions() {
 export function useSupportAdminOverview() {
   return useQuery({
     queryKey: ["support_admin_overview"],
-    refetchInterval: 8000,
+    refetchInterval: 15000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("support_admin_overview", { _limit: 50 });
       if (error) throw error;
