@@ -150,3 +150,61 @@ body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-compone
     padding-top:0!important;
   }
 }
+
+
+/* Current SeatGrid is a single 5-column grid. Keep every direct seat cell identical;
+   legacy layout rules must not add internal gaps or change its height. */
+@media (max-width:430px){
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child{
+    display:grid!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    grid-auto-rows:68px!important;
+    align-items:start!important;
+    justify-items:center!important;
+    gap:clamp(2px,1vw,5px)!important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child > [data-seat]{
+    display:flex!important;
+    width:100%!important;
+    height:68px!important;
+    min-height:68px!important;
+    max-height:68px!important;
+    margin:0!important;
+    padding:0!important;
+    gap:0!important;
+    overflow:visible!important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] > button{
+    width:100%!important;
+    height:68px!important;
+    min-height:68px!important;
+    max-height:68px!important;
+    margin:0!important;
+    padding:0 1px!important;
+    gap:1px!important;
+    overflow:visible!important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"],
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art]{
+    width:46px!important;
+    height:46px!important;
+    min-width:46px!important;
+    min-height:46px!important;
+    max-width:46px!important;
+    max-height:46px!important;
+    flex:0 0 46px!important;
+    transform:none!important;
+    overflow:visible!important;
+  }
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image]{
+    width:46px!important;
+    height:46px!important;
+    min-width:46px!important;
+    min-height:46px!important;
+    max-width:46px!important;
+    max-height:46px!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    border-radius:0!important;
+  }
+}
