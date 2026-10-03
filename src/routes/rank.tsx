@@ -2,7 +2,6 @@ import "../room-rank-frame-alignment.css";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { LevelAvatar } from "@/components/LevelAvatar";
@@ -125,9 +124,9 @@ function RankPage() {
           
           <header className="relative z-20 px-3 pb-2" style={{ paddingTop: "max(14px, env(safe-area-inset-top))" }}>
             <div className="mx-auto grid max-w-[430px] grid-cols-[40px_minmax(0,1fr)_40px] items-center gap-2 px-1 pt-1">
-              <motion.button whileTap={{ scale: 0.92 }} onClick={() => router.history.back()} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white backdrop-blur-xl shadow-sm">
+              <button onClick={() => router.history.back()} className="grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white backdrop-blur-xl shadow-sm">
                 <ArrowLeft className="h-5 w-5" />
-              </motion.button>
+              </button>
               
               <div className="text-center">
                 <div className="inline-flex items-center gap-1.5 rounded-full bg-[#2A154A]/80 px-3 py-0.5 border border-white/10">
@@ -137,9 +136,9 @@ function RankPage() {
                 <h1 className="mt-1 font-serif text-[30px] font-extrabold italic leading-none tracking-tight text-white drop-shadow-md">Rankings</h1>
               </div>
               
-              <motion.button whileTap={{ scale: 0.92 }} onClick={() => setHelpOpen(true)} className="ml-auto grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white backdrop-blur-xl shadow-sm">
+              <button onClick={() => setHelpOpen(true)} className="ml-auto grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white backdrop-blur-xl shadow-sm">
                 <HelpCircle className="h-[18px] w-[18px]" />
-              </motion.button>
+              </button>
             </div>
             
             {/* Category Navigation */}
@@ -152,7 +151,7 @@ function RankPage() {
                       <button onClick={() => setCategory(k)} className={`relative flex items-center gap-1.5 whitespace-nowrap pb-3 transition-all duration-300 ${active ? "font-bold text-white scale-105" : "hover:text-white/80"}`}>
                         <Icon className={`h-3.5 w-3.5 transition-colors ${active ? "text-yellow-400" : "text-white/50"}`} />
                         {label}
-                        {active && <motion.span layoutId="activeCategoryIndicator" className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
+                        {active && <span className="absolute inset-x-0 -bottom-px h-[2.5px] rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.8)]" />}
                       </button>
                     </li>
                   ); 
@@ -220,13 +219,13 @@ function RankPage() {
             ) : rest.length === 0 && list.length <= 3 ? (
               <EmptyState />
             ) : (
-              <motion.ul initial="hidden" animate="show" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: .04 } } }} className="space-y-2.5">
+              <ul>
                 {rest.map((r, index) => (
-                  <motion.li key={r.user_id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+                  <li key={r.user_id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
                     <RankItem row={r} index={index + 4} />
-                  </motion.li>
+                  </li>
                 ))}
-              </motion.ul>
+              </ul>
             )}
           </section>
         </main>
@@ -252,24 +251,24 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
   const avatarOuter = first ? "h-[82px] w-[82px] sm:h-[92px] sm:w-[92px]" : "h-[68px] w-[68px] sm:h-[76px] sm:w-[76px]";
   
   const content = (
-    <motion.div whileHover={{ y: -5, scale: 1.02 }} whileTap={{ scale: .98 }} className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl backdrop-blur-xl ${cardHeight} ${cardWidth}`}>
+    <div className={`group relative flex w-full flex-col items-center overflow-visible rounded-[26px] border border-white/10 bg-gradient-to-b ${first ? 'from-[#3A1B60]/90 to-[#190930]/90 border-yellow-500/30' : 'from-[#251142]/90 to-[#120624]/90'} px-1.5 pb-3.5 pt-4 shadow-xl backdrop-blur-xl ${cardHeight} ${cardWidth}`}>
       <img src={rankImage} alt={`Top ${place} ranking`} className="pointer-events-none absolute inset-0 h-full w-full rounded-[26px] object-cover opacity-55" />
       <div className="pointer-events-none absolute inset-0 rounded-[26px] bg-gradient-to-b from-[#120624]/45 via-[#120624]/65 to-[#08010F]/90" />
       
       {first && (
         <>
           {/* Intense Royal Glow for Rank 1 */}
-          <motion.div animate={{ opacity: [.4, .8, .4], scale: [.9, 1.1, .9] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }} className="pointer-events-none absolute left-1/2 top-6 h-32 w-32 -translate-x-1/2 rounded-full bg-yellow-500/30 blur-2xl" />
+          <div className="pointer-events-none absolute left-1/2 top-6 h-32 w-32 -translate-x-1/2 rounded-full bg-yellow-500/30 blur-2xl" />
           <div className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-yellow-400/60 to-transparent" />
         </>
       )}
       
       <div className="relative z-10 mb-1 flex items-center justify-center">
         {first ? (
-          <motion.div animate={{ y: [0, -3, 0], rotate: [0, -3, 3, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="relative">
+          <div className="relative">
             <div className="absolute inset-0 rounded-full bg-yellow-500/40 blur-md" />
             <Crown className="relative h-8 w-8 fill-yellow-400 text-yellow-300 drop-shadow-[0_2px_8px_rgba(250,204,21,0.8)]" />
-          </motion.div>
+          </div>
         ) : (
           <Medal className={medalClass} />
         )}
@@ -277,7 +276,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
       
       <div className={`relative z-10 shrink-0 rounded-full border-2 p-[3px] shadow-lg ${avatarOuter} ${ring}`}>
         {/* Ideal container for inserting 3D regal lion frames later based on platform assets */}
-        {first && <motion.div animate={{ rotate: 360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} className="absolute -inset-1 rounded-full border-2 border-dashed border-yellow-400/50" />}
+        {first && <div className="absolute -inset-1 rounded-full border-2 border-dashed border-yellow-400/50" />}
         <div className="relative h-full w-full overflow-visible rounded-full bg-[#1A0B2E]">
           <LevelAvatar src={row?.avatar ?? undefined} name={row?.username ?? undefined} level={row?.level ?? 0} size={first ? "lg" : "md"} showBadge={false} frame={row?.frame} ring={row?.ring} />
         </div>
@@ -301,7 +300,7 @@ function PodiumCard({ row, place }: { row?: Row; place: 1 | 2 | 3 }) {
       </div>
       
       {!row && <div className="absolute inset-0 rounded-[26px] bg-[#0A0210]/60 backdrop-blur-[2px]" />}
-    </motion.div>
+    </div>
   );
   
   if (!row) return <div className="opacity-40 grayscale">{content}</div>;
@@ -339,7 +338,7 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
   const level = row?.level ?? fallback?.level ?? 1; 
   return (
     <div className="fixed inset-x-0 bottom-[72px] z-40 px-3">
-      <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="mx-auto max-w-[430px] rounded-[24px] border border-yellow-500/30 bg-[#251142]/95 p-3 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
+      <div className="mx-auto max-w-[430px] rounded-[24px] border border-yellow-500/30 bg-[#251142]/95 p-3 shadow-[0_-10px_40px_rgba(0,0,0,0.6)] backdrop-blur-2xl">
         <div className="grid grid-cols-[46px_46px_minmax(0,1fr)_auto] items-center gap-2.5">
           <div className="text-center bg-[#10051C] py-1 rounded-xl border border-white/10">
             <p className="text-[7px] font-black uppercase tracking-wider text-white/50">My Rank</p>
@@ -356,7 +355,7 @@ function MyRankCard({ row, fallback }: { row: Row | null; fallback: any }) {
             {formatScore(row?.score ?? 0)}
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   ); 
 }
@@ -386,22 +385,20 @@ function CountrySelect({ value, onChange, compact = false }: { value: string; on
   
   return (
     <div ref={ref} className="relative shrink-0">
-      <motion.button whileTap={{ scale: .95 }} onClick={() => setOpen(o => !o)} className={`${compact ? "px-3.5 py-1.5 text-[10px]" : "px-3 py-1.5 text-xs"} inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2A154A]/80 font-extrabold text-white shadow-sm`}>
+      <button onClick={() => setOpen(o => !o)} className={`${compact ? "px-3.5 py-1.5 text-[10px]" : "px-3 py-1.5 text-xs"} inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#2A154A]/80 font-extrabold text-white shadow-sm`}>
         <span>{value === "Global" ? "🌐 Global" : `${COUNTRY_FLAG[value] ?? "🏳️"} ${value}`}</span>
         <ArrowUpDown className="h-3 w-3 text-yellow-400" />
-      </motion.button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ opacity: 0, y: 10, scale: .95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: .95 }} className="absolute right-0 z-50 mt-2 max-h-64 w-48 overflow-auto rounded-2xl border border-white/10 bg-[#1D0C33] p-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl no-scrollbar">
+      </button>
+      {open && (
+          <div className="absolute right-0 z-50 mt-2 max-h-64 w-48 overflow-auto rounded-2xl border border-white/10 bg-[#1D0C33] p-1.5 shadow-[0_15px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl no-scrollbar">
             {options.map(c => (
               <button key={c} onClick={() => { onChange(c); setOpen(false) }} className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-colors ${value === c ? "bg-yellow-500/20 text-yellow-400 font-bold border border-yellow-500/30" : "text-white/70 hover:bg-[#2A154A] hover:text-white"}`}>
                 <span>{c === "Global" ? "🌐" : (COUNTRY_FLAG[c] ?? "🏳️")}</span>
                 <span className="truncate">{c}</span>
               </button>
             ))}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </div>
   ); 
 }
@@ -421,7 +418,7 @@ function EmptyState() {
 function HelpModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/80 p-4 backdrop-blur-md" onClick={onClose}>
-      <motion.div initial={{ scale: .9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: .9, opacity: 0 }} className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#1D0C33] p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
+      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-[#1D0C33] p-6 shadow-[0_0_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-base font-extrabold text-white">
             <ShieldCheck className="h-5 w-5 text-yellow-400" /> Ranking Guidelines
@@ -437,7 +434,7 @@ function HelpModal({ onClose }: { onClose: () => void }) {
         <p className="mt-5 text-center text-[10px] font-medium text-yellow-500/70 uppercase tracking-wider">
           Resets Daily @ 00:00 UTC · Weekly on Monday · Monthly on the 1st
         </p>
-      </motion.div>
+      </div>
     </div>
   )
 }
