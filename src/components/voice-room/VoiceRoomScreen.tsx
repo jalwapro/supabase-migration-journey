@@ -306,7 +306,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <GiftAnimationPlayer roomId={roomId} />
         <div data-jalwa-live-component="voice.room-content" className="relative flex min-h-0 flex-1 flex-col overflow-visible justify-between">
           <div data-jalwa-live-component="voice.seat-area" className="relative flex-1 min-h-0 overflow-visible bg-transparent pt-0 px-1 no-scrollbar">
-            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] scale-105 transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={handleHostSeatProfileTap} />
+            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={handleHostSeatProfileTap} />
           </div>
           
           {activeFlyingEmoji && (
