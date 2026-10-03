@@ -81,8 +81,6 @@ export function useGlobalRealtime() {
     if (!user) return;
     const uid = user.id;
 
-    void import("@/lib/fcm-client").then((m) => m.autoEnableFcm(uid)).catch(() => {});
-
     const ch1 = subscribe(qc, `me:${uid}`, [
       {
         table: "profiles",
