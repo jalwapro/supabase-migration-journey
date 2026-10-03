@@ -18,8 +18,8 @@ type RoomViewer = { id: string; username: string; avatar: string | null };
 
 function EmptySeatArt({ locked }: { locked: boolean }) {
   return (
-    <span className="relative flex h-full w-full items-center justify-center overflow-visible">
-      <img src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain border-0 shadow-none" draggable={false} />
+    <span data-seat-empty-art="true" className="relative flex h-full w-full items-center justify-center overflow-visible">
+      <img data-seat-empty-art-image="true" src={DEFAULT_SEAT_AVATAR} alt="" className="h-full w-full object-contain border-0 shadow-none" draggable={false} />
       {locked && <Lock className="pointer-events-none absolute z-[20] h-3.5 w-3.5 text-amber-400 drop-shadow" />}
     </span>
   );
