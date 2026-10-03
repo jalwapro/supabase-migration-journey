@@ -1,5 +1,6 @@
 import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -51,6 +52,7 @@ export function LevelAvatar({
 }) {
 
   const tier = tierForLevel(level);
+  const rootRef = useRef<HTMLElement | null>(null);
   const px = SIZE_PX[size];
   const initial = (name ?? "J").slice(0, 1).toUpperCase();
   // If the user has an equipped shop frame, use it. Otherwise auto-apply the
@@ -117,6 +119,32 @@ export function LevelAvatar({
   const frameIsVideo = !!cleanFrameUrl && /\.(mp4|webm|mov)($|\?)/i.test(cleanFrameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
 
+  // Keep decorative frame/ring videos paused when this avatar is off-screen.
+  // Home can render many avatars at once; decoding all of them continuously
+  // wastes CPU and heats Android devices.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const videos = Array.from(root.querySelectorAll<HTMLVideoElement>("video"));
+    if (!videos.length) return;
+    const playVisible = (visible: boolean) => {
+      for (const video of videos) {
+        if (visible) void video.play().catch(() => undefined);
+        else video.pause();
+      }
+    };
+    if (typeof IntersectionObserver === "undefined") {
+      playVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => playVisible(entry?.isIntersecting ?? true), { threshold: 0.01 });
+    observer.observe(root);
+    return () => {
+      observer.disconnect();
+      videos.forEach((video) => video.pause());
+    };
+  }, [ringUrl, cleanFrameUrl, frameIsVideo, ringIsVideo]);
+
   const Wrapper: any = userId ? Link : "div";
   const wrapperProps: any = userId
     ? {
@@ -129,6 +157,7 @@ export function LevelAvatar({
 
   return (
     <Wrapper
+      ref={rootRef}
       {...wrapperProps}
       className={`relative z-0 block shrink-0 ${userId ? "cursor-pointer" : ""} ${className}`}
       style={{ width: px, height: px }}
@@ -141,14 +170,13 @@ export function LevelAvatar({
             <video
               key={ringUrl}
               src={ringUrl}
-              autoPlay
               muted
               loop
               playsInline
-              preload="auto"
+              preload="metadata"
               className="h-full w-full object-contain"
               style={{ backgroundColor: "transparent" }}
-              onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)}
+
             />
           ) : (
             <img src={ringUrl} alt="" className="h-full w-full object-contain" draggable={false} />
@@ -233,7 +261,7 @@ export function LevelAvatar({
             ) : effectiveChroma ? (
               <ChromaKeyImage src={cleanFrameUrl!} color={effectiveChroma.color} tolerance={effectiveChroma.tolerance} softness={effectiveChroma.softness} />
             ) : frameIsVideo ? (
-              <video key={cleanFrameUrl} src={cleanFrameUrl} autoPlay muted loop playsInline preload="auto" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
+              <video key={cleanFrameUrl} src={cleanFrameUrl} muted loop playsInline preload="metadata" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
             ) : (
               <img src={cleanFrameUrl ?? undefined} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
             )}
