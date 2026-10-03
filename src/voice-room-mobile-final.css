@@ -1,329 +1,222 @@
-/* JALWA GLOBAL LIVE — FINAL MOBILE ROOM LAYER
- * Single mobile composition for 320–430px. Existing room logic is untouched.
+/* JALWA GLOBAL LIVE — VoiceRoom layout contract
+ * Scoped only to the real VoiceRoom root. No generic grid/header/nav selectors.
+ * Functional room logic, LiveKit and realtime behavior are untouched.
  */
-:root {
-  --jalwa-phone-max: 430px;
-  --jalwa-room-gutter: clamp(7px, 2.2vw, 11px);
-  --jalwa-safe-top: env(safe-area-inset-top, 0px);
-  --jalwa-safe-bottom: env(safe-area-inset-bottom, 0px);
+
+:root{
+  --jalwa-room-max:480px;
+  --jalwa-room-bottom:calc(54px + env(safe-area-inset-bottom,0px));
 }
 
-html, body, #root { max-width: 100%; overflow-x: hidden !important; }
-body:has([data-jalwa-live-component="voice.seat-area"]) {
-  width: 100%; max-width: 100vw; min-height: 100dvh;
-  overflow-x: hidden !important; overscroll-behavior-x: none;
-  background: #05030a !important;
+html,body,#root{max-width:100%;overflow-x:hidden}
+body:has(main[data-jalwa-voice-room-root="true"]){
+  overflow:hidden!important;
+  overscroll-behavior:none;
+  background:#05030a!important;
 }
 
-/* The room is a phone app canvas, never a desktop dashboard. */
-body:has([data-jalwa-live-component="voice.seat-area"]) .app-frame-outer,
-body:has([data-jalwa-live-component="voice.seat-area"]) .app-frame,
-body:has([data-jalwa-live-component="voice.seat-area"]) .relative.z-10,
-body:has([data-jalwa-live-component="voice.seat-area"]) div.max-w-md {
-  width: min(100vw, var(--jalwa-phone-max)) !important;
-  max-width: var(--jalwa-phone-max) !important;
-  min-width: 0 !important;
-  margin-inline: auto !important;
-  box-sizing: border-box !important;
-  overflow-x: hidden !important;
+main[data-jalwa-voice-room-root="true"]{
+  position:fixed!important;
+  inset:0!important;
+  width:100%!important;
+  max-width:var(--jalwa-room-max)!important;
+  height:100dvh!important;
+  min-height:100svh!important;
+  margin:0 auto!important;
+  padding:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  isolation:isolate;
+  background:#090712!important;
+  color:#fff;
 }
 
-body:has([data-jalwa-live-component="voice.seat-area"]) div.max-w-md {
-  padding-top: var(--jalwa-safe-top) !important;
-  padding-bottom: calc(78px + var(--jalwa-safe-bottom)) !important;
+[data-jalwa-voice-room-root="true"]>*{min-width:0}
+[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.room-header"]{
+  position:relative;
+  z-index:70;
+  flex:0 0 auto;
+  width:100%;
+  min-width:0;
+  padding:4px 7px 0;
+}
+[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.room-content"]{
+  position:relative;
+  z-index:10;
+  display:flex;
+  flex:1 1 auto;
+  min-height:0;
+  flex-direction:column;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 14%,rgba(168,85,247,.13),transparent 36%),
+    linear-gradient(180deg,#0c0915 0%,#08060e 100%);
+}
+[data-jalwa-voice-room-root="true"]>[data-jalwa-live-component="voice.room-content"]>[data-jalwa-live-component="voice.seat-area"]{
+  flex:1 1 auto;
+  min-height:0;
+  width:100%;
+  overflow:visible;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:3px 4px 5px;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-grid-root="true"]{
+  width:100%!important;
+  max-width:480px!important;
+  min-width:0!important;
+  margin:0 auto!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  grid-auto-rows:68px!important;
+  gap:4px 2px!important;
+  width:100%!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  align-items:start!important;
+  justify-items:stretch!important;
+  box-sizing:border-box!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]{
+  width:100%!important;
+  height:68px!important;
+  min-height:68px!important;
+  max-height:68px!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>button,
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>div{
+  width:100%!important;
+  height:68px!important;
+  min-height:68px!important;
+  max-height:68px!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0 1px!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:1px!important;
+  overflow:visible!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-media="true"],
+[data-jalwa-voice-room-root="true"] [data-seat-empty-art]{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+  max-width:48px!important;
+  max-height:48px!important;
+  flex:0 0 48px!important;
+  margin:0!important;
+  padding:0!important;
+  transform:none!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-empty-art-image]{
+  display:block!important;
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  min-height:48px!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  border-radius:0!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-media]+span{
+  display:block!important;
+  width:100%!important;
+  height:12px!important;
+  min-height:12px!important;
+  max-width:100%!important;
+  min-width:0!important;
+  line-height:12px!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-media]+span+span{
+  height:10px!important;
+  min-height:10px!important;
+  line-height:10px!important;
+}
+[data-jalwa-voice-room-root="true"] [data-seat-cell] img{
+  max-width:none;
+}
+[data-jalwa-voice-room-root="true"] [data-voice-room-lower-panel]{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+}
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.announcement"]{
+  flex:0 0 auto;
+  width:100%;
+  min-width:0;
+  padding:0 6px 3px;
+  box-sizing:border-box;
+}
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"]{
+  position:relative!important;
+  z-index:80!important;
+  flex:0 0 calc(54px + env(safe-area-inset-bottom,0px))!important;
+  width:100%!important;
+  min-height:calc(54px + env(safe-area-inset-bottom,0px))!important;
+  height:calc(54px + env(safe-area-inset-bottom,0px))!important;
+  margin:0!important;
+  padding:3px max(5px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(5px,env(safe-area-inset-right,0px))!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-around!important;
+  gap:2px!important;
+  border-top:1px solid rgba(255,255,255,.12)!important;
+  background:rgba(8,6,14,.96)!important;
+  backdrop-filter:blur(18px);
+}
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"] button{
+  flex:1 1 0!important;
+  min-width:38px!important;
+  min-height:38px!important;
+  max-width:58px;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"] button:nth-child(5){
+  flex:0 0 44px!important;
+}
+[data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.bottom-nav"] button:nth-child(4){
+  flex:0 0 42px!important;
 }
 
-@media (min-width: 431px) {
-  body:has([data-jalwa-live-component="voice.seat-area"]) {
-    display: flex; justify-content: center; align-items: flex-start;
-    background: radial-gradient(circle at 50% 10%, rgba(139,92,246,.18), transparent 30%), #020106 !important;
+@media(min-width:481px){
+  body:has(main[data-jalwa-voice-room-root="true"]){background:#020106!important}
+}
+@media(max-width:359px){
+  [data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{gap:3px 1px!important}
+  [data-jalwa-voice-room-root="true"] [data-seat-media="true"],
+  [data-jalwa-voice-room-root="true"] [data-seat-empty-art]{
+    width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;flex-basis:44px!important;
   }
+  [data-jalwa-voice-room-root="true"] [data-seat-empty-art-image]{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important}
+  [data-jalwa-voice-room-root="true"] [data-jalwa-live-component="voice.announcement"]{padding-inline:4px}
 }
-
-/* Header/action rows stay compact and never become desktop rows. */
-body:has([data-jalwa-live-component="voice.seat-area"]) header,
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-room-header] {
-  width: 100% !important; max-width: 100% !important; min-width: 0 !important;
-  box-sizing: border-box !important; overflow: hidden !important;
+@media(prefers-reduced-motion:reduce){
+  [data-jalwa-voice-room-root="true"] *{animation-duration:.001ms!important;transition-duration:.001ms!important}
 }
-body:has([data-jalwa-live-component="voice.seat-area"]) header button,
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-room-header] button {
-  min-width: 44px !important; min-height: 44px !important; flex: 0 0 auto !important;
-}
-
-/* EXACT SeatsGrid structure: host is the center column; 8 left + 8 right + 4 bottom. */
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] {
-  width: 100% !important; max-width: 100% !important; min-width: 0 !important;
-  box-sizing: border-box !important; overflow: hidden !important;
-  padding-inline: var(--jalwa-room-gutter) !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:first-child {
-  display: grid !important;
-  grid-template-columns: minmax(0,1fr) minmax(0,1.28fr) minmax(0,1fr) !important;
-  gap: clamp(4px,1.3vw,8px) !important;
-  min-width: 0 !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:first-child > div:first-child,
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:first-child > div:last-child {
-  display: grid !important; grid-template-columns: repeat(2,minmax(0,1fr)) !important;
-  gap: clamp(4px,1.3vw,8px) !important; min-width: 0 !important; align-content: start !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:last-child {
-  display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)) !important;
-  gap: clamp(4px,1.3vw,8px) !important; min-width: 0 !important;
-}
-
-/* Seat geometry is canonical: every slot is one 68px cell.
- * Do NOT apply generic img/span sizing here: seat PNG/WebP art, DP frames and
- * rings need their own aspect ratio and may intentionally overflow the avatar cell.
- */
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] {
-  width: 100% !important;
-  height: 68px !important;
-  min-height: 68px !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  box-sizing: border-box !important;
-  overflow: visible !important;
-  touch-action: manipulation !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"] {
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  flex: 0 0 46px !important;
-  overflow: visible !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art] {
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  flex: 0 0 46px !important;
-  overflow: visible !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image] {
-  display: block !important;
-  width: 46px !important;
-  height: 46px !important;
-  max-width: none !important;
-  object-fit: contain !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] button {
-  min-width: 0 !important;
-  box-sizing: border-box !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"] img {
-  max-width: none !important;
-}
-
-/* Host remains centered and is never pushed below the seats. */
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.host"] {
-  min-width: 0 !important; width: 100% !important; height: 100% !important;
-  overflow: visible !important; align-self: stretch !important;
-}
-
-/* Internal panels cannot create a second page-wide column. */
-body:has([data-jalwa-live-component="voice.seat-area"]) [class*="overflow-y-auto"] {
-  min-width: 0 !important; max-width: 100% !important; overflow-x: hidden !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) textarea,
-body:has([data-jalwa-live-component="voice.seat-area"]) input {
-  min-width: 0 !important; max-width: 100% !important; box-sizing: border-box !important;
-}
-
-/* One-row quick actions. */
-body:has([data-jalwa-live-component="voice.seat-area"]) [class*="flex-nowrap"] {
-  flex-wrap: nowrap !important; min-width: 0 !important; max-width: 100% !important;
-}
-
-/* Fixed bottom app navigation with iOS/Android safe-area. */
-body:has([data-jalwa-live-component="voice.seat-area"]) nav.fixed,
-body:has([data-jalwa-live-component="voice.seat-area"]) [class*="fixed"][class*="bottom-0"] {
-  left: 50% !important; right: auto !important;
-  width: min(100vw, var(--jalwa-phone-max)) !important;
-  max-width: var(--jalwa-phone-max) !important;
-  transform: translateX(-50%) !important;
-  padding-bottom: var(--jalwa-safe-bottom) !important;
-  box-sizing: border-box !important; z-index: 100 !important;
-}
-
-body:has([data-jalwa-live-component="voice.seat-area"]) button,
-body:has([data-jalwa-live-component="voice.seat-area"]) [role="button"] {
-  -webkit-tap-highlight-color: transparent;
-}
-
-@media (max-width: 359px) {
-  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] { padding-inline: 5px !important; }
-  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:first-child,
-  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:first-child > div:first-child,
-  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:first-child > div:last-child,
-  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:last-child { gap: 3px !important; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  body:has([data-jalwa-live-component="voice.seat-area"]) *,
-  body:has([data-jalwa-live-component="voice.seat-area"]) *::before,
-  body:has([data-jalwa-live-component="voice.seat-area"]) *::after {
-    animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important;
-  }
-}
-
-
-/* Full-screen room isolation: never show the app chrome behind the live room. */
-body:has(main[data-jalwa-voice-room="true"]) [data-jalwa-global-nav],
-body:has(main[data-jalwa-voice-room="true"]) [data-jalwa-global-footer],
-body:has(main[data-jalwa-voice-room="true"]) footer:not(main footer) {
-  display: none !important;
-}
-body:has(main[data-jalwa-voice-room="true"]) header:not([data-room-header="true"]) {
-  display: none !important;
-}
-body:has(main[data-jalwa-voice-room="true"]) {
-  overflow: hidden !important;
-  height: 100dvh !important;
-}
-body:has(main[data-jalwa-voice-room="true"]) main[data-jalwa-voice-room="true"] {
-  top: 0 !important;
-  bottom: 0 !important;
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  padding: 0 !important;
-  margin: 0 auto !important;
-}
-body:has(main[data-jalwa-voice-room="true"]) main[data-jalwa-voice-room="true"] [data-room-header="true"] {
-  padding-top: env(safe-area-inset-top, 0px) !important;
-}
-body:has(main[data-jalwa-voice-room="true"]) main[data-jalwa-voice-room="true"] > nav {
-  flex: 0 0 auto !important;
-  box-sizing: border-box !important;
-  height: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
-
-/* Canonical current SeatGrid override.
- * SeatGrid now renders one 5-column grid (1..20). Older 8-left/8-right/4-bottom
- * selectors above must never reshape individual seat cells.
- */
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  grid-auto-rows: 68px !important;
-  align-items: start !important;
-  justify-items: center !important;
-  gap: clamp(2px, 1vw, 5px) !important;
-  width: 100% !important;
-  min-width: 0 !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child > [data-seat] {
-  display: flex !important;
-  width: 100% !important;
-  height: 68px !important;
-  min-height: 68px !important;
-  max-height: 68px !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  gap: 0 !important;
-  overflow: visible !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] > button {
-  width: 100% !important;
-  height: 68px !important;
-  min-height: 68px !important;
-  max-height: 68px !important;
-  min-width: 0 !important;
-  margin: 0 !important;
-  padding: 0 1px !important;
-  gap: 1px !important;
-  overflow: visible !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.host"][data-seat] > div {
-  width: 100% !important;
-  height: 68px !important;
-  min-height: 68px !important;
-  max-height: 68px !important;
-  margin: 0 !important;
-  padding: 0 1px !important;
-  gap: 1px !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: flex-start !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"] {
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  max-width: 46px !important;
-  max-height: 46px !important;
-  flex: 0 0 46px !important;
-  transform: none !important;
-  overflow: visible !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art],
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image] {
-  width: 46px !important;
-  height: 46px !important;
-  min-width: 46px !important;
-  min-height: 46px !important;
-  max-width: 46px !important;
-  max-height: 46px !important;
-  flex: 0 0 46px !important;
-  transform: none !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image] {
-  object-fit: contain !important;
-  object-position: center !important;
-  border-radius: 0 !important;
-}
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] > button > span:not([data-avatar="true"]):not([data-seat-empty-art]),
-body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"] + span {
-  max-width: 100% !important;
-  min-width: 0 !important;
-}
-@media (max-width:359px) {
-  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child {
-    gap: 2px !important;
-  }
-}
-
-
-/* Explicit VoiceRoom seat-grid contract */
-@media (max-width:430px){
-body [data-seat-grid-root="true"]{width:100%!important;max-width:430px!important;padding:4px!important;box-sizing:border-box!important}
-body [data-seat-grid-cells="true"]{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(4,68px)!important;grid-auto-rows:68px!important;gap:4px 2px!important;width:100%!important;min-width:0!important;align-items:start!important;justify-items:stretch!important}
-body [data-seat-grid-cells="true"]>[data-seat-cell="true"]{width:100%!important;height:68px!important;min-height:68px!important;max-height:68px!important;margin:0!important;padding:0!important;display:flex!important;align-items:flex-start!important;justify-content:center!important;overflow:visible!important;box-sizing:border-box!important}
-body [data-seat-grid-cells="true"]>[data-seat-cell="true"]>button,body [data-seat-grid-cells="true"]>[data-seat-cell="true"]>div{width:100%!important;height:68px!important;min-height:68px!important;max-height:68px!important;min-width:0!important;padding:0 1px!important;margin:0!important;gap:1px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;box-sizing:border-box!important;overflow:visible!important}
-body [data-seat-grid-root="true"] [data-seat-media="true"],body [data-seat-grid-root="true"] [data-seat-empty-art]{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;max-width:48px!important;max-height:48px!important;flex:0 0 48px!important;transform:none!important;overflow:visible!important}
-body [data-seat-grid-root="true"] [data-seat-empty-art-image]{width:48px!important;height:48px!important;max-width:none!important;object-fit:contain!important;object-position:center!important;border-radius:0!important}
-body [data-seat-grid-root="true"] [data-seat-media]+span{width:100%!important;height:12px!important;min-height:12px!important;line-height:12px!important;min-width:0!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
-body [data-seat-grid-root="true"] [data-seat-media]+span+span{height:10px!important;min-height:10px!important;line-height:10px!important}
-}
-@media(max-width:359px){body [data-seat-grid-cells="true"]{gap:3px 1px!important}body [data-seat-grid-root="true"] [data-seat-media="true"],body [data-seat-grid-root="true"] [data-seat-empty-art]{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;flex-basis:44px!important}body [data-seat-grid-root="true"] [data-seat-empty-art-image]{width:44px!important;height:44px!important}}
-
-
-/* FINAL JALWA VOICEROOM VISUAL CONTRACT — scoped, no legacy layout leakage */
-[data-jalwa-voice-room-root="true"]{background:#090712!important;isolation:isolate;overscroll-behavior:none}
-[data-jalwa-voice-room-root="true"] [data-voice-room-stage="true"]{background:radial-gradient(circle at 50% 18%,rgba(168,85,247,.10),transparent 42%),linear-gradient(180deg,#0b0813 0%,#08060e 100%)!important}
-[data-jalwa-voice-room-root="true"] [data-voice-room-seat-stage="true"]{display:flex!important;align-items:flex-start!important;justify-content:center!important;min-width:0!important;padding:2px 2px 4px!important}
-[data-jalwa-voice-room-root="true"] [data-seat-grid-root="true"]{width:100%!important;max-width:480px!important;margin:0 auto!important}
-[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-auto-rows:68px!important;gap:5px 2px!important;width:100%!important;align-items:start!important;justify-items:stretch!important}
-[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]{width:100%!important;height:68px!important;min-height:68px!important;max-height:68px!important;padding:0!important;margin:0!important;box-sizing:border-box!important}
-[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>button,[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]>div{width:100%!important;height:68px!important;min-height:68px!important;padding:0 1px!important;margin:0!important;gap:1px!important;box-sizing:border-box!important;align-items:center!important;justify-content:flex-start!important;overflow:visible!important}
-[data-jalwa-voice-room-root="true"] [data-seat-media="true"],[data-jalwa-voice-room-root="true"] [data-seat-empty-art]{width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;max-width:48px!important;max-height:48px!important;flex:0 0 48px!important;transform:none!important;overflow:visible!important}
-[data-jalwa-voice-room-root="true"] [data-seat-empty-art-image]{width:48px!important;height:48px!important;object-fit:contain!important;object-position:center!important;border-radius:0!important}
-[data-jalwa-voice-room-root="true"] [data-seat-media]+span{height:12px!important;min-height:12px!important;line-height:12px!important;width:100%!important;max-width:100%!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
-[data-jalwa-voice-room-root="true"] [data-seat-media]+span+span{height:10px!important;min-height:10px!important;line-height:10px!important}
-[data-jalwa-voice-room-root="true"] [data-voice-room-lower-panel]{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
-[data-jalwa-voice-room-root="true"] [data-voice-room-toolbar]{flex:0 0 auto!important;min-height:54px!important;background:rgba(10,8,17,.96)!important;box-shadow:0 -12px 35px rgba(0,0,0,.35)!important}
-@media(max-width:430px){[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{gap:4px 2px!important}[data-jalwa-voice-room-root="true"] [data-voice-room-lower-panel]{grid-template-columns:minmax(0,1fr)!important}[data-jalwa-voice-room-root="true"] [data-voice-room-lower-panel]>div:nth-child(2){display:none!important}[data-jalwa-voice-room-root="true"] [data-voice-room-seat-stage="true"]{padding-inline:2px!important}}
-@media(max-width:359px){[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{gap:3px 1px!important}[data-jalwa-voice-room-root="true"] [data-seat-media="true"],[data-jalwa-voice-room-root="true"] [data-seat-empty-art]{width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;max-width:44px!important;max-height:44px!important;flex-basis:44px!important}[data-jalwa-voice-room-root="true"] [data-seat-empty-art-image]{width:44px!important;height:44px!important}}
