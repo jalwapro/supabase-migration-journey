@@ -88,7 +88,7 @@ export function GlobalMinimizedVoiceRoom() {
       if (error) throw error;
       return (data as unknown as SeatPresence | null) ?? null;
     },
-    refetchInterval: 10_000,
+    refetchInterval: 15_000,
     staleTime: 5_000,
   });
 
