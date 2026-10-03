@@ -201,3 +201,97 @@ body:has(main[data-jalwa-voice-room="true"]) main[data-jalwa-voice-room="true"] 
   height: calc(52px + env(safe-area-inset-bottom, 0px)) !important;
   padding-bottom: env(safe-area-inset-bottom, 0px) !important;
 }
+
+
+/* Canonical current SeatGrid override.
+ * SeatGrid now renders one 5-column grid (1..20). Older 8-left/8-right/4-bottom
+ * selectors above must never reshape individual seat cells.
+ */
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-auto-rows: 68px !important;
+  align-items: start !important;
+  justify-items: center !important;
+  gap: clamp(2px, 1vw, 5px) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child > [data-seat] {
+  display: flex !important;
+  width: 100% !important;
+  height: 68px !important;
+  min-height: 68px !important;
+  max-height: 68px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  overflow: visible !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] > button {
+  width: 100% !important;
+  height: 68px !important;
+  min-height: 68px !important;
+  max-height: 68px !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 1px !important;
+  gap: 1px !important;
+  overflow: visible !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-jalwa-live-component="voice.host"][data-seat] > div {
+  width: 100% !important;
+  height: 68px !important;
+  min-height: 68px !important;
+  max-height: 68px !important;
+  margin: 0 !important;
+  padding: 0 1px !important;
+  gap: 1px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"] {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  max-width: 46px !important;
+  max-height: 46px !important;
+  flex: 0 0 46px !important;
+  transform: none !important;
+  overflow: visible !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art],
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image] {
+  width: 46px !important;
+  height: 46px !important;
+  min-width: 46px !important;
+  min-height: 46px !important;
+  max-width: 46px !important;
+  max-height: 46px !important;
+  flex: 0 0 46px !important;
+  transform: none !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-seat-empty-art-image] {
+  object-fit: contain !important;
+  object-position: center !important;
+  border-radius: 0 !important;
+}
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] > button > span:not([data-avatar="true"]):not([data-seat-empty-art]),
+body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat] [data-avatar="true"] + span {
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+@media (max-width:359px) {
+  body:has([data-jalwa-live-component="voice.seat-area"]) [data-seat-grid] > div:only-child {
+    gap: 2px !important;
+  }
+}
