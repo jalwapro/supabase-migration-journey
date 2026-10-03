@@ -184,28 +184,35 @@ export function useGlobalRealtime() {
       },
     ]);
 
-    let chCatalog = supabase.channel(`app-catalog:${uid}`);
-    for (const table of APP_REALTIME_TABLES) {
-      chCatalog = (
-        chCatalog as unknown as {
-          on: (
-            type: string,
-            cfg: Record<string, unknown>,
-            cb: () => void,
-          ) => typeof chCatalog;
-        }
-      ).on(
-        "postgres_changes",
-        { event: "*", schema: "public", table },
-        () => void qc.invalidateQueries({ refetchType: "active" }),
-      );
-    }
-    chCatalog.subscribe((status, error) => {
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-        console.warn("[Realtime] app-catalog", status, error);
+    // The catalog contains many low-frequency admin/shop tables. Creating this
+    // channel during first paint adds a large realtime subscription burst.
+    // Defer it until the app has rendered, while keeping all user-critical
+    // realtime channels above immediate.
+    let chCatalog: ReturnType<typeof supabase.channel> | null = null;
+    const catalogTimer = window.setTimeout(() => {
+      let channel = supabase.channel(`app-catalog:${uid}`);
+      for (const table of APP_REALTIME_TABLES) {
+        channel = (
+          channel as unknown as {
+            on: (
+              type: string,
+              cfg: Record<string, unknown>,
+              cb: () => void,
+            ) => typeof channel;
+          }
+        ).on(
+          "postgres_changes",
+          { event: "*", schema: "public", table },
+          () => void qc.invalidateQueries({ refetchType: "active" }),
+        );
       }
-      if (status === "SUBSCRIBED") void qc.invalidateQueries({ refetchType: "active" });
-    });
+      chCatalog = channel;
+      channel.subscribe((status, error) => {
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          console.warn("[Realtime] app-catalog", status, error);
+        }
+      });
+    }, 2000);
 
     const ch4 = subscribe(qc, `assets:${uid}`, [
       {
@@ -278,12 +285,9 @@ export function useGlobalRealtime() {
       .subscribe();
 
     const reconcile = () => {
-      if (document.visibilityState === "visible") {
-        void qc.invalidateQueries({ refetchType: "active" });
-      }
+      void qc.invalidateQueries({ refetchType: "active" });
     };
     window.addEventListener("online", reconcile);
-    document.addEventListener("visibilitychange", reconcile);
 
     return () => {
       void supabase.removeChannel(ch1);
@@ -293,10 +297,10 @@ export function useGlobalRealtime() {
       void supabase.removeChannel(ch3c);
       void supabase.removeChannel(chPopularity);
       void supabase.removeChannel(ch4);
-      void supabase.removeChannel(chCatalog);
+      window.clearTimeout(catalogTimer);
+      if (chCatalog) void supabase.removeChannel(chCatalog);
       void supabase.removeChannel(chNotif);
       window.removeEventListener("online", reconcile);
-      document.removeEventListener("visibilitychange", reconcile);
     };
   }, [user, qc]);
 }
