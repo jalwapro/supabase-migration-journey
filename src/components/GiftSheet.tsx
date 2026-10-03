@@ -55,7 +55,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
  const performSend=()=>{if(!selectedGift||send.isPending)return;if(!effectiveTargets.length){toast.error("Pick a receiver");return;}onClose();send.mutate({gift:selectedGift,targets:effectiveTargets,quantity:qty});};
  const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(id===profile?.id||sendToAll)return;setSelectedReceiverIds(prev=>prev.includes(id)?prev.filter(item=>item!==id):[...prev,id]);};
  return (
-  <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 transition-opacity" onClick={onClose}>
+  <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/50 p-0 transition-opacity" onClick={onClose}>
     <div
       onClick={(e) => e.stopPropagation()}
       className="relative flex w-full max-w-lg h-[310px] flex-col overflow-hidden rounded-t-[20px] border border-white/10 bg-[#121212]/95 backdrop-blur-xl text-white shadow-2xl animate-in slide-in-from-bottom duration-200"
@@ -134,7 +134,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
       </div>
 
       {confirmOpen && selectedGift && (
-        <div className="fixed inset-0 z-[60] grid place-items-center bg-black/70 p-5 backdrop-blur-sm animate-in fade-in duration-150" onClick={() => setConfirmOpen(false)}>
+        <div className="fixed inset-0 z-[2147483100] grid place-items-center bg-black/70 p-5 backdrop-blur-sm animate-in fade-in duration-150" onClick={() => setConfirmOpen(false)}>
           <div className="w-full max-w-sm rounded-2xl bg-[#1a1128] border border-white/15 p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="text-base font-black text-white">Confirm VIP Gift</div>
             <p className="mt-1.5 text-xs text-white/60">
