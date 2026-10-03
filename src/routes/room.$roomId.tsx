@@ -768,11 +768,6 @@ function RoomPage() {
       return [...server, ...stillPending];
     });
 
-    const likeMap: Record<number, number> = {};
-    (likeData ?? []).forEach((row: { seat_index: number }) => {
-      likeMap[row.seat_index] = (likeMap[row.seat_index] ?? 0) + 1;
-    });
-    setSeatLikes(likeMap);
     if (popData) {
       setPopularity({
         coin_score: Number((popData as { coin_score: number }).coin_score ?? 0),
@@ -1000,10 +995,6 @@ function RoomPage() {
         },
         (payload) => {
           const row = payload.new as { seat_index: number };
-          setSeatLikes((prev) => ({
-            ...prev,
-            [row.seat_index]: (prev[row.seat_index] ?? 0) + 1,
-          }));
           setPopularity((p) => ({ ...p, like_count: p.like_count + 1 }));
         },
       )
@@ -2103,8 +2094,10 @@ function RoomPage() {
       gift_score: giftPoints[r.host_id] ?? 0
     };
 
+    // Voice rooms use canonical human-visible numbering: host = 1, participants = 2..seat_count.
+    // SeatGrid renders the host separately, so this list must contain 2..seat_count.
     const roomSeats: RoomSeat[] = Array.from({ length: Math.max(0, r.seat_count - 1) }, (_, i) => {
-      const seatIndex = i + 1;
+      const seatIndex = i + 2;
       const m = members.find(mem => mem.user_id !== r.host_id && mem.seat_index === seatIndex);
       const isLocked = lockedSeats.includes(seatIndex);
       
