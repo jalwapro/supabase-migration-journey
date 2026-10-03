@@ -96,8 +96,8 @@ export function Seat({ seat, onClick }: SeatProps) {
 
   if (!user) {
     return (
-      <div data-seat-index={num} data-seat="true" className={cn("relative z-10 flex min-w-0 w-full flex-col items-center justify-center p-0.5 overflow-visible", className)}>
-        <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
+      <div data-seat-index={num} data-seat="true" className={cn("relative z-10 flex h-[68px] min-h-[68px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible", className)}>
+        <button type="button" onClick={onClick} className="group relative flex h-full w-full flex-col items-center justify-start gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
           <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-bold text-white shadow">{num}</span>
           <span className="relative h-[46px] w-[46px] shrink-0 p-0 bg-transparent overflow-visible"><EmptySeatArt locked={is_locked} /></span>
           <span className="w-full truncate text-[9px] font-semibold text-white text-center leading-tight">No.{num}</span>
