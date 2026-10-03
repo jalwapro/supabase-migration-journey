@@ -8,7 +8,7 @@ type Size = "sm" | "md" | "lg" | "xl";
  * live level are honoured; otherwise `vipLevel` decides the frame.
  */
 export function UserAvatarWithFrame({
-  avatarUrl, vipLevel, size = "md", userId, name, frameOverride, className,
+  avatarUrl, vipLevel, size = "md", userId, name, frameOverride, className, profileCardFrameBlend = false,
 }: {
   avatarUrl?: string | null;
   vipLevel: number;
@@ -17,6 +17,7 @@ export function UserAvatarWithFrame({
   name?: string | null;
   frameOverride?: string | null;
   className?: string;
+  profileCardFrameBlend?: boolean;
 }) {
   const live = useVipFrameAssets(userId, vipLevel);
   const tiers = useVipTierAssets();
@@ -29,6 +30,7 @@ export function UserAvatarWithFrame({
       size={size}
       userId={userId ?? undefined}
       frame={frameOverride ?? assets.dpFrameUrl}
+      profileCardFrameBlend={profileCardFrameBlend}
       className={className}
     />
   );
