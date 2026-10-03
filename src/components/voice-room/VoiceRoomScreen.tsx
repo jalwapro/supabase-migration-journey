@@ -68,60 +68,68 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
     return () => { void setVoiceRoomFullscreen(false); };
   }, []);
 
-  // Global Escape & Back button handler
+  // Unified VoiceRoom Back handling. Native Android sends the
+  // `jalwa:native-back` event; browser history/keyboard uses the same stack.
+  // Any open VoiceRoom popup closes first. The room itself is never closed by
+  // a single Back press while an overlay is open.
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
-      let closedSomething = false;
-      if (generatedPin) { setGeneratedPin(null); closedSomething = true; }
-      else if (exitMenuOpen) { setExitMenuOpen(false); closedSomething = true; }
-      else if (privateChatOpen) { setPrivateChatOpen(false); closedSomething = true; }
-      else if (giftOpen) { setGiftOpen(false); closedSomething = true; }
-      else if (emojiOpen) { setEmojiOpen(false); setSelectedTargetSeat(null); closedSomething = true; }
-      else if (gamesOpen) { setGamesOpen(false); closedSomething = true; }
-      else if (popularityOpen) { setPopularityOpen(false); closedSomething = true; }
-      else if (userMoreOpen) { setUserMoreOpen(false); closedSomething = true; }
-      else if (showMiniInputPopup) { setShowMiniInputPopup(false); setMiniDraft(""); closedSomething = true; }
-      else if (selectedMember) { setSelectedMember(null); closedSomething = true; }
-      else if (hostSettingsOpen) { setHostSettingsOpen(false); closedSomething = true; }
-      else if (moderatorControlsOpen) { setModeratorControlsOpen(false); closedSomething = true; }
-      else if (showHostFreePopup) { setShowHostFreePopup(false); closedSomething = true; }
-      else if (showPinModal) { setShowPinModal(false); setEnteredPin(""); closedSomething = true; }
-      else if (showRocketAnimation) { setShowRocketAnimation(false); closedSomething = true; }
-      else { setExitMenuOpen(true); closedSomething = true; }
-      
-      if (closedSomething) { 
-        e.preventDefault(); 
-        window.history.pushState(null, "", window.location.href); 
+    const closeTopOverlay = () => {
+      if (generatedPin) { setGeneratedPin(null); return true; }
+      if (exitMenuOpen) { setExitMenuOpen(false); return true; }
+      if (privateChatOpen) { setPrivateChatOpen(false); return true; }
+      if (giftOpen) { setGiftOpen(false); return true; }
+      if (emojiOpen) { setEmojiOpen(false); setSelectedTargetSeat(null); return true; }
+      if (gamesOpen) { setGamesOpen(false); return true; }
+      if (popularityOpen) { setPopularityOpen(false); return true; }
+      if (userMoreOpen) { setUserMoreOpen(false); return true; }
+      if (showMiniInputPopup) { setShowMiniInputPopup(false); setMiniDraft(""); return true; }
+      if (selectedMember) { setSelectedMember(null); return true; }
+      if (hostSettingsOpen) { setHostSettingsOpen(false); return true; }
+      if (moderatorControlsOpen) { setModeratorControlsOpen(false); return true; }
+      if (showHostFreePopup) { setShowHostFreePopup(false); return true; }
+      if (showPinModal) { setShowPinModal(false); setEnteredPin(""); return true; }
+      if (showRocketAnimation) { setShowRocketAnimation(false); return true; }
+      return false;
+    };
+
+    const handleNativeBack = (e: Event) => {
+      if (closeTopOverlay()) e.preventDefault();
+      else {
+        // Native shell must not fall through to app exit while VoiceRoom is open.
+        setExitMenuOpen(true);
+        e.preventDefault();
       }
+    };
+
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      closeTopOverlay();
+      if (!closeTopOverlay()) setExitMenuOpen(true);
+      window.history.pushState(null, "", window.location.href);
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        if (generatedPin) setGeneratedPin(null);
-        else if (privateChatOpen) setPrivateChatOpen(false);
-        else if (giftOpen) setGiftOpen(false);
-        else if (emojiOpen) { setEmojiOpen(false); setSelectedTargetSeat(null); }
-        else if (gamesOpen) setGamesOpen(false);
-        else if (popularityOpen) setPopularityOpen(false);
-        else if (userMoreOpen) setUserMoreOpen(false);
-        else if (showMiniInputPopup) { setShowMiniInputPopup(false); setMiniDraft(""); }
-        else if (selectedMember) setSelectedMember(null);
-        else if (hostSettingsOpen) setHostSettingsOpen(false);
-        else if (moderatorControlsOpen) setModeratorControlsOpen(false);
-        else if (showHostFreePopup) setShowHostFreePopup(false);
-        else if (showPinModal) setShowPinModal(false);
-        else if (showRocketAnimation) setShowRocketAnimation(false);
-        else if (exitMenuOpen) setExitMenuOpen(false);
-        else setExitMenuOpen(true);
+      if (e.key !== "Escape" && e.key !== "Backspace") return;
+      if (e.key === "Backspace" && (e.target as HTMLElement)?.tagName === "INPUT") return;
+      if (closeTopOverlay()) {
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setExitMenuOpen(true);
       }
     };
 
-    window.history.pushState(null, "", window.location.href);
+    // Keep one history guard entry while the room is mounted so browser/gesture
+    // Back reaches this handler before the route can be left.
+    window.history.pushState({ jalwaVoiceRoom: true }, "", window.location.href);
     window.addEventListener("popstate", handlePopState);
+    window.addEventListener("jalwa:native-back", handleNativeBack);
     window.addEventListener("keydown", handleKeyDown);
-    
+
     return () => {
       window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("jalwa:native-back", handleNativeBack);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [privateChatOpen, giftOpen, emojiOpen, gamesOpen, popularityOpen, userMoreOpen, showMiniInputPopup, selectedMember, hostSettingsOpen, moderatorControlsOpen, generatedPin, showHostFreePopup, showPinModal, showRocketAnimation, exitMenuOpen]);
