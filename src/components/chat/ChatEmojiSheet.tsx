@@ -19,7 +19,7 @@ export function ChatEmojiSheet({open,onClose,onPick}:Props){
 
  useEffect(()=>{if(isVoiceRoom||!open||list.length>0)return;setLoading(true);void supabase.from("chat_emojis").select("id,slug,emoji,name,category,clip_path,sort_order,tier,min_vip_level").eq("is_active",true).order("sort_order",{ascending:true}).then(({data,error})=>{if(error)toast.error("Chat emojis load nahi ho sake");setList((data??[])as ChatEmoji[]);setLoading(false);});},[isVoiceRoom,open,list.length]);
  const filtered=useMemo(()=>list.filter(e=>tier==="normal"?(e.tier??"normal")==="normal":(e.tier??"normal")!=="normal"),[list,tier]);
- const handleVoicePick=async(e:ChatEmoji,targetSeatIndex?:number|null)=>{
+ const handleVoicePick=async(e:ChatEmoji,targetSeatIndex?:number|null,targetUser?:{id:string;username:string|null}|null)=>{
    if(roomId&&targetSeatIndex!=null&&profile?.id){
      const payload={id:`emoji-${crypto.randomUUID()}`,roomId,senderId:profile.id,senderName:profile.username??"User",targetSeatIndex,targetName:targetUser?.username??"User",targetUserId:targetUser?.id??null,emoji:e.emoji,url:e.url??null,clipPath:e.clip_path??null};
      playVoiceRoomEmojiAtSeat(payload);
