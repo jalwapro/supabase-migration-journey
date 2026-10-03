@@ -68,3 +68,11 @@ main[data-jalwa-voice-room-root="true"]{position:fixed!important;inset:0!importa
 @media(max-width:359px){
   [data-jalwa-voice-room-root="true"] > div.relative.z-10.flex.min-h-0.flex-1.flex-col.overflow-hidden > [data-jalwa-live-component="voice.room-header"]{margin-bottom:10px!important}
 }
+
+/* Keep oversized DP frame artwork visually separated from neighboring seat rows. */
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"]{position:relative!important;z-index:1!important;}
+[data-jalwa-voice-room-root="true"] [data-seat-media="true"]{position:relative!important;z-index:2!important;}
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"] > button,
+[data-jalwa-voice-room-root="true"] [data-seat-cell="true"] > div{isolation:isolate!important;}
+[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{row-gap:12px!important;}
+@media(max-width:359px){[data-jalwa-voice-room-root="true"] [data-seat-grid-cells="true"]{row-gap:10px!important}}
