@@ -1,3 +1,8 @@
+import "../voice-room-reference.css";
+import "../voice-room-mobile.css";
+import "../voice-room-mobile-final.css";
+import "../voice-room-mobile-components.css";
+import "../voice-room-mobile-content.css";
 import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { vipTierForLevel } from "@/lib/vip-levels";
