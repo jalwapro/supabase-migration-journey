@@ -945,6 +945,11 @@ function RoomPage() {
               membersRef.current = next;
               return next;
             });
+            // Reconcile the authoritative member state after every seat update.
+            // This keeps Capacitor/Android clients in sync even if a realtime
+            // payload was partial or arrived during a reconnect.
+            void loadRoomState();
+
             // If the user just left their seat (seat_index → null),
             // reset their gift points so a re-seat starts from 0.
             if (row.seat_index == null) {
