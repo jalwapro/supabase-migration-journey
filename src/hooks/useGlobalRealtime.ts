@@ -22,6 +22,18 @@ function subscribe(qc: QueryClient, channelName: string, subs: Sub[], onStatus?:
   let ch = supabase.channel(channelName);
   const pendingKeys = new Map<string, string>();
   let flushTimer: number | null = null;
+  let flushAllActive = false;
+  const queueAllActive = () => {
+    flushAllActive = true;
+    if (flushTimer !== null) return;
+    flushTimer = window.setTimeout(() => {
+      flushTimer = null;
+      if (!flushAllActive) return;
+      flushAllActive = false;
+      pendingKeys.clear();
+      void qc.invalidateQueries({ refetchType: "active" });
+    }, 100);
+  };
   const queueKeys = (keys: string[]) => {
     for (const key of keys) pendingKeys.set(key, key);
     if (flushTimer !== null) return;
@@ -211,7 +223,7 @@ export function useGlobalRealtime() {
         ).on(
           "postgres_changes",
           { event: "*", schema: "public", table },
-          () => queueKeys(["__catalog__"]),
+          () => queueAllActive(),
         );
       }
       chCatalog = channel;
@@ -318,6 +330,7 @@ export function useGlobalRealtime() {
       window.clearTimeout(catalogTimer);
       if (flushTimer !== null) window.clearTimeout(flushTimer);
       pendingKeys.clear();
+      flushAllActive = false;
       if (chCatalog) void supabase.removeChannel(chCatalog);
       void supabase.removeChannel(chNotif);
       window.removeEventListener("online", reconcile);
