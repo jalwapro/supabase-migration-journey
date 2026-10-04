@@ -50,6 +50,8 @@ export function LevelAvatar({
   userId?: string | null;
   /** Persisted per-profile Shop Render Studio config; takes precedence over asset lookup. */
   renderConfigOverride?: unknown;
+  /** Blend dark frame backgrounds into profile-card artwork. */
+  profileCardFrameBlend?: boolean;
 }) {
 
   const tier = tierForLevel(level);
