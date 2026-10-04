@@ -7,7 +7,7 @@ self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
   const url = new URL(request.url);
-  if (url.origin !== self.location.origin || !MANAGED.test(url.pathname + url.search)) return;
+  if (!/^https?:$/.test(url.protocol) || !MANAGED.test(url.pathname + url.search)) return;
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
