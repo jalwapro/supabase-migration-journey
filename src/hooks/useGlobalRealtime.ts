@@ -223,7 +223,7 @@ export function useGlobalRealtime() {
         ).on(
           "postgres_changes",
           { event: "*", schema: "public", table },
-          () => queueAllActive(),
+          () => void qc.invalidateQueries({ refetchType: "active" }),
         );
       }
       chCatalog = channel;
@@ -309,13 +309,13 @@ export function useGlobalRealtime() {
       const now = Date.now();
       if (now - lastOnlineReconcile < 15_000) return;
       lastOnlineReconcile = now;
-      queueKeys([
+      ([
         "me", "me-counts", "profile", "public-profile", "auth-profile", "wallet", "wallet_tx",
         "friends", "dm", "dm_index", "dm-thread", "dm-threads", "dm-unread", "messages",
         "conversations", "msg-notif-count", "notifications", "notif-unread", "notif-feed",
         "my-rooms", "rooms", "gallery", "gallery-unlocks", "album-access", "user-themes",
         "recharge", "recharge-history", "withdraw", "withdraw-history", "host-popularity",
-      ]);
+      ]).forEach((k) => void qc.invalidateQueries({ queryKey: [k], refetchType: "active" }));
     };
     window.addEventListener("online", reconcile);
 
