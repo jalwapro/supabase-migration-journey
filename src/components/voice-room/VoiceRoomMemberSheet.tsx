@@ -202,12 +202,12 @@ export function VoiceRoomMemberSheet({
   const popupFrameUrl = resolveAssetUrl(popupFrameValue);
 
   return (
-    <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/65 backdrop-blur-md" onClick={onClose} role="presentation">
+    <div className="fixed inset-0 z-[2147483001] flex items-end justify-center bg-black/65" onClick={onClose} role="presentation">
       <div className="relative w-full max-w-[480px]">
         {popupFrameUrl ? (
           <div aria-hidden className="pointer-events-none absolute -inset-3 z-0 overflow-visible">
             {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
-              <video src={popupFrameUrl} autoPlay loop muted playsInline className="h-full w-full object-fill" />
+              <video src={popupFrameUrl} autoPlay loop muted playsInline preload="auto" className="h-full w-full object-fill" />
             ) : (
               <img src={popupFrameUrl} alt="" className="h-full w-full object-fill" />
             )}
@@ -220,7 +220,7 @@ export function VoiceRoomMemberSheet({
         <div className="mb-1 flex items-center gap-4">
           <div className="relative h-[84px] w-[84px] shrink-0">
             <div className="absolute inset-[4px] z-10 overflow-hidden rounded-full border-2 border-white/20 bg-black shadow-lg">
-              {member.avatar ? <img src={member.avatar} alt={displayName} className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black">{displayName.slice(0, 1).toUpperCase()}</div>}
+              {member.avatar ? <img src={member.avatar} alt={displayName} loading="eager" decoding="async" className="h-full w-full object-cover" /> : <div className="grid h-full w-full place-items-center text-xl font-black">{displayName.slice(0, 1).toUpperCase()}</div>}
             </div>
           </div>
           <div className="min-w-0 flex-1">
