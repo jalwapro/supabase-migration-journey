@@ -28,14 +28,44 @@ export function DailySpinFloatingButton() {
     if (Date.now() - dismissed < 2 * 60 * 60 * 1000) setHidden(true);
   }, []);
 
+  const readyAt = nextAt.data ? new Date(nextAt.data).getTime() : 0;
+
+  // The countdown only needs second-level precision near expiry. While the
+  // app is backgrounded, stop the timer entirely to avoid needless wakeups.
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
+    if (!user || hidden || typeof document === "undefined") return;
+    let timer: ReturnType<typeof window.setTimeout> | null = null;
+    let stopped = false;
+
+    const schedule = () => {
+      if (stopped || document.visibilityState !== "visible") return;
+      const remaining = Math.max(0, readyAt - Date.now());
+      const delay = remaining <= 60_000 ? 1_000 : 60_000;
+      timer = window.setTimeout(() => {
+        setNow(Date.now());
+        schedule();
+      }, delay);
+    };
+    const onVisibility = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = null;
+      if (document.visibilityState === "visible") {
+        setNow(Date.now());
+        schedule();
+      }
+    };
+
+    schedule();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stopped = true;
+      if (timer) window.clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [user, hidden, readyAt]);
 
   if (!user || hidden) return null;
 
-  const readyAt = nextAt.data ? new Date(nextAt.data).getTime() : 0;
   const ready = readyAt <= now;
   const remaining = Math.max(0, readyAt - now);
   const hh = Math.floor(remaining / 3_600_000);
