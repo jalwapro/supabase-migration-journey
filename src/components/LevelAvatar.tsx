@@ -102,7 +102,15 @@ export function LevelAvatar({
       softness: Number(renderConfig.edgeSoftness ?? 12),
     };
   })();
-  const effectiveChroma = studioChroma ?? frameMeta;
+  // Profile cards use the level-frame artwork as a decorative overlay. Some
+  // legacy level PNGs contain a baked-in black square instead of alpha. For
+  // profile cards only, remove that black key before compositing so the user's
+  // DP can never be covered by the asset canvas. Home/Rank/VoiceRoom keep their
+  // existing frame rendering untouched.
+  const profileCardChroma = profileCardFrameBlend
+    ? { color: "#000000", tolerance: 28, softness: 18 }
+    : null;
+  const effectiveChroma = profileCardChroma ?? studioChroma ?? frameMeta;
   const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.zoom ?? 1);
   const frameScaleX = frameScale * Number(renderConfig?.scaleX ?? 1);
   const frameScaleY = frameScale * Number(renderConfig?.scaleY ?? 1);
@@ -254,6 +262,8 @@ export function LevelAvatar({
               transform: `translate(-50%, -50%) rotate(${frameRotation}deg) scale(${finalScaleX}, ${finalScaleY})`,
               opacity: frameOpacity,
               filter: frameFilter || undefined,
+              // Keep screen as a fallback for any residual dark pixels while
+              // the profile-card chroma pass removes the baked-in black canvas.
               mixBlendMode: profileCardFrameBlend ? "screen" : undefined,
             }}
             aria-hidden
