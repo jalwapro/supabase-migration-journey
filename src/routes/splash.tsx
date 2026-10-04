@@ -4,6 +4,7 @@ import { Mic, Video, Gift } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { JALWA_LOGO as logo } from "@/lib/r2-static";
 import { supabase } from "@/integrations/supabase/client";
+import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
 
 export const Route = createFileRoute("/splash")({
   component: Splash,
@@ -34,11 +35,43 @@ type SplashCfg = {
   splash_duration: number;
 };
 
+function useAssetProgress() {
+  const [state, setState] = useState<AssetCacheProgress>(() => getAssetCacheProgress());
+  useEffect(() => subscribeAssetCacheProgress(setState), []);
+  return state;
+}
+
 function Splash() {
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const embeddedPreview = typeof window !== "undefined" && window.self !== window.top;
+  const assetProgress = useAssetProgress();
+  const assetsReady = assetProgress.status === "ready" || assetProgress.status === "offline" || assetProgress.percent >= 100;
+  const [finishRequested, setFinishRequested] = useState(false);
+  const [splashMinDone, setSplashMinDone] = useState(false);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setSplashMinDone(true), 2200);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (embeddedPreview || !finishRequested || !splashMinDone || !assetsReady) return;
+    try { sessionStorage.setItem("splash_shown", "1"); } catch {}
+    navigate({ to: "/" });
+  }, [assetsReady, embeddedPreview, finishRequested, navigate, splashMinDone]);
+
+  useEffect(() => {
+    if (embeddedPreview) return;
+    const t = window.setTimeout(() => {
+      try { sessionStorage.setItem("splash_shown", "1"); } catch {}
+      navigate({ to: "/" });
+    }, 12000);
+    return () => window.clearTimeout(t);
+  }, [embeddedPreview, navigate]);
+
+  const requestFinish = () => setFinishRequested(true);
 
   // The customization studio embeds the real app in an iframe. Never leave
   // that iframe on the splash screen; jump directly to the real Home UI.
@@ -85,7 +118,7 @@ function Splash() {
   // the black splash screen. Move into the app and let auth hydrate normally.
   useEffect(() => {
     if (embeddedPreview || !cfg.isLoading) return;
-    const t = window.setTimeout(finishVideo, 3500);
+    const t = window.setTimeout(requestFinish, 3500);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cfg.isLoading, embeddedPreview]);
@@ -95,7 +128,7 @@ function Splash() {
   // to its natural end — no total-duration cap.
   useEffect(() => {
     if (embeddedPreview || !videoUrl || videoStarted) return;
-    const t = window.setTimeout(finishVideo, 15000);
+    const t = window.setTimeout(requestFinish, 15000);
     return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [videoUrl, videoStarted, embeddedPreview]);
@@ -121,6 +154,39 @@ function Splash() {
   if (embeddedPreview) {
     return <main className="min-h-[100dvh] bg-background" aria-label="Loading app preview" />;
   }
+
+  const cachePercent = Math.max(0, Math.min(100, assetProgress.percent));
+  const cacheDone = assetProgress.total === 0 || assetsReady;
+  const cacheLabel = assetProgress.status === "offline"
+    ? "Offline resources ready"
+    : cacheDone
+      ? "Resources ready"
+      : assetProgress.status === "checking"
+        ? "Checking resources…"
+        : "Preparing JALWA resources…";
+
+  const ResourceProgress = () => (
+    <div className="absolute inset-x-0 bottom-8 z-20 mx-auto w-[min(88vw,360px)]">
+      <div className="mb-2 flex items-center justify-between text-[11px] font-medium text-white/75">
+        <span>{cacheLabel}</span>
+        <span>{cacheDone ? "100%" : cachePercent + "%"}</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-white/10 ring-1 ring-white/10">
+        <div
+          className="h-full rounded-full transition-[width] duration-200 ease-out"
+          style={{
+            width: (cacheDone ? 100 : cachePercent) + "%",
+            background: "linear-gradient(90deg, var(--primary), var(--gold), var(--secondary))",
+          }}
+        />
+      </div>
+      {assetProgress.total > 0 && !cacheDone && (
+        <div className="mt-1.5 text-center text-[10px] text-white/45">
+          {assetProgress.completed} / {assetProgress.total} essential assets
+        </div>
+      )}
+    </div>
+  );
 
   if (videoUrl) {
     return (
@@ -166,12 +232,13 @@ function Splash() {
           </div>
         )}
         <button
-          onClick={finishVideo}
+          onClick={requestFinish}
           className="absolute bottom-20 right-6 rounded-full bg-white/20 px-5 py-2 text-sm font-bold text-white backdrop-blur"
           style={{ marginBottom: "env(safe-area-inset-bottom)" }}
         >
           Skip
         </button>
+        <ResourceProgress />
       </main>
     );
   }
@@ -179,7 +246,11 @@ function Splash() {
   // Config is still loading — show a plain black screen (no animated fallback)
   // so users never see two splashes back-to-back before the video appears.
   if (cfg.isLoading) {
-    return <main className="min-h-[100dvh] bg-black" />;
+    return (
+      <main className="relative min-h-[100dvh] bg-black">
+        <ResourceProgress />
+      </main>
+    );
   }
 
   return (
@@ -233,6 +304,7 @@ function Splash() {
           />
         </div>
       </div>
+      <ResourceProgress />
     </main>
   );
 }
