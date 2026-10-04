@@ -109,6 +109,8 @@
     "@lovable.dev/vite-tanstack-config": "2.23.1",
     "@types/node": "^22.16.5",
     "@types/nodemailer": "^8.0.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@types/web-push": "^3.0.0",
     "@vitejs/plugin-react": "^5.2.0",
     "eslint": "^9.32.0",
