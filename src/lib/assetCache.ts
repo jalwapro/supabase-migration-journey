@@ -134,6 +134,7 @@ export async function clearJalwaAssetCache() {
 export async function initJalwaAssetCache() {
   if (!isBrowser()) return;
   await registerAssetCacheWorker();
+  try { await navigator.storage?.persist?.(); } catch {}
   const assets = await fetchAssetManifest();
   if (!assets.length) return;
   void warmAssetManifest(assets);
