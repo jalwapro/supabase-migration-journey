@@ -110,8 +110,7 @@ function Splash() {
   const [videoStarted, setVideoStarted] = useState(false);
 
   function finishVideo() {
-    try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
-    navigate({ to: "/" });
+    setFinishRequested(true);
   }
 
   // If settings fetch hangs on a slow/offline network, don't trap the user on
@@ -142,10 +141,7 @@ function Splash() {
       const p = Math.min(1, (Date.now() - start) / duration);
       setProgress(p);
       if (p < 1) raf = requestAnimationFrame(tick);
-      else {
-        try { sessionStorage.setItem("splash_shown", "1"); } catch { /* no-op */ }
-        navigate({ to: "/" });
-      }
+      else requestFinish();
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
