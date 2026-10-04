@@ -11,12 +11,49 @@ export type AssetManifestItem = {
   priority: number;
 };
 
+export type AssetCacheProgress = {
+  status: "idle" | "checking" | "downloading" | "ready" | "offline" | "error";
+  total: number;
+  completed: number;
+  downloadedBytes: number;
+  totalBytes: number;
+  currentAsset: string | null;
+  percent: number;
+};
+
 type Meta = AssetManifestItem & { size?: number; sha256?: string; cachedAt: number };
 
 const isBrowser = () => typeof window !== "undefined" && typeof caches !== "undefined";
 const normalize = (url: string) => {
   try { return new URL(url, window.location.origin).toString(); } catch { return url; }
 };
+
+let progress: AssetCacheProgress = {
+  status: "idle",
+  total: 0,
+  completed: 0,
+  downloadedBytes: 0,
+  totalBytes: 0,
+  currentAsset: null,
+  percent: 0,
+};
+
+const listeners = new Set<(value: AssetCacheProgress) => void>();
+
+function publish(patch: Partial<AssetCacheProgress>) {
+  progress = { ...progress, ...patch };
+  for (const listener of listeners) listener(progress);
+}
+
+export function getAssetCacheProgress() {
+  return progress;
+}
+
+export function subscribeAssetCacheProgress(listener: (value: AssetCacheProgress) => void) {
+  listeners.add(listener);
+  listener(progress);
+  return () => listeners.delete(listener);
+}
 
 function openMetaDb(): Promise<IDBDatabase | null> {
   if (!isBrowser() || !("indexedDB" in window)) return Promise.resolve(null);
@@ -81,36 +118,91 @@ export async function fetchAssetManifest(): Promise<AssetManifestItem[]> {
   } catch { return []; }
 }
 
-export async function cacheAsset(item: AssetManifestItem): Promise<boolean> {
+export async function cacheAsset(item: AssetManifestItem, onComplete?: (item: AssetManifestItem, downloadedBytes: number) => void): Promise<boolean> {
   if (!isBrowser() || !item?.url) return false;
   const url = normalize(item.url);
+  publish({ status: "downloading", currentAsset: item.url });
+
   try {
     const cache = await caches.open(CACHE_NAME);
     const meta = await getMeta(url);
-    if (meta?.version === item.version && await cache.match(url)) return true;
+    if (meta?.version === item.version && await cache.match(url)) {
+      onComplete?.(item, 0);
+      return true;
+    }
 
     const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) return false;
+    if (!response.ok) {
+      onComplete?.(item, 0);
+      return false;
+    }
+
+    const size = Number(response.headers.get("content-length") || 0) || undefined;
     const digest = await sha256(response);
     await cache.put(url, response.clone());
-    const size = Number(response.headers.get("content-length") || 0) || undefined;
     await putMeta({ ...item, url, size, sha256: digest, cachedAt: Date.now() });
+    onComplete?.(item, size ?? 0);
     return true;
   } catch {
+    onComplete?.(item, 0);
     return false;
   }
 }
 
+function isStartupAsset(item: AssetManifestItem) {
+  // Startup pack: small/common visual assets only. Heavy video/audio stays lazy.
+  return item.priority >= 50 && (item.type === "image" || item.type === "other");
+}
+
 export async function warmAssetManifest(assets: AssetManifestItem[]) {
-  const ordered = [...assets].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  const ordered = [...assets]
+    .filter(isStartupAsset)
+    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+
+  if (!ordered.length) {
+    publish({ status: "ready", total: 0, completed: 0, percent: 100, currentAsset: null });
+    return;
+  }
+
+  publish({
+    status: "checking",
+    total: ordered.length,
+    completed: 0,
+    downloadedBytes: 0,
+    totalBytes: 0,
+    currentAsset: null,
+    percent: 0,
+  });
+
   let cursor = 0;
+  let completed = 0;
+  let downloadedBytes = 0;
+
   const worker = async () => {
     while (cursor < ordered.length) {
       const item = ordered[cursor++];
-      await cacheAsset(item);
+      const ok = await cacheAsset(item, (_item, bytes) => {
+        completed += 1;
+        downloadedBytes += bytes;
+        publish({
+          status: "downloading",
+          completed,
+          downloadedBytes,
+          percent: Math.round((completed / ordered.length) * 100),
+          currentAsset: completed < ordered.length ? item.url : null,
+        });
+      });
+      if (!ok && !navigator.onLine) publish({ status: "offline" });
     }
   };
+
   await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENCY, ordered.length) }, worker));
+  publish({
+    status: navigator.onLine ? "ready" : "offline",
+    completed,
+    percent: Math.round((completed / ordered.length) * 100),
+    currentAsset: null,
+  });
 }
 
 export async function getCachedAsset(url: string): Promise<string | null> {
@@ -133,9 +225,17 @@ export async function clearJalwaAssetCache() {
 
 export async function initJalwaAssetCache() {
   if (!isBrowser()) return;
+  publish({ status: "checking" });
   await registerAssetCacheWorker();
   try { await navigator.storage?.persist?.(); } catch {}
+
   const assets = await fetchAssetManifest();
-  if (!assets.length) return;
+  if (!assets.length) {
+    publish({ status: navigator.onLine ? "ready" : "offline", percent: 100 });
+    return;
+  }
+
+  // Critical/common assets are prepared at startup. Heavy MP4/SVGA/audio assets
+  // remain lazy and are cached automatically by the service worker when first used.
   void warmAssetManifest(assets);
 }
