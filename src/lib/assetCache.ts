@@ -229,19 +229,11 @@ export async function initJalwaAssetCache() {
     return;
   }
 
-  // Do not turn app launch into a full catalog download. Only cache small,
-  // immediately useful image resources during startup; heavy gift videos,
-  // audio, entrances and other media are warmed later at idle with one worker.
-  // This keeps Home/room creation responsive while retaining local-first caching.
+  // Keep launch work limited to small, high-priority images. Everything else
+  // is cached transparently on first real use by the service worker. Do not
+  // start a hidden full-catalog download after launch: that competes with
+  // Supabase, navigation, taps, popups and room rendering for bandwidth/CPU.
   const startupAssets = assets.filter((item) => item.type === "image" && item.priority >= 70);
-  const backgroundAssets = assets.filter((item) => !startupAssets.includes(item));
 
-  void warmAssetManifest(startupAssets, MAX_CONCURRENCY).then(() => {
-    if (!backgroundAssets.length) return;
-    const start = () => {
-      if (document.visibilityState === "hidden") return;
-      void warmAssetManifest(backgroundAssets, BACKGROUND_CONCURRENCY);
-    };
-    window.setTimeout(start, 15_000);
-  });
+  void warmAssetManifest(startupAssets, MAX_CONCURRENCY);
 }
