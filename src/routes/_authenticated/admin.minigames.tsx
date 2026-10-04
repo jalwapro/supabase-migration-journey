@@ -10,7 +10,7 @@ import type { MiniGame } from "@/lib/minigames";
 export const Route = createFileRoute("/_authenticated/admin/minigames")({
   component: MiniGamesAdmin,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-red-400">Failed to load: {error?.message}</div>
+    <div className="p-6 text-sm text-red-400">Failed to load: {(error as Error | null)?.message}</div>
   ),
 });
 

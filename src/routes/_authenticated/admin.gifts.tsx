@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/admin/gifts")({
   component: GiftsAdmin,
   errorComponent: ({ error }) => (
     <div className="p-6 text-sm text-red-400">
-      Failed to load gifts: {error?.message ?? "Unknown error"}
+      Failed to load gifts: {(error as Error | null)?.message ?? "Unknown error"}
     </div>
   ),
 });

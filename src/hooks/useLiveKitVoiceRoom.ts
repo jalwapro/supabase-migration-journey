@@ -100,9 +100,9 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
       });
     };
 
-    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent.TrackSubscribed, onSubscribed); });
-    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent.TrackUnsubscribed, onUnsubscribed); });
-    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent.Disconnected, () => { if (!cancelled) setStatus("idle"); }); });
+    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent!.TrackSubscribed, onSubscribed); });
+    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent!.TrackUnsubscribed, onUnsubscribed); });
+    void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.on(RoomEvent!.Disconnected, () => { if (!cancelled) setStatus("idle"); }); });
 
     (async () => {
       try {

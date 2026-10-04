@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/admin/spotlights")({
   component: SpotlightsAdmin,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-red-400">Failed to load: {error?.message}</div>
+    <div className="p-6 text-sm text-red-400">Failed to load: {(error as Error | null)?.message}</div>
   ),
 });
 

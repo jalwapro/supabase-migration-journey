@@ -10,7 +10,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/admin/emojis")({
   component: EmojisAdmin,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-red-400">Failed to load emojis: {error?.message}</div>
+    <div className="p-6 text-sm text-red-400">Failed to load emojis: {(error as Error | null)?.message}</div>
   ),
 });
 

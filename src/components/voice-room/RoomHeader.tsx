@@ -143,7 +143,7 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       return;
     }
     if (room.seats.some((seat) => seat.user?.id === memberId)) { toast.info("User is already on a seat"); return; }
-    const selectedSeat = room.seats.find((seat) => (seat.index ?? seat.seatNumber) === safeSeat);
+    const selectedSeat = room.seats.find((seat) => seat.index === safeSeat);
     if (selectedSeat?.user?.id) { toast.error(`Seat ${safeSeat} is already occupied`); return; }
     setInvitingUserId(memberId);
     try {

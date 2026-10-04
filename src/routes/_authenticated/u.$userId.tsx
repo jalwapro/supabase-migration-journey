@@ -44,7 +44,7 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/u/$userId")({
   component: UserProfilePage,
   errorComponent: ({ error }) => (
-    <div className="p-8 text-center text-sm text-muted-foreground">{error.message}</div>
+    <div className="p-8 text-center text-sm text-muted-foreground">{(error as Error).message}</div>
   ),
   notFoundComponent: () => (
     <div className="p-8 text-center text-sm text-muted-foreground">User not found</div>
