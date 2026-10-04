@@ -28,7 +28,11 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
  const price=(g:Gift|null)=>(g?.price_coins??g?.price??0) as number;const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
- useEffect(()=>{if(!open)return; visibleGifts.slice(0,8).forEach(g=>preloadGiftVideo(giftVideoUrl(g)));},[open,visibleGifts]);
+ useEffect(()=>{if(!open)return;
+   // Gift sheet must open instantly. Video bytes are fetched/cached only when a
+   // gift is actually selected; preloading 8 clips here caused network/decoder
+   // contention and made the whole app feel slow on mobile.
+ },[open]);
  const send=useMutation({mutationFn:async({gift,targets,quantity}:{gift:Gift;targets:string[];quantity:number})=>{
    const uniqueTargets=[...new Set(targets)].filter(id=>id&&id!==profile?.id);
    if(!uniqueTargets.length)throw new Error("Pick a receiver");
