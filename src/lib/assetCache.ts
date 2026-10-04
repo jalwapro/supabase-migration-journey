@@ -2,6 +2,7 @@ const CACHE_NAME = "jalwa-assets-v1";
 const META_DB = "jalwa-asset-cache";
 const META_STORE = "assets";
 const MAX_CONCURRENCY = 2;
+const BACKGROUND_CONCURRENCY = 1;
 
 export type AssetManifestItem = {
   id: string;
@@ -102,7 +103,7 @@ export async function registerAssetCacheWorker() {
 
 export async function fetchAssetManifest(): Promise<AssetManifestItem[]> {
   try {
-    const res = await fetch("/api/public/asset-manifest", { cache: "no-store" });
+    const res = await fetch("/api/public/asset-manifest", { cache: "default" });
     if (!res.ok) return [];
     const data = await res.json();
     return Array.isArray(data.assets) ? data.assets : [];
@@ -146,7 +147,7 @@ export async function cacheAsset(
   }
 }
 
-export async function warmAssetManifest(assets: AssetManifestItem[]) {
+export async function warmAssetManifest(assets: AssetManifestItem[], concurrency = MAX_CONCURRENCY) {
   // Every catalogued asset is now part of the local-first pack:
   // gifts, frames, entrances, backgrounds, themes, ranking/profile frames,
   // animations and audio. Priority controls download order, not eligibility.
@@ -189,7 +190,7 @@ export async function warmAssetManifest(assets: AssetManifestItem[]) {
     }
   };
 
-  await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENCY, ordered.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(concurrency, ordered.length) }, worker));
   publish({
     status: navigator.onLine ? "ready" : "offline",
     completed,
@@ -228,7 +229,19 @@ export async function initJalwaAssetCache() {
     return;
   }
 
-  // Download the complete catalog in the background. Cache is local-first;
-  // only assets whose manifest version changed are fetched again.
-  void warmAssetManifest(assets);
+  // Do not turn app launch into a full catalog download. Only cache small,
+  // immediately useful image resources during startup; heavy gift videos,
+  // audio, entrances and other media are warmed later at idle with one worker.
+  // This keeps Home/room creation responsive while retaining local-first caching.
+  const startupAssets = assets.filter((item) => item.type === "image" && item.priority >= 70);
+  const backgroundAssets = assets.filter((item) => !startupAssets.includes(item));
+
+  void warmAssetManifest(startupAssets, MAX_CONCURRENCY).then(() => {
+    if (!backgroundAssets.length) return;
+    const start = () => {
+      if (document.visibilityState === "hidden") return;
+      void warmAssetManifest(backgroundAssets, BACKGROUND_CONCURRENCY);
+    };
+    window.setTimeout(start, 15_000);
+  });
 }
