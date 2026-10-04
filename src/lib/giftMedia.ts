@@ -34,21 +34,9 @@ export function resolvePlayableGiftUrl(url: string | null | undefined) {
   if (!value) return null;
   if (value.startsWith("__l5e/assets-v1/")) return `${LOVABLE_ORIGIN}/${value}`;
 
-  // Browser WebGL video textures require CORS. Stream public R2 gift clips
-  // through our same-origin range-aware proxy so WebGL can safely sample them.
-  try {
-    const parsed = new URL(value, window.location.origin);
-    if (
-      parsed.protocol === "https:" &&
-      parsed.hostname.endsWith(".r2.dev") &&
-      /\/gift-clips\//i.test(parsed.pathname)
-    ) {
-      return `/api/gift-media?url=${encodeURIComponent(parsed.toString())}`;
-    }
-  } catch {
-    // Fall through to the normal URL resolver for legacy/non-absolute values.
-  }
-
+  // R2 gift clips have CORS enabled, so keep the canonical URL. This is
+  // important because the service-worker asset cache keys the real R2 URL;
+  // routing gifts through /api/gift-media would bypass that local-first cache.
   return absolutizeLovableAsset(value);
 }
 
