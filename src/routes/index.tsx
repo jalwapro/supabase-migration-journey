@@ -8,6 +8,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { formatCompact } from "@/lib/utils";
+import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 import jalwaFrameGold from "@/assets/jalwa-frame-gold.png.asset.json";
@@ -86,6 +87,98 @@ const TABS: { key: TabKey; label: string; Icon: typeof Mic }[] = [
 
 // Empty by default — banners come from admin panel only (no mock imagery).
 const DEFAULT_BANNERS: Banner[] = [];
+const FIRST_HOME_LOAD_KEY = "jalwa_first_home_load_complete";
+
+function useHomeAssetProgress() {
+  const [state, setState] = useState<AssetCacheProgress>(() => getAssetCacheProgress());
+  useEffect(() => subscribeAssetCacheProgress(setState), []);
+  return state;
+}
+
+function FirstHomeLoading({
+  authLoading,
+  roomsLoading,
+  bannersLoading,
+  liveUsersLoading,
+}: {
+  authLoading: boolean;
+  roomsLoading: boolean;
+  bannersLoading: boolean;
+  liveUsersLoading: boolean;
+}) {
+  const assetProgress = useHomeAssetProgress();
+  const [visible, setVisible] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(FIRST_HOME_LOAD_KEY) === "1") return;
+    } catch {}
+    setVisible(true);
+  }, []);
+
+  const assetsDone =
+    assetProgress.status === "ready" ||
+    assetProgress.status === "offline" ||
+    assetProgress.percent >= 100;
+  const homeDone = !authLoading && !roomsLoading && !bannersLoading && !liveUsersLoading;
+  const rawProgress = assetsDone
+    ? (homeDone ? 100 : 96)
+    : Math.min(94, Math.max(1, Math.round(assetProgress.percent * 0.94)));
+  const progress = Math.max(1, Math.min(100, rawProgress));
+
+  useEffect(() => {
+    if (!visible || !homeDone || !assetsDone) return;
+    try { localStorage.setItem(FIRST_HOME_LOAD_KEY, "1"); } catch {}
+    const t = window.setTimeout(() => setDismissed(true), 250);
+    return () => window.clearTimeout(t);
+  }, [visible, homeDone, assetsDone]);
+
+  if (!visible || dismissed) return null;
+
+  const label = !assetsDone
+    ? "Loading JALWA resources…"
+    : !homeDone
+      ? "Finishing Home setup…"
+      : "JALWA is ready";
+  const detail = assetProgress.total > 0 && !assetsDone
+    ? `${assetProgress.completed} / ${assetProgress.total} resources`
+    : !homeDone
+      ? "Syncing your Home data"
+      : "Ready";
+
+  return (
+    <div
+      className="fixed inset-x-0 bottom-0 z-[80] px-3 pb-[calc(env(safe-area-inset-bottom)+76px)] pt-3 pointer-events-none"
+      aria-live="polite"
+      aria-label="Loading JALWA"
+    >
+      <div className="mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-background/95 p-3.5 shadow-2xl backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5">
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-[color:var(--primary)]" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate text-xs font-black text-foreground">{label}</p>
+              <span className="shrink-0 text-[11px] font-bold text-foreground/70">{progress}%</span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full transition-[width] duration-300 ease-out"
+                style={{
+                  width: `${progress}%`,
+                  background: "linear-gradient(90deg, var(--primary), var(--gold), var(--secondary))",
+                }}
+              />
+            </div>
+            <p className="mt-1 text-[9px] text-muted-foreground">{detail}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function Home() {
   const { user, profile, isAdmin, loading } = useAuth();
@@ -318,6 +411,12 @@ function Home() {
   return (
     <>
       <div className="min-h-[100dvh] pb-28">
+        <FirstHomeLoading
+          authLoading={loading}
+          roomsLoading={isRoomsLoading}
+          bannersLoading={banners.isLoading}
+          liveUsersLoading={liveUsers.isLoading}
+        />
         {/* Premium top bar */}
         <header
           className="sticky top-0 z-30 border-b border-white/5 bg-background/60 backdrop-blur-2xl"
