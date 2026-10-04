@@ -24,7 +24,7 @@ function add(out: Map<string, any>, table: string, row: Row, column: string, pri
 }
 
 async function rows(table: string, columns: string[]) {
-  const { data, error } = await supabaseAdmin.from(table).select(["id", "updated_at", ...columns].join(",")).limit(1000);
+  const { data, error } = await supabaseAdmin.from(table).select(["id", ...columns].join(",")).limit(1000);
   if (error) return [];
   return (data ?? []) as Row[];
 }
