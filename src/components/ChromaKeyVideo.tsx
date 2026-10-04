@@ -75,7 +75,7 @@ export function ChromaKeyVideo({ src, chromakey = "none", color, tolerance = 48,
     // sustained Android CPU heat when several animated frames are mounted.
     const schedule = () => {
       if (disposed || !visible) return;
-      timer = window.setTimeout(render, 66);
+      timer = setTimeout(render, 66);
     };
 
     const render = () => {

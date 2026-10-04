@@ -6,7 +6,7 @@ import { LudoReplayViewer } from "@/components/games/LudoReplayViewer";
 export const Route = createFileRoute("/_authenticated/admin/ludo-replays")({
   component: AdminLudoReplays,
   errorComponent: ({ error }) => (
-    <div className="p-6 text-sm text-red-400">Failed to load: {error?.message}</div>
+    <div className="p-6 text-sm text-red-400">Failed to load: {(error as Error | null)?.message}</div>
   ),
 });
 

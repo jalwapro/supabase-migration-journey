@@ -221,7 +221,7 @@ function RankPage() {
             ) : (
               <ul>
                 {rest.map((r, index) => (
-                  <li key={r.user_id} variants={{ hidden: { opacity: 0, y: 15 }, show: { opacity: 1, y: 0 } }}>
+                  <li key={r.user_id}>
                     <RankItem row={r} index={index + 4} />
                   </li>
                 ))}

@@ -24,7 +24,7 @@ export function useRealtimeInvalidate(channelName: string, subs: Sub[]) {
     let ch = supabase.channel(channelName);
     const pendingKeys = new Map<string, string | (string | number | null | undefined)[]>();
     let flushTimer: number | null = null;
-    const queueInvalidate = (keys: (string | (string | number | null | undefined))[], refetchType: "active" | "none" = "active") => {
+    const queueInvalidate = (keys: (string | (string | number | null | undefined)[])[], refetchType: "active" | "none" = "active") => {
       for (const key of keys) pendingKeys.set(JSON.stringify(key), key);
       if (flushTimer !== null) return;
       flushTimer = window.setTimeout(() => {
