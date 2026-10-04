@@ -71,6 +71,19 @@ function subscribe(qc: QueryClient, channelName: string, subs: Sub[], onStatus?:
   return ch;
 }
 
+const CATALOG_QUERY_KEYS: Record<string, string[]> = {
+  banners: ["banners"], gifts: ["gifts"], gift_categories: ["gift-categories", "gifts"],
+  themes: ["themes", "theme-shop"], user_themes: ["user-themes", "user-owned-items", "theme-shop"],
+  dp_frames: ["dp-frames", "frames"], user_frames: ["user-frames", "frames"],
+  room_backgrounds: ["room-backgrounds"], ads: ["ads"], cms_pages: ["cms-pages"],
+  vip_level_config: ["vip-level-config"], custom_themes: ["custom-themes"],
+  room_top_frames: ["room_top_frames_active"], entrance_effects: ["entrance-effects"],
+  profile_cards: ["profile-cards"], user_profile_cards: ["user-profile-cards"],
+  app_customization_published: ["published-global-config"],
+  app_customization_assets: ["app-customization-assets"], room_slides: ["room-slides"],
+  spotlight_animations: ["spotlight-animations"], theme_categories: ["theme-categories"],
+};
+
 const APP_REALTIME_TABLES = [
   "user_roles","coin_packages","recharge_requests","banners","payment_accounts",
   "gifts","gift_categories","gallery_images","gallery_unlocks","themes","user_themes","vip_tiers",
@@ -223,7 +236,13 @@ export function useGlobalRealtime() {
         ).on(
           "postgres_changes",
           { event: "*", schema: "public", table },
-          () => void qc.invalidateQueries({ refetchType: "active" }),
+          () => {
+            const keys = CATALOG_QUERY_KEYS[table] ?? [];
+            if (!keys.length) return;
+            for (const key of keys) {
+              void qc.invalidateQueries({ queryKey: [key], refetchType: "active" });
+            }
+          },
         );
       }
       chCatalog = channel;
