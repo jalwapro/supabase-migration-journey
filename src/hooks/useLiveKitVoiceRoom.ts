@@ -186,8 +186,8 @@ export function useLiveKitVoiceRoom({ roomId, enabled = true, publish = false, d
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibilityChange);
       void appStateHandle?.remove();
-      void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.off(RoomEvent.TrackSubscribed, onSubscribed); });
-      void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.off(RoomEvent.TrackUnsubscribed, onUnsubscribed); });
+      void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.off(RoomEvent!.TrackSubscribed, onSubscribed); });
+      void roomReady.then((readyRoom) => { if (readyRoom) readyRoom.off(RoomEvent!.TrackUnsubscribed, onUnsubscribed); });
       void (async () => {
         const readyRoom = await roomReady;
         if (!readyRoom) return;
