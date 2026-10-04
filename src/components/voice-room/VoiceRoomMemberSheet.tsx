@@ -68,8 +68,9 @@ export function VoiceRoomMemberSheet({
     setMessageOpen(false);
     setMessage("");
     setProfile(null);
-    setLevelFrame(null);
-    setPopupFrame(null);
+    const level = Math.max(1, Math.floor(Number(member?.level ?? 0)) || 1);
+    setLevelFrame(frameForLevel(level));
+    setPopupFrame(frameForLevel(level));
     setFollowing(false);
     setBlocked(false);
   }, [member?.id]);
@@ -119,12 +120,11 @@ export function VoiceRoomMemberSheet({
   const openProfile = async () => {
     onOpenProfile?.(member);
     setProfileOpen(true);
-    const { data, error } = await supabase.rpc("get_profile_public", { _id: member.id }).maybeSingle();
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
+    // Keep the sheet interactive while the full profile query runs.
+    void supabase.rpc("get_profile_public", { _id: member.id }).maybeSingle().then(({ data, error }) => {
+    if (error) { console.warn("member profile lookup failed", error); return; }
     if (data) setProfile(data as PublicProfile);
+  });
   };
 
   const toggleFollow = async () => {
@@ -207,7 +207,7 @@ export function VoiceRoomMemberSheet({
         {popupFrameUrl ? (
           <div aria-hidden className="pointer-events-none absolute -inset-3 z-0 overflow-visible">
             {/\.(webm|mp4|mov)(\?|$)/i.test(popupFrameUrl) ? (
-              <video src={popupFrameUrl} autoPlay loop muted playsInline preload="auto" className="h-full w-full object-fill" />
+              <video src={popupFrameUrl} autoPlay loop muted playsInline preload="metadata" className="h-full w-full object-fill" />
             ) : (
               <img src={popupFrameUrl} alt="" className="h-full w-full object-fill" />
             )}
