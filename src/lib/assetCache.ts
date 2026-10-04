@@ -29,13 +29,8 @@ const normalize = (url: string) => {
 };
 
 let progress: AssetCacheProgress = {
-  status: "idle",
-  total: 0,
-  completed: 0,
-  downloadedBytes: 0,
-  totalBytes: 0,
-  currentAsset: null,
-  percent: 0,
+  status: "idle", total: 0, completed: 0, downloadedBytes: 0, totalBytes: 0,
+  currentAsset: null, percent: 0,
 };
 
 const listeners = new Set<(value: AssetCacheProgress) => void>();
@@ -45,9 +40,7 @@ function publish(patch: Partial<AssetCacheProgress>) {
   for (const listener of listeners) listener(progress);
 }
 
-export function getAssetCacheProgress() {
-  return progress;
-}
+export function getAssetCacheProgress() { return progress; }
 
 export function subscribeAssetCacheProgress(listener: (value: AssetCacheProgress) => void) {
   listeners.add(listener);
@@ -104,9 +97,7 @@ export async function registerAssetCacheWorker() {
     await navigator.serviceWorker.register("/asset-cache-sw.js", { scope: "/" });
     await navigator.serviceWorker.ready;
     return true;
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 export async function fetchAssetManifest(): Promise<AssetManifestItem[]> {
@@ -118,7 +109,10 @@ export async function fetchAssetManifest(): Promise<AssetManifestItem[]> {
   } catch { return []; }
 }
 
-export async function cacheAsset(item: AssetManifestItem, onComplete?: (item: AssetManifestItem, downloadedBytes: number) => void): Promise<boolean> {
+export async function cacheAsset(
+  item: AssetManifestItem,
+  onComplete?: (item: AssetManifestItem, downloadedBytes: number) => void
+): Promise<boolean> {
   if (!isBrowser() || !item?.url) return false;
   const url = normalize(item.url);
   publish({ status: "downloading", currentAsset: item.url });
@@ -126,6 +120,9 @@ export async function cacheAsset(item: AssetManifestItem, onComplete?: (item: As
   try {
     const cache = await caches.open(CACHE_NAME);
     const meta = await getMeta(url);
+
+    // Version is the source of truth: unchanged assets are reused locally,
+    // changed assets are downloaded once and replace the old local copy.
     if (meta?.version === item.version && await cache.match(url)) {
       onComplete?.(item, 0);
       return true;
@@ -149,15 +146,11 @@ export async function cacheAsset(item: AssetManifestItem, onComplete?: (item: As
   }
 }
 
-function isStartupAsset(item: AssetManifestItem) {
-  // Startup pack: small/common visual assets only. Heavy video/audio stays lazy.
-  return item.priority >= 50 && (item.type === "image" || item.type === "other");
-}
-
 export async function warmAssetManifest(assets: AssetManifestItem[]) {
-  const ordered = [...assets]
-    .filter(isStartupAsset)
-    .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+  // Every catalogued asset is now part of the local-first pack:
+  // gifts, frames, entrances, backgrounds, themes, ranking/profile frames,
+  // animations and audio. Priority controls download order, not eligibility.
+  const ordered = [...assets].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
   if (!ordered.length) {
     publish({ status: "ready", total: 0, completed: 0, percent: 100, currentAsset: null });
@@ -235,7 +228,7 @@ export async function initJalwaAssetCache() {
     return;
   }
 
-  // Critical/common assets are prepared at startup. Heavy MP4/SVGA/audio assets
-  // remain lazy and are cached automatically by the service worker when first used.
+  // Download the complete catalog in the background. Cache is local-first;
+  // only assets whose manifest version changed are fetched again.
   void warmAssetManifest(assets);
 }
