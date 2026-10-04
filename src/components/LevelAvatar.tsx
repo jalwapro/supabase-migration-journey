@@ -140,7 +140,10 @@ export function LevelAvatar({
       playVisible(true);
       return;
     }
-    const observer = new IntersectionObserver(([entry]) => playVisible(entry?.isIntersecting ?? true), { threshold: 0.01 });
+    const observer = new IntersectionObserver(([entry]) => playVisible(entry?.isIntersecting ?? true), {
+      threshold: 0.01,
+      rootMargin: "160px",
+    });
     observer.observe(root);
     return () => {
       observer.disconnect();
@@ -176,7 +179,8 @@ export function LevelAvatar({
               muted
               loop
               playsInline
-              preload="metadata"
+              preload="auto"
+              autoPlay
               className="h-full w-full object-contain"
               style={{ backgroundColor: "transparent" }}
 
@@ -267,7 +271,17 @@ export function LevelAvatar({
             ) : effectiveChroma ? (
               <ChromaKeyImage src={cleanFrameUrl!} color={effectiveChroma.color} tolerance={effectiveChroma.tolerance} softness={effectiveChroma.softness} />
             ) : frameIsVideo ? (
-              <video key={cleanFrameUrl} src={cleanFrameUrl} muted loop playsInline preload="metadata" className="h-full w-full object-contain" style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} onLoadedData={(event) => event.currentTarget.play().catch(() => undefined)} />
+              <video
+                key={cleanFrameUrl}
+                src={cleanFrameUrl}
+                muted
+                loop
+                autoPlay
+                playsInline
+                preload="auto"
+                className="h-full w-full object-contain"
+                style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }}
+              />
             ) : (
               <img src={cleanFrameUrl ?? undefined} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
             )}
