@@ -1,18 +1,41 @@
 const CACHE_NAME = "jalwa-assets-v1";
 const MANAGED = /\.(mp4|webm|mov|svga|svg|png|jpe?g|gif|webp|avif|mp3|wav|ogg|m4a)(\?.*)?$/i;
+
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
 
 self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
+
   const url = new URL(request.url);
   if (!/^https?:$/.test(url.protocol) || !MANAGED.test(url.pathname + url.search)) return;
 
+  const forceRefresh =
+    request.cache === "no-store" ||
+    request.headers.get("cache-control")?.includes("no-cache");
+
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
+
+    // AssetCache uses no-store when a manifest version changed.
+    // Bypass the local hit in that case so the new file can replace it.
+    if (forceRefresh) {
+      try {
+        const response = await fetch(request);
+        if (response.ok && response.type !== "opaque") {
+          event.waitUntil(cache.put(request, response.clone()));
+        }
+        return response;
+      } catch {
+        return (await cache.match(request)) || Response.error();
+      }
+    }
+
+    // Normal app media requests are strictly local-first.
     const hit = await cache.match(request);
     if (hit) return hit;
+
     try {
       const response = await fetch(request);
       if (response.ok && response.type !== "opaque") {
@@ -20,7 +43,7 @@ self.addEventListener("fetch", event => {
       }
       return response;
     } catch {
-      return hit || Response.error();
+      return Response.error();
     }
   })());
 });
