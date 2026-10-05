@@ -58,8 +58,8 @@ export function GlobalMinimizedVoiceRoom() {
       if (error) throw error;
       return (Array.isArray(data) && data.length ? data[0] as RecoverableRoom : null);
     },
-    refetchInterval: 30_000,
-    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: false,
     staleTime: 10_000,
   });
 
@@ -76,7 +76,7 @@ export function GlobalMinimizedVoiceRoom() {
   } : null);
 
   const seatPresence = useQuery({
-    enabled: !!user?.id && !!room?.roomId,
+    enabled: !!user?.id && !!room?.roomId && (!!activeRoom?.isMinimized || !!recovery.data),
     queryKey: ['global-room-seat-presence', room?.roomId, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -88,8 +88,9 @@ export function GlobalMinimizedVoiceRoom() {
       if (error) throw error;
       return (data as unknown as SeatPresence | null) ?? null;
     },
-    refetchInterval: 15_000,
-    staleTime: 5_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+    staleTime: 10_000,
   });
 
   const seatedAvatar = seatPresence.data?.seat_index != null ? seatPresence.data.profile?.avatar : null;
