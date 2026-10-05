@@ -41,7 +41,7 @@ export function DailySpinFloatingButton() {
       if (stopped || document.visibilityState !== "visible") return;
       const remaining = Math.max(0, readyAt - Date.now());
       const delay = remaining <= 60_000 ? 1_000 : 60_000;
-      timer = window.setTimeout(() => {
+      timer = setTimeout(() => {
         setNow(Date.now());
         schedule();
       }, delay);
