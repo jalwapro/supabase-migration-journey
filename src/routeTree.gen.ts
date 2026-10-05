@@ -137,6 +137,7 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedUUserIdRouteImport } from './routes/_authenticated/u.$userId'
 import { Route as ApiAdminPushTestRouteImport } from './routes/api/admin/push-test'
 import { Route as ApiAdminR2GiftsRouteImport } from './routes/api/admin/r2-gifts'
+import { Route as ApiPublicAssetManifestRouteImport } from './routes/api/public/asset-manifest'
 import { Route as ApiPublicFirebaseConfigRouteImport } from './routes/api/public/firebase-config'
 import { Route as ApiPublicPushWebhookRouteImport } from './routes/api/public/push-webhook'
 import { Route as ApiPublicSmtpVerifyRouteImport } from './routes/api/public/smtp-verify'
@@ -838,6 +839,11 @@ const ApiAdminR2GiftsRoute = ApiAdminR2GiftsRouteImport.update({
   path: '/api/admin/r2-gifts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAssetManifestRoute = ApiPublicAssetManifestRouteImport.update({
+  id: '/api/public/asset-manifest',
+  path: '/api/public/asset-manifest',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicFirebaseConfigRoute = ApiPublicFirebaseConfigRouteImport.update({
   id: '/api/public/firebase-config',
   path: '/api/public/firebase-config',
@@ -991,6 +997,7 @@ export interface FileRoutesByFullPath {
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/admin/r2-gifts': typeof ApiAdminR2GiftsRouteWithChildren
+  '/api/public/asset-manifest': typeof ApiPublicAssetManifestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -1123,6 +1130,7 @@ export interface FileRoutesByTo {
   '/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/admin/r2-gifts': typeof ApiAdminR2GiftsRouteWithChildren
+  '/api/public/asset-manifest': typeof ApiPublicAssetManifestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -1259,6 +1267,7 @@ export interface FileRoutesById {
   '/_authenticated/u/$userId': typeof AuthenticatedUUserIdRoute
   '/api/admin/push-test': typeof ApiAdminPushTestRoute
   '/api/admin/r2-gifts': typeof ApiAdminR2GiftsRouteWithChildren
+  '/api/public/asset-manifest': typeof ApiPublicAssetManifestRoute
   '/api/public/firebase-config': typeof ApiPublicFirebaseConfigRoute
   '/api/public/push-webhook': typeof ApiPublicPushWebhookRoute
   '/api/public/smtp-verify': typeof ApiPublicSmtpVerifyRoute
@@ -1395,6 +1404,7 @@ export interface FileRouteTypes {
     | '/u/$userId'
     | '/api/admin/push-test'
     | '/api/admin/r2-gifts'
+    | '/api/public/asset-manifest'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1527,6 +1537,7 @@ export interface FileRouteTypes {
     | '/u/$userId'
     | '/api/admin/push-test'
     | '/api/admin/r2-gifts'
+    | '/api/public/asset-manifest'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1662,6 +1673,7 @@ export interface FileRouteTypes {
     | '/_authenticated/u/$userId'
     | '/api/admin/push-test'
     | '/api/admin/r2-gifts'
+    | '/api/public/asset-manifest'
     | '/api/public/firebase-config'
     | '/api/public/push-webhook'
     | '/api/public/smtp-verify'
@@ -1709,6 +1721,7 @@ export interface RootRouteChildren {
   RoomRoomIdRoute: typeof RoomRoomIdRoute
   ApiAdminPushTestRoute: typeof ApiAdminPushTestRoute
   ApiAdminR2GiftsRoute: typeof ApiAdminR2GiftsRouteWithChildren
+  ApiPublicAssetManifestRoute: typeof ApiPublicAssetManifestRoute
   ApiPublicFirebaseConfigRoute: typeof ApiPublicFirebaseConfigRoute
   ApiPublicPushWebhookRoute: typeof ApiPublicPushWebhookRoute
   ApiPublicSmtpVerifyRoute: typeof ApiPublicSmtpVerifyRoute
@@ -2612,6 +2625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminR2GiftsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/asset-manifest': {
+      id: '/api/public/asset-manifest'
+      path: '/api/public/asset-manifest'
+      fullPath: '/api/public/asset-manifest'
+      preLoaderRoute: typeof ApiPublicAssetManifestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/firebase-config': {
       id: '/api/public/firebase-config'
       path: '/api/public/firebase-config'
@@ -2928,6 +2948,7 @@ const rootRouteChildren: RootRouteChildren = {
   RoomRoomIdRoute: RoomRoomIdRoute,
   ApiAdminPushTestRoute: ApiAdminPushTestRoute,
   ApiAdminR2GiftsRoute: ApiAdminR2GiftsRouteWithChildren,
+  ApiPublicAssetManifestRoute: ApiPublicAssetManifestRoute,
   ApiPublicFirebaseConfigRoute: ApiPublicFirebaseConfigRoute,
   ApiPublicPushWebhookRoute: ApiPublicPushWebhookRoute,
   ApiPublicSmtpVerifyRoute: ApiPublicSmtpVerifyRoute,
