@@ -353,15 +353,37 @@ export function GiftGLVideo({
     };
 
     let raf = 0;
+    let videoFrameHandle: number | null = null;
     let disposed = false;
     let lastW = 0;
     let lastH = 0;
 
+    // Prefer the browser's decoded-video frame clock. A permanent RAF loop
+    // renders 60 GPU frames/second even when the video has not advanced,
+    // which is especially expensive on mobile. Fall back to RAF only on
+    // browsers without requestVideoFrameCallback.
+    const scheduleNext = (v: HTMLVideoElement) => {
+      if (disposed) return;
+      const withVideoFrame = v as HTMLVideoElement & {
+        requestVideoFrameCallback?: (callback: () => void) => number;
+      };
+      if (typeof withVideoFrame.requestVideoFrameCallback === "function") {
+        videoFrameHandle = withVideoFrame.requestVideoFrameCallback(() => {
+          videoFrameHandle = null;
+          frame();
+        });
+      } else {
+        raf = requestAnimationFrame(frame);
+      }
+    };
+
     const frame = () => {
       if (disposed) return;
-      raf = requestAnimationFrame(frame);
       const v = videoRef.current;
-      if (!v || v.readyState < 2 || !v.videoWidth) return;
+      if (!v || v.readyState < 2 || !v.videoWidth) {
+        if (v) scheduleNext(v);
+        return;
+      }
       detect(v);
       const cfg = cfgRef.current;
 
@@ -425,12 +447,19 @@ export function GiftGLVideo({
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      scheduleNext(v);
     };
-    raf = requestAnimationFrame(frame);
+    frame();
 
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      const v = videoRef.current as (HTMLVideoElement & {
+        cancelVideoFrameCallback?: (handle: number) => void;
+      }) | null;
+      if (v && videoFrameHandle !== null && typeof v.cancelVideoFrameCallback === "function") {
+        v.cancelVideoFrameCallback(videoFrameHandle);
+      }
       gl.deleteTexture(tex);
       gl.deleteBuffer(buf);
       gl.deleteProgram(prog);
