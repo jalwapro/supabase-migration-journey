@@ -46,7 +46,7 @@ export function getAssetCacheProgress() { return progress; }
 export function subscribeAssetCacheProgress(listener: (value: AssetCacheProgress) => void) {
   listeners.add(listener);
   listener(progress);
-  return () => listeners.delete(listener);
+  return () => { listeners.delete(listener); };
 }
 
 function openMetaDb(): Promise<IDBDatabase | null> {
