@@ -1,0 +1,71 @@
+/* Mobile performance layer — active when <html> has .perf-lite
+ * (Capacitor Android, or low-memory / low-core devices). */
+
+/* 1. Kill expensive compositing: blur filters + heavy shadows */
+html.perf-lite *,
+html.perf-lite *::before,
+html.perf-lite *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.perf-lite [role="dialog"],
+html.perf-lite [data-radix-popper-content-wrapper] > *,
+html.perf-lite [data-vaul-drawer],
+html.perf-lite [data-jalwa-overlay="true"],
+html.perf-lite [class*="shadow-["],
+html.perf-lite [class*="drop-shadow"] {
+  box-shadow: 0 6px 18px -8px rgba(0, 0, 0, 0.55) !important;
+  filter: none !important;
+}
+
+/* 2. Force GPU layers on animated popups / sheets / overlays */
+[role="dialog"],
+[role="menu"],
+[data-radix-popper-content-wrapper],
+[data-vaul-drawer],
+[data-jalwa-overlay="true"],
+[data-state="open"].fixed {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  contain: layout paint style;
+}
+
+/* 3. Only animate transform/opacity in popups (no layout props) */
+html.perf-lite [role="dialog"],
+html.perf-lite [data-radix-popper-content-wrapper] > * {
+  transition-property: transform, opacity !important;
+  will-change: transform, opacity;
+}
+
+/* 4. Windowing for long lists: offscreen items skip layout + paint */
+html.perf-lite [class*="overflow-y-auto"] > *,
+html.perf-lite [class*="overflow-auto"] > * > *,
+html.perf-lite [data-virtual-item] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 72px;
+}
+
+/* 5. Reduce animation cost: pause decorative infinite animations offscreen
+ * and shorten transitions */
+html.perf-lite .animate-spin-slow,
+html.perf-lite .animate-pulse,
+html.perf-lite .pulse {
+  animation-duration: 3s !important;
+}
+html.perf-lite svg animate,
+html.perf-lite svg animateTransform {
+  /* SMIL in popups is costly; let static frame render */
+}
+html.perf-lite [role="dialog"] svg [filter],
+html.perf-lite [role="dialog"] svg filter {
+  filter: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
