@@ -37,6 +37,9 @@ export function ThemeChrome() {
   useEffect(() => {
     if (typeof document === "undefined") return;
     let disposed = false;
+    let scheduled = false;
+    let lastChrome = "";
+    let applyTimer: number | null = null;
 
     const apply = async () => {
       const bodyStyles = getComputedStyle(document.body);
@@ -45,6 +48,8 @@ export function ThemeChrome() {
       const primary = toHex(primaryVar ? `hsl(${primaryVar})` : "") || toHex(primaryVar);
       const bg = toHex(bgVar ? `hsl(${bgVar})` : "") || toHex(bgVar);
       const chrome = primary || bg || "#1a0d2e";
+      if (disposed || chrome === lastChrome) return;
+      lastChrome = chrome;
 
       // <meta name="theme-color"> — updates address bar / PWA chrome
       let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
@@ -77,11 +82,22 @@ export function ThemeChrome() {
 
     void apply();
 
-    // Watch for theme mode + shop-theme changes
-    const onMode = () => void apply();
+    // Watch for theme changes without running getComputedStyle/native bridge
+    // work for every DOM mutation. App screens mutate classes/styles frequently.
+    const scheduleApply = () => {
+      if (scheduled || disposed) return;
+      scheduled = true;
+      if (applyTimer !== null) window.clearTimeout(applyTimer);
+      applyTimer = window.setTimeout(() => {
+        applyTimer = null;
+        scheduled = false;
+        void apply();
+      }, 120);
+    };
+    const onMode = () => scheduleApply();
     window.addEventListener("jalwa:theme-mode", onMode);
 
-    const obs = new MutationObserver(() => void apply());
+    const obs = new MutationObserver(scheduleApply);
     obs.observe(document.body, {
       attributes: true,
       attributeFilter: ["style", "class"],
@@ -95,6 +111,7 @@ export function ThemeChrome() {
       disposed = true;
       window.removeEventListener("jalwa:theme-mode", onMode);
       obs.disconnect();
+      if (applyTimer !== null) window.clearTimeout(applyTimer);
     };
   }, []);
 
