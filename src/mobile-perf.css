@@ -48,10 +48,27 @@ html.perf-lite [data-virtual-item] {
 
 /* 5. Reduce animation cost: pause decorative infinite animations offscreen
  * and shorten transitions */
+/* Decorative looping animations are switched off entirely on weak phones. */
 html.perf-lite .animate-spin-slow,
 html.perf-lite .animate-pulse,
-html.perf-lite .pulse {
-  animation-duration: 3s !important;
+html.perf-lite .animate-ping,
+html.perf-lite .animate-bounce,
+html.perf-lite .pulse,
+html.perf-lite [class*="animate-[shimmer"],
+html.perf-lite [class*="animate-[float"],
+html.perf-lite [class*="animate-[glow"] {
+  animation: none !important;
+}
+/* Shorter, cheaper transitions everywhere */
+html.perf-lite *,
+html.perf-lite *::before,
+html.perf-lite *::after {
+  transition-duration: 120ms !important;
+}
+/* Offscreen images and cards skip paint */
+html.perf-lite img,
+html.perf-lite video {
+  content-visibility: auto;
 }
 html.perf-lite svg animate,
 html.perf-lite svg animateTransform {
