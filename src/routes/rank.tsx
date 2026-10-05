@@ -82,7 +82,7 @@ function RankPage() {
     staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("rank_users", { 
-        p_category: category, p_period: period, p_scope: scope, p_scope_value: scopeValue, p_limit: 100 
+        p_category: category, p_period: period, p_scope: scope, p_scope_value: scopeValue, p_limit: 10 
       });
       if (error) throw error;
       const rows = (data ?? []) as Omit<Row, "frame" | "ring">[];
