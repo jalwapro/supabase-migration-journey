@@ -60,7 +60,11 @@ export function StudioLayer() {
   useEffect(()=>{
     let cancelled=false;
     if(!page){setConfig(null);return;}
-    void (async()=>{
+    // App Studio is enhancement-only for normal users. Let the route paint and
+    // become interactive first, then fetch/apply its published configuration.
+    const run = () => {
+      if (cancelled) return;
+      void (async()=>{
       try {
         const {data:pageRow,error:pageError}=await supabase.from("app_customization_pages").select("id").eq("page_key",page).eq("is_enabled",true).maybeSingle();
         if(pageError) console.error("[JALWA_STUDIO_PAGE_QUERY]", pageError);
@@ -75,8 +79,15 @@ export function StudioLayer() {
         console.error("[JALWA_STUDIO_LOAD_ERROR]", error);
         if (!cancelled) setConfig(null);
       }
-    })();
-    return()=>{cancelled=true;};
+      })();
+    };
+    const ric = (window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number }).requestIdleCallback;
+    const idleId = ric ? ric(run, { timeout: 700 }) : window.setTimeout(run, 250);
+    return()=>{
+      cancelled=true;
+      if (ric) window.cancelIdleCallback?.(idleId);
+      else window.clearTimeout(idleId);
+    };
   },[page,studioPreview]);
 
   useEffect(()=>{
