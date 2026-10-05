@@ -85,7 +85,7 @@ export function StudioLayer() {
     const idleId = ric ? ric(run, { timeout: 700 }) : window.setTimeout(run, 250);
     return()=>{
       cancelled=true;
-      if (ric) (window as any).cancelIdleCallback?.(idleId);
+      if (ric !== undefined) (window as any).cancelIdleCallback?.(idleId);
       else window.clearTimeout(idleId);
     };
   },[page,studioPreview]);
