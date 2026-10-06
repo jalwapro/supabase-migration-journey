@@ -18,7 +18,6 @@ export function createProductionRenderer(config:AppPageConfig){
   let disposed=false;
   let queued=false;
   let rendering=false;
-  let observer:MutationObserver|undefined;
 
   const run=()=>{
     queued=false;
@@ -26,10 +25,7 @@ export function createProductionRenderer(config:AppPageConfig){
     rendering=true;
     try {
       renderPublishedConfig(config,window.innerWidth<768?"mobile":window.innerWidth<1024?"tablet":"desktop");
-      observer?.takeRecords();
-    } finally {
-      rendering=false;
-    }
+    } finally { rendering=false; }
   };
   const schedule=()=>{
     if(disposed||queued)return;
@@ -39,18 +35,25 @@ export function createProductionRenderer(config:AppPageConfig){
   };
 
   schedule();
-  observer=new MutationObserver((mutations)=>{
-    if(disposed||rendering)return;
-    const meaningful=mutations.some((m)=>
-      m.type==="childList" &&
-      (Array.from(m.addedNodes).some(n=>n.nodeType===1) || Array.from(m.removedNodes).some(n=>n.nodeType===1))
-    );
-    if(meaningful)schedule();
-  });
-  observer.observe(document.body,{childList:true,subtree:true});
+
+  // Mobile route rendering is already driven by React navigation. A body-wide
+  // MutationObserver causes needless work for every popup/list/animation change.
+  const isMobile = window.matchMedia("(max-width: 767px)").matches;
+  let observer: MutationObserver | undefined;
+  if (!isMobile) {
+    observer=new MutationObserver((mutations)=>{
+      if(disposed||rendering)return;
+      const meaningful=mutations.some((m)=>
+        m.type==="childList" &&
+        (Array.from(m.addedNodes).some(n=>n.nodeType===1) || Array.from(m.removedNodes).some(n=>n.nodeType===1))
+      );
+      if(meaningful)schedule();
+    });
+    observer.observe(document.body,{childList:true,subtree:true});
+  }
+
   const onResize=()=>schedule();
   window.addEventListener("resize",onResize,{passive:true});
-
   return()=>{
     disposed=true;
     cancelAnimationFrame(frame);
