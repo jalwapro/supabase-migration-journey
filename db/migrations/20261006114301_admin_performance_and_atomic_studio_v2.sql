@@ -133,7 +133,7 @@ AS $$
   FROM public.live_rooms r
   LEFT JOIN public.room_popularity p ON p.room_id = r.id
   LEFT JOIN public.profiles u ON u.id = r.host_id
-  WHERE r.status = 'live'
+  WHERE r.status = 'live' AND public.room_layout_admin()
   ORDER BY COALESCE(p.coin_score,0) DESC, COALESCE(r.viewer_count,0) DESC, r.created_at DESC
   LIMIT GREATEST(1, LEAST(p_limit, 200));
 $$;
@@ -172,7 +172,7 @@ AS $$
   LEFT JOIN public.profiles rp ON rp.id = r.reporter_id
   LEFT JOIN public.profiles tp ON tp.id = r.reported_user_id
   LEFT JOIN public.live_rooms lr ON lr.id = r.room_id
-  WHERE r.status = p_status
+  WHERE r.status = p_status AND public.room_layout_admin()
   ORDER BY r.created_at DESC, r.id DESC
   LIMIT GREATEST(1, LEAST(p_limit, 100))
   OFFSET GREATEST(0, p_offset);
