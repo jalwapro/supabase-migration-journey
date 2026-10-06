@@ -8,18 +8,16 @@ export const Route = createFileRoute("/_authenticated/admin/finance-reports")({
   component: FinanceReports,
 });
 
-function useSum(table: string, col: string, filter?: { c: string; v: string }) {
+function useSum(status: "approved" | "pending", table: "recharge_requests" | "withdrawal_requests") {
   return useQuery({
-    queryKey: ["fin_sum", table, col, filter],
+    queryKey: ["fin_sum", table, status],
     queryFn: async (): Promise<number> => {
-      let q = supabase.from(table).select(col);
-      if (filter) q = q.eq(filter.c, filter.v);
-      const { data, error } = await q;
+      const { data, error } = await supabase.rpc("get_finance_report_sums", {
+        p_status: status,
+      });
       if (error || !data) return 0;
-      return (data as unknown as Array<Record<string, unknown>>).reduce(
-        (s, r) => s + Number(r[col] ?? 0),
-        0,
-      );
+      const row = table === "recharge_requests" ? data.recharge : data.withdrawal;
+      return Number(row ?? 0);
     },
     staleTime: 120_000,
     gcTime: 10 * 60_000,
@@ -29,10 +27,10 @@ function useSum(table: string, col: string, filter?: { c: string; v: string }) {
 }
 
 function FinanceReports() {
-  const recharged = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" });
-  const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" });
-  const pendingR = useSum("recharge_requests", "amount_pkr", { c: "status", v: "pending" });
-  const pendingW = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "pending" });
+  const recharged = useSum("approved", "recharge_requests");
+  const withdrawn = useSum("approved", "withdrawal_requests");
+  const pendingR = useSum("pending", "recharge_requests");
+  const pendingW = useSum("pending", "withdrawal_requests");
 
   return (
     <>
