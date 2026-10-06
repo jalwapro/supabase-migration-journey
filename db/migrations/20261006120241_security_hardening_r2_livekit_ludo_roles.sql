@@ -1,6 +1,7 @@
 -- 20261006160000: security hardening for role governance and server-authoritative Ludo.
 
 drop policy if exists "Admins manage roles" on public.user_roles;
+revoke insert, delete, update on table public.user_roles from authenticated, anon;
 CREATE OR REPLACE FUNCTION public.ludo_close_match(p_match uuid, p_winner uuid DEFAULT NULL::uuid, p_status text DEFAULT 'finished'::text)
  RETURNS integer
  LANGUAGE plpgsql
