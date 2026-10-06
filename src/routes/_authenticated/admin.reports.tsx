@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Loader2, Flag, User as UserIcon, DoorOpen } from "lucide-react";
@@ -13,84 +13,55 @@ export const Route = createFileRoute("/_authenticated/admin/reports")({
 type Report = {
   id: string;
   reporter_id: string;
+  reporter_username: string | null;
+  reporter_avatar: string | null;
   reported_user_id: string | null;
+  reported_username: string | null;
+  reported_avatar: string | null;
   room_id: string | null;
+  room_title: string | null;
   reason: string;
   details: string | null;
   status: string;
   created_at: string;
 };
 
-type ProfileLite = { id: string; username: string | null; avatar: string | null };
-type RoomLite = { id: string; title: string | null };
-
 function ReportsAdmin() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pending" | "resolved" | "dismissed">("pending");
 
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [tab]);
+
   const list = useQuery({
-    queryKey: ["admin_reports", tab],
+    queryKey: ["admin_reports", tab, page],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("user_reports")
-        .select("*")
-        .eq("status", tab)
-        .order("created_at", { ascending: false })
-        .limit(200);
+      const { data, error } = await supabase.rpc("get_admin_reports", {
+        p_status: tab,
+        p_limit: 50,
+        p_offset: (page - 1) * 50,
+      });
       if (error) throw error;
       return (data ?? []) as Report[];
     },
-  });
-
-  const userIds = useMemo(() => {
-    const s = new Set<string>();
-    list.data?.forEach((r) => {
-      if (r.reporter_id) s.add(r.reporter_id);
-      if (r.reported_user_id) s.add(r.reported_user_id);
-    });
-    return Array.from(s);
-  }, [list.data]);
-
-  const roomIds = useMemo(
-    () => Array.from(new Set((list.data ?? []).map((r) => r.room_id).filter((v): v is string => !!v))),
-    [list.data],
-  );
-
-  const profiles = useQuery({
-    queryKey: ["admin_reports_profiles", userIds],
-    queryFn: async () => {
-      if (userIds.length === 0) return {} as Record<string, ProfileLite>;
-      const { data, error } = await supabase.from("profiles").select("id,username,avatar").in("id", userIds);
-      if (error) throw error;
-      const map: Record<string, ProfileLite> = {};
-      (data ?? []).forEach((p: ProfileLite) => { map[p.id] = p; });
-      return map;
-    },
-    enabled: userIds.length > 0,
-  });
-
-  const rooms = useQuery({
-    queryKey: ["admin_reports_rooms", roomIds],
-    queryFn: async () => {
-      if (roomIds.length === 0) return {} as Record<string, RoomLite>;
-      const { data, error } = await supabase.from("live_rooms").select("id,title").in("id", roomIds);
-      if (error) throw error;
-      const map: Record<string, RoomLite> = {};
-      (data ?? []).forEach((r: RoomLite) => { map[r.id] = r; });
-      return map;
-    },
-    enabled: roomIds.length > 0,
+    staleTime: 10_000,
   });
 
   useEffect(() => {
+    let timer: number | undefined;
     const ch = supabase
       .channel("admin-reports")
       .on("postgres_changes", { event: "*", schema: "public", table: "user_reports" }, () => {
-        qc.invalidateQueries({ queryKey: ["admin_reports"] });
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => void qc.invalidateQueries({ queryKey: ["admin_reports", tab] }), 400);
       })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [qc]);
+    return () => {
+      window.clearTimeout(timer);
+      supabase.removeChannel(ch);
+    };
+  }, [qc, tab]);
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -104,15 +75,13 @@ function ReportsAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const nameOf = (id: string | null | undefined) => {
+  const nameOf = (id: string | null | undefined, username?: string | null) => {
     if (!id) return "—";
-    const p = profiles.data?.[id];
-    return p?.username ? `@${p.username}` : id.slice(0, 8);
+    return username ? `@${username}` : id.slice(0, 8);
   };
-  const roomOf = (id: string | null | undefined) => {
+  const roomOf = (id: string | null | undefined, title?: string | null) => {
     if (!id) return null;
-    const r = rooms.data?.[id];
-    return r?.title ?? id.slice(0, 8);
+    return title ?? id.slice(0, 8);
   };
 
   return (
@@ -134,7 +103,7 @@ function ReportsAdmin() {
       ) : (
         <div className="space-y-2">
           {list.data?.map((r) => {
-            const roomLabel = roomOf(r.room_id);
+            const roomLabel = roomOf(r.room_id, r.room_title);
             return (
               <div key={r.id} className="glass rounded-2xl p-3">
                 <div className="flex items-start gap-2">
@@ -144,7 +113,7 @@ function ReportsAdmin() {
                     {r.details && <p className="mt-1 text-xs text-muted-foreground">{r.details}</p>}
                     <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px]">
                       <span className="rounded-full bg-white/5 px-2 py-0.5 text-muted-foreground">
-                        by {nameOf(r.reporter_id)}
+                        by {nameOf(r.reporter_id, r.reporter_username)}
                       </span>
                       {r.reported_user_id && (
                         <Link
@@ -152,7 +121,7 @@ function ReportsAdmin() {
                           params={{ userId: r.reported_user_id }}
                           className="inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 font-bold text-red-300 hover:bg-red-500/25"
                         >
-                          <UserIcon className="h-3 w-3" /> {nameOf(r.reported_user_id)}
+                          <UserIcon className="h-3 w-3" /> {nameOf(r.reported_user_id, r.reported_username)}
                         </Link>
                       )}
                       {r.room_id && roomLabel && (
@@ -188,6 +157,13 @@ function ReportsAdmin() {
             );
           })}
           {list.data?.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">No reports</p>}
+          <div className="flex items-center justify-between gap-2 pt-2">
+            <span className="text-[11px] text-muted-foreground">Page {page} · 50 reports max</span>
+            <div className="flex gap-2">
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1 || list.isFetching} className="rounded-full border px-3 py-1.5 text-xs disabled:opacity-40">Previous</button>
+              <button onClick={() => setPage((p) => p + 1)} disabled={(list.data?.length ?? 0) < 50 || list.isFetching} className="rounded-full border px-3 py-1.5 text-xs disabled:opacity-40">Next</button>
+            </div>
+          </div>
         </div>
       )}
     </>
