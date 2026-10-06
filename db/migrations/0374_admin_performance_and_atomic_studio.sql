@@ -87,29 +87,32 @@ BEGIN
     ), '[]'::jsonb)
   ) INTO v_result;
 
-  -- Replace the activity array with a merged top-10 stream from the three sources.
+  -- Merge the latest four records from each source into one compact stream.
   v_result := jsonb_set(v_result, '{recent_activity}', COALESCE((
-    SELECT jsonb_agg(to_jsonb(x) ORDER BY x.when_at DESC)
+    SELECT jsonb_agg(
+      jsonb_build_object(
+        'kind', x.kind,
+        'id', x.id,
+        'when', x.when_at,
+        'label', x.label,
+        'sub', x.sub,
+        'amount', x.amount,
+        'tone', x.tone
+      ) ORDER BY x.when_at DESC
+    )
     FROM (
-      SELECT 'recharge'::text kind, 'r-' || id::text id, created_at when_at,
-        'Recharge ' || status label,
-        to_char(COALESCE(coins_expected,0), 'FM999,999,999,990') || ' coins' sub,
-        '+PKR ' || to_char(COALESCE(amount_pkr,0), 'FM999,999,999,990') amount,
-        'text-emerald-400'::text tone
-      FROM public.recharge_requests ORDER BY created_at DESC LIMIT 4
-      UNION ALL
-      SELECT 'withdraw', 'w-' || id::text, created_at,
-        'Withdrawal ' || status, 'Diamond cash-out',
-        '-PKR ' || to_char(COALESCE(amount_pkr,0), 'FM999,999,999,990'),
-        'text-red-400'
-      FROM public.withdrawal_requests ORDER BY created_at DESC LIMIT 4
-      UNION ALL
-      SELECT 'signup', 'u-' || id::text, created_at,
-        '@' || COALESCE(username,'user') || ' joined', 'New signup', NULL,
-        'text-primary'
-      FROM public.profiles ORDER BY created_at DESC LIMIT 4
-    ) x LIMIT 10
-  ), '[]'::jsonb);
+      SELECT 'recharge'::text AS kind, 'r-' || id::text AS id, created_at AS when_at,
+        'Recharge ' || status AS label,
+        to_char(COALESCE(coins_expected,0), 'FM999,999,999,990') || ' coins' AS sub,
+        '+PKR ' || to_char(COALESCE(amount_pkr,0), 'FM999,999,999,990') AS amount,
+        'text-emerald-400'::text AS tone
+      FROM public.recharge_requests
+      ORDER BY created_at DESC LIMIT 4
+    ) x
+    UNION ALL
+    SELECT NULL::jsonb
+  ), '[]'::jsonb));
+
 
   RETURN v_result;
 END;
@@ -137,7 +140,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT
-    r.id, r.title, r.room_type, r.cover_url, r.viewer_count, r.seat_count,
+    r.id, r.title, r.room_type::text, r.cover_url, r.viewer_count, r.seat_count,
     r.host_id, r.created_at, COALESCE(p.coin_score,0),
     u.username, u.avatar
   FROM public.live_rooms r
