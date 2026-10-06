@@ -82,6 +82,7 @@ function RechargeAdmin() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [userSearch, setUserSearch] = useState("");
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["admin_recharges", tab, userSearch.trim()],
