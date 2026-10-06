@@ -44,149 +44,35 @@ const ADMIN_QUERY_OPTS = {
   refetchOnWindowFocus: false,
 } as const;
 
-function useCount(table: string, filter?: { col: string; val: string }) {
+type AdminDashboardSummary = {
+  users: number;
+  rooms: number;
+  live_rooms: number;
+  voice_rooms: number;
+  video_rooms: number;
+  pending_recharge: number;
+  pending_withdrawal: number;
+  pending_reports: number;
+  vip_users: number;
+  new_users: number;
+  approved_recharges: number;
+  revenue: number;
+  withdrawn: number;
+  coins_circulation: number;
+  revenue_series: Array<{ key: string; name: string; value: number }>;
+  recent_activity: Array<{ kind: "recharge" | "withdraw" | "signup"; id: string; when: string; label: string; sub: string; amount?: string; tone: string }>;
+};
+
+function useAdminDashboardSummary(range: DateRange) {
   return useQuery({
-    queryKey: ["admin_count", table, filter],
-    queryFn: async () => {
-      // Exact counts: planner estimates ("planned") ignore the WHERE clause on
-      // small tables and produced nonsense numbers (e.g. 3 pending recharges
-      // when there were 0). Results are cached for 2 minutes below.
-      let q = supabase.from(table).select("id", { count: "exact", head: true });
-      if (filter) q = q.eq(filter.col, filter.val);
-      const { count } = await q;
-      return count ?? 0;
-    },
-    ...ADMIN_QUERY_OPTS,
-  });
-}
-
-function useLiveTypeCount(roomType: "voice" | "video") {
-  return useQuery({
-    queryKey: ["admin_live_type_count", roomType],
-    queryFn: async () => {
-      const { count } = await supabase
-        .from("live_rooms")
-        .select("id", { count: "exact", head: true })
-        .eq("room_type", roomType)
-        .eq("status", "live");
-      return count ?? 0;
-    },
-    ...ADMIN_QUERY_OPTS,
-  });
-}
-
-
-
-function useSum(table: string, col: string, filter?: { c: string; v: string }, range?: DateRange) {
-  return useQuery({
-    queryKey: ["admin_sum", table, col, filter, range?.from, range?.to],
-    queryFn: async (): Promise<number> => {
-      let q = supabase.from(table).select(col);
-      if (filter) q = q.eq(filter.c, filter.v);
-      if (range) {
-        const b = rangeBounds(range);
-        q = q.gte("created_at", b.from).lte("created_at", b.to);
-      }
-      const { data } = await q;
-      const rows = (data ?? []) as unknown as Array<Record<string, unknown>>;
-      return rows.reduce((s, r) => s + Number(r[col] ?? 0), 0);
-    },
-    ...ADMIN_QUERY_OPTS,
-  });
-}
-
-function useRangeCount(table: string, filter: { col: string; val: string } | undefined, range: DateRange) {
-  return useQuery({
-    queryKey: ["admin_rcount", table, filter, range.from, range.to],
-    queryFn: async () => {
-      const b = rangeBounds(range);
-      let q = supabase.from(table).select("id", { count: "exact", head: true })
-        .gte("created_at", b.from).lte("created_at", b.to);
-      if (filter) q = q.eq(filter.col, filter.val);
-      const { count } = await q;
-      return count ?? 0;
-    },
-    ...ADMIN_QUERY_OPTS,
-  });
-}
-
-function useRevenueSeries(range: DateRange) {
-  return useQuery({
-    queryKey: ["admin_rev_series", range.from, range.to],
-    queryFn: async () => {
-      const b = rangeBounds(range);
-      const { data } = await supabase
-        .from("recharge_requests")
-        .select("amount_pkr,created_at,status")
-        .eq("status", "approved")
-        .gte("created_at", b.from)
-        .lte("created_at", b.to);
-
-      const start = new Date(`${range.from}T00:00:00.000Z`);
-      const end = new Date(`${range.to}T00:00:00.000Z`);
-      const days = Math.max(1, Math.round((+end - +start) / 86400000) + 1);
-      const useMonthly = days > 120;
-
-      type Bucket = { key: string; name: string; value: number };
-      const buckets: Bucket[] = [];
-      const idx = new Map<string, Bucket>();
-
-      if (useMonthly) {
-        const cur = new Date(start); cur.setUTCDate(1);
-        while (cur <= end) {
-          const key = `${cur.getUTCFullYear()}-${cur.getUTCMonth()}`;
-          const bk: Bucket = { key, name: cur.toLocaleString("en", { month: "short", year: "2-digit" }), value: 0 };
-          buckets.push(bk); idx.set(key, bk);
-          cur.setUTCMonth(cur.getUTCMonth() + 1);
-        }
-      } else {
-        const cur = new Date(start);
-        while (cur <= end) {
-          const key = toYmd(cur);
-          const bk: Bucket = { key, name: cur.toLocaleDateString("en", { month: "short", day: "numeric" }), value: 0 };
-          buckets.push(bk); idx.set(key, bk);
-          cur.setUTCDate(cur.getUTCDate() + 1);
-        }
-      }
-      (data ?? []).forEach((r: Record<string, unknown>) => {
-        const dt = new Date(r.created_at as string);
-        const key = useMonthly ? `${dt.getUTCFullYear()}-${dt.getUTCMonth()}` : toYmd(dt);
-        const bk = idx.get(key);
-        if (bk) bk.value += Number(r.amount_pkr ?? 0);
+    queryKey: ["admin_dashboard_summary", range.from, range.to],
+    queryFn: async (): Promise<AdminDashboardSummary> => {
+      const { data, error } = await supabase.rpc("get_admin_dashboard_summary", {
+        p_from: rangeBounds(range).from,
+        p_to: rangeBounds(range).to,
       });
-      return buckets;
-    },
-    ...ADMIN_QUERY_OPTS,
-  });
-}
-
-
-function useRecentActivity() {
-  return useQuery({
-    queryKey: ["admin_recent_activity"],
-    queryFn: async () => {
-      const [rech, wd, users] = await Promise.all([
-        supabase.from("recharge_requests").select("id,amount_pkr,coins_expected,status,created_at,user_id").order("created_at", { ascending: false }).limit(4),
-        supabase.from("withdrawal_requests").select("id,amount_pkr,status,created_at,user_id").order("created_at", { ascending: false }).limit(4),
-        supabase.from("profiles").select("id,username,avatar,created_at").order("created_at", { ascending: false }).limit(4),
-      ]);
-      type Row = { kind: "recharge" | "withdraw" | "signup"; id: string; when: string; label: string; sub: string; amount?: string; tone: string };
-      const rows: Row[] = [];
-      (rech.data ?? []).forEach((r) => rows.push({
-        kind: "recharge", id: `r-${r.id}`, when: r.created_at,
-        label: `Recharge ${r.status}`, sub: `${Number(r.coins_expected ?? 0).toLocaleString()} coins`,
-        amount: `+PKR ${Number(r.amount_pkr ?? 0).toLocaleString()}`, tone: "text-emerald-400",
-      }));
-      (wd.data ?? []).forEach((r) => rows.push({
-        kind: "withdraw", id: `w-${r.id}`, when: r.created_at,
-        label: `Withdrawal ${r.status}`, sub: "Diamond cash-out",
-        amount: `-PKR ${Number(r.amount_pkr ?? 0).toLocaleString()}`, tone: "text-red-400",
-      }));
-      (users.data ?? []).forEach((u) => rows.push({
-        kind: "signup", id: `u-${u.id}`, when: u.created_at,
-        label: `@${u.username ?? "user"} joined`, sub: "New signup", tone: "text-primary",
-      }));
-      return rows.sort((a, b) => +new Date(b.when) - +new Date(a.when)).slice(0, 10);
+      if (error) throw error;
+      return (data ?? {}) as AdminDashboardSummary;
     },
     ...ADMIN_QUERY_OPTS,
   });
@@ -264,29 +150,28 @@ function Dashboard() {
     return `${range.from} → ${range.to}`;
   }, [range]);
 
-  const users = useCount("profiles");
-  const rooms = useCount("live_rooms");
-  const liveRooms = useCount("live_rooms", { col: "status", val: "live" });
-  // "Room Types" panel says "currently active" — so only count LIVE rooms,
-  // not the hundreds of ended ones.
-  const voiceRooms = useLiveTypeCount("voice");
-  const videoRooms = useLiveTypeCount("video");
-  const pendingR = useCount("recharge_requests", { col: "status", val: "pending" });
-  const pendingW = useCount("withdrawal_requests", { col: "status", val: "pending" });
-  const reports = useCount("user_reports", { col: "status", val: "pending" });
-  const vip = useCount("profiles", { col: "is_vip", val: "true" });
-
-  const newUsers = useRangeCount("profiles", undefined, range);
-  const approvedInRange = useRangeCount("recharge_requests", { col: "status", val: "approved" }, range);
-  const revenue = useSum("recharge_requests", "amount_pkr", { c: "status", v: "approved" }, range);
-  const withdrawn = useSum("withdrawal_requests", "amount_pkr", { c: "status", v: "approved" }, range);
-  const coinsCirc = useSum("profiles", "coins");
-  const monthly = useRevenueSeries(range);
-  const activity = useRecentActivity();
+  const summary = useAdminDashboardSummary(range);
+  const s = summary.data;
+  const users = { data: s?.users ?? 0 };
+  const rooms = { data: s?.rooms ?? 0 };
+  const liveRooms = { data: s?.live_rooms ?? 0 };
+  const voiceRooms = { data: s?.voice_rooms ?? 0 };
+  const videoRooms = { data: s?.video_rooms ?? 0 };
+  const pendingR = { data: s?.pending_recharge ?? 0 };
+  const pendingW = { data: s?.pending_withdrawal ?? 0 };
+  const reports = { data: s?.pending_reports ?? 0 };
+  const vip = { data: s?.vip_users ?? 0 };
+  const newUsers = { data: s?.new_users ?? 0 };
+  const approvedInRange = { data: s?.approved_recharges ?? 0 };
+  const revenue = { data: s?.revenue ?? 0 };
+  const withdrawn = { data: s?.withdrawn ?? 0 };
+  const coinsCirc = { data: s?.coins_circulation ?? 0 };
+  const monthly = { data: s?.revenue_series ?? [] };
+  const activity = { data: s?.recent_activity ?? [] };
   const health = useAdminHealth();
 
-  const totalRooms = (voiceRooms.data ?? 0) + (videoRooms.data ?? 0);
-  const voicePct = totalRooms ? Math.round(((voiceRooms.data ?? 0) / totalRooms) * 100) : 0;
+  const totalRooms = voiceRooms.data + videoRooms.data;
+  const voicePct = totalRooms ? Math.round((voiceRooms.data / totalRooms) * 100) : 0;
 
   return (
     <>
