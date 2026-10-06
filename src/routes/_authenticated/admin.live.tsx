@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Loader2, Radio, Users, Eye, X, Mic, Video, Crown, Gift, MessageCircle, Megaphone, ExternalLink, Maximize2, Minimize2 } from "lucide-react";
+import { Loader2, Radio, Users, Eye, X, Mic, Video, Crown, Gift, MessageCircle, Megaphone, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/live")({
@@ -26,38 +26,27 @@ type Live = {
 function LiveAdmin() {
   const qc = useQueryClient();
   const [monitorId, setMonitorId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
-
   const list = useQuery({
     queryKey: ["admin_live"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("live_rooms")
-        .select(
-          "id,title,room_type,cover_url,viewer_count,seat_count,host_id,created_at,host:profiles!live_rooms_host_id_fkey(username,avatar)",
-        )
-        .eq("status", "live")
-        .limit(100);
+      const { data, error } = await supabase.rpc("get_admin_live_rooms", { p_limit: 100 });
       if (error) throw error;
-      const rows = (data ?? []) as unknown as Live[];
-      const ids = rows.map((r) => r.id);
-      let scoreMap = new Map<string, number>();
-      if (ids.length) {
-        const { data: pop } = await supabase
-          .from("room_popularity")
-          .select("room_id,coin_score")
-          .in("room_id", ids);
-        (pop ?? []).forEach((p: any) => scoreMap.set(p.room_id, Number(p.coin_score ?? 0)));
-      }
-      rows.forEach((r) => (r.coin_score = scoreMap.get(r.id) ?? 0));
-      rows.sort((a, b) =>
-        (b.coin_score - a.coin_score) ||
-        ((b.viewer_count ?? 0) - (a.viewer_count ?? 0)) ||
-        (new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
-      );
-      return rows;
+      return ((data ?? []) as Array<any>).map((r) => ({
+        id: r.id,
+        title: r.title,
+        room_type: r.room_type,
+        cover_url: r.cover_url,
+        viewer_count: Number(r.viewer_count ?? 0),
+        seat_count: Number(r.seat_count ?? 0),
+        host_id: r.host_id,
+        created_at: r.created_at,
+        coin_score: Number(r.coin_score ?? 0),
+        host: r.username || r.avatar ? { username: r.username ?? null, avatar: r.avatar ?? null } : null,
+      })) as Live[];
     },
-    refetchInterval: 10_000,
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
   });
 
   const topRoom = list.data?.[0] ?? null;
@@ -107,84 +96,44 @@ function LiveAdmin() {
         <Stat label="Video rooms" value={video} />
       </div>
 
-      {/* Embedded monitor — top room auto-pinned; click any Eye to swap */}
+      {/* Lightweight read-only monitor. The real room/RTC is opened only explicitly. */}
       {monitorRoom && (
-        <div className={`glass mb-4 overflow-hidden rounded-2xl border border-primary/30 ${expanded ? "fixed inset-2 z-[80]" : "relative"}`}>
-          <div className="flex items-center gap-2 border-b border-white/10 bg-black/40 px-3 py-2">
+        <div className="glass mb-4 overflow-hidden rounded-2xl border border-primary/30">
+          <div className="flex flex-wrap items-center gap-2 border-b border-white/10 bg-black/40 px-3 py-2">
             <Crown className="h-4 w-4 text-yellow-400" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-black uppercase tracking-wider">
-                Monitoring · {monitorRoom.title}
-              </p>
+              <p className="truncate text-xs font-black uppercase tracking-wider">Monitoring · {monitorRoom.title}</p>
               <p className="truncate text-[10px] text-muted-foreground">
-                @{monitorRoom.host?.username ?? "host"} · 🪙 {monitorRoom.coin_score.toLocaleString()} · 👥 {monitorRoom.viewer_count}
+                @{monitorRoom.host?.username ?? "host"} · 🪙 {monitorRoom.coin_score.toLocaleString()} · 👥 {monitorRoom.viewer_count} · {monitorRoom.room_type}
               </p>
             </div>
-            <Link
-              to="/u/$userId"
-              params={{ userId: monitorRoom.host_id }}
-              className="rounded-full bg-primary/20 p-1.5 text-primary"
-              title="Open host profile (gift / message / appreciate)"
-            >
+            <Link to="/u/$userId" params={{ userId: monitorRoom.host_id }} className="rounded-full bg-primary/20 p-1.5 text-primary" title="Open host profile">
               <Gift className="h-3.5 w-3.5" />
             </Link>
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="rounded-full bg-white/10 p-1.5"
-              title={expanded ? "Restore" : "Expand"}
-            >
-              {expanded ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-            </button>
-            <a
-              href={`/room/${monitorRoom.id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full bg-white/10 p-1.5"
-              title="Open in new tab"
-            >
+            <a href={`/room/${monitorRoom.id}`} target="_blank" rel="noreferrer" className="rounded-full bg-white/10 p-1.5" title="Open full room">
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
-            <button
-              onClick={() => setMonitorId(null)}
-              className="rounded-full bg-red-500/20 p-1.5 text-red-300"
-              title="Close monitor"
-            >
+            <button onClick={() => setMonitorId(null)} className="rounded-full bg-red-500/20 p-1.5 text-red-300" title="Close monitor">
               <X className="h-3.5 w-3.5" />
             </button>
           </div>
-          <iframe
-            key={monitorRoom.id}
-            src={`/room/${monitorRoom.id}?adminMonitor=1`}
-            title={`Room ${monitorRoom.id}`}
-            className={`w-full bg-black ${expanded ? "h-[calc(100%-44px)]" : "h-[560px]"}`}
-            allow="autoplay; microphone; camera; clipboard-write"
-          />
+          <div className="grid grid-cols-2 gap-2 p-3 md:grid-cols-4">
+            <Stat label="Viewers" value={monitorRoom.viewer_count} />
+            <Stat label="Seats" value={monitorRoom.seat_count} />
+            <Stat label="Coin score" value={monitorRoom.coin_score} />
+            <Stat label="Type" value={monitorRoom.room_type === "voice" ? 1 : 0} />
+          </div>
           <div className="flex flex-wrap gap-1.5 border-t border-white/10 bg-black/40 px-3 py-2">
-            <Link
-              to="/u/$userId"
-              params={{ userId: monitorRoom.host_id }}
-              className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary"
-            >
+            <Link to="/u/$userId" params={{ userId: monitorRoom.host_id }} className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-[10px] font-bold text-primary">
               <Gift className="h-3 w-3" /> Gift host
             </Link>
-            <Link
-              to="/messages/$peerId"
-              params={{ peerId: monitorRoom.host_id }}
-
-              className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold"
-            >
+            <Link to="/messages/$peerId" params={{ peerId: monitorRoom.host_id }} className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
               <MessageCircle className="h-3 w-3" /> Message
             </Link>
-            <Link
-              to="/admin/notifications"
-              className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold"
-            >
+            <Link to="/admin/notifications" className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold">
               <Megaphone className="h-3 w-3" /> Announcement
             </Link>
-            <button
-              onClick={() => confirm(`End "${monitorRoom.title}"?`) && endLive.mutate(monitorRoom.id)}
-              className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2.5 py-1 text-[10px] font-bold text-red-300"
-            >
+            <button onClick={() => confirm(`End "${monitorRoom.title}"?`) && endLive.mutate(monitorRoom.id)} className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2.5 py-1 text-[10px] font-bold text-red-300">
               <X className="h-3 w-3" /> Force end
             </button>
           </div>
