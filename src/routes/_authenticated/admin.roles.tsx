@@ -55,7 +55,6 @@ function RolesAdmin() {
         _action: "grant",
       });
       if (error) throw error;
-      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
       toast.success("Role granted");
