@@ -27,7 +27,7 @@ export function AdminHubTabs({
           return (
             <Link
               key={tab.to}
-              to={tab.to}
+              to={tab.to as any}
               className={`shrink-0 rounded-xl px-3 py-2 text-xs font-bold transition ${active ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-card hover:text-foreground"}`}
             >
               {tab.label}
