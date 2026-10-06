@@ -74,16 +74,31 @@ BEGIN
       ) s
     ), '[]'::jsonb),
     'recent_activity', COALESCE((
-      SELECT jsonb_agg(to_jsonb(a) ORDER BY a.when_at DESC)
+      SELECT jsonb_agg(
+        jsonb_build_object(
+          'kind', x.kind, 'id', x.id, 'when', x.when_at,
+          'label', x.label, 'sub', x.sub, 'amount', x.amount, 'tone', x.tone
+        ) ORDER BY x.when_at DESC
+      )
       FROM (
-        SELECT 'recharge'::text AS kind, id::text AS id, created_at AS when_at,
+        (SELECT 'recharge'::text AS kind, 'r-' || id::text AS id, created_at AS when_at,
           'Recharge ' || status AS label,
           to_char(COALESCE(coins_expected,0), 'FM999,999,999,990') || ' coins' AS sub,
           '+PKR ' || to_char(COALESCE(amount_pkr,0), 'FM999,999,999,990') AS amount,
           'text-emerald-400'::text AS tone
-        FROM public.recharge_requests
-        ORDER BY created_at DESC LIMIT 4
-      ) a
+         FROM public.recharge_requests ORDER BY created_at DESC LIMIT 4)
+        UNION ALL
+        (SELECT 'withdraw'::text, 'w-' || id::text, created_at,
+          'Withdrawal ' || status, 'Diamond cash-out',
+          '-PKR ' || to_char(COALESCE(amount_pkr,0), 'FM999,999,999,990'),
+          'text-red-400'::text
+         FROM public.withdrawal_requests ORDER BY created_at DESC LIMIT 4)
+        UNION ALL
+        (SELECT 'signup'::text, 'u-' || id::text, created_at,
+          '@' || COALESCE(username,'user') || ' joined', 'New signup', NULL::text,
+          'text-primary'::text
+         FROM public.profiles ORDER BY created_at DESC LIMIT 4)
+      ) x
     ), '[]'::jsonb)
   ) INTO v_result;
 
