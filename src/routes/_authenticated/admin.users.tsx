@@ -24,6 +24,7 @@ type Row = {
   status: string;
   user_code: string | null;
   last_seen: string | null;
+  created_at: string;
 };
 
 type FrameItem = {
@@ -43,15 +44,26 @@ function frameCategory(item: FrameItem) {
 function UsersAdmin() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
+  const [vipFilter, setVipFilter] = useState<"all" | "vip" | "nonvip">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "banned">("all");
+  const [dateFilter, setDateFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
+  const [sort, setSort] = useState<"recent" | "oldest" | "coins_desc" | "coins_asc">("recent");
 
   const list = useQuery({
-    queryKey: ["admin_users", q],
+    queryKey: ["admin_users", q, vipFilter, statusFilter, dateFilter, sort],
     queryFn: async () => {
       let query = supabase
         .from("profiles")
-        .select("id,username,full_name,avatar,frame,coins,diamonds,level,is_vip,status,user_code,last_seen")
-        .order("last_seen", { ascending: false, nullsFirst: false })
+        .select("id,username,full_name,avatar,frame,coins,diamonds,level,is_vip,status,user_code,last_seen,created_at")
+        .order(sort === "coins_desc" || sort === "coins_asc" ? "coins" : "created_at", { ascending: sort === "coins_asc" || sort === "oldest", nullsFirst: false })
         .limit(50);
+      if (vipFilter === "vip") query = query.eq("is_vip", true);
+      if (vipFilter === "nonvip") query = query.eq("is_vip", false);
+      if (statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (dateFilter !== "all") {
+        const days = Number(dateFilter.replace("d", ""));
+        query = query.gte("created_at", new Date(Date.now() - days * 86400000).toISOString());
+      }
       if (q.trim()) {
         const term = q.trim();
         // User IDs are UUIDs, so use an exact ID filter instead of ilike.
@@ -138,14 +150,15 @@ function UsersAdmin() {
         title="Users"
         subtitle="Search, moderate and adjust balances"
         right={
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search username / code…"
-              className="w-64 rounded-full border border-border bg-input py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
-            />
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search username / code…" className="w-56 rounded-full border border-border bg-input py-2 pl-9 pr-3 text-sm outline-none focus:border-primary" />
+            </div>
+            <select value={vipFilter} onChange={(e) => setVipFilter(e.target.value as typeof vipFilter)} className="rounded-full border border-border bg-input px-3 py-2 text-xs"><option value="all">All VIP</option><option value="vip">VIP only</option><option value="nonvip">Non-VIP</option></select>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)} className="rounded-full border border-border bg-input px-3 py-2 text-xs"><option value="all">All status</option><option value="active">Active</option><option value="banned">Banned</option></select>
+            <select value={dateFilter} onChange={(e) => setDateFilter(e.target.value as typeof dateFilter)} className="rounded-full border border-border bg-input px-3 py-2 text-xs"><option value="all">Any registration</option><option value="7d">Registered 7d</option><option value="30d">Registered 30d</option><option value="90d">Registered 90d</option></select>
+            <select value={sort} onChange={(e) => setSort(e.target.value as typeof sort)} className="rounded-full border border-border bg-input px-3 py-2 text-xs"><option value="recent">Newest</option><option value="oldest">Oldest</option><option value="coins_desc">Coins ↓</option><option value="coins_asc">Coins ↑</option></select>
           </div>
         }
       />
