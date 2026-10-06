@@ -102,31 +102,6 @@ BEGIN
     ), '[]'::jsonb)
   ) INTO v_result;
 
-  -- Merge the latest four records from each source into one compact stream.
-  v_result := jsonb_set(v_result, '{recent_activity}', COALESCE((
-    SELECT jsonb_agg(
-      jsonb_build_object(
-        'kind', x.kind,
-        'id', x.id,
-        'when', x.when_at,
-        'label', x.label,
-        'sub', x.sub,
-        'amount', x.amount,
-        'tone', x.tone
-      ) ORDER BY x.when_at DESC
-    )
-    FROM (
-      SELECT 'recharge'::text AS kind, 'r-' || id::text AS id, created_at AS when_at,
-        'Recharge ' || status AS label,
-        to_char(COALESCE(coins_expected,0), 'FM999,999,999,990') || ' coins' AS sub,
-        '+PKR ' || to_char(COALESCE(amount_pkr,0), 'FM999,999,999,990') AS amount,
-        'text-emerald-400'::text AS tone
-      FROM public.recharge_requests
-      ORDER BY created_at DESC LIMIT 4
-    ) x
-    UNION ALL
-    SELECT NULL::jsonb
-  ), '[]'::jsonb));
 
 
   RETURN v_result;
