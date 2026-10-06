@@ -24,9 +24,6 @@ CREATE INDEX IF NOT EXISTS idx_user_reports_status_created
   ON public.user_reports(status, created_at DESC, id DESC);
 CREATE INDEX IF NOT EXISTS idx_live_rooms_status_created
   ON public.live_rooms(status, created_at DESC, id DESC);
-CREATE INDEX IF NOT EXISTS idx_room_popularity_room
-  ON public.room_popularity(room_id);
-
 CREATE OR REPLACE FUNCTION public.get_admin_dashboard_summary(
   p_from TIMESTAMPTZ,
   p_to TIMESTAMPTZ
