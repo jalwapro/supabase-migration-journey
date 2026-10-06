@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,12 +21,36 @@ const LOVABLE_ASSET_ORIGIN="https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_THUMB_URL=`${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 function isRoyalRoseGift(name:string|null|undefined){const n=(name??"").toLowerCase().replace(/[^a-z]+/g," ").trim();return n==="royal rose"||(n.includes("royal")&&n.includes("rose"));}
 function GiftPreview({gift,large=false}:{gift:Gift;large?:boolean}){const cls="h-full w-full object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]";if(isRoyalRoseGift(gift.name))return <img src={ROYAL_ROSE_THUMB_URL} alt={gift.name} className={cls}/>;const thumb=resolveGiftImageUrl(gift.image_url??gift.icon_path??(isAssetUrlLike(gift.icon)?gift.icon:null));if(thumb)return <img src={thumb} alt={gift.name} className={cls}/>;if(gift.clip_path&&gift.clip_type==="svg")return <img src={resolveGiftImageUrl(gift.clip_path)??gift.clip_path} alt={gift.name} className={cls}/>;return <span className={`${large?"text-3xl":"text-2xl"} leading-none`}>{gift.icon??gift.emoji??"🎁"}</span>;}
+
+const GiftGrid = memo(function GiftGrid({ gifts, selectedGiftId, onSelect }: { gifts: Gift[]; selectedGiftId: string | null; onSelect: (gift: Gift) => void }) {
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const scrollLeftRef = useRef(0);
+  return (
+    <div ref={gridRef} onScroll={(e) => { scrollLeftRef.current = e.currentTarget.scrollLeft; }} className="flex-1 overflow-x-auto overflow-y-hidden px-3 py-2 no-scrollbar scroll-smooth">
+      <div className="grid h-full grid-flow-col grid-rows-2 auto-cols-[calc((100vw-42px)/4)] sm:auto-cols-[calc((100%-42px)/4)] gap-2">
+        {gifts.map((g) => {
+          const isSelected = selectedGiftId === g.id;
+          return (
+            <button key={g.id} type="button" onClick={() => onSelect(g)} className={`relative flex min-w-0 w-full h-full flex-col items-center justify-between rounded-xl border p-1 text-center transition-all ${isSelected ? "border-pink-500 bg-pink-500/15 shadow-[0_0_10px_rgba(236,72,153,0.3)]" : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"}`}>
+              <div className="relative h-16 w-full overflow-hidden rounded-lg bg-black/20 flex items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center p-0.5"><GiftPreview gift={g} large /></div>
+              </div>
+              <div className="w-full truncate text-[10px] font-medium text-white/90 px-0.5">{g.name}</div>
+              <div className="flex items-center justify-center gap-0.5 text-[9px] text-yellow-300 font-bold"><Coins className="h-2.5 w-2.5" /><span>{price(g)}</span></div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+});
 export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:()=>void;roomId:string;receivers:GiftReceiver[]}){
  const {profile,refresh}=useAuth();const qc=useQueryClient();const giftGridRef=useRef<HTMLDivElement|null>(null);const giftScrollLeftRef=useRef(0);const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
  useEffect(()=>{if(open&&giftGridRef.current){giftGridRef.current.scrollLeft=giftScrollLeftRef.current;}},[open]);
  useEffect(()=>{if(open&&receivers.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receivers.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receivers,profile?.id]);
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
  const price=(g:Gift|null)=>(g?.price_coins??g?.price??0) as number;const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
+ const handleGiftSelect=useCallback((gift:Gift)=>{setSelectedGift(gift);preloadGiftVideo(giftVideoUrl(gift));},[activeTier]);
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
  useEffect(()=>{if(!open)return;
    // Gift sheet must open instantly. Video bytes are fetched/cached only when a
@@ -95,30 +119,15 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
         })}
       </div>
 
-      <div ref={giftGridRef} onScroll={(e) => { giftScrollLeftRef.current = e.currentTarget.scrollLeft; }} className="flex-1 overflow-x-auto overflow-y-hidden px-3 py-2 no-scrollbar scroll-smooth">
-        <div className="grid h-full grid-flow-col grid-rows-2 auto-cols-[calc((100vw-42px)/4)] sm:auto-cols-[calc((100%-42px)/4)] gap-2">
-          {gifts.isLoading ? (
-            <div className="w-full flex items-center justify-center"><Loader2 className="animate-spin h-5 w-5 text-violet-400" /></div>
-          ) : gifts.isError ? (
-            <div className="w-full text-center text-xs text-red-300">Failed to load gifts.</div>
-          ) : visibleGifts.length === 0 ? (
-            <div className="w-full text-center text-xs text-white/40">No gifts available in this tier.</div>
-          ) : (
-            visibleGifts.map((g) => {
-              const isSelected = selectedGift?.id === g.id;
-              return (
-                <button key={g.id} type="button" onClick={() => { setSelectedGift(g); preloadGiftVideo(giftVideoUrl(g)); }} className={`relative flex min-w-0 w-full h-full flex-col items-center justify-between rounded-xl border p-1 text-center transition-all ${isSelected ? "border-pink-500 bg-pink-500/15 shadow-[0_0_10px_rgba(236,72,153,0.3)]" : "border-white/10 bg-white/[0.03] hover:bg-white/[0.07]"}`}>
-                  <div className="relative h-16 w-full overflow-hidden rounded-lg bg-black/20 flex items-center justify-center">
-                    <div className="absolute inset-0 flex items-center justify-center p-0.5"><GiftPreview gift={g} large /></div>
-                  </div>
-                  <div className="w-full truncate text-[10px] font-medium text-white/90 px-0.5">{g.name}</div>
-                  <div className="flex items-center justify-center gap-0.5 text-[9px] text-yellow-300 font-bold"><Coins className="h-2.5 w-2.5" /><span>{price(g)}</span></div>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </div>
+      {gifts.isLoading ? (
+        <div className="flex-1 flex items-center justify-center"><Loader2 className="animate-spin h-5 w-5 text-violet-400" /></div>
+      ) : gifts.isError ? (
+        <div className="flex-1 flex items-center justify-center text-xs text-red-300">Failed to load gifts.</div>
+      ) : visibleGifts.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center text-xs text-white/40">No gifts available in this tier.</div>
+      ) : (
+        <GiftGrid gifts={visibleGifts} selectedGiftId={selectedGift?.id ?? null} onSelect={handleGiftSelect} />
+      )}
 
       <div className="border-t border-white/10 bg-black/40 px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 bg-white/[0.06] border border-white/10 px-3 py-1.5 rounded-xl">
