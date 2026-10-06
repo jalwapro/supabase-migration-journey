@@ -44,7 +44,7 @@ export function HostCard({ host, onTap }: { host: HostCardData; onTap?: () => vo
         <LevelAvatar src={host.avatar} name={host.username} level={0} size="sm" showBadge={false} frame={resolvedFrame} renderConfigOverride={renderConfig} className="" />
       </span>
       {host.is_vip === true && <BadgeCheck className="absolute right-[5%] top-[5%] z-50 h-[22%] w-[22%] fill-cyan-400 text-white drop-shadow" />}
-      <span className={cn("absolute bottom-[4%] right-[5%] z-50 grid h-[24%] w-[24%] items-center justify-center rounded-full border-2 border-[#2b1328] text-white shadow", active ? "bg-emerald-500" : "bg-red-500")}>{active ? <Mic className="h-[55%] w-[55%]" /> : <MicOff className="h-[55%] w-[55%}" />}</span>
+      <span className={cn("absolute bottom-[4%] right-[5%] z-50 grid h-[24%] w-[24%] items-center justify-center rounded-full border-2 border-[#2b1328] text-white shadow", active ? "bg-emerald-500" : "bg-red-500")}>{active ? <Mic className="h-[55%] w-[55%]" /> : <MicOff className="h-[55%] w-[55%]" />}</span>
     </button>
   );
 }
