@@ -34,7 +34,6 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const gameRef = useRef<LudoGameState | null>(null);
   const matchIdRef = useRef<string | null>(null);
-  const payoutSettledRef = useRef(false);
   const revisionRef = useRef(0);
   const lastRemoteRevisionRef = useRef(0);
   gameRef.current = game;
@@ -115,7 +114,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   useEffect(() => { void restoreGame(); }, [open, roomId, user?.id]);
 
   const resetToClosed = () => {
-    setStep("mode"); setGame(null); setBetModalOpen(false); setActiveBet(0); matchIdRef.current = null; payoutSettledRef.current = false; isAuthority.current = false;
+    setStep("mode"); setGame(null); setBetModalOpen(false); setActiveBet(0); matchIdRef.current = null; isAuthority.current = false;
     revisionRef.current = 0; lastRemoteRevisionRef.current = 0;
     if (channelRef.current) { void supabase.removeChannel(channelRef.current); channelRef.current = null; }
   };
