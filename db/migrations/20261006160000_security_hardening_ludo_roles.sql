@@ -1,9 +1,6 @@
 -- 20261006160000: security hardening for role governance and server-authoritative Ludo.
 
 drop policy if exists "Admins manage roles" on public.user_roles;
-drop policy if exists "Super admins view all roles" on public.user_roles;
-create policy "Super admins view all roles" on public.user_roles for select to authenticated using (public.is_admin(auth.uid()));
-
 CREATE OR REPLACE FUNCTION public.ludo_close_match(p_match uuid, p_winner uuid DEFAULT NULL::uuid, p_status text DEFAULT 'finished'::text)
  RETURNS integer
  LANGUAGE plpgsql
@@ -360,9 +357,9 @@ $function$
 
 revoke execute on function public.manage_user_role(uuid,text,text) from public, anon;
 grant execute on function public.manage_user_role(uuid,text,text) to authenticated;
-revoke execute on function public.ludo_server_roll(uuid,integer) from public;
-revoke execute on function public.ludo_server_move(uuid,integer,integer) from public;
-revoke execute on function public.ludo_get_state(uuid) from public;
+revoke execute on function public.ludo_server_roll(uuid,integer) from public, anon;
+revoke execute on function public.ludo_server_move(uuid,integer,integer) from public, anon;
+revoke execute on function public.ludo_get_state(uuid) from public, anon;
 grant execute on function public.ludo_server_roll(uuid,integer) to authenticated;
 grant execute on function public.ludo_server_move(uuid,integer,integer) to authenticated;
 grant execute on function public.ludo_get_state(uuid) to authenticated;
