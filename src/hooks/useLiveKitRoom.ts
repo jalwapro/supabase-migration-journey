@@ -117,6 +117,7 @@ function multiAudioFacade(tracks: AnyTrack[]): RemoteAudioTrack {
 export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiveKitRoomArgs) {
   const roomRef = useRef<Room | null>(null);
   const joinSeqRef = useRef(0);
+  const tokenRefreshInFlightRef = useRef(false);
   const publishRef = useRef(publish);
   const videoRef = useRef(video);
   publishRef.current = publish;
@@ -208,17 +209,60 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       });
     };
     const onSpeakers = (speakers: Participant[]) => setSpeakingUids(new Set(speakers.map((participant) => uidFromIdentity(participant.identity))));
+    const refreshLiveKitToken = async () => {
+      if (cancelled || tokenRefreshInFlightRef.current) return;
+      tokenRefreshInFlightRef.current = true;
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        const userId = data.session?.user?.id;
+        if (!token || !userId) throw new Error("Sign in first");
+
+        const response = await fetch("/api/livekit-token", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ userId, roomName, name: `Jalwa user ${uid}`, canPublish: publishRef.current }),
+        });
+        const body = await response.json() as { server_url?: string; participant_token?: string; room?: string; error?: string };
+        if (!response.ok || !body.server_url || !body.participant_token) {
+          throw new Error(body.error ?? "LiveKit token refresh failed");
+        }
+        const tokenRoomName = typeof body.room === "string" ? body.room.trim() : roomName;
+        if (tokenRoomName !== roomName) throw new Error("LiveKit room mismatch");
+
+        const currentRoom = roomRef.current;
+        if (!currentRoom || cancelled) return;
+        // LiveKit will use the refreshed JWT for the reconnect attempt. If the
+        // room has already fully disconnected, reconnect the same Room instance.
+        await currentRoom.updateToken(body.participant_token);
+        if (currentRoom.state === "disconnected" && !cancelled) {
+          await currentRoom.connect(body.server_url, body.participant_token, { autoSubscribe: true });
+          currentRoom.remoteParticipants.forEach(refresh);
+          if (!cancelled) setStatus("connected");
+        }
+      } catch (refreshError) {
+        console.error("[LiveKit] Token refresh/reconnect failed", refreshError);
+        if (!cancelled) {
+          setError(refreshError instanceof Error ? refreshError.message : "LiveKit reconnect failed");
+          setStatus("error");
+        }
+      } finally {
+        tokenRefreshInFlightRef.current = false;
+      }
+    };
+
     const onDisconnected = (reason?: unknown) => {
       console.error("LiveKit Disconnected Reason:", reason);
       console.error("LiveKit Disconnected Error Object:", reason);
       console.error("LiveKit Disconnected Error Message:", reason instanceof Error ? reason.message : String(reason ?? "Unknown disconnect reason"));
-      if (!cancelled) setStatus("idle");
+      if (!cancelled) void refreshLiveKitToken();
     };
 
     const onReconnecting = () => {
       if (!cancelled) {
-        console.warn("[LiveKit] Connection lost, reconnecting...");
+        console.warn("[LiveKit] Connection lost, refreshing LiveKit token...");
         setStatus("connecting");
+        void refreshLiveKitToken();
       }
     };
 
