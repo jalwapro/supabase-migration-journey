@@ -249,6 +249,28 @@ BEGIN
 
   PERFORM pg_advisory_xact_lock(hashtext(p_page_id::text));
 
+  -- Keep the editor's draft synchronized with the exact config being published,
+  -- while holding the same transaction/advisory lock.
+  UPDATE public.app_customization_versions
+  SET config = p_config, created_by = auth.uid()
+  WHERE id = (
+    SELECT id
+    FROM public.app_customization_versions
+    WHERE page_id = p_page_id AND status = 'draft'
+    ORDER BY version DESC
+    LIMIT 1
+    FOR UPDATE
+  );
+
+  IF NOT FOUND THEN
+    SELECT COALESCE(MAX(version),0) + 1 INTO v_version
+    FROM public.app_customization_versions
+    WHERE page_id = p_page_id;
+
+    INSERT INTO public.app_customization_versions(page_id, version, status, config, created_by)
+    VALUES(p_page_id, v_version, 'draft', p_config, auth.uid());
+  END IF;
+
   SELECT COALESCE(MAX(version),0) + 1 INTO v_version
   FROM public.app_customization_versions
   WHERE page_id = p_page_id;
