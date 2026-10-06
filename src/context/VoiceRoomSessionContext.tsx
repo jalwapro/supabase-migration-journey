@@ -19,7 +19,6 @@ export function VoiceRoomSessionProvider({ children }: { children: React.ReactNo
   const restoreRoom = useCallback(() => setActiveRoom(r => r ? { ...r, isMinimized: false } : r), []);
   const clearRoom = useCallback(() => setActiveRoom(null), []);
   const updateRoom = useCallback((patch: Partial<ActiveVoiceRoom>) => setActiveRoom(r => r ? { ...r, ...patch } : r), []);
-  useEffect(() => { if (!user?.id) return; const onClick = (event: MouseEvent) => { const target = event.target as HTMLElement | null; const button = target?.closest('button') as HTMLButtonElement | null; if (!button) return; const label = [button.getAttribute('aria-label'), button.getAttribute('title'), button.textContent].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim(); if (!/\bminimi[sz]e\b/i.test(label)) return; const match = window.location.pathname.match(/^\/room\/([^/?#]+)/); if (!match) return; const roomId = decodeURIComponent(match[1]); minimizeRoom({ roomId, roomRoute: `/room/${encodeURIComponent(roomId)}`, userId: user.id, userRole: 'user', connectionState: 'connected', microphoneMuted: false }); }; document.addEventListener('click', onClick, true); return () => document.removeEventListener('click', onClick, true); }, [user?.id, minimizeRoom]);
   const value = useMemo(() => ({ activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom }), [activeRoom, minimizeRoom, restoreRoom, clearRoom, updateRoom]);
   return <VoiceRoomSessionContext.Provider value={value}>{children}</VoiceRoomSessionContext.Provider>;
 }
