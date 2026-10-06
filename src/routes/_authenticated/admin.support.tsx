@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AdminHubTabs, SUPPORT_HUB_TABS } from "@/components/admin/AdminHubTabs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,7 +57,8 @@ function SupportAdmin() {
 
   return (
     <>
-      <AdminPageHeader title="Support Center" subtitle="User support tickets" />
+      <AdminHubTabs title="Support & Helpdesk" tabs={SUPPORT_HUB_TABS} />
+    <AdminPageHeader title="Support Center" subtitle="User support tickets" />
       <div className="mb-3 flex gap-2">
         {(["open", "closed"] as const).map((s) => (
           <button
