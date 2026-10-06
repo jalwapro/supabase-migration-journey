@@ -125,15 +125,25 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     if (!open || !roomId) return;
     const ch = supabase.channel(`ludo-${roomId}`, { config: { broadcast: { self: false, ack: true } } });
     ch.on("broadcast", { event: "state" }, ({ payload }) => {
-      const packet = payload as RevisionedState | undefined;
-      const incoming = packet?.state;
+      const packet = payload as { revision?: number } | undefined;
       const revision = Number(packet?.revision);
-      if (!incoming || !Number.isFinite(revision) || revision <= lastRemoteRevisionRef.current) return;
-      lastRemoteRevisionRef.current = revision; revisionRef.current = revision; setGame(incoming); setStep("play");
+      if (!Number.isFinite(revision) || revision <= lastRemoteRevisionRef.current || !matchIdRef.current) return;
+      lastRemoteRevisionRef.current = revision;
+      revisionRef.current = revision;
+      void supabase.rpc("ludo_get_state", { p_match: matchIdRef.current }).then(({ data, error }) => {
+        if (error || !data) return;
+        const snapshot = data as { id?: string; bet_coins?: number; status?: string; server_state?: ServerLudoState };
+        if (!snapshot.server_state) return;
+        const authoritative = hydrateServerState(snapshot.server_state, String(snapshot.id ?? matchIdRef.current), Number(snapshot.bet_coins ?? activeBet));
+        if (authoritative) {
+          setGame(authoritative);
+          setStep("play");
+        }
+      });
     });
     ch.on("broadcast", { event: "sync-request" }, () => {
       if (!gameRef.current) return;
-      void ch.send({ type: "broadcast", event: "state", payload: { state: gameRef.current, revision: revisionRef.current } });
+      void ch.send({ type: "broadcast", event: "state", payload: { revision: revisionRef.current } });
     });
     ch.subscribe((status) => { if (status === "SUBSCRIBED") void ch.send({ type: "broadcast", event: "sync-request", payload: {} }); });
     channelRef.current = ch;
@@ -152,21 +162,34 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     if (!roomId || !channelRef.current) return;
     if (bump) revisionRef.current += 1;
     const revision = revisionRef.current;
-    setTimeout(() => { void channelRef.current?.send({ type: "broadcast", event: "state", payload: { state, revision } }); }, 0);
+    setTimeout(() => { void channelRef.current?.send({ type: "broadcast", event: "state", payload: { revision } }); }, 0);
   }
 
   async function serverRoll(state: LudoGameState): Promise<number | null> {
     if (!matchIdRef.current) return rollDice();
     const { data, error } = await supabase.rpc("ludo_server_roll", { p_match: matchIdRef.current, p_turn: state.turnIndex });
     if (error) { toast.error(error.message || "Server roll failed"); return null; }
-    const dice = Number((data as { dice?: number })?.dice);
+    const result = data as { dice?: number; server_state?: ServerLudoState };
+    const dice = Number(result?.dice);
+    if (result?.server_state) {
+      const authoritative = hydrateServerState(result.server_state, matchIdRef.current, activeBet);
+      if (authoritative) setGame(authoritative);
+    }
     return Number.isInteger(dice) && dice >= 1 && dice <= 6 ? dice : null;
   }
 
   async function serverMove(state: LudoGameState, tokenIndex: number): Promise<boolean> {
     if (!matchIdRef.current) return true;
-    const { error } = await supabase.rpc("ludo_server_move", { p_match: matchIdRef.current, p_turn: state.turnIndex, p_token: tokenIndex });
+    const { data, error } = await supabase.rpc("ludo_server_move", { p_match: matchIdRef.current, p_turn: state.turnIndex, p_token: tokenIndex });
     if (error) { toast.error(error.message || "Server rejected the move"); return false; }
+    const result = data as { server_state?: ServerLudoState; winner?: boolean; payout?: number };
+    if (result?.server_state) {
+      const authoritative = hydrateServerState(result.server_state, matchIdRef.current, activeBet);
+      if (authoritative) setGame(authoritative);
+    }
+    if (result?.winner && Number(result.payout ?? 0) > 0) {
+      toast.success(`Ludo payout settled: ${Number(result.payout).toLocaleString()} coins`);
+    }
     return true;
   }
 
@@ -201,16 +224,6 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     return () => clearTimeout(t);
   }, [game]);
 
-  useEffect(() => {
-    if (!game || game.winnerIndex === null || !matchIdRef.current || payoutSettledRef.current) return;
-    const winner = game.players[game.winnerIndex]?.userId;
-    if (!winner) return;
-    payoutSettledRef.current = true;
-    void supabase.rpc("ludo_close_match", { p_match: matchIdRef.current, p_winner: winner, p_status: "finished" }).then(({ error, data }) => {
-      if (error) { payoutSettledRef.current = false; toast.error("Winner payout could not be settled yet."); return; }
-      toast.success(`Ludo payout settled: ${Number(data ?? 0).toLocaleString()} coins`);
-    });
-  }, [game]);
 
   async function handleRemoteAction(payload: { kind: "roll" | "move"; tokenIndex?: number; userId?: string }) {
     const state = gameRef.current;
