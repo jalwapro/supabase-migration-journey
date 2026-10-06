@@ -223,8 +223,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       if (heartbeatRef.current) clearInterval(heartbeatRef.current);
-      window.clearTimeout(firstTick);
       heartbeatRef.current = null;
+      lastHeartbeatAtRef.current = 0;
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
     };
