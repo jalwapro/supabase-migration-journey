@@ -145,6 +145,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const [musicTitle, setMusicTitle] = useState<string | null>(null);
 
   const musicCtxRef = useRef<AudioContext | null>(null);
+  const micMeterCtxRef = useRef<AudioContext | null>(null);
   const musicSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const musicGainRef = useRef<GainNode | null>(null);
   const musicTrackRef = useRef<LocalAudioTrack | null>(null);
@@ -214,6 +215,20 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       if (!cancelled) setStatus("idle");
     };
 
+    const onReconnecting = () => {
+      if (!cancelled) {
+        console.warn("[LiveKit] Connection lost, reconnecting...");
+        setStatus("connecting");
+      }
+    };
+
+    const onReconnected = () => {
+      if (cancelled) return;
+      console.log("[LiveKit] Reconnected successfully. Refreshing audio tracks...");
+      setStatus("connected");
+      roomRef.current?.remoteParticipants.forEach(refresh);
+    };
+
     const attachListeners = (nextRoom: Room) => {
       nextRoom.on(RoomEvent.TrackSubscribed, onSub);
       nextRoom.on(RoomEvent.TrackUnsubscribed, onUnsub);
@@ -221,6 +236,8 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       nextRoom.on(RoomEvent.ParticipantDisconnected, onDisc);
       nextRoom.on(RoomEvent.ActiveSpeakersChanged, onSpeakers);
       nextRoom.on(RoomEvent.Disconnected, onDisconnected);
+      nextRoom.on(RoomEvent.Reconnecting, onReconnecting);
+      nextRoom.on(RoomEvent.Reconnected, onReconnected);
     };
 
     void (async () => {
@@ -299,6 +316,8 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         room.off(RoomEvent.ParticipantDisconnected, onDisc);
         room.off(RoomEvent.ActiveSpeakersChanged, onSpeakers);
         room.off(RoomEvent.Disconnected, onDisconnected);
+        room.off(RoomEvent.Reconnecting, onReconnecting);
+        room.off(RoomEvent.Reconnected, onReconnected);
         if (room.state !== "disconnected") void room.disconnect();
         if (roomRef.current === room) roomRef.current = null;
       }
@@ -390,29 +409,64 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   }, []);
 
   useEffect(() => {
-    if (muted || status !== "connected") { setMicLevel(0); return; }
+    if (muted || status !== "connected") {
+      setMicLevel(0);
+      if (micMeterCtxRef.current?.state === "running") void micMeterCtxRef.current.suspend().catch(() => undefined);
+      return;
+    }
+
     const track = roomRef.current?.localParticipant.getTrackPublication(Track.Source.Microphone)?.track as LocalAudioTrack | undefined;
     const mediaTrack = track?.mediaStreamTrack;
     if (!mediaTrack) return;
+
     let animation = 0;
-    let context: AudioContext | null = null;
+    let source: MediaStreamAudioSourceNode | null = null;
+    let lastUpdate = 0;
+
     try {
-      context = new AudioContext();
-      const source = context.createMediaStreamSource(new MediaStream([mediaTrack]));
+      if (!micMeterCtxRef.current || micMeterCtxRef.current.state === "closed") {
+        const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (!AudioCtx) return;
+        micMeterCtxRef.current = new AudioCtx();
+      }
+
+      const context = micMeterCtxRef.current;
+      if (context.state === "suspended") void context.resume().catch(() => undefined);
+
+      source = context.createMediaStreamSource(new MediaStream([mediaTrack]));
       const analyser = context.createAnalyser();
-      analyser.fftSize = 512;
+      analyser.fftSize = 256;
       source.connect(analyser);
       const data = new Uint8Array(analyser.frequencyBinCount);
-      const tick = () => {
-        analyser.getByteTimeDomainData(data);
-        let sum = 0;
-        for (let i = 0; i < data.length; i += 1) { const value = (data[i] - 128) / 128; sum += value * value; }
-        setMicLevel(Math.min(1, Math.sqrt(sum / data.length) * 3));
+
+      const tick = (now: number) => {
+        if (now - lastUpdate >= 100) {
+          lastUpdate = now;
+          analyser.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i += 1) {
+            const value = (data[i] - 128) / 128;
+            sum += value * value;
+          }
+          const level = Math.min(1, Math.sqrt(sum / data.length) * 3);
+          setMicLevel((prev) => (Math.abs(prev - level) > 0.05 ? level : prev));
+        }
         animation = requestAnimationFrame(tick);
       };
+
       animation = requestAnimationFrame(tick);
-    } catch {}
-    return () => { cancelAnimationFrame(animation); setMicLevel(0); void context?.close().catch(() => undefined); };
+    } catch (err) {
+      console.warn("[LiveKit] Audio meter initialization failed", err);
+    }
+
+    return () => {
+      cancelAnimationFrame(animation);
+      source?.disconnect();
+      setMicLevel(0);
+      if (micMeterCtxRef.current?.state === "running") {
+        void micMeterCtxRef.current.suspend().catch(() => undefined);
+      }
+    };
   }, [muted, status]);
 
   const toggleMute = useCallback(async () => {
@@ -566,6 +620,8 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     musicSourceRef.current?.stop();
     musicTrackRef.current?.stop();
     void musicCtxRef.current?.close().catch(() => undefined);
+    void micMeterCtxRef.current?.close().catch(() => undefined);
+    micMeterCtxRef.current = null;
     remoteAudioEls.forEach((element) => { element.pause(); element.remove(); });
     remoteAudioEls.clear();
   }, []);
