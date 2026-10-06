@@ -12,6 +12,13 @@ const TIERS: { key: "normal" | "vip"; label: string }[] = [
 ];
 type Props = { open: boolean; onClose: () => void; onPick: (emoji: ChatEmoji, targetSeatIndex?: number | null) => void; embedded?: boolean };
 
+type EmojiCache = { expiresAt: number; data: ChatEmoji[] };
+type ReceiverCache = { expiresAt: number; data: EmojiReceiver[] };
+const emojiCache = new Map<string, EmojiCache>();
+const receiverCache = new Map<string, ReceiverCache>();
+const EMOJI_CACHE_TTL = 5 * 60_000;
+const RECEIVER_CACHE_TTL = 15_000;
+
 export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = false }: Props) {
   const { isAdmin, profile } = useAuth();
   const [list, setList] = useState<ChatEmoji[]>([]);
@@ -24,20 +31,36 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
   useEffect(() => {
     if (!open) return;
     let active = true;
-    setLoading(true);
     const roomId = typeof window !== "undefined" ? window.location.pathname.match(/^\/room\/([^/]+)/)?.[1] : null;
+    const cachedEmojis = emojiCache.get("global");
+    const cachedReceivers = roomId ? receiverCache.get(roomId) : null;
+    if (cachedEmojis && cachedEmojis.expiresAt > Date.now()) setList(cachedEmojis.data);
+    if (cachedReceivers && cachedReceivers.expiresAt > Date.now()) setReceivers(cachedReceivers.data);
+    if ((cachedEmojis?.expiresAt ?? 0) > Date.now() && (cachedReceivers?.expiresAt ?? 0) > Date.now()) {
+      setLoading(false);
+      return () => { active = false; };
+    }
+    setLoading(true);
     const load = async () => {
       const [{ data: emojis, error: emojiError }, { data: members, error: memberError }] = await Promise.all([
-        supabase.from("chat_emojis").select("id,slug,emoji,name,category,clip_path,sort_order,tier,min_vip_level").eq("is_active", true).order("sort_order", { ascending: true }),
-        roomId ? supabase.from("room_members").select("user_id,seat_index,profiles(id,username,avatar)").eq("room_id", roomId).not("seat_index", "is", null).order("seat_index", { ascending: true }) : Promise.resolve({ data: [], error: null } as any),
+        cachedEmojis && cachedEmojis.expiresAt > Date.now()
+          ? Promise.resolve({ data: cachedEmojis.data, error: null })
+          : supabase.from("chat_emojis").select("id,slug,emoji,name,category,clip_path,sort_order,tier,min_vip_level").eq("is_active", true).order("sort_order", { ascending: true }),
+        roomId && !(cachedReceivers && cachedReceivers.expiresAt > Date.now())
+          ? supabase.from("room_members").select("user_id,seat_index,profiles(id,username,avatar)").eq("room_id", roomId).not("seat_index", "is", null).order("seat_index", { ascending: true })
+          : Promise.resolve({ data: cachedReceivers?.data ?? [], error: null } as any),
       ]);
       if (!active) return;
       if (emojiError) { toast.error("Emojis load nahi ho sake"); setList([]); } else {
         const seen = new Set<string>();
-        setList((emojis ?? []).filter((row) => { const key = row.slug || row.id; if (seen.has(key)) return false; seen.add(key); return true; }).map((e) => ({ ...(e as ChatEmoji), url: e.clip_path })));
+        const nextEmojis = (emojis ?? []).filter((row) => { const key = row.slug || row.id; if (seen.has(key)) return false; seen.add(key); return true; }).map((e) => ({ ...(e as ChatEmoji), url: e.clip_path }));
+        emojiCache.set("global", { expiresAt: Date.now() + EMOJI_CACHE_TTL, data: nextEmojis });
+        setList(nextEmojis);
       }
       if (memberError) { toast.error("Room users load nahi ho sake"); setReceivers([]); } else {
-        setReceivers((members ?? []).map((m: any) => ({ id: m.profiles?.id || m.user_id, username: m.profiles?.username || "User", avatar: m.profiles?.avatar || null, seat_index: m.seat_index })).filter((r: EmojiReceiver) => r.seat_index != null));
+        const nextReceivers = (members ?? []).map((m: any) => ({ id: m.profiles?.id || m.user_id, username: m.profiles?.username || "User", avatar: m.profiles?.avatar || null, seat_index: m.seat_index })).filter((r: EmojiReceiver) => r.seat_index != null);
+        if (roomId) receiverCache.set(roomId, { expiresAt: Date.now() + RECEIVER_CACHE_TTL, data: nextReceivers });
+        setReceivers(nextReceivers);
       }
       setLoading(false);
     };
