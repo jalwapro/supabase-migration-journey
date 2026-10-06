@@ -13,4 +13,48 @@ function applyOverrides(config:AppPageConfig){for(const override of config.runti
 function applyTokens(config:AppPageConfig){const root=document.documentElement;for(const[k,v]of Object.entries(config.tokens?.colors??{}))root.style.setProperty(`--jalwa-${k}`,v);for(const[k,v]of Object.entries(config.tokens?.spacing??{}))root.style.setProperty(`--jalwa-spacing-${k}`,String(v));for(const[k,v]of Object.entries(config.tokens?.radius??{}))root.style.setProperty(`--jalwa-radius-${k}`,String(v));for(const[k,v]of Object.entries(config.tokens?.shadows??{}))root.style.setProperty(`--jalwa-shadow-${k}`,v);}
 function applyContentOverrides(config:AppPageConfig){for(const override of config.contentOverrides??[]){if(!override||typeof override.id!=="string")continue;let nodes:NodeListOf<Element>;try{nodes=document.querySelectorAll(studioSelector(override.id));}catch{continue;}nodes.forEach(raw=>{if(!(raw instanceof HTMLElement))return;const el=raw;if(override.key==="placeholder")el.setAttribute("placeholder",override.value);else if(["text","label","textContent"].includes(override.key))el.textContent=override.value;else if(override.key==="src")el.setAttribute("src",override.value);else if(override.key==="alt")el.setAttribute("alt",override.value);});}}
 export function renderPublishedConfig(config:AppPageConfig,device:DeviceKind){if(!config||typeof config!=="object")return;applyTokens(config);(Array.isArray(config.sections)?config.sections:[]).forEach(node=>applyNode(node,device,config));applyOverrides(config);applyContentOverrides(config);}
-export function createProductionRenderer(config:AppPageConfig){let frame=0;const render=()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>renderPublishedConfig(config,window.innerWidth<768?"mobile":window.innerWidth<1024?"tablet":"desktop"));};render();const observer=new MutationObserver(render);observer.observe(document.body,{childList:true,subtree:true});window.addEventListener("resize",render);return()=>{cancelAnimationFrame(frame);observer.disconnect();window.removeEventListener("resize",render);};}
+export function createProductionRenderer(config:AppPageConfig){
+  let frame=0;
+  let disposed=false;
+  let queued=false;
+  let rendering=false;
+  let observer:MutationObserver|undefined;
+
+  const run=()=>{
+    queued=false;
+    if(disposed)return;
+    rendering=true;
+    try {
+      renderPublishedConfig(config,window.innerWidth<768?"mobile":window.innerWidth<1024?"tablet":"desktop");
+      observer?.takeRecords();
+    } finally {
+      rendering=false;
+    }
+  };
+  const schedule=()=>{
+    if(disposed||queued)return;
+    queued=true;
+    cancelAnimationFrame(frame);
+    frame=requestAnimationFrame(run);
+  };
+
+  schedule();
+  observer=new MutationObserver((mutations)=>{
+    if(disposed||rendering)return;
+    const meaningful=mutations.some((m)=>
+      m.type==="childList" &&
+      (Array.from(m.addedNodes).some(n=>n.nodeType===1) || Array.from(m.removedNodes).some(n=>n.nodeType===1))
+    );
+    if(meaningful)schedule();
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+  const onResize=()=>schedule();
+  window.addEventListener("resize",onResize,{passive:true});
+
+  return()=>{
+    disposed=true;
+    cancelAnimationFrame(frame);
+    observer?.disconnect();
+    window.removeEventListener("resize",onResize);
+  };
+}
