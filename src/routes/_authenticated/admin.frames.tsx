@@ -62,7 +62,8 @@ function FramePreview({ frame, size = 96 }: { frame: Partial<PremiumFrame>; size
           style={{ borderColor: frame.from_color ?? "#5cbdff", boxShadow: `0 0 18px rgba(${frame.glow ?? "92,189,255"},0.7)` }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -143,7 +144,8 @@ function Page() {
   }
 
   return (
-    <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
+    <>
+      <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
     <div className="mx-auto max-w-6xl p-4">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div>
