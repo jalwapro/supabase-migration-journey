@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { AdminHubTabs, VISUALS_VIP_TABS } from "@/components/admin/AdminHubTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadFileAtPath } from "@/lib/uploads";
 import { toast } from "sonner";
