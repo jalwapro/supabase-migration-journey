@@ -117,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastHeartbeatAtRef = useRef(0);
   const hydrateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hydrateTokenRef = useRef(0);
   const initialSessionLoadedRef = useRef(false);
