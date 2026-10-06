@@ -42,20 +42,11 @@ export function useWakeLock(enabled = true) {
       pending = false;
     };
     const onVisibility = () => { if (document.visibilityState === "visible") void acquire(); };
-    const onInteraction = () => void acquire();
     void acquire();
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("pointerdown", onInteraction, { passive: true });
-    window.addEventListener("touchstart", onInteraction, { passive: true });
-    window.addEventListener("click", onInteraction, { passive: true });
-    window.addEventListener("keydown", onInteraction, { passive: true });
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibility);
-      window.removeEventListener("pointerdown", onInteraction);
-      window.removeEventListener("touchstart", onInteraction);
-      window.removeEventListener("click", onInteraction);
-      window.removeEventListener("keydown", onInteraction);
       if (sentinel) { sentinel.release?.(); sentinel = null; }
       if (nativeAwake) {
         void import("@capacitor-community/keep-awake").then(({ KeepAwake }) => KeepAwake.allowSleep()).catch(() => {});
