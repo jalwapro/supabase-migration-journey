@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,6 +17,7 @@ type Tier="small"|"premium"|"vip";
 const TIER_ORDER:Tier[]=["small","premium","vip"];
 const TIER_LABEL:Record<Tier,string>={small:"✨ Basic",premium:"💎 Premium",vip:"👑 VIP"};
 function tierOf(price:number):Tier{if(price<=300)return"small";if(price<2000)return"premium";return"vip";}
+const price = (g: Gift | null): number => (g?.price_coins ?? g?.price ?? 0) as number;
 const LOVABLE_ASSET_ORIGIN="https://cloud-to-soul.lovable.app";
 const ROYAL_ROSE_THUMB_URL=`${LOVABLE_ASSET_ORIGIN}/__l5e/assets-v1/fb1418b5-4aaa-4f54-8ea2-b411da08f604/royal-rose.png`;
 function isRoyalRoseGift(name:string|null|undefined){const n=(name??"").toLowerCase().replace(/[^a-z]+/g," ").trim();return n==="royal rose"||(n.includes("royal")&&n.includes("rose"));}
@@ -48,7 +49,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
  useEffect(()=>{if(open&&receivers.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receivers.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receivers,profile?.id]);
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
- const price=(g:Gift|null)=>(g?.price_coins??g?.price??0) as number;const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
+ const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  const handleGiftSelect=useCallback((gift:Gift)=>{setSelectedGift(gift);preloadGiftVideo(giftVideoUrl(gift));},[activeTier]);
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
  useEffect(()=>{if(!open)return;
