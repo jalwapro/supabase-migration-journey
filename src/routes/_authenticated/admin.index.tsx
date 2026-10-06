@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Users, DoorOpen, Wallet, Coins, Flag, Crown, TrendingUp, ArrowUpRight,
-  Radio, Video, Mic, ArrowUpFromLine, Search, Bell, Calendar,
+  Radio, Video, Mic, ArrowUpFromLine, Search, Bell, Calendar, Server, Database,
+  CheckCircle2, AlertTriangle, Loader2, RefreshCw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -216,6 +217,43 @@ function StatCard({ label, value, icon: Icon, tone, delta, sub }: {
   );
 }
 
+
+
+function useAdminHealth() {
+  return useQuery({
+    queryKey: ["admin_system_health"],
+    queryFn: async () => {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+      const dbStart = performance.now();
+      const dbResult = await supabase.from("app_settings").select("id").limit(1);
+      const dbLatencyMs = Math.round(performance.now() - dbStart);
+      let vm: any = null;
+      if (token) {
+        try {
+          const response = await fetch("/api/vm-stats", {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          });
+          if (response.ok) vm = await response.json();
+        } catch {}
+      }
+      return {
+        dbOk: !dbResult.error,
+        dbLatencyMs,
+        livekit: vm?.livekit?.status ?? "unknown",
+        vm: vm?.vm?.status ?? "unknown",
+        pendingRecharge: 0,
+        vmError: vm?.vm?.error ?? null,
+        livekitError: vm?.livekit?.error ?? null,
+      };
+    },
+    staleTime: 20_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
 function Dashboard() {
   const { profile } = useAuth();
   const [range, setRange] = useState<DateRange>(() => defaultRange("30d"));
@@ -245,13 +283,34 @@ function Dashboard() {
   const coinsCirc = useSum("profiles", "coins");
   const monthly = useRevenueSeries(range);
   const activity = useRecentActivity();
-
+  const health = useAdminHealth();
 
   const totalRooms = (voiceRooms.data ?? 0) + (videoRooms.data ?? 0);
   const voicePct = totalRooms ? Math.round(((voiceRooms.data ?? 0) / totalRooms) * 100) : 0;
 
   return (
     <>
+      <div className="mb-5 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card/60 p-3">
+        <div className="flex items-center gap-2 mr-2">
+          {health.isLoading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /> : (health.data?.livekit === "online" && health.data?.dbOk) ? <CheckCircle2 className="h-4 w-4 text-emerald-400" /> : <AlertTriangle className="h-4 w-4 text-amber-400" />}
+          <span className="text-xs font-black uppercase tracking-wider">System Health</span>
+        </div>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${health.data?.livekit === "online" ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>
+          LiveKit: {health.data?.livekit ?? "checking"}
+        </span>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${health.data?.dbOk && (health.data.dbLatencyMs < 800) ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+          DB: {health.data ? `${health.data.dbLatencyMs}ms` : "checking"}
+        </span>
+        <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${(pendingR.data ?? 0) < 25 ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"}`}>
+          Pending recharge: {(pendingR.data ?? 0).toLocaleString()}
+        </span>
+        {(health.data?.livekit === "offline" || !health.data?.dbOk || (health.data?.dbLatencyMs ?? 0) >= 800 || (pendingR.data ?? 0) >= 25) && (
+          <span className="ml-auto flex items-center gap-1 text-[10px] font-bold text-amber-300"><AlertTriangle className="h-3.5 w-3.5" /> Attention required</span>
+        )}
+        <button onClick={() => void health.refetch()} className="ml-auto grid h-7 w-7 place-items-center rounded-full border border-border text-muted-foreground hover:text-foreground" aria-label="Refresh health">
+          <RefreshCw className={`h-3.5 w-3.5 ${health.isFetching ? "animate-spin" : ""}`} />
+        </button>
+      </div>
       {/* Top bar */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
