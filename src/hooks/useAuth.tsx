@@ -201,18 +201,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-      supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("id", user.id).then(({ error }) => {
+      const now = Date.now();
+      if (now - lastHeartbeatAtRef.current < 30_000) return;
+      lastHeartbeatAtRef.current = now;
+      const seenAt = new Date(now).toISOString();
+      supabase.from("profiles").update({ last_seen: seenAt }).eq("id", user.id).then(({ error }) => {
         if (error) console.warn("[useAuth] heartbeat", error);
       });
       supabase.rpc("touch_presence").then(({ error }) => {
         if (error) console.warn("[useAuth] presence", error);
       });
     };
-    // Do not compete with the first interactive render for network/database
-    // bandwidth. Presence is eventually consistent and does not need to run
-    // during the startup critical path.
-    const firstTick = window.setTimeout(tick, 10_000);
-    heartbeatRef.current = setInterval(tick, 15_000);
+    // Presence is eventually consistent. Keep the periodic heartbeat at 90s
+    // so mobile radios/CPUs can stay idle for longer, while visibility/focus
+    // events still make returning to the app responsive.
+    lastHeartbeatAtRef.current = 0;
+    heartbeatRef.current = setInterval(tick, 90_000);
     const onFocus = () => tick();
     const onVisible = () => { if (document.visibilityState === "visible") tick(); };
     window.addEventListener("focus", onFocus);
