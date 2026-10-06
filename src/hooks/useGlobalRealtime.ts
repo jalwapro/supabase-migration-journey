@@ -84,7 +84,7 @@ const CATALOG_QUERY_KEYS: Record<string, string[]> = {
   spotlight_animations: ["spotlight-animations"], theme_categories: ["theme-categories"],
 };
 
-const APP_REALTIME_TABLES = [
+const APP_REALTIME_TABLES_UNUSED = [
   "user_roles","coin_packages","recharge_requests","banners","payment_accounts",
   "gifts","gift_categories","gallery_images","gallery_unlocks","themes","user_themes","vip_tiers",
   "withdrawal_requests","dp_frames","user_frames","room_backgrounds","ads","cms_pages","support_tickets",
@@ -223,8 +223,12 @@ export function useGlobalRealtime() {
     // realtime channels above immediate.
     let chCatalog: ReturnType<typeof supabase.channel> | null = null;
     const catalogTimer = window.setTimeout(() => {
+      // Catalog updates are low-frequency. Keep only the small set of catalog
+      // tables that materially affect an active mobile session; everything else
+      // is refreshed by React Query staleTime or targeted admin invalidation.
+      const CRITICAL_CATALOG = ["banners", "gifts", "dp_frames", "room_backgrounds"] as const;
       let channel = supabase.channel(`app-catalog:${uid}`);
-      for (const table of APP_REALTIME_TABLES) {
+      for (const table of CRITICAL_CATALOG) {
         channel = (
           channel as unknown as {
             on: (
