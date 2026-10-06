@@ -61,8 +61,40 @@ function AppCustomizationStudio() {
   function undo() { const prev = history.at(-1); if (!prev) return; setHistory((h) => h.slice(0,-1)); setFuture((f) => [config, ...f]); setConfig(prev); }
   function redo() { const next = future[0]; if (!next) return; setFuture((f) => f.slice(1)); setHistory((h) => [...h, config]); setConfig(next); }
 
-  async function saveDraft(showToast = true) { const page = pages.find((x) => x.page_key === pageKey); if (!page) return false; setSaving(true); const { data: draft, error: findError } = await supabase.from("app_customization_versions").select("id,version").eq("page_id", page.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle(); if (findError) { toast.error(findError.message); setSaving(false); return false; } let error; if (draft?.id) ({ error } = await supabase.from("app_customization_versions").update({ config }).eq("id", draft.id)); else ({ error } = await supabase.from("app_customization_versions").insert({ page_id: page.id, version: 1, status: "draft", config })); setSaving(false); if (error) { toast.error(error.message); return false; } if (showToast) toast.success(`${page.name} draft saved`); return true; }
-  async function publish() { const page = pages.find((x) => x.page_key === pageKey); if (!page) return; if (!(await saveDraft(false))) return; setSaving(true); const { data: latest, error: latestError } = await supabase.from("app_customization_versions").select("version").eq("page_id", page.id).order("version", { ascending: false }).limit(1).maybeSingle(); if (latestError) { toast.error(latestError.message); setSaving(false); return; } const version = (latest?.version ?? 0) + 1; const { data: publishedVersion, error: versionError } = await supabase.from("app_customization_versions").insert({ page_id: page.id, version, status: "published", config, published_at: new Date().toISOString() }).select("id").single(); if (versionError || !publishedVersion) { toast.error(versionError?.message ?? "Publish failed"); setSaving(false); return; } const { error: clearError } = await supabase.from("app_customization_published").update({ is_current: false }).eq("page_id", page.id).eq("is_current", true); if (clearError) { toast.error(clearError.message); setSaving(false); return; } const { error: pubError } = await supabase.from("app_customization_published").insert({ page_id: page.id, version_id: publishedVersion.id, config, version, published_at: new Date().toISOString(), is_current: true }); setSaving(false); if (pubError) toast.error(pubError.message); else { toast.success(`${page.name} published successfully`); await refreshPublishedVersions(page.id); } }
+  async function saveDraft(showToast = true) {
+    const page = pages.find((x) => x.page_key === pageKey);
+    if (!page) return false;
+    setSaving(true);
+    const { error } = await supabase.rpc("save_app_customization_draft", {
+      p_page_id: page.id,
+      p_config: config,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return false;
+    }
+    if (showToast) toast.success(`${page.name} draft saved`);
+    return true;
+  }
+
+  async function publish() {
+    const page = pages.find((x) => x.page_key === pageKey);
+    if (!page) return;
+    setSaving(true);
+    const { error } = await supabase.rpc("publish_app_customization", {
+      p_page_id: page.id,
+      p_config: config,
+    });
+    setSaving(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`${page.name} published successfully`);
+    await refreshPublishedVersions(page.id);
+  }
+
   async function rollback(version: PublishedVersion) { const page = pages.find((x) => x.page_key === pageKey); if (!page || version.is_current) return; const confirmed = window.confirm(`Restore published Version ${version.version} for ${page.name}? This will immediately change the live app.`); if (!confirmed) return; setRollingBackVersion(version.version); try { const restored = await rollbackPublishedVersion(page.id, version.version); const restoredConfig = normalizePageConfig(restored.config, pageKey); setConfig(restoredConfig); setSelectedId(null); setHistory([]); setFuture([]); await refreshPublishedVersions(page.id); toast.success(`Version ${version.version} restored. The live app now uses this version.`); } catch (error) { toast.error(error instanceof Error ? error.message : "Rollback failed"); } finally { setRollingBackVersion(null); } }
   function previewRoute(): string | null { if (pageKey === "voice-room" || pageKey === "video-room") return previewRoomId ? `/room/${previewRoomId}` : null; if (pageKey === "pk-battle") return previewRoomId ? `/pk/${previewRoomId}` : null; return STATIC_PREVIEW_ROUTES[pageKey] ?? currentPage?.route_pattern ?? null; }
   if (loading) return <div className="grid min-h-[70vh] place-items-center text-sm text-muted-foreground">Loading App Studio…</div>;
