@@ -232,13 +232,15 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
 
         const currentRoom = roomRef.current;
         if (!currentRoom || cancelled) return;
-        // LiveKit will use the refreshed JWT for the reconnect attempt. If the
-        // room has already fully disconnected, reconnect the same Room instance.
-        await currentRoom.updateToken(body.participant_token);
-        if (currentRoom.state === "disconnected" && !cancelled) {
+        // A fully disconnected Room cannot rely on the old reconnect path.
+        // Connect it with the fresh JWT directly; otherwise update the token
+        // in-place so LiveKit's active reconnect uses the new credentials.
+        if (currentRoom.state === "disconnected") {
           await currentRoom.connect(body.server_url, body.participant_token, { autoSubscribe: true });
           currentRoom.remoteParticipants.forEach(refresh);
           if (!cancelled) setStatus("connected");
+        } else {
+          await currentRoom.updateToken(body.participant_token);
         }
       } catch (refreshError) {
         console.error("[LiveKit] Token refresh/reconnect failed", refreshError);
