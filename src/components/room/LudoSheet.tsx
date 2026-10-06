@@ -134,20 +134,21 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
       }
       if (authoritativeSyncInFlightRef.current) return;
       authoritativeSyncInFlightRef.current = true;
-      void supabase.rpc("ludo_get_state", { p_match: matchIdRef.current }).then(({ data, error }) => {
-        if (error || !data) return;
-        const snapshot = data as { id?: string; bet_coins?: number; status?: string; server_state?: ServerLudoState };
-        if (!snapshot.server_state) return;
-        const authoritative = hydrateServerState(snapshot.server_state, String(snapshot.id ?? matchIdRef.current), Number(snapshot.bet_coins ?? activeBet));
-        if (authoritative) {
-          setGame(authoritative);
-          setStep("play");
+      void (async () => {
+        try {
+          const { data, error } = await supabase.rpc("ludo_get_state", { p_match: matchIdRef.current });
+          if (error || !data) return;
+          const snapshot = data as { id?: string; bet_coins?: number; status?: string; server_state?: ServerLudoState };
+          if (!snapshot.server_state) return;
+          const authoritative = hydrateServerState(snapshot.server_state, String(snapshot.id ?? matchIdRef.current), Number(snapshot.bet_coins ?? activeBet));
+          if (authoritative) {
+            setGame(authoritative);
+            setStep("play");
+          }
+        } finally {
+          authoritativeSyncInFlightRef.current = false;
         }
-      }, () => {
-        authoritativeSyncInFlightRef.current = false;
-      }).then(() => {
-        authoritativeSyncInFlightRef.current = false;
-      });
+      })();
     });
     ch.on("broadcast", { event: "sync-request" }, () => {
       if (!gameRef.current) return;
