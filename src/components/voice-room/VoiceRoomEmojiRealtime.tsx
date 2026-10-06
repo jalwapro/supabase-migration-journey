@@ -168,40 +168,56 @@ export function playVoiceRoomEmojiAtSeat(payload: Pick<VoiceRoomEmojiPlayback, "
   attempt();
 }
 
+const emojiChannels = new Map<string, ReturnType<typeof supabase.channel>>();
+
+function getVoiceEmojiChannel(roomId: string) {
+  let channel = emojiChannels.get(roomId);
+  if (!channel) {
+    channel = supabase.channel(`voice-emoji-player-${roomId}`, {
+      config: { private: false, broadcast: { self: false, ack: true } },
+    });
+    emojiChannels.set(roomId, channel);
+  }
+  return channel;
+}
+
 export function VoiceRoomEmojiRealtime({ roomId }: { roomId: string; userId?: string | null }) {
   useEffect(() => {
     if (!roomId) return;
-    const channel = supabase.channel(`voice-emoji-player-${roomId}`, {
-      config: { private: false, broadcast: { self: false } },
+    const channel = getVoiceEmojiChannel(roomId);
+    channel.on("broadcast", { event: "emoji_play" }, ({ payload }) => {
+      if (!payload || typeof payload !== "object") return;
+      const p = payload as VoiceRoomEmojiPlayback;
+      if (p.roomId !== roomId || !p.id || !Number.isInteger(p.targetSeatIndex)) return;
+      playVoiceRoomEmojiAtSeat(p);
     });
-
-    channel
-      .on("broadcast", { event: "emoji_play" }, ({ payload }) => {
-        if (!payload || typeof payload !== "object") return;
-        const p = payload as VoiceRoomEmojiPlayback;
-        if (p.roomId !== roomId || !p.id || !Number.isInteger(p.targetSeatIndex)) return;
-        playVoiceRoomEmojiAtSeat(p);
-      })
-      .subscribe();
-
-    return () => { void supabase.removeChannel(channel); };
+    let active = true;
+    void channel.subscribe((status) => {
+      if (!active && status === "SUBSCRIBED") return;
+    });
+    return () => {
+      active = false;
+      channel.unsubscribe();
+      emojiChannels.delete(roomId);
+      void supabase.removeChannel(channel);
+    };
   }, [roomId]);
 
   return null;
 }
 
 export async function broadcastVoiceRoomEmoji(payload: VoiceRoomEmojiPlayback) {
-  const channel = supabase.channel(`voice-emoji-player-${payload.roomId}`, {
-    config: { private: false, broadcast: { self: false, ack: true } },
+  const channel = getVoiceEmojiChannel(payload.roomId);
+  await new Promise<void>((resolve, reject) => {
+    let settled = false;
+    const finish = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
+    if (channel.state === "joined") { finish(resolve); return; }
+    const timer = window.setTimeout(() => finish(() => reject(new Error("Emoji channel timeout"))), 3500);
+    channel.subscribe((status, error) => {
+      if (status === "SUBSCRIBED") { window.clearTimeout(timer); finish(resolve); }
+      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") { window.clearTimeout(timer); finish(() => reject(error ?? new Error(`Emoji channel ${status}`))); }
+    });
   });
-  try {
-    await new Promise<void>((resolve, reject) => channel.subscribe((status, error) => {
-      if (status === "SUBSCRIBED") resolve();
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(error ?? new Error(`Emoji channel ${status}`));
-    }));
-    const result = await channel.send({ type: "broadcast", event: "emoji_play", payload });
-    if (result !== "ok") throw new Error("Emoji broadcast was not acknowledged");
-  } finally {
-    void supabase.removeChannel(channel);
-  }
+  const result = await channel.send({ type: "broadcast", event: "emoji_play", payload });
+  if (result !== "ok") throw new Error("Emoji broadcast was not acknowledged");
 }
