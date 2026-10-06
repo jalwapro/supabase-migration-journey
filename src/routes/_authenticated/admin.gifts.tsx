@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AdminHubTabs, GIFT_HUB_TABS } from "@/components/admin/AdminHubTabs";
 import { uploadFileAtPath } from "@/lib/uploads";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef, useMemo, useEffect } from "react";
