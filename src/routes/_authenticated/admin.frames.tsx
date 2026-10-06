@@ -59,10 +59,13 @@ function FramePreview({ frame, size = 96 }: { frame: Partial<PremiumFrame>; size
       ) : (
         <div
           className="absolute inset-0 rounded-full border-4"
-          style={{ borderColor: frame.from_color ?? "#5cbdff", boxShadow: `0 0 18px rgba(${frame.glow ?? "92,189,255"},0.7)` }}
+          style={{
+            borderColor: frame.from_color ?? "#5cbdff",
+            boxShadow: `0 0 18px rgba(${frame.glow ?? "92,189,255"},0.7)`,
+          }}
         />
       )}
-      </div>
+    </div>
   );
 }
 
