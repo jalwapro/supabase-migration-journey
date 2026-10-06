@@ -18,17 +18,16 @@ html.perf-lite [class*="drop-shadow"] {
   filter: none !important;
 }
 
-/* 2. Force GPU layers on animated popups / sheets / overlays */
+/* 2. Keep GPU promotion scoped to overlays only. */
 [role="dialog"],
 [role="menu"],
 [data-radix-popper-content-wrapper],
 [data-vaul-drawer],
-[data-jalwa-overlay="true"],
-[data-state="open"].fixed {
+[data-jalwa-overlay="true"] {
   transform: translateZ(0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  contain: layout paint style;
+  contain: layout paint;
 }
 
 /* 3. Only animate transform/opacity in popups (no layout props) */
@@ -59,10 +58,11 @@ html.perf-lite [class*="animate-[float"],
 html.perf-lite [class*="animate-[glow"] {
   animation: none !important;
 }
-/* Shorter, cheaper transitions everywhere */
-html.perf-lite *,
-html.perf-lite *::before,
-html.perf-lite *::after {
+/* Keep transitions scoped; never apply a transition rule to every DOM node. */
+html.perf-lite [role="dialog"],
+html.perf-lite [data-radix-popper-content-wrapper] > *,
+html.perf-lite [data-vaul-drawer],
+html.perf-lite [data-jalwa-overlay="true"] {
   transition-duration: 120ms !important;
 }
 /* Offscreen images and cards skip paint */
