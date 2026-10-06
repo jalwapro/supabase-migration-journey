@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, UserCheck, Lock, KeyRound, VolumeX, Volume2, Share2, Flag, LogOut, Info } from "lucide-react";
+import { Gift, Gamepad2, Smile, Send, Grid2X2, Mic, MicOff, Shield, MessageCircle, Lock, KeyRound, VolumeX, Volume2, Share2, Flag, LogOut, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,9 +53,6 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const [enteredPin, setEnteredPin] = useState("");
   const [isUnlockedByPin, setIsUnlockedByPin] = useState(false);
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
-  const [selectedTargetSeat, setSelectedTargetSeat] = useState<number | null>(null);
-  const [activeFlyingEmoji, setActiveFlyingEmoji] = useState<{ emojiUrl: string; fromSeat: number; toSeat: number } | null>(null);
-  const [glowingSeatIndex, setGlowingSeatIndex] = useState<number | null>(null);
   const [gameSlides, setGameSlides] = useState<GameSlide[]>([]);
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   
@@ -78,7 +75,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
       if (exitMenuOpen) { setExitMenuOpen(false); return true; }
       if (privateChatOpen) { setPrivateChatOpen(false); return true; }
       if (giftOpen) { setGiftOpen(false); return true; }
-      if (emojiOpen) { setEmojiOpen(false); setSelectedTargetSeat(null); return true; }
+      if (emojiOpen) { setEmojiOpen(false); return true; }
       if (gamesOpen) { setGamesOpen(false); return true; }
       if (popularityOpen) { setPopularityOpen(false); return true; }
       if (userMoreOpen) { setUserMoreOpen(false); return true; }
@@ -195,30 +192,9 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setMiniDraft(`@${seat.user.username} `); setShowMiniInputPopup(true); setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
   const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
   
-  const handlePickEmoji = (emoji: ChatEmoji) => { 
-    const targetSeat = selectedTargetSeat, senderSeat = mySeatIndex ?? 0; 
-    if (targetSeat == null) {
-      toast.info("Pehle room mein kisi user ki DP/seat select karein");
-      return;
-    }
-    const target = room.seats.find((seat) => seat.index === targetSeat);
-    if (!target?.user) {
-      toast.info("Sirf occupied user ki DP par emoji bhej sakte hain");
-      return;
-    }
-    onSendEmoji?.(emoji, targetSeat);
-    setEmojiOpen(false);
-    setSelectedTargetSeat(null);
-    setActiveFlyingEmoji({ emojiUrl: emoji.url || emoji.clip_path || "", fromSeat: senderSeat, toSeat: targetSeat });
-    setGlowingSeatIndex(targetSeat);
-    setTimeout(() => setActiveFlyingEmoji(null), 2700);
-    setTimeout(() => setGlowingSeatIndex(null), 3100);
-  };
-
   const handleSeatTapForEmoji = (seatIndex: number) => {
     const seat = room.seats.find((s) => s.index === seatIndex);
     if (seat?.user) {
-      setSelectedTargetSeat(seatIndex);
       setSelectedMember({
         id: seat.user.id,
         username: seat.user.username,
@@ -314,16 +290,9 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
         <GiftAnimationPlayer roomId={roomId} />
         <div data-jalwa-live-component="voice.room-content" data-voice-room-stage="true" className="relative flex min-h-0 flex-1 flex-col overflow-hidden justify-between">
           <div data-jalwa-live-component="voice.seat-area" data-voice-room-seat-stage="true" className="relative flex-1 min-h-0 overflow-visible bg-transparent pt-0 px-1 no-scrollbar">
-            <SeatGrid seats={room.seats.map(s => ({ ...s, className: s.index === glowingSeatIndex ? "ring-4 ring-amber-400 shadow-[0_0_25px_rgba(234,179,8,0.9)] transition-all duration-300" : "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={handleHostSeatProfileTap} />
+            <SeatGrid seats={room.seats.map(s => ({ ...s, className: "" }))} seatCount={effectiveSeatCount} host={room.host} roomId={roomId} isHost={isHost} onSeatTap={handleSeatTapForEmoji} onJoinSeat={joinSeat} onHostTap={handleHostSeatProfileTap} />
           </div>
           
-          {activeFlyingEmoji && (
-            <div className="absolute inset-0 z-50 pointer-events-none flex items-center justify-center">
-              <div className="animate-ping absolute h-16 w-16 rounded-full bg-amber-400 opacity-75" />
-              <img src={activeFlyingEmoji.emojiUrl} alt="" className="h-16 w-16 object-contain animate-bounce drop-shadow-[0_0_15px_rgba(255,215,0,1)]" />
-            </div>
-          )}
-
           <div data-jalwa-live-component="voice.announcement" className="shrink-0 flex flex-col gap-1 px-2 pb-0.5">
             <section data-voice-room-lower-panel="true" className="grid grid-cols-[minmax(0,1.7fr)_minmax(85px,.7fr)] gap-1.5">
               <div className="flex min-w-0 max-h-[190px] flex-col overflow-hidden rounded-2xl border border-white/20 bg-black/50 backdrop-blur-xl shadow-xl">
@@ -394,30 +363,7 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
 
       {giftOpen && <GiftSheet open={giftOpen} onClose={() => setGiftOpen(false)} roomId={roomId} receivers={receivers} />}
       
-      {emojiOpen && (
-        <div className="absolute inset-0 z-[2147483000] flex flex-col justify-end bg-black/30 backdrop-blur-md animate-fade-in">
-          <div className="absolute inset-0" onClick={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} />
-          <div className="relative z-10 w-full rounded-t-3xl bg-slate-900/90 border-t p-4 shadow-2xl backdrop-blur-xl animate-slide-up max-h-[60dvh] flex flex-col" style={{ borderColor: `${primaryThemeColor}55` }}>
-            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-slate-700" />
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center gap-2"><Smile className="h-4 w-4" style={{ color: primaryThemeColor }} /><span className="text-xs font-bold tracking-wide uppercase" style={{ color: primaryThemeColor }}>Send Emoji to Seat</span></div>
-              <button type="button" onClick={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} className="text-xs font-semibold text-slate-400 hover:text-white">Close</button>
-            </div>
-            <div className="py-2.5 border-b border-slate-800/80">
-              <p className="text-[10px] text-slate-400 mb-2 font-medium">Select Target Seat (Optional):</p>
-              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                <button type="button" onClick={() => setSelectedTargetSeat(null)} className={cn("px-3 py-1.5 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border", selectedTargetSeat === null ? "text-white border-transparent shadow-md" : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700")} style={selectedTargetSeat === null ? { background: primaryThemeColor, color: "#000" } : {}}>General Chat</button>
-                {room.seats.map(seat => (
-                  <button key={seat.index} type="button" disabled={!seat.user} onClick={() => setSelectedTargetSeat(seat.index)} className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold whitespace-nowrap transition-all border", selectedTargetSeat === seat.index ? "text-white border-transparent shadow-md" : "bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700", !seat.user && "opacity-40 cursor-not-allowed")} style={selectedTargetSeat === seat.index ? { background: primaryThemeColor, color: "#000" } : {}}>
-                    <UserCheck className="h-3 w-3" /><span>Seat {seat.index + 1} {seat.user?.username ? `(${seat.user.username})` : "(Empty)"}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto py-3"><ChatEmojiSheet open={emojiOpen} onClose={() => { setEmojiOpen(false); setSelectedTargetSeat(null); }} onPick={handlePickEmoji} /></div>
-          </div>
-        </div>
-      )}
+      <ChatEmojiSheet open={emojiOpen} onClose={() => setEmojiOpen(false)} onPick={(emoji, targetSeatIndex) => onSendEmoji?.(emoji, targetSeatIndex)} />
 
       {userMoreOpen && (
         <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/30 p-0 backdrop-blur-md animate-fade-in" onClick={() => setUserMoreOpen(false)}>
