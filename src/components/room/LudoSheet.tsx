@@ -36,6 +36,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
   const matchIdRef = useRef<string | null>(null);
   const revisionRef = useRef(0);
   const lastRemoteRevisionRef = useRef(0);
+  const authoritativeSyncInFlightRef = useRef(false);
   gameRef.current = game;
 
   const myName = profile?.username ?? "You";
@@ -126,9 +127,13 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     ch.on("broadcast", { event: "state" }, ({ payload }) => {
       const packet = payload as { revision?: number } | undefined;
       const revision = Number(packet?.revision);
-      if (!Number.isFinite(revision) || revision <= lastRemoteRevisionRef.current || !matchIdRef.current) return;
-      lastRemoteRevisionRef.current = revision;
-      revisionRef.current = revision;
+      if (!Number.isFinite(revision) || !matchIdRef.current) return;
+      // Revision is only a wake-up hint; it is not trusted as game authority.
+      if (revision > lastRemoteRevisionRef.current) {
+        lastRemoteRevisionRef.current = revision;
+      }
+      if (authoritativeSyncInFlightRef.current) return;
+      authoritativeSyncInFlightRef.current = true;
       void supabase.rpc("ludo_get_state", { p_match: matchIdRef.current }).then(({ data, error }) => {
         if (error || !data) return;
         const snapshot = data as { id?: string; bet_coins?: number; status?: string; server_state?: ServerLudoState };
@@ -138,6 +143,8 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
           setGame(authoritative);
           setStep("play");
         }
+      }).finally(() => {
+        authoritativeSyncInFlightRef.current = false;
       });
     });
     ch.on("broadcast", { event: "sync-request" }, () => {
@@ -172,7 +179,10 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     const dice = Number(result?.dice);
     if (result?.server_state) {
       const authoritative = hydrateServerState(result.server_state, matchIdRef.current, activeBet);
-      if (authoritative) setGame(authoritative);
+      if (authoritative) {
+        setGame(authoritative);
+        broadcastLater(authoritative);
+      }
     }
     return Number.isInteger(dice) && dice >= 1 && dice <= 6 ? dice : null;
   }
@@ -184,7 +194,10 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     const result = data as { server_state?: ServerLudoState; winner?: boolean; payout?: number };
     if (result?.server_state) {
       const authoritative = hydrateServerState(result.server_state, matchIdRef.current, activeBet);
-      if (authoritative) setGame(authoritative);
+      if (authoritative) {
+        setGame(authoritative);
+        broadcastLater(authoritative);
+      }
     }
     if (result?.winner && Number(result.payout ?? 0) > 0) {
       toast.success(`Ludo payout settled: ${Number(result.payout).toLocaleString()} coins`);
@@ -198,14 +211,23 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     setRolling(true);
     const dice = await serverRoll(state);
     if (dice === null) { setRolling(false); return; }
-    const next = applyRoll(state, dice); setGame(next); broadcastLater(next); setRolling(false);
+    if (!matchIdRef.current) {
+      const next = applyRoll(state, dice);
+      setGame(next);
+      broadcastLater(next);
+    }
+    setRolling(false);
   }
 
   async function processMove(tokenIndex: number) {
     const state = gameRef.current;
     if (!state || state.winnerIndex !== null || !state.awaitingMove) return;
     if (!(await serverMove(state, tokenIndex))) return;
-    const next = applyMove(state, tokenIndex); setGame(next); broadcastLater(next);
+    if (!matchIdRef.current) {
+      const next = applyMove(state, tokenIndex);
+      setGame(next);
+      broadcastLater(next);
+    }
   }
 
   useEffect(() => {
