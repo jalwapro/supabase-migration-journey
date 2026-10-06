@@ -36,6 +36,10 @@ export const Route = createFileRoute("/api/livekit-token")({ server: { handlers:
     if (room.status !== "live") return json({ error: "room is not live" }, 409);
     const { data: member } = await sb.from("room_members").select("seat_index,is_moderator,is_muted").eq("room_id", room.id).eq("user_id", authenticatedUserId).maybeSingle();
     const isHost = room.host_id === authenticatedUserId;
+    const isModerator = member?.is_moderator === true;
+    const seated = member?.seat_index !== null && member?.seat_index !== undefined;
+    const isMuted = member?.is_muted === true;
+    const canPublish = (isHost || isModerator || seated) && !isMuted;
     const livekitRoom = typeof room.rtc_channel === "string" ? room.rtc_channel.trim() : "";
     if (!livekitRoom) return json({ error: "room rtc_channel is missing" }, 500);
 
@@ -47,8 +51,7 @@ export const Route = createFileRoute("/api/livekit-token")({ server: { handlers:
     // The connection token must explicitly grant the client the base LiveKit
     // room capabilities. Runtime room-role/mute restrictions are enforced by
     // the separate livekit-permissions endpoint via UpdateParticipant.
-    const canPublish = true;
-    at.addGrant({ roomJoin: true, room: livekitRoom, canPublish: true, canSubscribe: true, canPublishData: true, roomAdmin: isHost || member?.is_moderator === true });
+    at.addGrant({ roomJoin: true, room: livekitRoom, canPublish, canSubscribe: true, canPublishData: true, roomAdmin: isHost || isModerator });
     return new Response(JSON.stringify({ server_url: wsUrl, participant_token: await at.toJwt(), room: livekitRoom, database_room_id: room.id, identity, canPublish, canSubscribe: true }), { status: 201, headers: { "Content-Type": "application/json", ...cors } });
   },
 } } });
