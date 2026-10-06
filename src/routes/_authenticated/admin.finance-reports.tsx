@@ -8,16 +8,18 @@ export const Route = createFileRoute("/_authenticated/admin/finance-reports")({
   component: FinanceReports,
 });
 
-function useSum(status: "approved" | "pending", table: "recharge_requests" | "withdrawal_requests") {
+function useFinanceSums() {
   return useQuery({
-    queryKey: ["fin_sum", table, status],
-    queryFn: async (): Promise<number> => {
-      const { data, error } = await supabase.rpc("get_finance_report_sums", {
-        p_status: status,
-      });
-      if (error || !data) return 0;
-      const row = table === "recharge_requests" ? data.recharge : data.withdrawal;
-      return Number(row ?? 0);
+    queryKey: ["finance_report_sums"],
+    queryFn: async (): Promise<{ approvedRecharge: number; approvedWithdrawal: number; pendingRecharge: number; pendingWithdrawal: number }> => {
+      const { data, error } = await supabase.rpc("get_finance_report_sums");
+      if (error || !data) return { approvedRecharge: 0, approvedWithdrawal: 0, pendingRecharge: 0, pendingWithdrawal: 0 };
+      return {
+        approvedRecharge: Number(data.approved_recharge ?? 0),
+        approvedWithdrawal: Number(data.approved_withdrawal ?? 0),
+        pendingRecharge: Number(data.pending_recharge ?? 0),
+        pendingWithdrawal: Number(data.pending_withdrawal ?? 0),
+      };
     },
     staleTime: 120_000,
     gcTime: 10 * 60_000,
@@ -27,19 +29,16 @@ function useSum(status: "approved" | "pending", table: "recharge_requests" | "wi
 }
 
 function FinanceReports() {
-  const recharged = useSum("approved", "recharge_requests");
-  const withdrawn = useSum("approved", "withdrawal_requests");
-  const pendingR = useSum("pending", "recharge_requests");
-  const pendingW = useSum("pending", "withdrawal_requests");
+  const finance = useFinanceSums();
 
   return (
     <>
       <AdminPageHeader title="Finance Reports" subtitle="Money in / money out" />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Card label="Recharged (approved)" value={recharged.data ?? 0} icon={Wallet} tone="bg-emerald-500/15 text-emerald-400" />
-        <Card label="Withdrawn (approved)" value={withdrawn.data ?? 0} icon={ArrowUpFromLine} tone="bg-red-500/15 text-red-400" />
-        <Card label="Recharge pending" value={pendingR.data ?? 0} icon={Coins} tone="bg-[color:var(--gold)]/15 text-[color:var(--gold)]" />
-        <Card label="Withdraw pending" value={pendingW.data ?? 0} icon={Gift} tone="bg-primary/15 text-primary" />
+        <Card label="Recharged (approved)" value={finance.data?.approvedRecharge ?? 0} icon={Wallet} tone="bg-emerald-500/15 text-emerald-400" />
+        <Card label="Withdrawn (approved)" value={finance.data?.approvedWithdrawal ?? 0} icon={ArrowUpFromLine} tone="bg-red-500/15 text-red-400" />
+        <Card label="Recharge pending" value={finance.data?.pendingRecharge ?? 0} icon={Coins} tone="bg-[color:var(--gold)]/15 text-[color:var(--gold)]" />
+        <Card label="Withdraw pending" value={finance.data?.pendingWithdrawal ?? 0} icon={Gift} tone="bg-primary/15 text-primary" />
       </div>
       <p className="mt-4 text-xs text-muted-foreground">Amounts in PKR. Updated live from recharge_requests / withdrawal_requests.</p>
     </>
