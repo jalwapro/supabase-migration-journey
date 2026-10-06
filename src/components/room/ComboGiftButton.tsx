@@ -71,7 +71,6 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
     busyRef.current = true;
     startRef.current = Date.now();
     setRemaining(COMBO_MS);
-    setCount((c) => c + 1);
 
     if (giftSoundSrc(gift) && giftAudioEnabled(gift)) {
       try {
@@ -129,6 +128,10 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
         });
       }
 
+      // The combo counter advances only after the atomic gift RPC has returned
+      // canonical send IDs. Failed taps therefore cannot inflate local combo
+      // state or the persisted summary.
+      setCount((c) => c + 1);
       await broadcastGiftPlayback(roomId, gift, uniqueTargets, sender, 1, firstSendId!, allSendIds);
       await refresh();
     } catch (e) {
