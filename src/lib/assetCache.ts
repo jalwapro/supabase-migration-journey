@@ -254,6 +254,5 @@ export async function initJalwaAssetCache() {
     totalBytes: 0,
     currentAsset: null,
     percent: 100,
-    currentAsset: null,
   });
 }
