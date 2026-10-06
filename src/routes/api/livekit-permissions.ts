@@ -89,7 +89,7 @@ export const Route = createFileRoute("/api/livekit-permissions")({
         if (room.status !== "live") return json({ error: "room is not live" }, 409);
 
         const { data: member, error: memberError } = await sb.from("room_members")
-          .select("seat_index,is_muted")
+          .select("seat_index,is_muted,is_moderator")
           .eq("room_id", room.id)
           .eq("user_id", userId)
           .maybeSingle();
@@ -97,8 +97,9 @@ export const Route = createFileRoute("/api/livekit-permissions")({
 
         const isHost = room.host_id === userId;
         const seated = member?.seat_index !== null && member?.seat_index !== undefined;
+        const isModerator = member?.is_moderator === true;
         const isMuted = member?.is_muted === true;
-        const canPublish = requestedPublish && (isHost || seated) && !isMuted;
+        const canPublish = requestedPublish && (isHost || isModerator || seated) && !isMuted;
         const participantIdentity = userId;
         const livekitRoom = room.rtc_channel || roomId;
 
