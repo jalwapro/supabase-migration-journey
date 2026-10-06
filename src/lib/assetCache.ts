@@ -219,21 +219,41 @@ export async function clearJalwaAssetCache() {
 
 export async function initJalwaAssetCache() {
   if (!isBrowser()) return;
-  publish({ status: "checking" });
-  await registerAssetCacheWorker();
+
+  // Resource caching must NEVER block app startup. The previous startup path
+  // could leave the splash progress at 1% when nothing had started the cache
+  // state machine, and a slow manifest request could also keep the splash
+  // waiting. The service worker is registered opportunistically; actual
+  // assets are cached on first real use.
+  publish({
+    status: "checking",
+    total: 0,
+    completed: 0,
+    downloadedBytes: 0,
+    totalBytes: 0,
+    currentAsset: null,
+    percent: 0,
+  });
+
+  try {
+    await Promise.race([
+      registerAssetCacheWorker(),
+      new Promise<boolean>(resolve => window.setTimeout(() => resolve(false), 2500)),
+    ]);
+  } catch {}
+
   try { await navigator.storage?.persist?.(); } catch {}
 
-  const assets = await fetchAssetManifest();
-  if (!assets.length) {
-    publish({ status: navigator.onLine ? "ready" : "offline", percent: 100 });
-    return;
-  }
-
-  // Keep launch work limited to small, high-priority images. Everything else
-  // is cached transparently on first real use by the service worker. Do not
-  // start a hidden full-catalog download after launch: that competes with
-  // Supabase, navigation, taps, popups and room rendering for bandwidth/CPU.
-  // No hidden catalog download during app startup. The service worker
-  // caches managed assets only when the UI actually requests them.
-  publish({ status: "ready", total: 0, completed: 0, percent: 100, currentAsset: null });
+  // No manifest/database/network dependency at launch. This makes resource
+  // caching non-blocking and guarantees the UI cannot be trapped at 1%.
+  publish({
+    status: navigator.onLine ? "ready" : "offline",
+    total: 0,
+    completed: 0,
+    downloadedBytes: 0,
+    totalBytes: 0,
+    currentAsset: null,
+    percent: 100,
+    currentAsset: null,
+  });
 }
