@@ -251,7 +251,7 @@ export function useGlobalRealtime() {
           console.warn("[Realtime] app-catalog", status, error);
         }
       });
-    }, 5000);
+    }, 15000);
 
     const ch4 = subscribe(qc, `assets:${uid}`, [
       {
