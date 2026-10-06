@@ -94,5 +94,5 @@ export function VoiceRoomAnimatedEmojiSheet({ open, onClose, onPick, embedded = 
     </div>
   );
   if (embedded) return content;
-  return <div className="fixed inset-0 z-[2147483600] flex items-end justify-center bg-black/50 p-0" onClick={onClose} role="dialog" aria-modal="true"><div onClick={(event) => event.stopPropagation()} className="relative flex w-full max-w-lg h-[310px] flex-col overflow-hidden rounded-t-[20px] border border-white/10 bg-[#121212]/95 backdrop-blur-xl text-white shadow-2xl">{content}</div></div>;
+  return <div data-jalwa-emoji-sheet="true" className="fixed inset-0 z-[2147483600] flex items-end justify-center bg-black/50 p-0" onClick={onClose} role="dialog" aria-modal="true"><div onClick={(event) => event.stopPropagation()} className="relative flex w-full max-w-lg h-[310px] flex-col overflow-hidden rounded-t-[20px] border border-white/10 bg-[#121212]/95 backdrop-blur-xl text-white shadow-2xl">{content}</div></div>;
 }
