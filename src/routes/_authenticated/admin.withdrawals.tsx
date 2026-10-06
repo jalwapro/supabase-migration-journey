@@ -26,6 +26,7 @@ type Row = {
 function WithdrawalsAdmin() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   const list = useQuery({
     queryKey: ["admin_withdrawals", tab],
@@ -74,6 +75,7 @@ function WithdrawalsAdmin() {
       qc.invalidateQueries({ queryKey: ["admin_withdrawals"] });
     },
     onError: (e: Error) => toast.error(e.message),
+    onSettled: () => setProcessingId(null),
   });
 
   return (
@@ -113,17 +115,26 @@ function WithdrawalsAdmin() {
               {tab === "pending" && (
                 <div className="mt-2 flex gap-2">
                   <button
-                    onClick={() => act.mutate({ id: r.id, status: "approved" })}
-                    className="flex-1 rounded-full bg-emerald-500/20 py-1.5 text-xs font-bold text-emerald-400"
+                    disabled={processingId !== null}
+                    onClick={() => {
+                      if (processingId) return;
+                      setProcessingId(r.id);
+                      act.mutate({ id: r.id, status: "approved" });
+                    }}
+                    className="flex-1 rounded-full bg-emerald-500/20 py-1.5 text-xs font-bold text-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Check className="mr-1 inline h-3 w-3" /> Approve
                   </button>
                   <button
+                    disabled={processingId !== null}
                     onClick={() => {
-                      const n = prompt("Rejection reason?") ?? "";
-                      if (n !== null) act.mutate({ id: r.id, status: "rejected", note: n });
+                      if (processingId) return;
+                      const reason = prompt("Rejection reason?");
+                      if (reason === null) return;
+                      setProcessingId(r.id);
+                      act.mutate({ id: r.id, status: "rejected", note: reason });
                     }}
-                    className="flex-1 rounded-full bg-red-500/20 py-1.5 text-xs font-bold text-red-400"
+                    className="flex-1 rounded-full bg-red-500/20 py-1.5 text-xs font-bold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <X className="mr-1 inline h-3 w-3" /> Reject
                   </button>
