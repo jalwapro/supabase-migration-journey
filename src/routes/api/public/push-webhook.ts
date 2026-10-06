@@ -1,9 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import webpush from "web-push";
-import { createHash } from "node:crypto";
 
 type NotifRow = { id:string; user_id:string; kind:string; title:string; body:string|null; data:Record<string,unknown>|null };
 type WebhookPayload = { type?:string; table?:string; record?:NotifRow; old_record?:NotifRow|null };
+
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 function configureVapid(){const pub=process.env.VAPID_PUBLIC_KEY;const priv=process.env.VAPID_PRIVATE_KEY;const subj=process.env.VAPID_SUBJECT||"mailto:admin@example.com";if(!pub||!priv)throw new Error("VAPID keys not configured");webpush.setVapidDetails(subj,pub,priv);}
 
@@ -18,7 +23,7 @@ export const Route=createFileRoute("/api/public/push-webhook")({server:{handlers
   if(secret||secretHashHeader){try{
     const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
     const {data:rpcHash,error:rpcError}=await (supabaseAdmin as any).rpc("get_push_webhook_secret_hash");
-    const hash=secret?createHash("sha256").update(secret).digest("hex"):secretHashHeader;
+    const hash=secret?await sha256Hex(secret):secretHashHeader;
     dbSecretAuthorized=!rpcError&&typeof rpcHash==="string"&&rpcHash===hash;
     if(rpcError)console.error("Webhook secret RPC failed:",rpcError);
   }catch(e){console.error("Webhook secret verification failed:",e);}
