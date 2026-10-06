@@ -49,11 +49,12 @@ function RolesAdmin() {
       const { data: prof, error: e1 } = await supabase.from("profiles").select("id").eq("username", u).maybeSingle();
       if (e1) throw e1;
       if (!prof) throw new Error("User not found");
-      const { error } = await supabase.from("user_roles").insert({ user_id: prof.id, role: form.role });
+      const { error } = await supabase.rpc("manage_user_role", {
+        _user_id: prof.id,
+        _role: form.role,
+        _action: "grant",
+      });
       if (error) throw error;
-      const { error: logErr } = await supabase
-        .from("admin_logs")
-        .insert({ action: `grant_${form.role}`, target: prof.id });
       if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => {
@@ -66,12 +67,19 @@ function RolesAdmin() {
 
   const revoke = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("user_roles").delete().eq("id", id);
+      const { data: row, error: lookupError } = await supabase
+        .from("user_roles")
+        .select("user_id,role")
+        .eq("id", id)
+        .maybeSingle();
+      if (lookupError) throw lookupError;
+      if (!row) throw new Error("Role not found");
+      const { error } = await supabase.rpc("manage_user_role", {
+        _user_id: row.user_id,
+        _role: row.role,
+        _action: "revoke",
+      });
       if (error) throw error;
-      const { error: logErr } = await supabase
-        .from("admin_logs")
-        .insert({ action: "revoke_role", target: id });
-      if (logErr) console.warn("[admin_logs]", logErr.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_roles"] }),
   });
