@@ -41,10 +41,10 @@ export function HostCard({ host, onTap }: { host: HostCardData; onTap?: () => vo
       <span className={cn("absolute inset-[2%] rounded-full border-[2px] border-[#f6d78a]/70", speaking && "animate-pulse")} />
       <span className="absolute left-[4%] top-[4%] z-40 grid h-[25%] w-[25%] place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-[#5b2800] shadow"><Crown className="h-[62%] w-[62%] fill-current" /></span>
       <span className="absolute inset-[4%] flex items-center justify-center z-10">
-        <LevelAvatar src={host.avatar} name={host.username} level={0} size="lg" showBadge={false} frame={resolvedFrame} renderConfigOverride={renderConfig} className="scale-[0.86]" />
+        <LevelAvatar src={host.avatar} name={host.username} level={0} size="sm" showBadge={false} frame={resolvedFrame} renderConfigOverride={renderConfig} className="" />
       </span>
       {host.is_vip === true && <BadgeCheck className="absolute right-[5%] top-[5%] z-50 h-[22%] w-[22%] fill-cyan-400 text-white drop-shadow" />}
-      <span className={cn("absolute bottom-[4%] right-[5%] z-50 grid h-[24%] w-[24%] items-center justify-center rounded-full border-2 border-[#2b1328] text-white shadow", active ? "bg-emerald-500" : "bg-red-500")}>{active ? <Mic className="h-[55%] w-[55%]" /> : <MicOff className="h-[55%] w-[55%]" />}</span>
+      <span className={cn("absolute bottom-[4%] right-[5%] z-50 grid h-[24%] w-[24%] items-center justify-center rounded-full border-2 border-[#2b1328] text-white shadow", active ? "bg-emerald-500" : "bg-red-500")}>{active ? <Mic className="h-[55%] w-[55%]" /> : <MicOff className="h-[55%] w-[55%}" />}</span>
     </button>
   );
 }
