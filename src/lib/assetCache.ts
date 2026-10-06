@@ -233,7 +233,7 @@ export async function initJalwaAssetCache() {
   // is cached transparently on first real use by the service worker. Do not
   // start a hidden full-catalog download after launch: that competes with
   // Supabase, navigation, taps, popups and room rendering for bandwidth/CPU.
-  const startupAssets = assets.filter((item) => item.type === "image" && item.priority >= 70);
-
-  void warmAssetManifest(startupAssets, MAX_CONCURRENCY);
+  // No hidden catalog download during app startup. The service worker
+  // caches managed assets only when the UI actually requests them.
+  publish({ status: "ready", total: 0, completed: 0, percent: 100, currentAsset: null });
 }
