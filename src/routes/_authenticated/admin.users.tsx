@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { Loader2, Search, Shield, Ban, Coins as CoinsIcon, Crown, X } from "lucide-react";
@@ -42,6 +42,15 @@ function frameCategory(item: FrameItem) {
   return Array.isArray(item.theme_categories) ? item.theme_categories[0] : item.theme_categories;
 }
 
+function useDebouncedValue<T>(value: T, delay = 350) {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 function UsersAdmin() {
   const qc = useQueryClient();
   const [q, setQ] = useState("");
@@ -50,15 +59,22 @@ function UsersAdmin() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "banned">("all");
   const [dateFilter, setDateFilter] = useState<"all" | "7d" | "30d" | "90d">("all");
   const [sort, setSort] = useState<"recent" | "oldest" | "coins_desc" | "coins_asc">("recent");
+  const [page, setPage] = useState(1);
+  const debouncedQ = useDebouncedValue(q);
+  const normalizedQ = debouncedQ.trim();
+
+  useEffect(() => { setPage(1); }, [q, vipFilter, vipLevel, statusFilter, dateFilter, sort]);
 
   const list = useQuery({
-    queryKey: ["admin_users", q, vipFilter, vipLevel, statusFilter, dateFilter, sort],
+    queryKey: ["admin_users", normalizedQ, vipFilter, vipLevel, statusFilter, dateFilter, sort, page],
+    enabled: normalizedQ.length === 0 || normalizedQ.length >= 2 || /^[0-9a-f-]{36}$/i.test(normalizedQ),
+    staleTime: 20_000,
     queryFn: async () => {
       let query = supabase
         .from("profiles")
         .select("id,username,full_name,avatar,frame,coins,diamonds,level,is_vip,vip_level,status,user_code,last_seen,created_at")
         .order(sort === "coins_desc" || sort === "coins_asc" ? "coins" : "created_at", { ascending: sort === "coins_asc" || sort === "oldest", nullsFirst: false })
-        .limit(50);
+        .range((page - 1) * 50, page * 50 - 1);
       if (vipFilter === "vip") query = query.eq("is_vip", true);
       if (vipFilter === "nonvip") query = query.eq("is_vip", false);
       if (vipLevel !== "all") query = query.eq("vip_level", Number(vipLevel));
@@ -67,8 +83,8 @@ function UsersAdmin() {
         const days = Number(dateFilter.replace("d", ""));
         query = query.gte("created_at", new Date(Date.now() - days * 86400000).toISOString());
       }
-      if (q.trim()) {
-        const term = q.trim();
+      if (normalizedQ) {
+        const term = normalizedQ;
         // User IDs are UUIDs, so use an exact ID filter instead of ilike.
         // This makes the UUID copied from WhatsApp directly searchable.
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(term);
@@ -86,6 +102,8 @@ function UsersAdmin() {
 
   const frames = useQuery({
     queryKey: ["admin_assignable_frames"],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("themes")
@@ -267,6 +285,21 @@ function UsersAdmin() {
             </table>
           </div>
         )}
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-2">
+        <span className="text-[11px] text-muted-foreground">Page {page} · showing up to 50 users</span>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1 || list.isFetching}
+            className="rounded-full border border-border px-3 py-1.5 text-xs disabled:opacity-40"
+          >Previous</button>
+          <button
+            onClick={() => setPage((p) => p + 1)}
+            disabled={(list.data?.length ?? 0) < 50 || list.isFetching}
+            className="rounded-full border border-border px-3 py-1.5 text-xs disabled:opacity-40"
+          >Next</button>
+        </div>
       </div>
     </>
   );
