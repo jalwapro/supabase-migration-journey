@@ -143,7 +143,9 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
           setGame(authoritative);
           setStep("play");
         }
-      }).finally(() => {
+      }, () => {
+        authoritativeSyncInFlightRef.current = false;
+      }).then(() => {
         authoritativeSyncInFlightRef.current = false;
       });
     });
@@ -289,7 +291,7 @@ export function LudoSheet({ open, onClose, players, roomId }: { open: boolean; o
     if (error) throw new Error(error.message || "Unable to fund Ludo match");
     const colors = activeColorsForMode(mode);
     const seats = colors.map((color, i) => ({ color, kind: "human" as SeatKind, userId: ids[i], name: seatedHumans[i]?.username ?? "Player" }));
-    isAuthority.current = true; matchIdRef.current = matchId as string; payoutSettledRef.current = false; revisionRef.current = 0; lastRemoteRevisionRef.current = 0; setActiveBet(bet); setBetModalOpen(false);
+    isAuthority.current = true; matchIdRef.current = matchId as string; revisionRef.current = 0; lastRemoteRevisionRef.current = 0; setActiveBet(bet); setBetModalOpen(false);
     const g = createGame(mode, seats); setGame(g); setStep("play"); broadcastLater(g, false);
   }
 
