@@ -20,6 +20,7 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
   const busyRef = useRef(false);
   const tapTotalsRef = useRef<Record<string, number>>({});
   const activeStateRef = useRef<ComboState | null>(null);
+  const audioPoolRef = useRef<HTMLAudioElement | null>(null);
 
   const flushSummary = () => {
     const totals = tapTotalsRef.current;
@@ -76,37 +77,59 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
       try {
         const raw = giftSoundSrc(gift)!;
         const src = raw.startsWith("/__l5e/") ? `${LOVABLE_ASSET_ORIGIN}${raw}` : raw;
-        const a = new Audio(src);
-        a.volume = Math.min(1, 0.9 * giftAudioGain(gift));
-        void a.play().catch(() => {});
+        if (!audioPoolRef.current) audioPoolRef.current = new Audio();
+        const audio = audioPoolRef.current;
+        if (audio.src !== src) audio.src = src;
+        audio.currentTime = 0;
+        audio.volume = Math.min(1, 0.9 * giftAudioGain(gift));
+        void audio.play().catch(() => {});
       } catch { /* noop */ }
     }
 
     try {
-      // Charge/log each recipient individually, but do not trigger playback here.
-      // Playback is broadcast once below for the whole recipient batch.
+      const uniqueTargets = [...new Set(targets)].filter((id) => id && id !== profile?.id);
+      if (!uniqueTargets.length) throw new Error("Pick a receiver");
+
+      const sender = { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null };
       let firstSendId: string | null = null;
-      for (const rid of targets) {
-        const { data, error } = await supabase.rpc("send_gift", { _room_id: roomId, _receiver_id: rid, _gift_id: gift.id, _quantity: 1, _write_message: false });
+      let allSendIds: string[] = [];
+
+      if (uniqueTargets.length === 1) {
+        const { data, error } = await supabase.rpc("send_gift", {
+          _room_id: roomId,
+          _receiver_id: uniqueTargets[0],
+          _gift_id: gift.id,
+          _quantity: 1,
+          _write_message: false,
+        });
         if (error) throw error;
         const row = data as { id?: string } | null;
         if (!row?.id) throw new Error("Gift was charged but returned no canonical send id");
-        if (!firstSendId) firstSendId = row.id;
-        tapTotalsRef.current[rid] = (tapTotalsRef.current[rid] ?? 0) + 1;
+        firstSendId = row.id;
+        allSendIds = [row.id];
+        tapTotalsRef.current[uniqueTargets[0]] = (tapTotalsRef.current[uniqueTargets[0]] ?? 0) + 1;
+      } else {
+        const { data, error } = await supabase.rpc("send_gift_multi_current", {
+          _room_id: roomId,
+          _receiver_ids: uniqueTargets,
+          _gift_id: gift.id,
+          _quantity: 1,
+        } as any);
+        if (error) throw error;
+        const rows = (Array.isArray(data) ? data : []) as Array<{ id?: string; receiver_id?: string }>;
+        if (rows.length !== uniqueTargets.length || rows.some((row) => !row.id)) {
+          throw new Error("Gift batch returned incomplete canonical send ids");
+        }
+        firstSendId = rows[0].id!;
+        allSendIds = rows.map((row) => row.id!);
+        rows.forEach((row) => {
+          if (row.receiver_id) {
+            tapTotalsRef.current[row.receiver_id] = (tapTotalsRef.current[row.receiver_id] ?? 0) + 1;
+          }
+        });
       }
 
-      // One unified animation event for the complete batch, regardless of how
-      // many recipients were charged above (e.g. 5 recipients => 1 playback).
-      if (firstSendId) {
-        await broadcastGiftPlayback(
-          roomId,
-          gift,
-          targets,
-          { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null },
-          1,
-          firstSendId,
-        );
-      }
+      await broadcastGiftPlayback(roomId, gift, uniqueTargets, sender, 1, firstSendId!, allSendIds);
       await refresh();
     } catch (e) {
       toast.error((e as Error).message);
