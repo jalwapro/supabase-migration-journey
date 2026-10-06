@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/livekit-token")({ server: { handlers:
     // single canonical LiveKit room name. The token grant and frontend
     // Room.connect() must both use this exact value.
     const identity = authenticatedUserId;
-    const at = new AccessToken(apiKey, apiSecret, { identity, name: String(body.name ?? "Jalwa user").trim().slice(0, 80) || "Jalwa user", ttl: "1h" });
+    const at = new AccessToken(apiKey, apiSecret, { identity, name: String(body.name ?? "Jalwa user").trim().slice(0, 80) || "Jalwa user", ttl: "4h" });
     // The connection token must explicitly grant the client the base LiveKit
     // room capabilities. Runtime room-role/mute restrictions are enforced by
     // the separate livekit-permissions endpoint via UpdateParticipant.
