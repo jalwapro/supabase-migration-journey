@@ -1,15 +1,10 @@
 import { useEffect } from "react";
 import { isNative } from "@/lib/native";
 
-/**
- * Keeps the mobile screen awake while the app is in the foreground.
- * Silently no-ops on browsers without support.
- * Uses native Capacitor keep-awake in app builds, and web Wake Lock in browsers.
- */
-export function useWakeLock() {
+/** Keeps the mobile screen awake only while explicitly enabled (VoiceRoom). */
+export function useWakeLock(enabled = true) {
   useEffect(() => {
-    if (typeof document === "undefined" || typeof navigator === "undefined") return;
-
+    if (!enabled || typeof document === "undefined" || typeof navigator === "undefined") return;
     let sentinel: any = null;
     let cancelled = false;
     let pending = false;
@@ -24,58 +19,36 @@ export function useWakeLock() {
         await KeepAwake.keepAwake();
         nativeAwake = true;
         return true;
-      } catch {
-        return false;
-      }
+      } catch { return false; }
     };
-
     const acquireWeb = async () => {
       const anyNav = navigator as any;
-      if (!anyNav.wakeLock || typeof anyNav.wakeLock.request !== "function") return;
+      if (!anyNav.wakeLock?.request) return;
       try {
         const s = await anyNav.wakeLock.request("screen");
-        if (cancelled) {
-          s.release?.();
-          return;
-        }
+        if (cancelled) { s.release?.(); return; }
         sentinel = s;
         sentinel.addEventListener?.("release", () => {
           sentinel = null;
           if (!cancelled && document.visibilityState === "visible") void acquire();
         });
-      } catch {
-        /* some mobile browsers require a gesture; interaction listeners retry */
-      }
+      } catch { /* gesture-required browsers retry on interaction */ }
     };
-
     const acquire = async () => {
       if (pending || cancelled || document.visibilityState !== "visible") return;
       pending = true;
-      const hasNativeLock = await acquireNative();
-      if (!hasNativeLock && !sentinel) await acquireWeb();
+      const native = await acquireNative();
+      if (!native && !sentinel) await acquireWeb();
       pending = false;
     };
-
-    const onVisibility = () => {
-      if (document.visibilityState === "visible") acquire();
-    };
-
-    const onInteraction = () => {
-      void acquire();
-    };
-
-    // Initial attempt
-    acquire();
-
-    // Re-acquire on visibility change
+    const onVisibility = () => { if (document.visibilityState === "visible") void acquire(); };
+    const onInteraction = () => void acquire();
+    void acquire();
     document.addEventListener("visibilitychange", onVisibility);
-
-    // Attempt on interaction in case initial attempt failed due to lack of gesture
     window.addEventListener("pointerdown", onInteraction, { passive: true });
     window.addEventListener("touchstart", onInteraction, { passive: true });
     window.addEventListener("click", onInteraction, { passive: true });
     window.addEventListener("keydown", onInteraction, { passive: true });
-
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibility);
@@ -83,15 +56,10 @@ export function useWakeLock() {
       window.removeEventListener("touchstart", onInteraction);
       window.removeEventListener("click", onInteraction);
       window.removeEventListener("keydown", onInteraction);
-      if (sentinel) {
-        sentinel.release?.().catch(() => {});
-        sentinel = null;
-      }
+      if (sentinel) { sentinel.release?.(); sentinel = null; }
       if (nativeAwake) {
-        void import("@capacitor-community/keep-awake")
-          .then(({ KeepAwake }) => KeepAwake.allowSleep())
-          .catch(() => {});
+        void import("@capacitor-community/keep-awake").then(({ KeepAwake }) => KeepAwake.allowSleep()).catch(() => {});
       }
     };
-  }, []);
+  }, [enabled]);
 }
