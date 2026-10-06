@@ -147,6 +147,35 @@ const USER_SCOPED_PREFIXES = [
 ];
 
 /** Returns an error string when this user may not write to `path`. */
+const PUBLIC_READ_PREFIXES = [
+  "gifts", "frames", "entrances", "entrance-effects", "banners", "splash",
+  "ads", "poster", "room-bg", "video", "themes", "theme-categories",
+  "spotlights", "room-frames", "profile-cards", "vip", "emoji",
+] as const;
+
+function authorizeRead(path: string, userId: string, admin: boolean): string | null {
+  if (admin) return null;
+  const [bucket, second] = path.split("/");
+  if (!bucket) return "path_required";
+
+  // Private/user-scoped media may only be signed for its owner's UUID.
+  if (USER_SCOPED_PREFIXES.includes(bucket)) {
+    return second === userId ? null : "path_outside_your_folder";
+  }
+
+  // Public catalogue media is readable by authenticated users.
+  if ((PUBLIC_READ_PREFIXES as readonly string[]).includes(bucket)) return null;
+
+  // shop-assets can contain both public catalogue media and user-owned custom
+  // media. Only a user-owned subfolder is readable here unless admin.
+  if (bucket === "shop-assets") {
+    return second === userId ? null : "private_namespace";
+  }
+
+  // Never sign arbitrary/unknown namespaces for normal users.
+  return "private_namespace";
+}
+
 function authorizeWrite(path: string, userId: string, admin: boolean): string | null {
   if (admin) return null;
   const [bucket, second] = path.split("/");
@@ -216,13 +245,15 @@ export const Route = createFileRoute("/api/r2-sign")({
         const contentType = (body.contentType || "application/octet-stream").slice(0, 120);
         const op = body.op === "get" ? "get" : "put";
 
+        const admin = await isAdmin(user.id, user.token);
+
         if (op === "put") {
           const invalid = validateUpload(path, contentType, body.size);
           if (invalid) return json({ error: invalid }, 400);
-          // Namespace authorization: shared catalogue media is admin-only and
-          // everything else must live under the caller's own user folder.
-          let denied = authorizeWrite(path, user.id, false);
-          if (denied && (await isAdmin(user.id, user.token))) denied = null;
+          const denied = authorizeWrite(path, user.id, admin);
+          if (denied) return json({ error: denied }, 403);
+        } else {
+          const denied = authorizeRead(path, user.id, admin);
           if (denied) return json({ error: denied }, 403);
         }
 
