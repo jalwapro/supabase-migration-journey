@@ -63,7 +63,6 @@ function FramePreview({ frame, size = 96 }: { frame: Partial<PremiumFrame>; size
         />
       )}
       </div>
-    </>
   );
 }
 
