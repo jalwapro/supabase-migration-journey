@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { CATALOG_GIFTS } from "@/lib/gifts";
-import { isAssetUrlLike, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
+import { isAssetUrlLike, preloadGiftAssets, preloadGiftVideo, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
 import { broadcastGiftPlayback } from "@/lib/giftBroadcast";
 import { Coins, Send, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -49,6 +49,23 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
  useEffect(()=>{if(open&&receivers.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receivers.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receivers,profile?.id]);
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
+ const topGiftPrefetchRef = useRef<string>("");
+ useEffect(() => {
+   if (!open || !gifts.data?.length) return;
+   const dbIds = gifts.data.filter((g) => /^[0-9a-f-]{36}$/i.test(g.id)).map((g) => g.id);
+   if (!dbIds.length) return;
+   void supabase.rpc("get_top_sent_gifts", { limit_n: 10 }).then(({ data, error }) => {
+     if (error || !Array.isArray(data)) return;
+     const topIds = data.map((row: { gift_id?: string }) => row.gift_id).filter((id): id is string => Boolean(id));
+     const signature = topIds.join(",");
+     if (!signature || signature === topGiftPrefetchRef.current) return;
+     topGiftPrefetchRef.current = signature;
+     const topSet = new Set(topIds);
+     for (const gift of gifts.data) {
+       if (topSet.has(gift.id)) preloadGiftAssets(gift);
+     }
+   });
+ }, [open, gifts.data]);
  const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  const handleGiftSelect=useCallback((gift:Gift)=>{setSelectedGift(gift);preloadGiftVideo(giftVideoUrl(gift));},[activeTier]);
  const giftVideoUrl=(g:Gift|null)=>{if(!g?.clip_path||!["mp4","webm","svga"].includes(g.clip_type??""))return null;return resolvePlayableGiftUrl(g.clip_path);};
