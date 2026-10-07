@@ -123,8 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initialSessionLoadedRef = useRef(false);
 
   const user = session?.user ?? null;
-  const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
-  const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin") || (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
+  // Admin access comes only from the server-backed user_roles table. Never
+  // elevate a browser session from a hardcoded email address.
+  const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin"));
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
