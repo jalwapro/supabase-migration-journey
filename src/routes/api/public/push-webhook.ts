@@ -1,34 +1,47 @@
 import { createFileRoute } from "@tanstack/react-router";
 import webpush from "web-push";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 type NotifRow = { id:string; user_id:string; kind:string; title:string; body:string|null; data:Record<string,unknown>|null };
 type WebhookPayload = { type?:string; table?:string; record?:NotifRow; old_record?:NotifRow|null };
 
-async function sha256Hex(value: string): Promise<string> {
-  const bytes = new TextEncoder().encode(value);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+function sha256Hex(value: string): string {
+  return createHash("sha256").update(value, "utf8").digest("hex");
+}
+
+function safeHashEquals(left: string, right: string): boolean {
+  const a = Buffer.from(left, "hex");
+  const b = Buffer.from(right, "hex");
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 function configureVapid(){const pub=process.env.VAPID_PUBLIC_KEY;const priv=process.env.VAPID_PRIVATE_KEY;const subj=process.env.VAPID_SUBJECT||"mailto:admin@example.com";if(!pub||!priv)throw new Error("VAPID keys not configured");webpush.setVapidDetails(subj,pub,priv);}
 
 export const Route=createFileRoute("/api/public/push-webhook")({server:{handlers:{POST:async({request})=>{
-  const secret=request.headers.get("x-webhook-secret");
-  const secretHashHeader=request.headers.get("x-webhook-secret-hash")||request.headers.get("apikey");
   const authorization=request.headers.get("authorization")||"";
+  const bearerSecret=authorization.startsWith("Bearer ") ? authorization.slice(7).trim() : "";
   const apiKey=request.headers.get("apikey")||"";
   const serviceKey=process.env.SUPABASE_SECRET_KEY||process.env.SB_SERVICE_ROLE_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||"";
-  const serviceAuthorized=!!serviceKey&&(authorization===`Bearer ${serviceKey}`||apiKey===serviceKey);
+  const serviceAuthorized=!!serviceKey && (authorization===`Bearer ${serviceKey}` || apiKey===serviceKey);
+
   let dbSecretAuthorized=false;
-  if(secret||secretHashHeader){try{
-    const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
-    const {data:rpcHash,error:rpcError}=await (supabaseAdmin as any).rpc("get_push_webhook_secret_hash");
-    const hash=secret?await sha256Hex(secret):secretHashHeader;
-    dbSecretAuthorized=!rpcError&&typeof rpcHash==="string"&&rpcHash===hash;
-    if(rpcError)console.error("Webhook secret RPC failed:",rpcError);
-  }catch(e){console.error("Webhook secret verification failed:",e);}
+  if (bearerSecret) {
+    try {
+      const {supabaseAdmin}=await import("@/integrations/supabase/client.server");
+      const {data:rpcHash,error:rpcError}=await (supabaseAdmin as any).rpc("get_push_webhook_secret_hash");
+      if (!rpcError && typeof rpcHash==="string") {
+        dbSecretAuthorized=safeHashEquals(rpcHash, sha256Hex(bearerSecret));
+      }
+      if (rpcError) console.error("Webhook secret RPC failed:",rpcError);
+    } catch(e) {
+      console.error("Webhook secret verification failed:",e);
+    }
   }
-  const envSecretAuthorized=!!secret&&!!process.env.PUSH_WEBHOOK_SECRET&&secret===process.env.PUSH_WEBHOOK_SECRET;
+
+  const envSecret=process.env.PUSH_WEBHOOK_SECRET||"";
+  const envSecretAuthorized=!!bearerSecret && !!envSecret &&
+    safeHashEquals(sha256Hex(envSecret), sha256Hex(bearerSecret));
+
   if(!serviceAuthorized&&!dbSecretAuthorized&&!envSecretAuthorized)return new Response("Unauthorized",{status:401});
 
   let payload:WebhookPayload;try{payload=(await request.json()) as WebhookPayload;}catch{return new Response("Bad JSON",{status:400});}
