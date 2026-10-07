@@ -49,7 +49,7 @@ function AppCustomizationStudio() {
   const currentPublished = useMemo(() => publishedVersions.find((x) => x.is_current) ?? null, [publishedVersions]);
 
   useEffect(() => { void (async () => { const { data, error } = await supabase.from("app_customization_pages").select("id,page_key,name,description,route_pattern,sort_order").eq("is_enabled", true).order("sort_order"); if (error) { toast.error(error.message); setLoading(false); return; } const rows = ((data ?? []) as PageRow[]).filter((x) => REAL_APP_PAGE_KEYS.has(x.page_key)); setPages(rows); if (!rows.some((x) => x.page_key === pageKey) && rows[0]) setPageKey(rows[0].page_key); setLoading(false); })(); }, []);
-  useEffect(() => { void (async () => { const { data } = await supabase.from("rooms").select("id").limit(1).maybeSingle(); if (data?.id) setPreviewRoomId(data.id); })(); }, []);
+  useEffect(() => { void (async () => { const { data } = await supabase.from("live_rooms").select("id").eq("status", "live").limit(1).maybeSingle(); if (data?.id) setPreviewRoomId(data.id); })(); }, []);
   useEffect(() => { const page = pages.find((x) => x.page_key === pageKey); if (!page) return; void (async () => { const { data, error } = await supabase.from("app_customization_versions").select("config").eq("page_id", page.id).eq("status", "draft").order("version", { ascending: false }).limit(1).maybeSingle(); if (error) { toast.error(error.message); return; } setConfig(normalizePageConfig(data?.config, pageKey)); setSelectedId(null); setHistory([]); setFuture([]); })(); }, [pageKey, pages]);
   useEffect(() => { const page = pages.find((x) => x.page_key === pageKey); if (!page) return; void refreshPublishedVersions(page.id); }, [pageKey, pages]);
 
