@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
@@ -73,27 +73,6 @@ export function Seat({ seat, onClick }: SeatProps) {
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
   const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
-  const [profileMedia, setProfileMedia] = useState<{ frame: string | null; ring: string | null; level: number | null; render_config: unknown } | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const id = user?.id;
-    if (!id) {
-      setProfileMedia(null);
-      return;
-    }
-    void supabase.from("profiles").select("frame,ring,vip_level,frame_render_config").eq("id", id).maybeSingle().then(({ data }) => {
-      if (!active) return;
-      setProfileMedia({
-        frame: (data as { frame?: string | null } | null)?.frame ?? null,
-        ring: (data as { ring?: string | null } | null)?.ring ?? null,
-        level: Number((data as { vip_level?: number | null } | null)?.vip_level ?? 0),
-        render_config: (data as { frame_render_config?: unknown } | null)?.frame_render_config ?? {},
-      });
-    });
-    return () => { active = false; };
-  }, [user?.id]);
-
   if (!user) {
     return (
       <div data-seat-index={num} data-seat="true" data-seat-cell="true" className={cn("relative z-10 flex h-[84px] min-h-[84px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible", className)}>
@@ -107,16 +86,16 @@ export function Seat({ seat, onClick }: SeatProps) {
     );
   }
 
-  const equippedFrame = frameUrl || profileMedia?.frame || null;
-  const equippedRing = user?.ring || profileMedia?.ring || null;
-  const level = user?.level ?? profileMedia?.level ?? 0;
+  const equippedFrame = frameUrl || null;
+  const equippedRing = user?.ring || null;
+  const level = user?.level ?? 0;
 
   return (
     <div data-seat-index={num} data-user-dp={user.id ?? ""} data-seat="true" data-seat-cell="true" className={cn("relative flex h-[84px] min-h-[84px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible", className)}>
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")} />
+          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={user?.frame_render_config} className={cn("origin-center", speaking && "ring-0 shadow-[0_0_15px_rgba(236,72,153,0.8)]")} />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
         <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
@@ -137,7 +116,7 @@ interface SeatGridProps {
   onHostTap?: () => void;
 }
 
-export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
+export const SeatGrid = memo(function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
   const [requests, setRequests] = useState<SeatRequest[]>([]);
   const [busyRequest, setBusyRequest] = useState<string | null>(null);
@@ -470,4 +449,4 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       )}
     </section>
   );
-}
+});
