@@ -26,6 +26,7 @@ const TARGETS = [
   ["gift_categories", ["icon"]],
   ["chat_emojis", ["clip_path"]],
   ["entrance_effects", ["media_url", "sound_url", "thumbnail_url"]],
+  ["room_entrances", ["media_url", "sound_url", "published_render_url", "avatar_url"]],
   ["themes", ["animation_url", "bg_image", "preview_url"]],
   ["theme_categories", ["icon_url"]],
   ["custom_themes", ["image_url"]],
