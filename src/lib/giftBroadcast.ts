@@ -109,12 +109,8 @@ export async function broadcastGiftPlayback(
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
   };
 
-  await entry.ready;
-  const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
-  if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
-
-  // The sender must see the same playback even when the channel is configured
-  // without self-delivery. The player deduplicates this canonical event id.
+  // Sender playback is deliberately local-first. Do not make the UI wait for
+  // Supabase Realtime subscription/ACK latency (especially noticeable from Pakistan).
   if (typeof window !== "undefined") {
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("jalwa:gift-sent", {
@@ -141,9 +137,21 @@ export async function broadcastGiftPlayback(
           quantity: payload.quantity,
           renderConfig: payload.renderConfig,
           local: true,
-          broadcast: true,
+          broadcast: false,
         },
       }));
     });
   }
+
+  // Broadcast independently. A slow/failed Realtime ACK must never delay or
+  // suppress the sender's local animation.
+  void (async () => {
+    try {
+      await entry!.ready;
+      const result = await entry!.channel.send({ type: "broadcast", event: "gift_play", payload });
+      if (result !== "ok") console.warn("[giftBroadcast] Realtime broadcast not acknowledged", result);
+    } catch (error) {
+      console.warn("[giftBroadcast] Realtime broadcast failed", error);
+    }
+  })();
 }
