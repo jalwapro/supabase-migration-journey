@@ -1,6 +1,6 @@
 import { vipTierForLevel as tierForLevel } from "@/lib/vip-levels";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User as UserIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -95,8 +95,6 @@ export function LevelAvatar({
       [t.animation_url, t.preview_url, t.bg_image].some((u) => (u ?? "").split("#")[0] === baseFrame)
     )?.preview_url ?? null) as string | null,
   );
-  const staticFrameUrl = perfLite && frameIsVideo ? previewFrameUrl : cleanFrameUrl;
-
   // Shop Render Studio is the single source of truth for an equipped frame.
   // Support both the persisted studio config and the legacy URL chroma hash.
   const studioChroma = (() => {
@@ -127,6 +125,7 @@ export function LevelAvatar({
   ].filter(Boolean).join(" ");
   const frameIsVideo = !!cleanFrameUrl && /\.(mp4|webm|mov)($|\?)/i.test(cleanFrameUrl);
   const ringIsVideo = !!ringUrl && /\.(mp4|webm|mov)($|\?)/i.test(ringUrl);
+  const staticFrameUrl = perfLite && frameIsVideo ? previewFrameUrl : cleanFrameUrl;
 
   // Keep decorative frame/ring videos paused when this avatar is off-screen.
   // Home can render many avatars at once; decoding all of them continuously
