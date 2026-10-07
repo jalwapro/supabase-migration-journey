@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 type Props = { roomId: string };
 
-export function GiftAnimationPlayer({
+export function GiftAnimationPlayer({ roomId }: Props) {
   useEffect(() => {
     let cancelled = false;
     void supabase.rpc("get_top_sent_gifts", { limit_n: 10 }).then(({ data, error }) => {
@@ -20,7 +20,6 @@ export function GiftAnimationPlayer({
     });
     return () => { cancelled = true; };
   }, []);
- roomId }: Props) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const processedEventsRef = useRef<Set<string>>(new Set());
