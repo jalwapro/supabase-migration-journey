@@ -205,9 +205,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (now - lastHeartbeatAtRef.current < 30_000) return;
       lastHeartbeatAtRef.current = now;
       const seenAt = new Date(now).toISOString();
-      supabase.from("profiles").update({ last_seen: seenAt }).eq("id", user.id).then(({ error }) => {
-        if (error) console.warn("[useAuth] heartbeat", error);
-      });
+      // Presence owns the heartbeat now. Updating profiles.last_seen here
+      // caused useGlobalRealtime's profiles subscription to invalidate/refetch
+      // online-user data for every heartbeat.
+      void seenAt;
       supabase.rpc("touch_presence").then(({ error }) => {
         if (error) console.warn("[useAuth] presence", error);
       });
