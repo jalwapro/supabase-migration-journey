@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "predev": "node scripts/fix-voice-chat-history.mjs",
     "build": "vite build",
-    "prebuild": "node scripts/fix-voice-chat-history.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
