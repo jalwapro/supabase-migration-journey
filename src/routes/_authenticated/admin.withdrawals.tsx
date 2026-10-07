@@ -27,6 +27,8 @@ function WithdrawalsAdmin() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [rejectionRequest, setRejectionRequest] = useState<Row | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const list = useQuery({
     queryKey: ["admin_withdrawals", tab],
@@ -129,10 +131,8 @@ function WithdrawalsAdmin() {
                     disabled={processingId !== null}
                     onClick={() => {
                       if (processingId) return;
-                      const reason = prompt("Rejection reason?");
-                      if (reason === null) return;
-                      setProcessingId(r.id);
-                      act.mutate({ id: r.id, status: "rejected", note: reason });
+                      setRejectionRequest(r);
+                      setRejectionReason("");
                     }}
                     className="flex-1 rounded-full bg-red-500/20 py-1.5 text-xs font-bold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
