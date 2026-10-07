@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
@@ -39,8 +40,19 @@ function PkAdmin() {
       if (error) throw error;
       return (data ?? []) as Match[];
     },
-    refetchInterval: 5000,
+    refetchInterval: (query) => query.state.data?.some((match) => match.status === "active") ? 5000 : false,
+    refetchIntervalInBackground: false,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-pk-matches-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "pk_matches" }, () => {
+        void qc.invalidateQueries({ queryKey: ["admin-pk-matches"] });
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [qc]);
 
   const endMatch = useMutation({
     mutationFn: async (id: string) => {
