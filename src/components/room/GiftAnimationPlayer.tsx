@@ -1,12 +1,25 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
+import { preloadGiftAssets } from "@/lib/giftMedia";
+import { supabase } from "@/integrations/supabase/client";
 import { ReliableGiftAnimationPlayer } from "./ReliableGiftAnimationPlayer";
 import { useAuth } from "@/hooks/useAuth";
 
 type Props = { roomId: string };
 
 export function GiftAnimationPlayer({ roomId }: Props) {
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.rpc("get_top_sent_gifts", { limit_n: 10 }).then(({ data, error }) => {
+      if (cancelled || error || !Array.isArray(data)) return;
+      for (const gift of data.slice(0, 10)) {
+        if (!gift || typeof gift !== "object") continue;
+        preloadGiftAssets(gift as { clip_path?: string | null; image_url?: string | null; sound_url?: string | null; emoji?: string | null });
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const processedEventsRef = useRef<Set<string>>(new Set());

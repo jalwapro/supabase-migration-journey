@@ -133,9 +133,29 @@ export default function AdminVmServerMonitor() {
   }, []);
 
   useEffect(() => {
-    fetchStats();
-    const interval = window.setInterval(fetchStats, 5000);
-    return () => window.clearInterval(interval);
+    let interval: number | null = null;
+    const stop = () => {
+      if (interval !== null) {
+        window.clearInterval(interval);
+        interval = null;
+      }
+    };
+    const start = () => {
+      stop();
+      if (document.visibilityState !== "visible") return;
+      void fetchStats();
+      interval = window.setInterval(fetchStats, 5000);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [fetchStats]);
 
   if (loading) return <div className="rounded-2xl border border-cyan-500/30 bg-black/80 p-8 text-center text-cyan-400 font-mono"><Loader2 className="mx-auto h-8 w-8 animate-spin mb-3 text-cyan-400" /> INITIALIZING NEURAL TELEMETRY...</div>;

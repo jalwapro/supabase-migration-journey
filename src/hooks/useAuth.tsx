@@ -123,8 +123,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const initialSessionLoadedRef = useRef(false);
 
   const user = session?.user ?? null;
-  const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
-  const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin") || (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
+  // Admin access comes only from the server-backed user_roles table. Never
+  // elevate a browser session from a hardcoded email address.
+  const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin"));
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
@@ -205,9 +206,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (now - lastHeartbeatAtRef.current < 30_000) return;
       lastHeartbeatAtRef.current = now;
       const seenAt = new Date(now).toISOString();
-      supabase.from("profiles").update({ last_seen: seenAt }).eq("id", user.id).then(({ error }) => {
-        if (error) console.warn("[useAuth] heartbeat", error);
-      });
+      // Presence owns the heartbeat now. Updating profiles.last_seen here
+      // caused useGlobalRealtime's profiles subscription to invalidate/refetch
+      // online-user data for every heartbeat.
+      void seenAt;
       supabase.rpc("touch_presence").then(({ error }) => {
         if (error) console.warn("[useAuth] presence", error);
       });

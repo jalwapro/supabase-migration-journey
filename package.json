@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "predev": "node scripts/fix-voice-chat-history.mjs",
     "build": "vite build",
-    "prebuild": "node scripts/fix-voice-chat-history.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -15,7 +13,6 @@
     "cap:sync": "vite build && cap sync && node scripts/ensure-android-permissions.mjs",
     "cap:android": "vite build && cap sync android && node scripts/ensure-android-permissions.mjs && cap open android",
     "cap:ios": "vite build && cap sync ios && cap open ios",
-    "cache:gifts": "node scripts/cache-top-gifts.mjs",
     "monitor:oracle": "node scripts/oracle-vm-monitor.mjs",
     "cap:android:bootstrap": "vite build && node scripts/bootstrap-android.mjs"
   },

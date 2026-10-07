@@ -1517,6 +1517,11 @@ body.theme-background-active header.sticky {
   .dp-sparkle { animation: none; opacity: .6; }
 }
 
+/* Android/native low-power rooms: seat frames must not run four infinite
+   drop-shadow animations on every avatar. Profile cards can still show the
+   full visual treatment when perf-lite is not active. */
+html.perf-lite .dp-sparkle { display: none !important; }
+
 .dp-ring-spin { animation: dp-ring-spin 8s linear infinite; transform-origin: 50% 50%; }
 @keyframes dp-ring-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .dp-ring-spin { animation: none; } }

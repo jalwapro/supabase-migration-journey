@@ -184,7 +184,7 @@ type Member = {
   is_moderator?: boolean;
   joined_at?: string | null;
   seated_at?: string | null;
-  user: { username: string | null; avatar: string | null; frame: string | null; vip_level?: number | null } | null;
+  user: { username: string | null; avatar: string | null; frame: string | null; vip_level?: number | null; frame_render_config?: unknown } | null;
 };
 
 type Message = {
@@ -638,7 +638,7 @@ function RoomPage() {
       const withSeatedAt = await supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level,frame_render_config)",
         )
         .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {

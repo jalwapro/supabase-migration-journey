@@ -59,7 +59,25 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const clearTimer = useCallback(() => { if (timerRef.current !== null) window.clearTimeout(timerRef.current); timerRef.current = null; }, []);
   const stopAudio = useCallback(() => { const audio = audioRef.current; if (audio) { audio.pause(); audio.currentTime = 0; audioRef.current = null; } }, []);
   const finish = useCallback(() => { clearTimer(); stopAudio(); const next = queueRef.current.shift() ?? null; activeRef.current = next; setResolvedSrc(null); setResolvedType(null); setCandidateIndex(0); setCandidates([]); setActive(next); }, [clearTimer, stopAudio]);
-  const enqueue = useCallback((event: GiftEvent) => { if (!event.key || seenRef.current.has(event.key)) return; seenRef.current.add(event.key); if (seenRef.current.size > 500) seenRef.current.clear(); if (activeRef.current) queueRef.current.push(event); else { activeRef.current = event; setResolvedSrc(null); setResolvedType(null); setCandidateIndex(0); setCandidates([]); setActive(event); } }, []);
+  const enqueue = useCallback((event: GiftEvent) => {
+    if (!event.key || seenRef.current.has(event.key)) return;
+    seenRef.current.add(event.key);
+    if (seenRef.current.size > 500) seenRef.current.clear();
+    if (activeRef.current) {
+      // Never allow a combo storm to build an unbounded 10×12s backlog.
+      // Keep the newest events because they are the ones the room currently sees.
+      const MAX_QUEUE = 4;
+      if (queueRef.current.length >= MAX_QUEUE) queueRef.current.shift();
+      queueRef.current.push(event);
+    } else {
+      activeRef.current = event;
+      setResolvedSrc(null);
+      setResolvedType(null);
+      setCandidateIndex(0);
+      setCandidates([]);
+      setActive(event);
+    }
+  }, []);
   useEffect(() => { const onGift = (event: Event) => { const detail = (event as CustomEvent<GiftEvent>).detail; if (!detail || typeof detail !== "object") return; enqueue(detail); }; window.addEventListener("jalwa:gift-sent", onGift as EventListener); return () => window.removeEventListener("jalwa:gift-sent", onGift as EventListener); }, [enqueue]);
   useEffect(() => () => { clearTimer(); stopAudio(); activeRef.current = null; queueRef.current = []; }, [clearTimer, stopAudio]);
   useEffect(() => { if (!active) return; const direct = [asUrl(active.giftClipUrl), resolveGiftImageUrl(asUrl(active.giftImageUrl)), resolveGiftImageUrl(asUrl(active.giftIcon))].filter((x): x is string => Boolean(x)); const canonical = giftAssetCandidates(active.giftName).map(asUrl).filter((x): x is string => Boolean(x)); const unique = [...new Set([...direct, ...canonical])]; setCandidates(unique); setCandidateIndex(0); const first = unique[0] ?? null; setResolvedSrc(first); setResolvedType(first ? typeOf(first, active.giftClipType) : null); }, [active?.key, active?.giftName, active?.giftClipUrl, active?.giftImageUrl, active?.giftIcon, active?.giftClipType]);
@@ -95,13 +113,35 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }
   const stageStyle = renderConfigToStyle(cfg);
   const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit] };
+  const requiresGpu = Boolean(
+    cfg.chromaMode !== "off" ||
+    cfg.blurRadius ||
+    cfg.sharpness ||
+    cfg.denoise ||
+    cfg.temperature ||
+    cfg.tint ||
+    cfg.highlights ||
+    cfg.shadows ||
+    cfg.exposure ||
+    cfg.gamma !== 1 ||
+    cfg.hue ||
+    cfg.brightness ||
+    cfg.contrast ||
+    cfg.saturation !== 1 ||
+    cfg.edgeCleanup ||
+    cfg.spillSuppression ||
+    cfg.colorRecovery ||
+    cfg.contrastRecovery
+  );
   const advanceCandidate = () => { const nextIndex = candidateIndex + 1; if (nextIndex >= candidates.length) { setResolvedSrc(null); setResolvedType(null); return; } const next = candidates[nextIndex]!; setCandidateIndex(nextIndex); setResolvedSrc(next); setResolvedType(typeOf(next, null)); };
   return (
     <div aria-live="polite" data-jalwa-gift-player="true" className="pointer-events-none fixed inset-0 z-[99999] overflow-hidden" style={{ pointerEvents: "none", width: "100vw", height: "100dvh", left: 0, top: 0 }}>
       <div className="absolute inset-0 flex items-center justify-center overflow-hidden" style={{ width: "100%", height: "100%", left: 0, top: 0 }}>
         <div className="relative flex items-center justify-center" style={{ ...stageStyle, margin: "auto", flexShrink: 0, transformOrigin: "center center" }}>
-          {kind === "video" && src ? (
+          {kind === "video" && src && requiresGpu ? (
             <GiftGLVideo key={`${active.key}:${src}`} src={src} config={cfg} muted={active.audioEnabled !== false && Boolean(active.soundUrl)} volume={active.audioEnabled === false ? 0 : Number(active.audioVolume ?? 1)} loop={Boolean(cfg.loop && cfg.loopCount !== 1)} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} playbackKey={active.key} onEnded={() => { if (cfg.holdMs > 0) window.setTimeout(finish, cfg.holdMs + 400); else finish(); }} onError={advanceCandidate} onDuration={(ms) => { clearTimer(); if (cfg.endMs == null && ms > 0) timerRef.current = window.setTimeout(finish, ms + cfg.holdMs + 500); }} />
+          ) : kind === "video" && src ? (
+            <video key={`${active.key}:${src}`} src={src} muted={active.audioEnabled !== false && Boolean(active.soundUrl)} volume={active.audioEnabled === false ? 0 : Math.min(1, Math.max(0, Number(active.audioVolume ?? 1)))} playsInline autoPlay={playbackStarted} preload="auto" crossOrigin="anonymous" loop={Boolean(cfg.loop && cfg.loopCount !== 1)} className="h-full w-full" style={mediaStyle} onEnded={() => { if (cfg.holdMs > 0) window.setTimeout(finish, cfg.holdMs + 400); else finish(); }} onError={advanceCandidate} onLoadedMetadata={(e) => { const ms = Number.isFinite(e.currentTarget.duration) ? e.currentTarget.duration * 1000 : 0; if (cfg.endMs == null && ms > 0) { clearTimer(); timerRef.current = window.setTimeout(finish, ms + cfg.holdMs + 500); } }} />
           ) : kind === "svga" && src ? (
             <SvgaPlayer key={`${active.key}:${src}`} src={src} loops={cfg.loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
           ) : src ? (

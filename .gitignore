@@ -36,3 +36,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Database backups / dumps — never commit production or user data
+/db/backups/
+*.sql.bak
+*.dump
+*.backup
