@@ -1,4 +1,4 @@
-/** Jalwa current-launch feature gates. Video and PK remain preserved for future releases. */
+/** Jalwa launch scope: audio voice rooms + chat only. Video and PK are disabled. */
 export const LAUNCH_FEATURES = {
   voiceRooms: true,
   videoRooms: false,
