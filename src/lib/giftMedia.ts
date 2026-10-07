@@ -50,6 +50,9 @@ export function preloadGiftVideo(url: string | null | undefined) {
   video.preload = "auto";
   video.muted = true;
   video.playsInline = true;
+  // Match the player CORS mode so the warmed response is reusable by
+  // canvas/WebGL playback instead of creating a second network request.
+  video.crossOrigin = "anonymous";
   video.src = src;
   video.load();
 }
