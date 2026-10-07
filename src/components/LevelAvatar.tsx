@@ -90,6 +90,12 @@ export function LevelAvatar({
     } catch { return null; }
   })();
   const cleanFrameUrl = frameUrl ? frameUrl.split("#")[0] : frameUrl;
+  const previewFrameUrl = resolveAssetUrl(
+    ((shopFrameConfig ?? []).find((t) =>
+      [t.animation_url, t.preview_url, t.bg_image].some((u) => (u ?? "").split("#")[0] === baseFrame)
+    )?.preview_url ?? null) as string | null,
+  );
+  const staticFrameUrl = perfLite && frameIsVideo ? previewFrameUrl : cleanFrameUrl;
 
   // Shop Render Studio is the single source of truth for an equipped frame.
   // Support both the persisted studio config and the legacy URL chroma hash.
@@ -172,7 +178,7 @@ export function LevelAvatar({
       {/* Equipped aura ring behind avatar */}
       {ringUrl && (
         <div className="pointer-events-none absolute inset-[-28%] z-0" aria-hidden>
-          {ringIsVideo ? (
+          {ringIsVideo && !perfLite ? (
             <video
               key={ringUrl}
               src={ringUrl}
@@ -266,11 +272,11 @@ export function LevelAvatar({
             }}
             aria-hidden
           >
-            {effectiveChroma && frameIsVideo ? (
+            {effectiveChroma && frameIsVideo && !perfLite ? (
               <ChromaKeyVideo src={cleanFrameUrl!} chromakey="custom" color={effectiveChroma.color} tolerance={effectiveChroma.tolerance} softness={effectiveChroma.softness} />
             ) : effectiveChroma ? (
               <ChromaKeyImage src={cleanFrameUrl!} color={effectiveChroma.color} tolerance={effectiveChroma.tolerance} softness={effectiveChroma.softness} />
-            ) : frameIsVideo ? (
+            ) : frameIsVideo && !perfLite ? (
               <video
                 key={cleanFrameUrl}
                 src={cleanFrameUrl}
@@ -283,7 +289,7 @@ export function LevelAvatar({
                 style={{ backgroundColor: "transparent", objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }}
               />
             ) : (
-              <img src={cleanFrameUrl ?? undefined} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
+              <img src={staticFrameUrl ?? undefined} alt="" className="h-full w-full object-contain" style={{ objectPosition: "center", transform: `scaleX(${renderConfig?.flipH ? -1 : 1}) scaleY(${renderConfig?.flipV ? -1 : 1})` }} draggable={false} />
             )}
           </div>
         );
