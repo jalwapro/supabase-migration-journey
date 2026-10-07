@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Users, DoorOpen, Wallet, Coins, Flag, Crown, TrendingUp, ArrowUpRight,
-  Radio, Video, Mic, ArrowUpFromLine, Search, Bell, Calendar, Server, Database,
+  Radio, Mic, ArrowUpFromLine, Search, Bell, Calendar, Server, Database,
   CheckCircle2, AlertTriangle, Loader2, RefreshCw,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
