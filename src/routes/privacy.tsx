@@ -42,7 +42,7 @@ function PrivacyPolicyPage() {
               <p><strong className="text-white">Sharing and Disclosure:</strong> Jalwa Global Live does not sell or rent Google user data. We do not share Google user data with advertisers or data brokers. Limited data may be processed by service providers that are necessary to operate Jalwa, such as Supabase for database services and hosting/infrastructure providers for operating the application, only for purposes of providing or improving Jalwa functionality and subject to appropriate safeguards. We do not transfer Google user data for advertising or other unrelated purposes.</p>
               <p><strong className="text-white">Security:</strong> We maintain reasonable technical and organizational safeguards designed to protect Google user data from unauthorized access, alteration, disclosure, or destruction. Access to account data is restricted to authorized systems and personnel who need it to operate or support Jalwa.</p>
               <p><strong className="text-white">Retention:</strong> We retain Google-derived account information for as long as your Jalwa account remains active or as reasonably necessary to provide the service, maintain security, resolve disputes, prevent abuse, and meet legal obligations. When information is no longer required, we delete or anonymize it where reasonably practicable, subject to legal, financial, or security retention requirements.</p>
-              <p><strong className="text-white">Data Deletion:</strong> You may request complete deletion of your Jalwa account and associated Google user data at any time by contacting <a href="mailto:admin@jalwa.pro" className="text-fuchsia-300 hover:text-fuchsia-200">admin@jalwa.pro</a> or using the in-app account deletion feature when available. We will process deletion requests in accordance with applicable law and our retention obligations.</p>
+              <p><strong className="text-white">Data Deletion:</strong> You may request complete deletion of your Jalwa account and associated personal data from the in-app <strong className="text-white">Delete Account</strong> action or through our public <a href="/account-deletion" className="text-fuchsia-300 hover:text-fuchsia-200">Account Deletion</a> page. Some financial or security records may be retained where legally required, as described below.</p>
               <p><strong className="text-white">Policy Compliance:</strong> Jalwa Global Live limits its use and transfer of Google user data to providing or improving user-facing features and does not use Google user data for targeted advertising, sale to data brokers, information resale, creditworthiness decisions, lending, or training generalized AI/ML models.</p>
             </div>
           </Section>
@@ -82,7 +82,10 @@ function PrivacyPolicyPage() {
           <Section title="14. Changes to This Policy">
             We may update this Privacy Policy when our services, technology, legal requirements, or data practices change. The updated version will be published on this page with a revised update date.
           </Section>
-          <Section title="15. Contact Us">
+          <Section title="15. Account Deletion Requests">
+            You can start account deletion from inside Jalwa or use the public <a href="/account-deletion" className="text-fuchsia-300 hover:text-fuchsia-200">Account Deletion</a> resource. Account deletion removes the Jalwa account and associated personal data; legally required financial or security records may be retained for the minimum required period.
+          </Section>
+          <Section title="16. Contact Us">
             For privacy questions, account-data requests, or account deletion requests, please contact Jalwa at admin@jalwa.pro, admin@jalwa.app, or smartsoloutionservicess@gmail.com.
           </Section>
         </div>
