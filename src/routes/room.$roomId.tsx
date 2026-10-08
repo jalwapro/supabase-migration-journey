@@ -1925,6 +1925,7 @@ function RoomPage() {
     const nextMuted = !agora.muted;
     await agora.toggleMute();
     if (user) {
+      setMembers(prev => prev.map(member => member.user_id === user.id ? { ...member, is_muted: nextMuted } : member));
       await supabase
         .from("room_members")
         .update({ is_muted: nextMuted })
@@ -2034,7 +2035,7 @@ function RoomPage() {
       avatar: r.host?.avatar ?? null,
       level: r.host?.vip_level ?? 0,
       is_vip: (r.host?.vip_level ?? 0) > 0,
-      is_muted: hostMember ? hostMember.is_muted : agora.muted,
+      is_muted: hostMember ? (hostMember.user_id === user?.id ? agora.muted : hostMember.is_muted) : agora.muted,
       is_speaking: hostMember ? agora.speakingUids.has(uidFromUuid(hostMember.user_id)) : false,
       has_video: hostMember ? hostMember.is_video : false,
       gift_score: giftPoints[r.host_id] ?? 0
@@ -2057,7 +2058,7 @@ function RoomPage() {
           avatar: m.user?.avatar ?? null,
           level: m.user?.vip_level ?? 0,
           is_vip: (m.user?.vip_level ?? 0) > 0,
-          is_muted: m.is_muted,
+          is_muted: m.user_id === user?.id ? agora.muted : m.is_muted,
           is_speaking: agora.speakingUids.has(uidFromUuid(m.user_id)),
           has_video: m.is_video,
           gift_score: giftPoints[m.user_id] ?? 0
