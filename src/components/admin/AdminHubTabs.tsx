@@ -45,7 +45,8 @@ export const VISUALS_VIP_TABS: Tab[] = [
   { to: "/admin/room-frames", label: "Room Frames", aliases: ["/admin/room-frames-preview"] },
   { to: "/admin/profile-cards", label: "Profile Cards" },
   { to: "/admin/themes", label: "Themes", aliases: ["/admin/custom-themes", "/admin/theme-categories"] },
-  { to: "/admin/vip", label: "VIP Config", aliases: ["/admin/vip-levels", "/admin/assign-frame"] },
+  { to: "/admin/vip-levels", label: "Gifting Levels", aliases: ["/admin/assign-frame"] },
+  { to: "/admin/vip", label: "VIP Membership" },
 ];
 
 export const GIFT_HUB_TABS: Tab[] = [
