@@ -69,6 +69,7 @@ export { History } from "lucide-react/dist/esm/icons/history.js";
 export { Home } from "lucide-react/dist/esm/icons/home.js";
 export { Hourglass } from "lucide-react/dist/esm/icons/hourglass.js";
 export { ImagePlus } from "lucide-react/dist/esm/icons/image-plus.js";
+export { Image } from "lucide-react/dist/esm/icons/image.js";
 export { Info } from "lucide-react/dist/esm/icons/info.js";
 export { KeyRound } from "lucide-react/dist/esm/icons/key-round.js";
 export { Layers3 } from "lucide-react/dist/esm/icons/layers3.js";
