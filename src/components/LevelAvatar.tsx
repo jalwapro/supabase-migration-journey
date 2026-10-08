@@ -104,7 +104,12 @@ export function LevelAvatar({
       softness: Number(renderConfig.edgeSoftness ?? 12),
     };
   })();
-  const isAutoGiftingLevelFrame = effectiveFrame === autoFrame;\n  // Gifting-level PNGs have a baked black canvas. Key only that canvas out;\n  // do not use the Shop Studio chroma settings for these built-in frames.\n  const effectiveChroma = isAutoGiftingLevelFrame\n    ? { color: "#000000", tolerance: 24, softness: 10 }\n    : studioChroma ?? frameMeta;
+  const isAutoGiftingLevelFrame = effectiveFrame === autoFrame;
+  // Gifting-level PNGs have a baked black canvas. Key only that canvas out;
+  // do not use the Shop Studio chroma settings for these built-in frames.
+  const effectiveChroma = isAutoGiftingLevelFrame
+    ? { color: "#000000", tolerance: 24, softness: 10 }
+    : studioChroma ?? frameMeta;
   const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.zoom ?? 1);
   const frameScaleX = frameScale * Number(renderConfig?.scaleX ?? 1);
   const frameScaleY = frameScale * Number(renderConfig?.scaleY ?? 1);
