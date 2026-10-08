@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Download, Mic, MessageCircle, Gift, Zap, ShieldCheck, Smartphone, Users, WifiOff, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/download")({
@@ -14,8 +16,6 @@ export const Route = createFileRoute("/download")({
   }),
 });
 
-const APK_URL = "/downloads/jalwa.apk";
-
 const benefits = [
   { icon: Mic, title: "Live Voice Rooms", text: "Audio-only rooms mein hosts aur friends ke saath real-time baat karein." },
   { icon: MessageCircle, title: "Fast Chat", text: "Room aur private chat ke through apne friends se connected rahain." },
@@ -26,6 +26,17 @@ const benefits = [
 ];
 
 function DownloadPage() {
+  const apk = useQuery({
+    queryKey: ["public_apk_download"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("app_downloads").select("file_url,file_name,file_size").eq("id", "android").maybeSingle();
+      if (error) throw error;
+      return data as { file_url: string | null; file_name: string; file_size: number | null } | null;
+    },
+    staleTime: 60_000,
+  });
+  const apkUrl = apk.data?.file_url ?? null;
+
   return (
     <main className="min-h-[100dvh] overflow-x-hidden bg-[#07040c] text-white">
       <div className="pointer-events-none fixed inset-0 overflow-hidden" aria-hidden>
@@ -68,13 +79,20 @@ function DownloadPage() {
           </p>
 
           <a
-            href={APK_URL}
-            download="JALWA.apk"
-            className="mx-auto mt-8 inline-flex min-h-14 w-full max-w-sm items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-violet-500 to-purple-600 px-6 py-4 text-base font-black shadow-[0_15px_50px_-15px_rgba(168,85,247,0.8)] transition-transform active:scale-[0.98]"
-          >
-            <Download className="h-5 w-5" />
-            Download JALWA APK
-          </a>
+            {apkUrl ? (
+              <a
+                href={apkUrl}
+                download={apk.data?.file_name || "JALWA.apk"}
+                className="mx-auto mt-8 inline-flex min-h-14 w-full max-w-sm items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-violet-500 to-purple-600 px-6 py-4 text-base font-black shadow-[0_15px_50px_-15px_rgba(168,85,247,0.8)] transition-transform active:scale-[0.98]"
+              >
+                <Download className="h-5 w-5" />
+                Download JALWA APK
+              </a>
+            ) : (
+              <div className="mx-auto mt-8 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4 text-sm font-bold text-white/60">
+                APK is temporarily unavailable. Please try again later.
+              </div>
+            )}
 
           <p className="mt-3 text-[10px] text-white/35">
             Android • Direct APK download • Official JALWA app
