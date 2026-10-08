@@ -313,7 +313,7 @@ function MePage() {
                 </div>
 
                 <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
-                  <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
+                  <Link to="/vip-level" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
                     <Crown className="h-3.5 w-3.5" /> {tier.label}
                   </Link>
                   {adminVipTier && (
