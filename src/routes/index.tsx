@@ -401,10 +401,33 @@ function Home() {
   useEffect(() => {
     const list = (banners.data && banners.data.length > 0) ? banners.data : DEFAULT_BANNERS;
     if (list.length < 2) return;
-    const t = setInterval(() => {
-      setBannerIdx((i) => (i + 1) % list.length);
-    }, 3000);
-    return () => clearInterval(t);
+
+    let timer: number | null = null;
+    const stop = () => {
+      if (timer !== null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    };
+    const start = () => {
+      stop();
+      if (document.visibilityState !== "visible") return;
+      timer = window.setInterval(() => {
+        if (document.visibilityState !== "visible") return;
+        setBannerIdx((i) => (i + 1) % list.length);
+      }, 3000);
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
+
+    start();
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, [banners.data]);
 
   const tabIndex = TABS.findIndex((t) => t.key === tab);
