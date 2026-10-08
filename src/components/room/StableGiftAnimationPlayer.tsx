@@ -13,7 +13,16 @@ const cleanUrl = (src: string | null) => (src ?? "").split("?")[0].split("#")[0]
 const isVideo = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".mp4") || s.endsWith(".webm") || s.endsWith(".mov") || ["mp4", "webm", "mov"].includes((type ?? "").toLowerCase())); };
 const isSvga = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svga") || (type ?? "").toLowerCase() === "svga"); };
 const isSvg = (src: string | null, type?: string | null) => { const s = cleanUrl(src); return !!src && (s.endsWith(".svg") || (type ?? "").toLowerCase() === "svg"); };
-const isSmallGift = (row: GiftRow) => { const price = Number(row.gift_price_coins); return Number.isFinite(price) && price >= 10 && price <= 300; };
+const isSmallGift = (row: GiftRow) => {
+  // Price must never force a real video/SVGA gift into the tiny flying-gift
+  // renderer. Some animated gifts are inexpensive and were incorrectly
+  // classified as "small" solely by price.
+  const price = Number(row.gift_price_coins);
+  if (!Number.isFinite(price) || price < 10 || price > 300) return false;
+  const sources = [row.gift_clip_path, row.gift_image_url, row.gift_icon_path, row.gift_icon];
+  if (sources.some((src) => isVideo(src, row.gift_clip_type) || isSvga(src, row.gift_clip_type))) return false;
+  return true;
+};
 const svgCandidates = (row: GiftRow) => [row.gift_clip_path, row.gift_icon_path, row.gift_image_url, row.gift_icon, ...giftAssetCandidates(row.gift_name)].map(assetUrl).filter((v): v is string => !!v && isSvg(v));
 const requiresGpuGiftRenderer = (cfg: GiftRenderConfig) => Boolean(
   (cfg.chromaMode !== "off" && cfg.chromaMode !== "auto") ||
