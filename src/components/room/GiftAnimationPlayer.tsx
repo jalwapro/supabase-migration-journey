@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
-import { ReliableGiftAnimationPlayer } from "./ReliableGiftAnimationPlayer";
+import { StableGiftAnimationPlayer } from "./StableGiftAnimationPlayer";
 import { useAuth } from "@/hooks/useAuth";
 
 type Props = { roomId: string };
@@ -78,5 +78,5 @@ export function GiftAnimationPlayer({ roomId }: Props) {
     };
   }, [roomId, queryClient, user?.id]);
 
-  return <ReliableGiftAnimationPlayer roomId={roomId} />;
+  return <StableGiftAnimationPlayer roomId={roomId} />;
 }
