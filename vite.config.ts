@@ -31,6 +31,9 @@ const isVercel = !!process.env.VERCEL;
 
 export default defineConfig({
   tanstackStart: {
+    // Keep route matching/configuration eager, but lazy-load every route component.
+    // This prevents admin/games/studio/room code from entering Home's initial JS graph.
+    router: { autoCodeSplitting: true },
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     server: { entry: "server" },
   },
