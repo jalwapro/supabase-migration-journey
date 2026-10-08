@@ -40,6 +40,7 @@ const ALLOWED: Record<string, { mime: string[]; max: number }> = {
   m4a: { mime: ["audio/mp4", "audio/x-m4a"], max: 20 * 1024 * 1024 },
   webp2: { mime: ["image/webp"], max: 15 * 1024 * 1024 },
   bin: { mime: ["application/octet-stream"], max: 25 * 1024 * 1024 },
+  apk: { mime: ["application/vnd.android.package-archive", "application/octet-stream"], max: 500 * 1024 * 1024 },
 };
 
 function validateUpload(path: string, contentType: string, size?: number) {
@@ -132,6 +133,7 @@ const ADMIN_ONLY_PREFIXES = [
   "vip",
   "emoji",
   "admin",
+  "apk",
 ];
 
 /** Buckets whose objects are namespaced per user: `<bucket>/<userId>/...`. */
@@ -150,7 +152,7 @@ const USER_SCOPED_PREFIXES = [
 const PUBLIC_READ_PREFIXES = [
   "gifts", "frames", "entrances", "entrance-effects", "banners", "splash",
   "ads", "poster", "room-bg", "video", "themes", "theme-categories",
-  "spotlights", "room-frames", "profile-cards", "vip", "emoji",
+  "spotlights", "room-frames", "profile-cards", "vip", "emoji", "apk",
 ] as const;
 
 function authorizeRead(path: string, userId: string, admin: boolean): string | null {
