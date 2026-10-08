@@ -36,9 +36,9 @@ export function HostCard({ host, onTap }: { host: HostCardData; onTap?: () => vo
 
   return (
     <button type="button" onClick={onTap}
-      className={cn("relative h-full w-full overflow-visible rounded-full bg-gradient-to-br from-[#5a1c42] via-[#7a2a4f] to-[#28162e] touch-manipulation", speaking && "shadow-[0_0_22px_rgba(232,60,220,.75)]")}
+      className={cn("relative h-full w-full overflow-visible rounded-full bg-gradient-to-br from-[#5a1c42] via-[#7a2a4f] to-[#28162e] touch-manipulation", speaking && "shadow-[0_0_30px_rgba(232,60,220,.95)] animate-[pulse_0.85s_ease-in-out_infinite]")}
       aria-label={`Host ${host.username}`}>
-      <span className={cn("absolute inset-[2%] rounded-full border-[2px] border-[#f6d78a]/70", speaking && "animate-pulse")} />
+      <span className={cn("absolute inset-[2%] rounded-full border-[2px] border-[#f6d78a]/70", speaking && "animate-[pulse_0.85s_ease-in-out_infinite] border-fuchsia-300 shadow-[0_0_14px_rgba(232,60,220,.9)]")} />
       <span className="absolute left-[4%] top-[4%] z-40 grid h-[25%] w-[25%] place-items-center rounded-full bg-gradient-to-br from-amber-300 to-amber-500 text-[#5b2800] shadow"><Crown className="h-[62%] w-[62%] fill-current" /></span>
       <span className="absolute inset-[4%] flex items-center justify-center z-10">
         <LevelAvatar src={host.avatar} name={host.username} level={0} size="sm" showBadge={false} frame={resolvedFrame} renderConfigOverride={renderConfig} className="" />
