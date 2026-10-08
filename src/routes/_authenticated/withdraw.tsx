@@ -86,9 +86,9 @@ function Page() {
     if (hasPending) return toast.error("You already have a pending withdrawal");
     if (!accNum.trim() || !accName.trim()) return toast.error("Fill account details");
 
-    // Validation for JazzCash / EasyPaisa (Must be 11 digits starting with 03)
-    if ((method === "jazzcash" || method === "easypaisa") && !/^03\d{9}$/.test(accNum.trim())) {
-      return toast.error("Enter a valid 11-digit mobile number (e.g. 03XXXXXXXXX)");
+    // International account/mobile validation. Allow E.164-style values or 8–15 digit local/account numbers.
+    if ((method === "jazzcash" || method === "easypaisa") && !/^\+?[0-9]{8,15}$/.test(accNum.trim())) {
+      return toast.error("Enter a valid international mobile number (8–15 digits, with country code)");
     }
 
     setSubmitting(true);
