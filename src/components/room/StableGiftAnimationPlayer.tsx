@@ -4,6 +4,7 @@ import { DEFAULT_GIFT_RENDER, normalizeRenderConfig, renderConfigToStyle, OBJECT
 import GiftGLVideo from "@/components/room/GiftGLVideo";
 import SvgaPlayer from "@/components/room/SvgaPlayer";
 import { giftAssetCandidates, giftAssetType } from "@/lib/giftAssetResolver";
+import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
 
 type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
@@ -146,7 +147,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       enqueue(row);
     };
     window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
-    return () => { alive = false; void supabase.removeChannel(channel); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
+    return () => { alive = false; releaseGiftBroadcastChannel(roomId); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
   }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
 
   useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const declared = num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, clearTimer, finish]);
