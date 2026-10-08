@@ -27,6 +27,8 @@ function WithdrawalsAdmin() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [rejectTarget, setRejectTarget] = useState<Row | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
 
   const list = useQuery({
     queryKey: ["admin_withdrawals", tab],
@@ -129,10 +131,8 @@ function WithdrawalsAdmin() {
                     disabled={processingId !== null}
                     onClick={() => {
                       if (processingId) return;
-                      const reason = prompt("Rejection reason?");
-                      if (reason === null) return;
-                      setProcessingId(r.id);
-                      act.mutate({ id: r.id, status: "rejected", note: reason });
+                      setRejectTarget(r);
+                      setRejectReason("");
                     }}
                     className="flex-1 rounded-full bg-red-500/20 py-1.5 text-xs font-bold text-red-400 disabled:cursor-not-allowed disabled:opacity-50"
                   >
@@ -145,6 +145,17 @@ function WithdrawalsAdmin() {
           {list.data?.length === 0 && <p className="py-8 text-center text-xs text-muted-foreground">Nothing here</p>}
         </div>
       )}
-    </>
-  );
-}
+      {rejectTarget && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="reject-withdrawal-title">
+          <div className="w-full max-w-md rounded-3xl border border-red-500/20 bg-[#111117] p-5 shadow-2xl">
+            <h2 id="reject-withdrawal-title" className="text-lg font-black text-white">Reject withdrawal</h2>
+            <p className="mt-2 text-xs text-white/55">Enter the reason the user should see for this rejected payout.</p>
+            <textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} autoFocus rows={4} maxLength={500} placeholder="Rejection reason…" className="mt-4 w-full resize-none rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none focus:border-red-500/50" />
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => { setRejectTarget(null); setRejectReason(""); }} disabled={processingId !== null} className="rounded-full border border-white/10 bg-white/5 py-3 text-sm font-bold text-white/80">Cancel</button>
+              <button type="button" onClick={() => { if (!rejectTarget || !rejectReason.trim() || processingId) return; setProcessingId(rejectTarget.id); act.mutate({ id: rejectTarget.id, status: "rejected", note: rejectReason.trim() }, { onSettled: () => { setRejectTarget(null); setRejectReason(""); } }); }} disabled={!rejectReason.trim() || processingId !== null} className="rounded-full bg-red-500 py-3 text-sm font-black text-white disabled:opacity-40">Reject withdrawal</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>\n  );\n}
