@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { AdminHubTabs, VISUALS_VIP_TABS } from "@/components/admin/AdminHubTabs";
 import { VipBadge } from "@/components/vip/VipBadge";
 import { formatCoins, vipTierForLevel } from "@/lib/vip-levels";
 import { frameForLevel, seriesForLevel, LEVEL_FRAMES } from "@/lib/levelFrames";
@@ -136,6 +137,7 @@ function VipLevelsAdmin() {
 
   return (
     <>
+      <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
       <AdminPageHeader
         title="VIP Frames & Levels"
         subtitle="Manage all 101 levels — DP frames, Voice Room popup frames, thresholds, rewards and privileges"
