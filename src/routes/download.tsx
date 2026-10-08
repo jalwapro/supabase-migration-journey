@@ -78,8 +78,7 @@ function DownloadPage() {
             friends se chat kar sakte hain aur gifts ke through apni community grow kar sakte hain.
           </p>
 
-          <a
-            {apkUrl ? (
+          {apkUrl ? (
               <a
                 href={apkUrl}
                 download={apk.data?.file_name || "JALWA.apk"}
