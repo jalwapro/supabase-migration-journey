@@ -1,6 +1,6 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
-// Jalwa — Capacitor native wrapper config.
+// Jalwa — Capacitor native wrapper config.\n// Native production builds load the bundled files from webDir. Backend APIs remain remote; no remote server.url is used.
 // The native shell loads the production Jalwa web app directly.
 // Keep this URL on the production domain so the native app does not depend
 // on the old Lovable-hosted web app.
@@ -13,12 +13,6 @@ const config: CapacitorConfig = {
   appId: "app.lovable.jalwa",
   appName: "Jalwa",
   webDir: "dist/client",
-  server: {
-    // Production web app / API origin used by the native shell.
-    url: "https://www.jalwa.pro",
-    cleartext: false,
-    androidScheme: "https",
-  },
   android: {
     allowMixedContent: false,
   },
