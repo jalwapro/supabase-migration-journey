@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { AdminHubTabs, VISUALS_VIP_TABS } from "@/components/admin/AdminHubTabs";
 import { Plus, Trash2, Crown } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,7 +65,8 @@ function VipAdmin() {
 
   return (
     <>
-      <AdminPageHeader title="VIP Tiers" subtitle="Membership levels and pricing" />
+      <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
+      <AdminPageHeader title="VIP Membership" subtitle="Paid subscription tiers, pricing and duration" />
       <div className="grid gap-2 md:grid-cols-2">
         {list.data?.map((t) => (
           <div key={t.id} className="glass flex items-center gap-3 rounded-2xl p-4">
