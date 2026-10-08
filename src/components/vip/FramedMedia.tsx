@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** Renders an image or looping video asset. Off-screen videos are paused to
  * avoid continuous decoder/GPU work while scrolling or when cards are hidden. */
-export function FramedMedia({ url, className, fit = "cover" }: { url: string | null | undefined; className?: string; fit?: "cover" | "fill" | "contain" }) {
+export function FramedMedia({ url, className, fit = "cover", removeBlackBackground = false }: { url: string | null | undefined; className?: string; fit?: "cover" | "fill" | "contain"; removeBlackBackground?: boolean }) {
   const src = resolveAssetUrl(url);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [visible, setVisible] = useState(false);
@@ -35,7 +35,7 @@ export function FramedMedia({ url, className, fit = "cover" }: { url: string | n
   }, [visible]);
 
   if (!src) return null;
-  const cls = cn("pointer-events-none h-full w-full", fit === "cover" ? "object-cover" : fit === "fill" ? "object-fill" : "object-contain", className);
+  const cls = cn("pointer-events-none h-full w-full", fit === "cover" ? "object-cover" : fit === "fill" ? "object-fill" : "object-contain", removeBlackBackground && "mix-blend-screen", className);
   return isVideoUrl(src)
     ? <video ref={videoRef} src={src} autoPlay={visible} loop muted playsInline preload={visible ? "metadata" : "none"} className={cls} />
     : <img src={src} alt="" draggable={false} className={cls} loading="lazy" decoding="async" />;
