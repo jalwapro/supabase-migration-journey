@@ -212,9 +212,9 @@ function Page() {
                 <option value="manual">Manual / Other</option>
               </select>
             </Field>
-            <Field label={method === "jazzcash" || method === "easypaisa" ? "Mobile Number (03XXXXXXXXX)" : "Account number / IBAN"}>
+            <Field label={method === "jazzcash" || method === "easypaisa" ? "Mobile Number / Account (international)" : "Account number / IBAN"}>
               <input
-                placeholder={method === "jazzcash" || method === "easypaisa" ? "03001234567" : "Enter account number"}
+                placeholder={method === "jazzcash" || method === "easypaisa" ? "+971501234567" : "Enter account number / IBAN"}
                 value={accNum}
                 onChange={(e) => setAccNum(e.target.value)}
                 className="w-full rounded-xl border border-border bg-background/60 px-3 py-2 text-sm outline-none"
