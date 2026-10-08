@@ -104,7 +104,7 @@ export function LevelAvatar({
       softness: Number(renderConfig.edgeSoftness ?? 12),
     };
   })();
-  const effectiveChroma = studioChroma ?? frameMeta;
+  const isAutoGiftingLevelFrame = effectiveFrame === autoFrame;\n  const effectiveChroma = isAutoGiftingLevelFrame ? null : studioChroma ?? frameMeta;
   const frameScale = Number(renderConfig?.scale ?? 1) * Number(renderConfig?.zoom ?? 1);
   const frameScaleX = frameScale * Number(renderConfig?.scaleX ?? 1);
   const frameScaleY = frameScale * Number(renderConfig?.scaleY ?? 1);
@@ -262,7 +262,7 @@ export function LevelAvatar({
               filter: frameFilter || undefined,
               // Keep screen as a fallback for any residual dark pixels while
               // the profile-card chroma pass removes the baked-in black canvas.
-              mixBlendMode: profileCardFrameBlend ? "screen" : undefined,
+              mixBlendMode: isAutoGiftingLevelFrame || profileCardFrameBlend ? "screen" : undefined,
             }}
             aria-hidden
           >
