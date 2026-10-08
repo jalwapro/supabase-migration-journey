@@ -15,7 +15,6 @@ const permissions = [
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.POST_NOTIFICATIONS",
-  "android.permission.FOREGROUND_SERVICE",
 ];
 
 const missing = permissions.filter(
@@ -39,9 +38,6 @@ if (!xml.includes("com.google.firebase.messaging.default_notification_channel_id
   if (closeIndex === -1) throw new Error("Could not parse <application> in AndroidManifest.xml");
   xml = xml.slice(0, closeIndex + 1) + "\n" + fcmChannelMeta + xml.slice(closeIndex + 1);
 }
-
-/* Legacy background connectivity service cleanup. */
-xml = xml.replace(/\s*<service[\s\S]*?android:name="\.JalwaForegroundService"[\s\S]*?\/\>/g, "");
 
 xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
 writeFileSync(manifestPath, xml);
