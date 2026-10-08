@@ -26,6 +26,7 @@ const Coin = ({ className = "h-5 w-5" }: { className?: string }) => (
 );
 
 function RechargePage() {
+  const isPlayStoreBuild = import.meta.env.VITE_PLAY_STORE_BUILD === "true";
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -93,9 +94,9 @@ function RechargePage() {
 
   return (
     <>
-      <AppShell title="Recharge Coins" subtitle="Easypaisa / JazzCash QR & Till">
+      <AppShell title="Recharge Coins" subtitle={isPlayStoreBuild ? "Google Play Billing" : "Easypaisa / JazzCash QR & Till"}>
         <div className="space-y-5 px-4 pt-4 pb-8">
-          {submitted ? <Success onReset={reset} onHistory={() => navigate({ to: "/recharge-history" })} /> : <>
+          {isPlayStoreBuild ? <PlayBillingRequired /> : submitted ? <Success onReset={reset} onHistory={() => navigate({ to: "/recharge-history" })} /> : <>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {tiers.map((t) => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}
             </div>
@@ -141,6 +142,27 @@ function RechargePage() {
       </AppShell>
       <BottomNav />
     </>
+  );
+}
+
+function PlayBillingRequired() {
+  return (
+    <div className="space-y-4 py-10 text-center">
+      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-primary/30 bg-primary/10">
+        <Coins className="h-8 w-8 text-primary" />
+      </div>
+      <div>
+        <p className="text-xl font-black">Google Play Billing</p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">
+          This Google Play build does not expose JazzCash, Easypaisa, bank-transfer,
+          WhatsApp, or screenshot-proof checkout. Virtual Jalwa Coins must be
+          purchased through Google Play Billing in the Play-distributed app.
+        </p>
+      </div>
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground">
+        Local payment methods remain available only in the web/standalone distribution.
+      </div>
+    </div>
   );
 }
 
