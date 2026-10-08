@@ -114,6 +114,7 @@ function MePage() {
   });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   // Own equipped Profile Card — the owner must see the card they bought/equipped,
   // exactly like visitors do on /u/:id.
@@ -175,6 +176,26 @@ function MePage() {
   const [qrOpen, setQrOpen] = useState(false);
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : "https://cloud-to-soul.lovable.app"}/u/${profile?.user_code ?? user?.id ?? ""}`;
   const handleShare = () => setShareOpen(true);
+  async function handleDeleteAccount() {
+    if (!user || deletingAccount) return;
+    const confirmed = window.confirm(
+      "Delete your Jalwa account permanently? Your account and associated personal data will be deleted. This cannot be undone."
+    );
+    if (!confirmed) return;
+    setDeletingAccount(true);
+    try {
+      const { error } = await supabase.rpc("delete_my_account");
+      if (error) throw error;
+      await signOut();
+      toast.success("Your account deletion request has been completed.");
+      window.location.assign("/auth");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Account deletion failed");
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
 
   return (
     <>
@@ -350,6 +371,7 @@ function MePage() {
               <FeatureCard to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
               <FeatureCard to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
               <FeatureCard to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
+              <button type="button" onClick={() => void handleDeleteAccount()} disabled={deletingAccount} className="group relative overflow-hidden rounded-[22px] border border-red-500/20 bg-red-500/[0.04] p-4 text-left transition-all hover:border-red-500/50 active:scale-[0.98] disabled:opacity-60"><FeatureInner icon={UserX} title={deletingAccount ? "Deleting Account…" : "Delete Account"} sub="Permanently delete your account and associated data" color="#ef4444" /></button>
               <button onClick={() => signOut()} className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-left transition-all hover:border-[#ff2d95]/40 active:scale-[0.98]">
                 <FeatureInner icon={LogOut} title="Log Out" sub="Sign out from your account" color="#ff2d95" />
               </button>
