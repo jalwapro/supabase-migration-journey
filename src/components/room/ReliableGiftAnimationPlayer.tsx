@@ -68,11 +68,6 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     setPlaybackStarted(false);
     clearTimer();
 
-    const cfg = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER);
-    const declared = Number(active.durationMs ?? 0);
-    const duration = cfg.endMs != null
-      ? Math.max(800, cfg.endMs)
-      : Math.min(180000, Math.max(2500, declared || 12000) + cfg.holdMs);
     const delay = Math.max(0, cfg.delayMs);
 
     // Rendering can begin before a remote gift video has buffered. Do not
@@ -87,6 +82,10 @@ export function ReliableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => { if (!active || !playbackStarted) return; stopAudio(); const enabled = active.audioEnabled !== false; const src = asUrl(active.soundUrl); if (!enabled || !src || typeof window === "undefined") return; const volumeValue = Number(active.audioVolume ?? 1); const volume = Number.isFinite(volumeValue) ? Math.min(1, Math.max(0, volumeValue)) : 1; const audio = new Audio(src); audio.preload = "auto"; audio.volume = volume; audioRef.current = audio; void audio.play().catch(() => {}); return stopAudio; }, [active?.key, active?.soundUrl, active?.audioEnabled, active?.audioVolume, stopAudio]);
   if (!active) return null;
   const cfg: GiftRenderConfig = normalizeRenderConfig(active.renderConfig ?? DEFAULT_GIFT_RENDER);
+  const declared = Number(active.durationMs ?? 0);
+  const duration = cfg.endMs != null
+    ? Math.max(800, cfg.endMs)
+    : Math.min(180000, Math.max(2500, declared || 12000) + cfg.holdMs);
   const src = resolvedSrc;
   const kind = src ? resolvedType ?? typeOf(src, active.giftClipType) : "image";
   if (!playbackStarted) {
