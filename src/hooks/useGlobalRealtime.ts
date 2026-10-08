@@ -9,20 +9,33 @@ import type { NotificationRow } from "@/hooks/useNotifications";
 
 /**
  * Global realtime bridge for the signed-in user.
- * Subscribes to user-scoped tables and invalidates the matching React Query
- * keys so open screens refresh without a manual page reload.
+ *
+ * Performance rules:
+ * - One multiplexed Supabase channel per signed-in session.
+ * - The channel is removed while the document is hidden, so background
+ *   WebSockets do not keep the Android radio/CPU awake.
+ * - Low-frequency catalog tables share the same channel instead of opening a
+ *   delayed second socket.
  */
 type Sub = {
   table: string;
-  filter: string;
-  keys: string[];
+  filter?: string;
+  keys?: string[];
+  event?: "*" | "INSERT" | "UPDATE" | "DELETE";
+  onChange?: (payload: any) => void;
 };
 
-function subscribe(qc: QueryClient, channelName: string, subs: Sub[], onStatus?: (status: string, error?: unknown) => void) {
+function subscribe(
+  qc: QueryClient,
+  channelName: string,
+  subs: Sub[],
+  onStatus?: (status: string, error?: unknown) => void,
+) {
   let ch = supabase.channel(channelName);
   const pendingKeys = new Map<string, string>();
   let flushTimer: number | null = null;
   let flushAllActive = false;
+
   const queueAllActive = () => {
     flushAllActive = true;
     if (flushTimer !== null) return;
@@ -34,56 +47,81 @@ function subscribe(qc: QueryClient, channelName: string, subs: Sub[], onStatus?:
       void qc.invalidateQueries({ refetchType: "active" });
     }, 100);
   };
+
   const queueKeys = (keys: string[]) => {
     for (const key of keys) pendingKeys.set(key, key);
     if (flushTimer !== null) return;
     flushTimer = window.setTimeout(() => {
       flushTimer = null;
-      const keys = [...pendingKeys.values()];
+      const queued = [...pendingKeys.values()];
       pendingKeys.clear();
-      for (const key of keys) void qc.invalidateQueries({ queryKey: [key], refetchType: "active" });
+      for (const key of queued) {
+        void qc.invalidateQueries({ queryKey: [key], refetchType: "active" });
+      }
     }, 75);
   };
-  for (const s of subs) {
+
+  for (const sub of subs) {
     ch = (
       ch as unknown as {
         on: (
           type: string,
           cfg: Record<string, unknown>,
-          cb: () => void,
+          cb: (payload: any) => void,
         ) => typeof ch;
       }
     ).on(
       "postgres_changes",
-      { event: "*", schema: "public", table: s.table, filter: s.filter },
-      () => queueKeys(s.keys),
+      {
+        event: sub.event ?? "*",
+        schema: "public",
+        table: sub.table,
+        ...(sub.filter ? { filter: sub.filter } : {}),
+      },
+      (payload: any) => {
+        if (sub.keys?.length) queueKeys(sub.keys);
+        sub.onChange?.(payload);
+      },
     );
   }
+
   ch.subscribe((status, error) => {
     onStatus?.(status, error);
     if (status === "SUBSCRIBED") {
-      // Reconcile any writes that happened while the socket was reconnecting.
-      queueKeys(subs.flatMap((s) => s.keys))
+      const allKeys = subs.flatMap((s) => s.keys ?? []);
+      if (allKeys.length) queueKeys(allKeys);
+      else queueAllActive();
     } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
       console.warn("[Realtime]", channelName, status, error);
     }
   });
+
   return ch;
 }
 
 const CATALOG_QUERY_KEYS: Record<string, string[]> = {
-  banners: ["banners"], gifts: ["gifts"], gift_categories: ["gift-categories", "gifts"],
-  themes: ["themes", "theme-shop"], user_themes: ["user-themes", "user-owned-items", "theme-shop"],
-  dp_frames: ["dp-frames", "frames"], user_frames: ["user-frames", "frames"],
-  room_backgrounds: ["room-backgrounds"], ads: ["ads"], cms_pages: ["cms-pages"],
-  vip_level_config: ["vip-level-config"], custom_themes: ["custom-themes"],
-  room_top_frames: ["room_top_frames_active"], entrance_effects: ["entrance-effects"],
-  profile_cards: ["profile-cards"], user_profile_cards: ["user-profile-cards"],
+  banners: ["banners"],
+  gifts: ["gifts"],
+  gift_categories: ["gift-categories", "gifts"],
+  themes: ["themes", "theme-shop"],
+  user_themes: ["user-themes", "user-owned-items", "theme-shop"],
+  dp_frames: ["dp-frames", "frames"],
+  user_frames: ["user-frames", "frames"],
+  room_backgrounds: ["room-backgrounds"],
+  ads: ["ads"],
+  cms_pages: ["cms-pages"],
+  vip_level_config: ["vip-level-config"],
+  custom_themes: ["custom-themes"],
+  room_top_frames: ["room_top_frames_active"],
+  entrance_effects: ["entrance-effects"],
+  profile_cards: ["profile-cards"],
+  user_profile_cards: ["user-profile-cards"],
   app_customization_published: ["published-global-config"],
-  app_customization_assets: ["app-customization-assets"], room_slides: ["room-slides"],
-  spotlight_animations: ["spotlight-animations"], theme_categories: ["theme-categories"],
+  app_customization_assets: ["app-customization-assets"],
+  room_slides: ["room-slides"],
+  spotlight_animations: ["spotlight-animations"],
+  theme_categories: ["theme-categories"],
 };
-
 
 export function useGlobalRealtime() {
   const { user } = useAuth();
@@ -91,9 +129,18 @@ export function useGlobalRealtime() {
 
   useEffect(() => {
     if (!user) return;
-    const uid = user.id;
 
-    const ch1 = subscribe(qc, `me:${uid}`, [
+    const uid = user.id;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const catalogTables = [
+      "banners",
+      "gifts",
+      "dp_frames",
+      "room_backgrounds",
+    ] as const;
+
+    const subs: Sub[] = [
       {
         table: "profiles",
         filter: `id=eq.${uid}`,
@@ -114,66 +161,31 @@ export function useGlobalRealtime() {
         filter: `user_id=eq.${uid}`,
         keys: ["push_subscriptions"],
       },
-    ]);
-
-    const ch2 = subscribe(qc, `social:${uid}`, [
       {
         table: "follows",
         filter: `follower_id=eq.${uid}`,
-        keys: [
-          "friends",
-          "is-following",
-          "me-counts",
-          "public-profile-stats",
-          "following-list",
-          "chat-followers",
-        ],
+        keys: ["friends", "is-following", "me-counts", "public-profile-stats", "following-list", "chat-followers"],
       },
       {
         table: "follows",
         filter: `following_id=eq.${uid}`,
-        keys: [
-          "friends",
-          "is-following",
-          "me-counts",
-          "public-profile-stats",
-          "followers-list",
-          "chat-followers",
-        ],
+        keys: ["friends", "is-following", "me-counts", "public-profile-stats", "followers-list", "chat-followers"],
       },
       {
         table: "blocked_users",
         filter: `blocker_id=eq.${uid}`,
         keys: ["blocked", "friends"],
       },
-    ]);
-
-    const ch3 = subscribe(qc, `dm-received:${uid}`, [
       {
         table: "direct_messages",
         filter: `recipient_id=eq.${uid}`,
-        keys: [
-          "dm",
-          "dm_index",
-          "dm-thread",
-          "dm-threads",
-          "dm-unread",
-          "messages",
-          "conversations",
-          "msg-notif-count",
-        ],
+        keys: ["dm", "dm_index", "dm-thread", "dm-threads", "dm-unread", "messages", "conversations", "msg-notif-count"],
       },
-    ]);
-
-    const ch3b = subscribe(qc, `dm-sent:${uid}`, [
       {
         table: "direct_messages",
         filter: `sender_id=eq.${uid}`,
         keys: ["dm", "dm_index", "dm-thread", "dm-threads", "messages", "conversations"],
       },
-    ]);
-
-    const ch3c = subscribe(qc, `gifts:${uid}`, [
       {
         table: "gift_sends",
         filter: `receiver_id=eq.${uid}`,
@@ -184,59 +196,11 @@ export function useGlobalRealtime() {
         filter: `sender_id=eq.${uid}`,
         keys: ["wallet", "wallet_tx", "me-counts", "gifts-sent", "profile"],
       },
-    ]);
-
-    // Host popularity is persisted by the gift_sends trigger. Keep the
-    // current user's host dashboard/profile caches in sync when that row moves.
-    const chPopularity = subscribe(qc, `host-popularity:${uid}`, [
       {
         table: "host_popularity_stats",
         filter: `host_id=eq.${uid}`,
         keys: ["host-popularity", "profile", "public-profile", "me"],
       },
-    ]);
-
-    // The catalog contains many low-frequency admin/shop tables. Creating this
-    // channel during first paint adds a large realtime subscription burst.
-    // Defer it until the app has rendered, while keeping all user-critical
-    // realtime channels above immediate.
-    let chCatalog: ReturnType<typeof supabase.channel> | null = null;
-    const catalogTimer = window.setTimeout(() => {
-      // Catalog updates are low-frequency. Keep only the small set of catalog
-      // tables that materially affect an active mobile session; everything else
-      // is refreshed by React Query staleTime or targeted admin invalidation.
-      const CRITICAL_CATALOG = ["banners", "gifts", "dp_frames", "room_backgrounds"] as const;
-      let channel = supabase.channel(`app-catalog:${uid}`);
-      for (const table of CRITICAL_CATALOG) {
-        channel = (
-          channel as unknown as {
-            on: (
-              type: string,
-              cfg: Record<string, unknown>,
-              cb: () => void,
-            ) => typeof channel;
-          }
-        ).on(
-          "postgres_changes",
-          { event: "*", schema: "public", table },
-          () => {
-            const keys = CATALOG_QUERY_KEYS[table] ?? [];
-            if (!keys.length) return;
-            for (const key of keys) {
-              void qc.invalidateQueries({ queryKey: [key], refetchType: "active" });
-            }
-          },
-        );
-      }
-      chCatalog = channel;
-      channel.subscribe((status, error) => {
-        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-          console.warn("[Realtime] app-catalog", status, error);
-        }
-      });
-    }, 15000);
-
-    const ch4 = subscribe(qc, `assets:${uid}`, [
       {
         table: "live_rooms",
         filter: `host_id=eq.${uid}`,
@@ -272,67 +236,80 @@ export function useGlobalRealtime() {
         filter: `user_id=eq.${uid}`,
         keys: ["withdraw", "withdraw-history", "wallet"],
       },
-    ]);
-
-    const chNotif = supabase
-      .channel(`notif:${uid}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${uid}` },
-        (payload: { new: NotificationRow }) => {
-          qc.invalidateQueries({ queryKey: ["notif-unread", uid] });
-          qc.invalidateQueries({ queryKey: ["notif-feed", uid] });
-          qc.invalidateQueries({ queryKey: ["msg-notif-count", uid] });
+      {
+        table: "notifications",
+        event: "INSERT",
+        filter: `user_id=eq.${uid}`,
+        keys: ["notif-unread", "notif-feed", "msg-notif-count"],
+        onChange: (payload: { new: NotificationRow }) => {
           const row = payload.new;
-          if (row?.title) {
-            playNotifySound();
-            toast(row.title, {
-              description: row.body ?? undefined,
-              action: { label: "Open", onClick: () => openNotification(row) },
-            });
-          }
+          if (!row?.title) return;
+          playNotifySound();
+          toast(row.title, {
+            description: row.body ?? undefined,
+            action: { label: "Open", onClick: () => openNotification(row) },
+          });
         },
-      )
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "milestone_broadcasts" },
-        (payload: { new: { host_username: string | null; room_title: string | null } }) => {
+      },
+      {
+        table: "milestone_broadcasts",
+        event: "INSERT",
+        onChange: (payload: { new: { host_username: string | null; room_title: string | null } }) => {
           const who = payload.new.host_username ?? "Host";
           toast.success(`🏆 @${who} ka popularity task complete ho gaya!`, {
             description: payload.new.room_title ?? undefined,
             duration: 8000,
           });
         },
-      )
-      .subscribe();
+      },
+      ...catalogTables.map((table) => ({
+        table,
+        keys: CATALOG_QUERY_KEYS[table] ?? [],
+      })),
+    ];
+
+    const start = () => {
+      if (channel || document.visibilityState !== "visible") return;
+      channel = subscribe(qc, `global-realtime:${uid}`, subs);
+    };
+
+    const stop = () => {
+      if (!channel) return;
+      const current = channel;
+      channel = null;
+      void supabase.removeChannel(current);
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") start();
+      else stop();
+    };
 
     let lastOnlineReconcile = 0;
     const reconcile = () => {
+      if (document.visibilityState !== "visible") return;
       const now = Date.now();
       if (now - lastOnlineReconcile < 15_000) return;
       lastOnlineReconcile = now;
-      ([
-        "me", "me-counts", "profile", "public-profile", "auth-profile", "wallet", "wallet_tx",
-        "friends", "dm", "dm_index", "dm-thread", "dm-threads", "dm-unread", "messages",
-        "conversations", "msg-notif-count", "notifications", "notif-unread", "notif-feed",
-        "my-rooms", "rooms", "gallery", "gallery-unlocks", "album-access", "user-themes",
-        "recharge", "recharge-history", "withdraw", "withdraw-history", "host-popularity",
-      ]).forEach((k) => void qc.invalidateQueries({ queryKey: [k], refetchType: "active" }));
+      [
+        "me", "me-counts", "profile", "public-profile", "auth-profile",
+        "wallet", "wallet_tx", "friends", "dm", "dm_index", "dm-thread",
+        "dm-threads", "dm-unread", "messages", "conversations", "msg-notif-count",
+        "notifications", "notif-unread", "notif-feed", "my-rooms", "rooms",
+        "gallery", "gallery-unlocks", "album-access", "user-themes",
+        "recharge", "recharge-history", "withdraw", "withdraw-history",
+        "host-popularity",
+      ].forEach((key) => void qc.invalidateQueries({ queryKey: [key], refetchType: "active" }));
     };
+
+    document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("online", reconcile);
+    start();
 
     return () => {
-      void supabase.removeChannel(ch1);
-      void supabase.removeChannel(ch2);
-      void supabase.removeChannel(ch3);
-      void supabase.removeChannel(ch3b);
-      void supabase.removeChannel(ch3c);
-      void supabase.removeChannel(chPopularity);
-      void supabase.removeChannel(ch4);
-      window.clearTimeout(catalogTimer);
-      if (chCatalog) void supabase.removeChannel(chCatalog);
-      void supabase.removeChannel(chNotif);
+      document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("online", reconcile);
+      stop();
     };
   }, [user, qc]);
 }
