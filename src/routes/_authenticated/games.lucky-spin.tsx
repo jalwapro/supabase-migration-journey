@@ -84,7 +84,7 @@ function LuckySpin() {
     <>
       <AppShell
         title="Lucky Spin"
-        subtitle="Win up to 10x"
+        subtitle="Coin Bet Wheel · Win up to 10x"
         right={
           <Link to="/games" aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full bg-card/60">
             <ArrowLeft className="h-4 w-4" />
