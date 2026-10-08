@@ -9,7 +9,7 @@ function RoomPreview() {
   const { data: roomId, isLoading } = useQuery({
     queryKey: ['customization-preview-room'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rooms').select('id').limit(1).maybeSingle();
+      const { data, error } = await supabase.from('live_rooms').select('id').eq('status', 'live').limit(1).maybeSingle();
       if (error) throw error;
       return data?.id ?? null;
     },
