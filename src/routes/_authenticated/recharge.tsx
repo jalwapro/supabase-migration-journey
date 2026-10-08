@@ -68,7 +68,7 @@ function RechargePage() {
     mutationFn: async () => {
       if (!user) throw new Error("Please login again");
       if (!selectedPkg) throw new Error("Choose a package");
-      if (!/^03\d{9}$/.test(senderAccount.trim())) throw new Error("Enter a valid 03xxxxxxxxx mobile number");
+      if (!/^\+?[0-9]{8,15}$/.test(senderAccount.trim())) throw new Error("Enter a valid international mobile number (8–15 digits, with country code)");
       if (txnReference.trim().length < 4) throw new Error("Enter the transaction ID");
       if (!proofFile) throw new Error("Upload your payment screenshot");
       if (!qrUrl && !tillId) throw new Error("Payment QR/Till is not configured by admin yet");
@@ -131,7 +131,7 @@ function RechargePage() {
                 {title && <Info label="Account title" value={title} />}
                 <p className="mt-3 text-xs font-semibold text-amber-300">After payment, enter the mobile number you paid from, the transaction ID, and upload the payment receipt.</p>
               </div>
-              <input value={senderAccount} onChange={(e) => setSenderAccount(e.target.value.replace(/\D/g, "").slice(0, 11))} placeholder="Your Easypaisa/JazzCash number (03xxxxxxxxx)" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
+              <input value={senderAccount} onChange={(e) => setSenderAccount(e.target.value.replace(/[^\d+]/g, "").replace(/(?!^)\+/g, "").slice(0, 16))} placeholder="Mobile / account number with country code" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
               <input value={txnReference} onChange={(e) => setTxnReference(e.target.value.replace(/\s/g, "").slice(0, 80))} placeholder="Transaction ID / TID" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
               <label className="block cursor-pointer rounded-xl border border-dashed border-border bg-card/40 p-4"><div className="flex items-center gap-2 text-sm font-bold"><Upload className="h-4 w-4" />{proofFile ? proofFile.name : "Upload payment screenshot"}</div><input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => setProofFile(e.target.files?.[0] ?? null)} /></label>
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] text-muted-foreground"><b className="text-amber-300">Manual verification:</b> Request stays pending. Admin checks the payment in the merchant portal and credits coins only after confirming amount and transaction ID.</div>
