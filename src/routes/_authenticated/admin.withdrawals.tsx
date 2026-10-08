@@ -159,4 +159,5 @@ function WithdrawalsAdmin() {
         </div>
       )}
     </>
-  );\n}
+  );
+}
