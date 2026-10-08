@@ -31,7 +31,7 @@ export function VoiceRoomUserPopup({
         <DialogTitle className="sr-only">{user.name ?? "User"}</DialogTitle>
         <div className="relative">
           {assets.popupFrameUrl && (
-            <div className="pointer-events-none absolute -inset-5 z-10"><FramedMedia url={assets.popupFrameUrl} fit="fill" /></div>
+            <div className="pointer-events-none absolute -inset-5 z-10"><FramedMedia url={assets.popupFrameUrl} fit="fill" removeBlackBackground /></div>
           )}
           <UserProfileCard user={user} assetsOverride={assets}>
             <div className="mt-4 grid w-full grid-cols-4 gap-2">
