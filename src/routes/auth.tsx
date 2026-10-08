@@ -232,8 +232,21 @@ function AuthPage() {
       navigate({ to: "/", replace: true });
     } catch (error: unknown) {
       const code = (error as { code?: string })?.code;
-      if (code !== GoogleErrorCode.SignInCanceled) {
-        setErr(error instanceof Error ? error.message : "Google sign-in failed. Please try again.");
+      const message = error instanceof Error ? error.message : String(error ?? "");
+
+      // Capawesome/Google Play Services can surface an Android OAuth
+      // configuration failure as SIGN_IN_CANCELED (for example
+      // "Account reauth failed" / "UNREGISTERED_ON_API_CONSOLE"). Never hide
+      // those errors as if the user simply pressed Cancel.
+      const looksLikeConfigFailure =
+        /reauth|unregistered_on_api_console|api console|configuration|credential/i.test(message);
+
+      if (code !== GoogleErrorCode.SignInCanceled || looksLikeConfigFailure) {
+        setErr(
+          looksLikeConfigFailure
+            ? "Google sign-in is not fully configured for this Android build. The Google account picker worked, but the Android app signing certificate is not registered for Jalwa."
+            : message || "Google sign-in failed. Please try again.",
+        );
       }
     } finally {
       setBusy(false);
