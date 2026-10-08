@@ -136,6 +136,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!nextSession?.user) {
       setProfile(null);
       setRoles([]);
+      // No persisted session is a valid startup state. Do not leave the app
+      // permanently in auth-loading, otherwise Home setup is stuck at 96%.
+      setLoading(false);
       return;
     }
     const uid = nextSession.user.id;
