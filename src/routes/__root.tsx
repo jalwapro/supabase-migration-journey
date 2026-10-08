@@ -95,4 +95,35 @@ function AssetCacheBridge() {
   return null;
 }
 function PerfModeBridge() { useEffect(() => { const nav = navigator as any; const isAndroid = /Android/i.test(navigator.userAgent); const isCap = !!(window as any).Capacitor?.isNativePlatform?.(); const lowEnd = (nav.deviceMemory && nav.deviceMemory <= 4) || (nav.hardwareConcurrency && nav.hardwareConcurrency <= 4); if (isAndroid || isCap || lowEnd) document.documentElement.classList.add("perf-lite"); }, []); return null; }
-function RootComponent() { const { queryClient } = Route.useRouteContext(); const pathname = useRouterState({ select: (state) => state.location.pathname }); useWakeLock(pathname.startsWith("/room/")); const [toastTheme, setToastTheme] = useState<"light" | "dark">(() => { if (typeof document === "undefined") return "dark"; return document.documentElement.classList.contains("light") ? "light" : "dark"; }); useEffect(() => { void import("../lib/native").then((m) => m.initNativeShell()); }, []); useEffect(() => { const onChange = (e: Event) => { const d = (e as CustomEvent<"light" | "dark">).detail; if (d === "light" || d === "dark") setToastTheme(d); }; window.addEventListener("jalwa:theme-mode", onChange); return () => window.removeEventListener("jalwa:theme-mode", onChange); }, []); return <QueryClientProvider client={queryClient}><AuthProvider><VoiceRoomSessionProvider><GlobalTokenBridge /><AssetCacheBridge /><PerfModeBridge /><PublishedStudioBridge /><ThemeChrome /><SplashGate /><GlobalRealtimeBridge /><InstallPermissionGate /><LaunchRouteGate /><div className="relative z-10" suppressHydrationWarning><StudioLayer /><Outlet /></div><GlobalMinimizedVoiceRoom /><Toaster position="top-center" theme={toastTheme} richColors /></VoiceRoomSessionProvider></AuthProvider></QueryClientProvider> }
+function WebDownloadOnlyGate() {
+  return (
+    <main className="grid min-h-[100dvh] place-items-center bg-[#08050c] px-5 text-white">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-7 text-center shadow-2xl backdrop-blur-xl">
+        <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-[color:var(--gold)] via-[color:var(--primary)] to-[color:var(--secondary)] text-2xl font-black">
+          J
+        </div>
+        <h1 className="mt-5 text-2xl font-black">JALWA App</h1>
+        <p className="mt-2 text-sm text-white/60">
+          JALWA ab web browser par available nahi hai. App download karke install karein.
+        </p>
+        <a
+          href="/download"
+          className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] px-5 py-3 text-sm font-black text-white shadow-lg"
+        >
+          Download JALWA APK
+        </a>
+      </div>
+    </main>
+  );
+}
+
+function RootComponent() {
+  const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const isNativeApp = typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform?.();
+
+  if (!isNativeApp && pathname !== "/download") {
+    return <WebDownloadOnlyGate />;
+  }
+
+  useWakeLock(pathname.startsWith("/room/")); const [toastTheme, setToastTheme] = useState<"light" | "dark">(() => { if (typeof document === "undefined") return "dark"; return document.documentElement.classList.contains("light") ? "light" : "dark"; }); useEffect(() => { void import("../lib/native").then((m) => m.initNativeShell()); }, []); useEffect(() => { const onChange = (e: Event) => { const d = (e as CustomEvent<"light" | "dark">).detail; if (d === "light" || d === "dark") setToastTheme(d); }; window.addEventListener("jalwa:theme-mode", onChange); return () => window.removeEventListener("jalwa:theme-mode", onChange); }, []); return <QueryClientProvider client={queryClient}><AuthProvider><VoiceRoomSessionProvider><GlobalTokenBridge /><AssetCacheBridge /><PerfModeBridge /><PublishedStudioBridge /><ThemeChrome /><SplashGate /><GlobalRealtimeBridge /><InstallPermissionGate /><LaunchRouteGate /><div className="relative z-10" suppressHydrationWarning><StudioLayer /><Outlet /></div><GlobalMinimizedVoiceRoom /><Toaster position="top-center" theme={toastTheme} richColors /></VoiceRoomSessionProvider></AuthProvider></QueryClientProvider> }
