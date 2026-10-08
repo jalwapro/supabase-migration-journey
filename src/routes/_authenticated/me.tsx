@@ -115,6 +115,7 @@ function MePage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [uploading, setUploading] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Own equipped Profile Card — the owner must see the card they bought/equipped,
   // exactly like visitors do on /u/:id.
@@ -178,10 +179,7 @@ function MePage() {
   const handleShare = () => setShareOpen(true);
   async function handleDeleteAccount() {
     if (!user || deletingAccount) return;
-    const confirmed = window.confirm(
-      "Delete your Jalwa account permanently? Your account and associated personal data will be deleted. This cannot be undone."
-    );
-    if (!confirmed) return;
+    setDeleteDialogOpen(false);
     setDeletingAccount(true);
     try {
       const { error } = await supabase.rpc("delete_my_account");
@@ -371,7 +369,7 @@ function MePage() {
               <FeatureCard to="/blocked" icon={UserX} title="Blocked Users" sub="Manage blocked list" color="#ff2d95" />
               <FeatureCard to="/settings" icon={SettingsIcon} title="Settings" sub="Profile, password, privacy" color="#94a3b8" />
               <FeatureCard to="/privacy" icon={Shield} title="Privacy Policy" sub="How we protect your data" color="#38bdf8" />
-              <button type="button" onClick={() => void handleDeleteAccount()} disabled={deletingAccount} className="group relative overflow-hidden rounded-[22px] border border-red-500/20 bg-red-500/[0.04] p-4 text-left transition-all hover:border-red-500/50 active:scale-[0.98] disabled:opacity-60"><FeatureInner icon={UserX} title={deletingAccount ? "Deleting Account…" : "Delete Account"} sub="Permanently delete your account and associated data" color="#ef4444" /></button>
+              <button type="button" onClick={() => setDeleteDialogOpen(true)} disabled={deletingAccount} className="group relative overflow-hidden rounded-[22px] border border-red-500/20 bg-red-500/[0.04] p-4 text-left transition-all hover:border-red-500/50 active:scale-[0.98] disabled:opacity-60"><FeatureInner icon={UserX} title={deletingAccount ? "Deleting Account…" : "Delete Account"} sub="Permanently delete your account and associated data" color="#ef4444" /></button>
               <button onClick={() => signOut()} className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 text-left transition-all hover:border-[#ff2d95]/40 active:scale-[0.98]">
                 <FeatureInner icon={LogOut} title="Log Out" sub="Sign out from your account" color="#ff2d95" />
               </button>
@@ -434,6 +432,25 @@ function MePage() {
         title="Share profile"
         target={{ title: `${userName} on Jalwa Live`, text: "Check out my Jalwa Live profile", url: shareUrl }}
       />
+      {deleteDialogOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 px-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+          <div className="w-full max-w-sm rounded-3xl border border-red-500/25 bg-[#111117] p-5 shadow-2xl">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-red-500/10">
+              <UserX className="h-6 w-6 text-red-400" />
+            </div>
+            <h2 id="delete-account-title" className="mt-4 text-lg font-black text-white">Delete account?</h2>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              Your Jalwa account and associated personal data will be permanently deleted. This action cannot be undone.
+            </p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setDeleteDialogOpen(false)} disabled={deletingAccount} className="rounded-full border border-white/10 bg-white/5 py-3 text-sm font-bold text-white/80">Cancel</button>
+              <button type="button" onClick={() => void handleDeleteAccount()} disabled={deletingAccount} className="rounded-full bg-red-500 py-3 text-sm font-black text-white disabled:opacity-50">
+                {deletingAccount ? "Deleting…" : "Delete permanently"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <BottomNav />
     </>
   );
