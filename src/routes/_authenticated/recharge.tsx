@@ -149,7 +149,7 @@ function PlayBillingRequired() {
   return (
     <div className="space-y-4 py-10 text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-full border border-primary/30 bg-primary/10">
-        <Coins className="h-8 w-8 text-primary" />
+        <Coin className="h-8 w-8" />
       </div>
       <div>
         <p className="text-xl font-black">Google Play Billing</p>
