@@ -145,7 +145,7 @@ function DailySpin() {
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div className="rounded-full border border-[#f5c542]/40 bg-black/60 px-3 py-1 text-xs font-bold text-[#f5c542]">
-            🪙 Daily Bonus
+            🎁 Free Daily Bonus
           </div>
         </div>
 
@@ -175,7 +175,7 @@ function DailySpin() {
           </h1>
           <div className="mx-auto mt-2 flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-[0.3em] text-[#f5c542]/80">
             <span>✦</span>
-            <span>Spin daily · Win big</span>
+            <span>Free spin every 24 hours · Win a bonus</span>
             <span>✦</span>
           </div>
         </div>
