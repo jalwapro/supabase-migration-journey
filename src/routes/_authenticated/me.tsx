@@ -314,11 +314,11 @@ function MePage() {
 
                 <div className="mt-2.5 flex flex-wrap items-center justify-center gap-2">
                   <Link to="/vip-level" className="inline-flex items-center gap-1.5 rounded-lg border border-[#c88a2b]/70 bg-gradient-to-b from-[#5a2f0a] to-[#1a0a02] px-3 py-1.5 text-[12px] font-black text-[#fbbf24] shadow-[0_0_18px_rgba(200,138,43,0.4)]" style={HEADING}>
-                    <Crown className="h-3.5 w-3.5" /> {tier.label}
+                    <Crown className="h-3.5 w-3.5" /> Gifting Tier · {tier.label}
                   </Link>
                   {adminVipTier && (
                     <Link to="/vip" className="inline-flex items-center gap-1.5 rounded-lg border border-[#a855f7]/70 bg-gradient-to-b from-[#3a0f5c] to-[#180329] px-3 py-1.5 text-[12px] font-black text-white shadow-[0_0_18px_rgba(168,85,247,0.5)]" style={HEADING}>
-                      <span className="text-sm leading-none">{adminVipTier.badge_emoji ?? "👑"}</span> {adminVipTier.name}
+                      <span className="text-sm leading-none">{adminVipTier.badge_emoji ?? "👑"}</span> VIP Pass · {adminVipTier.name}
                     </Link>
                   )}
                   <span className="text-[22px] leading-none" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.7))" }}>🏅</span>
@@ -344,7 +344,7 @@ function MePage() {
                   <StatBox to="/wallet" icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
                   <StatBox to="/wallet" icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
                   <StatBox to="/rank" icon={<Star className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
-                  <StatBox to="/vip" icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Host Lv" />
+                  <StatBox to="/vip-level" icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Gifting Lv" />
                   <StatBox to="/my-rooms" icon={<Home className="h-4 w-4" />} color="#38bdf8" value={counts?.liveRooms ?? 0} label="Live Rooms" />
                 </div>
               </div>
