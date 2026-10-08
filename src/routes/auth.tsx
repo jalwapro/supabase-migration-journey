@@ -202,13 +202,34 @@ function AuthPage() {
         throw new Error("Google did not return an ID token.");
       }
 
-      const { error } = await supabase.auth.signInWithIdToken({
+      // Native Google returns the provider token directly. Give Supabase both
+      // tokens when an access token is available; this also covers Google ID
+      // tokens that contain an at_hash claim.
+      const { data: authData, error } = await supabase.auth.signInWithIdToken({
         provider: "google",
         token: result.idToken,
+        ...(result.accessToken ? { access_token: result.accessToken } : {}),
       });
 
       if (error) throw error;
-      navigate({ to: "/" });
+
+      // Do not navigate until Supabase has actually persisted the session.
+      // This prevents the authenticated route guard from racing the native
+      // Google callback and sending the user straight back to /auth.
+      let session = authData.session ?? null;
+      if (!session) {
+        const { data } = await supabase.auth.getSession();
+        session = data.session ?? null;
+      }
+
+      if (!session?.user) {
+        throw new Error("Google sign-in completed, but Jalwa could not restore the session. Please try again.");
+      }
+
+      // Let AuthProvider receive SIGNED_IN and hydrate profile/roles before
+      // leaving the login screen.
+      await new Promise((resolve) => window.setTimeout(resolve, 0));
+      navigate({ to: "/", replace: true });
     } catch (error: unknown) {
       const code = (error as { code?: string })?.code;
       if (code !== GoogleErrorCode.SignInCanceled) {
