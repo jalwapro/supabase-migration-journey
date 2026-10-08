@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { supabaseAdmin } from "../../../integrations/supabase/client.server";
 
 type Row = Record<string, unknown>;
 
@@ -24,6 +23,8 @@ function add(out: Map<string, any>, table: string, row: Row, column: string, pri
 }
 
 async function rows(table: string, columns: string[]) {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
+  const { supabaseAdmin } = await import("../../../integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.from(table).select(["id", ...columns].join(",")).limit(1000);
   if (error) return [];
   return (data ?? []) as Row[];
