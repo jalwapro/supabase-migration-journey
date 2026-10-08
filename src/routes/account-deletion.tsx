@@ -3,6 +3,14 @@ import { ShieldCheck, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/account-deletion")({
   component: AccountDeletionPage,
+  head: () => ({
+    meta: [
+      { title: "Account Deletion | Jalwa Live" },
+      { name: "description", content: "Permanently delete your Jalwa account and personal data." },
+      { property: "og:title", content: "Account Deletion | Jalwa Live" },
+      { property: "og:description", content: "Permanently delete your Jalwa account and personal data." },
+    ],
+  }),
 });
 
 function AccountDeletionPage() {
