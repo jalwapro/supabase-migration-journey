@@ -41,10 +41,14 @@ export function acquireGiftBroadcastChannel(roomId: string): GiftChannel {
     return existing.channel;
   }
   const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true, ack: true } } });
+  // Register all broadcast/postgres listeners before subscribing. Supabase
+  // Realtime rejects postgres_changes callbacks added after subscribe().
   const ready = new Promise<void>((resolve, reject) => {
-    channel.subscribe((status, error) => {
-      if (status === "SUBSCRIBED") resolve();
-      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(error ?? new Error(`Gift channel ${status}`));
+    queueMicrotask(() => {
+      channel.subscribe((status, error) => {
+        if (status === "SUBSCRIBED") resolve();
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") reject(error ?? new Error(`Gift channel ${status}`));
+      });
     });
   });
   channels.set(roomId, { channel, refs: 1, ready });
