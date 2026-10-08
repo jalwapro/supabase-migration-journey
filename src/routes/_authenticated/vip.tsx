@@ -14,6 +14,24 @@ function Page() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
 
+  const { data: subscription } = useQuery({
+    queryKey: ["vip-subscription", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vip_subscriptions")
+        .select("*")
+        .eq("user_id", user!.id)
+        .eq("status", "active")
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
   const { data: tiers } = useQuery({
     queryKey: ["vip-tiers"],
     queryFn: async () => {
@@ -62,7 +80,7 @@ function Page() {
                       : "bg-white/10 text-white/50 border border-white/20"
                   }`}
                 >
-                  {profile?.is_vip ? "Active" : "Inactive"}
+                  {subscription ? "Active" : "Inactive"}
                 </span>
               </div>
 
@@ -97,14 +115,20 @@ function Page() {
                 <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
                   <p className="uppercase tracking-widest text-white/40">Expires</p>
                   <p className="mt-0.5 font-black text-white">
-                    {profile?.is_vip && profile.vip_expiry
-                      ? new Date(profile.vip_expiry).toLocaleDateString()
+                    {subscription?.expires_at
+                      ? new Date(subscription.expires_at).toLocaleDateString()
                       : "—"}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-3 space-y-1 rounded-lg border border-[#ffcf6a]/20 bg-black/30 px-3 py-2 text-[10px] text-white/80">
+              <div className="mt-3 rounded-lg border border-[#ffcf6a]/20 bg-black/30 px-3 py-2 text-[10px] text-white/80">
+                <p className="font-black uppercase tracking-widest text-[#ffcf6a]">Paid Membership</p>
+                <p className="mt-1 font-bold text-white/80">{subscription?.tier_name ?? "No active subscription"}</p>
+                <p className="mt-1 text-white/50">This membership is separate from your lifetime gift-based VIP Level.</p>
+              </div>
+
+              <div className="mt-2 space-y-1 rounded-lg border border-[#ffcf6a]/20 bg-black/30 px-3 py-2 text-[10px] text-white/80">
                 <p className="font-black uppercase tracking-widest text-[#ffcf6a]">Pass Benefits</p>
                 <p>👑 Unlock all VIP-only animated emojis</p>
                 <p>✨ Exclusive VIP badge + frame in rooms</p>
