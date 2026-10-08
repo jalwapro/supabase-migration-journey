@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 const manifestPath = resolve("android/app/src/main/AndroidManifest.xml");
@@ -46,27 +46,4 @@ xml = xml.replace(/\s*<service[\s\S]*?android:name="\.JalwaForegroundService"[\s
 xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
 writeFileSync(manifestPath, xml);
 
-const javaDir = resolve("android/app/src/main/java/app/lovable/jalwa");
-const servicePath = resolve(javaDir, "JalwaForegroundService.java");
-if (existsSync(servicePath)) {
-  writeFileSync(servicePath, "");
-}
-
-/* Remove legacy service startup injected by older versions of this script. */
-const activityCandidates = [
-  resolve("android/app/src/main/java/app/lovable/jalwa/MainActivity.java"),
-  resolve("android/app/src/main/java/app/lovable/jalwa/MainActivity.kt"),
-];
-
-for (const activityPath of activityCandidates) {
-  if (!existsSync(activityPath)) continue;
-  let activity = readFileSync(activityPath, "utf8");
-  activity = activity
-    .replace(/\\n?\\s*import android\\.content\\.Intent;\\n?/g, "\\n")
-    .replace(/\\n?\\s*import android\\.content\\.Intent\\n?/g, "\\n")
-    .replace(/\\n?\\s*if \\(android\\.os\\.Build\\.VERSION\\.SDK_INT >= 26\\) \\{ startForegroundService\\(new Intent\\(this, JalwaForegroundService\\.class\\)\\); \\} else \\{ startService\\(new Intent\\(this, JalwaForegroundService\\.class\\)\\); \\}\\n?/g, "\\n")
-    .replace(/\\n?\\s*if \\(android\\.os\\.Build\\.VERSION\\.SDK_INT >= 26\\) \\{ startForegroundService\\(Intent\\(this, JalwaForegroundService::class\\.java\\)\\) \\} else \\{ startService\\(Intent\\(this, JalwaForegroundService::class\\.java\\)\\) \\}\\n?/g, "\\n");
-  writeFileSync(activityPath, activity);
-}
-
-console.log("✓ Android permissions configured without legacy background connectivity service.");
+console.log("✓ Android permissions configured without a persistent background service.");
