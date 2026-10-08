@@ -80,7 +80,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     let alive = true;
-    const channel = supabase.channel(`gift-player-${roomId}`, { config: { private: false, broadcast: { self: true } } })
+    const channel = acquireGiftBroadcastChannel(roomId)
       .on("broadcast", { event: "gift_play" }, (message) => {
         if (!alive) return;
         const d = (message.payload ?? {}) as Record<string, unknown>;
