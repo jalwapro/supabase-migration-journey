@@ -277,7 +277,16 @@ function UsersAdmin() {
                           <CoinsIcon className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => {\n                            if (u.status === "banned") {\n                              if (window.confirm("Unban this user and restore account access?")) setStatus.mutate({ id: u.id, status: "active" });\n                              return;\n                            }\n                            const reason = window.prompt("Ban reason shown to the user (required):", "Violation of JALWA community guidelines");\n                            if (reason === null) return;\n                            if (reason.trim().length < 5) { toast.error("Please enter a ban reason of at least 5 characters."); return; }\n                            setStatus.mutate({ id: u.id, status: "banned", reason: reason.trim() });\n                          }}
+                          onClick={() => {
+                            if (u.status === "banned") {
+                              if (window.confirm("Unban this user and restore account access?")) setStatus.mutate({ id: u.id, status: "active" });
+                              return;
+                            }
+                            const reason = window.prompt("Ban reason shown to the user (required):", "Violation of JALWA community guidelines");
+                            if (reason === null) return;
+                            if (reason.trim().length < 5) { toast.error("Please enter a ban reason of at least 5 characters."); return; }
+                            setStatus.mutate({ id: u.id, status: "banned", reason: reason.trim() });
+                          }}
                           className="rounded-full bg-red-500/15 p-1.5 text-red-400"
                           title={u.status === "banned" ? "Unban" : "Ban"}
                         >
