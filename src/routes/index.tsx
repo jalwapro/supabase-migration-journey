@@ -1124,7 +1124,7 @@ function RoomListItem({ room }: { room: Room }) {
         <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <TypeIcon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}{room.host?.country && <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
+          <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
           {room.pk_battle && (
             <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
               <Flame className="h-2 w-2" /> PK
