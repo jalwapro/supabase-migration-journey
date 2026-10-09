@@ -749,9 +749,9 @@ function Home() {
             <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-card/80 px-3 py-2.5 text-sm">
               <Globe2 className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
               <span className="shrink-0 text-xs font-bold text-muted-foreground">Country</span>
-              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm font-bold text-foreground outline-none">
-                <option value="Global">🌐 All Countries</option>
-                {HOME_COUNTRIES.map((country) => <option key={country} value={country}>{COUNTRY_FLAGS[country] ?? "🌍"} {country}</option>)}
+              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="min-w-0 flex-1 rounded-lg bg-transparent text-sm font-bold text-foreground outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--primary)]" style={{ colorScheme: "dark" }}>
+                <option value="Global" style={{ backgroundColor: "#160808", color: "#fff" }}>🌐 All Countries</option>
+                {HOME_COUNTRIES.map((country) => <option key={country} value={country} style={{ backgroundColor: "#160808", color: "#fff" }}>{COUNTRY_FLAGS[country] ?? "🌍"} {country}</option>)}
               </select>
             </label>
             {isRoomsLoading ? (
@@ -1077,7 +1077,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{flagForCountry(room.host.country, room.host.country_code)}</span>}{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
+            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
