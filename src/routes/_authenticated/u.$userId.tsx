@@ -65,7 +65,7 @@ type FullProfile = {
   data_card: string | null;
   bio: string | null;
   gender: string | null;
-  country: string | null;
+  country: string | null;\n  city: string | null;
   coins: number;
   diamonds: number;
   level: number;
