@@ -120,7 +120,7 @@ function UsersAdmin() {
   });
 
   const setStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, reason }: { id: string; status: string; reason?: string }) => {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       if (sessionError) throw sessionError;
       const token = sessionData.session?.access_token;
@@ -128,13 +128,13 @@ function UsersAdmin() {
       const response = await fetch("/api/admin-user-ban", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ userId: id, banned: status === "banned" }),
+        body: JSON.stringify({ userId: id, banned: status === "banned", ...(reason ? { reason } : {}) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(result.error ? `${result.error}${result.detail ? `: ${result.detail}` : ""}` : "Could not update user ban status");
     },
     onSuccess: (_data, variables) => {
-      toast.success(variables.status === "banned" ? "User banned in JALWA and Supabase Auth" : "User unbanned");
+      toast.success(variables.status === "banned" ? "User banned; ban reason saved and shown to the user" : "User unbanned");
       qc.invalidateQueries({ queryKey: ["admin_users"] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -277,7 +277,7 @@ function UsersAdmin() {
                           <CoinsIcon className="h-3.5 w-3.5" />
                         </button>
                         <button
-                          onClick={() => setStatus.mutate({ id: u.id, status: u.status === "banned" ? "active" : "banned" })}
+                          onClick={() => {\n                            if (u.status === "banned") {\n                              if (window.confirm("Unban this user and restore account access?")) setStatus.mutate({ id: u.id, status: "active" });\n                              return;\n                            }\n                            const reason = window.prompt("Ban reason shown to the user (required):", "Violation of JALWA community guidelines");\n                            if (reason === null) return;\n                            if (reason.trim().length < 5) { toast.error("Please enter a ban reason of at least 5 characters."); return; }\n                            setStatus.mutate({ id: u.id, status: "banned", reason: reason.trim() });\n                          }}
                           className="rounded-full bg-red-500/15 p-1.5 text-red-400"
                           title={u.status === "banned" ? "Unban" : "Ban"}
                         >
