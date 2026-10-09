@@ -67,6 +67,18 @@ create policy coin_seller_inventory_owner_admin_read on public.coin_seller_inven
   for select to authenticated
   using (seller_id = (select auth.uid()) or (select public.is_admin(auth.uid())));
 
+drop policy if exists coin_seller_inventory_public_listing_read on public.coin_seller_inventory;
+create policy coin_seller_inventory_public_listing_read on public.coin_seller_inventory
+  for select to authenticated
+  using (
+    exists (
+      select 1 from public.coin_sellers s
+      where s.user_id = coin_seller_inventory.seller_id
+        and s.is_active = true
+        and s.is_listed = true
+    )
+  );
+
 drop policy if exists coin_seller_transactions_participant_admin_read on public.coin_seller_transactions;
 create policy coin_seller_transactions_participant_admin_read on public.coin_seller_transactions
   for select to authenticated
@@ -221,9 +233,9 @@ begin
   returning id into v_tx_id;
 
   insert into public.wallet_transactions
-    (user_id, kind, coins_delta, balance_coins_after, ref_type, ref_id, note)
+    (user_id, kind, coins, coins_delta, balance_coins_after, ref_type, ref_id, note)
   values
-    (v_buyer.id, 'seller_transfer', p_coins::integer, v_buyer_balance::integer,
+    (v_buyer.id, 'seller_transfer', p_coins, p_coins, v_buyer_balance,
      'coin_seller_transfer', v_tx_id,
      'Coins received from seller ' || coalesce(v_seller.public_name, 'JALWA seller'));
 
