@@ -40,13 +40,15 @@ export type Profile = {
   last_seen: string | null;
 };
 
-export type AppRole = "user" | "host" | "agent" | "moderator" | "admin" | "super_admin";
+export type AppRole = "user" | "host" | "agent" | "moderator" | "finance_operator" | "admin" | "super_admin";
 
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   roles: AppRole[];
+  adminPermissions: string[];
+  canAccessAdmin: boolean;
   isAdmin: boolean;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -61,33 +63,11 @@ function isStudioPreview(): boolean {
 
 function demoProfile(userId: string): Profile {
   return {
-    id: userId,
-    username: "Jalwa User",
-    full_name: "Jalwa User",
-    avatar: null,
-    frame: null,
-    ring: null,
-    bubble: null,
-    car: null,
-    entrance: null,
-    special_id: null,
-    data_card: null,
-    bio: null,
-    gender: null,
-    country: "Pakistan",
-    coins: 12500,
-    diamonds: 2500,
-    level: 12,
-    xp: 2400,
-    is_vip: false,
-    vip_expiry: null,
-    vip_level: 0,
-    status: "online",
-    theme_id: null,
-    frame_expires_at: null,
-    is_free: false,
-    user_code: "JALWA001",
-    last_seen: new Date().toISOString(),
+    id: userId, username: "Jalwa User", full_name: "Jalwa User", avatar: null, frame: null,
+    ring: null, bubble: null, car: null, entrance: null, special_id: null, data_card: null,
+    bio: null, gender: null, country: "Pakistan", coins: 12500, diamonds: 2500, level: 12,
+    xp: 2400, is_vip: false, vip_expiry: null, vip_level: 0, status: "online", theme_id: null,
+    frame_expires_at: null, is_free: false, user_code: "JALWA001", last_seen: new Date().toISOString(),
   };
 }
 
@@ -111,10 +91,21 @@ async function loadRoles(userId: string): Promise<AppRole[]> {
   return (data ?? []).map((r) => r.role as AppRole);
 }
 
+async function loadAdminPermissions(): Promise<string[]> {
+  if (isStudioPreview()) return [];
+  const { data, error } = await supabase.rpc("get_my_admin_permissions");
+  if (error) {
+    console.error("[useAuth] loadAdminPermissions", error);
+    return [];
+  }
+  return Array.isArray(data) ? data.filter((value): value is string => typeof value === "string") : [];
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [adminPermissions, setAdminPermissions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastHeartbeatAtRef = useRef(0);
@@ -125,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const user = session?.user ?? null;
   const SUPER_ADMIN_EMAILS = ["jalwaapplive@gmail.com"];
   const isAdmin = !isStudioPreview() && (roles.includes("admin") || roles.includes("super_admin") || (user?.email ? SUPER_ADMIN_EMAILS.includes(user.email.toLowerCase()) : false));
+  const canAccessAdmin = !isStudioPreview() && adminPermissions.includes("dashboard.view");
 
   const hydrate = useCallback(async (nextSession: Session | null) => {
     setSession(nextSession);
@@ -136,24 +128,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!nextSession?.user) {
       setProfile(null);
       setRoles([]);
-      // No persisted session is a valid startup state. Do not leave the app
-      // permanently in auth-loading, otherwise Home setup is stuck at 96%.
+      setAdminPermissions([]);
       setLoading(false);
       return;
     }
     const uid = nextSession.user.id;
-    // Keep auth loading until profile/roles are hydrated. Admin routes depend on
-    // roles and must not redirect during the brief hydration window.
     hydrateTimerRef.current = setTimeout(async () => {
-      const [p, r] = await Promise.all([loadProfile(uid), loadRoles(uid)]);
+      const [p, r, permissions] = await Promise.all([loadProfile(uid), loadRoles(uid), loadAdminPermissions()]);
       if (token !== hydrateTokenRef.current) return;
       if (p?.status === "banned") {
-        // Preserve the ban notice before clearing the session so the sign-in
-        // screen can explain the reason and accept an appeal.
         try {
           localStorage.setItem("jalwa_ban_notice", JSON.stringify({
-            userId: uid,
-            email: nextSession.user.email ?? "",
+            userId: uid, email: nextSession.user.email ?? "",
             reason: (p as Profile & { ban_reason?: string | null }).ban_reason ?? "",
           }));
         } catch {}
@@ -161,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(null);
         setProfile(null);
         setRoles([]);
+        setAdminPermissions([]);
         setLoading(false);
         if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
           window.location.replace("/auth?reason=banned");
@@ -169,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setProfile(p);
       setRoles(r);
+      setAdminPermissions(permissions);
       setLoading(false);
     }, 0);
   }, []);
@@ -176,9 +164,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadInitialSession = useCallback(async () => {
     let nextSession: Session | null = null;
     try {
-      // Session is persisted locally by Supabase, so avoid serial retry delays
-      // during app startup. onAuthStateChange remains the source of truth for
-      // refresh/sign-in/sign-out changes after the initial read.
       const { data } = await supabase.auth.getSession();
       nextSession = data.session;
     } catch (error) {
@@ -190,9 +175,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (!user) return;
-    const [p, r] = await Promise.all([loadProfile(user.id), loadRoles(user.id)]);
+    const [p, r, permissions] = await Promise.all([loadProfile(user.id), loadRoles(user.id), loadAdminPermissions()]);
     setProfile(p);
     setRoles(r);
+    setAdminPermissions(permissions);
   }, [user]);
 
   const signOut = useCallback(async () => {
@@ -204,6 +190,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
     setProfile(null);
     setRoles([]);
+    setAdminPermissions([]);
     if (typeof window !== "undefined") window.location.replace("/auth");
   }, []);
 
@@ -224,33 +211,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const enforceBan = (reason?: string | null) => {
       try {
-        localStorage.setItem("jalwa_ban_notice", JSON.stringify({
-          userId: user.id,
-          email: user.email ?? "",
-          reason: reason ?? "",
-        }));
+        localStorage.setItem("jalwa_ban_notice", JSON.stringify({ userId: user.id, email: user.email ?? "", reason: reason ?? "" }));
       } catch {}
       void supabase.auth.signOut();
       setSession(null);
       setProfile(null);
       setRoles([]);
-      if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
-        window.location.replace("/auth?reason=banned");
-      }
+      setAdminPermissions([]);
+      if (typeof window !== "undefined" && window.location.pathname !== "/auth") window.location.replace("/auth?reason=banned");
     };
-    // React to an admin ban while the account is already open, not only on next login.
-    const banChannel = supabase
-      .channel(`auth-ban-status:${user.id}`)
-      .on("postgres_changes", {
-        event: "UPDATE",
-        schema: "public",
-        table: "profiles",
-        filter: `id=eq.${user.id}`,
-      }, (payload) => {
+    const banChannel = supabase.channel(`auth-ban-status:${user.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` }, (payload) => {
         const updated = payload.new as { status?: string; ban_reason?: string | null };
         if (updated.status === "banned") enforceBan(updated.ban_reason);
-      })
-      .subscribe();
+      }).subscribe();
 
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
@@ -265,9 +239,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (error) console.warn("[useAuth] presence", error);
       });
     };
-    // Presence is eventually consistent. Keep the periodic heartbeat at 90s
-    // so mobile radios/CPUs can stay idle for longer, while visibility/focus
-    // events still make returning to the app responsive.
     lastHeartbeatAtRef.current = 0;
     heartbeatRef.current = setInterval(tick, 90_000);
     const onFocus = () => tick();
@@ -284,7 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [user]);
 
-  return <AuthContext.Provider value={{ session, user, profile, roles, isAdmin, loading, refresh, signOut }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ session, user, profile, roles, adminPermissions, canAccessAdmin, isAdmin, loading, refresh, signOut }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
