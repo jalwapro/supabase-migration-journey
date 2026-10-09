@@ -21,26 +21,29 @@ export const Route = createFileRoute("/api/submit-ban-appeal")({
 
         let body: { userId?: string; email?: string; message?: string };
         try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
-        const userId = String(body.userId ?? "").trim();
+        const userIdInput = String(body.userId ?? "").trim();
         const email = String(body.email ?? "").trim().toLowerCase();
         const message = String(body.message ?? "").trim();
-        if (!isUuid(userId) || !email.includes("@") || message.length < 10 || message.length > 2000) {
+        if ((userIdInput && !isUuid(userIdInput)) || !email.includes("@") || message.length < 10 || message.length > 2000) {
           return json({ error: "Enter the banned account email and an appeal of 10–2000 characters." }, 400);
         }
 
         const { createClient } = await import("@supabase/supabase-js");
         const admin = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
-        const { data: authData, error: authError } = await admin.auth.admin.getUserById(userId);
-        if (authError || !authData.user || (authData.user.email ?? "").toLowerCase() !== email) {
-          return json({ error: "Account ID and email do not match." }, 403);
+        let userId: string | null = userIdInput || null;
+        if (userId) {
+          const { data: authData, error: authError } = await admin.auth.admin.getUserById(userId);
+          if (authError || !authData.user || (authData.user.email ?? "").toLowerCase() !== email) {
+            return json({ error: "Account ID and email do not match." }, 403);
+          }
+          const { data: profile, error: profileError } = await admin.from("profiles").select("status").eq("id", userId).maybeSingle();
+          if (profileError) return json({ error: "Could not verify account status.", detail: profileError.message }, 500);
+          if (profile?.status !== "banned") return json({ error: "This account is not currently marked as banned." }, 409);
         }
-        const { data: profile, error: profileError } = await admin.from("profiles").select("status").eq("id", userId).maybeSingle();
-        if (profileError) return json({ error: "Could not verify account status." }, 500);
-        if (profile?.status !== "banned") return json({ error: "This account is not currently marked as banned." }, 409);
 
         const { data: existing, error: existingError } = await admin
           .from("user_ban_appeals").select("id,status,created_at")
-          .eq("user_id", userId).eq("status", "pending").limit(1).maybeSingle();
+          .eq("email", email).eq("status", "pending").limit(1).maybeSingle();
         if (existingError) return json({ error: "Could not check existing appeals." }, 500);
         if (existing) return json({ ok: true, alreadySubmitted: true, message: "Your appeal request has already been submitted and is pending review." });
 
