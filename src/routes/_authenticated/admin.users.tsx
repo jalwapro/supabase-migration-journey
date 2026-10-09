@@ -121,11 +121,20 @@ function UsersAdmin() {
 
   const setStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("profiles").update({ status }).eq("id", id);
-      if (error) throw error;
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError) throw sessionError;
+      const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Your admin session has expired. Please sign in again.");
+      const response = await fetch("/api/admin-user-ban", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: id, banned: status === "banned" }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ? `${result.error}${result.detail ? `: ${result.detail}` : ""}` : "Could not update user ban status");
     },
-    onSuccess: () => {
-      toast.success("Updated");
+    onSuccess: (_data, variables) => {
+      toast.success(variables.status === "banned" ? "User banned in JALWA and Supabase Auth" : "User unbanned");
       qc.invalidateQueries({ queryKey: ["admin_users"] });
     },
     onError: (e: Error) => toast.error(e.message),
