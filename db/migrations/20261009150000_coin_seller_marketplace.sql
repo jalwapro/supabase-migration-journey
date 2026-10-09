@@ -220,6 +220,13 @@ begin
      v_buyer_balance, 'Coin seller transfer', auth.uid())
   returning id into v_tx_id;
 
+  insert into public.wallet_transactions
+    (user_id, kind, coins_delta, balance_coins_after, ref_type, ref_id, note)
+  values
+    (v_buyer.id, 'seller_transfer', p_coins::integer, v_buyer_balance::integer,
+     'coin_seller_transfer', v_tx_id,
+     'Coins received from seller ' || coalesce(v_seller.public_name, 'JALWA seller'));
+
   return jsonb_build_object(
     'transaction_id', v_tx_id,
     'buyer_id', v_buyer.id,
