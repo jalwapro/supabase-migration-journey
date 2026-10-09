@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Loader2, Search, Shield, Ban, Coins as CoinsIcon, Crown, X } from "lucide-react";
+import { Loader2, Search, Shield, Ban, Coins as CoinsIcon, Crown, X, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { LevelAvatar } from "@/components/LevelAvatar";
 
@@ -98,6 +98,35 @@ function UsersAdmin() {
       if (error) throw error;
       return (data ?? []) as Row[];
     },
+  });
+
+  const appeals = useQuery({
+    queryKey: ["admin_ban_appeals"],
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data: s } = await supabase.auth.getSession();
+      const token = s.session?.access_token;
+      if (!token) throw new Error("Admin session expired");
+      const response = await fetch("/api/admin-ban-appeals", { headers: { Authorization: "Bearer " + token } });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not load appeals");
+      return (result.appeals ?? []) as Array<{ id: string; user_id: string; email: string; appeal_message: string; status: string; admin_response: string | null; created_at: string; profile: { username: string | null; full_name: string | null; user_code: string | null } | null }>;
+    },
+  });
+  const reviewAppeal = useMutation({
+    mutationFn: async ({ appealId, status, responseText }: { appealId: string; status: "approved" | "rejected"; responseText: string }) => {
+      const { data: s } = await supabase.auth.getSession();
+      const token = s.session?.access_token;
+      if (!token) throw new Error("Admin session expired");
+      const response = await fetch("/api/admin-ban-appeals", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ appealId, status, response: responseText }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || "Could not save review");
+    },
+    onSuccess: () => { toast.success("Appeal review saved"); qc.invalidateQueries({ queryKey: ["admin_ban_appeals"] }); },
+    onError: (e: Error) => toast.error(e.message),
   });
 
   const frames = useQuery({
@@ -304,6 +333,25 @@ function UsersAdmin() {
           </div>
         )}
       </div>
+      <section className="mt-6 glass overflow-hidden rounded-2xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div><h2 className="flex items-center gap-2 text-sm font-bold"><MessageSquare className="h-4 w-4 text-fuchsia-300" /> Ban Appeals</h2><p className="mt-1 text-[11px] text-muted-foreground">Appeal requests submitted by banned users.</p></div>
+          <button onClick={() => void appeals.refetch()} className="rounded-full border border-border px-3 py-1.5 text-xs">Refresh</button>
+        </div>
+        {appeals.isLoading ? <p className="p-4 text-xs text-muted-foreground">Loading appeals…</p> : appeals.isError ? <p className="p-4 text-xs text-red-300">{(appeals.error as Error).message}</p> : !appeals.data?.length ? <p className="p-4 text-xs text-muted-foreground">No appeal requests yet.</p> : (
+          <div className="divide-y divide-border/60">{appeals.data.map((a) => (
+            <article key={a.id} className="space-y-3 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-semibold">{a.profile?.username ?? a.profile?.full_name ?? "JALWA User"} · {a.profile?.user_code ?? a.user_id}</p><p className="text-xs text-muted-foreground">{a.email} · {new Date(a.created_at).toLocaleString()}</p></div><span className="rounded-full bg-amber-400/10 px-2 py-1 text-[10px] font-bold uppercase text-amber-300">{a.status}</span></div>
+              <p className="whitespace-pre-wrap rounded-xl bg-background/50 p-3 text-sm leading-6">{a.appeal_message}</p>
+              {a.admin_response && <p className="text-xs text-muted-foreground">Admin response: {a.admin_response}</p>}
+              {a.status === "pending" && <div className="flex flex-wrap gap-2">
+                <button disabled={reviewAppeal.isPending} onClick={() => { const responseText = window.prompt("Response to user:", "Your appeal has been approved. The moderation team will restore access separately."); if (responseText !== null) reviewAppeal.mutate({ appealId: a.id, status: "approved", responseText }); }} className="rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300 disabled:opacity-50">Approve appeal</button>
+                <button disabled={reviewAppeal.isPending} onClick={() => { const responseText = window.prompt("Reason for rejecting appeal:", "The ban remains in place because the violation was confirmed."); if (responseText !== null) reviewAppeal.mutate({ appealId: a.id, status: "rejected", responseText }); }} className="rounded-full bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-300 disabled:opacity-50">Reject appeal</button>
+              </div>}
+            </article>
+          ))}</div>
+        )}
+      </section>
       <div className="mt-3 flex items-center justify-between gap-2">
         <span className="text-[11px] text-muted-foreground">Page {page} · showing up to 50 users</span>
         <div className="flex gap-2">
