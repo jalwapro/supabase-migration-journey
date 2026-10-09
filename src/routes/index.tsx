@@ -45,6 +45,7 @@ import {
   MoreVertical,
   LifeBuoy,
   Share2,
+  Globe2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -294,6 +295,7 @@ function Home() {
         .limit(10);
       if (tab === "pk") sel = sel.eq("pk_battle", true);
       else sel = sel.eq("room_type", tab);
+      if (countryFilter !== "Global") sel = sel.eq("host.country", countryFilter);
       const { data, error } = await sel;
       if (error) throw error;
       const list = (data ?? []) as unknown as Room[];
@@ -354,6 +356,7 @@ function Home() {
         .range(from, to);
       if (tab === "pk") sel = sel.eq("pk_battle", true);
       else sel = sel.eq("room_type", tab);
+      if (countryFilter !== "Global") sel = sel.eq("host.country", countryFilter);
       if (debouncedQuery) sel = sel.ilike("title", `%${debouncedQuery}%`);
       const { data, error } = await sel;
       if (error) throw error;
@@ -742,6 +745,14 @@ function Home() {
 
           {/* Rooms — Top Hosts + All Live */}
           <section className="mt-4 space-y-5 px-4">
+            <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-card/80 px-3 py-2.5 text-sm">
+              <Globe2 className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
+              <span className="shrink-0 text-xs font-bold text-muted-foreground">Country</span>
+              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="min-w-0 flex-1 bg-transparent text-sm font-bold text-foreground outline-none">
+                <option value="Global">🌐 All Countries</option>
+                {HOME_COUNTRIES.map((country) => <option key={country} value={country}>{COUNTRY_FLAGS[country] ?? "🌍"} {country}</option>)}
+              </select>
+            </label>
             {isRoomsLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -1065,7 +1076,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
+            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
@@ -1112,7 +1123,7 @@ function RoomListItem({ room }: { room: Room }) {
         <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <TypeIcon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
+          <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}{room.host?.country && <span className="shrink-0">{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
           {room.pk_battle && (
             <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
               <Flame className="h-2 w-2" /> PK
