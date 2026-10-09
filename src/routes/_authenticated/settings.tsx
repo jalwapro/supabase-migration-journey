@@ -14,6 +14,7 @@ import {
   AtSign,
   FileText,
   Globe2,
+  MapPin,
   Lock,
   Save,
   Sparkles,
@@ -176,6 +177,18 @@ function Page() {
               onChange={setCountry}
               placeholder="e.g. Pakistan"
             />
+            <FancyField
+              icon={<MapPin className="h-4 w-4" />}
+              label="City"
+              value={city}
+              onChange={setCity}
+              placeholder="Your city"
+            />
+            <button type="button" onClick={() => void detectLocation()} disabled={locating || saving} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/10 px-3 py-2.5 text-xs font-bold text-foreground disabled:opacity-50">
+              {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+              {locating ? "Detecting GPS location…" : "Detect city & country using GPS"}
+            </button>
+            <p className="text-[10px] text-muted-foreground">Your device asks permission first. Only city and country are shown on your profile; exact GPS coordinates are not saved.</p>
 
             <div>
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
