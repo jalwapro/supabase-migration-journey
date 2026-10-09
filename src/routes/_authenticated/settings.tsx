@@ -37,7 +37,7 @@ function Page() {
   const [bio, setBio] = useState("");
   const [avatar, setAvatar] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other">("other");
-  const [country, setCountry] = useState("");
+  const [country, setCountry] = useState("");\n  const [city, setCity] = useState("");\n  const [locating, setLocating] = useState(false);
   const [pw, setPw] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -50,7 +50,7 @@ function Page() {
     setBio(profile.bio ?? "");
     setAvatar(profile.avatar ?? "");
     setGender((profile.gender as any) ?? "other");
-    setCountry(profile.country ?? "");
+    setCountry(profile.country ?? "");\n    setCity(profile.city ?? "");
   }, [profile]);
 
   async function onPickAvatar(file: File) {
@@ -83,7 +83,7 @@ function Page() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ username, full_name: fullName, bio, gender, country })
+      .update({ username, full_name: fullName, bio, gender, country, city })
       .eq("id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -91,7 +91,7 @@ function Page() {
     refresh?.();
   }
 
-  async function changePassword() {
+  async function detectLocation() {\n    if (!navigator.geolocation) return toast.error("GPS location is not supported on this device");\n    setLocating(true);\n    try {\n      const position = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }));\n      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=10&addressdetails=1`;\n      const response = await fetch(url, { headers: { Accept: "application/json" } });\n      if (!response.ok) throw new Error("Could not look up your city. Please try again.");\n      const result = await response.json();\n      const address = result.address ?? {};\n      const detectedCountry = address.country as string | undefined;\n      const detectedCity = (address.city ?? address.town ?? address.village ?? address.municipality ?? address.county) as string | undefined;\n      if (!detectedCountry) throw new Error("Country could not be detected. Please enter it manually.");\n      setCountry(detectedCountry);\n      if (detectedCity) setCity(detectedCity);\n      toast.success(`Location detected: ${detectedCity ? detectedCity + ", " : ""}${detectedCountry}. Press Save Changes to save it.`);\n    } catch (error) {\n      const message = error instanceof GeolocationPositionError ? (error.code === 1 ? "Please allow location access in your device/browser settings." : error.code === 3 ? "Location request timed out. Try again." : "Unable to get your device location.") : error instanceof Error ? error.message : "Could not detect location";\n      toast.error(message);\n    } finally { setLocating(false); }\n  }\n\n  async function changePassword() {
     if (pw.length < 6) return toast.error("Password must be 6+ chars");
     const { error } = await supabase.auth.updateUser({ password: pw });
     if (error) return toast.error(error.message);
