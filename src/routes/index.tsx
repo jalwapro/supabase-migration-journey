@@ -441,7 +441,7 @@ function Home() {
 
   return (
     <>
-      <div className="min-h-[100dvh] pb-28">
+      <div className="relative min-h-[100dvh] overflow-x-clip bg-gradient-to-b from-[#1E0B36] via-[#10051C] to-[#0A0210] pb-28 text-white selection:bg-yellow-500/30 selection:text-yellow-200">
         <FirstHomeLoading
           authLoading={loading}
           roomsLoading={isRoomsLoading}
@@ -450,7 +450,7 @@ function Home() {
         />
         {/* Premium top bar */}
         <header
-          className="sticky top-0 z-30 border-b border-white/5 bg-background/60 backdrop-blur-2xl"
+          className="sticky top-0 z-30 border-b border-white/10 bg-[#10051C]/85 text-white shadow-[0_8px_28px_rgba(0,0,0,0.24)] backdrop-blur-2xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
@@ -480,13 +480,13 @@ function Home() {
             </Link>
             )}
 
-            <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 shadow-inner backdrop-blur transition focus-within:border-[color:var(--primary)]/60 focus-within:bg-white/10">
-              <Search className="h-4 w-4 text-muted-foreground transition group-focus-within:text-[color:var(--primary)]" />
+            <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-[#1D0C33]/80 px-3 py-2 shadow-inner backdrop-blur transition focus-within:border-yellow-400/60 focus-within:bg-[#2A154A]/80">
+              <Search className="h-4 w-4 text-white/45 transition group-focus-within:text-yellow-400" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search rooms, users, ID…"
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                className="min-w-0 flex-1 bg-transparent text-sm text-white outline-none placeholder:text-white/40"
               />
             </label>
 
@@ -496,7 +496,7 @@ function Home() {
                   <Link
                     to="/notifications"
                     aria-label="Notifications"
-                    className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+                    className="relative grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white/80 transition hover:border-yellow-400/40 hover:text-yellow-400"
                   >
                     <Bell className="h-4 w-4" />
                     {unreadCount > 0 && (
@@ -530,7 +530,7 @@ function Home() {
                   type="button"
                   onClick={() => setMenuOpen(true)}
                   aria-label="More"
-                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-white/5 text-foreground/80 hover:text-[color:var(--primary)]"
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/10 bg-[#2A154A]/50 text-white/80 transition hover:border-yellow-400/40 hover:text-yellow-400"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
@@ -724,10 +724,10 @@ function Home() {
 
           {/* Rooms — Top Hosts + All Live */}
           <section className="mt-4 space-y-5 px-4">
-            <label className="flex items-center gap-2 rounded-2xl border border-white/10 bg-card/80 px-3 py-2.5 text-sm">
-              <Globe2 className="h-4 w-4 shrink-0 text-[color:var(--primary)]" />
-              <span className="shrink-0 text-xs font-bold text-muted-foreground">Country</span>
-              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="min-w-0 flex-1 rounded-lg bg-transparent text-sm font-bold text-foreground outline-none focus-visible:ring-1 focus-visible:ring-[color:var(--primary)]" style={{ colorScheme: "dark" }}>
+            <label className="flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-gradient-to-r from-[#251142]/95 to-[#160925]/95 px-3 py-2.5 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl">
+              <Globe2 className="h-4 w-4 shrink-0 text-yellow-400" />
+              <span className="shrink-0 text-[10px] font-black uppercase tracking-[.18em] text-white/60">Country</span>
+              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="min-w-0 flex-1 rounded-lg bg-transparent text-sm font-bold text-white outline-none focus-visible:ring-1 focus-visible:ring-yellow-400" style={{ colorScheme: "dark" }}>
                 <option value="Global" style={{ backgroundColor: "#160808", color: "#fff" }}>🌐 All Countries</option>
                 {HOME_COUNTRIES.map((country) => <option key={country} value={country} style={{ backgroundColor: "#160808", color: "#fff" }}>{COUNTRY_FLAGS[country] ?? "🌍"} {country}</option>)}
               </select>
@@ -743,8 +743,8 @@ function Home() {
                 {topHosts.length > 0 && (
                   <div>
                     <div className="mb-2 flex items-center gap-2">
-                      <Crown className="h-4 w-4 text-[color:var(--gold)]" />
-                      <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
+                      <Crown className="h-4 w-4 text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.35)]" />
+                      <h2 className="text-[10px] font-black uppercase tracking-[.22em] text-white/75">
                         Top Hosts
                       </h2>
                     </div>
@@ -760,7 +760,7 @@ function Home() {
                 {restRooms.length > 0 && (
                   <div>
                     <div className="mb-2 flex items-center gap-2">
-                      <Radio className="h-4 w-4 text-[color:var(--primary)]" />
+                      <Radio className="h-4 w-4 text-yellow-400" />
                       <h2 className="text-xs font-black uppercase tracking-wider text-foreground/80">
                         All Live Rooms
                       </h2>
@@ -774,7 +774,7 @@ function Home() {
                       <button
                         onClick={() => restRoomsInfinite.fetchNextPage()}
                         disabled={restRoomsInfinite.isFetchingNextPage}
-                        className="mt-3 w-full rounded-xl border border-white/10 bg-white/5 py-2 text-xs font-bold uppercase tracking-wider text-foreground/80 hover:bg-white/10 disabled:opacity-50"
+                        className="mt-3 w-full rounded-xl border border-white/10 bg-[#251142]/80 py-2.5 text-[10px] font-black uppercase tracking-[.2em] text-white/80 transition hover:border-yellow-400/30 hover:bg-[#2A154A] disabled:opacity-50"
                       >
                         {restRoomsInfinite.isFetchingNextPage ? "Loading…" : "Load more"}
                       </button>
@@ -1075,7 +1075,7 @@ function RoomListItem({ room }: { room: Room }) {
     <Link
       to="/room/$roomId"
       params={{ roomId: room.id }}
-      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-card/70 p-2.5 shadow-[0_6px_20px_-15px_rgba(0,0,0,0.6)] transition active:scale-[0.99]"
+      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-r from-[#251142]/95 to-[#120624]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition active:scale-[0.99] hover:border-yellow-400/20"
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
         {room.cover_url ? (
