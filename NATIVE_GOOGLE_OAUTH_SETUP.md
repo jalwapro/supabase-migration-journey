@@ -15,11 +15,11 @@ The native Google plugin uses Android Credential Manager / iOS Google Sign-In SD
 
 ## Required build configuration
 
-Set this Vite environment variable in Vercel and in the native build environment:
+The code uses the Web OAuth client from the current Jalwa Firebase project:
 
-`VITE_GOOGLE_WEB_CLIENT_ID=<Google Web OAuth Client ID>`
+`jalwa-84344` — `923506443706-bfroam18nheqfkdpfrhevd2tdgkt2pqj.apps.googleusercontent.com`
 
-The plugin requires the Web client ID in `GoogleSignIn.initialize()` on Android and iOS.
+Do not set `VITE_GOOGLE_WEB_CLIENT_ID` to the legacy `516412597113-2plcc8mbokimpljcmjfdon3pdnos0v0d.apps.googleusercontent.com`; that client belongs to a different project. The plugin requires the Web client ID in `GoogleSignIn.initialize()` on Android and iOS.
 
 ## Android Google Cloud setup
 
@@ -30,6 +30,8 @@ Create an Android OAuth client in the same Google Cloud project as the Web clien
 - Keep the Web OAuth client ID for `VITE_GOOGLE_WEB_CLIENT_ID`.
 
 A matching Android client + SHA-1 is required or account selection can succeed and sign-in can fail immediately afterward.
+
+If Firebase says **“An identical OAuth client already exists”**, the package-name + SHA-1 pair is already registered in another Google Cloud project. Do not create duplicate JSON entries or delete an OAuth client blindly. Find the existing Android OAuth client in the other project, then either safelist that external client ID in Firebase Authentication → Sign-in method → Google (if the Firebase console offers that option), or remove the old client only after verifying it is not used by any live app. If you cannot access the project that owns the duplicate, Firebase Support must resolve the ownership conflict.
 
 ## iOS setup
 
