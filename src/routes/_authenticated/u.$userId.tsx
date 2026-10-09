@@ -66,6 +66,8 @@ type FullProfile = {
   bio: string | null;
   gender: string | null;
   country: string | null;
+  country_code: string | null;
+  city: string | null;
   coins: number;
   diamonds: number;
   level: number;
@@ -544,9 +546,11 @@ function UserProfilePage() {
                     ID {p.user_code} <Copy className="h-3 w-3 opacity-60" />
                   </button>
                 )}
-                {p.country && (
+                {(p.country || p.city) && (
                   <span className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5">
-                    <MapPin className="h-3 w-3" /> {p.country}
+                    <MapPin className="h-3 w-3" />
+                    {p.country && <span>{(p.country_code && /^[A-Z]{2}$/i.test(p.country_code) ? String.fromCodePoint(...[...p.country_code.toUpperCase()].map((char) => 127397 + char.charCodeAt(0))) : ({ Pakistan: "🇵🇰", India: "🇮🇳", Bangladesh: "🇧🇩", "Saudi Arabia": "🇸🇦", "United Arab Emirates": "🇦🇪", UAE: "🇦🇪", Turkey: "🇹🇷", Türkiye: "🇹🇷", Egypt: "🇪🇬", Indonesia: "🇮🇩", Malaysia: "🇲🇾", "United States": "🇺🇸", "United Kingdom": "🇬🇧", Philippines: "🇵🇭", Nigeria: "🇳🇬", Morocco: "🇲🇦", Iraq: "🇮🇶", Kuwait: "🇰🇼", Qatar: "🇶🇦" } as Record<string, string>)[p.country] ?? "🌍")} {p.country}</span>}
+                    {p.city && <span>· {p.city}</span>}
                   </span>
                 )}
                 {p.gender && (

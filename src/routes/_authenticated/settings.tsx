@@ -14,6 +14,7 @@ import {
   AtSign,
   FileText,
   Globe2,
+  MapPin,
   Lock,
   Save,
   Sparkles,
@@ -38,6 +39,9 @@ function Page() {
   const [avatar, setAvatar] = useState("");
   const [gender, setGender] = useState<"male" | "female" | "other">("other");
   const [country, setCountry] = useState("");
+  const [countryCode, setCountryCode] = useState("");
+  const [city, setCity] = useState("");
+  const [locating, setLocating] = useState(false);
   const [pw, setPw] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -51,6 +55,8 @@ function Page() {
     setAvatar(profile.avatar ?? "");
     setGender((profile.gender as any) ?? "other");
     setCountry(profile.country ?? "");
+    setCountryCode(profile.country_code ?? "");
+    setCity(profile.city ?? "");
   }, [profile]);
 
   async function onPickAvatar(file: File) {
@@ -83,12 +89,37 @@ function Page() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ username, full_name: fullName, bio, gender, country })
+      .update({ username, full_name: fullName, bio, gender, country, country_code: countryCode || null, city })
       .eq("id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Profile saved");
     refresh?.();
+  }
+
+  async function detectLocation() {
+    if (!navigator.geolocation) return toast.error("GPS location is not supported on this device");
+    setLocating(true);
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 }));
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=10&addressdetails=1`;
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("Could not look up your city. Please try again.");
+      const result = await response.json();
+      const address = result.address ?? {};
+      const detectedCountry = address.country as string | undefined;
+      const detectedCity = (address.city ?? address.town ?? address.village ?? address.municipality ?? address.county) as string | undefined;
+      const detectedCountryCode = typeof address.country_code === "string" ? address.country_code.toUpperCase() : "";
+      if (!detectedCountry) throw new Error("Country could not be detected. Please enter it manually.");
+      setCountry(detectedCountry);
+      setCountryCode(detectedCountryCode);
+      if (detectedCity) setCity(detectedCity);
+      toast.success(`Location detected: ${detectedCity ? detectedCity + ", " : ""}${detectedCountry}. Press Save Changes to save it.`);
+    } catch (error) {
+      const geoError = error as GeolocationPositionError;
+      const message = typeof geoError?.code === "number" ? (geoError.code === 1 ? "Please allow location access in your device/browser settings." : geoError.code === 3 ? "Location request timed out. Try again." : "Unable to get your device location.") : error instanceof Error ? error.message : "Could not detect location";
+      toast.error(message);
+    } finally { setLocating(false); }
   }
 
   async function changePassword() {
@@ -173,9 +204,21 @@ function Page() {
               icon={<Globe2 className="h-4 w-4" />}
               label="Country"
               value={country}
-              onChange={setCountry}
+              onChange={(value) => { setCountry(value); setCountryCode(""); }}
               placeholder="e.g. Pakistan"
             />
+            <FancyField
+              icon={<MapPin className="h-4 w-4" />}
+              label="City"
+              value={city}
+              onChange={setCity}
+              placeholder="Your city"
+            />
+            <button type="button" onClick={() => void detectLocation()} disabled={locating || saving} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/10 px-3 py-2.5 text-xs font-bold text-foreground disabled:opacity-50">
+              {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+              {locating ? "Detecting GPS location…" : "Detect city & country using GPS"}
+            </button>
+            <p className="text-[10px] text-muted-foreground">Your device asks permission first. Only city and country are shown on your profile; exact GPS coordinates are not saved.</p>
 
             <div>
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
