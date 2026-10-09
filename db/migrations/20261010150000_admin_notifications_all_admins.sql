@@ -18,7 +18,9 @@ create index if not exists admin_notifications_unread_idx
 
 alter table public.admin_notifications enable row level security;
 revoke all on public.admin_notifications from anon;
-grant select, update on public.admin_notifications to authenticated;
+grant select on public.admin_notifications to authenticated;
+revoke update on public.admin_notifications from authenticated;
+grant update (read_at) on public.admin_notifications to authenticated;
 
 drop policy if exists "Admins can read own admin notifications" on public.admin_notifications;
 create policy "Admins can read own admin notifications"
