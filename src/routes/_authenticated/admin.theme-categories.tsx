@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { AdminHubTabs, VISUALS_VIP_TABS } from "@/components/admin/AdminHubTabs";
 import { Plus, Trash2, FolderTree, Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -84,6 +85,7 @@ function ThemeCatsAdmin() {
 
   return (
     <>
+      <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
       <AdminPageHeader title="Shop Categories" subtitle="Sidebar categories in the Shop (Car, Frame, Ring…)" />
       <div className="glass mb-4 max-w-2xl rounded-2xl p-4">
         <div className="grid grid-cols-3 gap-2">
