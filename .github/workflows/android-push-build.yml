@@ -41,7 +41,6 @@ jobs:
           if [ -f android/app/google-services.json ]; then
             cp android/app/google-services.json .native-build/google-services.json
           fi
-          rm -rf android
           npx cap add android
           if [ -f .native-build/google-services.json ]; then
             cp .native-build/google-services.json android/app/google-services.json
@@ -49,6 +48,7 @@ jobs:
 
       - name: Sync Capacitor and enforce Android permissions
         run: |
+          mkdir -p android/app/src/main/assets
           npx cap sync android
           node scripts/ensure-android-permissions.mjs
 
