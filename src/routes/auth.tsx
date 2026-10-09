@@ -10,9 +10,10 @@ import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
 
 const JALWA_PRODUCTION_URL = "https://www.jalwa.pro/";
 const NATIVE_OAUTH_REDIRECT = "app.lovable.jalwa://auth/callback";
+// Must belong to the same Google Cloud/Firebase project as Jalwa's Android app.
+ // Do not use the legacy 516412597113 client: it belongs to a different project.
 const GOOGLE_WEB_CLIENT_ID =
-  (import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined) ??
-  "516412597113-2plcc8mbokimpljcmjfdon3pdnos0v0d.apps.googleusercontent.com";
+  "923506443706-bfroam18nheqfkdpfrhevd2tdgkt2pqj.apps.googleusercontent.com";
 
 let googleSignInInitialized = false;
 
