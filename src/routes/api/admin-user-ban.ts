@@ -18,13 +18,15 @@ export const Route = createFileRoute("/api/admin-user-ban")({
       POST: async ({ request }) => {
         const key = serviceKey();
         if (!key) return json({ error: "Server auth administration is not configured" }, 503);
-        const bearer = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+        const bearer = (request.headers.get("authorization") ?? "").replace(/^Bearer\\s+/i, "").trim();
         if (!bearer) return json({ error: "Authentication required" }, 401);
 
-        let body: { userId?: string; banned?: boolean };
+        let body: { userId?: string; banned?: boolean; reason?: string };
         try { body = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
         const userId = String(body.userId ?? "").trim();
+        const reason = String(body.reason ?? "").trim().slice(0, 1000);
         if (!isUuid(userId) || typeof body.banned !== "boolean") return json({ error: "Valid userId and banned flag are required" }, 400);
+        if (body.banned && reason.length < 5) return json({ error: "Please provide a ban reason (at least 5 characters)." }, 400);
 
         const { createClient } = await import("@supabase/supabase-js");
         const admin = createClient(supabaseUrl(), key, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -41,24 +43,24 @@ export const Route = createFileRoute("/api/admin-user-ban")({
         if (targetError || !target.user) return json({ error: "Target user not found" }, 404);
 
         if (body.banned) {
-          const { error: profileError } = await admin.from("profiles").update({ status: "banned" }).eq("id", userId);
+          const { error: profileError } = await admin.from("profiles").update({ status: "banned", ban_reason: reason }).eq("id", userId);
           if (profileError) return json({ error: "Could not update profile status", detail: profileError.message }, 500);
           const { error: banError } = await admin.auth.admin.updateUserById(userId, { ban_duration: "876000h" });
           if (banError) {
-            await admin.from("profiles").update({ status: "active" }).eq("id", userId);
+            await admin.from("profiles").update({ status: "active", ban_reason: null }).eq("id", userId);
             return json({ error: "Supabase Auth ban failed", detail: banError.message }, 500);
           }
         } else {
           const { error: unbanError } = await admin.auth.admin.updateUserById(userId, { ban_duration: "none" });
           if (unbanError) return json({ error: "Supabase Auth unban failed", detail: unbanError.message }, 500);
-          const { error: profileError } = await admin.from("profiles").update({ status: "active" }).eq("id", userId);
+          const { error: profileError } = await admin.from("profiles").update({ status: "active", ban_reason: null }).eq("id", userId);
           if (profileError) {
             await admin.auth.admin.updateUserById(userId, { ban_duration: "876000h" });
             return json({ error: "Could not update profile status", detail: profileError.message }, 500);
           }
         }
 
-        return json({ ok: true, userId, status: body.banned ? "banned" : "active" });
+        return json({ ok: true, userId, status: body.banned ? "banned" : "active", reason: body.banned ? reason : null });
       },
     },
   },
