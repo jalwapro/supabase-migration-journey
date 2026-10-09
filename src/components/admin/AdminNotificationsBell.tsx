@@ -82,7 +82,6 @@ export function AdminNotificationsBell() {
 
   const markAllRead = async () => {
     if (!user || unread === 0) return;
-    const ids = items.filter((item) => !item.read_at).map((item) => item.id);
     const readAt = new Date().toISOString();
     setItems((current) => current.map((item) => item.read_at ? item : { ...item, read_at: readAt }));
     const { error } = await supabase.from("admin_notifications")
