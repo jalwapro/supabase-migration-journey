@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/admin-ban-appeals")({
           .select("id,user_id,email,appeal_message,status,admin_response,created_at,reviewed_at")
           .order("created_at", { ascending: false }).limit(100);
         if (error) return json({ error: "Could not load appeals", detail: error.message }, 500);
-        const ids = [...new Set((data ?? []).map((a) => a.user_id).filter((id): id is string => Boolean(id))];
+        const ids = (data ?? []).map((a) => a.user_id).filter(Boolean);
         const { data: profiles, error: profileError } = ids.length
           ? await auth.admin.from("profiles").select("id,username,full_name,user_code").in("id", ids)
           : { data: [], error: null };
