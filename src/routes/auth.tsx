@@ -103,7 +103,7 @@ function AuthPage() {
   useEffect(() => {
     if (typeof window === "undefined" || new URLSearchParams(window.location.search).get("reason") !== "banned") return;
     try {
-      const raw = sessionStorage.getItem("jalwa_ban_notice");
+      const raw = localStorage.getItem("jalwa_ban_notice");
       if (raw) {
         const parsed = JSON.parse(raw) as { userId?: string; email?: string; reason?: string };
         if (parsed.userId) {
