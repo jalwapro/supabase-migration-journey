@@ -15,7 +15,8 @@ type Seller = {
   inventory?: { available_coins: number; total_allocated: number; total_sold: number } | null;
 };
 type Profile = { id: string; username: string | null; user_code: string | null; avatar: string | null };
-type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; seller?: Profile | null; buyer?: Profile | null };\ntype FundingAudit = { id: string; seller_id: string; amount_pkr: number; coins_credited: number; coins_per_pkr: number; payment_method: string; payment_reference: string; note: string | null; inventory_before: number; inventory_after: number; verified_by: string; verified_at: string; seller?: Profile | null; verifier?: Profile | null };
+type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; seller?: Profile | null; buyer?: Profile | null };
+type FundingAudit = { id: string; seller_id: string; amount_pkr: number; coins_credited: number; coins_per_pkr: number; payment_method: string; payment_reference: string; note: string | null; inventory_before: number; inventory_after: number; verified_by: string; verified_at: string; seller?: Profile | null; verifier?: Profile | null };
 
 function CoinSellersAdmin() {
   const qc = useQueryClient();
@@ -28,7 +29,13 @@ function CoinSellersAdmin() {
   const [paymentReference, setPaymentReference] = useState("");
   const [stockNote, setStockNote] = useState("");
   const [selectedSeller, setSelectedSeller] = useState("");
-  const [userSearch, setUserSearch] = useState("");\n  const [fundingAmount, setFundingAmount] = useState("");\n  const [fundingCoins, setFundingCoins] = useState("");\n  const [fundingMethod, setFundingMethod] = useState("jazzcash");\n  const [fundingReference, setFundingReference] = useState("");\n  const [fundingNote, setFundingNote] = useState("");\n  const [fundingSeller, setFundingSeller] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  const [fundingAmount, setFundingAmount] = useState("");
+  const [fundingCoins, setFundingCoins] = useState("");
+  const [fundingMethod, setFundingMethod] = useState("jazzcash");
+  const [fundingReference, setFundingReference] = useState("");
+  const [fundingNote, setFundingNote] = useState("");
+  const [fundingSeller, setFundingSeller] = useState("");
 
   const sellers = useQuery({
     queryKey: ["admin_coin_sellers"],
@@ -92,7 +99,7 @@ function CoinSellersAdmin() {
       const amount = Number(stock);
       if (!selectedSeller) throw new Error("Choose a seller first.");
       if (!Number.isSafeInteger(amount) || amount === 0 || Math.abs(amount) > 1_000_000_000) throw new Error("Enter a valid non-zero whole coin amount.");
-      if (amount > 0 && !paymentReference.trim() && !stockNote.trim()) throw new Error("Add a payment reference or note before allocating coins.");
+      if (amount > 0) throw new Error("For new stock, use the Verified Payment & Coin Credit form so the received amount is audited.");
       if (amount < 0 && !stockNote.trim()) throw new Error("Add a reason for a negative inventory adjustment.");
       const { error } = await supabase.rpc("admin_adjust_coin_seller_inventory", {
         p_seller_id: selectedSeller, p_delta: amount,
@@ -222,8 +229,8 @@ function CoinSellersAdmin() {
     </section>
 
     <section className="relative overflow-hidden rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-950/20 via-card to-slate-950/40 p-4 shadow-lg shadow-amber-950/10 sm:p-5">
-      <h2 className="mb-3 text-base font-bold">Seller inventory allocation</h2>
-      <p className="mb-4 text-xs text-muted-foreground">Add positive coins only after receiving payment. A negative adjustment can reverse unused inventory, but cannot take stock below zero. Every adjustment is audited.</p>
+      <h2 className="mb-3 text-base font-bold">Inventory correction (negative adjustment only)</h2>
+      <p className="mb-4 text-xs text-muted-foreground">Use this only to reverse unused inventory with a reason. Positive allocations must use the verified payment workflow above.</p>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <select value={selectedSeller} onChange={(e) => setSelectedSeller(e.target.value)} className="rounded-xl border border-border bg-input px-3 py-2 text-sm"><option value="">Select seller</option>{(sellers.data ?? []).map((s) => <option key={s.user_id} value={s.user_id}>{s.profile?.username || s.profile?.user_code || s.user_id.slice(0,8)}</option>)}</select>
         <input type="number" value={stock} onChange={(e) => setStock(e.target.value)} placeholder="+ coins / - adjustment" className="rounded-xl border border-border bg-input px-3 py-2 text-sm" />
