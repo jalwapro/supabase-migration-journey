@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { AdminHubTabs, VISUALS_VIP_TABS } from "@/components/admin/AdminHubTabs";
 import { Plus, Trash2, Upload, Loader2, Gem, Pencil, X, Save, Search, Eye, EyeOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { resolveAssetUrl } from "@/lib/assetUrl";
@@ -241,6 +242,7 @@ function ThemesAdmin() {
 
   return (
     <>
+      <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
       <AdminPageHeader title="Shop Items" subtitle="Cars, frames, rings, entrances — animated items users buy with diamonds" />
 
       <div className="glass mb-4 rounded-2xl p-4">
