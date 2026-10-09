@@ -719,11 +719,7 @@ function Home() {
           </section>
 
           {/* Country filter replaces the Voice Room tab */}
-          <section className="mt-4 px-4">
-          </section>
-
-          {/* Rooms — Top Hosts + All Live */}
-          <section className="mt-4 space-y-5 px-4">
+          <section className="mx-auto mt-4 max-w-md px-4">
             <label className="flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-gradient-to-r from-[#251142]/95 to-[#160925]/95 px-3 py-2.5 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl">
               <Globe2 className="h-4 w-4 shrink-0 text-yellow-400" />
               <span className="shrink-0 text-[10px] font-black uppercase tracking-[.18em] text-white/60">Country</span>
@@ -732,6 +728,10 @@ function Home() {
                 {HOME_COUNTRIES.map((country) => <option key={country} value={country} style={{ backgroundColor: "#160808", color: "#fff" }}>{COUNTRY_FLAGS[country] ?? "🌍"} {country}</option>)}
               </select>
             </label>
+          </section>
+
+          {/* Rooms — Top Hosts + All Live */}
+          <section className="mt-4 space-y-5 px-4">
             {isRoomsLoading ? (
               <div className="grid grid-cols-2 gap-3">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -990,7 +990,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
       <Link
         to="/room/$roomId"
         params={{ roomId: room.id }}
-        className={`group absolute overflow-hidden border border-white/10 bg-card ${glow} transition active:scale-[0.98] ${
+        className={`group absolute overflow-hidden border border-white/10 bg-[#190930] ${glow} transition active:scale-[0.98] ${
           frameTone ? "inset-[7%] rounded-2xl" : "inset-0 rounded-3xl"
         }`}
       >
