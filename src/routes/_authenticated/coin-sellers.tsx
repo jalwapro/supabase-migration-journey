@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowLeft, BadgeCheck, Coins, Copy, ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Coins , ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/coin-sellers")({ component: CoinSellerMarketplace });
@@ -19,7 +19,9 @@ function CoinSellerMarketplace() {
   const [search, setSearch] = useState("");
   const [buyerCode, setBuyerCode] = useState("");
   const [amount, setAmount] = useState("1000");
-  const [confirmTransfer, setConfirmTransfer] = useState(false);\n\n  const myProfile = useQuery({ queryKey: ["coin_seller_my_profile", user?.id], enabled: !!user?.id, queryFn: async () => { const { data, error } = await supabase.from("profiles").select("username,user_code").eq("id", user!.id).single(); if (error) throw error; return data; }, staleTime: 60_000 });
+  const [confirmTransfer, setConfirmTransfer] = useState(false);
+
+  const myProfile = useQuery({ queryKey: ["coin_seller_my_profile", user?.id], enabled: !!user?.id, queryFn: async () => { const { data, error } = await supabase.from("profiles").select("username,user_code").eq("id", user!.id).single(); if (error) throw error; return data; }, staleTime: 60_000 });
 
   const directory = useQuery({
     queryKey: ["coin_seller_public_directory"],
