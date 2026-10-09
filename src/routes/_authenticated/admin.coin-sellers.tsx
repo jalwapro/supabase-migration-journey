@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { BadgeCheck, Coins, Loader2, MessageCircle, Plus, Search, ShieldCheck, Store, Trash2 } from "lucide-react";
+import { BadgeCheck, Coins, Loader2, MessageCircle, Plus, Search, ShieldCheck, Store, Trash2, CreditCard, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/coin-sellers")({ component: CoinSellersAdmin });
@@ -15,7 +15,7 @@ type Seller = {
   inventory?: { available_coins: number; total_allocated: number; total_sold: number } | null;
 };
 type Profile = { id: string; username: string | null; user_code: string | null; avatar: string | null };
-type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; seller?: Profile | null; buyer?: Profile | null };
+type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; seller?: Profile | null; buyer?: Profile | null };\ntype FundingAudit = { id: string; seller_id: string; amount_pkr: number; coins_credited: number; coins_per_pkr: number; payment_method: string; payment_reference: string; note: string | null; inventory_before: number; inventory_after: number; verified_by: string; verified_at: string; seller?: Profile | null; verifier?: Profile | null };
 
 function CoinSellersAdmin() {
   const qc = useQueryClient();
@@ -28,7 +28,7 @@ function CoinSellersAdmin() {
   const [paymentReference, setPaymentReference] = useState("");
   const [stockNote, setStockNote] = useState("");
   const [selectedSeller, setSelectedSeller] = useState("");
-  const [userSearch, setUserSearch] = useState("");
+  const [userSearch, setUserSearch] = useState("");\n  const [fundingAmount, setFundingAmount] = useState("");\n  const [fundingCoins, setFundingCoins] = useState("");\n  const [fundingMethod, setFundingMethod] = useState("jazzcash");\n  const [fundingReference, setFundingReference] = useState("");\n  const [fundingNote, setFundingNote] = useState("");\n  const [fundingSeller, setFundingSeller] = useState("");
 
   const sellers = useQuery({
     queryKey: ["admin_coin_sellers"],
@@ -104,6 +104,31 @@ function CoinSellersAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const verifyPayment = useMutation({
+    mutationFn: async () => {
+      const amount = Number(fundingAmount);
+      const coins = Number(fundingCoins);
+      if (!fundingSeller) throw new Error("Choose a seller.");
+      if (!Number.isFinite(amount) || amount <= 0 || Math.round(amount * 100) !== amount * 100) throw new Error("Enter the exact received PKR amount (up to 2 decimals).");
+      if (!Number.isSafeInteger(coins) || coins <= 0 || coins > 1000000000) throw new Error("Enter a valid whole coin amount.");
+      if (!fundingReference.trim()) throw new Error("Payment transaction/reference number is required.");
+      const { error } = await supabase.rpc("admin_verify_coin_seller_payment", {
+        p_seller_id: fundingSeller, p_amount_pkr: amount, p_coins: coins,
+        p_payment_method: fundingMethod, p_payment_reference: fundingReference.trim(),
+        p_note: fundingNote.trim() || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Payment recorded and seller coins credited. Audit entry saved.");
+      setFundingAmount(""); setFundingCoins(""); setFundingReference(""); setFundingNote("");
+      qc.invalidateQueries({ queryKey: ["admin_coin_sellers"] });
+      qc.invalidateQueries({ queryKey: ["admin_coin_seller_transactions"] });
+      qc.invalidateQueries({ queryKey: ["admin_coin_seller_funding_audit"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const deleteSeller = useMutation({
     mutationFn: async (sellerId: string) => {
       const { error } = await supabase.rpc("admin_delete_coin_seller", { p_seller_id: sellerId });
@@ -132,6 +157,22 @@ function CoinSellersAdmin() {
       return rows.map((r) => ({ ...r, seller: pMap.get(r.seller_id) ?? null, buyer: r.buyer_id ? pMap.get(r.buyer_id) ?? null : null }));
     },
     staleTime: 15_000,
+  });
+
+  const fundingAudit = useQuery({
+    queryKey: ["admin_coin_seller_funding_audit"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("coin_seller_funding_audit").select("*").order("verified_at", { ascending: false }).limit(250);
+      if (error) throw error;
+      const rows = (data ?? []) as FundingAudit[];
+      const ids = [...new Set(rows.flatMap((r) => [r.seller_id, r.verified_by]))];
+      if (!ids.length) return rows;
+      const { data: profiles, error: profileError } = await supabase.from("profiles").select("id,username,user_code,avatar").in("id", ids);
+      if (profileError) throw profileError;
+      const pMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+      return rows.map((r) => ({ ...r, seller: pMap.get(r.seller_id) ?? null, verifier: pMap.get(r.verified_by) ?? null }));
+    },
+    staleTime: 15000,
   });
 
   const activeCount = (sellers.data ?? []).filter((s) => s.is_active && s.is_listed).length;
@@ -165,6 +206,21 @@ function CoinSellersAdmin() {
       </div>
     </section>
 
+    <section className="relative overflow-hidden rounded-2xl border border-emerald-400/25 bg-gradient-to-br from-emerald-950/25 via-card to-slate-950/40 p-4 shadow-lg sm:p-5">
+      <h2 className="mb-1 flex items-center gap-2 text-base font-bold"><CreditCard className="h-4 w-4 text-emerald-300" /> Verified payment & coin credit</h2>
+      <p className="mb-4 text-xs text-muted-foreground">Verify the seller's actual payment in your bank/payment app, then record the PKR amount, coin amount, method and transaction reference. Saving atomically credits inventory and records who verified it.</p>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div><label className="mb-1 block text-xs text-muted-foreground">Coin seller</label><select value={fundingSeller} onChange={(e) => setFundingSeller(e.target.value)} className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm"><option value="">Select seller</option>{(sellers.data ?? []).map((x) => <option key={x.user_id} value={x.user_id}>{x.profile?.username || x.profile?.user_code || x.user_id.slice(0,8)}</option>)}</select></div>
+        <div><label className="mb-1 block text-xs text-muted-foreground">Amount received (PKR)</label><input type="number" min="0.01" step="0.01" value={fundingAmount} onChange={(e) => setFundingAmount(e.target.value)} placeholder="e.g. 5000.00" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm" /></div>
+        <div><label className="mb-1 block text-xs text-muted-foreground">Coins to credit</label><input type="number" min="1" step="1" value={fundingCoins} onChange={(e) => setFundingCoins(e.target.value)} placeholder="e.g. 525000" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm" /></div>
+        <div><label className="mb-1 block text-xs text-muted-foreground">Payment method</label><select value={fundingMethod} onChange={(e) => setFundingMethod(e.target.value)} className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm"><option value="jazzcash">JazzCash</option><option value="easypaisa">Easypaisa</option><option value="bank_transfer">Bank transfer</option><option value="cash">Cash</option><option value="other">Other</option></select></div>
+        <div><label className="mb-1 block text-xs text-muted-foreground">Payment reference / receipt ID (required)</label><input value={fundingReference} onChange={(e) => setFundingReference(e.target.value)} placeholder="Transaction ID" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm" /></div>
+        <div><label className="mb-1 block text-xs text-muted-foreground">Audit note (optional)</label><input value={fundingNote} onChange={(e) => setFundingNote(e.target.value)} placeholder="Agreed rate or other details" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm" /></div>
+      </div>
+      {Number(fundingAmount) > 0 && Number(fundingCoins) > 0 && <p className="mt-3 rounded-lg bg-background/60 p-3 text-xs text-muted-foreground">Rate recorded: <strong className="text-foreground">{(Number(fundingCoins) / Number(fundingAmount)).toLocaleString(undefined, { maximumFractionDigits: 6 })} coins per PKR</strong></p>}
+      <button disabled={verifyPayment.isPending || !fundingSeller || !fundingAmount || !fundingCoins || !fundingReference.trim()} onClick={() => { if (window.confirm(`Confirm receipt of PKR ${Number(fundingAmount).toLocaleString()} and credit ${Number(fundingCoins).toLocaleString()} coins?`)) verifyPayment.mutate(); }} className="mt-3 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">{verifyPayment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ClipboardCheck className="h-4 w-4" />} Confirm verified payment & credit coins</button>
+    </section>
+
     <section className="relative overflow-hidden rounded-2xl border border-amber-400/20 bg-gradient-to-br from-amber-950/20 via-card to-slate-950/40 p-4 shadow-lg shadow-amber-950/10 sm:p-5">
       <h2 className="mb-3 text-base font-bold">Seller inventory allocation</h2>
       <p className="mb-4 text-xs text-muted-foreground">Add positive coins only after receiving payment. A negative adjustment can reverse unused inventory, but cannot take stock below zero. Every adjustment is audited.</p>
@@ -184,6 +240,12 @@ function CoinSellersAdmin() {
     <section className="rounded-2xl border border-red-400/15 bg-gradient-to-br from-red-950/10 via-card to-slate-950/30 p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Transaction audit trail</h2><span className="text-xs text-muted-foreground">Latest 100 entries</span></div>
       {transactions.isLoading ? <div className="grid place-items-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div> : transactions.isError ? <p className="text-sm text-destructive">Could not load transaction history.</p> : (transactions.data ?? []).length === 0 ? <p className="py-5 text-sm text-muted-foreground">No seller transactions yet.</p> : <div className="space-y-2">{(transactions.data ?? []).map((t) => <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3"><div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10"><Coins className="h-4 w-4 text-primary" /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{t.kind === "sale" ? `Sale: ${t.seller?.username || t.seller?.user_code || "seller"} → ${t.buyer?.username || t.buyer?.user_code || "buyer"}` : t.kind === "allocation" ? `Inventory allocated to ${t.seller?.username || t.seller?.user_code || "seller"}` : `Inventory adjustment: ${t.seller?.username || t.seller?.user_code || "seller"}`}</p><p className="text-[11px] text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.payment_reference ? `Ref: ${t.payment_reference} · ` : ""}{t.note || "No note"}</p></div><div className="text-right"><p className="text-sm font-bold">{t.kind === "sale" || t.inventory_delta < 0 ? "−" : "+"}{Number(t.coins).toLocaleString()}</p><p className="text-[10px] text-muted-foreground">seller balance {Number(t.seller_balance_after).toLocaleString()}</p></div></div>)}</div>}
+    </section>
+    <section className="rounded-2xl border border-emerald-400/20 bg-gradient-to-br from-emerald-950/15 via-card to-slate-950/30 p-4 sm:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="flex items-center gap-2 text-base font-bold"><ClipboardCheck className="h-4 w-4 text-emerald-300" /> Verified seller payment audit</h2><span className="text-xs text-muted-foreground">Latest 250 entries</span></div>
+      <div className="mb-3 grid grid-cols-2 gap-3 lg:grid-cols-3"><div className="rounded-xl border border-border p-3"><p className="text-xs text-muted-foreground">PKR received (entries shown)</p><p className="mt-1 text-xl font-bold">Rs {(fundingAudit.data ?? []).reduce((n, x) => n + Number(x.amount_pkr), 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p></div><div className="rounded-xl border border-border p-3"><p className="text-xs text-muted-foreground">Coins credited</p><p className="mt-1 text-xl font-bold">{(fundingAudit.data ?? []).reduce((n, x) => n + Number(x.coins_credited), 0).toLocaleString()}</p></div><div className="rounded-xl border border-border p-3"><p className="text-xs text-muted-foreground">Entries</p><p className="mt-1 text-xl font-bold">{(fundingAudit.data ?? []).length}</p></div></div>
+      {fundingAudit.isLoading ? <div className="grid place-items-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div> : fundingAudit.isError ? <p className="text-sm text-destructive">Could not load payment audit. Check migration and admin permissions.</p> : (fundingAudit.data ?? []).length === 0 ? <p className="py-5 text-sm text-muted-foreground">No verified seller payments recorded yet.</p> : <div className="space-y-2">{(fundingAudit.data ?? []).map((x) => <div key={x.id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-start gap-3"><div className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-500/10"><CreditCard className="h-4 w-4 text-emerald-400" /></div><div className="min-w-0 flex-1"><p className="text-sm font-bold">{x.seller?.username || x.seller?.user_code || x.seller_id} · Rs {Number(x.amount_pkr).toLocaleString(undefined, { maximumFractionDigits: 2 })} received</p><p className="mt-1 text-xs text-muted-foreground">{x.payment_method.replace("_", " ")} · Ref: {x.payment_reference}</p><p className="mt-1 text-xs text-muted-foreground">Verified by {x.verifier?.username || x.verifier?.user_code || x.verified_by} · {new Date(x.verified_at).toLocaleString()}</p>{x.note && <p className="mt-1 text-xs text-muted-foreground">Note: {x.note}</p>}</div><div className="text-right"><p className="text-sm font-bold text-emerald-400">+{Number(x.coins_credited).toLocaleString()} coins</p><p className="text-[10px] text-muted-foreground">{Number(x.coins_per_pkr).toLocaleString(undefined, { maximumFractionDigits: 6 })} coins/PKR</p><p className="mt-1 text-[10px] text-muted-foreground">Stock {Number(x.inventory_before).toLocaleString()} → {Number(x.inventory_after).toLocaleString()}</p></div></div></div>)}</div>}
+      <p className="mt-3 text-[11px] text-muted-foreground">Totals cover the latest 250 records shown. Payment is recorded as verified by the admin who confirms it; the app does not independently verify bank/JazzCash receipts.</p>
     </section>
     <p className="text-xs text-muted-foreground">Seller coin transfers run through a server-side atomic RPC. Admin inventory adjustments and each seller-to-buyer transfer are recorded in an immutable transaction ledger.</p>
   </div>;
