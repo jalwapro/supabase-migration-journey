@@ -71,7 +71,8 @@ create policy coin_seller_transactions_participant_admin_read on public.coin_sel
   for select to authenticated
   using (seller_id = (select auth.uid()) or buyer_id = (select auth.uid()) or (select public.is_admin(auth.uid())));
 
-revoke all on public.coin_sellers from anon;
+revoke all on public.coin_sellers from anon, authenticated;
+grant select, insert, update, delete on public.coin_sellers to authenticated;
 revoke all on public.coin_seller_inventory from anon, authenticated;
 revoke all on public.coin_seller_transactions from anon, authenticated;
 grant select on public.coin_sellers to authenticated;
@@ -106,6 +107,12 @@ begin
   end if;
   if p_delta = 0 or abs(p_delta) > 1000000000 then
     raise exception 'Enter a valid non-zero inventory adjustment';
+  end if;
+  if p_delta > 0 and nullif(trim(coalesce(p_payment_reference, '')), '') is null and nullif(trim(coalesce(p_note, '')), '') is null then
+    raise exception 'Add a payment reference or note before allocating paid coins';
+  end if;
+  if p_delta < 0 and nullif(trim(coalesce(p_note, '')), '') is null then
+    raise exception 'A reason is required for negative inventory adjustments';
   end if;
   if not exists (select 1 from public.coin_sellers where user_id = p_seller_id and is_active) then
     raise exception 'Seller does not exist or is inactive';
