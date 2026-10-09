@@ -49,6 +49,17 @@ function SupportPage() {
   ];
   const scroller = useRef<HTMLDivElement>(null);
 
+  // Deep-link from the Coin Agent profile button directly into a prefilled stock request.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("topic") !== "coin-seller-stock") return;
+    setQuickHelpOpen(false);
+    setTicketOpen(true);
+    setSubject("Coin Agent stock allocation request");
+    setDetail("Assalam-o-Alaikum Admin, I am requesting additional JALWA coin stock for my Coin Agent account. Please review my request and let me know the payment and allocation process.");
+  }, []);
+
   const conv = useQuery({
     enabled: !!user,
     queryKey: ["support-conv", user?.id],
