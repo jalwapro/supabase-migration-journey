@@ -47,10 +47,11 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string | string[]> = {
 };
 
 export function permissionForAdminPath(pathname: string): string | string[] {
-  const exact = ADMIN_ROUTE_PERMISSIONS[pathname];
+  const normalized = pathname.length > 1 ? pathname.replace(/\\/+$/, "") : pathname;
+  const exact = ADMIN_ROUTE_PERMISSIONS[normalized];
   if (exact) return exact;
   const match = Object.keys(ADMIN_ROUTE_PERMISSIONS)
-    .filter((path) => path !== "/admin" && pathname.startsWith(path + "/"))
+    .filter((path) => path !== "/admin" && normalized.startsWith(path + "/"))
     .sort((a, b) => b.length - a.length)[0];
   return match ? ADMIN_ROUTE_PERMISSIONS[match] : "system.manage";
 }
