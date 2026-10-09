@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
+import { AdminHubTabs, VISUALS_VIP_TABS } from "@/components/admin/AdminHubTabs";
 import { CheckCircle2, XCircle, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
@@ -90,6 +91,7 @@ function CustomThemesAdmin() {
 
   return (
     <>
+      <AdminHubTabs title="Visuals & VIP Hub" tabs={VISUALS_VIP_TABS} />
       <AdminPageHeader
         title="Custom Themes"
         subtitle="Approve or reject user-uploaded backgrounds"
