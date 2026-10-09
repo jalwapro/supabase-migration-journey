@@ -15,6 +15,7 @@ type Seller = {
   inventory?: { available_coins: number; total_allocated: number; total_sold: number } | null;
 };
 type Profile = { id: string; username: string | null; user_code: string | null; avatar: string | null };
+type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; seller?: Profile | null; buyer?: Profile | null };
 
 function CoinSellersAdmin() {
   const qc = useQueryClient();
@@ -102,6 +103,22 @@ function CoinSellersAdmin() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const transactions = useQuery({
+    queryKey: ["admin_coin_seller_transactions"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("coin_seller_transactions").select("*").order("created_at", { ascending: false }).limit(100);
+      if (error) throw error;
+      const rows = (data ?? []) as AdminTx[];
+      const ids = [...new Set(rows.flatMap((r) => [r.seller_id, r.buyer_id].filter((id): id is string => !!id)))];
+      if (!ids.length) return rows;
+      const { data: profiles, error: profileError } = await supabase.from("profiles").select("id,username,user_code,avatar").in("id", ids);
+      if (profileError) throw profileError;
+      const pMap = new Map((profiles ?? []).map((p) => [p.id, p]));
+      return rows.map((r) => ({ ...r, seller: pMap.get(r.seller_id) ?? null, buyer: r.buyer_id ? pMap.get(r.buyer_id) ?? null : null }));
+    },
+    staleTime: 15_000,
+  });
+
   const activeCount = (sellers.data ?? []).filter((s) => s.is_active && s.is_listed).length;
   const totalStock = (sellers.data ?? []).reduce((n, s) => n + Number(s.inventory?.available_coins ?? 0), 0);
   const totalSold = (sellers.data ?? []).reduce((n, s) => n + Number(s.inventory?.total_sold ?? 0), 0);
@@ -148,6 +165,10 @@ function CoinSellersAdmin() {
     <section className="glass rounded-2xl p-4">
       <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Seller directory and controls</h2><div className="relative max-w-xs flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search listed sellers" className="w-full rounded-xl border border-border bg-input py-2 pl-9 pr-3 text-sm" /></div></div>
       {sellers.isLoading ? <div className="grid place-items-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div> : sellers.isError ? <p className="py-6 text-sm text-destructive">Could not load sellers. Check migration and admin permissions.</p> : <div className="space-y-2">{(sellers.data ?? []).filter((s) => `${s.profile?.username ?? ""} ${s.profile?.user_code ?? ""} ${s.whatsapp_number}`.toLowerCase().includes(search.toLowerCase())).map((s) => <div key={s.user_id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-start gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-primary/15 font-bold">{(s.profile?.username || "?").slice(0,1).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="font-bold">{s.public_name || s.profile?.username || "Seller"} <span className="text-xs font-normal text-muted-foreground">ID {s.profile?.user_code || "—"}</span></p><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MessageCircle className="h-3 w-3" /> +{s.whatsapp_number}</p><p className="mt-1 text-xs text-muted-foreground">Available {Number(s.inventory?.available_coins ?? 0).toLocaleString()} · Sold {Number(s.inventory?.total_sold ?? 0).toLocaleString()} · Allocated {Number(s.inventory?.total_allocated ?? 0).toLocaleString()}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => updateSeller.mutate({ seller: s, patch: { is_listed: !s.is_listed } })} className="rounded-lg border border-border px-2 py-1 text-xs">{s.is_listed ? "Hide listing" : "Publish listing"}</button><button onClick={() => updateSeller.mutate({ seller: s, patch: { is_active: !s.is_active } })} className={`rounded-lg px-2 py-1 text-xs font-bold ${s.is_active ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>{s.is_active ? "Active" : "Suspended"}</button><button onClick={() => { const n = window.prompt("WhatsApp number with country code", s.whatsapp_number); if (n === null) return; const digits = n.replace(/\D/g, ""); if (digits.length < 8 || digits.length > 15) { toast.error("Enter 8–15 digits including country code."); return; } updateSeller.mutate({ seller: s, patch: { whatsapp_number: digits } }); }} className="rounded-lg border border-border px-2 py-1 text-xs">Edit WhatsApp</button></div></div>{s.public_note && <p className="mt-2 text-xs text-muted-foreground">{s.public_note}</p>}</div>)}</div>}
+    </section>
+    <section className="glass rounded-2xl p-4">
+      <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Transaction audit trail</h2><span className="text-xs text-muted-foreground">Latest 100 entries</span></div>
+      {transactions.isLoading ? <div className="grid place-items-center py-8"><Loader2 className="h-5 w-5 animate-spin" /></div> : transactions.isError ? <p className="text-sm text-destructive">Could not load transaction history.</p> : (transactions.data ?? []).length === 0 ? <p className="py-5 text-sm text-muted-foreground">No seller transactions yet.</p> : <div className="space-y-2">{(transactions.data ?? []).map((t) => <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3"><div className="grid h-9 w-9 place-items-center rounded-lg bg-primary/10"><Coins className="h-4 w-4 text-primary" /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{t.kind === "sale" ? `Sale: ${t.seller?.username || t.seller?.user_code || "seller"} → ${t.buyer?.username || t.buyer?.user_code || "buyer"}` : t.kind === "allocation" ? `Inventory allocated to ${t.seller?.username || t.seller?.user_code || "seller"}` : `Inventory adjustment: ${t.seller?.username || t.seller?.user_code || "seller"}`}</p><p className="text-[11px] text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.payment_reference ? `Ref: ${t.payment_reference} · ` : ""}{t.note || "No note"}</p></div><div className="text-right"><p className="text-sm font-bold">{t.kind === "sale" || t.inventory_delta < 0 ? "−" : "+"}{Number(t.coins).toLocaleString()}</p><p className="text-[10px] text-muted-foreground">seller balance {Number(t.seller_balance_after).toLocaleString()}</p></div></div>)}</div>}
     </section>
     <p className="text-xs text-muted-foreground">Seller coin transfers run through a server-side atomic RPC. Admin inventory adjustments and each seller-to-buyer transfer are recorded in an immutable transaction ledger.</p>
   </div>;
