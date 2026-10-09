@@ -168,6 +168,9 @@ function MePage() {
   }
 
   const userName = profile?.username ?? "you";
+  const profileCity = (profile as any)?.city as string | null | undefined;
+  const profileCountryCode = (profile as any)?.country_code as string | null | undefined;
+  const profileLocationFlag = profileCountryCode && /^[A-Z]{2}$/i.test(profileCountryCode) ? String.fromCodePoint(...[...profileCountryCode.toUpperCase()].map((char) => 127397 + char.charCodeAt(0))) : ({ Pakistan: "🇵🇰", India: "🇮🇳", Bangladesh: "🇧🇩", "Saudi Arabia": "🇸🇦", "United Arab Emirates": "🇦🇪", UAE: "🇦🇪" } as Record<string, string>)[profile?.country ?? ""] ?? "🌍";
   const handleCopyId = () => {
     if (!profile?.user_code) return;
     navigator.clipboard.writeText(profile.user_code);
@@ -289,6 +292,7 @@ function MePage() {
                   <BadgeCheck className="h-5 w-5 shrink-0 fill-[#6366f1] text-white" />
                 </div>
                 <p className="text-[13px] leading-tight text-white/60">@{userName.toLowerCase()}</p>
+                {(profile?.country || profileCity) && <p className="inline-flex items-center gap-1 text-[11px] text-white/75"><span>{profileLocationFlag}</span>{profile?.country}{profileCity ? ` · ${profileCity}` : ""}</p>}
 
                 <div className="mt-1.5 flex w-full flex-col items-center gap-1.5 text-[12px] text-white/75">
                   {profile?.user_code && (
