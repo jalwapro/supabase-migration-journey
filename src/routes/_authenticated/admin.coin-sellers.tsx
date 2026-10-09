@@ -20,6 +20,7 @@ type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: s
 function CoinSellersAdmin() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [publicName, setPublicName] = useState("");
   const [note, setNote] = useState("");
@@ -65,17 +66,15 @@ function CoinSellersAdmin() {
     mutationFn: async (profile: Profile) => {
       const number = whatsapp.replace(/\D/g, "");
       if (number.length < 8 || number.length > 15) throw new Error("Enter WhatsApp with country code, digits only (8–15 digits).");
+      const { data: authData, error: authError } = await supabase.auth.getUser();
+      if (authError) throw authError;
       const { error } = await supabase.from("coin_sellers").upsert({
         user_id: profile.id, whatsapp_number: number, public_name: publicName.trim() || null,
-        public_note: note.trim() || null, is_active: true, is_listed: true,
+        public_note: note.trim() || null, is_active: true, is_listed: true, assigned_by: authData.user?.id ?? null,
       }, { onConflict: "user_id" });
       if (error) throw error;
-      const { error: inventoryError } = await supabase.from("coin_seller_inventory").select("seller_id").eq("seller_id", profile.id).maybeSingle();
-      if (inventoryError) throw inventoryError;
-      const { error: roleError } = await supabase.from("user_roles").upsert({ user_id: profile.id, role: "user" }, { onConflict: "user_id,role", ignoreDuplicates: true });
-      if (roleError) throw roleError;
     },
-    onSuccess: () => { toast.success("Seller assigned and listed"); setWhatsapp(""); setPublicName(""); setNote(""); setUserSearch(""); qc.invalidateQueries({ queryKey: ["admin_coin_sellers"] }); },
+    onSuccess: () => { toast.success("Seller assigned and listed"); setWhatsapp(""); setPublicName(""); setNote(""); setUserSearch(""); setSelectedUserId(""); qc.invalidateQueries({ queryKey: ["admin_coin_sellers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -139,13 +138,13 @@ function CoinSellersAdmin() {
       <p className="mb-4 text-xs text-muted-foreground">Search a registered JALWA user by username or 6-digit user ID. WhatsApp is shown to buyers in the public directory.</p>
       <div className="grid gap-3 md:grid-cols-2">
         <div><label className="mb-1 block text-xs text-muted-foreground">Find user</label><input value={userSearch} onChange={(e) => setUserSearch(e.target.value)} placeholder="Username or JALWA ID" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" />
-          {searchUsers.data && <div className="mt-2 space-y-1">{searchUsers.data.map((p) => <button key={p.id} onClick={() => setSearch(p.id)} className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left text-sm ${search === p.id ? "border-primary bg-primary/10" : "border-border"}`}><div className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 font-bold">{(p.username || "?").slice(0,1).toUpperCase()}</div><span className="min-w-0 flex-1"><span className="block font-semibold">{p.username || "JALWA user"}</span><span className="text-xs text-muted-foreground">ID: {p.user_code || "—"}</span></span>{search === p.id && <BadgeCheck className="h-4 w-4 text-primary" />}</button>)}</div>}
+          {searchUsers.data && <div className="mt-2 space-y-1">{searchUsers.data.map((p) => <button key={p.id} onClick={() => setSelectedUserId(p.id)} className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left text-sm ${selectedUserId === p.id ? "border-primary bg-primary/10" : "border-border"}`}><div className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 font-bold">{(p.username || "?").slice(0,1).toUpperCase()}</div><span className="min-w-0 flex-1"><span className="block font-semibold">{p.username || "JALWA user"}</span><span className="text-xs text-muted-foreground">ID: {p.user_code || "—"}</span></span>{selectedUserId === p.id && <BadgeCheck className="h-4 w-4 text-primary" />}</button>)}</div>}
         </div>
         <div className="space-y-3">
           <div><label className="mb-1 block text-xs text-muted-foreground">Seller WhatsApp number (with country code)</label><input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="923001234567" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" /></div>
           <div><label className="mb-1 block text-xs text-muted-foreground">Public display name (optional)</label><input value={publicName} onChange={(e) => setPublicName(e.target.value)} placeholder="Seller display name" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" /></div>
           <div><label className="mb-1 block text-xs text-muted-foreground">Public note (optional)</label><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Payment methods / availability" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" /></div>
-          <button disabled={!search || assign.isPending} onClick={() => { const p = searchUsers.data?.find((x) => x.id === search); if (p) assign.mutate(p); else toast.error("Select a user from search results."); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">{assign.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Assign and publish seller</button>
+          <button disabled={!selectedUserId || assign.isPending} onClick={() => { const p = searchUsers.data?.find((x) => x.id === selectedUserId); if (p) assign.mutate(p); else toast.error("Select a user from search results."); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">{assign.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} Assign and publish seller</button>
         </div>
       </div>
     </section>
