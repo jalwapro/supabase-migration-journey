@@ -380,7 +380,13 @@ function MePage() {
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
               {coinAgent && <FeatureCard to="/coin-sellers" icon={Store} title="Coin Agent Panel" sub="Sell coins & check your stock" color="#fbbf24" elite />}
-              {coinAgent && <FeatureCard to="/support?topic=coin-seller-stock" icon={MessageCircle} title="Request Coins from Admin" sub="Appeal for more seller stock" color="#22d3ee" elite />}
+              {coinAgent && (
+                <a href="/support?topic=coin-seller-stock" className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition-all hover:border-[#22d3ee]/40 active:scale-[0.98]">
+                  <div aria-hidden className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: "#22d3ee" }} />
+                  <FeatureInner icon={MessageCircle} title="Request Coins from Admin" sub="Appeal for more seller stock" color="#22d3ee" elite />
+                  <ChevronRight className="absolute bottom-3 right-3 h-4 w-4 text-white/30" />
+                </a>
+              )}
               <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
               <FeatureCard to="/recharge" icon={Coins} title="Recharge Coins" sub="Buy coins with Easypaisa or JazzCash" color="#fbbf24" />
               <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
