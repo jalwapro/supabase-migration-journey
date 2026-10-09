@@ -47,7 +47,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string | string[]> = {
 };
 
 export function permissionForAdminPath(pathname: string): string | string[] {
-  const normalized = pathname.length > 1 ? pathname.replace(/\\/+$/, "") : pathname;
+  const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
   const exact = ADMIN_ROUTE_PERMISSIONS[normalized];
   if (exact) return exact;
   const match = Object.keys(ADMIN_ROUTE_PERMISSIONS)
