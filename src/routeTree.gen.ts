@@ -53,6 +53,7 @@ import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authentica
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
+import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
 import { Route as ApiDataDeletionRouteImport } from './routes/api/data-deletion'
 import { Route as ApiGiftMediaRouteImport } from './routes/api/gift-media'
@@ -79,6 +80,7 @@ import { Route as AuthenticatedAdminAssignFrameRouteImport } from './routes/_aut
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
 import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
+import { Route as AuthenticatedAdminCoinSellersRouteImport } from './routes/_authenticated/admin.coin-sellers'
 import { Route as AuthenticatedAdminConnectionRouteImport } from './routes/_authenticated/admin.connection'
 import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
 import { Route as AuthenticatedAdminEmojisRouteImport } from './routes/_authenticated/admin.emojis'
@@ -368,6 +370,11 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoinSellersRoute = AuthenticatedCoinSellersRouteImport.update({
+  id: '/coin-sellers',
+  path: '/coin-sellers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
   id: '/withdraw',
   path: '/withdraw',
@@ -502,6 +509,11 @@ const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
 const AuthenticatedAdminCoinsRoute = AuthenticatedAdminCoinsRouteImport.update({
   id: '/coins',
   path: '/coins',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminCoinSellersRoute = AuthenticatedAdminCoinSellersRouteImport.update({
+  id: '/coin-sellers',
+  path: '/coin-sellers',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminConnectionRoute =
@@ -915,6 +927,7 @@ export interface FileRoutesByFullPath {
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/data-deletion': typeof ApiDataDeletionRoute
   '/api/gift-media': typeof ApiGiftMediaRoute
@@ -940,6 +953,7 @@ export interface FileRoutesByFullPath {
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
@@ -1322,6 +1336,7 @@ export interface FileRouteTypes {
     | '/vip'
     | '/visitors'
     | '/wallet'
+    | '/coin-sellers'
     | '/withdraw'
     | '/api/data-deletion'
     | '/api/gift-media'
@@ -1347,6 +1362,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
+    | '/admin/coin-sellers'
     | '/admin/connection'
     | '/admin/custom-themes'
     | '/admin/emojis'
@@ -1591,6 +1607,7 @@ export interface FileRouteTypes {
     | '/_authenticated/vip'
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
+    | '/_authenticated/coin-sellers'
     | '/_authenticated/withdraw'
     | '/api/data-deletion'
     | '/api/gift-media'
@@ -1616,6 +1633,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/banners'
     | '/_authenticated/admin/cms'
     | '/_authenticated/admin/coins'
+    | '/_authenticated/admin/coin-sellers'
     | '/_authenticated/admin/connection'
     | '/_authenticated/admin/custom-themes'
     | '/_authenticated/admin/emojis'
@@ -2030,6 +2048,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVisitorsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coin-sellers': {
+      id: '/_authenticated/coin-sellers'
+      path: '/coin-sellers'
+      fullPath: '/coin-sellers'
+      preLoaderRoute: typeof AuthenticatedCoinSellersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/wallet': {
       id: '/_authenticated/wallet'
       path: '/wallet'
@@ -2217,6 +2242,13 @@ declare module '@tanstack/react-router' {
       path: '/coins'
       fullPath: '/admin/coins'
       preLoaderRoute: typeof AuthenticatedAdminCoinsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/coin-sellers': {
+      id: '/_authenticated/admin/coin-sellers'
+      path: '/coin-sellers'
+      fullPath: '/admin/coin-sellers'
+      preLoaderRoute: typeof AuthenticatedAdminCoinSellersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/connection': {
@@ -2680,6 +2712,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
   AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
+  AuthenticatedAdminCoinSellersRoute: typeof AuthenticatedAdminCoinSellersRoute
   AuthenticatedAdminConnectionRoute: typeof AuthenticatedAdminConnectionRoute
   AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
   AuthenticatedAdminEmojisRoute: typeof AuthenticatedAdminEmojisRoute
@@ -2746,6 +2779,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
   AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
+  AuthenticatedAdminCoinSellersRoute: AuthenticatedAdminCoinSellersRoute,
   AuthenticatedAdminConnectionRoute: AuthenticatedAdminConnectionRoute,
   AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
   AuthenticatedAdminEmojisRoute: AuthenticatedAdminEmojisRoute,
@@ -2850,6 +2884,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
   AuthenticatedVisitorsRoute: typeof AuthenticatedVisitorsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
+  AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedUUserIdRoute: typeof AuthenticatedUUserIdRoute
@@ -2879,6 +2914,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedVipRoute: AuthenticatedVipRoute,
   AuthenticatedVisitorsRoute: AuthenticatedVisitorsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
+  AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
