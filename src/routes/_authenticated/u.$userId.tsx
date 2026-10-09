@@ -67,7 +67,7 @@ type FullProfile = {
   gender: string | null;
   country: string | null;
   country_code: string | null;
-  city: string | null;\n  city: string | null;
+  city: string | null;
   coins: number;
   diamonds: number;
   level: number;
