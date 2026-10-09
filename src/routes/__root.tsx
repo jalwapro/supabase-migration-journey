@@ -56,7 +56,7 @@ function SplashGate() {
     splashCheckedThisLoad = true;
 
     // Never interrupt public pages or an already-open splash/room.
-    if (pathname === "/privacy" || pathname === "/terms" || pathname === "/splash" || pathname.startsWith("/room/")) {
+    if (pathname === "/privacy" || pathname === "/terms" || pathname === "/auth" || pathname === "/splash" || pathname.startsWith("/room/")) {
       return;
     }
 
