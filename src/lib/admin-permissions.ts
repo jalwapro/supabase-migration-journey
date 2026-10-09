@@ -8,7 +8,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string | string[]> = {
   "/admin/settings": "system.manage",
   "/admin/payment-accounts": "payment_accounts.manage",
   "/admin/coins": "coin_sellers.manage",
-  "/admin/coin-sellers": "coin_sellers.view",
+  "/admin/coin-sellers": "audit.view",
   "/admin/recharge": "recharge.review",
   "/admin/withdrawals": "withdrawals.review",
   "/admin/finance-reports": "finance.reports",
