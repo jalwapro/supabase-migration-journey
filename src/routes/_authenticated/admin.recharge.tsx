@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { resolveMediaUrl } from "@/lib/signedMedia";
 
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { Loader2, Check, X, Image as ImageIcon, Search, UserRound } from "lucide-react";
+import { Loader2, Check, X, Image as ImageIcon, Search, UserRound, Coins, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/recharge")({
@@ -80,6 +81,15 @@ type RechargeUser = {
 
 function RechargeAdmin() {
   const qc = useQueryClient();
+  const { roles, refresh } = useAuth();
+  const isSuperAdmin = roles.includes("super_admin");
+  const [manualUserSearch, setManualUserSearch] = useState("");
+  const [manualTarget, setManualTarget] = useState<RechargeUser | null>(null);
+  const [manualCoins, setManualCoins] = useState("");
+  const [manualAmountPkr, setManualAmountPkr] = useState("0");
+  const [manualMethod, setManualMethod] = useState("admin_manual");
+  const [manualReference, setManualReference] = useState("");
+  const [manualReason, setManualReason] = useState("");
   const [tab, setTab] = useState<"pending" | "approved" | "rejected">("pending");
   const [userSearch, setUserSearch] = useState("");
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -132,6 +142,51 @@ function RechargeAdmin() {
   });
   const userMap = new Map((users.data ?? []).map((u) => [u.id, u]));
 
+  const manualUserResults = useQuery({
+    queryKey: ["admin_manual_recharge_user_search", manualUserSearch.trim()],
+    enabled: isSuperAdmin && manualUserSearch.trim().length >= 2 && !manualTarget,
+    queryFn: async () => {
+      const q = manualUserSearch.trim().replace(/^@/, "").replace(/[%(),]/g, " ");
+      const { data, error } = await supabase.from("profiles")
+        .select("id,username,full_name,user_code,avatar,coins")
+        .or(`username.ilike.%${q}%,full_name.ilike.%${q}%,user_code.ilike.%${q}%`)
+        .limit(8);
+      if (error) throw error;
+      return (data ?? []) as (RechargeUser & { coins: number })[];
+    },
+  });
+
+  const manualRecharge = useMutation({
+    mutationFn: async () => {
+      if (!isSuperAdmin) throw new Error("Only Super Admin can manually credit coins.");
+      if (!manualTarget) throw new Error("Select a JALWA user first.");
+      const coins = Number(manualCoins);
+      const amount = Number(manualAmountPkr);
+      if (!Number.isSafeInteger(coins) || coins <= 0 || coins > 1000000000) throw new Error("Enter a valid whole coin amount.");
+      if (!Number.isFinite(amount) || amount < 0 || Math.round(amount * 100) !== amount * 100) throw new Error("Enter a valid PKR amount.");
+      if (!manualReason.trim()) throw new Error("Audit reason is required.");
+      if (amount > 0 && manualMethod !== "admin_manual" && !manualReference.trim()) throw new Error("Payment reference is required for a paid recharge.");
+      const { data, error } = await supabase.rpc("admin_manual_recharge_user", {
+        p_user_id: manualTarget.id,
+        p_coins: coins,
+        p_amount_pkr: amount,
+        p_payment_method: manualMethod,
+        p_payment_reference: manualReference.trim() || null,
+        p_note: manualReason.trim(),
+      });
+      if (error) throw error;
+      return data as { coins_credited: number; balance_after: number };
+    },
+    onSuccess: async (result) => {
+      toast.success(`Added ${Number(result.coins_credited).toLocaleString()} coins. New balance: ${Number(result.balance_after).toLocaleString()}.`);
+      setManualTarget(null); setManualUserSearch(""); setManualCoins(""); setManualAmountPkr("0");
+      setManualMethod("admin_manual"); setManualReference(""); setManualReason("");
+      await refresh();
+      qc.invalidateQueries({ queryKey: ["admin_recharges"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   // Realtime: refresh the queue whenever anything changes so admins never
   // miss a pending request.
   useEffect(() => {
@@ -179,6 +234,34 @@ function RechargeAdmin() {
           </div>
         }
       />
+      {isSuperAdmin && (
+        <section className="mb-5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-950/25 via-card to-card p-4 sm:p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-amber-400/30 bg-amber-400/10"><ShieldCheck className="h-5 w-5 text-amber-300" /></div>
+            <div><h2 className="flex items-center gap-2 text-base font-black"><Coins className="h-4 w-4 text-amber-300" /> Super Admin — Manual User Recharge</h2><p className="mt-1 text-xs text-muted-foreground">Direct coin credit is restricted to Super Admin. Every credit records the operator, old/new balance and reason in the audit ledger.</p></div>
+          </div>
+          {!manualTarget ? (
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-muted-foreground">Search user by username, full name or JALWA ID</label>
+              <input value={manualUserSearch} onChange={(e) => setManualUserSearch(e.target.value)} placeholder="Enter at least 2 characters…" className="w-full rounded-xl border border-border bg-input px-3 py-2.5 text-sm outline-none focus:border-primary" />
+              {manualUserResults.data?.map((u) => <button key={u.id} type="button" onClick={() => setManualTarget(u)} className="mt-2 flex w-full items-center gap-3 rounded-xl border border-border bg-background/50 p-3 text-left hover:border-primary/50"><div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10"><UserRound className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{u.username ?? u.full_name ?? "JALWA User"}</p><p className="text-[11px] text-muted-foreground">Code: {u.user_code ?? "—"} · Current coins: {Number(u.coins).toLocaleString()}</p></div><span className="text-xs font-bold text-primary">Select</span></button>)}
+              {manualUserSearch.trim().length >= 2 && !manualUserResults.isFetching && manualUserResults.data?.length === 0 && <p className="mt-2 text-xs text-muted-foreground">No matching user found.</p>}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 rounded-xl border border-border bg-background/50 p-3"><div className="min-w-0 flex-1"><p className="text-sm font-bold">{manualTarget.username ?? manualTarget.full_name ?? "JALWA User"}</p><p className="text-[11px] text-muted-foreground">Code: {manualTarget.user_code ?? "—"} · {manualTarget.id}</p><p className="mt-1 text-xs font-bold text-amber-300">Current balance: {Number((manualTarget as RechargeUser & {coins?:number}).coins ?? 0).toLocaleString()} coins</p></div><button type="button" onClick={() => setManualTarget(null)} className="rounded-lg border border-border px-3 py-2 text-xs font-bold">Change user</button></div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div><label className="mb-1 block text-xs text-muted-foreground">Coins to credit *</label><input type="number" min="1" max="1000000000" step="1" value={manualCoins} onChange={(e) => setManualCoins(e.target.value)} placeholder="e.g. 52500" className="w-full rounded-xl border border-border bg-input px-3 py-2.5 text-sm" /></div>
+                <div><label className="mb-1 block text-xs text-muted-foreground">Received amount (PKR; 0 for bonus/adjustment)</label><input type="number" min="0" step="0.01" value={manualAmountPkr} onChange={(e) => setManualAmountPkr(e.target.value)} className="w-full rounded-xl border border-border bg-input px-3 py-2.5 text-sm" /></div>
+                <div><label className="mb-1 block text-xs text-muted-foreground">Payment method</label><select value={manualMethod} onChange={(e) => setManualMethod(e.target.value)} className="w-full rounded-xl border border-border bg-input px-3 py-2.5 text-sm"><option value="admin_manual">Admin manual / bonus</option><option value="cash">Cash</option><option value="bank_transfer">Bank transfer</option><option value="jazzcash">JazzCash</option><option value="easypaisa">Easypaisa</option><option value="other">Other</option></select></div>
+                <div><label className="mb-1 block text-xs text-muted-foreground">Payment reference {Number(manualAmountPkr) > 0 && manualMethod !== "admin_manual" ? "*" : "(optional)"}</label><input value={manualReference} onChange={(e) => setManualReference(e.target.value)} placeholder="Receipt / transaction ID" className="w-full rounded-xl border border-border bg-input px-3 py-2.5 text-sm" /></div>
+              </div>
+              <div><label className="mb-1 block text-xs text-muted-foreground">Reason / audit note *</label><textarea value={manualReason} onChange={(e) => setManualReason(e.target.value)} maxLength={500} rows={2} placeholder="e.g. payment checked against JazzCash receipt, or approved goodwill bonus" className="w-full rounded-xl border border-border bg-input px-3 py-2.5 text-sm" /></div>
+              <button type="button" disabled={manualRecharge.isPending} onClick={() => { if (window.confirm(`Credit ${Number(manualCoins).toLocaleString()} coins to ${manualTarget.username ?? manualTarget.user_code ?? "this user"}? This action will be permanently audited.`)) manualRecharge.mutate(); }} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-black text-black disabled:opacity-50"><Coins className="h-4 w-4" />{manualRecharge.isPending ? "Crediting…" : "Confirm Manual Recharge"}</button>
+            </div>
+          )}
+        </section>
+      )}
       <div className="mb-3 flex gap-1 rounded-full bg-card/60 p-1">
         {(["pending", "approved", "rejected"] as const).map((t) => (
           <button
