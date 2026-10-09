@@ -63,7 +63,7 @@ type Room = {
   is_locked: boolean;
   pk_battle: boolean | null;
   host_id: string;
-  host: { username: string | null; avatar: string | null; country?: string | null; city?: string | null } | null;
+  host: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; city?: string | null } | null;
   coin_score?: number;
 };
 type LiveUser = {
@@ -82,6 +82,7 @@ type SearchUser = {
 };
 
 type TabKey = "voice" | "video" | "pk";
+function flagForCountry(country?: string | null, countryCode?: string | null) { const code = countryCode?.toUpperCase(); if (code && /^[A-Z]{2}$/.test(code)) return String.fromCodePoint(...[...code].map((char) => 127397 + char.charCodeAt(0))); return COUNTRY_FLAGS[country ?? ""] ?? "🌍"; }
 const HOME_COUNTRIES = ["Pakistan", "India", "Bangladesh", "Saudi Arabia", "United Arab Emirates", "Turkey", "Egypt", "Indonesia", "Malaysia", "United States", "United Kingdom", "Philippines", "Nigeria", "Morocco", "Iraq", "Kuwait", "Qatar", "Afghanistan", "Nepal", "Sri Lanka", "Oman", "Bahrain", "Jordan", "Iran", "Canada", "Australia"];
 const COUNTRY_FLAGS: Record<string, string> = { Pakistan: "🇵🇰", India: "🇮🇳", Bangladesh: "🇧🇩", "Saudi Arabia": "🇸🇦", "United Arab Emirates": "🇦🇪", UAE: "🇦🇪", Turkey: "🇹🇷", Türkiye: "🇹🇷", Egypt: "🇪🇬", Indonesia: "🇮🇩", Malaysia: "🇲🇾", "United States": "🇺🇸", "United Kingdom": "🇬🇧", Philippines: "🇵🇭", Nigeria: "🇳🇬", Morocco: "🇲🇦", Iraq: "🇮🇶", Kuwait: "🇰🇼", Qatar: "🇶🇦", Afghanistan: "🇦🇫", Nepal: "🇳🇵", "Sri Lanka": "🇱🇰", Oman: "🇴🇲", Bahrain: "🇧🇭", Jordan: "🇯🇴", Iran: "🇮🇷", Canada: "🇨🇦", Australia: "🇦🇺" };
 const TABS: { key: TabKey; label: string; Icon: typeof Mic }[] = [
@@ -288,7 +289,7 @@ function Home() {
       let sel = supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey(username,avatar,country,city)",
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city)",
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
@@ -1076,7 +1077,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
+            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{flagForCountry(room.host.country, room.host.country_code)}</span>}{room.host?.country && <span className="shrink-0" title={room.host.country}>{COUNTRY_FLAGS[room.host.country] ?? "🌍"}</span>}
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
