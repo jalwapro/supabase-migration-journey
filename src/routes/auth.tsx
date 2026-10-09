@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { GoogleSignIn, ErrorCode as GoogleErrorCode } from "@capawesome/capacitor-google-sign-in";
-import { Mail, KeyRound, Loader2, Sparkles } from "lucide-react";
+import { Mail, KeyRound, Loader2, Sparkles, ShieldAlert, Send, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
@@ -93,6 +93,48 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [banNotice, setBanNotice] = useState<{ userId: string; email: string; reason: string } | null>(null);
+  const [appealEmail, setAppealEmail] = useState("");
+  const [appealMessage, setAppealMessage] = useState("");
+  const [appealBusy, setAppealBusy] = useState(false);
+  const [appealSubmitted, setAppealSubmitted] = useState(false);
+  const [appealError, setAppealError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || new URLSearchParams(window.location.search).get("reason") !== "banned") return;
+    try {
+      const raw = sessionStorage.getItem("jalwa_ban_notice");
+      if (raw) {
+        const parsed = JSON.parse(raw) as { userId?: string; email?: string; reason?: string };
+        if (parsed.userId) {
+          setBanNotice({ userId: parsed.userId, email: parsed.email ?? "", reason: parsed.reason ?? "" });
+          setAppealEmail(parsed.email ?? "");
+          return;
+        }
+      }
+    } catch {}
+    setBanNotice({ userId: "", email: "", reason: "" });
+  }, []);
+
+  async function submitAppeal(e: React.FormEvent) {
+    e.preventDefault();
+    setAppealError(null);
+    setAppealBusy(true);
+    try {
+      const response = await fetch("/api/submit-ban-appeal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: banNotice?.userId, email: appealEmail.trim(), message: appealMessage.trim() }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error ? String(result.error) + (result.detail ? ": " + String(result.detail) : "") : "Could not submit appeal.");
+      setAppealSubmitted(true);
+    } catch (error) {
+      setAppealError(error instanceof Error ? error.message : "Could not submit appeal. Please try again.");
+    } finally {
+      setAppealBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -256,6 +298,50 @@ function AuthPage() {
   }
 
   return (
+    <>
+    {banNotice && (
+      <div className="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-[#05030a]/90 p-4 backdrop-blur-xl">
+        <div role="dialog" aria-modal="true" aria-labelledby="ban-notice-title" className="relative my-auto w-full max-w-lg overflow-hidden rounded-3xl border border-red-400/30 bg-[#110b17] p-6 text-white shadow-[0_25px_100px_rgba(0,0,0,0.7)]">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-orange-400 to-red-500" />
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-500/15 text-red-300"><ShieldAlert className="h-6 w-6" /></div>
+            <div className="min-w-0 flex-1">
+              <h2 id="ban-notice-title" className="text-xl font-bold">Your Account Has Been Banned</h2>
+              <p className="mt-1 text-sm text-white/60">Your JALWA account access has been restricted by the moderation team.</p>
+            </div>
+            <button type="button" aria-label="Close ban notice" onClick={() => setBanNotice(null)} className="rounded-full p-2 text-white/50 hover:bg-white/10 hover:text-white"><X className="h-4 w-4" /></button>
+          </div>
+          <div className="mt-5 rounded-2xl border border-red-300/15 bg-red-500/[0.07] p-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-300">Ban reason</p>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/90">{banNotice.reason || "The moderation team has not provided a reason. You can submit an appeal below for clarification."}</p>
+          </div>
+          {appealSubmitted ? (
+            <div role="status" className="mt-5 rounded-2xl border border-emerald-400/25 bg-emerald-400/10 p-4">
+              <p className="font-semibold text-emerald-300">Appeal request submitted</p>
+              <p className="mt-1 text-sm text-white/75">Your appeal request has been submitted. The JALWA team will review it.</p>
+            </div>
+          ) : (
+            <form onSubmit={submitAppeal} className="mt-5 space-y-3">
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-white/75">Account email</label>
+                <input type="email" required value={appealEmail} onChange={(e) => setAppealEmail(e.target.value)} placeholder="Email used for this JALWA account" className="w-full rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-400" />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-white/75">Appeal request</label>
+                <textarea required minLength={10} maxLength={2000} rows={4} value={appealMessage} onChange={(e) => setAppealMessage(e.target.value)} placeholder="Explain why you believe this ban should be reviewed (10–2000 characters)." className="w-full resize-y rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-400" />
+              </div>
+              {appealError && <p role="alert" className="text-sm text-red-300">{appealError}</p>}
+              <button type="submit" disabled={appealBusy || !banNotice.userId} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-fuchsia-500 px-4 py-3 text-sm font-bold text-white hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50">
+                {appealBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {appealBusy ? "Submitting appeal…" : "Submit Appeal Request"}
+              </button>
+              {!banNotice.userId && <p className="text-xs text-amber-200">This notice could not load the banned account details. Please contact JALWA support so they can verify your account.</p>}
+            </form>
+          )}
+          <p className="mt-4 text-center text-[11px] leading-5 text-white/45">Submitting an appeal does not automatically remove the ban. Your account remains restricted while the appeal is reviewed.</p>
+        </div>
+      </div>
+    )}
     <div className="relative min-h-screen overflow-hidden px-4 py-10 flex items-center justify-center">
       <div
         aria-hidden
@@ -431,6 +517,7 @@ function AuthPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
