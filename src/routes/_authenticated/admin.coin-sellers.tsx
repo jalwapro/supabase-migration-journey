@@ -92,6 +92,8 @@ function CoinSellersAdmin() {
       const amount = Number(stock);
       if (!selectedSeller) throw new Error("Choose a seller first.");
       if (!Number.isSafeInteger(amount) || amount === 0 || Math.abs(amount) > 1_000_000_000) throw new Error("Enter a valid non-zero whole coin amount.");
+      if (amount > 0 && !paymentReference.trim() && !stockNote.trim()) throw new Error("Add a payment reference or note before allocating coins.");
+      if (amount < 0 && !stockNote.trim()) throw new Error("Add a reason for a negative inventory adjustment.");
       const { error } = await supabase.rpc("admin_adjust_coin_seller_inventory", {
         p_seller_id: selectedSeller, p_delta: amount,
         p_payment_reference: paymentReference.trim() || null, p_note: stockNote.trim() || null,
