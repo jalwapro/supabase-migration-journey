@@ -216,6 +216,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       heartbeatRef.current = null;
       return;
     }
+    const enforceBan = () => {
+      void supabase.auth.signOut();
+      setSession(null);
+      setProfile(null);
+      setRoles([]);
+      if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+        window.location.replace("/auth?reason=banned");
+      }
+    };
+    // React to an admin ban while the account is already open, not only on next login.
+    const banChannel = supabase
+      .channel(`auth-ban-status:${user.id}`)
+      .on("postgres_changes", {
+        event: "UPDATE",
+        schema: "public",
+        table: "profiles",
+        filter: `id=eq.${user.id}`,
+      }, (payload) => {
+        if ((payload.new as { status?: string }).status === "banned") enforceBan();
+      })
+      .subscribe();
+
     const tick = () => {
       if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
       const now = Date.now();
@@ -244,6 +266,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastHeartbeatAtRef.current = 0;
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisible);
+      void supabase.removeChannel(banChannel);
     };
   }, [user]);
 
