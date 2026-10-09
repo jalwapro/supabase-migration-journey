@@ -151,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Preserve the ban notice before clearing the session so the sign-in
         // screen can explain the reason and accept an appeal.
         try {
-          sessionStorage.setItem("jalwa_ban_notice", JSON.stringify({
+          localStorage.setItem("jalwa_ban_notice", JSON.stringify({
             userId: uid,
             email: nextSession.user.email ?? "",
             reason: (p as Profile & { ban_reason?: string | null }).ban_reason ?? "",
@@ -224,7 +224,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     const enforceBan = (reason?: string | null) => {
       try {
-        sessionStorage.setItem("jalwa_ban_notice", JSON.stringify({
+        localStorage.setItem("jalwa_ban_notice", JSON.stringify({
           userId: user.id,
           email: user.email ?? "",
           reason: reason ?? "",
