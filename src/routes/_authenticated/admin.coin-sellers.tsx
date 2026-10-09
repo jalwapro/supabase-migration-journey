@@ -132,7 +132,7 @@ function CoinSellersAdmin() {
         { label: "Public sellers", value: activeCount, icon: BadgeCheck },
         { label: "Coins in stock", value: totalStock.toLocaleString(), icon: Coins },
         { label: "Coins sold", value: totalSold.toLocaleString(), icon: ShieldCheck },
-      ].map((item) => <div key={item.label} className="glass rounded-2xl p-4"><item.icon className="mb-3 h-5 w-5 text-primary" /><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 text-2xl font-bold">{item.value}</p></div>)}
+      ].map((item) => <div key={item.label} className="relative overflow-hidden rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/30 via-card to-slate-950/60 p-4 shadow-lg shadow-cyan-950/10"><div className="pointer-events-none absolute -right-5 -top-5 h-20 w-20 rounded-full bg-cyan-400/10 blur-2xl" /><item.icon className="mb-3 h-5 w-5 text-cyan-300" /><p className="text-xs text-muted-foreground">{item.label}</p><p className="mt-1 text-2xl font-bold">{item.value}</p></div>)}
     </div>
 
     <section className="glass rounded-2xl p-4">
