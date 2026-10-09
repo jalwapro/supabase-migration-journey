@@ -44,7 +44,9 @@ export const VISUALS_VIP_TABS: Tab[] = [
   { to: "/admin/frames", label: "DP Frames" },
   { to: "/admin/room-frames", label: "Room Frames", aliases: ["/admin/room-frames-preview"] },
   { to: "/admin/profile-cards", label: "Profile Cards" },
-  { to: "/admin/themes", label: "Themes", aliases: ["/admin/custom-themes", "/admin/theme-categories"] },
+  { to: "/admin/themes", label: "Shop Items" },
+  { to: "/admin/custom-themes", label: "Custom Themes" },
+  { to: "/admin/theme-categories", label: "Shop Categories" },
   { to: "/admin/vip-levels", label: "Gifting Levels", aliases: ["/admin/assign-frame"] },
   { to: "/admin/vip", label: "VIP Membership" },
 ];
