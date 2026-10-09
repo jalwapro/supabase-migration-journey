@@ -36,7 +36,7 @@ export const Route = createFileRoute("/api/admin-ban-appeals")({
           .select("id,user_id,email,appeal_message,status,admin_response,created_at,reviewed_at")
           .order("created_at", { ascending: false }).limit(100);
         if (error) return json({ error: "Could not load appeals", detail: error.message }, 500);
-        const ids = [...new Set((data ?? []).map((a) => a.user_id))];
+        const ids = [...new Set((data ?? []).map((a) => a.user_id).filter((id): id is string => Boolean(id))];
         const { data: profiles, error: profileError } = ids.length
           ? await auth.admin.from("profiles").select("id,username,full_name,user_code").in("id", ids)
           : { data: [], error: null };
@@ -60,7 +60,7 @@ export const Route = createFileRoute("/api/admin-ban-appeals")({
         if (lookupError) return json({ error: "Could not load appeal", detail: lookupError.message }, 500);
         if (!appeal) return json({ error: "Appeal not found" }, 404);
 
-        if (status === "approved") {
+        if (status === "approved" && appeal.user_id) {
           const { error: authUnbanError } = await auth.admin.auth.admin.updateUserById(appeal.user_id, { ban_duration: "none" });
           if (authUnbanError) return json({ error: "Appeal is not approved because Auth unban failed", detail: authUnbanError.message }, 500);
           const { error: profileError } = await auth.admin.from("profiles")
@@ -75,7 +75,7 @@ export const Route = createFileRoute("/api/admin-ban-appeals")({
           status, admin_response: response || null, reviewed_at: new Date().toISOString(), reviewed_by: auth.user.id,
         }).eq("id", appealId);
         if (error) {
-          if (status === "approved") {
+          if (status === "approved" && appeal.user_id) {
             await auth.admin.from("profiles").update({ status: "banned" }).eq("id", appeal.user_id);
             await auth.admin.auth.admin.updateUserById(appeal.user_id, { ban_duration: "876000h" });
           }
