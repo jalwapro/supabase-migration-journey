@@ -331,11 +331,11 @@ function AuthPage() {
                 <textarea required minLength={10} maxLength={2000} rows={4} value={appealMessage} onChange={(e) => setAppealMessage(e.target.value)} placeholder="Explain why you believe this ban should be reviewed (10–2000 characters)." className="w-full resize-y rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-sm text-white outline-none focus:border-fuchsia-400" />
               </div>
               {appealError && <p role="alert" className="text-sm text-red-300">{appealError}</p>}
-              <button type="submit" disabled={appealBusy || !banNotice.userId} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-fuchsia-500 px-4 py-3 text-sm font-bold text-white hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="submit" disabled={appealBusy} className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-fuchsia-500 px-4 py-3 text-sm font-bold text-white hover:bg-fuchsia-400 disabled:cursor-not-allowed disabled:opacity-50">
                 {appealBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 {appealBusy ? "Submitting appeal…" : "Submit Appeal Request"}
               </button>
-              {!banNotice.userId && <p className="text-xs text-amber-200">This notice could not load the banned account details. Please contact JALWA support so they can verify your account.</p>}
+              {!banNotice.userId && <p className="text-xs text-amber-200">Account ID could not be restored on this device. Please enter the email linked to your banned JALWA account; support can verify your identity if needed.</p>}
             </form>
           )}
           <p className="mt-4 text-center text-[11px] leading-5 text-white/45">Submitting an appeal does not automatically remove the ban. Your account remains restricted while the appeal is reviewed.</p>
