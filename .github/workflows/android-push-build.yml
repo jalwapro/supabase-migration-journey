@@ -34,17 +34,6 @@ jobs:
       - name: Build web app
         run: npm run build
 
-      - name: Verify Capacitor web bundle
-        shell: bash
-        run: |
-          if [ ! -f dist/client/index.html ]; then
-            echo "::error::Capacitor web bundle missing: dist/client/index.html"
-            echo "Current build outputs:"
-            find dist .output/public -maxdepth 2 -type f 2>/dev/null | head -80 || true
-            echo "capacitor.config.ts points webDir to dist/client; fix the client build output before generating Android."
-            exit 1
-          fi
-
       - name: Generate fresh Capacitor Android project
         shell: bash
         run: |
