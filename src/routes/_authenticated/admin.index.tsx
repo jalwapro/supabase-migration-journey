@@ -63,7 +63,7 @@ type AdminDashboardSummary = {
   recent_activity: Array<{ kind: "recharge" | "withdraw" | "signup"; id: string; when: string; label: string; sub: string; amount?: string; tone: string }>;
 };
 
-function useAdminDashboardSummary(range: DateRange) {
+function useAdminDashboardSummary(range: DateRange, enabled: boolean) {
   return useQuery({
     queryKey: ["admin_dashboard_summary", range.from, range.to],
     queryFn: async (): Promise<AdminDashboardSummary> => {
@@ -75,6 +75,7 @@ function useAdminDashboardSummary(range: DateRange) {
       return (data ?? {}) as AdminDashboardSummary;
     },
     ...ADMIN_QUERY_OPTS,
+    enabled,
   });
 }
 
@@ -105,7 +106,7 @@ function StatCard({ label, value, icon: Icon, tone, delta, sub }: {
 
 
 
-function useAdminHealth() {
+function useAdminHealth(enabled: boolean) {
   return useQuery({
     queryKey: ["admin_system_health"],
     queryFn: async () => {
@@ -137,11 +138,34 @@ function useAdminHealth() {
     staleTime: 20_000,
     refetchInterval: 30_000,
     refetchOnWindowFocus: false,
+    enabled,
   });
 }
 
+
+function RoleDashboard({ roles }: { roles: string[] }) {
+  const role = roles.includes("finance_operator") ? "finance_operator" : roles.includes("moderator") ? "moderator" : roles.includes("agent") ? "agent" : "staff";
+  const config = role === "finance_operator"
+    ? { title: "Finance Operator", description: "Read-only finance overview. Payment approval and wallet changes remain restricted.", links: [{ to: "/admin/finance-reports", label: "Finance Reports" }] }
+    : role === "moderator"
+      ? { title: "Moderator Dashboard", description: "Review abuse reports and help keep JALWA voice rooms safe.", links: [{ to: "/admin/reports", label: "Review Reports" }, { to: "/admin/rooms", label: "View Rooms" }, { to: "/admin/rankings", label: "View Rankings" }] }
+      : role === "agent"
+        ? { title: "Support Agent Dashboard", description: "Respond to user support tickets. Recharge status is view-only; do not approve payments or edit balances.", links: [{ to: "/admin/support", label: "Open Support Tickets" }, { to: "/admin/users", label: "Find a User" }] }
+        : { title: "Staff Dashboard", description: "Your account has limited staff permissions.", links: [] };
+  return <div className="mx-auto max-w-3xl">
+    <div className="glass rounded-3xl p-6 md:p-8">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">JALWA · Role Workspace</p>
+      <h1 className="mt-2 text-2xl font-black">{config.title}</h1>
+      <p className="mt-2 max-w-xl text-sm text-muted-foreground">{config.description}</p>
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {config.links.map((item) => <Link key={item.to} to={item.to} className="flex items-center justify-between rounded-2xl border border-border bg-card/60 p-4 text-sm font-bold transition hover:border-primary/50 hover:bg-primary/5">{item.label}<ArrowUpRight className="h-4 w-4 text-primary" /></Link>)}
+      </div>
+    </div>
+  </div>;
+}
+
 function Dashboard() {
-  const { profile } = useAuth();
+  const { profile, roles, isAdmin } = useAuth();
   const [range, setRange] = useState<DateRange>(() => defaultRange("30d"));
   const rangeLabel = useMemo(() => {
     if (range.preset === "7d") return "Last 7 days";
@@ -150,7 +174,7 @@ function Dashboard() {
     return `${range.from} → ${range.to}`;
   }, [range]);
 
-  const summary = useAdminDashboardSummary(range);
+  const summary = useAdminDashboardSummary(range, isAdmin);
   const s = summary.data;
   const users = { data: s?.users ?? 0 };
   const rooms = { data: s?.rooms ?? 0 };
@@ -168,7 +192,9 @@ function Dashboard() {
   const coinsCirc = { data: s?.coins_circulation ?? 0 };
   const monthly = { data: s?.revenue_series ?? [] };
   const activity = { data: s?.recent_activity ?? [] };
-  const health = useAdminHealth();
+  const health = useAdminHealth(isAdmin);
+
+  if (!isAdmin) return <RoleDashboard roles={roles} />;
 
   const totalRooms = voiceRooms.data + videoRooms.data;
   const voicePct = totalRooms ? Math.round((voiceRooms.data / totalRooms) * 100) : 0;
