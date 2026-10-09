@@ -147,6 +147,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     hydrateTimerRef.current = setTimeout(async () => {
       const [p, r] = await Promise.all([loadProfile(uid), loadRoles(uid)]);
       if (token !== hydrateTokenRef.current) return;
+      if (p?.status === "banned") {
+        // Profile status is the app-wide enforcement backstop. Supabase Auth
+        // bans block future sign-ins/refreshes; this also clears an already
+        // persisted client session as soon as the profile is hydrated.
+        void supabase.auth.signOut();
+        setSession(null);
+        setProfile(null);
+        setRoles([]);
+        setLoading(false);
+        if (typeof window !== "undefined" && window.location.pathname !== "/auth") {
+          window.location.replace("/auth?reason=banned");
+        }
+        return;
+      }
       setProfile(p);
       setRoles(r);
       setLoading(false);
