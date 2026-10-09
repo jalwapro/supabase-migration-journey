@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
-import { BadgeCheck, Coins, Loader2, MessageCircle, Plus, Search, ShieldCheck, Store, ToggleLeft, ToggleRight, UserRoundX } from "lucide-react";
+import { BadgeCheck, Coins, Loader2, MessageCircle, Plus, Search, ShieldCheck, Store } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/coin-sellers")({ component: CoinSellersAdmin });
