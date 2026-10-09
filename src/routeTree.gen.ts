@@ -1062,6 +1062,7 @@ export interface FileRoutesByTo {
   '/vip': typeof AuthenticatedVipRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
+  '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
   '/api/data-deletion': typeof ApiDataDeletionRoute
   '/api/gift-media': typeof ApiGiftMediaRoute
@@ -1087,6 +1088,7 @@ export interface FileRoutesByTo {
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
   '/admin/coins': typeof AuthenticatedAdminCoinsRoute
+  '/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
@@ -1471,6 +1473,7 @@ export interface FileRouteTypes {
     | '/vip'
     | '/visitors'
     | '/wallet'
+    | '/coin-sellers'
     | '/withdraw'
     | '/api/data-deletion'
     | '/api/gift-media'
@@ -1496,6 +1499,7 @@ export interface FileRouteTypes {
     | '/admin/banners'
     | '/admin/cms'
     | '/admin/coins'
+    | '/admin/coin-sellers'
     | '/admin/connection'
     | '/admin/custom-themes'
     | '/admin/emojis'
