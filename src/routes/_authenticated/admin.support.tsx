@@ -42,10 +42,11 @@ function SupportAdmin() {
 
   const submit = useMutation({
     mutationFn: async ({ id, status, admin_reply }: { id: string; status?: string; admin_reply?: string }) => {
-      const patch: Record<string, unknown> = {};
-      if (status) patch.status = status;
-      if (admin_reply !== undefined) patch.admin_reply = admin_reply;
-      const { error } = await supabase.from("support_tickets").update(patch).eq("id", id);
+      const { error } = await supabase.rpc("support_agent_reply_ticket", {
+        _ticket_id: id,
+        _reply: admin_reply ?? "",
+        _status: status ?? "closed",
+      });
       if (error) throw error;
     },
     onSuccess: () => {
