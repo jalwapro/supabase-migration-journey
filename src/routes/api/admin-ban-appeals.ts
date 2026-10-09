@@ -55,11 +55,33 @@ export const Route = createFileRoute("/api/admin-ban-appeals")({
         if (!/^[0-9a-f-]{36}$/i.test(appealId) || !["approved", "rejected"].includes(status ?? "")) {
           return json({ error: "Valid appeal ID and review decision are required" }, 400);
         }
+        const { data: appeal, error: lookupError } = await auth.admin.from("user_ban_appeals")
+          .select("id,user_id,status").eq("id", appealId).maybeSingle();
+        if (lookupError) return json({ error: "Could not load appeal", detail: lookupError.message }, 500);
+        if (!appeal) return json({ error: "Appeal not found" }, 404);
+
+        if (status === "approved") {
+          const { error: authUnbanError } = await auth.admin.auth.admin.updateUserById(appeal.user_id, { ban_duration: "none" });
+          if (authUnbanError) return json({ error: "Appeal is not approved because Auth unban failed", detail: authUnbanError.message }, 500);
+          const { error: profileError } = await auth.admin.from("profiles")
+            .update({ status: "active", ban_reason: null }).eq("id", appeal.user_id);
+          if (profileError) {
+            await auth.admin.auth.admin.updateUserById(appeal.user_id, { ban_duration: "876000h" });
+            return json({ error: "Appeal is not approved because profile restore failed", detail: profileError.message }, 500);
+          }
+        }
+
         const { error } = await auth.admin.from("user_ban_appeals").update({
           status, admin_response: response || null, reviewed_at: new Date().toISOString(), reviewed_by: auth.user.id,
         }).eq("id", appealId);
-        if (error) return json({ error: "Could not save appeal review", detail: error.message }, 500);
-        return json({ ok: true });
+        if (error) {
+          if (status === "approved") {
+            await auth.admin.from("profiles").update({ status: "banned" }).eq("id", appeal.user_id);
+            await auth.admin.auth.admin.updateUserById(appeal.user_id, { ban_duration: "876000h" });
+          }
+          return json({ error: "Could not save appeal review", detail: error.message }, 500);
+        }
+        return json({ ok: true, status });
       },
     },
   },
