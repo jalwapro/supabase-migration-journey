@@ -1,4 +1,4 @@
-export const ADMIN_ROUTE_PERMISSIONS: Record<string, string> = {
+export const ADMIN_ROUTE_PERMISSIONS: Record<string, string | string[]> = {
   "/admin": "dashboard.view",
   "/admin/roles": "roles.manage",
   "/admin/factory-reset": "factory_reset",
@@ -14,7 +14,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string> = {
   "/admin/finance-reports": "finance.reports",
   "/admin/free-accounts": "system.manage",
   "/admin/partners": "system.manage",
-  "/admin/users": "users.view",
+  "/admin/users": ["users.view", "users.lookup"],
   "/admin/rooms": "rooms.view",
   "/admin/live": "rooms.view",
   "/admin/rankings": "rankings.view",
@@ -46,7 +46,7 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string> = {
   "/admin/spin-prizes": "content.manage",
 };
 
-export function permissionForAdminPath(pathname: string): string {
+export function permissionForAdminPath(pathname: string): string | string[] {
   const exact = ADMIN_ROUTE_PERMISSIONS[pathname];
   if (exact) return exact;
   const match = Object.keys(ADMIN_ROUTE_PERMISSIONS)
@@ -56,5 +56,6 @@ export function permissionForAdminPath(pathname: string): string {
 }
 
 export function canAccessAdminPath(pathname: string, permissions: string[]): boolean {
-  return permissions.includes(permissionForAdminPath(pathname));
+  const required = permissionForAdminPath(pathname);
+  return Array.isArray(required) ? required.some((permission) => permissions.includes(permission)) : permissions.includes(required);
 }
