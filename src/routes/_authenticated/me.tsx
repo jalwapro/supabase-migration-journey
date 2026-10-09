@@ -17,6 +17,8 @@ import {
   UserPlus,
   Star,
   Coins,
+  Store,
+  MessageCircle,
   ChevronRight,
   Home,
   ShoppingBag,
@@ -89,6 +91,21 @@ function MePage() {
     },
   });
   const isPartner = !!partnerRow?.is_active;
+  const { data: coinAgent } = useQuery({
+    queryKey: ["me-coin-agent", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coin_sellers")
+        .select("user_id,is_active")
+        .eq("user_id", user!.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
+  });
   const isVipActive = !!profile?.is_vip && (!profile?.vip_expiry || new Date(profile.vip_expiry) > new Date());
   const { data: adminVipTier } = useQuery({
     queryKey: ["me-admin-vip-tier", user?.id, isVipActive],
@@ -362,6 +379,8 @@ function MePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
+              {coinAgent && <FeatureCard to="/coin-sellers" icon={Store} title="Coin Agent Panel" sub="Sell coins & check your stock" color="#fbbf24" elite />}
+              {coinAgent && <FeatureCard to="/support?topic=coin-seller-stock" icon={MessageCircle} title="Request Coins from Admin" sub="Appeal for more seller stock" color="#22d3ee" elite />}
               <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
               <FeatureCard to="/recharge" icon={Coins} title="Recharge Coins" sub="Buy coins with Easypaisa or JazzCash" color="#fbbf24" />
               <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
