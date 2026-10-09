@@ -137,7 +137,7 @@ function Page() {
       <AppShell title="Edit Profile">
         <div data-adaptive="neon" className="space-y-5 px-4 pb-8 pt-4">
           {/* Hero avatar card */}
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#1a0b2e] via-[#2d0b4d] to-[#050510] p-6 text-white shadow-2xl">
+          <div className="relative overflow-hidden rounded-3xl border border-[#c88a2b]/25 bg-gradient-to-br from-[#190606] via-[#360909] to-[#080404] p-6 text-white shadow-[0_12px_36px_rgba(120,12,20,0.28)]">
             <div className="pointer-events-none absolute -top-16 -right-16 h-56 w-56 rounded-full bg-[color:var(--primary)]/30 opacity-40 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-20 -left-16 h-56 w-56 rounded-full bg-[color:var(--secondary)]/30 opacity-30 blur-3xl" />
 
