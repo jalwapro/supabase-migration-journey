@@ -38,6 +38,7 @@ import {
   Star,
   Heart,
   Flame,
+  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -98,6 +99,24 @@ function UserProfilePage() {
       if (!data) throw new Error("User not found");
       return data as FullProfile;
     },
+  });
+
+  // Only active, publicly listed Coin Agents appear on other users' profiles.
+  const coinSeller = useQuery({
+    queryKey: ["public-coin-seller-profile", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coin_sellers")
+        .select("user_id, whatsapp_number, public_name, is_active, is_listed")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .eq("is_listed", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 60_000,
   });
 
   // Track profile view (visitors)
@@ -526,6 +545,11 @@ function UserProfilePage() {
                   {displayName}
                 </h1>
                 <BadgeCheck className="h-5 w-5 text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
+                {coinSeller.data && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-300/20 to-orange-500/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-200 shadow-[0_0_14px_rgba(245,158,11,0.18)]">
+                    <Store className="h-3 w-3" /> Coin Agent
+                  </span>
+                )}
                 {p.is_vip && (
                   <span className="flex items-center gap-1 rounded-full bg-gradient-to-r from-[#ffd76a] via-amber-400 to-[#c9861f] px-2.5 py-0.5 text-[10px] font-black text-black shadow-[0_0_18px_rgba(255,200,80,0.55)]">
                     <Crown className="h-3 w-3" /> VIP{p.vip_level > 0 ? ` ${p.vip_level}` : ""}
@@ -632,11 +656,32 @@ function UserProfilePage() {
 
         {/* Quick actions */}
         {!isMe && (
-          <div className="mx-4 mt-3 grid grid-cols-4 gap-2">
+          <div className={`mx-4 mt-3 grid gap-2 ${coinSeller.data ? "grid-cols-3 sm:grid-cols-5" : "grid-cols-4"}`}>
             <QuickAction icon={<Gift className="h-4 w-4" />} label="Gift" onClick={() => toast.info("Open gifting from a live room")} tone="gold" />
             <QuickAction icon={<Users className="h-4 w-4" />} label="Invite" onClick={() => toast.info("Invite from your live room")} tone="violet" />
             <QuickAction icon={<Share2 className="h-4 w-4" />} label="Share" onClick={shareProfile} tone="cyan" />
             <QuickAction icon={<Heart className="h-4 w-4" />} label={followState.data ? "Liked" : "Like"} onClick={() => follow.mutate()} tone="pink" />
+            {coinSeller.data && (
+              <a
+                href={`https://wa.me/${coinSeller.data.whatsapp_number.replace(/\\D/g, "")}?text=${encodeURIComponent("Assalam-o-Alaikum, I want to buy JALWA coins.")}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-col items-center gap-1 rounded-2xl border border-amber-300/35 bg-gradient-to-br from-amber-300/20 to-orange-600/10 py-2.5 text-[10px] font-black text-amber-200 shadow-[0_0_16px_rgba(245,158,11,0.12)] transition active:scale-95"
+              >
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-amber-300/15"><Coins className="h-4 w-4" /></span>
+                Buy Coins
+              </a>
+            )}
+          </div>
+        )}
+        {isMe && coinSeller.data && (
+          <div className="mx-4 mt-3">
+            <Link
+              to="/coin-sellers"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-amber-300/35 bg-gradient-to-r from-amber-300/15 via-orange-500/10 to-amber-300/15 px-4 py-3 text-sm font-black text-amber-200 shadow-[0_0_18px_rgba(245,158,11,0.12)] transition hover:border-amber-300/60"
+            >
+              <Store className="h-4 w-4" /> Coin Seller Dashboard <ArrowLeft className="h-4 w-4 rotate-180" />
+            </Link>
           </div>
         )}
 
