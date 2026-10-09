@@ -718,30 +718,8 @@ function Home() {
             </div>
           </section>
 
-          {/* Tabs with sliding indicator */}
+          {/* Country filter replaces the Voice Room tab */}
           <section className="mt-4 px-4">
-            <div className="relative grid grid-cols-1 gap-1 rounded-full border border-white/10 bg-white/5 p-1 backdrop-blur">
-              <span
-                aria-hidden
-                className="absolute inset-y-1 left-1 w-[calc(100%-0.5rem)] rounded-full bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--secondary)] shadow-[0_8px_24px_-10px_color-mix(in_oklab,var(--primary)_80%,transparent)] transition-transform duration-300"
-                style={{ transform: `translateX(${tabIndex * 100}%)` }}
-              />
-              {TABS.map(({ key, label, Icon }) => {
-                const active = tab === key;
-                return (
-                  <button
-                    key={key}
-                    onClick={() => setTab(key)}
-                    className={`relative z-10 flex items-center justify-center gap-1.5 rounded-full px-2 py-2 text-xs font-bold transition ${
-                      active ? "text-primary-foreground" : "text-foreground/70"
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    <span className="truncate">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
           </section>
 
           {/* Rooms — Top Hosts + All Live */}
