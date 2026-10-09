@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/admin-user-ban")({
       POST: async ({ request }) => {
         const key = serviceKey();
         if (!key) return json({ error: "Server auth administration is not configured" }, 503);
-        const bearer = (request.headers.get("authorization") ?? "").replace(/^Bearer\\s+/i, "").trim();
+        const bearer = (request.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
         if (!bearer) return json({ error: "Authentication required" }, 401);
 
         let body: { userId?: string; banned?: boolean; reason?: string };
