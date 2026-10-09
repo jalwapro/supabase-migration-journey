@@ -350,7 +350,7 @@ function Home() {
       let sel = supabase
         .from("live_rooms")
         .select(
-          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey(username,avatar)",
+          "id,title,cover_url,room_type,viewer_count,seat_count,is_locked,pk_battle,host_id,host:profiles!live_rooms_host_id_fkey!inner(username,avatar,country,country_code,city)",
         )
         .eq("status", "live")
         .order("viewer_count", { ascending: false })
@@ -1055,7 +1055,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
           </span>
           <span className="flex min-w-0 items-center gap-0.5 text-[10px] font-semibold text-white/90">
             <TypeIcon className="h-3 w-3 shrink-0" />
-            <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
+            <span className="truncate">{room.host?.username ?? "host"}</span>{(room.host?.country || room.host?.country_code) && <span className="shrink-0" title={room.host.country ?? room.host.country_code ?? "Country"}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
           </span>
         </div>
         <h3 className="line-clamp-2 text-xs font-black text-white drop-shadow">
@@ -1102,7 +1102,7 @@ function RoomListItem({ room }: { room: Room }) {
         <h3 className="line-clamp-1 text-sm font-black">{room.title}</h3>
         <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <TypeIcon className="h-3 w-3 shrink-0" />
-          <span className="truncate">{room.host?.username ?? "host"}</span>{room.host?.country && <span className="shrink-0" title={room.host.country}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
+          <span className="truncate">{room.host?.username ?? "host"}</span>{(room.host?.country || room.host?.country_code) && <span className="shrink-0" title={room.host.country ?? room.host.country_code ?? "Country"}>{flagForCountry(room.host.country, room.host.country_code)}</span>}
           {room.pk_battle && (
             <span className="ml-1 inline-flex items-center gap-0.5 rounded-full bg-gradient-to-r from-[color:var(--gold)] to-[color:var(--primary)] px-1.5 py-0.5 text-[9px] font-black uppercase text-black">
               <Flame className="h-2 w-2" /> PK
