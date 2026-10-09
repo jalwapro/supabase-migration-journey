@@ -148,9 +148,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const [p, r] = await Promise.all([loadProfile(uid), loadRoles(uid)]);
       if (token !== hydrateTokenRef.current) return;
       if (p?.status === "banned") {
-        // Profile status is the app-wide enforcement backstop. Supabase Auth
-        // bans block future sign-ins/refreshes; this also clears an already
-        // persisted client session as soon as the profile is hydrated.
+        // Preserve the ban notice before clearing the session so the sign-in
+        // screen can explain the reason and accept an appeal.
+        try {
+          sessionStorage.setItem("jalwa_ban_notice", JSON.stringify({
+            userId: uid,
+            email: nextSession.user.email ?? "",
+            reason: (p as Profile & { ban_reason?: string | null }).ban_reason ?? "",
+          }));
+        } catch {}
         void supabase.auth.signOut();
         setSession(null);
         setProfile(null);
@@ -216,7 +222,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       heartbeatRef.current = null;
       return;
     }
-    const enforceBan = () => {
+    const enforceBan = (reason?: string | null) => {
+      try {
+        sessionStorage.setItem("jalwa_ban_notice", JSON.stringify({
+          userId: user.id,
+          email: user.email ?? "",
+          reason: reason ?? "",
+        }));
+      } catch {}
       void supabase.auth.signOut();
       setSession(null);
       setProfile(null);
@@ -234,7 +247,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         table: "profiles",
         filter: `id=eq.${user.id}`,
       }, (payload) => {
-        if ((payload.new as { status?: string }).status === "banned") enforceBan();
+        const updated = payload.new as { status?: string; ban_reason?: string | null };
+        if (updated.status === "banned") enforceBan(updated.ban_reason);
       })
       .subscribe();
 
