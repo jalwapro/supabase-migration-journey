@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { Radio, Users, Mic } from "lucide-react";
+import { CountryFlag } from "@/components/CountryFlag";
 
 export const Route = createFileRoute("/rooms")({
   component: RoomsPage,
@@ -17,7 +18,7 @@ type Room = {
   room_type: "voice";
   viewer_count: number;
   is_locked: boolean;
-  host: { username: string | null; avatar: string | null } | null;
+  host: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null } | null;
   coin_score?: number;
 };
 
@@ -36,21 +37,25 @@ function RoomsPage() {
         _offset: 0,
       });
       if (error) throw error;
-      return (data ?? [])
-        .filter((r: { room_type: string }) => r.room_type === "voice")
-        .map((r: {
-          id: string; title: string; cover_url: string | null;
-          room_type: string; viewer_count: number; is_locked: boolean;
-          host_username: string | null; host_avatar: string | null;
-          coin_score: number;
-        }) => ({
+      const rows = (data ?? []).filter((r: { room_type: string }) => r.room_type === "voice") as Array<{
+        id: string; title: string; cover_url: string | null;
+        room_type: string; viewer_count: number; is_locked: boolean;
+        host_id: string; host_username: string | null; host_avatar: string | null;
+        coin_score: number;
+      }>;
+      const hostIds = [...new Set(rows.map(r => r.host_id).filter(Boolean))];
+      const { data: hostProfiles } = hostIds.length
+        ? await supabase.from("profiles").select("id,country,country_code").in("id", hostIds)
+        : { data: [] };
+      const hostLocationById = new Map((hostProfiles ?? []).map((p: { id: string; country: string | null; country_code: string | null }) => [p.id, p]));
+      return rows.map((r) => ({
           id: r.id,
           title: r.title,
           cover_url: r.cover_url,
           room_type: "voice" as const,
           viewer_count: r.viewer_count,
           is_locked: r.is_locked,
-          host: { username: r.host_username, avatar: r.host_avatar },
+          host: { username: r.host_username, avatar: r.host_avatar, country: hostLocationById.get(r.host_id)?.country ?? null, country_code: hostLocationById.get(r.host_id)?.country_code ?? null },
           coin_score: Number(r.coin_score ?? 0),
         })) as Room[];
     },
@@ -94,7 +99,7 @@ function RoomsPage() {
                   )}
                   <div className="absolute inset-x-2 bottom-2">
                     <div className="flex items-center gap-1 text-[10px] text-white/80">
-                      <Mic className="h-3 w-3" /> {r.host?.username ?? "host"}
+                      <Mic className="h-3 w-3" /> {r.host?.username ?? "host"} <CountryFlag country={r.host?.country} countryCode={r.host?.country_code} className="text-xs" />
                     </div>
                     <h3 className="line-clamp-2 text-xs font-bold text-white">{r.title}</h3>
                   </div>
