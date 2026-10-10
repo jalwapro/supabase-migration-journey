@@ -63,6 +63,7 @@ export function RoyalJalwaSlots({ open, onClose, roomId }: Props) {
     }, 85);
     try {
       const r = await play.mutateAsync(bet);
+      void refresh?.();
       finishTimer.current = window.setTimeout(() => {
         if (spinTimer.current) window.clearInterval(spinTimer.current);
         spinTimer.current = null;
@@ -91,7 +92,6 @@ export function RoyalJalwaSlots({ open, onClose, roomId }: Props) {
       icon="👑"
       accent="#f5c451"
       balance={balance}
-      gameSlug="slots777"
       help="Royal JALWA slot machine. The server determines every reel and payout; your real JALWA coin wallet is used."
       footer={
         <div className="space-y-2.5">
