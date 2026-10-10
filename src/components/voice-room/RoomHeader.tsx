@@ -117,13 +117,13 @@ export function RoomHeader({ room, roomCode, onlineCount, topGifterName, topGift
       if (error) throw error;
       const memberIds = (data ?? []).map((row: { user_id: string }) => row.user_id).filter(Boolean);
       memberIds.forEach(id => ids.add(id));
-      const missingIds = memberIds.filter(id => !seeded.some(m => m.id === id));
+      const missingIds = [...new Set([...memberIds, ...seeded.filter(m => !m.country && !m.country_code).map(m => m.id)])].filter(id => { const existing = seeded.find(m => m.id === id); return !existing || (!existing.country && !existing.country_code); });
       const moderators = new Set((data ?? []).filter((row: { is_moderator?: boolean }) => row.is_moderator).map((row: { user_id: string }) => row.user_id));
       seeded.forEach(m => { if (moderators.has(m.id)) m.moderator = true; });
       if (missingIds.length) {
         const { data: profiles, error: profileError } = await supabase.from("profiles").select("id,username,avatar,country,country_code,vip_level").in("id", missingIds).limit(100);
         if (profileError) throw profileError;
-        (profiles ?? []).forEach((p: { id: string; username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; vip_level?: number | null }) => seeded.push({ id: p.id, username: p.username || "User", avatar: p.avatar, country: p.country, country_code: p.country_code, level: p.vip_level ?? 0, moderator: moderators.has(p.id) }));
+        (profiles ?? []).forEach((p: { id: string; username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; vip_level?: number | null }) => { const existing = seeded.find(m => m.id === p.id); if (existing) { existing.country = p.country; existing.country_code = p.country_code; } else seeded.push({ id: p.id, username: p.username || "User", avatar: p.avatar, country: p.country, country_code: p.country_code, level: p.vip_level ?? 0, moderator: moderators.has(p.id) }); });
       }
       if (canInviteToSeat) {
         const { data: invites, error: inviteError } = await supabase.from("seat_invites").select("to_user").eq("room_id", room.id).eq("status", "pending");
