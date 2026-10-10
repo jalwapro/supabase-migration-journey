@@ -7,6 +7,11 @@ type CountryFlagProps = {
 
 const COUNTRY_FLAGS: Record<string, string> = {
   "Pakistan": "🇵🇰",
+  "USA": "🇺🇸",
+  "U.S.A.": "🇺🇸",
+  "UK": "🇬🇧",
+  "U.K.": "🇬🇧",
+  "Republic of Türkiye": "🇹🇷",
   "India": "🇮🇳",
   "Bangladesh": "🇧🇩",
   "Saudi Arabia": "🇸🇦",
@@ -217,13 +222,17 @@ const COUNTRY_FLAGS: Record<string, string> = {
   "People's Republic of China": "🇨🇳",
 };
 
+const COUNTRY_FLAGS_NORMALIZED = Object.fromEntries(
+  Object.entries(COUNTRY_FLAGS).map(([name, flag]) => [name.toLocaleLowerCase(), flag]),
+) as Record<string, string>;
+
 export function countryFlagFor(country?: string | null, countryCode?: string | null): string | null {
   const code = countryCode?.trim().toUpperCase();
   if (code && /^[A-Z]{2}$/.test(code)) {
     return String.fromCodePoint(...[...code].map((char) => 127397 + char.charCodeAt(0)));
   }
   const normalizedCountry = country?.trim();
-  return normalizedCountry ? COUNTRY_FLAGS[normalizedCountry] ?? null : null;
+  return normalizedCountry ? COUNTRY_FLAGS_NORMALIZED[normalizedCountry.toLocaleLowerCase()] ?? null : null;
 }
 
 export function CountryFlag({ country, countryCode, className = "", title }: CountryFlagProps) {
