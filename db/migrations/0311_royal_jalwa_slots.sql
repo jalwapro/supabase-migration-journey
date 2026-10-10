@@ -2,6 +2,17 @@
 -- Uses the existing server-authoritative slot engine and real profiles.coins.
 begin;
 
+-- Idempotency cache: one authenticated user + request UUID can settle only once.
+create table if not exists public.royal_jalwa_slot_requests (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  request_id uuid not null,
+  result jsonb not null,
+  created_at timestamptz not null default now(),
+  primary key (user_id, request_id)
+);
+alter table public.royal_jalwa_slot_requests enable row level security;
+revoke all on table public.royal_jalwa_slot_requests from public, anon, authenticated;
+
 insert into public.room_games
   (slug, name, subtitle, kind, category, game_url, enabled, visible, sort_order)
 values
@@ -21,6 +32,7 @@ on conflict (slug) do update
 -- all reel outcomes and payouts on the server. No client-supplied result is accepted.
 create or replace function public.royal_jalwa_slots_spin(
   p_bet bigint,
+  p_request_id uuid,
   p_room_id uuid default null
 ) returns jsonb
 language plpgsql
@@ -30,12 +42,25 @@ as $
 declare
   me uuid := auth.uid();
   round_result jsonb;
+  prior_result jsonb;
   round_payout bigint;
   round_balance bigint;
   free_spin boolean;
 begin
   if me is null then
     raise exception 'not authenticated';
+  end if;
+  if p_request_id is null then
+    raise exception 'request id required';
+  end if;
+
+  -- Serialize duplicate retries with the same idempotency key.
+  perform pg_advisory_xact_lock(hashtextextended(me::text || ':' || p_request_id::text, 0));
+  select result into prior_result
+    from public.royal_jalwa_slot_requests
+   where user_id = me and request_id = p_request_id;
+  if found then
+    return prior_result;
   end if;
 
   perform set_config('app.trusted_definer', 'on', true);
