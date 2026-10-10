@@ -9,6 +9,7 @@ import {
   BadgeCheck, Crown, Loader2, Users, Home, Sparkles, UserPlus, X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CountryFlag } from "@/components/CountryFlag";
 import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/messages")({
@@ -30,6 +31,8 @@ type PeerProfile = {
   avatar: string | null;
   user_code?: string | null;
   vip_level?: number | null;
+  country?: string | null;
+  country_code?: string | null;
 };
 
 type InboxRow = {
@@ -207,7 +210,7 @@ function MessagesPage() {
       if (!ids.length) return [] as PeerProfile[];
       const { data: profs } = await supabase
         .from("profiles")
-        .select("id,username,avatar,user_code,vip_level")
+        .select("id,username,avatar,user_code,vip_level,country,country_code")
         .in("id", ids);
       return (profs ?? []) as PeerProfile[];
     },
@@ -734,7 +737,7 @@ function FollowersList({ loading, rows, onlineSet }: { loading: boolean; rows: P
             )}
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"}</p>
+            <p className="flex items-center gap-1 truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"} <CountryFlag country={p.country} countryCode={p.country_code} className="text-sm" /></p>
             <p className="truncate text-[10px] text-white/50">ID {p.user_code ?? "—"}</p>
           </div>
           <Link
