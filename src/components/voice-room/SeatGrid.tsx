@@ -3,6 +3,7 @@ import { Mic, MicOff, Heart, Lock, Unlock, Check, X, Settings } from "lucide-rea
 import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { CountryFlag } from "@/components/CountryFlag";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -73,7 +74,7 @@ export function Seat({ seat, onClick }: SeatProps) {
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
   const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
-  const [profileMedia, setProfileMedia] = useState<{ frame: string | null; ring: string | null; level: number | null; render_config: unknown } | null>(null);
+  const [profileMedia, setProfileMedia] = useState<{ frame: string | null; ring: string | null; level: number | null; render_config: unknown; country: string | null; country_code: string | null } | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -82,13 +83,15 @@ export function Seat({ seat, onClick }: SeatProps) {
       setProfileMedia(null);
       return;
     }
-    void supabase.from("profiles").select("frame,ring,vip_level,frame_render_config").eq("id", id).maybeSingle().then(({ data }) => {
+    void supabase.from("profiles").select("frame,ring,vip_level,frame_render_config,country,country_code").eq("id", id).maybeSingle().then(({ data }) => {
       if (!active) return;
       setProfileMedia({
         frame: (data as { frame?: string | null } | null)?.frame ?? null,
         ring: (data as { ring?: string | null } | null)?.ring ?? null,
         level: Number((data as { vip_level?: number | null } | null)?.vip_level ?? 0),
         render_config: (data as { frame_render_config?: unknown } | null)?.frame_render_config ?? {},
+        country: (data as { country?: string | null } | null)?.country ?? null,
+        country_code: (data as { country_code?: string | null } | null)?.country_code ?? null,
       });
     });
     return () => { active = false; };
@@ -119,7 +122,7 @@ export function Seat({ seat, onClick }: SeatProps) {
           <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
-        <span className="w-full truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow">{username}</span>
+        <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow"><span className="truncate">{username}</span><CountryFlag country={profileMedia?.country} countryCode={profileMedia?.country_code} className="text-[10px]" /></span>
         <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(giftScore)}</span>
       </button>
     </div>
@@ -426,7 +429,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
                   <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => { if (!isHost) { toast.error("Only room owner can occupy the host seat"); return; } onHostTap?.(); }} /></span>
 
                 </span>
-                <span className="w-full truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow">{host.username}</span>
+                <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow"><span className="truncate">{host.username}</span><CountryFlag country={host.country} countryCode={host.country_code} className="text-[10px]" /></span>
                 <span className="flex items-center gap-0.5 text-[8px] font-medium text-white"><Heart className="h-2 w-2 fill-pink-500 text-pink-500" />{formatCount(host.gift_score ?? 0)}</span>
               </div>
             </div>
