@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { frameForLevel } from "@/lib/levelFrames";
 import { resolveAssetUrl } from "@/lib/assetUrl";
+import { CountryFlag } from "@/components/CountryFlag";
 
 export type VoiceRoomMemberProfile = {
   id: string;
@@ -20,6 +21,8 @@ type PublicProfile = {
   avatar: string | null;
   bio: string | null;
   country: string | null;
+  country_code: string | null;
+  city: string | null;
   level: number;
   vip_level: number;
   user_code: string | null;
@@ -224,7 +227,7 @@ export function VoiceRoomMemberSheet({
             </div>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-xl font-black">{displayName}</div>
+            <div className="flex min-w-0 items-center gap-1.5 text-xl font-black"><span className="truncate">{displayName}</span><CountryFlag country={profile?.country} countryCode={profile?.country_code} className="text-lg" /></div>
             <div className="mt-1 text-xs font-semibold text-white/55">VIP Level {displayLevel}</div>
             <div className="mt-2 inline-flex w-fit items-center rounded-full border border-emerald-300/20 bg-emerald-400/10 px-2.5 py-1 text-[10px] font-bold text-emerald-200">● {member.is_muted ? "Microphone muted" : "Microphone active"}</div>
           </div>
@@ -247,7 +250,7 @@ export function VoiceRoomMemberSheet({
             <div className="text-sm font-black">{displayName}</div>
             {profile?.user_code && <div className="mt-1 text-[10px] text-white/45">ID: {profile.user_code}</div>}
             {profile?.bio && <p className="mt-2 text-xs leading-relaxed text-white/75">{profile.bio}</p>}
-            {profile?.country && <div className="mt-2 text-xs text-white/55">📍 {profile.country}</div>}
+            {(profile?.country || profile?.city) && <div className="mt-2 flex items-center gap-1 text-xs text-white/55"><CountryFlag country={profile?.country} countryCode={profile?.country_code} />{profile?.country}{profile?.city ? ` · ${profile.city}` : ""}</div>}
             <div className="mt-3 grid grid-cols-2 gap-2">
               <button type="button" disabled={socialBusy} onClick={() => void toggleFollow()} className="h-10 rounded-xl bg-white/10 text-xs font-black disabled:opacity-50">{following ? "Unfollow" : "Follow"}</button>
               <button type="button" disabled={socialBusy} onClick={() => void toggleBlock()} className="h-10 rounded-xl bg-red-500/85 text-xs font-black text-white disabled:opacity-50">{blocked ? "Unblock" : "Block"}</button>
