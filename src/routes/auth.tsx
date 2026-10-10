@@ -14,7 +14,7 @@ const NATIVE_OAUTH_REDIRECT = "app.lovable.jalwa://auth/callback";
 // The matching Android OAuth client must also exist in this project with
 // package app.lovable.jalwa and the signing certificate SHA-1 for this build.
 const GOOGLE_WEB_CLIENT_ID =
-  "516412597113-srica99p7opvua5e2gf1da1tcqo57sdm.apps.googleusercontent.com";
+  "923506443706-bfroam18nheqfkdpfrhevd2tdgkt2pqj.apps.googleusercontent.com";
 
 let googleSignInInitialized = false;
 
@@ -260,7 +260,7 @@ function AuthPage() {
       // Do not navigate until Supabase has actually persisted the session.
       // This prevents the authenticated route guard from racing the native
       // Google callback and sending the user straight back to /auth.
-      let session = authData.session ?? null;
+      let session: typeof authData.session | null = authData.session ?? null;
       if (!session) {
         const { data } = await supabase.auth.getSession();
         session = data.session ?? null;

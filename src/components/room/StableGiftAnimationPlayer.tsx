@@ -20,7 +20,7 @@ const isSmallGift = (row: GiftRow) => {
   const price = Number(row.gift_price_coins);
   if (!Number.isFinite(price) || price < 10 || price > 300) return false;
   const sources = [row.gift_clip_path, row.gift_image_url, row.gift_icon_path, row.gift_icon];
-  if (sources.some((src) => isVideo(src, row.gift_clip_type) || isSvga(src, row.gift_clip_type))) return false;
+  if (sources.some((src) => isVideo(src ?? null, row.gift_clip_type) || isSvga(src ?? null, row.gift_clip_type))) return false;
   return true;
 };
 const svgCandidates = (row: GiftRow) => [row.gift_clip_path, row.gift_icon_path, row.gift_image_url, row.gift_icon, ...giftAssetCandidates(row.gift_name)].map(assetUrl).filter((v): v is string => !!v && isSvg(v));

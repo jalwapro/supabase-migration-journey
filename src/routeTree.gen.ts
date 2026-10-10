@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AccountDeletionRouteImport } from './routes/account-deletion'
 import { Route as ArTestRouteImport } from './routes/ar-test'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as FramesPreviewRouteImport } from './routes/frames-preview'
 import { Route as FramesShowcaseRouteImport } from './routes/frames-showcase'
 import { Route as GiftPreviewRouteImport } from './routes/gift-preview'
@@ -32,6 +34,7 @@ import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
+import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedCustomThemeRouteImport } from './routes/_authenticated/custom-theme'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
@@ -51,10 +54,12 @@ import { Route as AuthenticatedSupportRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSupportRoomRouteImport } from './routes/_authenticated/support-room'
 import { Route as AuthenticatedThemeShopRouteImport } from './routes/_authenticated/theme-shop'
 import { Route as AuthenticatedVipRouteImport } from './routes/_authenticated/vip'
+import { Route as AuthenticatedVipLevelRouteImport } from './routes/_authenticated/vip-level'
 import { Route as AuthenticatedVisitorsRouteImport } from './routes/_authenticated/visitors'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
-import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
 import { Route as AuthenticatedWithdrawRouteImport } from './routes/_authenticated/withdraw'
+import { Route as ApiAdminBanAppealsRouteImport } from './routes/api/admin-ban-appeals'
+import { Route as ApiAdminUserBanRouteImport } from './routes/api/admin-user-ban'
 import { Route as ApiDataDeletionRouteImport } from './routes/api/data-deletion'
 import { Route as ApiGiftMediaRouteImport } from './routes/api/gift-media'
 import { Route as ApiLivekitPermissionsRouteImport } from './routes/api/livekit-permissions'
@@ -65,6 +70,7 @@ import { Route as ApiRtcStatusRouteImport } from './routes/api/rtc-status'
 import { Route as ApiRtcUsageRouteImport } from './routes/api/rtc-usage'
 import { Route as ApiRtcVerifyRouteImport } from './routes/api/rtc-verify'
 import { Route as ApiSendEmailRouteImport } from './routes/api/send-email'
+import { Route as ApiSubmitBanAppealRouteImport } from './routes/api/submit-ban-appeal'
 import { Route as ApiVmStatsRouteImport } from './routes/api/vm-stats'
 import { Route as ApiZegoTokenRouteImport } from './routes/api/zego-token'
 import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
@@ -72,6 +78,7 @@ import { Route as MessagesPeerIdRouteImport } from './routes/messages_.$peerId'
 import { Route as RoomRoomIdRouteImport } from './routes/room.$roomId'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminAdsRouteImport } from './routes/_authenticated/admin.ads'
+import { Route as AuthenticatedAdminApkRouteImport } from './routes/_authenticated/admin.apk'
 import { Route as AuthenticatedAdminAppCustomizationRouteImport } from './routes/_authenticated/admin.app-customization'
 import { Route as AuthenticatedAdminAppStudioAssetsRouteImport } from './routes/_authenticated/admin.app-studio-assets'
 import { Route as AuthenticatedAdminAppStudioLiveRoomsRouteImport } from './routes/_authenticated/admin.app-studio-live-rooms'
@@ -79,8 +86,8 @@ import { Route as AuthenticatedAdminAppStudioTokensRouteImport } from './routes/
 import { Route as AuthenticatedAdminAssignFrameRouteImport } from './routes/_authenticated/admin.assign-frame'
 import { Route as AuthenticatedAdminBannersRouteImport } from './routes/_authenticated/admin.banners'
 import { Route as AuthenticatedAdminCmsRouteImport } from './routes/_authenticated/admin.cms'
-import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
 import { Route as AuthenticatedAdminCoinSellersRouteImport } from './routes/_authenticated/admin.coin-sellers'
+import { Route as AuthenticatedAdminCoinsRouteImport } from './routes/_authenticated/admin.coins'
 import { Route as AuthenticatedAdminConnectionRouteImport } from './routes/_authenticated/admin.connection'
 import { Route as AuthenticatedAdminCustomThemesRouteImport } from './routes/_authenticated/admin.custom-themes'
 import { Route as AuthenticatedAdminEmojisRouteImport } from './routes/_authenticated/admin.emojis'
@@ -155,6 +162,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountDeletionRoute = AccountDeletionRouteImport.update({
+  id: '/account-deletion',
+  path: '/account-deletion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArTestRoute = ArTestRouteImport.update({
   id: '/ar-test',
   path: '/ar-test',
@@ -163,6 +175,11 @@ const ArTestRoute = ArTestRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FramesPreviewRoute = FramesPreviewRouteImport.update({
@@ -260,6 +277,12 @@ const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
   path: '/blocked',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCoinSellersRoute =
+  AuthenticatedCoinSellersRouteImport.update({
+    id: '/coin-sellers',
+    path: '/coin-sellers',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
@@ -360,6 +383,11 @@ const AuthenticatedVipRoute = AuthenticatedVipRouteImport.update({
   path: '/vip',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedVipLevelRoute = AuthenticatedVipLevelRouteImport.update({
+  id: '/vip-level',
+  path: '/vip-level',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedVisitorsRoute = AuthenticatedVisitorsRouteImport.update({
   id: '/visitors',
   path: '/visitors',
@@ -370,15 +398,20 @@ const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCoinSellersRoute = AuthenticatedCoinSellersRouteImport.update({
-  id: '/coin-sellers',
-  path: '/coin-sellers',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedWithdrawRoute = AuthenticatedWithdrawRouteImport.update({
   id: '/withdraw',
   path: '/withdraw',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiAdminBanAppealsRoute = ApiAdminBanAppealsRouteImport.update({
+  id: '/api/admin-ban-appeals',
+  path: '/api/admin-ban-appeals',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminUserBanRoute = ApiAdminUserBanRouteImport.update({
+  id: '/api/admin-user-ban',
+  path: '/api/admin-user-ban',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDataDeletionRoute = ApiDataDeletionRouteImport.update({
   id: '/api/data-deletion',
@@ -430,6 +463,11 @@ const ApiSendEmailRoute = ApiSendEmailRouteImport.update({
   path: '/api/send-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSubmitBanAppealRoute = ApiSubmitBanAppealRouteImport.update({
+  id: '/api/submit-ban-appeal',
+  path: '/api/submit-ban-appeal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVmStatsRoute = ApiVmStatsRouteImport.update({
   id: '/api/vm-stats',
   path: '/api/vm-stats',
@@ -463,6 +501,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
 const AuthenticatedAdminAdsRoute = AuthenticatedAdminAdsRouteImport.update({
   id: '/ads',
   path: '/ads',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const AuthenticatedAdminApkRoute = AuthenticatedAdminApkRouteImport.update({
+  id: '/apk',
+  path: '/apk',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminAppCustomizationRoute =
@@ -506,14 +549,15 @@ const AuthenticatedAdminCmsRoute = AuthenticatedAdminCmsRouteImport.update({
   path: '/cms',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminCoinSellersRoute =
+  AuthenticatedAdminCoinSellersRouteImport.update({
+    id: '/coin-sellers',
+    path: '/coin-sellers',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminCoinsRoute = AuthenticatedAdminCoinsRouteImport.update({
   id: '/coins',
   path: '/coins',
-  getParentRoute: () => AuthenticatedAdminRoute,
-} as any)
-const AuthenticatedAdminCoinSellersRoute = AuthenticatedAdminCoinSellersRouteImport.update({
-  id: '/coin-sellers',
-  path: '/coin-sellers',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminConnectionRoute =
@@ -885,8 +929,10 @@ const ApiAdminR2GiftsDeleteRoute = ApiAdminR2GiftsDeleteRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRouteWithChildren
+  '/download': typeof DownloadRoute
   '/frames-preview': typeof FramesPreviewRoute
   '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
@@ -906,6 +952,7 @@ export interface FileRoutesByFullPath {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
+  '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -925,10 +972,12 @@ export interface FileRoutesByFullPath {
   '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
+  '/vip-level': typeof AuthenticatedVipLevelRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
-  '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/admin-ban-appeals': typeof ApiAdminBanAppealsRoute
+  '/api/admin-user-ban': typeof ApiAdminUserBanRoute
   '/api/data-deletion': typeof ApiDataDeletionRoute
   '/api/gift-media': typeof ApiGiftMediaRoute
   '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
@@ -939,12 +988,14 @@ export interface FileRoutesByFullPath {
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/submit-ban-appeal': typeof ApiSubmitBanAppealRoute
   '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/admin/apk': typeof AuthenticatedAdminApkRoute
   '/admin/app-customization': typeof AuthenticatedAdminAppCustomizationRoute
   '/admin/app-studio-assets': typeof AuthenticatedAdminAppStudioAssetsRoute
   '/admin/app-studio-live-rooms': typeof AuthenticatedAdminAppStudioLiveRoomsRoute
@@ -952,8 +1003,8 @@ export interface FileRoutesByFullPath {
   '/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
-  '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
+  '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
@@ -1022,8 +1073,10 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/account-deletion': typeof AccountDeletionRoute
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRouteWithChildren
+  '/download': typeof DownloadRoute
   '/frames-preview': typeof FramesPreviewRoute
   '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
@@ -1042,6 +1095,7 @@ export interface FileRoutesByTo {
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/blocked': typeof AuthenticatedBlockedRoute
+  '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -1060,10 +1114,12 @@ export interface FileRoutesByTo {
   '/support-room': typeof AuthenticatedSupportRoomRoute
   '/theme-shop': typeof AuthenticatedThemeShopRoute
   '/vip': typeof AuthenticatedVipRoute
+  '/vip-level': typeof AuthenticatedVipLevelRoute
   '/visitors': typeof AuthenticatedVisitorsRoute
   '/wallet': typeof AuthenticatedWalletRoute
-  '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/admin-ban-appeals': typeof ApiAdminBanAppealsRoute
+  '/api/admin-user-ban': typeof ApiAdminUserBanRoute
   '/api/data-deletion': typeof ApiDataDeletionRoute
   '/api/gift-media': typeof ApiGiftMediaRoute
   '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
@@ -1074,12 +1130,14 @@ export interface FileRoutesByTo {
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/submit-ban-appeal': typeof ApiSubmitBanAppealRoute
   '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/messages/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/admin/apk': typeof AuthenticatedAdminApkRoute
   '/admin/app-customization': typeof AuthenticatedAdminAppCustomizationRoute
   '/admin/app-studio-assets': typeof AuthenticatedAdminAppStudioAssetsRoute
   '/admin/app-studio-live-rooms': typeof AuthenticatedAdminAppStudioLiveRoomsRoute
@@ -1087,8 +1145,8 @@ export interface FileRoutesByTo {
   '/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/admin/cms': typeof AuthenticatedAdminCmsRoute
-  '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
+  '/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
   '/admin/emojis': typeof AuthenticatedAdminEmojisRoute
@@ -1159,8 +1217,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/account-deletion': typeof AccountDeletionRoute
   '/ar-test': typeof ArTestRoute
   '/auth': typeof AuthRouteWithChildren
+  '/download': typeof DownloadRoute
   '/frames-preview': typeof FramesPreviewRoute
   '/frames-showcase': typeof FramesShowcaseRoute
   '/gift-preview': typeof GiftPreviewRoute
@@ -1180,6 +1240,7 @@ export interface FileRoutesById {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
+  '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
@@ -1199,9 +1260,12 @@ export interface FileRoutesById {
   '/_authenticated/support-room': typeof AuthenticatedSupportRoomRoute
   '/_authenticated/theme-shop': typeof AuthenticatedThemeShopRoute
   '/_authenticated/vip': typeof AuthenticatedVipRoute
+  '/_authenticated/vip-level': typeof AuthenticatedVipLevelRoute
   '/_authenticated/visitors': typeof AuthenticatedVisitorsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/withdraw': typeof AuthenticatedWithdrawRoute
+  '/api/admin-ban-appeals': typeof ApiAdminBanAppealsRoute
+  '/api/admin-user-ban': typeof ApiAdminUserBanRoute
   '/api/data-deletion': typeof ApiDataDeletionRoute
   '/api/gift-media': typeof ApiGiftMediaRoute
   '/api/livekit-permissions': typeof ApiLivekitPermissionsRoute
@@ -1212,12 +1276,14 @@ export interface FileRoutesById {
   '/api/rtc-usage': typeof ApiRtcUsageRoute
   '/api/rtc-verify': typeof ApiRtcVerifyRoute
   '/api/send-email': typeof ApiSendEmailRoute
+  '/api/submit-ban-appeal': typeof ApiSubmitBanAppealRoute
   '/api/vm-stats': typeof ApiVmStatsRoute
   '/api/zego-token': typeof ApiZegoTokenRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/messages_/$peerId': typeof MessagesPeerIdRoute
   '/room/$roomId': typeof RoomRoomIdRoute
   '/_authenticated/admin/ads': typeof AuthenticatedAdminAdsRoute
+  '/_authenticated/admin/apk': typeof AuthenticatedAdminApkRoute
   '/_authenticated/admin/app-customization': typeof AuthenticatedAdminAppCustomizationRoute
   '/_authenticated/admin/app-studio-assets': typeof AuthenticatedAdminAppStudioAssetsRoute
   '/_authenticated/admin/app-studio-live-rooms': typeof AuthenticatedAdminAppStudioLiveRoomsRoute
@@ -1225,6 +1291,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/assign-frame': typeof AuthenticatedAdminAssignFrameRoute
   '/_authenticated/admin/banners': typeof AuthenticatedAdminBannersRoute
   '/_authenticated/admin/cms': typeof AuthenticatedAdminCmsRoute
+  '/_authenticated/admin/coin-sellers': typeof AuthenticatedAdminCoinSellersRoute
   '/_authenticated/admin/coins': typeof AuthenticatedAdminCoinsRoute
   '/_authenticated/admin/connection': typeof AuthenticatedAdminConnectionRoute
   '/_authenticated/admin/custom-themes': typeof AuthenticatedAdminCustomThemesRoute
@@ -1296,8 +1363,10 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/account-deletion'
     | '/ar-test'
     | '/auth'
+    | '/download'
     | '/frames-preview'
     | '/frames-showcase'
     | '/gift-preview'
@@ -1317,6 +1386,7 @@ export interface FileRouteTypes {
     | '/voice-room-redesign'
     | '/admin'
     | '/blocked'
+    | '/coin-sellers'
     | '/create-room'
     | '/custom-theme'
     | '/friends'
@@ -1336,10 +1406,12 @@ export interface FileRouteTypes {
     | '/support-room'
     | '/theme-shop'
     | '/vip'
+    | '/vip-level'
     | '/visitors'
     | '/wallet'
-    | '/coin-sellers'
     | '/withdraw'
+    | '/api/admin-ban-appeals'
+    | '/api/admin-user-ban'
     | '/api/data-deletion'
     | '/api/gift-media'
     | '/api/livekit-permissions'
@@ -1350,12 +1422,14 @@ export interface FileRouteTypes {
     | '/api/rtc-usage'
     | '/api/rtc-verify'
     | '/api/send-email'
+    | '/api/submit-ban-appeal'
     | '/api/vm-stats'
     | '/api/zego-token'
     | '/auth/callback'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
+    | '/admin/apk'
     | '/admin/app-customization'
     | '/admin/app-studio-assets'
     | '/admin/app-studio-live-rooms'
@@ -1363,8 +1437,8 @@ export interface FileRouteTypes {
     | '/admin/assign-frame'
     | '/admin/banners'
     | '/admin/cms'
-    | '/admin/coins'
     | '/admin/coin-sellers'
+    | '/admin/coins'
     | '/admin/connection'
     | '/admin/custom-themes'
     | '/admin/emojis'
@@ -1433,8 +1507,10 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/account-deletion'
     | '/ar-test'
     | '/auth'
+    | '/download'
     | '/frames-preview'
     | '/frames-showcase'
     | '/gift-preview'
@@ -1453,6 +1529,7 @@ export interface FileRouteTypes {
     | '/test-livekit'
     | '/voice-room-redesign'
     | '/blocked'
+    | '/coin-sellers'
     | '/create-room'
     | '/custom-theme'
     | '/friends'
@@ -1471,10 +1548,12 @@ export interface FileRouteTypes {
     | '/support-room'
     | '/theme-shop'
     | '/vip'
+    | '/vip-level'
     | '/visitors'
     | '/wallet'
-    | '/coin-sellers'
     | '/withdraw'
+    | '/api/admin-ban-appeals'
+    | '/api/admin-user-ban'
     | '/api/data-deletion'
     | '/api/gift-media'
     | '/api/livekit-permissions'
@@ -1485,12 +1564,14 @@ export interface FileRouteTypes {
     | '/api/rtc-usage'
     | '/api/rtc-verify'
     | '/api/send-email'
+    | '/api/submit-ban-appeal'
     | '/api/vm-stats'
     | '/api/zego-token'
     | '/auth/callback'
     | '/messages/$peerId'
     | '/room/$roomId'
     | '/admin/ads'
+    | '/admin/apk'
     | '/admin/app-customization'
     | '/admin/app-studio-assets'
     | '/admin/app-studio-live-rooms'
@@ -1498,8 +1579,8 @@ export interface FileRouteTypes {
     | '/admin/assign-frame'
     | '/admin/banners'
     | '/admin/cms'
-    | '/admin/coins'
     | '/admin/coin-sellers'
+    | '/admin/coins'
     | '/admin/connection'
     | '/admin/custom-themes'
     | '/admin/emojis'
@@ -1569,8 +1650,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/account-deletion'
     | '/ar-test'
     | '/auth'
+    | '/download'
     | '/frames-preview'
     | '/frames-showcase'
     | '/gift-preview'
@@ -1590,6 +1673,7 @@ export interface FileRouteTypes {
     | '/voice-room-redesign'
     | '/_authenticated/admin'
     | '/_authenticated/blocked'
+    | '/_authenticated/coin-sellers'
     | '/_authenticated/create-room'
     | '/_authenticated/custom-theme'
     | '/_authenticated/friends'
@@ -1609,10 +1693,12 @@ export interface FileRouteTypes {
     | '/_authenticated/support-room'
     | '/_authenticated/theme-shop'
     | '/_authenticated/vip'
+    | '/_authenticated/vip-level'
     | '/_authenticated/visitors'
     | '/_authenticated/wallet'
-    | '/_authenticated/coin-sellers'
     | '/_authenticated/withdraw'
+    | '/api/admin-ban-appeals'
+    | '/api/admin-user-ban'
     | '/api/data-deletion'
     | '/api/gift-media'
     | '/api/livekit-permissions'
@@ -1623,12 +1709,14 @@ export interface FileRouteTypes {
     | '/api/rtc-usage'
     | '/api/rtc-verify'
     | '/api/send-email'
+    | '/api/submit-ban-appeal'
     | '/api/vm-stats'
     | '/api/zego-token'
     | '/auth/callback'
     | '/messages_/$peerId'
     | '/room/$roomId'
     | '/_authenticated/admin/ads'
+    | '/_authenticated/admin/apk'
     | '/_authenticated/admin/app-customization'
     | '/_authenticated/admin/app-studio-assets'
     | '/_authenticated/admin/app-studio-live-rooms'
@@ -1636,8 +1724,8 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/assign-frame'
     | '/_authenticated/admin/banners'
     | '/_authenticated/admin/cms'
-    | '/_authenticated/admin/coins'
     | '/_authenticated/admin/coin-sellers'
+    | '/_authenticated/admin/coins'
     | '/_authenticated/admin/connection'
     | '/_authenticated/admin/custom-themes'
     | '/_authenticated/admin/emojis'
@@ -1708,8 +1796,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AccountDeletionRoute: typeof AccountDeletionRoute
   ArTestRoute: typeof ArTestRoute
   AuthRoute: typeof AuthRouteWithChildren
+  DownloadRoute: typeof DownloadRoute
   FramesPreviewRoute: typeof FramesPreviewRoute
   FramesShowcaseRoute: typeof FramesShowcaseRoute
   GiftPreviewRoute: typeof GiftPreviewRoute
@@ -1727,6 +1817,8 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TestLivekitRoute: typeof TestLivekitRoute
   VoiceRoomRedesignRoute: typeof VoiceRoomRedesignRoute
+  ApiAdminBanAppealsRoute: typeof ApiAdminBanAppealsRoute
+  ApiAdminUserBanRoute: typeof ApiAdminUserBanRoute
   ApiDataDeletionRoute: typeof ApiDataDeletionRoute
   ApiGiftMediaRoute: typeof ApiGiftMediaRoute
   ApiLivekitPermissionsRoute: typeof ApiLivekitPermissionsRoute
@@ -1737,6 +1829,7 @@ export interface RootRouteChildren {
   ApiRtcUsageRoute: typeof ApiRtcUsageRoute
   ApiRtcVerifyRoute: typeof ApiRtcVerifyRoute
   ApiSendEmailRoute: typeof ApiSendEmailRoute
+  ApiSubmitBanAppealRoute: typeof ApiSubmitBanAppealRoute
   ApiVmStatsRoute: typeof ApiVmStatsRoute
   ApiZegoTokenRoute: typeof ApiZegoTokenRoute
   MessagesPeerIdRoute: typeof MessagesPeerIdRoute
@@ -1765,6 +1858,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account-deletion': {
+      id: '/account-deletion'
+      path: '/account-deletion'
+      fullPath: '/account-deletion'
+      preLoaderRoute: typeof AccountDeletionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ar-test': {
       id: '/ar-test'
       path: '/ar-test'
@@ -1777,6 +1877,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/frames-preview': {
@@ -1912,6 +2019,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBlockedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/coin-sellers': {
+      id: '/_authenticated/coin-sellers'
+      path: '/coin-sellers'
+      fullPath: '/coin-sellers'
+      preLoaderRoute: typeof AuthenticatedCoinSellersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create-room': {
       id: '/_authenticated/create-room'
       path: '/create-room'
@@ -2045,18 +2159,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedVipRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/vip-level': {
+      id: '/_authenticated/vip-level'
+      path: '/vip-level'
+      fullPath: '/vip-level'
+      preLoaderRoute: typeof AuthenticatedVipLevelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/visitors': {
       id: '/_authenticated/visitors'
       path: '/visitors'
       fullPath: '/visitors'
       preLoaderRoute: typeof AuthenticatedVisitorsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/coin-sellers': {
-      id: '/_authenticated/coin-sellers'
-      path: '/coin-sellers'
-      fullPath: '/coin-sellers'
-      preLoaderRoute: typeof AuthenticatedCoinSellersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/wallet': {
@@ -2072,6 +2186,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/withdraw'
       preLoaderRoute: typeof AuthenticatedWithdrawRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/admin-ban-appeals': {
+      id: '/api/admin-ban-appeals'
+      path: '/api/admin-ban-appeals'
+      fullPath: '/api/admin-ban-appeals'
+      preLoaderRoute: typeof ApiAdminBanAppealsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin-user-ban': {
+      id: '/api/admin-user-ban'
+      path: '/api/admin-user-ban'
+      fullPath: '/api/admin-user-ban'
+      preLoaderRoute: typeof ApiAdminUserBanRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/data-deletion': {
       id: '/api/data-deletion'
@@ -2143,6 +2271,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSendEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/submit-ban-appeal': {
+      id: '/api/submit-ban-appeal'
+      path: '/api/submit-ban-appeal'
+      fullPath: '/api/submit-ban-appeal'
+      preLoaderRoute: typeof ApiSubmitBanAppealRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/vm-stats': {
       id: '/api/vm-stats'
       path: '/api/vm-stats'
@@ -2190,6 +2325,13 @@ declare module '@tanstack/react-router' {
       path: '/ads'
       fullPath: '/admin/ads'
       preLoaderRoute: typeof AuthenticatedAdminAdsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/apk': {
+      id: '/_authenticated/admin/apk'
+      path: '/apk'
+      fullPath: '/admin/apk'
+      preLoaderRoute: typeof AuthenticatedAdminApkRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/app-customization': {
@@ -2241,18 +2383,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminCmsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
-    '/_authenticated/admin/coins': {
-      id: '/_authenticated/admin/coins'
-      path: '/coins'
-      fullPath: '/admin/coins'
-      preLoaderRoute: typeof AuthenticatedAdminCoinsRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/_authenticated/admin/coin-sellers': {
       id: '/_authenticated/admin/coin-sellers'
       path: '/coin-sellers'
       fullPath: '/admin/coin-sellers'
       preLoaderRoute: typeof AuthenticatedAdminCoinSellersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/coins': {
+      id: '/_authenticated/admin/coins'
+      path: '/coins'
+      fullPath: '/admin/coins'
+      preLoaderRoute: typeof AuthenticatedAdminCoinsRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/connection': {
@@ -2708,6 +2850,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAdsRoute: typeof AuthenticatedAdminAdsRoute
+  AuthenticatedAdminApkRoute: typeof AuthenticatedAdminApkRoute
   AuthenticatedAdminAppCustomizationRoute: typeof AuthenticatedAdminAppCustomizationRoute
   AuthenticatedAdminAppStudioAssetsRoute: typeof AuthenticatedAdminAppStudioAssetsRoute
   AuthenticatedAdminAppStudioLiveRoomsRoute: typeof AuthenticatedAdminAppStudioLiveRoomsRoute
@@ -2715,8 +2858,8 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAssignFrameRoute: typeof AuthenticatedAdminAssignFrameRoute
   AuthenticatedAdminBannersRoute: typeof AuthenticatedAdminBannersRoute
   AuthenticatedAdminCmsRoute: typeof AuthenticatedAdminCmsRoute
-  AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
   AuthenticatedAdminCoinSellersRoute: typeof AuthenticatedAdminCoinSellersRoute
+  AuthenticatedAdminCoinsRoute: typeof AuthenticatedAdminCoinsRoute
   AuthenticatedAdminConnectionRoute: typeof AuthenticatedAdminConnectionRoute
   AuthenticatedAdminCustomThemesRoute: typeof AuthenticatedAdminCustomThemesRoute
   AuthenticatedAdminEmojisRoute: typeof AuthenticatedAdminEmojisRoute
@@ -2771,6 +2914,7 @@ interface AuthenticatedAdminRouteChildren {
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAdsRoute: AuthenticatedAdminAdsRoute,
+  AuthenticatedAdminApkRoute: AuthenticatedAdminApkRoute,
   AuthenticatedAdminAppCustomizationRoute:
     AuthenticatedAdminAppCustomizationRoute,
   AuthenticatedAdminAppStudioAssetsRoute:
@@ -2782,8 +2926,8 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAssignFrameRoute: AuthenticatedAdminAssignFrameRoute,
   AuthenticatedAdminBannersRoute: AuthenticatedAdminBannersRoute,
   AuthenticatedAdminCmsRoute: AuthenticatedAdminCmsRoute,
-  AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
   AuthenticatedAdminCoinSellersRoute: AuthenticatedAdminCoinSellersRoute,
+  AuthenticatedAdminCoinsRoute: AuthenticatedAdminCoinsRoute,
   AuthenticatedAdminConnectionRoute: AuthenticatedAdminConnectionRoute,
   AuthenticatedAdminCustomThemesRoute: AuthenticatedAdminCustomThemesRoute,
   AuthenticatedAdminEmojisRoute: AuthenticatedAdminEmojisRoute,
@@ -2867,6 +3011,7 @@ const AuthenticatedGamesRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
+  AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
   AuthenticatedCustomThemeRoute: typeof AuthenticatedCustomThemeRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
@@ -2886,9 +3031,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSupportRoomRoute: typeof AuthenticatedSupportRoomRoute
   AuthenticatedThemeShopRoute: typeof AuthenticatedThemeShopRoute
   AuthenticatedVipRoute: typeof AuthenticatedVipRoute
+  AuthenticatedVipLevelRoute: typeof AuthenticatedVipLevelRoute
   AuthenticatedVisitorsRoute: typeof AuthenticatedVisitorsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
-  AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
   AuthenticatedWithdrawRoute: typeof AuthenticatedWithdrawRoute
   AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedUUserIdRoute: typeof AuthenticatedUUserIdRoute
@@ -2897,6 +3042,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
+  AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
   AuthenticatedCustomThemeRoute: AuthenticatedCustomThemeRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
@@ -2916,9 +3062,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSupportRoomRoute: AuthenticatedSupportRoomRoute,
   AuthenticatedThemeShopRoute: AuthenticatedThemeShopRoute,
   AuthenticatedVipRoute: AuthenticatedVipRoute,
+  AuthenticatedVipLevelRoute: AuthenticatedVipLevelRoute,
   AuthenticatedVisitorsRoute: AuthenticatedVisitorsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
-  AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
   AuthenticatedWithdrawRoute: AuthenticatedWithdrawRoute,
   AuthenticatedSettingsNotificationsRoute:
     AuthenticatedSettingsNotificationsRoute,
@@ -2953,8 +3099,10 @@ const ApiAdminR2GiftsRouteWithChildren = ApiAdminR2GiftsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AccountDeletionRoute: AccountDeletionRoute,
   ArTestRoute: ArTestRoute,
   AuthRoute: AuthRouteWithChildren,
+  DownloadRoute: DownloadRoute,
   FramesPreviewRoute: FramesPreviewRoute,
   FramesShowcaseRoute: FramesShowcaseRoute,
   GiftPreviewRoute: GiftPreviewRoute,
@@ -2972,6 +3120,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TestLivekitRoute: TestLivekitRoute,
   VoiceRoomRedesignRoute: VoiceRoomRedesignRoute,
+  ApiAdminBanAppealsRoute: ApiAdminBanAppealsRoute,
+  ApiAdminUserBanRoute: ApiAdminUserBanRoute,
   ApiDataDeletionRoute: ApiDataDeletionRoute,
   ApiGiftMediaRoute: ApiGiftMediaRoute,
   ApiLivekitPermissionsRoute: ApiLivekitPermissionsRoute,
@@ -2982,6 +3132,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRtcUsageRoute: ApiRtcUsageRoute,
   ApiRtcVerifyRoute: ApiRtcVerifyRoute,
   ApiSendEmailRoute: ApiSendEmailRoute,
+  ApiSubmitBanAppealRoute: ApiSubmitBanAppealRoute,
   ApiVmStatsRoute: ApiVmStatsRoute,
   ApiZegoTokenRoute: ApiZegoTokenRoute,
   MessagesPeerIdRoute: MessagesPeerIdRoute,
