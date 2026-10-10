@@ -43,6 +43,9 @@ export type RoomSeatUser = {
   mic?: "speaking" | "muted" | "off";
   gift_score: number;
   popularity?: number;
+  country?: string | null;
+  country_code?: string | null;
+  city?: string | null;
 };
 
 export type RoomSeat = {
@@ -63,6 +66,9 @@ export type RoomParticipant = {
   ring?: string | null;
   gift_score?: number;
   level?: number;
+  country?: string | null;
+  country_code?: string | null;
+  city?: string | null;
 };
 
 export function Seat({ seat, onClick }: SeatProps) {
