@@ -29,9 +29,10 @@ export function RoyalJalwaSlots({ open, onClose, roomId }: Props) {
   const balance = Number(profile?.coins ?? 0);
 
   const play = useMutation({
-    mutationFn: async (amount: number) => {
+    mutationFn: async ({ amount, requestId }: { amount: number; requestId: string }) => {
       const { data, error } = await supabase.rpc("royal_jalwa_slots_spin" as never, {
         p_bet: amount,
+        p_request_id: requestId,
         p_room_id: roomId ?? null,
       } as never);
       if (error) throw error;
@@ -62,7 +63,7 @@ export function RoyalJalwaSlots({ open, onClose, roomId }: Props) {
       blip(240 + Math.random() * 160, 0.025, "square");
     }, 85);
     try {
-      const r = await play.mutateAsync(bet);
+      const r = await play.mutateAsync({ amount: bet, requestId: crypto.randomUUID() });
       void refresh?.();
       finishTimer.current = window.setTimeout(() => {
         if (spinTimer.current) window.clearInterval(spinTimer.current);
