@@ -243,7 +243,7 @@ export function GiftGLVideo({
   const detectedRef = useRef<"green" | "black" | "none" | null>(null);
   // Gift Studio clips are rendered through WebGL so the saved chroma/crop/
   // colour settings are actually applied. R2 must provide CORS for this path.
-  const [glFailed, setGlFailed] = useState(false);
+  // Android WebView GPUs are inconsistent with per-frame WebGL video texture uploads.\n  // Use the browser-native hardware-decoded video path there; keep WebGL for desktop.\n  const mobileNativeVideo = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);\n  const [glFailed, setGlFailed] = useState(mobileNativeVideo);
   const [ready, setReady] = useState(false);
   const readyOnce = useRef(false);
   const completedLoopsRef = useRef(0);
@@ -264,11 +264,11 @@ export function GiftGLVideo({
     // Always try the WebGL renderer first. The R2 bucket now has CORS enabled,
     // which is required for uploading the video frame into a WebGL texture.
     setGlFailed(false);
-  }, [src]);
+  }, [src, mobileNativeVideo]);
 
   // Auto-detect the backdrop once from the first frame (border sampling).
   const detect = useCallback((video: HTMLVideoElement) => {
-    if (detectedRef.current || !video.videoWidth) return;
+    if (detectedRef.current || !video.videoWidth) return;\n    // Chroma auto-detection uses canvas readback (getImageData), which is expensive\n    // on mobile and unnecessary when the native video fallback is selected.\n    if (mobileNativeVideo) { detectedRef.current = "none"; return; }
     try {
       const w = 32;
       const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
