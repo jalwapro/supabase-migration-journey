@@ -164,9 +164,15 @@ function AuthPage() {
     e.preventDefault();
     resetAlerts();
     setBusy(true);
+    // OTP is verified by 6-digit code, so always use the https production URL
+    // (custom native schemes can make the email send fail on Android).
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: getAuthRedirectUrl() },
+      options: {
+        emailRedirectTo: Capacitor.isNativePlatform()
+          ? JALWA_PRODUCTION_URL
+          : getAuthRedirectUrl(),
+      },
     });
     setBusy(false);
     if (error) setErr(error.message);
