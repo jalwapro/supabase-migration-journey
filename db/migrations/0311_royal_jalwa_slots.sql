@@ -38,7 +38,7 @@ create or replace function public.royal_jalwa_slots_spin(
 language plpgsql
 security definer
 set search_path = public
-as $
+as $$
 declare
   me uuid := auth.uid();
   round_result jsonb;
@@ -87,12 +87,15 @@ begin
        'Royal JALWA slot payout');
   end if;
 
+  insert into public.royal_jalwa_slot_requests (user_id, request_id, result)
+  values (me, p_request_id, round_result);
+
   return round_result;
 end;
-$;
+$$;
 
-revoke all on function public.royal_jalwa_slots_spin(bigint, uuid) from public, anon;
-grant execute on function public.royal_jalwa_slots_spin(bigint, uuid) to authenticated;
+revoke all on function public.royal_jalwa_slots_spin(bigint, uuid, uuid) from public, anon;
+grant execute on function public.royal_jalwa_slots_spin(bigint, uuid, uuid) to authenticated;
 
 notify pgrst, 'reload schema';
 commit;
