@@ -24,6 +24,7 @@ const COLS = "id,slug,name,subtitle,kind,category,icon_url,thumb_url,game_url,en
 export const NATIVE_GAME_EMOJI: Record<string, string> = {
   ludo: "🎲",
   slots777: "🎰",
+  royal_jalwa_slots: "👑",
   crash_x: "🚀",
   dragon_tiger: "🐉",
   in_out: "🔴",
