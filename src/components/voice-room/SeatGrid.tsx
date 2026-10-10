@@ -222,7 +222,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
     };
     const upsertRequest = async (row: any) => {
       if (row.status !== "pending") { setRequests(prev => prev.filter(r => r.id !== row.id)); return; }
-      const { data: profile } = await supabase.from("profiles").select("id,username,avatar").eq("id", row.from_user).maybeSingle();
+      const { data: profile } = await supabase.from("profiles").select("id,username,avatar,country,country_code").eq("id", row.from_user).maybeSingle();
       const next: SeatRequest = { id: row.id, from_user: row.from_user, seat_index: row.seat_index ?? null, created_at: row.created_at, username: profile?.username || "User", avatar: profile?.avatar || null };
       setRequests(prev => prev.some(r => r.id === next.id) ? prev.map(r => r.id === next.id ? next : r) : [...prev, next].sort((a, b) => a.created_at.localeCompare(b.created_at)));
     };
