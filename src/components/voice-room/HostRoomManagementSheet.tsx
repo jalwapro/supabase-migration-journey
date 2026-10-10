@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Ban, Crown, Loader2, Shield, UserX, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { CountryFlag } from "@/components/CountryFlag";
 
 type Props = {
   roomId: string;
@@ -13,6 +14,8 @@ type Props = {
 type Member = {
   user_id: string;
   username: string | null;
+  country?: string | null;
+  country_code?: string | null;
   avatar: string | null;
   is_moderator: boolean;
 };
@@ -51,7 +54,7 @@ export function HostRoomManagementSheet({ roomId, open, mode, onClose }: Props) 
     }
     const ids = (rows ?? []).map(r => r.user_id);
     const { data: profiles } = ids.length
-      ? await supabase.from("profiles").select("id,username,avatar").in("id", ids)
+      ? await supabase.from("profiles").select("id,username,avatar,country,country_code").in("id", ids)
       : { data: [] };
     const profileMap = new Map((profiles ?? []).map(p => [p.id, p]));
     setMembers((rows ?? []).map(r => ({
@@ -59,6 +62,8 @@ export function HostRoomManagementSheet({ roomId, open, mode, onClose }: Props) 
       is_moderator: !!r.is_moderator,
       username: profileMap.get(r.user_id)?.username ?? null,
       avatar: profileMap.get(r.user_id)?.avatar ?? null,
+      country: profileMap.get(r.user_id)?.country ?? null,
+      country_code: profileMap.get(r.user_id)?.country_code ?? null,
     })));
   };
 
@@ -143,7 +148,7 @@ export function HostRoomManagementSheet({ roomId, open, mode, onClose }: Props) 
             {members.map(m => (
               <div key={m.user_id} className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 p-2">
                 {m.avatar ? <img src={m.avatar} alt="" className="h-9 w-9 rounded-full object-cover" /> : <div className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-xs font-bold">{(m.username ?? "U")[0]}</div>}
-                <div className="min-w-0 flex-1"><div className="truncate text-[11px] font-bold">{m.username ?? "User"}</div><div className="text-[8px] text-white/40">{m.is_moderator ? "Moderator" : "Room member"}</div></div>
+                <div className="min-w-0 flex-1"><div className="flex items-center gap-1 truncate text-[11px] font-bold">{m.username ?? "User"} <CountryFlag country={m.country} countryCode={m.country_code} className="text-sm" /></div><div className="text-[8px] text-white/40">{m.is_moderator ? "Moderator" : "Room member"}</div></div>
                 {mode === "kick" ? (
                   <button type="button" disabled={!!busy || m.is_moderator} onClick={() => void moderate(m.user_id, "kick")} className="grid h-8 w-8 place-items-center rounded-lg bg-amber-500/20 text-amber-200 disabled:opacity-30" title="Kick">{busy === `kick:${m.user_id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserX className="h-3.5 w-3.5" />}</button>
                 ) : (
