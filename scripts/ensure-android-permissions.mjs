@@ -40,6 +40,28 @@ if (!xml.includes("com.google.firebase.messaging.default_notification_channel_id
 }
 
 xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
+const oauthScheme = "app.lovable.jalwa";
+if (!xml.includes(`android:scheme="${oauthScheme}"`)) {
+  // cap sync regenerates AndroidManifest.xml; keep the native OAuth callback
+  // in this post-sync script so it is restored idempotently on every build.
+  const activityOpen = /<activity\b(?=[^>]*android:name="[^"]*MainActivity")[^>]*>/m.exec(xml);
+  if (!activityOpen) {
+    throw new Error("Could not find MainActivity for the native OAuth callback");
+  }
+  const activityStart = activityOpen.index + activityOpen[0].length;
+  const activityClose = xml.indexOf("</activity>", activityStart);
+  if (activityClose === -1) throw new Error("Could not find the closing MainActivity tag");
+  const oauthIntentFilter = `
+        <intent-filter>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.DEFAULT" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="${oauthScheme}" android:host="auth" android:pathPrefix="/callback" />
+        </intent-filter>
+`;
+  xml = xml.slice(0, activityClose) + oauthIntentFilter + xml.slice(activityClose);
+}
+
 writeFileSync(manifestPath, xml);
 
 console.log("✓ Android permissions configured without a persistent background service.");

@@ -20,7 +20,7 @@ const isSmallGift = (row: GiftRow) => {
   const price = Number(row.gift_price_coins);
   if (!Number.isFinite(price) || price < 10 || price > 300) return false;
   const sources = [row.gift_clip_path, row.gift_image_url, row.gift_icon_path, row.gift_icon];
-  if (sources.some((src) => isVideo(src, row.gift_clip_type) || isSvga(src, row.gift_clip_type))) return false;
+  if (sources.some((src) => isVideo(src ?? null, row.gift_clip_type) || isSvga(src ?? null, row.gift_clip_type))) return false;
   return true;
 };
 const svgCandidates = (row: GiftRow) => [row.gift_clip_path, row.gift_icon_path, row.gift_image_url, row.gift_icon, ...giftAssetCandidates(row.gift_name)].map(assetUrl).filter((v): v is string => !!v && isSvg(v));
@@ -167,8 +167,8 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const primaryClip = assetUrl(active.gift_clip_path); const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
   const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (primaryClip ?? fallbackSrc);
   const mediaType = fallbackSrc && !primaryClip ? fallbackType : giftAssetType(src ?? "");
-  const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
-  const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
+  const video = !small && (mediaType === "video" || isVideo(src ?? null, active.gift_clip_type));
+  const svga = !small && (mediaType === "svga" || isSvga(src ?? null, active.gift_clip_type));
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : primaryImage; const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
   const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};

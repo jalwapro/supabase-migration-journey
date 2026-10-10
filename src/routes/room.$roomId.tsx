@@ -1891,9 +1891,6 @@ function RoomPage() {
       country: seated.user?.country ?? null,
       country_code: seated.user?.country_code ?? null,
       city: seated.user?.city ?? null,
-      country: seated.user?.country ?? null,
-      country_code: seated.user?.country_code ?? null,
-      city: seated.user?.city ?? null,
     });
   }
 
@@ -2016,9 +2013,6 @@ function RoomPage() {
         country: m.user?.country ?? null,
         country_code: m.user?.country_code ?? null,
         city: m.user?.city ?? null,
-        country: m.user?.country ?? null,
-        country_code: m.user?.country_code ?? null,
-        city: m.user?.city ?? null,
       })),
   ];
 
@@ -2074,9 +2068,6 @@ function RoomPage() {
           id: m.user_id,
           username: m.user?.username ?? "User",
           avatar: m.user?.avatar ?? null,
-          country: m.user?.country ?? null,
-          country_code: m.user?.country_code ?? null,
-          city: m.user?.city ?? null,
           country: m.user?.country ?? null,
           country_code: m.user?.country_code ?? null,
           city: m.user?.city ?? null,
@@ -2158,7 +2149,7 @@ onOpenGames={() => setGamesSheetOpen(true)}
 </div>
 
 <HostRoomMoreSheet open={hostMoreOpen} onClose={() => setHostMoreOpen(false)} seatCount={r.seat_count} maxSeats={20} onSeats={async (next) => { if (!isHost) return; const occupied=members.filter((m)=>m.seat_index!=null).length; if(next<occupied){toast.error(`Cannot reduce seats below ${occupied} occupied seats`);return;} const {error}=await supabase.rpc("update_voice_room_seat_count",{_room_id:roomId,_seat_count:next}); if(error){toast.error(error.message);return;} setHostMoreOpen(false); await room.refetch(); }} onMusic={() => {setHostMoreOpen(false);setMusicOpen(true)}} onSettings={() => {setHostMoreOpen(false);setVideoSettingsOpen(true)}} onInvite={() => {setHostMoreOpen(false);setInviteOpen(true)}} onRanking={() => {setHostMoreOpen(false);void navigate({to:"/rank"})}} />
-<InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window === "undefined" ? "" : window.location.href} roomTitle={r.name ?? "JALWA Voice Room"} />
+<InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window === "undefined" ? "" : window.location.href} roomTitle={r.title ?? "JALWA Voice Room"} />
 
 <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 
