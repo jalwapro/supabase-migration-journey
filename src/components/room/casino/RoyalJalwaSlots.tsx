@@ -59,14 +59,14 @@ export function RoyalJalwaSlots({ open, onClose, roomId }: Props) {
     haptic();
     setSpinning(true);
     setResult(null);
-    spinTimer.current = window.setInterval(() => {
+    spinTimer.current = (window.setInterval as unknown as typeof setInterval)(() => {
       setReels([0, 1, 2].map(() => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]));
       blip(240 + Math.random() * 160, 0.025, "square");
     }, 85);
     try {
       const r = await play.mutateAsync({ amount: bet, requestId: crypto.randomUUID() });
       void refresh?.();
-      finishTimer.current = window.setTimeout(() => {
+      finishTimer.current = (window.setTimeout as unknown as typeof setTimeout)(() => {
         if (spinTimer.current) window.clearInterval(spinTimer.current);
         spinTimer.current = null;
         const serverReels = Array.isArray(r.reels) ? r.reels.slice(0, 3) : [];

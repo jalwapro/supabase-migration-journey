@@ -1861,7 +1861,7 @@ function RoomPage() {
   const ludoPlayers: LudoPlayer[] = [0, 1, 2, 3].map((i) => {
     const m = seatsByIndex.get(i);
     return m
-      ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null, country: m.user?.country ?? null, country_code: m.user?.country_code ?? null, city: m.user?.city ?? null }
+      ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null, country: m.user?.country ?? null, country_code: m.user?.country_code ?? null, city: (m.user as { city?: string | null } | undefined)?.city ?? null }
       : { id: `empty-${i}`, username: null, avatar: null };
   });
 
@@ -1888,12 +1888,6 @@ function RoomPage() {
       id: seated.user_id,
       username: seated.user?.username ?? null,
       avatar: seated.user?.avatar ?? null,
-      country: seated.user?.country ?? null,
-      country_code: seated.user?.country_code ?? null,
-      city: seated.user?.city ?? null,
-      country: seated.user?.country ?? null,
-      country_code: seated.user?.country_code ?? null,
-      city: seated.user?.city ?? null,
     });
   }
 
@@ -2015,10 +2009,7 @@ function RoomPage() {
         avatar: m.user?.avatar ?? null,
         country: m.user?.country ?? null,
         country_code: m.user?.country_code ?? null,
-        city: m.user?.city ?? null,
-        country: m.user?.country ?? null,
-        country_code: m.user?.country_code ?? null,
-        city: m.user?.city ?? null,
+        city: (m.user as { city?: string | null } | undefined)?.city ?? null,
       })),
   ];
 
@@ -2076,10 +2067,7 @@ function RoomPage() {
           avatar: m.user?.avatar ?? null,
           country: m.user?.country ?? null,
           country_code: m.user?.country_code ?? null,
-          city: m.user?.city ?? null,
-          country: m.user?.country ?? null,
-          country_code: m.user?.country_code ?? null,
-          city: m.user?.city ?? null,
+          city: (m.user as { city?: string | null } | undefined)?.city ?? null,
           level: m.user?.vip_level ?? 0,
           is_vip: (m.user?.vip_level ?? 0) > 0,
           is_muted: m.user_id === user?.id ? agora.muted : m.is_muted,
@@ -2158,7 +2146,7 @@ onOpenGames={() => setGamesSheetOpen(true)}
 </div>
 
 <HostRoomMoreSheet open={hostMoreOpen} onClose={() => setHostMoreOpen(false)} seatCount={r.seat_count} maxSeats={20} onSeats={async (next) => { if (!isHost) return; const occupied=members.filter((m)=>m.seat_index!=null).length; if(next<occupied){toast.error(`Cannot reduce seats below ${occupied} occupied seats`);return;} const {error}=await supabase.rpc("update_voice_room_seat_count",{_room_id:roomId,_seat_count:next}); if(error){toast.error(error.message);return;} setHostMoreOpen(false); await room.refetch(); }} onMusic={() => {setHostMoreOpen(false);setMusicOpen(true)}} onSettings={() => {setHostMoreOpen(false);setVideoSettingsOpen(true)}} onInvite={() => {setHostMoreOpen(false);setInviteOpen(true)}} onRanking={() => {setHostMoreOpen(false);void navigate({to:"/rank"})}} />
-<InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window === "undefined" ? "" : window.location.href} roomTitle={r.name ?? "JALWA Voice Room"} />
+<InviteSheet open={inviteOpen} onClose={() => setInviteOpen(false)} roomUrl={typeof window === "undefined" ? "" : window.location.href} roomTitle={(r as { name?: string | null }).name ?? "JALWA Voice Room"} />
 
 <JalwaPrivateChat open={privateChatOpen} onClose={() => setPrivateChatOpen(false)} />
 

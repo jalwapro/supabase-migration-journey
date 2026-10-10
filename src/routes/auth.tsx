@@ -260,7 +260,7 @@ function AuthPage() {
       // Do not navigate until Supabase has actually persisted the session.
       // This prevents the authenticated route guard from racing the native
       // Google callback and sending the user straight back to /auth.
-      let session = authData.session ?? null;
+      let session: typeof authData.session | null = authData.session ?? null;
       if (!session) {
         const { data } = await supabase.auth.getSession();
         session = data.session ?? null;
