@@ -160,6 +160,9 @@ type Room = {
   host: {
     username: string | null;
     avatar: string | null;
+    country?: string | null;
+    country_code?: string | null;
+    city?: string | null;
     frame: string | null;
     vip_level?: number | null;
     theme: {
@@ -184,7 +187,7 @@ type Member = {
   is_moderator?: boolean;
   joined_at?: string | null;
   seated_at?: string | null;
-  user: { username: string | null; avatar: string | null; frame: string | null; vip_level?: number | null } | null;
+  user: { username: string | null; avatar: string | null; country?: string | null; country_code?: string | null; frame: string | null; vip_level?: number | null } | null;
 };
 
 type Message = {
@@ -534,7 +537,7 @@ function RoomPage() {
     queryKey: ["room", roomId],
     queryFn: async () => {
       const baseCols =
-        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
+        "id,title,cover_url,room_type,status,viewer_count,seat_count,host_id,rtc_channel,locked_seats,host:profiles!live_rooms_host_id_fkey(username,avatar,country,country_code,city,frame,vip_level,theme:themes(bg_image,preview_url,primary_color,accent_color,category_id,theme_categories(slug)))";
       // Try with milestone + pk columns; fall back if migration not applied yet.
       let { data, error } = (await supabase
         .from("live_rooms")
@@ -907,7 +910,7 @@ function RoomPage() {
           // INSERT: fetch just this one user's profile (single-row lookup).
           const { data: prof } = await supabase
             .from("profiles")
-            .select("username,avatar,frame,vip_level")
+            .select("username,avatar,country,country_code,city,frame,vip_level")
             .eq("id", row.user_id)
             .maybeSingle();
           const newMember: Member = {
@@ -2033,6 +2036,9 @@ function RoomPage() {
       id: r.host_id,
       username: r.host?.username ?? "Host",
       avatar: r.host?.avatar ?? null,
+      country: r.host?.country ?? null,
+      country_code: r.host?.country_code ?? null,
+      city: r.host?.city ?? null,
       level: r.host?.vip_level ?? 0,
       is_vip: (r.host?.vip_level ?? 0) > 0,
       is_muted: hostMember ? (hostMember.user_id === user?.id ? agora.muted : hostMember.is_muted) : agora.muted,
