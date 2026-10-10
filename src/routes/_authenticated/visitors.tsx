@@ -6,11 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { Eye } from "lucide-react";
+import { CountryFlag } from "@/components/CountryFlag";
 
 export const Route = createFileRoute("/_authenticated/visitors")({ component: Page });
 
 type Row = { viewer_id: string; viewed_at: string };
-type Prof = { id: string; username: string | null; avatar: string | null; user_code: string | null; level: number | null; is_vip: boolean | null };
+type Prof = { id: string; username: string | null; avatar: string | null; user_code: string | null; level: number | null; is_vip: boolean | null; country?: string | null; country_code?: string | null };
 
 function timeAgo(iso: string) {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -40,7 +41,7 @@ function Page() {
       if (!list.length) return [] as Array<Row & { p?: Prof }>;
       const { data: profs } = await supabase
         .from("profiles")
-        .select("id, username, avatar, user_code, level, is_vip")
+        .select("id, username, avatar, user_code, level, is_vip, country, country_code")
         .in("id", list.map((r) => r.viewer_id));
       const byId = new Map<string, Prof>((profs ?? []).map((p: any) => [p.id, p]));
       return list.map((r) => ({ ...r, p: byId.get(r.viewer_id) }));
@@ -71,7 +72,7 @@ function Page() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-bold">
-                    {r.p?.username ?? "User"}
+                    {r.p?.username ?? "User"} <CountryFlag country={r.p?.country} countryCode={r.p?.country_code} className="text-sm" />
                     {r.p?.user_code && <span className="ml-1 text-[10px] font-normal text-muted-foreground">#{r.p.user_code}</span>}
                   </p>
                   <p className="text-[11px] text-muted-foreground">
