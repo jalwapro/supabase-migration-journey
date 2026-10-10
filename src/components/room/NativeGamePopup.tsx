@@ -4,6 +4,7 @@ import { DragonTigerGame } from "@/components/room/casino/DragonTigerGame";
 import { InOutGame } from "@/components/room/casino/InOutGame";
 import { PlinkoGame } from "@/components/room/casino/PlinkoGame";
 import { Slots777Game } from "@/components/room/casino/Slots777Game";
+import { RoyalJalwaSlots } from "@/components/room/casino/RoyalJalwaSlots";
 import { UnderOver7 } from "@/components/room/casino/games/UnderOver7";
 import { CrashPoint } from "@/components/room/casino/games/CrashPoint";
 import { ScratchCard } from "@/components/room/casino/games/ScratchCard";
@@ -30,6 +31,8 @@ export function NativeGamePopup({ slug, onClose }: { slug: string; onClose: () =
       return <LudoSheet open onClose={onClose} players={[]} roomId={roomId} />;
     case "slots777":
       return roomId ? <Slots777Game open onClose={onClose} roomId={roomId} /> : null;
+    case "royal_jalwa_slots":
+      return <RoyalJalwaSlots open onClose={onClose} roomId={roomId} />;
     case "crash_x":
       return <CrashXGame open onClose={onClose} roomId={roomId} />;
     case "dragon_tiger":
