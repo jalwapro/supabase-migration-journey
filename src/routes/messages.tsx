@@ -836,7 +836,7 @@ function ComposeSheet({ uid, onClose }: { uid: string; onClose: () => void }) {
       if (!ids.length) return [] as PeerProfile[];
       const { data: profs } = await supabase
         .from("profiles")
-        .select("id,username,avatar,user_code,vip_level")
+        .select("id,username,avatar,user_code,vip_level,country,country_code")
         .in("id", ids);
       return (profs ?? []) as PeerProfile[];
     },
@@ -849,7 +849,7 @@ function ComposeSheet({ uid, onClose }: { uid: string; onClose: () => void }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,user_code,vip_level")
+        .select("id,username,avatar,user_code,vip_level,country,country_code")
         .or(`username.ilike.%${debouncedQ}%,user_code.ilike.%${debouncedQ}%`)
         .neq("id", uid)
         .limit(30);
@@ -918,7 +918,7 @@ function ComposeSheet({ uid, onClose }: { uid: string; onClose: () => void }) {
                 </span>
               </span>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"}</p>
+                <p className="flex items-center gap-1 truncate text-sm font-bold text-white" style={HEADING}>{p.username ?? "user"} <CountryFlag country={p.country} countryCode={p.country_code} className="text-sm" /></p>
                 <p className="truncate text-[10px] text-white/50">ID {p.user_code ?? "—"}</p>
               </div>
               <MessageSquarePlus className="h-4 w-4 text-fuchsia-300" />
