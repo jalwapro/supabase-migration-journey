@@ -641,7 +641,7 @@ function RoomPage() {
       const withSeatedAt = await supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,seated_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
         .eq("room_id", roomId);
       if (!withSeatedAt.error || !/seated_at/i.test(withSeatedAt.error.message)) {
@@ -1861,7 +1861,7 @@ function RoomPage() {
   const ludoPlayers: LudoPlayer[] = [0, 1, 2, 3].map((i) => {
     const m = seatsByIndex.get(i);
     return m
-      ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null }
+      ? { id: m.user_id, username: m.user?.username ?? null, avatar: m.user?.avatar ?? null, country: m.user?.country ?? null, country_code: m.user?.country_code ?? null, city: m.user?.city ?? null }
       : { id: `empty-${i}`, username: null, avatar: null };
   });
 
@@ -1888,6 +1888,9 @@ function RoomPage() {
       id: seated.user_id,
       username: seated.user?.username ?? null,
       avatar: seated.user?.avatar ?? null,
+      country: seated.user?.country ?? null,
+      country_code: seated.user?.country_code ?? null,
+      city: seated.user?.city ?? null,
     });
   }
 
@@ -2007,6 +2010,9 @@ function RoomPage() {
         id: m.user_id,
         username: m.user?.username ?? null,
         avatar: m.user?.avatar ?? null,
+        country: m.user?.country ?? null,
+        country_code: m.user?.country_code ?? null,
+        city: m.user?.city ?? null,
       })),
   ];
 
@@ -2062,6 +2068,9 @@ function RoomPage() {
           id: m.user_id,
           username: m.user?.username ?? "User",
           avatar: m.user?.avatar ?? null,
+          country: m.user?.country ?? null,
+          country_code: m.user?.country_code ?? null,
+          city: m.user?.city ?? null,
           level: m.user?.vip_level ?? 0,
           is_vip: (m.user?.vip_level ?? 0) > 0,
           is_muted: m.user_id === user?.id ? agora.muted : m.is_muted,
