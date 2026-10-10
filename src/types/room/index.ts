@@ -4,6 +4,9 @@ export interface RoomParticipant {
   id: string;
   username: string;
   avatar: string | null;
+  country?: string | null;
+  country_code?: string | null;
+  city?: string | null;
   level: number;
   is_vip: boolean;
   vip_level?: number | null;
