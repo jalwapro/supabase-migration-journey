@@ -25,6 +25,8 @@ export type Profile = {
   bio: string | null;
   gender: string | null;
   country: string | null;
+  country_code?: string | null;
+  city?: string | null;
   coins: number;
   diamonds: number;
   level: number;
@@ -180,6 +182,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRoles(r);
     setAdminPermissions(permissions);
   }, [user]);
+
+  // Automatically request GPS once for a signed-in profile that has no country.
+  // Country and city are persisted only as coarse location; exact coordinates are discarded.
+  useEffect(() => {
+    if (!user || !profile || profile.country || profile.country_code || isStudioPreview()) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    let cancelled = false;
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=10&addressdetails=1`;
+        const response = await fetch(url, { headers: { Accept: "application/json" } });
+        if (!response.ok) return;
+        const result = await response.json();
+        if (cancelled) return;
+        const address = result?.address ?? {};
+        const detectedCountry = typeof address.country === "string" ? address.country : "";
+        const detectedCode = typeof address.country_code === "string" ? address.country_code.toUpperCase() : "";
+        const detectedCity = typeof (address.city ?? address.town ?? address.village ?? address.municipality ?? address.county) === "string"
+          ? (address.city ?? address.town ?? address.village ?? address.municipality ?? address.county) as string
+          : null;
+        if (!detectedCountry || !detectedCode) return;
+        const { error } = await supabase.from("profiles").update({
+          country: detectedCountry,
+          country_code: detectedCode,
+          city: detectedCity,
+        }).eq("id", user.id);
+        if (error) {
+          console.warn("[useAuth] initial GPS country save", error);
+          return;
+        }
+        if (!cancelled) await refresh();
+      } catch (error) {
+        if (!cancelled) console.warn("[useAuth] GPS country detection", error);
+      }
+    }, (error) => {
+      // Permission denial is not fatal; the profile screen offers a retry button.
+      if (error.code !== 1) console.info("[useAuth] GPS location unavailable", error.message);
+    }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+    return () => { cancelled = true; };
+  }, [user?.id, profile?.id, profile?.country, profile?.country_code, refresh]);
 
   const signOut = useCallback(async () => {
     try {
