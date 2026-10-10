@@ -59,6 +59,14 @@ function Page() {
     setCity(profile.city ?? "");
   }, [profile]);
 
+  // On first visit after login, attempt GPS detection automatically when no country
+  // has been assigned. If permission is denied, the user can retry with the button.
+  useEffect(() => {
+    if (profile && !profile.country && !profile.country_code && user) {
+      void detectLocation();
+    }
+  }, [profile?.id, profile?.country, profile?.country_code, user?.id]);
+
   async function onPickAvatar(file: File) {
     if (!user) return;
     if (!file.type.startsWith("image/")) return toast.error("Please pick an image");
@@ -89,7 +97,7 @@ function Page() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ username, full_name: fullName, bio, gender, country, country_code: countryCode || null, city })
+      .update({ username, full_name: fullName, bio, gender })
       .eq("id", user.id);
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -111,10 +119,24 @@ function Page() {
       const detectedCity = (address.city ?? address.town ?? address.village ?? address.municipality ?? address.county) as string | undefined;
       const detectedCountryCode = typeof address.country_code === "string" ? address.country_code.toUpperCase() : "";
       if (!detectedCountry) throw new Error("Country could not be detected. Please enter it manually.");
-      setCountry(detectedCountry);
-      setCountryCode(detectedCountryCode);
-      if (detectedCity) setCity(detectedCity);
-      toast.success(`Location detected: ${detectedCity ? detectedCity + ", " : ""}${detectedCountry}. Press Save Changes to save it.`);
+      // Save the first GPS-detected location immediately. The database trigger locks
+      // country/country_code/city after the first successful assignment.
+      const { data: savedLocation, error: saveLocationError } = await supabase
+        .from("profiles")
+        .update({
+          country: detectedCountry,
+          country_code: detectedCountryCode || null,
+          city: detectedCity ?? null,
+        })
+        .eq("id", user.id)
+        .select("country,country_code,city")
+        .single();
+      if (saveLocationError) throw saveLocationError;
+      setCountry(savedLocation.country ?? detectedCountry);
+      setCountryCode(savedLocation.country_code ?? detectedCountryCode);
+      setCity(savedLocation.city ?? detectedCity ?? "");
+      refresh?.();
+      toast.success(`Country locked: ${savedLocation.country ?? detectedCountry}. It cannot be changed manually.`);
     } catch (error) {
       const geoError = error as GeolocationPositionError;
       const message = typeof geoError?.code === "number" ? (geoError.code === 1 ? "Please allow location access in your device/browser settings." : geoError.code === 3 ? "Location request timed out. Try again." : "Unable to get your device location.") : error instanceof Error ? error.message : "Could not detect location";
@@ -200,25 +222,33 @@ function Page() {
               placeholder="Tell people about you…"
               textarea
             />
-            <FancyField
-              icon={<Globe2 className="h-4 w-4" />}
-              label="Country"
-              value={country}
-              onChange={(value) => { setCountry(value); setCountryCode(""); }}
-              placeholder="e.g. Pakistan"
-            />
-            <FancyField
-              icon={<MapPin className="h-4 w-4" />}
-              label="City"
-              value={city}
-              onChange={setCity}
-              placeholder="Your city"
-            />
-            <button type="button" onClick={() => void detectLocation()} disabled={locating || saving} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/10 px-3 py-2.5 text-xs font-bold text-foreground disabled:opacity-50">
-              {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
-              {locating ? "Detecting GPS location…" : "Detect city & country using GPS"}
-            </button>
-            <p className="text-[10px] text-muted-foreground">Your device asks permission first. Only city and country are shown on your profile; exact GPS coordinates are not saved.</p>
+            <div className="rounded-2xl border border-border bg-background/50 p-4">
+              <div className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
+                <Globe2 className="h-4 w-4" /> Verified country & location
+              </div>
+              {country ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-black text-foreground">
+                      {countryCode && /^[A-Z]{2}$/i.test(countryCode) ? String.fromCodePoint(...[...countryCode.toUpperCase()].map((char) => 127397 + char.charCodeAt(0))) : "🌍"} {country}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{city || "City unavailable"} · Country is locked</p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold text-emerald-400">
+                    <Lock className="h-3 w-3" /> Locked
+                  </span>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground">Country has not been detected yet. Allow GPS permission to set it once.</p>
+              )}
+            </div>
+            {!country && !countryCode && (
+              <button type="button" onClick={() => void detectLocation()} disabled={locating || saving} className="flex w-full items-center justify-center gap-2 rounded-xl border border-[color:var(--primary)]/40 bg-[color:var(--primary)]/10 px-3 py-2.5 text-xs font-bold text-foreground disabled:opacity-50">
+                {locating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                {locating ? "Detecting GPS location…" : "Detect country automatically"}
+              </button>
+            )}
+            <p className="text-[10px] text-muted-foreground">Country and city are detected from device GPS and saved once. You cannot edit them manually. Exact GPS coordinates are never saved.</p>
 
             <div>
               <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
