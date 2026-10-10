@@ -264,8 +264,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const banChannel = supabase.channel(`auth-ban-status:${user.id}`)
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "profiles", filter: `id=eq.${user.id}` }, (payload) => {
-        const updated = payload.new as { status?: string; ban_reason?: string | null };
-        if (updated.status === "banned") enforceBan(updated.ban_reason);
+        const updated = payload.new as { status?: string; ban_reason?: string | null; coins?: number | null; diamonds?: number | null };
+        if (updated.status === "banned") {
+          enforceBan(updated.ban_reason);
+          return;
+        }
+        // Keep the visible wallet balance in sync with atomic server-side coin transfers.
+        // Return the existing object when balances did not change to avoid extra app-wide renders.
+        setProfile((previous) => {
+          if (!previous) return previous;
+          const coins = typeof updated.coins === "number" ? updated.coins : previous.coins;
+          const diamonds = typeof updated.diamonds === "number" ? updated.diamonds : previous.diamonds;
+          if (coins === previous.coins && diamonds === previous.diamonds) return previous;
+          return { ...previous, coins, diamonds };
+        });
       }).subscribe();
 
     const tick = () => {
