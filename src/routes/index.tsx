@@ -272,7 +272,7 @@ function Home() {
       const since = new Date(Date.now() - 2 * 60_000).toISOString();
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,frame,last_seen")
+        .select("id,username,avatar,frame,last_seen,country,country_code")
         .gte("last_seen", since)
         .order("last_seen", { ascending: false })
         .limit(20);
