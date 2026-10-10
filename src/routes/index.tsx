@@ -8,6 +8,7 @@ import { useUnreadCount } from "@/hooks/useNotifications";
 import { useRealtimeInvalidate } from "@/hooks/useRealtimeInvalidate";
 import { DailySpinPopup } from "@/components/DailySpinPopup";
 import { formatCompact } from "@/lib/utils";
+import { CountryFlag } from "@/components/CountryFlag";
 import { getAssetCacheProgress, subscribeAssetCacheProgress, type AssetCacheProgress } from "@/lib/assetCache";
 
 import { JALWA_LOGO as jalwaLogo } from "@/lib/r2-static";
@@ -72,6 +73,8 @@ type LiveUser = {
   avatar: string | null;
   frame: string | null;
   last_seen: string | null;
+  country?: string | null;
+  country_code?: string | null;
 };
 type SearchUser = {
   id: string;
@@ -79,6 +82,8 @@ type SearchUser = {
   full_name: string | null;
   avatar: string | null;
   user_code: string | null;
+  country?: string | null;
+  country_code?: string | null;
 };
 
 type TabKey = "voice" | "video" | "pk";
@@ -235,7 +240,7 @@ function Home() {
       const since = new Date(Date.now() - 2 * 60_000).toISOString();
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,avatar,frame,last_seen")
+        .select("id,username,avatar,frame,last_seen,country,country_code")
         .in("id", mutual)
         .gte("last_seen", since)
         .order("last_seen", { ascending: false });
@@ -391,7 +396,7 @@ function Home() {
       if (safe.length < 2) return [] as SearchUser[];
       const { data, error } = await supabase
         .from("profiles")
-        .select("id,username,full_name,avatar,user_code")
+        .select("id,username,full_name,avatar,user_code,country,country_code")
         .or(
           `username.ilike.%${safe}%,full_name.ilike.%${safe}%,user_code.ilike.%${safe}%`,
         )
@@ -575,8 +580,9 @@ function Home() {
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">
-                          {u.full_name ?? u.username ?? "User"}
+                        <p className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold">
+                          <span className="truncate">{u.full_name ?? u.username ?? "User"}</span>
+                          <CountryFlag country={u.country} countryCode={u.country_code} />
                         </p>
                         <p className="truncate text-[11px] text-muted-foreground">
                           {u.username ?? "user"}
@@ -705,8 +711,9 @@ function Home() {
                       LIVE
                     </span>
                   </span>
-                  <span className="w-full truncate text-center text-[10px] text-foreground/80">
-                    {u.username ?? "user"}
+                  <span className="flex w-full items-center justify-center gap-1 truncate text-center text-[10px] text-foreground/80">
+                    <span className="truncate">{u.username ?? "user"}</span>
+                    <CountryFlag country={u.country} countryCode={u.country_code} className="text-[12px]" />
                   </span>
                 </Link>
               ))}
