@@ -13,6 +13,7 @@ import { InsufficientCoins } from "./GameBalance";
 type Props = { open: boolean; onClose: () => void; roomId?: string };
 const SYMBOLS = ["🍒", "🔔", "💰", "👑", "💎", "7️⃣", "⭐"];
 const SYMBOL_LABELS = ["CHERRY", "BELL", "GOLD", "CROWN", "DIAMOND", "777", "STAR"];
+const SYMBOL_ICONS: Record<string, string> = { cherry: "🍒", bell: "🔔", moneybag: "💰", crown: "👑", diamond: "💎", "777": "7️⃣", star: "⭐" };
 
 type RoyalResult = SlotsResult;
 
@@ -69,7 +70,7 @@ export function RoyalJalwaSlots({ open, onClose, roomId }: Props) {
         if (spinTimer.current) window.clearInterval(spinTimer.current);
         spinTimer.current = null;
         const serverReels = Array.isArray(r.reels) ? r.reels.slice(0, 3) : [];
-        setReels(serverReels.length === 3 ? serverReels : ["🍒", "🔔", "⭐"]);
+        setReels(serverReels.length === 3 ? serverReels.map((symbol) => SYMBOL_ICONS[symbol] ?? symbol) : ["🍒", "🔔", "⭐"]);
         setResult(r);
         setSpinning(false);
         blip((r.payout ?? 0) > 0 ? 980 : 155, 0.18, (r.payout ?? 0) > 0 ? "sine" : "sawtooth");
