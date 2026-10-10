@@ -121,6 +121,7 @@ interface SeatGridProps {
 
 export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
+  const seatedUserIdsKey = [...new Set(seats.map((seat) => seat.user?.id).filter((id): id is string => !!id))].sort().join(",");
   const [requests, setRequests] = useState<SeatRequest[]>([]);
   const [busyRequest, setBusyRequest] = useState<string | null>(null);
   const [isModerator, setIsModerator] = useState(false);
@@ -134,7 +135,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   // Batch-load visual/profile metadata for seated users in one request.
   useEffect(() => {
     let active = true;
-    const ids = [...new Set(seats.map((seat) => seat.user?.id).filter((id): id is string => !!id))];
+    const ids = seatedUserIdsKey ? seatedUserIdsKey.split(",") : [];
     if (!ids.length) { setSeatProfiles({}); return () => { active = false; }; }
     void supabase.from("profiles")
       .select("id,frame,ring,vip_level,frame_render_config,country,country_code")
@@ -148,7 +149,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
         setSeatProfiles(next);
       });
     return () => { active = false; };
-  }, [seats]);
+  }, [seatedUserIdsKey]);
 
   useEffect(() => {
     if (!roomId) return;
