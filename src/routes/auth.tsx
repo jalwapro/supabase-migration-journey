@@ -14,7 +14,7 @@ const NATIVE_OAUTH_REDIRECT = "app.lovable.jalwa://auth/callback";
 // The matching Android OAuth client must also exist in this project with
 // package app.lovable.jalwa and the signing certificate SHA-1 for this build.
 const GOOGLE_WEB_CLIENT_ID =
-  "516412597113-srica99p7opvua5e2gf1da1tcqo57sdm.apps.googleusercontent.com";
+  "923506443706-bfroam18nheqfkdpfrhevd2tdgkt2pqj.apps.googleusercontent.com";
 
 let googleSignInInitialized = false;
 
