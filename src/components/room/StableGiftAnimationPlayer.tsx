@@ -167,7 +167,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const primaryClip = assetUrl(active.gift_clip_path); const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
   const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (primaryClip ?? fallbackSrc);
   const mediaType = fallbackSrc && !primaryClip ? fallbackType : giftAssetType(src ?? "");
-  const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
+  const video = !small && (mediaType === "video" || isVideo(src ?? null, active.gift_clip_type));
   const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : primaryImage; const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);

@@ -61,6 +61,8 @@ export type RoomParticipant = {
   avatar_frame_url?: string | null;
   frame_url?: string | null;
   ring?: string | null;
+  country?: string | null;
+  country_code?: string | null;
   gift_score?: number;
   level?: number;
 };
