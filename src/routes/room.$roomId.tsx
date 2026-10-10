@@ -650,7 +650,7 @@ function RoomPage() {
       return supabase
         .from("room_members")
         .select(
-          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,frame,vip_level)",
+          "room_id,user_id,seat_index,is_muted,is_video,is_moderator,joined_at,user:profiles!room_members_user_id_fkey(username,avatar,country,country_code,city,frame,vip_level)",
         )
         .eq("room_id", roomId);
     };
@@ -1891,6 +1891,9 @@ function RoomPage() {
       country: seated.user?.country ?? null,
       country_code: seated.user?.country_code ?? null,
       city: seated.user?.city ?? null,
+      country: seated.user?.country ?? null,
+      country_code: seated.user?.country_code ?? null,
+      city: seated.user?.city ?? null,
     });
   }
 
@@ -2013,6 +2016,9 @@ function RoomPage() {
         country: m.user?.country ?? null,
         country_code: m.user?.country_code ?? null,
         city: m.user?.city ?? null,
+        country: m.user?.country ?? null,
+        country_code: m.user?.country_code ?? null,
+        city: m.user?.city ?? null,
       })),
   ];
 
@@ -2068,6 +2074,9 @@ function RoomPage() {
           id: m.user_id,
           username: m.user?.username ?? "User",
           avatar: m.user?.avatar ?? null,
+          country: m.user?.country ?? null,
+          country_code: m.user?.country_code ?? null,
+          city: m.user?.city ?? null,
           country: m.user?.country ?? null,
           country_code: m.user?.country_code ?? null,
           city: m.user?.city ?? null,
