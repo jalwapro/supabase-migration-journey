@@ -264,9 +264,9 @@ export function GiftGLVideo({
     setReady(false);
     detectedRef.current = null;
     completedLoopsRef.current = 0;
-    // Always try the WebGL renderer first. The R2 bucket now has CORS enabled,
-    // which is required for uploading the video frame into a WebGL texture.
-    setGlFailed(false);
+    // Keep mobile WebViews on the native video path for every new gift source.
+    // Desktop can retry WebGL for each source.
+    setGlFailed(mobileNativeVideo);
   }, [src, mobileNativeVideo]);
 
   // Auto-detect the backdrop once from the first frame (border sampling).
