@@ -41,6 +41,8 @@ type InboxRow = {
   peer_avatar: string | null;
   peer_user_code: string | null;
   peer_vip_level?: number | null;
+  peer_country?: string | null;
+  peer_country_code?: string | null;
   last_message: string | null;
   last_kind: string | null;
   last_deleted: boolean;
@@ -189,7 +191,15 @@ function MessagesPage() {
       if (!uid) return [] as InboxRow[];
       const { data, error } = await supabase.rpc("dm_inbox", { _limit: 50, _offset: 0 });
       if (error) throw error;
-      return (data ?? []) as InboxRow[];
+      const inbox = (data ?? []) as InboxRow[];
+      const peerIds = [...new Set(inbox.map((row) => row.peer_id).filter(Boolean))];
+      if (!peerIds.length) return inbox;
+      const { data: locations } = await supabase.from("profiles").select("id,country,country_code").in("id", peerIds);
+      const locationById = new Map((locations ?? []).map((p: { id: string; country: string | null; country_code: string | null }) => [p.id, p]));
+      return inbox.map((row) => {
+        const location = locationById.get(row.peer_id);
+        return { ...row, peer_country: location?.country ?? null, peer_country_code: location?.country_code ?? null };
+      });
     },
   });
 
@@ -667,6 +677,7 @@ function InboxRowCard({ row, online }: { row: InboxRow; online: boolean }) {
           <div className="flex items-center gap-1.5">
             <p className="truncate text-sm font-bold text-white" style={HEADING}>
               {row.peer_username ?? "user"}
+              <CountryFlag country={row.peer_country} countryCode={row.peer_country_code} className="text-sm" />
             </p>
             {vip >= 5 && <Crown className="h-3.5 w-3.5 text-amber-300 drop-shadow-[0_0_4px_rgba(252,211,77,0.7)]" />}
             <BadgeCheck className="h-3.5 w-3.5 text-fuchsia-300" />
