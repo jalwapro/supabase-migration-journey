@@ -4,6 +4,7 @@ import { PremiumProfileCard, ProfileCardFrame } from "@/components/profile/Premi
 import { ItemAnimation } from "@/components/ItemAnimation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { CountryFlag } from "@/components/CountryFlag";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
@@ -541,8 +542,9 @@ function UserProfilePage() {
 
               {/* Name row */}
               <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                <h1 className="text-2xl font-black text-white" data-keep-dark>
+                <h1 className="flex items-center gap-2 text-2xl font-black text-white" data-keep-dark>
                   {displayName}
+                  <CountryFlag country={p.country} countryCode={p.country_code} className="text-xl" />
                 </h1>
                 <BadgeCheck className="h-5 w-5 text-cyan-400 drop-shadow-[0_0_6px_rgba(34,211,238,0.7)]" />
                 {coinSeller.data && (
