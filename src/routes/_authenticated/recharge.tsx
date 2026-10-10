@@ -96,11 +96,11 @@ function RechargePage() {
     <>
       <AppShell title="Recharge Coins" subtitle={isPlayStoreBuild ? "Google Play Billing" : "Easypaisa / JazzCash QR & Till"}>
         <div className="space-y-5 px-4 pt-4 pb-8">
-          <a href="/coin-sellers" className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-3 transition hover:border-primary/50">
+          {!isPlayStoreBuild && <a href="/coin-sellers" className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/5 p-3 transition hover:border-primary/50">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/15"><Store className="h-5 w-5 text-primary" /></span>
             <span className="min-w-0 flex-1"><span className="block text-sm font-bold">Buy coins from a seller</span><span className="block text-xs text-muted-foreground">Choose a seller and contact them on WhatsApp</span></span>
             <MessageCircle className="h-4 w-4 shrink-0 text-primary" />
-          </a>
+          </a>}
           {isPlayStoreBuild ? <PlayBillingRequired /> : submitted ? <Success onReset={reset} onHistory={() => navigate({ to: "/recharge-history" })} /> : <>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {tiers.map((t) => <button key={t.key} onClick={() => { setTier(t.key); setSelectedPkg(null); }} className={`shrink-0 rounded-full px-4 py-2 text-xs font-black ${tier === t.key ? "bg-primary text-primary-foreground" : "bg-card/60 text-muted-foreground"}`}>{t.label}</button>)}
