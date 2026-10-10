@@ -1,5 +1,3 @@
-import type { HTMLAttributes } from "react";
-
 type CountryFlagProps = {
   country?: string | null;
   countryCode?: string | null;
