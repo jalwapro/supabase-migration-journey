@@ -2,6 +2,7 @@ import { Music, Settings, Users, Lock, UserPlus, Trophy, X, LayoutGrid, Minus, P
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CountryFlag } from "@/components/CountryFlag";
 
 const MIN_SEATS = 4;
 const MAX_SEATS = 20;
@@ -11,7 +12,7 @@ type Props = {
   onMembers?: () => void; onAnnouncement?: () => void; onShare?: () => void; onModerators?: () => void; onReports?: () => void; onGiftActivity?: () => void; onStats?: () => void; onEndRoom?: () => void; onSeatManagement?: () => void;
 };
 
-type Member = { user_id: string; seat_index: number | null; is_moderator: boolean; is_muted: boolean; username: string | null; avatar: string | null };
+type Member = { user_id: string; seat_index: number | null; is_moderator: boolean; is_muted: boolean; username: string | null; avatar: string | null; country?: string | null; country_code?: string | null };
 type GiftRow = { id: string; sender_username: string | null; receiver_username: string | null; gift_name: string | null; gift_emoji: string | null; coins_spent: number | null; created_at: string };
 
 const normalizeSeats = (v: number, max = MAX_SEATS) => Number.isFinite(Number(v)) ? Math.min(max, Math.max(MIN_SEATS, Math.round(Number(v)))) : MIN_SEATS;
@@ -35,9 +36,9 @@ export function HostRoomMoreSheet({ open, onClose, seatCount, maxSeats = MAX_SEA
     if (error) { toast.error(error.message); setLoading(false); return; }
     const rows = (data ?? []) as Array<{ user_id: string; seat_index: number | null; is_moderator: boolean; is_muted: boolean }>;
     const ids = rows.map(r => r.user_id);
-    const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,username,avatar").in("id", ids) : { data: [] };
-    const map = new Map(((profiles ?? []) as Array<{ id: string; username: string | null; avatar: string | null }>).map(p => [p.id, p]));
-    setMembers(rows.map(r => ({ ...r, username: map.get(r.user_id)?.username ?? null, avatar: map.get(r.user_id)?.avatar ?? null })));
+    const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,username,avatar,country,country_code").in("id", ids) : { data: [] };
+    const map = new Map(((profiles ?? []) as Array<{ id: string; username: string | null; avatar: string | null; country?: string | null; country_code?: string | null }>).map(p => [p.id, p]));
+    setMembers(rows.map(r => ({ ...r, username: map.get(r.user_id)?.username ?? null, avatar: map.get(r.user_id)?.avatar ?? null, country: map.get(r.user_id)?.country ?? null, country_code: map.get(r.user_id)?.country_code ?? null })));
     setLoading(false);
   };
 
@@ -140,7 +141,7 @@ export function HostRoomMoreSheet({ open, onClose, seatCount, maxSeats = MAX_SEA
     {panel && <div className="fixed inset-0 z-[100] grid place-items-end bg-black/60" onClick={()=>setPanel(null)}><div className="w-[calc(100%-16px)] max-w-[430px] max-h-[58vh] overflow-y-auto rounded-t-2xl border border-white/20 bg-[#17082a] p-3 pb-[calc(12px+env(safe-area-inset-bottom))] text-white" onClick={e=>e.stopPropagation()}>
       <div className="mb-2 flex items-center justify-between"><b className="text-sm">{panel === "members" ? "Members" : panel === "ranking" ? "Rankings" : panel === "announcement" ? "Announcement" : panel === "moderators" ? "Moderators" : panel === "gifts" ? "Gift Activity" : panel === "stats" ? "Room Stats" : "Reports"}</b><button onClick={()=>setPanel(null)} className="grid h-7 w-7 place-items-center rounded-full bg-white/10"><X className="h-3.5 w-3.5"/></button></div>
       {loading && <p className="py-4 text-center text-xs text-white/60">Loading…</p>}
-      {(panel === "members" || panel === "moderators") && <div className="space-y-1.5">{members.map(m=><div key={m.user_id} className="flex items-center gap-2 rounded-xl bg-white/5 p-2">{m.avatar ? <img src={m.avatar} alt="" className="h-8 w-8 rounded-full object-cover"/> : <div className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-xs font-bold">{(m.username ?? "U")[0]}</div>}<div className="min-w-0 flex-1"><b className="block truncate text-[11px]">{m.username ?? "User"}</b><span className="text-[9px] text-white/50">{m.seat_index == null ? "Viewer" : `Seat ${m.seat_index + 1}`}{m.is_moderator ? " · Moderator" : ""}</span></div>{panel === "moderators" && <button onClick={()=>void toggleModerator(m)} className="rounded-lg bg-white/10 px-2 py-1 text-[9px] font-bold">{m.is_moderator ? "Remove" : "Make"}</button>}</div>)}{!loading && members.length===0 && <p className="py-4 text-center text-xs text-white/50">No members.</p>}</div>}
+      {(panel === "members" || panel === "moderators") && <div className="space-y-1.5">{members.map(m=><div key={m.user_id} className="flex items-center gap-2 rounded-xl bg-white/5 p-2">{m.avatar ? <img src={m.avatar} alt="" className="h-8 w-8 rounded-full object-cover"/> : <div className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-xs font-bold">{(m.username ?? "U")[0]}</div>}<div className="min-w-0 flex-1"><b className="flex items-center gap-1 truncate text-[11px]">{m.username ?? "User"} <CountryFlag country={m.country} countryCode={m.country_code} className="text-sm" /></b><span className="text-[9px] text-white/50">{m.seat_index == null ? "Viewer" : `Seat ${m.seat_index + 1}`}{m.is_moderator ? " · Moderator" : ""}</span></div>{panel === "moderators" && <button onClick={()=>void toggleModerator(m)} className="rounded-lg bg-white/10 px-2 py-1 text-[9px] font-bold">{m.is_moderator ? "Remove" : "Make"}</button>}</div>)}{!loading && members.length===0 && <p className="py-4 text-center text-xs text-white/50">No members.</p>}</div>}
       {panel === "announcement" && <div><textarea value={announcement} onChange={e=>setAnnouncement(e.target.value)} placeholder="Write room announcement…" className="min-h-24 w-full rounded-xl border border-white/10 bg-white/5 p-2 text-xs outline-none"/><button onClick={()=>void publishAnnouncement()} className="mt-2 w-full rounded-xl bg-[color:var(--secondary)] py-2.5 text-xs font-black">Publish Announcement</button></div>}
       {panel === "gifts" && <div className="space-y-1.5">{gifts.map(g=><div key={g.id} className="rounded-xl bg-white/5 p-2 text-[10px]"><b>{g.gift_emoji ?? "🎁"} {g.gift_name ?? "Gift"}</b><div className="text-white/60">{g.sender_username ?? "User"} → {g.receiver_username ?? "User"} · {Number(g.coins_spent ?? 0).toLocaleString()} coins</div></div>)}{!loading && gifts.length===0 && <p className="py-4 text-center text-xs text-white/50">No gifts yet.</p>}</div>}
       {panel === "stats" && <div className="grid grid-cols-3 gap-2"><div className="rounded-xl bg-white/5 p-3 text-center"><b className="block text-sm">{stats.gifts}</b><span className="text-[9px] text-white/50">Gifts</span></div><div className="rounded-xl bg-white/5 p-3 text-center"><b className="block text-sm">{stats.total.toLocaleString()}</b><span className="text-[9px] text-white/50">Coins</span></div><div className="rounded-xl bg-white/5 p-3 text-center"><b className="block text-sm">{stats.senders}</b><span className="text-[9px] text-white/50">Gifters</span></div></div>}
