@@ -40,6 +40,7 @@ import {
 import { toast } from "sonner";
 import { useRef, useState, type ComponentType } from "react";
 import { LevelAvatar } from "@/components/LevelAvatar";
+import { CountryFlag } from "@/components/CountryFlag";
 import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
@@ -305,7 +306,7 @@ function MePage() {
               {/* Name + info */}
               <div className="relative z-10 mt-8 flex flex-col items-center gap-1.5 text-center">
                 <div className="flex items-center justify-center gap-1.5">
-                  <p className="max-w-[240px] truncate text-[22px] font-black leading-tight text-white" style={HEADING}>{userName}</p>
+                  <p className="flex max-w-[280px] items-center gap-1.5 text-[22px] font-black leading-tight text-white" style={HEADING}><span className="truncate">{userName}</span><CountryFlag country={profile?.country} countryCode={profileCountryCode} className="text-lg" /></p>
                   <BadgeCheck className="h-5 w-5 shrink-0 fill-[#6366f1] text-white" />
                 </div>
                 <p className="text-[13px] leading-tight text-white/60">@{userName.toLowerCase()}</p>
