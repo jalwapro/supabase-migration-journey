@@ -59,13 +59,6 @@ function Page() {
     setCity(profile.city ?? "");
   }, [profile]);
 
-  // On first visit after login, attempt GPS detection automatically when no country
-  // has been assigned. If permission is denied, the user can retry with the button.
-  useEffect(() => {
-    if (profile && !profile.country && !profile.country_code && user) {
-      void detectLocation();
-    }
-  }, [profile?.id, profile?.country, profile?.country_code, user?.id]);
 
   async function onPickAvatar(file: File) {
     if (!user) return;
