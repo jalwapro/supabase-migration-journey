@@ -18,7 +18,7 @@ self.addEventListener("fetch", event => {
         const cached = await cache.match(new Request(request.url, { method: "GET" }));
         if (!cached || cached.status !== 200) return fetch(request);
         const range = request.headers.get("range") || "";
-        const match = range.match(/^bytes=(\\d*)-(\\d*)$/);
+        const match = range.match(/^bytes=(\d*)-(\d*)$/);
         if (!match) return fetch(request);
         const blob = await cached.blob();
         const start = match[1] ? Number(match[1]) : 0;
