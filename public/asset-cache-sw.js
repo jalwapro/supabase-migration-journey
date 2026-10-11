@@ -23,8 +23,10 @@ self.addEventListener("fetch", event => {
     if (forceRefresh) {
       try {
         const response = await fetch(request);
-        if (response.ok && response.type !== "opaque") {
-          event.waitUntil(cache.put(request, response.clone()));
+        if (response.status === 200 && response.type !== "opaque") {
+          event.waitUntil(cache.put(request, response.clone()).catch((error) => {
+            console.warn("[AssetCache] Cache write skipped", error);
+          }));
         }
         return response;
       } catch {
@@ -38,8 +40,10 @@ self.addEventListener("fetch", event => {
 
     try {
       const response = await fetch(request);
-      if (response.ok && response.type !== "opaque") {
-        event.waitUntil(cache.put(request, response.clone()));
+      if (response.status === 200 && response.type !== "opaque") {
+        event.waitUntil(cache.put(request, response.clone()).catch((error) => {
+          console.warn("[AssetCache] Cache write skipped", error);
+        }));
       }
       return response;
     } catch {
