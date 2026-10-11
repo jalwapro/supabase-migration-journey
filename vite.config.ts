@@ -31,6 +31,9 @@ const isVercel = !!process.env.VERCEL;
 
 export default defineConfig({
   tanstackStart: {
+    // Enable route-level lazy loading so the public Home route does not eagerly
+    // download admin, Studio, games, and other unrelated route components.
+    router: { autoCodeSplitting: true },
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     server: { entry: "server" },
   },

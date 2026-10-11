@@ -33,6 +33,8 @@ let progress: AssetCacheProgress = {
   status: "idle", total: 0, completed: 0, downloadedBytes: 0, totalBytes: 0,
   currentAsset: null, percent: 0,
 };
+let initializationStarted = false;
+let warmupInFlight: Promise<void> | null = null;
 
 const listeners = new Set<(value: AssetCacheProgress) => void>();
 
@@ -84,14 +86,6 @@ async function getMeta(url: string): Promise<Meta | null> {
   });
 }
 
-async function sha256(response: Response) {
-  try {
-    const buffer = await response.clone().arrayBuffer();
-    const digest = await crypto.subtle.digest("SHA-256", buffer);
-    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
-  } catch { return undefined; }
-}
-
 export async function registerAssetCacheWorker() {
   if (!isBrowser() || !("serviceWorker" in navigator)) return false;
   try {
@@ -130,15 +124,18 @@ export async function cacheAsset(
     }
 
     const response = await fetch(url, { cache: "no-store" });
-    if (!response.ok) {
+    // Cache Storage must only receive complete, readable responses.
+    // Never store partial (206) or opaque cross-origin responses.
+    if (response.status !== 200 || response.type === "opaque") {
       onComplete?.(item, 0);
       return false;
     }
 
     const size = Number(response.headers.get("content-length") || 0) || undefined;
-    const digest = await sha256(response);
+    // Avoid hashing entire video/audio files in memory; the manifest version
+    // is the cache invalidation key and hashing large clips can freeze phones.
     await cache.put(url, response.clone());
-    await putMeta({ ...item, url, size, sha256: digest, cachedAt: Date.now() });
+    await putMeta({ ...item, url, size, cachedAt: Date.now() });
     onComplete?.(item, size ?? 0);
     return true;
   } catch {
@@ -170,6 +167,7 @@ export async function warmAssetManifest(assets: AssetManifestItem[], concurrency
 
   let cursor = 0;
   let completed = 0;
+  let failed = 0;
   let downloadedBytes = 0;
 
   const worker = async () => {
@@ -186,13 +184,16 @@ export async function warmAssetManifest(assets: AssetManifestItem[], concurrency
           currentAsset: completed < ordered.length ? item.url : null,
         });
       });
-      if (!ok && !navigator.onLine) publish({ status: "offline" });
+      if (!ok) {
+        failed += 1;
+        publish({ status: navigator.onLine ? "downloading" : "offline" });
+      }
     }
   };
 
   await Promise.all(Array.from({ length: Math.min(concurrency, ordered.length) }, worker));
   publish({
-    status: navigator.onLine ? "ready" : "offline",
+    status: !navigator.onLine ? "offline" : failed > 0 ? "error" : "ready",
     completed,
     percent: Math.round((completed / ordered.length) * 100),
     currentAsset: null,
@@ -218,13 +219,9 @@ export async function clearJalwaAssetCache() {
 }
 
 export async function initJalwaAssetCache() {
-  if (!isBrowser()) return;
+  if (!isBrowser() || initializationStarted) return;
+  initializationStarted = true;
 
-  // Resource caching must NEVER block app startup. The previous startup path
-  // could leave the splash progress at 1% when nothing had started the cache
-  // state machine, and a slow manifest request could also keep the splash
-  // waiting. The service worker is registered opportunistically; actual
-  // assets are cached on first real use.
   publish({
     status: "checking",
     total: 0,
@@ -235,24 +232,44 @@ export async function initJalwaAssetCache() {
     percent: 0,
   });
 
+  // Register the worker and request persistent storage without holding up UI.
   try {
     await Promise.race([
       registerAssetCacheWorker(),
-      new Promise<boolean>(resolve => window.setTimeout(() => resolve(false), 2500)),
+      new Promise<boolean>(resolve => window.setTimeout(() => resolve(false), 1800)),
     ]);
   } catch {}
-
   try { await navigator.storage?.persist?.(); } catch {}
 
-  // No manifest/database/network dependency at launch. This makes resource
-  // caching non-blocking and guarantees the UI cannot be trapped at 1%.
-  publish({
-    status: navigator.onLine ? "ready" : "offline",
-    total: 0,
-    completed: 0,
-    downloadedBytes: 0,
-    totalBytes: 0,
-    currentAsset: null,
-    percent: 100,
-  });
+  const startWarmup = () => {
+    if (!navigator.onLine || warmupInFlight) return;
+    warmupInFlight = (async () => {
+      publish({ status: "checking", total: 0, completed: 0, downloadedBytes: 0, totalBytes: 0, currentAsset: null, percent: 0 });
+      const assets = await fetchAssetManifest();
+      if (!assets.length) {
+        publish({ status: navigator.onLine ? "error" : "offline", total: 0, completed: 0, currentAsset: null, percent: 0 });
+        return;
+      }
+      const nav = navigator as Navigator & { deviceMemory?: number; hardwareConcurrency?: number };
+      const lowEnd = /Android/i.test(navigator.userAgent) ||
+        (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) ||
+        (nav.hardwareConcurrency !== undefined && nav.hardwareConcurrency <= 4);
+      await warmAssetManifest(assets, lowEnd ? BACKGROUND_CONCURRENCY : MAX_CONCURRENCY);
+    })().catch(() => {
+      publish({ status: navigator.onLine ? "error" : "offline", currentAsset: null });
+    }).finally(() => {
+      warmupInFlight = null;
+    });
+  };
+
+  if (!navigator.onLine) {
+    publish({ status: "offline", total: 0, completed: 0, percent: 0, currentAsset: null });
+  } else {
+    // Let the first screen render before starting bulk media downloads.
+    window.setTimeout(startWarmup, 1200);
+  }
+
+  // If first launch happened offline, begin filling the cache when connectivity
+  // returns. A failed initial attempt can also be retried after reconnecting.
+  window.addEventListener("online", startWarmup);
 }
