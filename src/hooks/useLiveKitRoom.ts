@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { App } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   LocalAudioTrack,
   Room,
@@ -370,6 +372,89 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       });
     };
   }, [channel, uid, enabled, disconnect]);
+
+  // Recover only after Android returns to the foreground. Never publish a second
+  // microphone track if LiveKit still has a healthy publication. Background
+  // capture itself is provided by Android's microphone foreground service when
+  // available; failures here are deliberately non-fatal and do not raise the
+  // raw "failed to publish track" toast.
+  const micRecoveryInFlightRef = useRef(false);
+  const wasBackgroundedRef = useRef(false);
+
+  useEffect(() => {
+    if (status !== "connected" || !enabled) return;
+    let disposed = false;
+    let appStateHandle: { remove: () => Promise<void> } | null = null;
+
+    const recoverMicAfterResume = async () => {
+      if (disposed || !wasBackgroundedRef.current || micRecoveryInFlightRef.current) return;
+      wasBackgroundedRef.current = false;
+      if (!publishRef.current) return;
+
+      const room = roomRef.current;
+      if (!room || room.state !== "connected") return;
+
+      const publication = room.localParticipant.getTrackPublication(Track.Source.Microphone);
+      const track = publication?.track as LocalAudioTrack | undefined;
+      if (track?.mediaStreamTrack?.readyState === "live" && !publication?.isMuted) {
+        localAudioTrack.current = track;
+        setMuted(false);
+        setMicBlocked(false);
+        setMicError(null);
+        return;
+      }
+
+      micRecoveryInFlightRef.current = true;
+      try {
+        // setMicrophoneEnabled is idempotent for a healthy track. When Android
+        // revoked the underlying capture, LiveKit can create a fresh track.
+        await room.localParticipant.setMicrophoneEnabled(true);
+        if (disposed || roomRef.current !== room || room.state !== "connected") return;
+        localAudioTrack.current =
+          room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
+        setMuted(false);
+        setMicBlocked(false);
+        setMicError(null);
+      } catch (error) {
+        console.warn("[LiveKit] Microphone recovery will wait for a user retry.", error);
+        if (!disposed) {
+          setMicBlocked(true);
+          setMicError("Microphone paused by Android. Tap the mic button to retry.");
+          setMuted(true);
+        }
+      } finally {
+        micRecoveryInFlightRef.current = false;
+      }
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        wasBackgroundedRef.current = true;
+      } else {
+        void recoverMicAfterResume();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    if (Capacitor.isNativePlatform()) {
+      void App.addListener("appStateChange", ({ isActive }) => {
+        if (!isActive) {
+          wasBackgroundedRef.current = true;
+        } else {
+          void recoverMicAfterResume();
+        }
+      }).then((handle) => {
+        if (disposed) void handle.remove();
+        else appStateHandle = handle;
+      }).catch((error) => console.warn("[LiveKit] Native app-state listener unavailable.", error));
+    }
+
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      if (appStateHandle) void appStateHandle.remove();
+    };
+  }, [status, enabled]);
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
