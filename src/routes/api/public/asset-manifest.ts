@@ -26,8 +26,14 @@ async function rows(table: string, columns: string[]) {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return [];
   const { supabaseAdmin } = await import("../../../integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin.from(table).select(["id", ...columns].join(",")).limit(1000);
-  if (error) return [];
-  return (data ?? []) as Row[];
+  if (!error) return (data ?? []) as Row[];
+
+  // Asset tables evolve independently. If one optional media column was renamed
+  // or removed, retry with the existing schema instead of dropping every asset
+  // from that table from the manifest.
+  const fallback = await supabaseAdmin.from(table).select("*").limit(1000);
+  if (fallback.error) return [];
+  return (fallback.data ?? []) as Row[];
 }
 
 export const Route = createFileRoute("/api/public/asset-manifest")({
