@@ -67,9 +67,9 @@ html.perf-lite [data-vaul-drawer],
 html.perf-lite [data-jalwa-overlay="true"] {
   transition-duration: 120ms !important;
 }
-/* Offscreen images and cards skip paint */
-html.perf-lite img,
-html.perf-lite video {
+/* Offscreen images and cards skip paint. Keep video layers excluded: Android WebView
+ * can defer painting video used by gift overlays, leaving black/frozen frames. */
+html.perf-lite img {
   content-visibility: auto;
 }
 html.perf-lite svg animate,

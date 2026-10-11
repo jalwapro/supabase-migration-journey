@@ -33,6 +33,10 @@ export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     server: { entry: "server" },
+    // Split route UI out of the initial bundle so Home doesn't eagerly load every page.
+    // The Lovable wrapper owns the TanStack Start plugin; configure its router through tsr
+    // instead of adding a second router plugin (which would break route generation).
+    tsr: { autoCodeSplitting: true },
   },
   nitro: isVercel ? { preset: "vercel" } : undefined,
   vite: {

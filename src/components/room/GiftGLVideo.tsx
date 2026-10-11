@@ -243,7 +243,14 @@ export function GiftGLVideo({
   const detectedRef = useRef<"green" | "black" | "none" | null>(null);
   // Gift Studio clips are rendered through WebGL so the saved chroma/crop/
   // colour settings are actually applied. R2 must provide CORS for this path.
-  const [glFailed, setGlFailed] = useState(false);
+  // Keep ordinary gifts on the native hardware-decoded video path on mobile.
+  // Explicit chroma modes still use WebGL so admin-configured keying/crop/grade works.
+  // Mobile "auto" mode deliberately uses native playback to avoid GPU uploads; choose
+  // an explicit green/blue/black/white mode for assets that require chroma removal.
+  const isMobileDevice = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const needsCustomChroma = config.chromaMode === "green" || config.chromaMode === "blue" || config.chromaMode === "black" || config.chromaMode === "white";
+  const mobileNativeVideo = isMobileDevice && !needsCustomChroma;
+  const [glFailed, setGlFailed] = useState(mobileNativeVideo);
   const [ready, setReady] = useState(false);
   const readyOnce = useRef(false);
   const completedLoopsRef = useRef(0);
@@ -261,14 +268,20 @@ export function GiftGLVideo({
     setReady(false);
     detectedRef.current = null;
     completedLoopsRef.current = 0;
-    // Always try the WebGL renderer first. The R2 bucket now has CORS enabled,
-    // which is required for uploading the video frame into a WebGL texture.
-    setGlFailed(false);
-  }, [src]);
+    // Keep mobile WebViews on the native video path for every new gift source.
+    // Desktop can retry WebGL for each source.
+    setGlFailed(mobileNativeVideo);
+  }, [src, mobileNativeVideo, config.chromaMode]);
 
   // Auto-detect the backdrop once from the first frame (border sampling).
   const detect = useCallback((video: HTMLVideoElement) => {
     if (detectedRef.current || !video.videoWidth) return;
+    // Only auto mode needs detection. Explicit key modes already identify the
+    // backdrop, and native mobile playback must never pay for canvas readback.
+    if (config.chromaMode !== "auto" || mobileNativeVideo) {
+      detectedRef.current = "none";
+      return;
+    }
     try {
       const w = 32;
       const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
@@ -296,7 +309,7 @@ export function GiftGLVideo({
     } catch {
       detectedRef.current = "none";
     }
-  }, []);
+  }, [config.chromaMode, mobileNativeVideo]);
 
   useEffect(() => {
     if (glFailed) return;

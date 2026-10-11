@@ -26,7 +26,8 @@ function EmptySeatArt({ locked }: { locked: boolean }) {
   );
 }
 
-type SeatProps = { seat: RoomSeat; onClick: () => void };
+type ProfileMedia = { frame: string | null; ring: string | null; level: number | null; render_config: unknown; country: string | null; country_code: string | null };
+type SeatProps = { seat: RoomSeat; onClick: () => void; profileMedia?: ProfileMedia | null };
 
 export type RoomSeatUser = {
   id?: string;
@@ -65,7 +66,7 @@ export type RoomParticipant = {
   level?: number;
 };
 
-export function Seat({ seat, onClick }: SeatProps) {
+export function Seat({ seat, onClick, profileMedia = null }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
@@ -74,28 +75,6 @@ export function Seat({ seat, onClick }: SeatProps) {
   const giftScore = user?.gift_score ?? user?.popularity ?? 0;
   const isMuted = user?.is_muted || user?.mic === "muted" || user?.mic === "off";
   const speaking = (user?.is_speaking && !isMuted) || user?.mic === "speaking";
-  const [profileMedia, setProfileMedia] = useState<{ frame: string | null; ring: string | null; level: number | null; render_config: unknown; country: string | null; country_code: string | null } | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const id = user?.id;
-    if (!id) {
-      setProfileMedia(null);
-      return;
-    }
-    void supabase.from("profiles").select("frame,ring,vip_level,frame_render_config,country,country_code").eq("id", id).maybeSingle().then(({ data }) => {
-      if (!active) return;
-      setProfileMedia({
-        frame: (data as { frame?: string | null } | null)?.frame ?? null,
-        ring: (data as { ring?: string | null } | null)?.ring ?? null,
-        level: Number((data as { vip_level?: number | null } | null)?.vip_level ?? 0),
-        render_config: (data as { frame_render_config?: unknown } | null)?.frame_render_config ?? {},
-        country: (data as { country?: string | null } | null)?.country ?? null,
-        country_code: (data as { country_code?: string | null } | null)?.country_code ?? null,
-      });
-    });
-    return () => { active = false; };
-  }, [user?.id]);
 
   if (!user) {
     return (
@@ -119,7 +98,7 @@ export function Seat({ seat, onClick }: SeatProps) {
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} />
+          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400")} />
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
         <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow"><span className="truncate">{username}</span><CountryFlag country={profileMedia?.country} countryCode={profileMedia?.country_code} className="text-[10px]" /></span>
@@ -142,6 +121,7 @@ interface SeatGridProps {
 
 export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSeatTap, onJoinSeat, onHostTap }: SeatGridProps) {
   const capacity = normalizeCapacity(seatCount);
+  const seatedUserIdsKey = [...new Set(seats.map((seat) => seat.user?.id).filter((id): id is string => !!id))].sort().join(",");
   const [requests, setRequests] = useState<SeatRequest[]>([]);
   const [busyRequest, setBusyRequest] = useState<string | null>(null);
   const [isModerator, setIsModerator] = useState(false);
@@ -149,7 +129,27 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   const [lockBusy, setLockBusy] = useState<number | null>(null);
   const [selectedEmptySeat, setSelectedEmptySeat] = useState<RoomSeat | null>(null);
   const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]);
+  const [seatProfiles, setSeatProfiles] = useState<Record<string, ProfileMedia>>({});
     const [hostSeatIndex, setHostSeatIndex] = useState(1);
+
+  // Batch-load visual/profile metadata for seated users in one request.
+  useEffect(() => {
+    let active = true;
+    const ids = seatedUserIdsKey ? seatedUserIdsKey.split(",") : [];
+    if (!ids.length) { setSeatProfiles({}); return () => { active = false; }; }
+    void supabase.from("profiles")
+      .select("id,frame,ring,vip_level,frame_render_config,country,country_code")
+      .in("id", ids)
+      .then(({ data }) => {
+        if (!active) return;
+        const next: Record<string, ProfileMedia> = {};
+        for (const row of (data ?? []) as Array<{ id: string; frame?: string | null; ring?: string | null; vip_level?: number | null; frame_render_config?: unknown; country?: string | null; country_code?: string | null }>) {
+          next[row.id] = { frame: row.frame ?? null, ring: row.ring ?? null, level: Number(row.vip_level ?? 0), render_config: row.frame_render_config ?? {}, country: row.country ?? null, country_code: row.country_code ?? null };
+        }
+        setSeatProfiles(next);
+      });
+    return () => { active = false; };
+  }, [seatedUserIdsKey]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -434,7 +434,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               </div>
             </div>
           );
-          return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} onClick={() => void handleSeatClick(seat)} />;
+          return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} profileMedia={seat.user?.id ? seatProfiles[seat.user.id] ?? null : null} onClick={() => void handleSeatClick(seat)} />;
         })}
       </div>
 

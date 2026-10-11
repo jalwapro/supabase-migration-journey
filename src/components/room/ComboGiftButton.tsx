@@ -86,7 +86,7 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
     }
 
     try {
-      const uniqueTargets = [...new Set(targets)].filter((id) => id && id !== profile?.id);
+      const uniqueTargets = [...new Set(targets)].filter(Boolean);
       if (!uniqueTargets.length) throw new Error("Pick a receiver");
 
       const sender = { id: profile?.id ?? null, name: profile?.username ?? "Guest", avatar: profile?.avatar ?? null };
