@@ -234,6 +234,17 @@ function RechargeAdmin() {
           </div>
         }
       />
+      {!isSuperAdmin && (
+        <section className="mb-5 rounded-2xl border border-border bg-card/60 p-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+            <div>
+              <h2 className="text-sm font-bold">Manual user recharge is Super Admin only</h2>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">This account does not have the required Super Admin role, so direct coin credit is unavailable. Existing role assignments are unchanged. Sign in with an authorized Super Admin account or ask the current Super Admin to perform the credit.</p>
+            </div>
+          </div>
+        </section>
+      )}
       {isSuperAdmin && (
         <section className="mb-5 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-amber-950/25 via-card to-card p-4 sm:p-5">
           <div className="mb-4 flex items-start gap-3">
