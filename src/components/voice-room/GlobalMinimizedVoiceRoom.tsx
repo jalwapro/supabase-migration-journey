@@ -22,7 +22,7 @@ type SeatPresence = { seat_index: number | null; profile: { avatar: string | nul
 
 export function GlobalMinimizedVoiceRoom() {
   const { user } = useAuth();
-  const { activeRoom, restoreRoom, clearRoom, updateRoom } = useVoiceRoomSession();
+  const { activeRoom, restoreRoom, clearRoom } = useVoiceRoomSession();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -167,15 +167,16 @@ export function GlobalMinimizedVoiceRoom() {
     toast.success('Left Voice Room');
   };
 
+  // The room route (and its media session) is unmounted while minimized.
+  // Never pretend this floating control can change the live microphone state.
   const toggleMic = () => {
-    const muted = !Boolean(room.microphoneMuted);
-    updateRoom({ microphoneMuted: muted });
-    window.dispatchEvent(new CustomEvent('jalwa:voice-room-toggle-mic', { detail: { muted, roomId: room.roomId } }));
+    toast.info('Microphone stays off while minimized. Return to the room to unmute.');
+    void enterRoom();
   };
 
   const toggleSpeaker = () => {
-    window.dispatchEvent(new CustomEvent('jalwa:voice-room-toggle-speaker', { detail: { roomId: room.roomId } }));
-    toast.success('Speaker control sent to Voice Room');
+    toast.info('Return to the room to change speaker settings.');
+    void enterRoom();
   };
 
   return (
@@ -196,7 +197,7 @@ export function GlobalMinimizedVoiceRoom() {
             {room.userRole === 'host' ? (
               <>
                 <div className="mt-2 grid grid-cols-2 gap-1.5">
-                  <button type="button" onClick={toggleMic} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white">{room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}{room.microphoneMuted ? 'Unmute Me' : 'Mute Me'}</button>
+                  <button type="button" onClick={toggleMic} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white">{room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}Mic Off · Return</button>
                   <button type="button" onClick={toggleSpeaker} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white"><Volume2 className="h-4 w-4" />Speaker</button>
                   <button type="button" onClick={enterRoom} className="flex items-center justify-center gap-1.5 rounded-xl bg-[color:var(--primary)]/20 p-2.5 text-[10px] font-bold text-white"><LogIn className="h-4 w-4" />Manage Room</button>
                   <button type="button" onClick={leaveRoom} className="flex items-center justify-center gap-1.5 rounded-xl bg-white/10 p-2.5 text-[10px] font-bold text-white"><X className="h-4 w-4" />Leave</button>
@@ -206,7 +207,7 @@ export function GlobalMinimizedVoiceRoom() {
             ) : (
               <>
                 <div className="mt-2 grid grid-cols-3 gap-1.5">
-                  <button type="button" onClick={toggleMic} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white">{room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}{room.microphoneMuted ? 'Unmute' : 'Mute'}</button>
+                  <button type="button" onClick={toggleMic} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white">{room.microphoneMuted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}Mic Off · Return</button>
                   <button type="button" onClick={toggleSpeaker} className="flex flex-col items-center gap-1 rounded-xl bg-white/10 p-2 text-[9px] font-bold text-white"><Volume2 className="h-4 w-4" />Speaker</button>
                   <button type="button" onClick={leaveRoom} className="flex flex-col items-center gap-1 rounded-xl bg-rose-500/15 p-2 text-[9px] font-bold text-rose-200"><VolumeX className="h-4 w-4" />Leave</button>
                 </div>

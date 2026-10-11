@@ -242,7 +242,12 @@ function shortRoomCode(id: string) {
 function RoomPage() {
   const { roomId } = Route.useParams();
   const { user, profile, refresh } = useAuth();
-  const { updateRoom, clearRoom } = useVoiceRoomSession();
+  const { activeRoom, updateRoom, clearRoom } = useVoiceRoomSession();
+  // A minimized room is restored with publishing disabled. The user must tap
+  // the mic explicitly to publish again, avoiding a brief hot-mic window on reconnect.
+  const [restoreMutedMic, setRestoreMutedMic] = useState(() =>
+    activeRoom?.roomId === roomId && activeRoom.microphoneMuted === true,
+  );
   const navigate = useNavigate();
   useEffect(() => {
     if (!user?.id) return;
@@ -253,9 +258,9 @@ function RoomPage() {
       userRole: "user",
       isMinimized: false,
       connectionState: "connected",
-      microphoneMuted: false,
+      microphoneMuted: restoreMutedMic,
     });
-  }, [roomId, user?.id, updateRoom]);
+  }, [roomId, user?.id, updateRoom, restoreMutedMic]);
   const qc = useQueryClient();
   const defaultBgVisibility = useDefaultBgOpacity();
 
@@ -604,11 +609,29 @@ function RoomPage() {
   const agora = useAgoraRoom({
     channel: room.data?.rtc_channel ?? null,
     uid: myUid,
-    publish: shouldPublish,
+    publish: shouldPublish && !restoreMutedMic,
     video: isVideo,
     kind: isVideo ? "video" : "voice",
     enabled: !!user && !!room.data && room.data.status === "live",
   });
+
+  // A restored room stays muted until the publish transition actually succeeds.
+  // Once the media adapter reports an enabled mic, synchronize the room member
+  // and minimized-session UI state; if it fails, leave the ref pending so the
+  // next explicit mic tap can use the normal permission/retry path.
+  const restoreMicSyncPendingRef = useRef(restoreMutedMic);
+  useEffect(() => {
+    if (!restoreMicSyncPendingRef.current || restoreMutedMic || agora.muted || !user?.id) return;
+    restoreMicSyncPendingRef.current = false;
+    void supabase
+      .from("room_members")
+      .update({ is_muted: false })
+      .eq("room_id", roomId)
+      .eq("user_id", user.id);
+    updateRoom({ microphoneMuted: false, connectionState: "connected" });
+  }, [restoreMutedMic, agora.muted, user?.id, roomId, updateRoom]);
+
+
 
   // Wrapper that hands the CamPipeline processor callbacks (populated by
   // PipelineBridge inside the provider) to agora.toggleVideo so the
@@ -1906,6 +1929,30 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
+    // On the first tap after restore, only re-enable the publish intent here.
+    // useZegoRoom owns the permission-sync -> requestMic sequence when publish
+    // changes. Calling requestMic again in this handler races that sequence and
+    // can leave the room connected while the microphone remains muted.
+    if (restoreMutedMic) {
+      // The permission endpoint rejects canPublish=true while room_members.is_muted
+      // is still true. Clear the DB mute only after this explicit user tap, and
+      // wait for the write before allowing the publish-permission sync to run.
+      const { error: unmuteError } = await supabase
+        .from("room_members")
+        .update({ is_muted: false })
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+      if (unmuteError) {
+        console.error("[voice-room] failed to clear restored mic mute", unmuteError);
+        toast.error("Microphone could not be enabled", {
+          description: "Room permission sync failed. Please tap the microphone again.",
+        });
+        return;
+      }
+      setRestoreMutedMic(false);
+      toast.info("Reconnecting microphone…");
+      return;
+    }
     // If browser blocked mic earlier, try to re-request permission on this
     // user gesture. Show the exact reason if it fails again.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
@@ -1940,6 +1987,9 @@ function RoomPage() {
         }
       }
       if (!result.ok) {
+        // Keep the restored room safely non-publishing when the explicit
+        // unmute attempt fails; the next tap can retry from the muted state.
+        if (restoreMutedMic) setRestoreMutedMic(true);
         const message = result.error ?? agora.micError ?? "Microphone unavailable";
         const permissionIssue = /permission|blocked|allow|browser settings|site settings|insufficient permissions|failed to publish track/i.test(message);
         toast.error(message || "Microphone unavailable", {
@@ -2175,6 +2225,21 @@ onReport={async () => {
 onShare={share}
 onExit={leaveRoom}
 onHome={() => void navigate({ to: "/", replace: true })}
+onBeforeMinimize={async () => {
+  try {
+    if (shouldPublish && !agora.muted) {
+      await agora.toggleMute();
+      if (user?.id) {
+        await supabase.from("room_members").update({ is_muted: true }).eq("room_id", roomId).eq("user_id", user.id);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("[voice-room] could not mute before minimizing", error);
+    toast.error("Microphone could not be muted. Please try again before minimizing.");
+    return false;
+  }
+}}
 onRanking={() => void navigate({ to: "/rank" })}
 onOpenGames={() => setGamesSheetOpen(true)}
 />
