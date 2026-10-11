@@ -84,14 +84,6 @@ async function getMeta(url: string): Promise<Meta | null> {
   });
 }
 
-async function sha256(response: Response) {
-  try {
-    const buffer = await response.clone().arrayBuffer();
-    const digest = await crypto.subtle.digest("SHA-256", buffer);
-    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
-  } catch { return undefined; }
-}
-
 export async function registerAssetCacheWorker() {
   if (!isBrowser() || !("serviceWorker" in navigator)) return false;
   try {
