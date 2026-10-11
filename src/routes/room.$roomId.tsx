@@ -615,6 +615,22 @@ function RoomPage() {
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
+  // A restored room stays muted until the publish transition actually succeeds.
+  // Once the media adapter reports an enabled mic, synchronize the room member
+  // and minimized-session UI state; if it fails, leave the ref pending so the
+  // next explicit mic tap can use the normal permission/retry path.
+  const restoreMicSyncPendingRef = useRef(restoreMutedMic);
+  useEffect(() => {
+    if (!restoreMicSyncPendingRef.current || restoreMutedMic || agora.muted || !user?.id) return;
+    restoreMicSyncPendingRef.current = false;
+    void supabase
+      .from("room_members")
+      .update({ is_muted: false })
+      .eq("room_id", roomId)
+      .eq("user_id", user.id);
+    updateRoom({ microphoneMuted: false, connectionState: "connected" });
+  }, [restoreMutedMic, agora.muted, user?.id, roomId, updateRoom]);
+
 
 
   // Wrapper that hands the CamPipeline processor callbacks (populated by
@@ -1913,9 +1929,15 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
-    // The first explicit mic tap after restoring a minimized room re-enables
-    // publishing. The normal permission sync/retry path below handles the server grant.
-    if (restoreMutedMic) setRestoreMutedMic(false);
+    // On the first tap after restore, only re-enable the publish intent here.
+    // useZegoRoom owns the permission-sync -> requestMic sequence when publish
+    // changes. Calling requestMic again in this handler races that sequence and
+    // can leave the room connected while the microphone remains muted.
+    if (restoreMutedMic) {
+      setRestoreMutedMic(false);
+      toast.info("Reconnecting microphone…");
+      return;
+    }
     // If browser blocked mic earlier, try to re-request permission on this
     // user gesture. Show the exact reason if it fails again.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
