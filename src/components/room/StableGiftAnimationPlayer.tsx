@@ -172,12 +172,12 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   if (!active) return null;
   const small = isSmallGift(active); const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
   const primaryClip = assetUrl(active.gift_clip_path); const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
-  const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (primaryClip ?? fallbackSrc);
-  const mediaType = fallbackSrc && !primaryClip ? fallbackType : giftAssetType(src ?? "");
+  const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (fallbackSrc ?? primaryClip);
+  const mediaType = fallbackSrc && fallbackSrc !== primaryClip ? (fallbackType ?? giftAssetType(fallbackSrc)) : giftAssetType(src ?? "");
   const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
   const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
-  const image = svg ? src : primaryImage; const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
+  const image = svg ? src : (mediaType === "image" ? (src ?? primaryImage) : primaryImage); const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
   const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
   const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" ");
   const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, transform: "translate3d(0, 0, 0)", willChange: "transform", ...crop };
