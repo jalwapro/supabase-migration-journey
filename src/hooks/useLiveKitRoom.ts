@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { App } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { startNativeMicrophoneForegroundService, stopNativeMicrophoneForegroundService } from "@/lib/native-microphone-service";
 import {
   LocalAudioTrack,
   Room,
@@ -372,6 +373,26 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       });
     };
   }, [channel, uid, enabled, disconnect]);
+
+  // Start Android's microphone foreground service while a native voice room
+  // is connected. This must start while the activity is visible; Android 14+
+  // rejects microphone foreground services started for the first time in background.
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    if (status === "connected" && enabled) {
+      void startNativeMicrophoneForegroundService().catch((error) => {
+        console.warn("[Android] Microphone foreground service could not start.", error);
+      });
+    } else if (status === "idle" || status === "disabled" || status === "error" || !enabled) {
+      void stopNativeMicrophoneForegroundService().catch((error) => {
+        console.warn("[Android] Microphone foreground service could not stop.", error);
+      });
+    }
+  }, [status, enabled]);
+
+  useEffect(() => () => {
+    void stopNativeMicrophoneForegroundService().catch(() => undefined);
+  }, []);
 
   // Recover only after Android returns to the foreground. Never publish a second
   // microphone track if LiveKit still has a healthy publication. Background
