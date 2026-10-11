@@ -31,7 +31,7 @@ function Splash() {
   const assetsReady =
     assetProgress.status === "ready" ||
     assetProgress.status === "offline" ||
-    assetProgress.percent >= 100;
+    assetProgress.status === "error";
 
   useEffect(() => {
     const t = window.setTimeout(() => setSplashMinDone(true), 900);
@@ -64,15 +64,17 @@ function Splash() {
   }
 
   const cachePercent = Math.max(0, Math.min(100, assetProgress.percent));
-  const cacheDone = assetProgress.total === 0 || assetsReady;
+  const cacheDone = assetsReady;
   const cacheLabel =
     assetProgress.status === "offline"
-      ? "Offline resources ready"
-      : cacheDone
-        ? "Resources ready"
-        : assetProgress.status === "checking"
-          ? "Checking resources…"
-          : "Preparing JALWA resources…";
+      ? "Offline mode — cached resources available"
+      : assetProgress.status === "error"
+        ? "Some resources will load online"
+        : assetProgress.status === "ready"
+          ? "Resources cached and ready"
+          : assetProgress.status === "checking"
+            ? "Preparing resource download…"
+            : "Preparing JALWA resources…";
 
   return (
     <main
