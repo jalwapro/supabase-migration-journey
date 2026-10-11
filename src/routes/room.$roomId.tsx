@@ -12,6 +12,7 @@ import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
 import { VoiceRoomScreen } from "@/components/voice-room/VoiceRoomScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
+import { nativePlatform } from "@/lib/native";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import hostThroneAsset from "@/assets/room/host-throne.png.asset.json";
@@ -1295,14 +1296,23 @@ function RoomPage() {
         .eq("user_id", uid);
     };
 
-    const onPageHide = () => removeMembership();
+    const onPageHide = () => {
+      // Android/iOS backgrounding is not a room exit; keep the seat for resume.
+      if (nativePlatform() === "web") removeMembership();
+    };
     window.addEventListener("pagehide", onPageHide);
     window.addEventListener("beforeunload", onPageHide);
 
     return () => {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onPageHide);
-      removeMembership();
+      // Minimizing routes Home but must not remove the user's seat/membership.
+      let minimized = false;
+      try {
+        const saved = JSON.parse(localStorage.getItem("jalwa:active-voice-room") || "null");
+        minimized = saved?.roomId === rid && saved?.isMinimized === true;
+      } catch {}
+      if (!minimized) removeMembership();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roomId, isHost, room.data?.id]);
@@ -1899,13 +1909,42 @@ function RoomPage() {
     // If browser blocked mic earlier, try to re-request permission on this
     // user gesture. Show the exact reason if it fails again.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
-      const result = await agora.requestMic();
+      let result = await agora.requestMic();
+      const firstError = result.error ?? agora.micError ?? "";
+      // After minimizing/restoring, the local participant can still be connected
+      // while server-side publish permission is stale. Re-sync through the
+      // existing permission endpoint once, then retry mic publishing once.
+      if (!result.ok && /insufficient permissions|failed to publish track|publish permission/i.test(firstError)) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+          const canonicalRoom = room.data?.rtc_channel;
+          if (accessToken && canonicalRoom) {
+            const response = await fetch("/api/livekit-permissions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({ room: canonicalRoom, canPublish: true }),
+            });
+            const permission = await response.json().catch(() => ({})) as { error?: string; canPublish?: boolean };
+            if (response.ok && permission.canPublish === true) {
+              result = await agora.requestMic();
+            } else {
+              console.warn("[voice-room] microphone publish permission recovery failed", permission.error);
+            }
+          }
+        } catch (error) {
+          console.warn("[voice-room] microphone publish permission recovery failed", error);
+        }
+      }
       if (!result.ok) {
         const message = result.error ?? agora.micError ?? "Microphone unavailable";
-        const permissionIssue = /permission|blocked|allow|browser settings|site settings/i.test(message);
-        toast.error(result.error ?? agora.micError ?? "Microphone unavailable", {
+        const permissionIssue = /permission|blocked|allow|browser settings|site settings|insufficient permissions|failed to publish track/i.test(message);
+        toast.error(message || "Microphone unavailable", {
           description: permissionIssue
-            ? "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again."
+            ? (nativePlatform() === "android" ? "Agar Jalwa ki Microphone permission Allow hai, room se bahar aaye baghair mic dobara tap karein. Phir bhi issue ho to Phone Settings → Apps → Jalwa → Permissions → Microphone check karein." : nativePlatform() === "ios" ? "Agar Jalwa ki Microphone permission Allow hai, mic dobara tap karein. Phir bhi issue ho to iPhone Settings → Jalwa → Microphone check karein." : "Address bar ke 🔒/ⓘ icon → Site settings → Microphone → Allow karein, phir mic dobara tap karein.")
             : "Mic abhi start nahi ho saka. Doosri audio app band karke mic dobara tap karein.",
           duration: 8000,
         });
