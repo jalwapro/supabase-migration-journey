@@ -1303,7 +1303,13 @@ function RoomPage() {
     return () => {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("beforeunload", onPageHide);
-      removeMembership();
+      // Minimizing routes Home but must not remove the user's seat/membership.
+      let minimized = false;
+      try {
+        const saved = JSON.parse(localStorage.getItem("jalwa:active-voice-room") || "null");
+        minimized = saved?.roomId === rid && saved?.isMinimized === true;
+      } catch {}
+      if (!minimized) removeMembership();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, roomId, isHost, room.data?.id]);
