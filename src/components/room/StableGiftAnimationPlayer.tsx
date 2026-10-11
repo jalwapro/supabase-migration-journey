@@ -36,13 +36,15 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [active, setActive] = useState<GiftRow | null>(null);
   const [localUserId, setLocalUserId] = useState<string | null>(null);
   const [mediaFailed, setMediaFailed] = useState(false);
+  const [mediaStarted, setMediaStarted] = useState(false);
+  const [mediaDurationMs, setMediaDurationMs] = useState<number | null>(null);
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
   const [fallbackType, setFallbackType] = useState<"video" | "svga" | "image" | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
   const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
-  const finish = useCallback(() => { clearTimer(); setFlyTarget(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
-  const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setActive(row); } }, []);
+  const finish = useCallback(() => { clearTimer(); setFlyTarget(null); setMediaStarted(false); setMediaDurationMs(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
+  const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setMediaStarted(false); setMediaDurationMs(null); setActive(row); } }, []);
   const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => {
     if (!row.gift_id) return row;
     const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,icon_path,emoji,sound_url,animation,duration_ms,loop,price_coins,price").eq("id", row.gift_id).maybeSingle();
@@ -159,7 +161,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     return () => { alive = false; releaseGiftBroadcastChannel(roomId); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
   }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
 
-  useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const declared = num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, clearTimer, finish]);
+  useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const videoSrc = assetUrl(active.gift_clip_path) ?? fallbackSrc; const activeVideo = isVideo(videoSrc, active.gift_clip_type); if (activeVideo && !mediaStarted) return; const declared = mediaDurationMs ?? num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, fallbackSrc, mediaStarted, mediaDurationMs, clearTimer, finish]);
   useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
   if (!active) return null;
@@ -173,9 +175,9 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const image = svg ? src : primaryImage; const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
   const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
   const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" ");
-  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, ...crop };
+  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, transform: "translate3d(0, 0, 0)", willChange: "transform", ...crop };
   const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
-  const handleDuration = (ms: number) => { clearTimer(); const naturalMs = ms > 0 ? ms : num(active.gift_duration_ms, 15000); const maxMs = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, naturalMs + cfg.holdMs); endTimerRef.current = window.setTimeout(finish, Math.max(0, cfg.delayMs) + maxMs + 250); };
+  const handleDuration = (ms: number) => { if (ms > 0) setMediaDurationMs(ms); };
   const handleMediaError = () => { if (small) { finish(); return; } setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(() => { if (!fallbackSrc) finish(); }, 7000); };
   const handleSvgError = () => { setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(finish, 1200); };
 
@@ -187,11 +189,12 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
     {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
-      : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onEnded={finish} onError={handleMediaError} />
-      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={false} loop={loop} className="h-full w-full" style={mediaStyle}
+      : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onReady={() => setMediaStarted(true)} onEnded={finish} onError={handleMediaError} />
+      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={false} loop={loop} className="h-full w-full" style={{ ...mediaStyle, transform: "translate3d(0, 0, 0)", willChange: "transform" }}
           onLoadedMetadata={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) handleDuration(Math.ceil(d * 1000)); }}
           onLoadedData={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
-          onCanPlay={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
+          onCanPlayThrough={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
+          onPlaying={() => setMediaStarted(true)}
           onWaiting={e => { const v = e.currentTarget; window.setTimeout(() => { if (!v.paused && !v.ended) return; void v.play().catch(() => {}); }, 250); }}
           onStalled={e => { const v = e.currentTarget; window.setTimeout(() => { if (!v.paused && !v.ended) return; void v.play().catch(() => {}); }, 500); }}
           onEnded={finish} onError={handleMediaError} />
