@@ -1906,61 +1906,84 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
-    // If browser blocked mic earlier, try to re-request permission on this
-    // user gesture. Show the exact reason if it fails again.
+
+    // When no track is published yet, first clear the database mute flag.
+    // /api/livekit-permissions intentionally refuses canPublish=true while
+    // room_members.is_muted is true, so syncing before this write always fails.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
-      let result = await agora.requestMic();
-      const firstError = result.error ?? agora.micError ?? "";
-      // After minimizing/restoring, the local participant can still be connected
-      // while server-side publish permission is stale. Re-sync through the
-      // existing permission endpoint once, then retry mic publishing once.
-      if (!result.ok && /insufficient permissions|failed to publish track|publish permission/i.test(firstError)) {
-        try {
-          const { data: sessionData } = await supabase.auth.getSession();
-          const accessToken = sessionData.session?.access_token;
-          const canonicalRoom = room.data?.rtc_channel;
-          if (accessToken && canonicalRoom) {
-            const response = await fetch("/api/livekit-permissions", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accessToken}`,
-              },
-              body: JSON.stringify({ room: canonicalRoom, canPublish: true }),
-            });
-            const permission = await response.json().catch(() => ({})) as { error?: string; canPublish?: boolean };
-            if (response.ok && permission.canPublish === true) {
-              result = await agora.requestMic();
-            } else {
-              console.warn("[voice-room] microphone publish permission recovery failed", permission.error);
-            }
-          }
-        } catch (error) {
-          console.warn("[voice-room] microphone publish permission recovery failed", error);
-        }
-      }
-      if (!result.ok) {
-        const message = result.error ?? agora.micError ?? "Microphone unavailable";
-        const permissionIssue = /permission|blocked|allow|browser settings|site settings|insufficient permissions|failed to publish track/i.test(message);
-        toast.error(message || "Microphone unavailable", {
-          description: permissionIssue
-            ? (nativePlatform() === "android" ? "Agar Jalwa ki Microphone permission Allow hai, room se bahar aaye baghair mic dobara tap karein. Phir bhi issue ho to Phone Settings → Apps → Jalwa → Permissions → Microphone check karein." : nativePlatform() === "ios" ? "Agar Jalwa ki Microphone permission Allow hai, mic dobara tap karein. Phir bhi issue ho to iPhone Settings → Jalwa → Microphone check karein." : "Address bar ke 🔒/ⓘ icon → Site settings → Microphone → Allow karein, phir mic dobara tap karein.")
-            : "Mic abhi start nahi ho saka. Doosri audio app band karke mic dobara tap karein.",
-          duration: 8000,
-        });
+      if (!user) return;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      const canonicalRoom = room.data?.rtc_channel;
+      if (!accessToken || !canonicalRoom) {
+        toast.error("Room permission session is not ready. Please try again.");
         return;
       }
-      // Just enabled mic — reflect in DB and stop here (already unmuted).
-      if (user) {
-        await supabase
-          .from("room_members")
-          .update({ is_muted: false })
-          .eq("room_id", roomId)
-          .eq("user_id", user.id);
+
+      const { error: unmuteError } = await supabase
+        .from("room_members")
+        .update({ is_muted: false })
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+      if (unmuteError) {
+        console.warn("[voice-room] failed to clear room mute state", unmuteError);
+        toast.error("Could not enable your room microphone. Please try again.");
+        return;
       }
-      toast.success("Microphone enabled");
+      setMembers((prev) => prev.map((member) =>
+        member.user_id === user.id ? { ...member, is_muted: false } : member
+      ));
+
+      try {
+        const response = await fetch("/api/livekit-permissions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ room: canonicalRoom, canPublish: true }),
+        });
+        const permission = await response.json().catch(() => ({})) as { error?: string; canPublish?: boolean };
+        if (!response.ok || permission.canPublish !== true) {
+          // Restore the previous DB mute state if the server refuses publish.
+          await supabase.from("room_members").update({ is_muted: true })
+            .eq("room_id", roomId).eq("user_id", user.id);
+          setMembers((prev) => prev.map((member) =>
+            member.user_id === user.id ? { ...member, is_muted: true } : member
+          ));
+          console.warn("[voice-room] microphone permission sync rejected", permission.error);
+          toast.error(permission.error ?? "Microphone publishing is not allowed for this seat.");
+          return;
+        }
+
+        // Only attempt microphone publication after the existing server endpoint
+        // confirms that this participant has canPublish permission.
+        const result = await agora.requestMic();
+        if (!result.ok) {
+          const message = result.error ?? agora.micError ?? "Microphone unavailable";
+          toast.error(message, {
+            description: /permission|blocked|allow|insufficient permissions|failed to publish track/i.test(message)
+              ? (nativePlatform() === "android"
+                ? "Phone Settings → Apps → Jalwa → Permissions → Microphone check karein."
+                : nativePlatform() === "ios"
+                  ? "iPhone Settings → Jalwa → Microphone check karein."
+                  : "Browser Site settings → Microphone → Allow karein.")
+              : "Doosri audio app band karke mic dobara try karein.",
+            duration: 8000,
+          });
+          return;
+        }
+
+        await supabase.from("room_members").update({ is_muted: false })
+          .eq("room_id", roomId).eq("user_id", user.id);
+        toast.success("Microphone enabled");
+      } catch (error) {
+        console.warn("[voice-room] microphone permission recovery failed", error);
+        toast.error("Microphone permission update failed. Please try again.");
+      }
       return;
     }
+
     // Compute the post-toggle value BEFORE the toggle so the DB write matches
     // the new state — `agora.muted` is React state that only updates on next
     // render.
