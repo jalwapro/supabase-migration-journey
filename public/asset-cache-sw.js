@@ -8,6 +8,10 @@ self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
 
+  // Range requests (for media seeking/streaming) return partial 206 responses.
+  // Do not intercept them: Cache Storage only accepts complete 200 responses.
+  if (request.headers.has("range")) return;
+
   const url = new URL(request.url);
   if (!/^https?:$/.test(url.protocol) || !MANAGED.test(url.pathname + url.search)) return;
 
