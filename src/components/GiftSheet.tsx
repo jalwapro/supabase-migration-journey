@@ -47,7 +47,8 @@ const GiftGrid = memo(function GiftGrid({ gifts, selectedGiftId, onSelect }: { g
 });
 export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:()=>void;roomId:string;receivers:GiftReceiver[]}){
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
- useEffect(()=>{if(open&&receivers.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receivers.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receivers,profile?.id]);
+ const receiverOptions=useMemo(()=>{const list=[...receivers];if(profile?.id&&!list.some(r=>r.id===profile.id))list.unshift({id:profile.id,username:profile.username??"You",avatar:profile.avatar??null});return list;},[receivers,profile?.id,profile?.username,profile?.avatar]);
+ useEffect(()=>{if(open&&receiverOptions.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receiverOptions,selectedReceiverIds.length,profile?.id]);
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
  const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  const handleGiftSelect=useCallback((gift:Gift)=>{setSelectedGift(gift);preloadGiftVideo(giftVideoUrl(gift));},[activeTier]);
@@ -58,7 +59,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
    // contention and made the whole app feel slow on mobile.
  },[open]);
  const send=useMutation({mutationFn:async({gift,targets,quantity}:{gift:Gift;targets:string[];quantity:number})=>{
-   const uniqueTargets=[...new Set(targets)].filter(id=>id&&id!==profile?.id);
+   const uniqueTargets=[...new Set(targets)].filter(Boolean);
    if(!uniqueTargets.length)throw new Error("Pick a receiver");
    const sender={id:profile?.id??null,name:profile?.username??"Guest",avatar:profile?.avatar??null};
    if(uniqueTargets.length===1){
@@ -79,9 +80,9 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
    }
    return{gift,quantity};
  },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["wallet_tx"]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
- if(!open)return null;const effectiveTargets=[...new Set((sendToAll?receivers.map(r=>r.id):selectedReceiverIds).filter(id=>id&&id!==profile?.id))];const totalCost=price(selectedGift)*qty*Math.max(1,effectiveTargets.length);const canAfford=(profile?.coins??0)>=totalCost;
+ if(!open)return null;const effectiveTargets=[...new Set((sendToAll?receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id):selectedReceiverIds).filter(Boolean))];const totalCost=price(selectedGift)*qty*Math.max(1,effectiveTargets.length);const canAfford=(profile?.coins??0)>=totalCost;
  const performSend=()=>{if(!selectedGift||send.isPending)return;if(!effectiveTargets.length){toast.error("Pick a receiver");return;}onClose();send.mutate({gift:selectedGift,targets:effectiveTargets,quantity:qty});};
- const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(id===profile?.id||sendToAll)return;setSelectedReceiverIds(prev=>prev.includes(id)?prev.filter(item=>item!==id):[...prev,id]);};
+ const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(sendToAll)return;setSelectedReceiverIds(prev=>prev.includes(id)?prev.filter(item=>item!==id):[...prev,id]);};
  return (
   <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/50 p-0 transition-opacity" onClick={onClose}>
     <div
@@ -105,15 +106,15 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
       </div>
 
       <div className="flex items-center gap-2 px-3 py-2 overflow-x-auto border-b border-white/5 bg-black/20 no-scrollbar">
-        {receivers.map((r) => {
-          const isSelected = r.id !== profile?.id && (sendToAll || selectedReceiverIds.includes(r.id));
+        {receiverOptions.map((r) => {
+          const isSelected = r.id === profile?.id ? selectedReceiverIds.includes(r.id) : (sendToAll || selectedReceiverIds.includes(r.id));
           return (
-            <button key={r.id} onClick={() => toggleReceiver(r.id)} disabled={r.id === profile?.id} className={`relative flex flex-col items-center shrink-0 transition-all ${r.id === profile?.id ? "opacity-30 cursor-not-allowed" : ""} ${isSelected ? "opacity-100 scale-105" : "opacity-50 hover:opacity-80"}`}>
+            <button key={r.id} onClick={() => toggleReceiver(r.id)} className={`relative flex flex-col items-center shrink-0 transition-all ${isSelected ? "opacity-100 scale-105" : "opacity-50 hover:opacity-80"}`}>
               <div className={`relative h-9 w-9 rounded-full p-0.5 ${isSelected ? "bg-gradient-to-tr from-pink-500 to-violet-500 shadow-sm shadow-pink-500/50" : "bg-white/20"}`}>
                 <img src={r.avatar ?? "https://github.com/shadcn.png"} alt={r.username ?? "User"} className="h-full w-full rounded-full object-cover bg-black" />
                 {isSelected && <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-pink-500 flex items-center justify-center text-[8px] font-bold text-white border border-[#121212]">✓</div>}
               </div>
-              <span className="text-[9px] font-medium text-white/80 truncate max-w-[42px] mt-0.5">{r.username ?? "User"}</span>
+              <span className="text-[9px] font-medium text-white/80 truncate max-w-[42px] mt-0.5">{r.id===profile?.id ? "You" : (r.username ?? "User")}</span>
             </button>
           );
         })}
