@@ -12,6 +12,7 @@ import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
 import { VoiceRoomScreen } from "@/components/voice-room/VoiceRoomScreen";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
+import { nativePlatform } from "@/lib/native";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
 import { resolveLuxuryGiftMp4Url } from "@/lib/luxuryGiftMp4";
 import hostThroneAsset from "@/assets/room/host-throne.png.asset.json";
@@ -1905,7 +1906,7 @@ function RoomPage() {
         const permissionIssue = /permission|blocked|allow|browser settings|site settings/i.test(message);
         toast.error(result.error ?? agora.micError ?? "Microphone unavailable", {
           description: permissionIssue
-            ? "Click the 🔒/ⓘ icon in the address bar → Site settings → Microphone → Allow, then tap the mic again."
+            ? (nativePlatform() === "android" ? "Jalwa app ki microphone permission band hai. Phone Settings → Apps → Jalwa → Permissions → Microphone → Allow karein, phir Jalwa dobara khol kar mic tap karein." : nativePlatform() === "ios" ? "iPhone Settings → Jalwa → Microphone ko Allow karein, phir Jalwa dobara khol kar mic tap karein." : "Address bar ke 🔒/ⓘ icon → Site settings → Microphone → Allow karein, phir mic dobara tap karein.")
             : "Mic abhi start nahi ho saka. Doosri audio app band karke mic dobara tap karein.",
           duration: 8000,
         });
