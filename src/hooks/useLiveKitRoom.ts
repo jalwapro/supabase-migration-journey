@@ -410,7 +410,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
     const recoverMicAfterResume = async () => {
       if (disposed || !wasBackgroundedRef.current || micRecoveryInFlightRef.current) return;
       wasBackgroundedRef.current = false;
-      if (!publishRef.current) return;
+      if (!publishRef.current || muted) return;
 
       const room = roomRef.current;
       if (!room || room.state !== "connected") return;
@@ -475,7 +475,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
       document.removeEventListener("visibilitychange", onVisibilityChange);
       if (appStateHandle) void appStateHandle.remove();
     };
-  }, [status, enabled]);
+  }, [status, enabled, muted]);
 
   const requestMic = useCallback(async (): Promise<{ ok: boolean; error?: string }> => {
     const room = roomRef.current;
