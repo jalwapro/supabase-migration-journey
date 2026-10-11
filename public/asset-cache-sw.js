@@ -27,7 +27,7 @@ self.addEventListener("fetch", event => {
         const suffixLength = !match[1] && match[2] ? Number(match[2]) : null;
         const start = suffixLength !== null ? Math.max(blob.size - suffixLength, 0) : Number(match[1] || 0);
         const end = match[2] && suffixLength === null ? Math.min(Number(match[2]), blob.size - 1) : blob.size - 1;
-        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= blob.size || (suffixLength !== null && suffixLength <= 0)) {
+        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= blob.size || (suffixLength !== null && (!Number.isSafeInteger(suffixLength) || suffixLength <= 0))) {
           return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${blob.size}` } });
         }
         const part = blob.slice(start, end + 1);
