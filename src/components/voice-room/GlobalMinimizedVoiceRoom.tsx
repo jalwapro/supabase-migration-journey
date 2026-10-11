@@ -22,7 +22,7 @@ type SeatPresence = { seat_index: number | null; profile: { avatar: string | nul
 
 export function GlobalMinimizedVoiceRoom() {
   const { user } = useAuth();
-  const { activeRoom, restoreRoom, clearRoom, updateRoom } = useVoiceRoomSession();
+  const { activeRoom, restoreRoom, clearRoom } = useVoiceRoomSession();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
