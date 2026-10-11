@@ -149,6 +149,11 @@ public class MicrophoneForegroundServicePlugin extends Plugin {
     @PluginMethod
     public void start(PluginCall call) {
         try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                getContext().checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                call.reject("Microphone permission is not granted");
+                return;
+            }
             Intent intent = new Intent(getContext(), MicrophoneForegroundService.class);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) getContext().startForegroundService(intent);
             else getContext().startService(intent);
