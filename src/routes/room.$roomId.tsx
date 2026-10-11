@@ -243,9 +243,11 @@ function RoomPage() {
   const { roomId } = Route.useParams();
   const { user, profile, refresh } = useAuth();
   const { activeRoom, updateRoom, clearRoom } = useVoiceRoomSession();
-  // Keep a minimized user's microphone muted when the room route reconnects.
-  // The LiveKit implementation remains untouched; this is route-level lifecycle handling.
-  const restoreMutedMicRef = useRef(activeRoom?.microphoneMuted === true);
+  // A minimized room is restored with publishing disabled. The user must tap
+  // the mic explicitly to publish again, avoiding a brief hot-mic window on reconnect.
+  const [restoreMutedMic, setRestoreMutedMic] = useState(() =>
+    activeRoom?.roomId === roomId && activeRoom.isMinimized === true && activeRoom.microphoneMuted === true,
+  );
   const navigate = useNavigate();
   useEffect(() => {
     if (!user?.id) return;
@@ -256,9 +258,9 @@ function RoomPage() {
       userRole: "user",
       isMinimized: false,
       connectionState: "connected",
-      microphoneMuted: false,
+      microphoneMuted: restoreMutedMic,
     });
-  }, [roomId, user?.id, updateRoom]);
+  }, [roomId, user?.id, updateRoom, restoreMutedMic]);
   const qc = useQueryClient();
   const defaultBgVisibility = useDefaultBgOpacity();
 
@@ -607,31 +609,13 @@ function RoomPage() {
   const agora = useAgoraRoom({
     channel: room.data?.rtc_channel ?? null,
     uid: myUid,
-    publish: shouldPublish,
+    publish: shouldPublish && !restoreMutedMic,
     video: isVideo,
     kind: isVideo ? "video" : "voice",
     enabled: !!user && !!room.data && room.data.status === "live",
   });
 
-  useEffect(() => {
-    if (!restoreMutedMicRef.current || agora.status !== "connected") return;
-    let cancelled = false;
-    const restoreSafeMicState = async () => {
-      try {
-        if (!agora.muted && shouldPublish) await agora.toggleMute();
-        if (cancelled) return;
-        restoreMutedMicRef.current = false;
-        updateRoom({ microphoneMuted: true, connectionState: "connected" });
-        if (user?.id) {
-          void supabase.from("room_members").update({ is_muted: true }).eq("room_id", roomId).eq("user_id", user.id);
-        }
-      } catch (error) {
-        console.warn("[voice-room] restore microphone safety state failed", error);
-      }
-    };
-    void restoreSafeMicState();
-    return () => { cancelled = true; };
-  }, [agora.status, agora.muted, agora.toggleMute, shouldPublish, updateRoom, user?.id, roomId]);
+
 
   // Wrapper that hands the CamPipeline processor callbacks (populated by
   // PipelineBridge inside the provider) to agora.toggleVideo so the
@@ -1929,6 +1913,9 @@ function RoomPage() {
       toast.info("Take a seat first to talk");
       return;
     }
+    // The first explicit mic tap after restoring a minimized room re-enables
+    // publishing. The normal permission sync/retry path below handles the server grant.
+    if (restoreMutedMic) setRestoreMutedMic(false);
     // If browser blocked mic earlier, try to re-request permission on this
     // user gesture. Show the exact reason if it fails again.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
