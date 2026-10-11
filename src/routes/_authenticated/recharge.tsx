@@ -67,6 +67,8 @@ function RechargePage() {
   const manualSubmit = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("Please login again");
+      if (accounts.isLoading) throw new Error("Payment details are still loading. Please wait a moment.");
+      if (accounts.isError) throw new Error("Could not load payment details. Tap Retry and try again.");
       if (!selectedPkg) throw new Error("Choose a package");
       if (!/^\+?[0-9]{8,15}$/.test(senderAccount.trim())) throw new Error("Enter a valid international mobile number (8–15 digits, with country code)");
       if (txnReference.trim().length < 4) throw new Error("Enter the transaction ID");
@@ -131,7 +133,7 @@ function RechargePage() {
               <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4">
                 <div className="flex items-center gap-2"><WalletCards className="h-5 w-5" /><b>{method === "easypaisa" ? "Pay with Easypaisa" : "Pay with JazzCash"}</b></div>
                 <p className="mt-2 text-xs text-muted-foreground">Scan the QR or use the Till shown below. Complete payment inside your official {method === "easypaisa" ? "Easypaisa" : "JazzCash"} app and enter your PIN there. Never enter your PIN in Jalwa.</p>
-                {qrUrl ? <img src={qrUrl} alt={`${method} merchant QR`} className="mx-auto mt-4 max-h-72 w-full rounded-xl bg-white object-contain p-3" /> : <div className="mt-4 rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground"><ImageIcon className="mx-auto mb-2 h-7 w-7" />QR is not configured.</div>}
+                {accounts.isLoading ? <div className="mt-4 rounded-xl border border-dashed p-6 text-center text-xs text-muted-foreground"><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />Loading payment details…</div> : accounts.isError ? <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-center text-xs"><p className="text-amber-300">Payment details could not be loaded. Please retry before paying.</p><button type="button" onClick={() => void accounts.refetch()} className="mt-3 rounded-full border border-border px-4 py-2 font-bold">Retry payment details</button></div> : qrUrl ? <img src={qrUrl} alt={`${method} merchant QR`} className="mx-auto mt-4 max-h-72 w-full rounded-xl bg-white object-contain p-3" /> : <div className="mt-4 rounded-xl border border-dashed p-8 text-center text-xs text-muted-foreground"><ImageIcon className="mx-auto mb-2 h-7 w-7" />{tillId ? "QR is unavailable. You can use the Till ID below." : "QR/Till is not configured. Please contact support."}</div>}
                 {tillId && <Info label="Till / Merchant ID" value={tillId} />}
                 {title && <Info label="Account title" value={title} />}
                 <p className="mt-3 text-xs font-semibold text-amber-300">After payment, enter the mobile number you paid from, the transaction ID, and upload the payment receipt.</p>
@@ -140,7 +142,7 @@ function RechargePage() {
               <input value={txnReference} onChange={(e) => setTxnReference(e.target.value.replace(/\s/g, "").slice(0, 80))} placeholder="Transaction ID / TID" className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm font-semibold" />
               <label className="block cursor-pointer rounded-xl border border-dashed border-border bg-card/40 p-4"><div className="flex items-center gap-2 text-sm font-bold"><Upload className="h-4 w-4" />{proofFile ? proofFile.name : "Upload payment screenshot"}</div><input type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={(e) => setProofFile(e.target.files?.[0] ?? null)} /></label>
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3 text-[11px] text-muted-foreground"><b className="text-amber-300">Manual verification:</b> Request stays pending. Admin checks the payment in the merchant portal and credits coins only after confirming amount and transaction ID.</div>
-              <button disabled={manualSubmit.isPending || !selectedPkg || !senderAccount || !txnReference || !proofFile} onClick={() => manualSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{manualSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}{manualSubmit.isPending ? "Submitting…" : "Submit Payment for Verification"}</button>
+              <button disabled={manualSubmit.isPending || accounts.isLoading || accounts.isError || (!qrUrl && !tillId) || !selectedPkg || !senderAccount || !txnReference || !proofFile} onClick={() => manualSubmit.mutate()} className="flex w-full items-center justify-center gap-2 rounded-full bg-primary py-3.5 text-sm font-black text-primary-foreground disabled:opacity-40">{manualSubmit.isPending && <Loader2 className="h-4 w-4 animate-spin" />}{manualSubmit.isPending ? "Submitting…" : "Submit Payment for Verification"}</button>
             </>}
           </>}
         </div>
