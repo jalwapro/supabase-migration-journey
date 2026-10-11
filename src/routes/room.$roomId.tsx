@@ -1909,13 +1909,42 @@ function RoomPage() {
     // If browser blocked mic earlier, try to re-request permission on this
     // user gesture. Show the exact reason if it fails again.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
-      const result = await agora.requestMic();
+      let result = await agora.requestMic();
+      const firstError = result.error ?? agora.micError ?? "";
+      // After minimizing/restoring, the local participant can still be connected
+      // while server-side publish permission is stale. Re-sync through the
+      // existing permission endpoint once, then retry mic publishing once.
+      if (!result.ok && /insufficient permissions|failed to publish track|publish permission/i.test(firstError)) {
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const accessToken = sessionData.session?.access_token;
+          const canonicalRoom = room.data?.rtc_channel;
+          if (accessToken && canonicalRoom) {
+            const response = await fetch("/api/livekit-permissions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({ room: canonicalRoom, canPublish: true }),
+            });
+            const permission = await response.json().catch(() => ({})) as { error?: string; canPublish?: boolean };
+            if (response.ok && permission.canPublish === true) {
+              result = await agora.requestMic();
+            } else {
+              console.warn("[voice-room] microphone publish permission recovery failed", permission.error);
+            }
+          }
+        } catch (error) {
+          console.warn("[voice-room] microphone publish permission recovery failed", error);
+        }
+      }
       if (!result.ok) {
         const message = result.error ?? agora.micError ?? "Microphone unavailable";
-        const permissionIssue = /permission|blocked|allow|browser settings|site settings/i.test(message);
-        toast.error(result.error ?? agora.micError ?? "Microphone unavailable", {
+        const permissionIssue = /permission|blocked|allow|browser settings|site settings|insufficient permissions|failed to publish track/i.test(message);
+        toast.error(message || "Microphone unavailable", {
           description: permissionIssue
-            ? (nativePlatform() === "android" ? "Jalwa app ki microphone permission band hai. Phone Settings → Apps → Jalwa → Permissions → Microphone → Allow karein, phir Jalwa dobara khol kar mic tap karein." : nativePlatform() === "ios" ? "iPhone Settings → Jalwa → Microphone ko Allow karein, phir Jalwa dobara khol kar mic tap karein." : "Address bar ke 🔒/ⓘ icon → Site settings → Microphone → Allow karein, phir mic dobara tap karein.")
+            ? (nativePlatform() === "android" ? "Agar Jalwa ki Microphone permission Allow hai, room se bahar aaye baghair mic dobara tap karein. Phir bhi issue ho to Phone Settings → Apps → Jalwa → Permissions → Microphone check karein." : nativePlatform() === "ios" ? "Agar Jalwa ki Microphone permission Allow hai, mic dobara tap karein. Phir bhi issue ho to iPhone Settings → Jalwa → Microphone check karein." : "Address bar ke 🔒/ⓘ icon → Site settings → Microphone → Allow karein, phir mic dobara tap karein.")
             : "Mic abhi start nahi ho saka. Doosri audio app band karke mic dobara tap karein.",
           duration: 8000,
         });
