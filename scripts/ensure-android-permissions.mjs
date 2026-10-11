@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 const root = process.cwd();
 const manifestPath = resolve(root, "android/app/src/main/AndroidManifest.xml");
