@@ -37,7 +37,7 @@ export function MicPermissionModal({ open, state, onClose, onGranted }: Props) {
       const err = e as DOMException;
       setBusy(false);
       if (err?.name === "NotAllowedError" || err?.name === "SecurityError") {
-        setErr("Permission denied. Browser settings me Allow karo.");
+        setErr(nativePlatform() === "android" ? "Phone Settings → Apps → Jalwa → Permissions → Microphone → Allow karein. Phir Jalwa par wapas aa kar mic dobara tap karein." : nativePlatform() === "ios" ? "iPhone Settings → Jalwa → Microphone allow karein. Phir Jalwa par wapas aa kar mic dobara tap karein." : "Browser site settings me Microphone ko Allow karein, phir page reload karke dobara try karein.");
       } else if (err?.name === "NotFoundError") {
         setErr("Koi microphone nahi mila.");
       } else if (err?.name === "NotReadableError") {
