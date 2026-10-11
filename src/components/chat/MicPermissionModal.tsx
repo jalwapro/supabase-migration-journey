@@ -97,7 +97,7 @@ export function MicPermissionModal({ open, state, onClose, onGranted }: Props) {
             </li>
             <li>
               <span className="mr-1.5 inline-grid h-5 w-5 place-items-center rounded-full bg-[color:var(--primary)]/20 text-[10px] font-black text-[color:var(--primary)]">3</span>
-              Page {nativePlatform() === "web" ? <>Page <b>reload</b> karke dubara try karo</> : "Jalwa par wapas aa kar mic dobara tap karein"}
+              {nativePlatform() === "web" ? <>Page <b>reload</b> karke dubara try karo</> : "Jalwa par wapas aa kar mic dobara tap karein"}
             </li>
           </ol>
         )}
