@@ -20,8 +20,17 @@ self.addEventListener("fetch", event => {
         const range = request.headers.get("range") || "";
         const match = range.match(/^bytes=(\d*)-(\d*)$/);
         if (!match) return fetch(request);
-        const blob = await cached.blob();
+        // Do not materialize large video/audio files into RAM just to answer a
+        // Range request. On low-memory phones this can cause WebView freezes.
+        // Let the origin stream large files; use local byte slicing only for
+        // small cached assets with a known size.
+        const cachedLength = Number(cached.headers.get("content-length") || 0);
+        const MAX_RANGE_SLICE_BYTES = 24 * 1024 * 1024;
+        if (!Number.isFinite(cachedLength) || cachedLength <= 0 || cachedLength > MAX_RANGE_SLICE_BYTES) {
+          return fetch(request);
+        }
         if (!match[1] && !match[2]) return fetch(request);
+        const blob = await cached.blob();
         // Support normal ranges (bytes=100-), bounded ranges (bytes=100-500),
         // and suffix ranges (bytes=-500) used by some media players.
         const suffixLength = !match[1] && match[2] ? Number(match[2]) : null;
