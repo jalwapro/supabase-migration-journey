@@ -15,7 +15,7 @@ export function InstallPermissionGate() {
   const started = useRef(false);
 
   useEffect(() => {
-    if (started.current || !Capacitor.isNativePlatform()) return;
+    if (started.current || !Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "android") return;
     started.current = true;
 
     let cancelled = false;
