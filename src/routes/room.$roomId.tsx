@@ -1296,7 +1296,10 @@ function RoomPage() {
         .eq("user_id", uid);
     };
 
-    const onPageHide = () => removeMembership();
+    const onPageHide = () => {
+      // Android/iOS backgrounding is not a room exit; keep the seat for resume.
+      if (nativePlatform() === "web") removeMembership();
+    };
     window.addEventListener("pagehide", onPageHide);
     window.addEventListener("beforeunload", onPageHide);
 
