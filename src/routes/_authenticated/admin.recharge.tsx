@@ -81,7 +81,7 @@ type RechargeUser = {
 
 function RechargeAdmin() {
   const qc = useQueryClient();
-  const { roles, refresh } = useAuth();
+  const { roles, refresh, loading: authLoading } = useAuth();
   const isSuperAdmin = roles.includes("super_admin");
   const [manualUserSearch, setManualUserSearch] = useState("");
   const [manualTarget, setManualTarget] = useState<RechargeUser | null>(null);
@@ -234,7 +234,7 @@ function RechargeAdmin() {
           </div>
         }
       />
-      {!isSuperAdmin && (
+      {!authLoading && !isSuperAdmin && (
         <section className="mb-5 rounded-2xl border border-border bg-card/60 p-4">
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
