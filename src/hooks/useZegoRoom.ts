@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveKitRoom, type RemoteVideoTrack, type RemoteAudioTrack, type RemoteUser, type LiveKitStatus, type UseLiveKitRoomArgs } from "@/hooks/useLiveKitRoom";
 
@@ -43,16 +43,8 @@ export function useZegoRoom(args: UseLiveKitRoomArgs) {
   }, [args.channel]);
 
   const livekit = useLiveKitRoom({ ...args, channel: canonicalRoomName });
-  const previousPublishRef = useRef<boolean | null>(null);
-
   useEffect(() => {
     if (livekit.status !== "connected" || !canonicalRoomName || args.uid == null) return;
-    if (previousPublishRef.current === null) {
-      previousPublishRef.current = args.publish;
-      return;
-    }
-    if (previousPublishRef.current === args.publish) return;
-    previousPublishRef.current = args.publish;
     let cancelled = false;
 
     const sync = async () => {
