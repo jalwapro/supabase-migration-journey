@@ -246,7 +246,7 @@ function RoomPage() {
   // A minimized room is restored with publishing disabled. The user must tap
   // the mic explicitly to publish again, avoiding a brief hot-mic window on reconnect.
   const [restoreMutedMic, setRestoreMutedMic] = useState(() =>
-    activeRoom?.roomId === roomId && activeRoom.isMinimized === true && activeRoom.microphoneMuted === true,
+    activeRoom?.roomId === roomId && activeRoom.microphoneMuted === true,
   );
   const navigate = useNavigate();
   useEffect(() => {
