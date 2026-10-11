@@ -15,6 +15,10 @@ const permissions = [
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
   "android.permission.POST_NOTIFICATIONS",
+  "android.permission.ACCESS_COARSE_LOCATION",
+  "android.permission.ACCESS_FINE_LOCATION",
+  "android.permission.FOREGROUND_SERVICE",
+  "android.permission.FOREGROUND_SERVICE_MICROPHONE",
 ];
 
 const missing = permissions.filter(
@@ -39,7 +43,10 @@ if (!xml.includes("com.google.firebase.messaging.default_notification_channel_id
   xml = xml.slice(0, closeIndex + 1) + "\n" + fcmChannelMeta + xml.slice(closeIndex + 1);
 }
 
-xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
+if (declarations) {
+  xml = xml.slice(0, applicationIndex) + declarations + "\n" + xml.slice(applicationIndex);
+}
 writeFileSync(manifestPath, xml);
 
-console.log("✓ Android permissions configured without a persistent background service.");
+console.log("✓ Android runtime permissions configured.");
+console.log("ℹ Foreground-service permissions are declarations only; a native microphone foreground service must also be implemented and started to guarantee background capture on Android 14+.");
