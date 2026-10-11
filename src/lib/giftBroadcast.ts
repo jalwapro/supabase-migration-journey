@@ -113,12 +113,6 @@ export async function broadcastGiftPlayback(
     renderConfig: (gift.render_config as Record<string, unknown> | null) ?? null,
   };
 
-  await entry.ready;
-  const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
-  if (result !== "ok") throw new Error("Gift broadcast was not acknowledged by Realtime");
-
-  // The sender must see the same playback even when the channel is configured
-  // without self-delivery. The player deduplicates this canonical event id.
   if (typeof window !== "undefined") {
     window.requestAnimationFrame(() => {
       window.dispatchEvent(new CustomEvent("jalwa:gift-sent", {
@@ -149,5 +143,16 @@ export async function broadcastGiftPlayback(
         },
       }));
     });
+  }
+
+  // Playback must not depend on Realtime being healthy after the coin RPC has
+  // already committed. The local sender plays immediately; remote clients use
+  // the broadcast when available and the gift_sends INSERT as durable fallback.
+  try {
+    await entry.ready;
+    const result = await entry.channel.send({ type: "broadcast", event: "gift_play", payload });
+    if (result !== "ok") console.warn("[gift-playback] Realtime broadcast was not acknowledged", { roomId, id, result });
+  } catch (error) {
+    console.warn("[gift-playback] Realtime broadcast failed; local playback and gift_sends fallback remain active", { roomId, id, error });
   }
 }
