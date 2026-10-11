@@ -1950,6 +1950,9 @@ function RoomPage() {
         }
       }
       if (!result.ok) {
+        // Keep the restored room safely non-publishing when the explicit
+        // unmute attempt fails; the next tap can retry from the muted state.
+        if (restoreMutedMic) setRestoreMutedMic(true);
         const message = result.error ?? agora.micError ?? "Microphone unavailable";
         const permissionIssue = /permission|blocked|allow|browser settings|site settings|insufficient permissions|failed to publish track/i.test(message);
         toast.error(message || "Microphone unavailable", {
