@@ -130,7 +130,7 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
   const [status, setStatus] = useState<LiveKitStatus>(enabled ? "idle" : "disabled");
   const [error, setError] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<Map<number, RemoteUser>>(new Map());
-  const [muted, setMuted] = useState(!publish);
+  const [muted, setMuted] = useState(true);
   const [speakerMuted, setSpeakerMuted] = useState(false);
   const [speakerVolume, setSpeakerVolumeState] = useState(100);
   const [micLevel, setMicLevel] = useState(0);
@@ -323,20 +323,12 @@ export function useLiveKitRoom({ channel, uid, publish, video, enabled }: UseLiv
         room.remoteParticipants.forEach(refresh);
         setStatus("connected");
 
-        if (publishRef.current) {
-          try {
-            await room.localParticipant.setMicrophoneEnabled(true);
-            localAudioTrack.current = room.localParticipant.getTrackPublication(Track.Source.Microphone)?.track ?? null;
-            setMuted(false);
-            setMicBlocked(false);
-            setMicError(null);
-          } catch (micErrorValue) {
-            setMicBlocked(true);
-            setMicError(micErrorValue instanceof Error ? micErrorValue.message : "Microphone permission denied");
-          }
-        } else {
-          setMuted(true);
-        }
+        // Start muted. useZegoRoom synchronizes the server-side participant
+        // permission after connection, then explicitly requests microphone
+        // publishing only when the permission endpoint confirms it is allowed.
+        setMuted(true);
+        setMicBlocked(false);
+        setMicError(null);
       } catch (joinError) {
         console.error("LiveKit connect() failed - exact error object:", joinError);
         console.error("LiveKit connect() failed - error message:", joinError instanceof Error ? joinError.message : String(joinError));
