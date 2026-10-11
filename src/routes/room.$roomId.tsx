@@ -2175,6 +2175,21 @@ onReport={async () => {
 onShare={share}
 onExit={leaveRoom}
 onHome={() => void navigate({ to: "/", replace: true })}
+onBeforeMinimize={async () => {
+  try {
+    if (shouldPublish && !agora.muted) {
+      await agora.toggleMute();
+      if (user?.id) {
+        await supabase.from("room_members").update({ is_muted: true }).eq("room_id", roomId).eq("user_id", user.id);
+      }
+    }
+    return true;
+  } catch (error) {
+    console.error("[voice-room] could not mute before minimizing", error);
+    toast.error("Microphone could not be muted. Please try again before minimizing.");
+    return false;
+  }
+}}
 onRanking={() => void navigate({ to: "/rank" })}
 onOpenGames={() => setGamesSheetOpen(true)}
 />
