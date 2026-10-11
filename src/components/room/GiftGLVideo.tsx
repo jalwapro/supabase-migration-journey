@@ -276,9 +276,12 @@ export function GiftGLVideo({
   // Auto-detect the backdrop once from the first frame (border sampling).
   const detect = useCallback((video: HTMLVideoElement) => {
     if (detectedRef.current || !video.videoWidth) return;
-    // Chroma auto-detection uses canvas readback (getImageData), which is expensive
-    // on mobile and unnecessary when the native video fallback is selected.
-    if (mobileNativeVideo) { detectedRef.current = "none"; return; }
+    // Only auto mode needs detection. Explicit key modes already identify the
+    // backdrop, and native mobile playback must never pay for canvas readback.
+    if (config.chromaMode !== "auto" || mobileNativeVideo) {
+      detectedRef.current = "none";
+      return;
+    }
     try {
       const w = 32;
       const h = Math.max(8, Math.round((video.videoHeight / video.videoWidth) * w));
@@ -306,7 +309,7 @@ export function GiftGLVideo({
     } catch {
       detectedRef.current = "none";
     }
-  }, [mobileNativeVideo]);
+  }, [config.chromaMode, mobileNativeVideo]);
 
   useEffect(() => {
     if (glFailed) return;
