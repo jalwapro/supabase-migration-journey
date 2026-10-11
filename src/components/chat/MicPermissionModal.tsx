@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { nativePlatform } from "@/lib/native";
 import { Mic, X, Loader2, ShieldAlert } from "lucide-react";
 
 type Props = {
@@ -88,15 +89,15 @@ export function MicPermissionModal({ open, state, onClose, onGranted }: Props) {
           <ol className="mt-4 space-y-2 rounded-2xl border border-border bg-card/60 p-3 text-left text-xs text-muted-foreground">
             <li>
               <span className="mr-1.5 inline-grid h-5 w-5 place-items-center rounded-full bg-[color:var(--primary)]/20 text-[10px] font-black text-[color:var(--primary)]">1</span>
-              Address bar me <b>🔒 lock icon</b> tap karo
+              {nativePlatform() === "android" ? "Phone Settings → Apps → Jalwa → Permissions" : nativePlatform() === "ios" ? "iPhone Settings → Jalwa" : <>Address bar me <b>🔒 lock icon</b> tap karo</>}
             </li>
             <li>
               <span className="mr-1.5 inline-grid h-5 w-5 place-items-center rounded-full bg-[color:var(--primary)]/20 text-[10px] font-black text-[color:var(--primary)]">2</span>
-              <b>Site settings</b> → <b>Microphone</b> → <b>Allow</b> select karo
+              {nativePlatform() === "android" ? "Microphone → Allow select karein" : nativePlatform() === "ios" ? "Microphone ko Allow karein" : <><b>Site settings</b> → <b>Microphone</b> → <b>Allow</b> select karo</>}
             </li>
             <li>
               <span className="mr-1.5 inline-grid h-5 w-5 place-items-center rounded-full bg-[color:var(--primary)]/20 text-[10px] font-black text-[color:var(--primary)]">3</span>
-              Page <b>reload</b> karke dubara try karo
+              Page {nativePlatform() === "web" ? <>Page <b>reload</b> karke dubara try karo</> : "Jalwa par wapas aa kar mic dobara tap karein"}
             </li>
           </ol>
         )}
