@@ -5,8 +5,9 @@ import GiftGLVideo from "@/components/room/GiftGLVideo";
 import SvgaPlayer from "@/components/room/SvgaPlayer";
 import { giftAssetCandidates, giftAssetType } from "@/lib/giftAssetResolver";
 import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
+import { getGiftAudioPrefs } from "@/lib/giftAudio";
 
-type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_chromakey?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
+type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_chromakey?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_audio_enabled?: boolean | null; gift_audio_volume?: number | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
 const assetUrl = (v: string | null | undefined) => { if (!v) return null; const s = v.trim(); if (!s) return null; if (s.startsWith("__l5e/assets-v1/")) return `https://cloud-to-soul.lovable.app/${s}`; if (s.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${s}`; return s; };
 const cleanUrl = (src: string | null) => (src ?? "").split("?")[0].split("#")[0].toLowerCase();
@@ -46,16 +47,35 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
   const [fallbackType, setFallbackType] = useState<"video" | "svga" | "image" | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
+  const giftAudioRef = useRef<HTMLAudioElement | null>(null);
   const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
+  const stopGiftAudio = useCallback(() => { const audio = giftAudioRef.current; if (audio) { audio.pause(); audio.currentTime = 0; giftAudioRef.current = null; } }, []);
   const finish = useCallback(() => { clearTimer(); setFlyTarget(null); setMediaStarted(false); setMediaDurationMs(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setMediaStarted(false); setMediaDurationMs(null); setActive(row); } }, []);
   const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => {
     if (!row.gift_id) return row;
-    const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,icon_path,emoji,sound_url,animation,duration_ms,loop,price_coins,price,chromakey").eq("id", row.gift_id).maybeSingle();
+    const { data } = await supabase.from("gifts").select("render_config,clip_path,clip_type,image_url,icon,icon_path,emoji,sound_url,audio_url,audio_enabled,audio_volume,animation,duration_ms,loop,price_coins,price,chromakey").eq("id", row.gift_id).maybeSingle();
     if (!data) return row;
-    return { ...row, gift_chromakey: row.gift_chromakey ?? (data as any).chromakey ?? null, gift_render_config: (data as any).render_config ?? row.gift_render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_icon_path: row.gift_icon_path ?? (data as any).icon_path ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_audio_url: row.gift_audio_url ?? (data as any).sound_url ?? null, gift_duration_ms: row.gift_duration_ms ?? (data as any).duration_ms ?? null, gift_loop: row.gift_loop ?? false, gift_price_coins: row.gift_price_coins ?? num((data as any).price_coins ?? (data as any).price, 0) };
+    return { ...row, gift_chromakey: row.gift_chromakey ?? (data as any).chromakey ?? null, gift_render_config: (data as any).render_config ?? row.gift_render_config ?? null, gift_clip_path: row.gift_clip_path ?? (data as any).clip_path ?? null, gift_clip_type: row.gift_clip_type ?? (data as any).clip_type ?? null, gift_image_url: row.gift_image_url ?? (data as any).image_url ?? null, gift_icon: row.gift_icon ?? (data as any).icon ?? null, gift_icon_path: row.gift_icon_path ?? (data as any).icon_path ?? null, gift_emoji: row.gift_emoji ?? (data as any).emoji ?? null, gift_audio_url: row.gift_audio_url ?? (data as any).audio_url ?? null, gift_sound_url: row.gift_sound_url ?? (data as any).sound_url ?? null, gift_audio_enabled: row.gift_audio_enabled ?? (data as any).audio_enabled ?? true, gift_audio_volume: row.gift_audio_volume ?? (data as any).audio_volume ?? 1, gift_duration_ms: row.gift_duration_ms ?? (data as any).duration_ms ?? null, gift_loop: row.gift_loop ?? false, gift_price_coins: row.gift_price_coins ?? num((data as any).price_coins ?? (data as any).price, 0) };
   }, []);
+
+  useEffect(() => {
+    stopGiftAudio();
+    if (!active || active.gift_audio_enabled === false) return;
+    const soundSrc = assetUrl(active.gift_audio_url) ?? assetUrl(active.gift_sound_url);
+    if (!soundSrc) return;
+    const prefs = getGiftAudioPrefs();
+    if (prefs.muted || prefs.volume <= 0) return;
+    const giftVolume = Math.max(0, Math.min(1, num(active.gift_audio_volume, 1)));
+    if (giftVolume <= 0) return;
+    const audio = new Audio(soundSrc);
+    audio.preload = "auto";
+    audio.volume = Math.max(0, Math.min(1, prefs.volume * giftVolume));
+    giftAudioRef.current = audio;
+    void audio.play().catch((error) => console.warn("[gift-playback] separate gift audio could not autoplay", error));
+    return stopGiftAudio;
+  }, [active?.id, active?.gift_audio_url, active?.gift_sound_url, active?.gift_audio_enabled, active?.gift_audio_volume, stopGiftAudio]);
 
   useEffect(() => {
     let cancelled = false; setMediaFailed(false); setFallbackSrc(null); setFallbackType(null); setFlyTarget(null);
@@ -107,7 +127,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
           id, room_id: roomId, sender_id: typeof d.senderId === "string" ? d.senderId : null, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets,
           gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁",
           gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipPath === "string" ? d.giftClipPath : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null,
-          gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_duration_ms: num(d.giftDurationMs, 0) || null, gift_audio_url: typeof d.giftAudioUrl === "string" ? d.giftAudioUrl : null, gift_sound_url: typeof d.giftSoundUrl === "string" ? d.giftSoundUrl : null,
+          gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_duration_ms: num(d.giftDurationMs, 0) || null, gift_audio_url: typeof d.giftAudioUrl === "string" ? d.giftAudioUrl : null, gift_sound_url: typeof d.giftSoundUrl === "string" ? d.giftSoundUrl : null, gift_audio_enabled: typeof d.giftAudioEnabled === "boolean" ? d.giftAudioEnabled : true, gift_audio_volume: num(d.giftAudioVolume, 1),
           gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: typeof d.giftLoop === "boolean" ? d.giftLoop : false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User",
         };
         // Broadcast already contains the complete render/media payload. Do not
@@ -157,7 +177,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       const eventIds = Array.isArray(d.eventIds) ? d.eventIds.filter((x): x is string => typeof x === "string") : [key];
       for (const eventId of eventIds) { if (eventId === key) continue; seenRef.current.add(eventId); seenOrderRef.current.push(eventId); }
       localEchoRef.current.add(key);
-      const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_icon_path: null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" };
+      const row: GiftRow = { id: key, room_id: roomId, sender_id: localUserId, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets, gift_id: typeof d.giftId === "string" ? d.giftId : null, gift_name: typeof d.giftName === "string" ? d.giftName : "Gift", gift_emoji: typeof d.giftEmoji === "string" ? d.giftEmoji : "🎁", gift_icon: typeof d.giftIcon === "string" ? d.giftIcon : null, gift_icon_path: null, gift_image_url: typeof d.giftImageUrl === "string" ? d.giftImageUrl : null, gift_clip_path: typeof d.giftClipUrl === "string" ? d.giftClipUrl : null, gift_clip_type: typeof d.giftClipType === "string" ? d.giftClipType : null, gift_price_coins: num(d.giftPriceCoins, 0) || null, gift_audio_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_sound_url: typeof d.soundUrl === "string" ? d.soundUrl : null, gift_audio_enabled: typeof d.audioEnabled === "boolean" ? d.audioEnabled : true, gift_audio_volume: num(d.audioVolume, 1), gift_duration_ms: num(d.durationMs, 0) || null, gift_render_config: (d.renderConfig as Record<string, unknown> | null) ?? null, gift_loop: false, quantity: num(d.quantity, 1), sender_username: typeof d.senderName === "string" ? d.senderName : "User" };
       // Use the broadcast payload directly so the sender does not wait for a
       // second database read before starting playback.
       enqueue(row);
@@ -167,7 +187,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
 
   useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const videoSrc = assetUrl(active.gift_clip_path) ?? fallbackSrc; const activeVideo = isVideo(videoSrc, active.gift_clip_type); if (activeVideo && !mediaStarted) return; const declared = mediaDurationMs ?? num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, fallbackSrc, mediaStarted, mediaDurationMs, clearTimer, finish]);
-  useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
+  useEffect(() => () => { clearTimer(); stopGiftAudio(); activeRef.current = null; queueRef.current = []; }, [clearTimer, stopGiftAudio]);
 
   if (!active) return null;
   const small = isSmallGift(active); const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
@@ -175,6 +195,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (fallbackSrc ?? primaryClip);
   const mediaType = fallbackSrc && fallbackSrc !== primaryClip ? (fallbackType ?? giftAssetType(fallbackSrc)) : giftAssetType(src ?? "");
   const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
+  const hasSeparateAudio = active.gift_audio_enabled !== false && Boolean(assetUrl(active.gift_audio_url) ?? assetUrl(active.gift_sound_url));
   const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : (mediaType === "image" ? (src ?? primaryImage) : primaryImage); const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
@@ -194,11 +215,11 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
     {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
-      : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) && (!isMobileWebView() || isChromaKeyEnabled(active.gift_chromakey, cfg)) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={false} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onReady={() => setMediaStarted(true)} onEnded={finish} onError={handleMediaError} />
-      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={false} loop={loop} className="h-full w-full" style={{ ...mediaStyle, transform: "translate3d(0, 0, 0)", willChange: "transform" }}
+      : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) && (!isMobileWebView() || isChromaKeyEnabled(active.gift_chromakey, cfg)) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={hasSeparateAudio} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onReady={() => setMediaStarted(true)} onEnded={finish} onError={handleMediaError} />
+      : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={hasSeparateAudio} loop={loop} className="h-full w-full" style={{ ...mediaStyle, transform: "translate3d(0, 0, 0)", willChange: "transform" }}
           onLoadedMetadata={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) handleDuration(Math.ceil(d * 1000)); }}
-          onLoadedData={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
-          onCanPlayThrough={e => { const v = e.currentTarget; v.muted = false; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
+          onLoadedData={e => { const v = e.currentTarget; v.muted = hasSeparateAudio; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
+          onCanPlayThrough={e => { const v = e.currentTarget; v.muted = hasSeparateAudio; void v.play().catch(() => { v.muted = true; void v.play().catch(() => {}); }); }}
           onPlaying={() => setMediaStarted(true)}
           onWaiting={e => { const v = e.currentTarget; window.setTimeout(() => { if (!v.paused && !v.ended) return; void v.play().catch(() => {}); }, 250); }}
           onStalled={e => { const v = e.currentTarget; window.setTimeout(() => { if (!v.paused && !v.ended) return; void v.play().catch(() => {}); }, 500); }}
