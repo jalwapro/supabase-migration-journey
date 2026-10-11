@@ -175,8 +175,8 @@ export function GlobalMinimizedVoiceRoom() {
   };
 
   const toggleSpeaker = () => {
-    window.dispatchEvent(new CustomEvent('jalwa:voice-room-toggle-speaker', { detail: { roomId: room.roomId } }));
-    toast.success('Speaker control sent to Voice Room');
+    toast.info('Return to the room to change speaker settings.');
+    void enterRoom();
   };
 
   return (
