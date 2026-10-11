@@ -1934,6 +1934,21 @@ function RoomPage() {
     // changes. Calling requestMic again in this handler races that sequence and
     // can leave the room connected while the microphone remains muted.
     if (restoreMutedMic) {
+      // The permission endpoint rejects canPublish=true while room_members.is_muted
+      // is still true. Clear the DB mute only after this explicit user tap, and
+      // wait for the write before allowing the publish-permission sync to run.
+      const { error: unmuteError } = await supabase
+        .from("room_members")
+        .update({ is_muted: false })
+        .eq("room_id", roomId)
+        .eq("user_id", user.id);
+      if (unmuteError) {
+        console.error("[voice-room] failed to clear restored mic mute", unmuteError);
+        toast.error("Microphone could not be enabled", {
+          description: "Room permission sync failed. Please tap the microphone again.",
+        });
+        return;
+      }
       setRestoreMutedMic(false);
       toast.info("Reconnecting microphone…");
       return;
