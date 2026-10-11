@@ -1912,19 +1912,29 @@ function RoomPage() {
     // room_members.is_muted is true, so syncing before this write always fails.
     if (agora.micBlocked || !agora.localAudioTrack.current || !agora.localAudioPublished.current) {
       if (!user) return;
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
       const canonicalRoom = room.data?.rtc_channel;
-      if (!accessToken || !canonicalRoom) {
+      if (!canonicalRoom) {
         toast.error("Room permission session is not ready. Please try again.");
         return;
       }
 
-      const { error: unmuteError } = await supabase
+      // Resolve the cached Supabase session while the authenticated DB write
+      // is in flight, rather than adding another serial network/UI wait.
+      const sessionPromise = supabase.auth.getSession();
+      const unmutePromise = supabase
         .from("room_members")
         .update({ is_muted: false })
         .eq("room_id", roomId)
         .eq("user_id", user.id);
+      const [{ data: sessionData }, { error: unmuteError }] = await Promise.all([
+        sessionPromise,
+        unmutePromise,
+      ]);
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        toast.error("Room permission session is not ready. Please try again.");
+        return;
+      }
       if (unmuteError) {
         console.warn("[voice-room] failed to clear room mute state", unmuteError);
         toast.error("Could not enable your room microphone. Please try again.");
