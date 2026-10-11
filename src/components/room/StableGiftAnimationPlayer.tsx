@@ -63,7 +63,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   useEffect(() => {
     stopGiftAudio();
     if (!active || active.gift_audio_enabled === false) return;
-    const soundSrc = assetUrl(active.gift_audio_url) ?? assetUrl(active.gift_sound_url);
+    const soundSrc = assetUrl(active.gift_sound_url) ?? assetUrl(active.gift_audio_url);
     if (!soundSrc) return;
     const prefs = getGiftAudioPrefs();
     if (prefs.muted || prefs.volume <= 0) return;
@@ -81,7 +81,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
     let cancelled = false; setMediaFailed(false); setFallbackSrc(null); setFallbackType(null); setFlyTarget(null);
     if (!active) return;
     if (isSmallGift(active)) { const svg = svgCandidates(active)[0]; if (svg && !cancelled) setFallbackSrc(svg); return () => { cancelled = true; }; }
-    const primary = assetUrl(active.gift_clip_path) ?? assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon);
+    const primary = assetUrl(active.gift_clip_path) ?? assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon_path) ?? assetUrl(active.gift_icon);
     if (primary) return;
     const candidates = giftAssetCandidates(active.gift_name);
     (async () => { for (const candidate of candidates) { try { const response = await fetch(candidate, { method: "HEAD", cache: "force-cache" }); if (response.ok && !cancelled) { setFallbackSrc(candidate); setFallbackType(giftAssetType(candidate)); return; } } catch {} } })();
@@ -191,11 +191,11 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   if (!active) return null;
   const small = isSmallGift(active); const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
-  const primaryClip = assetUrl(active.gift_clip_path); const primaryImage = assetUrl(active.gift_image_url ?? active.gift_icon);
+  const primaryClip = assetUrl(active.gift_clip_path); const primaryImage = assetUrl(active.gift_image_url) ?? assetUrl(active.gift_icon_path) ?? assetUrl(active.gift_icon);
   const src = small ? (fallbackSrc ?? svgCandidates(active)[0] ?? null) : (fallbackSrc ?? primaryClip);
   const mediaType = fallbackSrc && fallbackSrc !== primaryClip ? (fallbackType ?? giftAssetType(fallbackSrc)) : giftAssetType(src ?? "");
   const video = !small && (mediaType === "video" || isVideo(src, active.gift_clip_type));
-  const hasSeparateAudio = active.gift_audio_enabled !== false && Boolean(assetUrl(active.gift_audio_url) ?? assetUrl(active.gift_sound_url));
+  const hasSeparateAudio = active.gift_audio_enabled !== false && Boolean(assetUrl(active.gift_sound_url) ?? assetUrl(active.gift_audio_url));
   const svga = !small && (mediaType === "svga" || isSvga(src, active.gift_clip_type));
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : (mediaType === "image" ? (src ?? primaryImage) : primaryImage); const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
