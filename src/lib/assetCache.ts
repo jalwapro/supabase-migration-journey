@@ -33,6 +33,8 @@ let progress: AssetCacheProgress = {
   status: "idle", total: 0, completed: 0, downloadedBytes: 0, totalBytes: 0,
   currentAsset: null, percent: 0,
 };
+let initializationStarted = false;
+let warmupInFlight: Promise<void> | null = null;
 
 const listeners = new Set<(value: AssetCacheProgress) => void>();
 
@@ -217,7 +219,8 @@ export async function clearJalwaAssetCache() {
 }
 
 export async function initJalwaAssetCache() {
-  if (!isBrowser()) return;
+  if (!isBrowser() || initializationStarted) return;
+  initializationStarted = true;
 
   publish({
     status: "checking",
@@ -238,16 +241,9 @@ export async function initJalwaAssetCache() {
   } catch {}
   try { await navigator.storage?.persist?.(); } catch {}
 
-  if (!navigator.onLine) {
-    publish({ status: "offline", total: 0, completed: 0, percent: 0, currentAsset: null });
-    return;
-  }
-
-  // Warm the complete server-provided catalog in the background after the UI
-  // gets a head start. Low-end Android gets one download at a time to avoid
-  // main-thread/memory pressure; desktops can use two concurrent downloads.
-  window.setTimeout(() => {
-    void (async () => {
+  const startWarmup = () => {
+    if (!navigator.onLine || warmupInFlight) return;
+    warmupInFlight = (async () => {
       publish({ status: "checking", total: 0, completed: 0, downloadedBytes: 0, totalBytes: 0, currentAsset: null, percent: 0 });
       const assets = await fetchAssetManifest();
       if (!assets.length) {
@@ -259,6 +255,21 @@ export async function initJalwaAssetCache() {
         (nav.deviceMemory !== undefined && nav.deviceMemory <= 4) ||
         (nav.hardwareConcurrency !== undefined && nav.hardwareConcurrency <= 4);
       await warmAssetManifest(assets, lowEnd ? BACKGROUND_CONCURRENCY : MAX_CONCURRENCY);
-    })().catch(() => publish({ status: "error", currentAsset: null }));
-  }, 1200);
+    })().catch(() => {
+      publish({ status: navigator.onLine ? "error" : "offline", currentAsset: null });
+    }).finally(() => {
+      warmupInFlight = null;
+    });
+  };
+
+  if (!navigator.onLine) {
+    publish({ status: "offline", total: 0, completed: 0, percent: 0, currentAsset: null });
+  } else {
+    // Let the first screen render before starting bulk media downloads.
+    window.setTimeout(startWarmup, 1200);
+  }
+
+  // If first launch happened offline, begin filling the cache when connectivity
+  // returns. A failed initial attempt can also be retried after reconnecting.
+  window.addEventListener("online", startWarmup);
 }
