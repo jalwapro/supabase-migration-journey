@@ -21,13 +21,20 @@ self.addEventListener("fetch", event => {
         const match = range.match(/^bytes=(\d*)-(\d*)$/);
         if (!match) return fetch(request);
         const blob = await cached.blob();
-        const start = match[1] ? Number(match[1]) : 0;
-        const end = match[2] ? Math.min(Number(match[2]), blob.size - 1) : blob.size - 1;
-        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= blob.size) {
+        if (!match[1] && !match[2]) return fetch(request);
+        // Support normal ranges (bytes=100-), bounded ranges (bytes=100-500),
+        // and suffix ranges (bytes=-500) used by some media players.
+        const suffixLength = !match[1] && match[2] ? Number(match[2]) : null;
+        const start = suffixLength !== null ? Math.max(blob.size - suffixLength, 0) : Number(match[1] || 0);
+        const end = match[2] && suffixLength === null ? Math.min(Number(match[2]), blob.size - 1) : blob.size - 1;
+        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= blob.size || (suffixLength !== null && suffixLength <= 0)) {
           return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${blob.size}` } });
         }
         const part = blob.slice(start, end + 1);
         const headers = new Headers(cached.headers);
+        // The cached body is already decoded by Fetch; do not forward stale
+        // encoding/length headers from the original full response.
+        headers.delete("Content-Encoding");
         headers.set("Accept-Ranges", "bytes");
         headers.set("Content-Length", String(part.size));
         headers.set("Content-Range", `bytes ${start}-${end}/${blob.size}`);
