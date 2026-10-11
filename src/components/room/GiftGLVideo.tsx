@@ -243,9 +243,13 @@ export function GiftGLVideo({
   const detectedRef = useRef<"green" | "black" | "none" | null>(null);
   // Gift Studio clips are rendered through WebGL so the saved chroma/crop/
   // colour settings are actually applied. R2 must provide CORS for this path.
-  // Android WebView GPUs are inconsistent with per-frame WebGL video texture uploads.
-  // Use the browser-native hardware-decoded video path there; keep WebGL for desktop.
-  const mobileNativeVideo = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  // Keep ordinary gifts on the native hardware-decoded video path on mobile.
+  // Explicit chroma modes still use WebGL so admin-configured keying/crop/grade works.
+  // Mobile "auto" mode deliberately uses native playback to avoid GPU uploads; choose
+  // an explicit green/blue/black/white mode for assets that require chroma removal.
+  const isMobileDevice = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const needsCustomChroma = config.chromaMode === "green" || config.chromaMode === "blue" || config.chromaMode === "black" || config.chromaMode === "white";
+  const mobileNativeVideo = isMobileDevice && !needsCustomChroma;
   const [glFailed, setGlFailed] = useState(mobileNativeVideo);
   const [ready, setReady] = useState(false);
   const readyOnce = useRef(false);
@@ -267,7 +271,7 @@ export function GiftGLVideo({
     // Keep mobile WebViews on the native video path for every new gift source.
     // Desktop can retry WebGL for each source.
     setGlFailed(mobileNativeVideo);
-  }, [src, mobileNativeVideo]);
+  }, [src, mobileNativeVideo, config.chromaMode]);
 
   // Auto-detect the backdrop once from the first frame (border sampling).
   const detect = useCallback((video: HTMLVideoElement) => {
@@ -302,7 +306,7 @@ export function GiftGLVideo({
     } catch {
       detectedRef.current = "none";
     }
-  }, []);
+  }, [mobileNativeVideo]);
 
   useEffect(() => {
     if (glFailed) return;
