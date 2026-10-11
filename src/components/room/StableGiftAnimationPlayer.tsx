@@ -5,7 +5,7 @@ import GiftGLVideo from "@/components/room/GiftGLVideo";
 import SvgaPlayer from "@/components/room/SvgaPlayer";
 import { giftAssetCandidates, giftAssetType } from "@/lib/giftAssetResolver";
 import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
-import { getGiftAudioPrefs } from "@/lib/giftAudio";
+import { getGiftAudioPrefs, playGiftAudioCue } from "@/lib/giftAudio";
 
 type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_chromakey?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_audio_enabled?: boolean | null; gift_audio_volume?: number | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
@@ -47,10 +47,8 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
   const [fallbackType, setFallbackType] = useState<"video" | "svga" | "image" | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
-  const giftAudioRef = useRef<HTMLAudioElement | null>(null);
   const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
-  const stopGiftAudio = useCallback(() => { const audio = giftAudioRef.current; if (audio) { audio.pause(); audio.currentTime = 0; giftAudioRef.current = null; } }, []);
   const finish = useCallback(() => { clearTimer(); setFlyTarget(null); setMediaStarted(false); setMediaDurationMs(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setMediaStarted(false); setMediaDurationMs(null); setActive(row); } }, []);
   const hydrateRenderConfig = useCallback(async (row: GiftRow): Promise<GiftRow> => {
@@ -61,21 +59,22 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, []);
 
   useEffect(() => {
-    stopGiftAudio();
     if (!active || active.gift_audio_enabled === false) return;
-    const soundSrc = assetUrl(active.gift_sound_url) ?? assetUrl(active.gift_audio_url);
+    const soundSrc = active.gift_sound_url ?? active.gift_audio_url;
     if (!soundSrc) return;
     const prefs = getGiftAudioPrefs();
     if (prefs.muted || prefs.volume <= 0) return;
     const giftVolume = Math.max(0, Math.min(1, num(active.gift_audio_volume, 1)));
     if (giftVolume <= 0) return;
-    const audio = new Audio(soundSrc);
-    audio.preload = "auto";
-    audio.volume = Math.max(0, Math.min(1, prefs.volume * giftVolume));
-    giftAudioRef.current = audio;
-    void audio.play().catch((error) => console.warn("[gift-playback] separate gift audio could not autoplay", error));
-    return stopGiftAudio;
-  }, [active?.id, active?.gift_audio_url, active?.gift_sound_url, active?.gift_audio_enabled, active?.gift_audio_volume, stopGiftAudio]);
+    // Use JALWA's shared audio helper so URL normalization, AudioContext
+    // unlock and the room's saved mute/volume preferences stay consistent.
+    playGiftAudioCue({
+      soundUrl: soundSrc,
+      giftName: active.gift_name,
+      volume: Math.max(0, Math.min(1, prefs.volume * giftVolume)),
+      premium: false,
+    });
+  }, [active?.id, active?.gift_audio_url, active?.gift_sound_url, active?.gift_audio_enabled, active?.gift_audio_volume, active?.gift_name]);
 
   useEffect(() => {
     let cancelled = false; setMediaFailed(false); setFallbackSrc(null); setFallbackType(null); setFlyTarget(null);
@@ -187,7 +186,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
 
   useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const videoSrc = assetUrl(active.gift_clip_path) ?? fallbackSrc; const activeVideo = isVideo(videoSrc, active.gift_clip_type); if (activeVideo && !mediaStarted) return; const declared = mediaDurationMs ?? num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, fallbackSrc, mediaStarted, mediaDurationMs, clearTimer, finish]);
-  useEffect(() => () => { clearTimer(); stopGiftAudio(); activeRef.current = null; queueRef.current = []; }, [clearTimer, stopGiftAudio]);
+  useEffect(() => () => { clearTimer(); activeRef.current = null; queueRef.current = []; }, [clearTimer]);
 
   if (!active) return null;
   const small = isSmallGift(active); const cfg: GiftRenderConfig = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER);
