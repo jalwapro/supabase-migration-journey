@@ -8,9 +8,36 @@ self.addEventListener("fetch", event => {
   const request = event.request;
   if (request.method !== "GET") return;
 
-  // Range requests (for media seeking/streaming) return partial 206 responses.
-  // Do not intercept them: Cache Storage only accepts complete 200 responses.
-  if (request.headers.has("range")) return;
+  // Serve byte ranges from a previously cached complete asset when possible.
+  // Never write the resulting 206 response back to Cache Storage.
+  if (request.headers.has("range")) {
+    if (!/^https?:$/.test(new URL(request.url).protocol) || !MANAGED.test(new URL(request.url).pathname + new URL(request.url).search)) return;
+    event.respondWith((async () => {
+      try {
+        const cache = await caches.open(CACHE_NAME);
+        const cached = await cache.match(new Request(request.url, { method: "GET" }));
+        if (!cached || cached.status !== 200) return fetch(request);
+        const range = request.headers.get("range") || "";
+        const match = range.match(/^bytes=(\\d*)-(\\d*)$/);
+        if (!match) return fetch(request);
+        const blob = await cached.blob();
+        const start = match[1] ? Number(match[1]) : 0;
+        const end = match[2] ? Math.min(Number(match[2]), blob.size - 1) : blob.size - 1;
+        if (!Number.isSafeInteger(start) || !Number.isSafeInteger(end) || start > end || start >= blob.size) {
+          return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${blob.size}` } });
+        }
+        const part = blob.slice(start, end + 1);
+        const headers = new Headers(cached.headers);
+        headers.set("Accept-Ranges", "bytes");
+        headers.set("Content-Length", String(part.size));
+        headers.set("Content-Range", `bytes ${start}-${end}/${blob.size}`);
+        return new Response(part, { status: 206, statusText: "Partial Content", headers });
+      } catch {
+        return fetch(request);
+      }
+    })());
+    return;
+  }
 
   const url = new URL(request.url);
   if (!/^https?:$/.test(url.protocol) || !MANAGED.test(url.pathname + url.search)) return;
