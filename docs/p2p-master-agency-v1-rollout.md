@@ -6,6 +6,7 @@ The eight `20261013000100`–`20261013000800` migrations create an isolated P2P 
 
 - Independent profiles/roles, coin inventory, available/locked diamond balances, exchange-rate snapshots, ledger, withdrawals, and notifications.
 - Admin-only role assignment, fiat conversion-rate configuration, and audited coin/diamond grants.
+- Super Agent team dashboard for searching JALWA users and creating/managing up to five Sub-Agents; the same five-agent cap is enforced in database RPCs, including Admin assignments.
 - Required payout destination (JazzCash, Easypaisa, bank transfer, Raast, or other), account-holder name, and account/wallet number; visible only to withdrawal parties under RLS.
 - Top-down coin transfers: Admin -> Super Agent -> assigned Sub-Agent -> standard User; each Super Agent is limited to five Sub-Agents.
 - P2P coin marketplace with agent country/payment details, Admin-controlled pricing and currency conversion, agent coin escrow, payment screenshots, order chat, and Admin appeal resolution.
@@ -13,6 +14,7 @@ The eight `20261013000100`–`20261013000800` migrations create an isolated P2P 
 - Diamond withdrawal escrow, private payout screenshot storage, Super Agent approval, and rejection/refund.
 - RLS for table reads and screenshot access; browser clients have no direct balance/table write grants.
 - Super Agent review route: `/_authenticated/agency-approvals`.
+- Legacy coin-agent, coin-seller, wallet, recharge, recharge-history, and withdrawal screens redirect into `/p2p-agency`; the old agent components are no longer the active frontend.
 - Legacy user wallet/recharge/withdraw/coin-seller routes redirect to `/p2p-agency`; old finance items are filtered from published bottom navigation.
 
 ## One-time bootstrap
@@ -59,7 +61,7 @@ The eight `20261013000100`–`20261013000800` migrations create an isolated P2P 
 - Insufficient coin stock blocks every hierarchy transfer; all invalid hierarchy transfers fail.
 - Browser roles cannot directly insert/update/delete wallets, ledger, roles, or withdrawal states.
 - Gift credit idempotency prevents duplicate diamond credit.
-- Verify dashboard route builds after route generation and that no LiveKit files or APIs changed.
+- Verify dashboard and Super Agent team routes build after route generation, old finance routes redirect as intended, and no LiveKit files or APIs changed.
 
 ## Not yet a production cutover
 
