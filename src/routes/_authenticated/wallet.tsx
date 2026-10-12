@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
 import { TheatreCard, TheatreDivider, TheatreRow } from "@/components/theatre/TheatreCard";
+import { CoinP2PTransferPanel } from "@/components/coin-agent/CoinP2PTransferPanel";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   component: WalletPage,
@@ -105,6 +106,7 @@ function WalletPage() {
             </div>
           </div>
 
+          <div className="px-3 pb-4"><CoinP2PTransferPanel /></div>
           <TheatreDivider label="Ledger" />
 
           <section id="wallet-history" className="px-3 pt-5 pb-6">
