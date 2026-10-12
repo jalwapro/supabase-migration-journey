@@ -20,7 +20,7 @@ Deno.serve(async(req)=>{const origin=req.headers.get("Origin");if(req.method==="
  else if(body.action==="ADMIN_TOGGLE_AGENT"){rpcName="admin_set_coin_agent_enabled";rpcArgs={actor_id:user.id,target_id:payload.agent_id,enabled:payload.enabled??false};}
  else if(body.action==="MARKETPLACE"){rpcName="coin_agent_marketplace_for_user";rpcArgs={actor_id:user.id};}
  const {data,error}=await db.rpc(rpcName,rpcArgs);
- if(error){const msg=error.message||"COIN_AGENT_ACTION_FAILED";const status=/AUTH_REQUIRED|ADMIN_REQUIRED/i.test(msg)?403:/NOT_FOUND|NOT_AVAILABLE|INSUFFICIENT|OUT_OF_RANGE|INVALID|REQUIRED|BANNED|PENDING|MUST_BE|NO_EXCHANGE|TOO_SMALL|MINIMUM|PACKAGE|DISPUT|COUNTRY_MISMATCH/i.test(msg)?400:500;return reply({error:msg},status,origin);}
+ if(error){const msg=error.message||"COIN_AGENT_ACTION_FAILED";const status=/AUTH_REQUIRED|ADMIN_REQUIRED/i.test(msg)?403:/NOT_FOUND|NOT_AVAILABLE|INSUFFICIENT|OUT_OF_RANGE|INVALID|REQUIRED|BANNED|PENDING|MUST_BE|NO_EXCHANGE|TOO_SMALL|MINIMUM|PACKAGE|DISPUT|COUNTRY_MISMATCH|CHILD_LIMIT|SUPER_AGENT_HAS_CHILDREN|PARENT_MUST_BE|ONLY_COIN_AGENTS/i.test(msg)?400:500;return reply({error:msg},status,origin);}
  return reply({data},200,origin);
  }catch(error){console.error("[coin-agent] request failed",error);return reply({error:"INTERNAL_ERROR"},500,origin);}
 });
