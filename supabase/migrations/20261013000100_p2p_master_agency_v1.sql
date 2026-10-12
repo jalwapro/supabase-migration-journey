@@ -4,7 +4,7 @@ create schema if not exists p2p_private;
 revoke all on schema p2p_private from public,anon,authenticated;
 create type public.p2p_role as enum ('admin','super_agent','sub_agent','user');
 create type public.p2p_asset as enum ('coin','diamond');
-create type public.p2p_withdrawal_status as enum ('pending_payment','pending_approval','completed','rejected','cancelled');
+create type public.p2p_withdrawal_status as enum ('pending_payment','pending_super_agent_approval','completed','rejected','cancelled');
 create type public.p2p_ledger_kind as enum ('coin_issue','coin_transfer','diamond_earned','diamond_lock','diamond_release','diamond_return','gift_spend','admin_adjustment');
 
 create table public.p2p_profiles (
@@ -183,7 +183,7 @@ begin
  if v_w.status<>'pending_payment' then raise exception 'NOT_AWAITING_PROOF'; end if;
  if p_screenshot_path is null or p_screenshot_path !~ ('^'||p_withdrawal_id::text||'/[A-Za-z0-9_-]+\.(png|jpg|jpeg|webp)$') then raise exception 'INVALID_PROOF_PATH'; end if;
  if not exists(select 1 from storage.objects where bucket_id='payout_screenshots' and name=p_screenshot_path) then raise exception 'PROOF_NOT_UPLOADED'; end if;
- update public.p2p_diamond_withdrawals set status='pending_approval',payout_screenshot_path=p_screenshot_path,
+ update public.p2p_diamond_withdrawals set status='pending_super_agent_approval',payout_screenshot_path=p_screenshot_path,
  payout_reference=nullif(trim(p_payout_reference),''),sub_agent_submitted_at=now(),updated_at=now() where id=p_withdrawal_id;
  insert into public.p2p_notifications(recipient_id,withdrawal_id,event_type,payload)
  values(v_w.super_agent_id,p_withdrawal_id,'diamond_withdrawal_awaiting_approval',jsonb_build_object('amount',v_w.amount,'currency',v_w.fiat_currency));
@@ -200,7 +200,7 @@ begin
  select * into v_w from public.p2p_diamond_withdrawals where id=p_withdrawal_id for update;
  if not found then raise exception 'WITHDRAWAL_NOT_FOUND'; end if;
  if v_w.super_agent_id<>v_actor or not p2p_private.valid_agent_pair(v_w.sub_agent_id,v_actor) then raise exception 'ASSIGNED_SUPER_AGENT_REQUIRED'; end if;
- if v_w.status<>'pending_approval' or v_w.payout_screenshot_path is null then raise exception 'NOT_AWAITING_APPROVAL'; end if;
+ if v_w.status<>'pending_super_agent_approval' or v_w.payout_screenshot_path is null then raise exception 'NOT_AWAITING_APPROVAL'; end if;
  if exists(select 1 from public.p2p_ledger where withdrawal_id=v_w.id and kind='diamond_release') then raise exception 'ALREADY_SETTLED'; end if;
  perform 1 from public.p2p_wallets where user_id in (v_w.user_id,v_w.sub_agent_id) order by user_id for update;
  if (select diamond_locked from public.p2p_wallets where user_id=v_w.user_id)<v_w.amount then raise exception 'ESCROW_BALANCE_MISMATCH'; end if;
@@ -224,7 +224,7 @@ begin
  if v_actor is null or length(trim(coalesce(p_reason,'')))<3 then raise exception 'REJECTION_REASON_REQUIRED'; end if;
  select * into v_w from public.p2p_diamond_withdrawals where id=p_withdrawal_id for update;
  if not found or v_w.super_agent_id<>v_actor or not p2p_private.valid_agent_pair(v_w.sub_agent_id,v_actor) then raise exception 'ASSIGNED_SUPER_AGENT_REQUIRED'; end if;
- if v_w.status<>'pending_approval' then raise exception 'NOT_AWAITING_APPROVAL'; end if;
+ if v_w.status<>'pending_super_agent_approval' then raise exception 'NOT_AWAITING_APPROVAL'; end if;
  update public.p2p_wallets set diamond_locked=diamond_locked-v_w.amount,diamond_available=diamond_available+v_w.amount,updated_at=now()
  where user_id=v_w.user_id and diamond_locked>=v_w.amount;
  if not found then raise exception 'ESCROW_BALANCE_MISMATCH'; end if;
