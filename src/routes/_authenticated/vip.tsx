@@ -121,7 +121,7 @@ function Page() {
                 <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
                   <p className="uppercase tracking-widest text-white/40">Coins</p>
                   <p className="mt-0.5 font-black text-[#ffd66a]">
-                    {(profile?.coins ?? 0).toLocaleString()}
+                    {Number(p2pBalance.data ?? 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
