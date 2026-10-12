@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +32,12 @@ function P2PAgencyPage() {
   const [parentId, setParentId] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [recipientSearch, setRecipientSearch] = useState("");
+  const [marketCountry, setMarketCountry] = useState("all");
+  const [listingCountryCode, setListingCountryCode] = useState("PK");
+  const [listingCurrencyCode, setListingCurrencyCode] = useState("PKR");
+  const [listingWhatsApp, setListingWhatsApp] = useState("");
+  const [listingPrice, setListingPrice] = useState("100");
+  const [listingActive, setListingActive] = useState(false);
   const [childUserId, setChildUserId] = useState("");
   const [childDisplayName, setChildDisplayName] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -82,6 +88,39 @@ function P2PAgencyPage() {
       return (result.data ?? []) as Array<{ id: string; username: string | null; user_code: string | null }>;
     },
   });
+  const marketplace = useQuery({
+    queryKey: ["p2p-agent-marketplace"],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await db.from("p2p_agent_listings")
+        .select("user_id,country_code,currency_code,whatsapp_number,sell_price_per_1000")
+        .eq("listed", true)
+        .order("country_code");
+      if (error) throw error;
+      return (data ?? []) as Array<{ user_id: string; country_code: string; currency_code: string; whatsapp_number: string; sell_price_per_1000: number }>;
+    },
+    refetchInterval: 60_000,
+  });
+  const agentListing = useQuery({
+    queryKey: ["p2p-agent-listing", user?.id],
+    enabled: !!user?.id && profile.data?.role === "sub_agent",
+    queryFn: async () => {
+      const { data, error } = await db.from("p2p_agent_listings")
+        .select("user_id,country_code,currency_code,whatsapp_number,sell_price_per_1000,listed")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { user_id: string; country_code: string; currency_code: string; whatsapp_number: string; sell_price_per_1000: number; listed: boolean } | null;
+    },
+  });
+  useEffect(() => {
+    if (!agentListing.data) return;
+    setListingCountryCode(agentListing.data.country_code);
+    setListingCurrencyCode(agentListing.data.currency_code);
+    setListingWhatsApp(agentListing.data.whatsapp_number);
+    setListingPrice(String(agentListing.data.sell_price_per_1000));
+    setListingActive(agentListing.data.listed);
+  }, [agentListing.data]);
   const mySubAgents = useQuery({
     queryKey: ["p2p-my-subagents", user?.id],
     enabled: !!user?.id && profile.data?.role === "super_agent",
@@ -157,6 +196,8 @@ function P2PAgencyPage() {
     qc.invalidateQueries({ queryKey: ["p2p-my-subagents"] }),
     qc.invalidateQueries({ queryKey: ["p2p-ledger"] }),
     qc.invalidateQueries({ queryKey: ["p2p-user-search"] }),
+    qc.invalidateQueries({ queryKey: ["p2p-agent-listing"] }),
+    qc.invalidateQueries({ queryKey: ["p2p-agent-marketplace"] }),
   ]);
   const mutation = useMutation({
     mutationFn: async (run: () => Promise<void>) => run(),
@@ -187,6 +228,19 @@ function P2PAgencyPage() {
       throw error;
     }
     setProofFiles((prev) => ({ ...prev, [row.id]: null }));
+  }
+  async function saveAgentListing() {
+    const price = Number(listingPrice);
+    if (!Number.isFinite(price) || price <= 0) throw new Error("Enter a valid price per 1,000 coins");
+    if (listingWhatsApp.replace(/\\D/g, "").length < 8) throw new Error("Enter a valid WhatsApp number with country code");
+    const { error } = await db.rpc("p2p_agent_save_listing", {
+      p_country_code: listingCountryCode,
+      p_currency_code: listingCurrencyCode,
+      p_whatsapp_number: listingWhatsApp,
+      p_sell_price_per_1000: price,
+      p_listed: listingActive,
+    });
+    if (error) throw error;
   }
   async function createSubAgent() {
     if (!childUserId.trim()) throw new Error("Search and select a JALWA user first");
@@ -243,6 +297,11 @@ function P2PAgencyPage() {
         {profile.isLoading ? <div className="mt-5 flex items-center gap-2 text-sm"><Loader2 className="h-4 w-4 animate-spin"/> Setting up your P2P profile…</div> : profile.isError ? <p className="mt-4 text-sm text-destructive">P2P profile setup failed: {errorText(profile.error)}</p> : <><div className="mt-4 flex flex-wrap items-center gap-2"><span className="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-black uppercase text-amber-200">{me?.role?.replace("_"," ")}</span><span className="text-xs text-muted-foreground">{me?.display_name || user?.id}</span></div><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><Balance icon={<Coins className="h-4 w-4"/>} label="Available coins" value={wallet.data?.coin_available ?? 0}/><Balance icon={<Gem className="h-4 w-4"/>} label="Available diamonds" value={wallet.data?.diamond_available ?? 0}/><Balance icon={<ShieldCheck className="h-4 w-4"/>} label="Diamonds in escrow" value={wallet.data?.diamond_locked ?? 0}/></div></>}
       </section>
 
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black">Coin Agent Marketplace</h2><p className="mt-1 text-xs text-muted-foreground">Choose a listed Sub-Agent, contact them on WhatsApp, then the agent transfers coins after confirming your payment.</p></div><Field label="Country"><select value={marketCountry} onChange={e=>setMarketCountry(e.target.value)} className={inputClass}><option value="all">All countries</option>{Array.from(new Set((marketplace.data??[]).map(a=>a.country_code))).sort().map(code=><option key={code} value={code}>{code}</option>)}</select></Field></div>
+        {marketplace.isLoading?<Loader2 className="mt-4 h-5 w-5 animate-spin"/>:marketplace.isError?<p className="mt-3 text-sm text-destructive">{errorText(marketplace.error)}</p>:(marketplace.data??[]).filter(a=>marketCountry==="all"||a.country_code===marketCountry).length?<div className="mt-4 grid gap-3 sm:grid-cols-2">{(marketplace.data??[]).filter(a=>marketCountry==="all"||a.country_code===marketCountry).map(a=><article key={a.user_id} className="rounded-2xl border border-border bg-background/50 p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-black">Coin Agent · {a.user_id.slice(0,8)}</p><p className="mt-1 text-xs text-muted-foreground">{a.country_code} · {a.currency_code}</p></div><span className="rounded-full border border-amber-400/30 px-2 py-1 text-xs font-black text-amber-300">{a.currency_code} {Number(a.sell_price_per_1000).toLocaleString()} / 1,000</span></div><a href={`https://wa.me/${a.whatsapp_number.replace(/\\D/g,"")}`} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-black text-white">Contact on WhatsApp</a></article>)}</div>:<p className="mt-4 rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">No active Coin Agents are listed yet.</p>}
+      </section>
+      {me?.role === "sub_agent" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">My Coin Agent Listing</h2><p className="mt-1 text-xs text-muted-foreground">Set your WhatsApp contact and price. Only active listings appear in the user marketplace.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Country"><select value={listingCountryCode} onChange={e=>setListingCountryCode(e.target.value)} className={inputClass}>{[["PK","Pakistan"],["IN","India"],["BD","Bangladesh"],["AE","United Arab Emirates"],["SA","Saudi Arabia"],["US","United States"]].map(([code,name])=><option key={code} value={code}>{name}</option>)}</select></Field><Field label="Currency"><select value={listingCurrencyCode} onChange={e=>setListingCurrencyCode(e.target.value)} className={inputClass}>{["PKR","INR","BDT","AED","SAR","USD"].map(code=><option key={code}>{code}</option>)}</select></Field><Field label="WhatsApp number with country code"><input value={listingWhatsApp} onChange={e=>setListingWhatsApp(e.target.value)} className={inputClass} placeholder="923001234567" maxLength={20}/></Field><Field label="Price per 1,000 coins"><input type="number" min="0.01" step="0.01" value={listingPrice} onChange={e=>setListingPrice(e.target.value)} className={inputClass}/></Field></div><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={listingActive} onChange={e=>setListingActive(e.target.checked)}/>Show my listing in the marketplace</label><button disabled={mutation.isPending} onClick={()=>mutation.mutate(saveAgentListing)} className={primaryClass}>Save Agent Listing</button></section>}
       {me?.role === "user" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Request diamond withdrawal</h2><p className="mt-1 text-xs text-muted-foreground">Choose a Sub-Agent. Diamonds are locked until their payment proof is reviewed by the assigned Super Agent.</p><div className="mt-4 grid gap-3 sm:grid-cols-3"><Field label="Diamonds"><input type="number" min="1" step="1" value={amount} onChange={e=>setAmount(e.target.value)} className={inputClass}/></Field><Field label="Currency"><select value={currency} onChange={e=>setCurrency(e.target.value)} className={inputClass}>{(rates.data ?? []).map(r=><option key={r.currency_code} value={r.currency_code}>{r.currency_code}</option>)}</select></Field><Field label="Sub-Agent"><select value={subAgentId} onChange={e=>setSubAgentId(e.target.value)} className={inputClass}><option value="">Choose agent</option>{(agents.data ?? []).map(a=><option key={a.user_id} value={a.user_id}>{a.display_name || a.user_id.slice(0,8)} · {a.user_id.slice(0,8)}</option>)}</select></Field></div><div className="mt-3 grid gap-3 sm:grid-cols-3"><Field label="Payout method"><select value={payoutMethod} onChange={e=>setPayoutMethod(e.target.value)} className={inputClass}><option>JazzCash</option><option>Easypaisa</option><option>Bank Transfer</option><option>Raast</option><option>Other</option></select></Field><Field label="Account holder name"><input value={payoutAccountName} onChange={e=>setPayoutAccountName(e.target.value)} className={inputClass} maxLength={120} autoComplete="name" required/></Field><Field label="Account / wallet number"><input value={payoutAccountNumber} onChange={e=>setPayoutAccountNumber(e.target.value)} className={inputClass} maxLength={80} autoComplete="off" required/></Field></div><p className="mt-2 text-xs text-muted-foreground">Payout details are shared only with the assigned Sub-Agent/Super Agent to process this request. Estimated payout: {currency} {(()=>{const r=(rates.data??[]).find(x=>x.currency_code===currency);return r ? (Number(amount)/Number(r.diamonds_per_fiat_unit)).toFixed(2) : "—"})()}</p><button disabled={mutation.isPending || !agents.data?.length} onClick={()=>mutation.mutate(requestWithdrawal)} className={primaryClass}>Lock diamonds & create request</button></section>}
 
       {(me?.role === "sub_agent" || me?.role === "super_agent") && <section className="rounded-2xl border border-border bg-card p-4"><div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="font-black">Agency settlement</h2><p className="mt-1 text-xs text-muted-foreground">Sub-Agent pays the user externally and submits proof. Super Agent reviews proof before diamonds are released.</p></div>{me?.role === "super_agent" && <Link to="/agency-approvals" className="rounded-xl bg-amber-400 px-3 py-2 text-sm font-black text-black">Open approvals</Link>}</div>
