@@ -380,10 +380,8 @@ function MePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
-              <FeatureCard to="/p2p-agency" icon={ShieldCheck} title="P2P Agency Wallet" sub="Independent coins, diamonds & agency payouts" color="#fbbf24" elite />
+              <FeatureCard to="/p2p-agency" icon={ShieldCheck} title="P2P Master-Agency" sub="New coins, diamonds, agent payouts & approvals" color="#fbbf24" elite />
                             <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
-              <FeatureCard to="/recharge" icon={Coins} title="Recharge Coins" sub="Buy coins with Easypaisa or JazzCash" color="#fbbf24" />
-              <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
               <FeatureCard to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
               <FeatureCard to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
               <FeatureCard to="/my-rooms" icon={Home} title="My Rooms" sub="Room history, points & active time" color="#38bdf8" />
