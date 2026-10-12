@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Globe2, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import type { P2POrder } from "@/lib/p2p";
 import { p2pAction, type AgentListing } from "@/lib/p2p";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -9,11 +11,12 @@ const COUNTRIES = ["Global", "Pakistan", "India", "Bangladesh", "Saudi Arabia", 
 
 export function AgentMarketplace() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const [agents, setAgents] = useState<AgentListing[]>([]);
   const [country, setCountry] = useState("Pakistan");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
+  const [myOrders, setMyOrders] = useState<P2POrder[]>([]);
 
   async function load(nextCountry = country) {
     setLoading(true);
@@ -25,6 +28,16 @@ export function AgentMarketplace() {
   }
   useEffect(() => { if (profile?.country) setCountry(profile.country); }, [profile?.country]);
   useEffect(() => { void load(country); }, [country]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) { setMyOrders([]); return; }
+    void supabase.from("p2p_orders").select("id,buyer_id,agent_id,coin_amount,fiat_amount,currency,status,payment_proof_url,resolution_note,created_at").or(`buyer_id.eq.${user.id},agent_id.eq.${user.id}`).order("created_at",{ascending:false}).limit(10).then(({data,error})=>{
+      if (cancelled) return;
+      if (error) { console.warn("[p2p] order history load failed",error); return; }
+      setMyOrders((data??[]) as P2POrder[]);
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   async function createOrder(agent: AgentListing) {
     setBusy(agent.user_id);
@@ -49,6 +62,7 @@ export function AgentMarketplace() {
         </select>
       </label>
     </div>
+    {myOrders.length > 0 && <div className="rounded-2xl border border-border bg-card p-4"><h2 className="mb-3 font-bold">Your recent escrow orders</h2><div className="space-y-2">{myOrders.map(order=><button key={order.id} onClick={()=>void navigate({to:"/p2p/order/$orderId",params:{orderId:order.id}})} className="flex w-full items-center justify-between gap-3 rounded-xl border border-border p-3 text-left"><span className="min-w-0"><span className="block font-bold">Order {order.id.slice(0,8).toUpperCase()}</span><span className="text-xs text-muted-foreground">{Number(order.coin_amount).toLocaleString()} coins · {order.currency} {Number(order.fiat_amount).toLocaleString()}</span></span><span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase">{order.status}</span></button>)}</div></div>}
     {loading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin text-amber-300"/></div> :
       agents.length === 0 ? <div className="rounded-2xl border border-border bg-card p-8 text-center"><Globe2 className="mx-auto mb-3 text-muted-foreground"/><p className="font-semibold">No active agents found</p><p className="mt-1 text-sm text-muted-foreground">Try Global or another country.</p><button onClick={() => void load()} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm"><RefreshCw size={14}/>Refresh</button></div> :
       <div className="space-y-3">{agents.map(agent => <article key={agent.user_id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
