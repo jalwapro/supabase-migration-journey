@@ -82,7 +82,7 @@ function MePage() {
     queryKey: ["p2p-wallet-summary", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { error: setupError } = await supabase.rpc("p2p_ensure_profile");
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
       if (setupError) throw setupError;
       const { data, error } = await (supabase as any).from("p2p_wallets")
         .select("coin_available,diamond_available,diamond_locked")
