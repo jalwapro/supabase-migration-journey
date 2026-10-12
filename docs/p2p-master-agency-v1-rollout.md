@@ -14,6 +14,8 @@ The eight `20261013000100`–`20261013000800` migrations create an isolated P2P 
 - Diamond withdrawal escrow, private payout screenshot storage, Super Agent approval, and rejection/refund.
 - RLS for table reads and screenshot access; browser clients have no direct balance/table write grants.
 - Super Agent review route: `/_authenticated/agency-approvals`.
+- Sub-Agent storefront with country/currency, WhatsApp, price per 1,000 coins, and a user-facing country filter.
+- Gift sending debits P2P coins and credits P2P diamonds atomically; VIP subscription, theme shop, and custom-theme submission fees use P2P balances.
 - Legacy coin-agent, coin-seller, wallet, recharge, recharge-history, and withdrawal screens redirect into `/p2p-agency`; the old agent components are no longer the active frontend.
 - Legacy user wallet/recharge/withdraw/coin-seller routes redirect to `/p2p-agency`; old finance items are filtered from published bottom navigation.
 
@@ -32,7 +34,7 @@ The eight `20261013000100`–`20261013000800` migrations create an isolated P2P 
    ```
    This example means 10 diamonds per PKR 1 and is only a placeholder. Set the business-approved rate before enabling withdrawals.
 4. Assign Super Agents and Sub-Agents through `p2p_admin_assign_role`. A Sub-Agent must be assigned to an active Super Agent.
-5. Seed or credit diamond balances only through trusted server-side gift settlement. The private `p2p_private.credit_diamonds` function is granted to `service_role` only; never put the service-role key in the browser.
+5. Configure the Admin gift-economy settings in `/p2p-agency`: approved PKR value per 1,000 coins, receiver share, and enable toggle. Configure an active PKR diamond conversion rate before enabling gift settlement. The backend rejects gift sends until both settings are valid.
 6. Run RLS tests for every role before enabling navigation or real-money activity.
 
 ## P2P coin order lifecycle
