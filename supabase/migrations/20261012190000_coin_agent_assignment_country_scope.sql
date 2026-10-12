@@ -114,6 +114,7 @@ begin
     join public.profiles p on p.id=a.user_id
     where a.coin_agent_enabled and a.is_active and not a.is_banned
       and lower(trim(a.country))=lower(trim(v_country))
+      and exists(select 1 from public.coin_sellers cs where cs.user_id=a.user_id and cs.is_active)
       and a.diamond_buy_rate_pkr_per_1000 between v_cfg.min_user_buy_rate_pkr_per_1000 and v_cfg.max_user_buy_rate_pkr_per_1000
   ),'[]'::jsonb);
 end;
@@ -273,3 +274,24 @@ end;
 $$;
 revoke all on function public.p2p_marketplace_for_user(uuid) from public,anon,authenticated;
 grant execute on function public.p2p_marketplace_for_user(uuid) to service_role;
+
+
+create or replace function public.disable_agent_when_coin_seller_suspended()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if tg_op='DELETE' or (tg_op='UPDATE' and not new.is_active) then
+    update public.agent_profiles set is_active=false,coin_agent_enabled=false,updated_at=now()
+      where user_id=old.user_id;
+  end if;
+  if tg_op='DELETE' then return old; end if;
+  return new;
+end;
+$$;
+drop trigger if exists disable_agent_when_coin_seller_suspended_trigger on public.coin_sellers;
+create trigger disable_agent_when_coin_seller_suspended_trigger
+after update of is_active or delete on public.coin_sellers
+for each row execute function public.disable_agent_when_coin_seller_suspended();
