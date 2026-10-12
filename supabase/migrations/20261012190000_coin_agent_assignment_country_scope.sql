@@ -295,3 +295,43 @@ drop trigger if exists disable_agent_when_coin_seller_suspended_trigger on publi
 create trigger disable_agent_when_coin_seller_suspended_trigger
 after update of is_active or delete on public.coin_sellers
 for each row execute function public.disable_agent_when_coin_seller_suspended();
+
+
+-- One-time backfill: every currently active admin-assigned Coin Seller receives the full agent profile.
+do $$
+declare v_cfg public.coin_agent_config%rowtype;
+begin
+  select * into v_cfg from public.coin_agent_config where id=true;
+  perform set_config('app.coin_agent_admin_assignment','on',true);
+  insert into public.agent_profiles(
+    user_id,currency_code,country,payment_methods,sell_rate,buy_rate,whatsapp_number,
+    is_active,is_banned,coin_agent_enabled,diamond_buy_rate_pkr_per_1000,updated_at
+  )
+  select cs.user_id,
+    case lower(trim(cs.country))
+      when 'pakistan' then 'PKR' when 'india' then 'INR' when 'united states' then 'USD'
+      when 'united kingdom' then 'GBP' when 'united arab emirates' then 'AED'
+      when 'saudi arabia' then 'SAR' when 'canada' then 'CAD' when 'australia' then 'AUD'
+      when 'bangladesh' then 'BDT' when 'turkey' then 'TRY' when 'indonesia' then 'IDR'
+      when 'malaysia' then 'MYR' when 'germany' then 'EUR' when 'france' then 'EUR'
+      else 'USD' end,
+    cs.country,'{}'::jsonb,500,400,cs.whatsapp_number,true,false,true,v_cfg.min_user_buy_rate_pkr_per_1000,now()
+  from public.coin_sellers cs
+  where cs.is_active
+  on conflict(user_id) do update set
+    country=excluded.country,
+    is_active=case when agent_profiles.is_banned then false else true end,
+    coin_agent_enabled=case when agent_profiles.is_banned then false else true end,
+    diamond_buy_rate_pkr_per_1000=coalesce(agent_profiles.diamond_buy_rate_pkr_per_1000,excluded.diamond_buy_rate_pkr_per_1000),
+    updated_at=now();
+
+  insert into public.coin_agent_balances(agent_id,source_type)
+  select cs.user_id,src.source_type
+  from public.coin_sellers cs cross join (values('profile_diamonds'),('red_diamonds')) src(source_type)
+  where cs.is_active
+  on conflict(agent_id,source_type) do nothing;
+
+  insert into public.coin_seller_inventory(seller_id,available_coins,total_allocated,total_sold)
+  select cs.user_id,0,0,0 from public.coin_sellers cs where cs.is_active
+  on conflict(seller_id) do nothing;
+end $$;
