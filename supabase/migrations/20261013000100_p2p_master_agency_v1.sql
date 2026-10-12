@@ -151,7 +151,7 @@ create or replace function public.p2p_admin_assign_role(
 ) returns void language plpgsql security definer set search_path=''
 as $$
 begin
-  if (select p2p_private.current_role()) <> 'admin' then
+  if (select p2p_private.current_role()) is distinct from 'admin' then
     raise exception 'ADMIN_REQUIRED';
   end if;
   if p_role='sub_agent' then
@@ -297,6 +297,34 @@ $$;
 revoke all on function public.p2p_reject_diamond_withdrawal(uuid,text) from public,anon;
 grant execute on function public.p2p_reject_diamond_withdrawal(uuid,text) to authenticated;
 
+-- Admin-only platform issuance: seed/expand the Admin's own coin stock.
+-- Regular agents cannot mint coins or write balances directly.
+create or replace function public.p2p_admin_issue_coins(
+  p_request_key uuid, p_amount bigint
+) returns uuid language plpgsql security definer set search_path=''
+as $
+declare v_actor uuid:=auth.uid(); v_id uuid;
+begin
+  if v_actor is null or p_request_key is null or p_amount is null or p_amount<=0
+    then raise exception 'INVALID_ISSUANCE'; end if;
+  if (select p2p_private.current_role()) is distinct from 'admin'
+    then raise exception 'ADMIN_REQUIRED'; end if;
+  select id into v_id from public.p2p_ledger
+    where request_key=p_request_key and actor_id=v_actor;
+  if v_id is not null then return v_id; end if;
+  perform 1 from public.p2p_wallets where user_id=v_actor for update;
+  if not found then raise exception 'ADMIN_WALLET_NOT_FOUND'; end if;
+  update public.p2p_wallets set coin_available=coin_available+p_amount,updated_at=now()
+    where user_id=v_actor;
+  insert into public.p2p_ledger(request_key,kind,asset,amount,to_user_id,actor_id,metadata)
+  values(p_request_key,'coin_issue','coin',p_amount,v_actor,v_actor,
+    jsonb_build_object('reason','admin_platform_issuance')) returning id into v_id;
+  return v_id;
+end
+$;
+revoke all on function public.p2p_admin_issue_coins(uuid,bigint) from public,anon;
+grant execute on function public.p2p_admin_issue_coins(uuid,bigint) to authenticated;
+
 create or replace function public.p2p_transfer_coins(
   p_request_key uuid,p_to_user_id uuid,p_amount bigint
 ) returns uuid language plpgsql security definer set search_path=''
@@ -343,7 +371,7 @@ begin
   values(p_request_key,'diamond_earned','diamond',p_amount,p_user_id,jsonb_build_object('source',p_source));
 end
 $$;
-revoke all on function p2p_private.credit_diamonds(uuid,uuid,bigint,text) from public,anon,authenticated;
+revoke all on function p2p_private.credit_diamonds(uuid,uuid,bigint,text) from public,anon,authenticated;\ngrant usage on schema p2p_private to service_role;\ngrant execute on function p2p_private.credit_diamonds(uuid,uuid,bigint,text) to service_role;
 
 -- Private screenshot bucket. Existing bucket settings are not overwritten.
 insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
