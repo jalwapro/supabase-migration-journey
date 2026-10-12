@@ -237,7 +237,7 @@ begin
       if not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
       return jsonb_build_object(
         'orders',(select coalesce(jsonb_agg(to_jsonb(o) order by o.created_at desc),'[]'::jsonb) from public.p2p_orders o where o.status in ('appealed','paid','pending')),
-        'agents',(select coalesce(jsonb_agg(to_jsonb(a) order by a.created_at desc),'[]'::jsonb) from public.agent_profiles a where a.pending_whatsapp is not null or a.is_banned),
+        'agents',(select coalesce(jsonb_agg(to_jsonb(a) order by a.created_at desc),'[]'::jsonb) from public.agent_profiles a where a.is_active or a.pending_whatsapp is not null or a.is_banned),
         'settings',to_jsonb(v_settings)
       );
     end if;
