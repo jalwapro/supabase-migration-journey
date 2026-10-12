@@ -7,6 +7,7 @@ type Props = {
   className?: string;
   style?: CSSProperties;
   onFinished?: () => void;
+  onError?: () => void;
 };
 
 /**
@@ -21,9 +22,12 @@ export default function SvgaPlayer({
   className,
   style,
   onFinished,
+  onError,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<any>(null);
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -59,6 +63,7 @@ export default function SvgaPlayer({
         if (cancelled) return;
         console.error('SVGA load failed:', src, error);
         setFailed(true);
+        onErrorRef.current?.();
       });
     })();
 
