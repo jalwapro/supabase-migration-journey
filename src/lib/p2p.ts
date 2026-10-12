@@ -32,7 +32,7 @@ export const PAYMENT_OPTIONS = [
 
 export type AgentListing = {
   user_id: string; currency_code: string; country: string; sell_rate: number; buy_rate: number;
-  payment_methods: string[];
+  payment_methods: string[]; base_fiat_amount: number;
 };
 export type P2POrder = {
   id: string; buyer_id: string; agent_id: string; coin_amount: number; fiat_amount: number;
