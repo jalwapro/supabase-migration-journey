@@ -46,7 +46,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
   const [fallbackType, setFallbackType] = useState<"video" | "svga" | "image" | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
-  const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
+  const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const pendingDbRef = useRef(new Map<string, number>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
   const finish = useCallback(() => { clearTimer(); setFlyTarget(null); setMediaStarted(false); setMediaDurationMs(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setMediaStarted(false); setMediaDurationMs(null); setActive(row); } }, []);
@@ -102,6 +102,16 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
         const d = (message.payload ?? {}) as Record<string, unknown>;
         if (typeof d.roomId === "string" && d.roomId !== roomId) return;
         const id = typeof d.id === "string" ? d.id : null; if (!id || localEchoRef.current.has(id)) return;
+        const eventIds = Array.isArray(d.eventIds) ? [...new Set(d.eventIds.filter((x): x is string => typeof x === "string" && x.length > 0))] : [id];
+        // A multi-recipient send creates one gift_sends row per receiver but is
+        // one user action. Cancel DB fallbacks and suppress every sibling row.
+        for (const eventId of eventIds) {
+          const pending = pendingDbRef.current.get(eventId);
+          if (pending !== undefined) { if (pending > 0) window.clearTimeout(pending); pendingDbRef.current.delete(eventId); }
+          if (eventId !== id && !seenRef.current.has(eventId)) {
+            seenRef.current.add(eventId); seenOrderRef.current.push(eventId);
+          }
+        }
         const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
         const row: GiftRow = {
           id, room_id: roomId, sender_id: typeof d.senderId === "string" ? d.senderId : null, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets,
@@ -117,8 +127,18 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
         if (!alive) return;
-        const row = payload.new as GiftRow; if (!row?.id || localEchoRef.current.has(row.id)) return;
-        void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+        const row = payload.new as GiftRow; if (!row?.id || localEchoRef.current.has(row.id) || seenRef.current.has(row.id) || pendingDbRef.current.has(row.id)) return;
+        // Broadcast carries the canonical event and recipient ID list. Delay
+        // the durable-row fallback briefly so it cannot race the broadcast.
+        pendingDbRef.current.set(row.id, 0);
+        void hydrateRenderConfig(row).then((ready) => {
+          if (!alive || seenRef.current.has(row.id)) { pendingDbRef.current.delete(row.id); return; }
+          const timer = window.setTimeout(() => {
+            pendingDbRef.current.delete(row.id);
+            if (alive) enqueue(ready);
+          }, 1400);
+          pendingDbRef.current.set(row.id, timer);
+        });
       })
       .subscribe((status) => {
         // Recover gifts missed while a low-bandwidth client temporarily
@@ -163,7 +183,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       enqueue(row);
     };
     window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
-    return () => { alive = false; releaseGiftBroadcastChannel(roomId); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
+    return () => { alive = false; for (const timer of pendingDbRef.current.values()) if (timer > 0) window.clearTimeout(timer); pendingDbRef.current.clear(); releaseGiftBroadcastChannel(roomId); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
   }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
 
   useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const videoSrc = assetUrl(active.gift_clip_path) ?? fallbackSrc; const activeVideo = isVideo(videoSrc, active.gift_clip_type); if (activeVideo && !mediaStarted) return; const declared = mediaDurationMs ?? num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, fallbackSrc, mediaStarted, mediaDurationMs, clearTimer, finish]);
