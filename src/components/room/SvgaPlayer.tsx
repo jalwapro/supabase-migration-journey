@@ -65,7 +65,12 @@ export default function SvgaPlayer({
         setFailed(true);
         onErrorRef.current?.();
       });
-    })();
+    })().catch((error: unknown) => {
+      if (cancelled) return;
+      console.error('SVGA player initialization failed:', src, error);
+      setFailed(true);
+      onErrorRef.current?.();
+    });
 
     return () => {
       cancelled = true;
