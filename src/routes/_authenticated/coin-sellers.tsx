@@ -13,6 +13,32 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/coin-sellers")({ component: CoinSellerMarketplaceRoute });
 function CoinSellerMarketplaceRoute() {
+  const { user, isAdmin } = useAuth();
+  const access = useQuery({
+    queryKey: ["coin-agent-workspace-access", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coin_sellers")
+        .select("user_id")
+        .eq("user_id", user!.id)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+    staleTime: 30_000,
+    retry: 1,
+  });
+
+  if (access.isLoading) {
+    return <AppShell title="Coin Agent Panel"><div className="mx-auto flex min-h-[50vh] max-w-lg items-center justify-center gap-3 p-6 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Checking Coin Agent access…</div></AppShell>;
+  }
+
+  if (!user || (!isAdmin && access.data !== true)) {
+    return <AppShell title="Coin Agent Panel"><main className="mx-auto max-w-lg p-6"><section className="rounded-2xl border border-border bg-card p-5 text-center"><Store className="mx-auto h-10 w-10 text-muted-foreground" /><h1 className="mt-3 text-xl font-black">Coin Agent access required</h1><p className="mt-2 text-sm text-muted-foreground">This workspace is only available to approved, active Coin Agents. Normal user accounts cannot access seller inventory, payment settings or customer transfers.</p><a href="/me" className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">Back to Profile</a></section></main></AppShell>;
+  }
+
   return <>
     <AppShell title="Coin Agent Workspace" subtitle="Diamonds, coin stock, customer transfers, payment settings and settlements">
       <main className="mx-auto w-full max-w-6xl space-y-5 px-3 pb-28 pt-4 sm:px-5">
