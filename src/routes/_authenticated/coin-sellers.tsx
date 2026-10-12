@@ -120,7 +120,8 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
       if (!confirmTransfer) throw new Error("Review and confirm the transfer first.");
       const coins = Number(amount);
       if (!Number.isSafeInteger(coins) || coins < 1 || coins > 1_000_000) throw new Error("Enter between 1 and 1,000,000 coins.");
-      const { data, error } = await supabase.rpc("coin_seller_transfer", { p_buyer_code: buyerCode.trim(), p_coins: coins, p_request_key: transferRequestKey });
+      const transferRpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const { data, error } = await transferRpc("coin_seller_transfer", { p_buyer_code: buyerCode.trim(), p_coins: coins, p_request_key: transferRequestKey });
       if (error) throw error;
       if (!data || typeof data !== "object" || !("transaction_id" in data) || !("coins_transferred" in data)) {
         throw new Error("Transfer response was incomplete. Refresh the page and verify the transaction history before retrying.");
