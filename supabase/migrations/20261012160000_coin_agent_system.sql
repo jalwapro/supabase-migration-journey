@@ -166,7 +166,7 @@ begin
     v_amount := nullif(payload->>'diamonds','')::bigint;
     if v_source not in ('profile_diamonds','red_diamonds') or v_amount is null or v_amount <= 0 or v_amount > 1000000000 then raise exception 'INVALID_DIAMOND_AMOUNT_OR_SOURCE'; end if;
     select * into v_agent from public.agent_profiles where user_id=v_id and coin_agent_enabled and is_active and not is_banned for update;
-    if not found or v_id=actor_id or v_agent.diamond_buy_rate_pkr_per_1000 is null then raise exception 'AGENT_NOT_AVAILABLE'; end if;
+    if not found or v_id=actor_id or v_agent.diamond_buy_rate_pkr_per_1000 is null or v_agent.diamond_buy_rate_pkr_per_1000 < v_cfg.min_user_buy_rate_pkr_per_1000 or v_agent.diamond_buy_rate_pkr_per_1000 > v_cfg.max_user_buy_rate_pkr_per_1000 then raise exception 'AGENT_NOT_AVAILABLE_OR_RATE_OUT_OF_RANGE'; end if;
     if length(trim(coalesce(payload->>'payout_account_name','')))<2 or length(trim(coalesce(payload->>'payout_account_number','')))<5 then raise exception 'PAYOUT_DETAILS_REQUIRED'; end if;
     v_payout := round(v_amount * v_agent.diamond_buy_rate_pkr_per_1000 / 1000,2);
     if v_source='profile_diamonds' then
