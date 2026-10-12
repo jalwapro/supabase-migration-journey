@@ -1,0 +1,17 @@
+drop policy if exists coin_agent_config_admin_read on public.coin_agent_config;
+create policy coin_agent_config_admin_read on public.coin_agent_config for select to authenticated using (public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_rates_owner_admin_read on public.coin_agent_rate_tiers;
+create policy coin_agent_rates_owner_admin_read on public.coin_agent_rate_tiers for select to authenticated using (agent_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_balances_owner_admin_read on public.coin_agent_balances;
+create policy coin_agent_balances_owner_admin_read on public.coin_agent_balances for select to authenticated using (agent_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_trades_participant_admin_read on public.coin_agent_trades;
+create policy coin_agent_trades_participant_admin_read on public.coin_agent_trades for select to authenticated using (user_id=(select auth.uid()) or agent_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_ledger_owner_admin_read on public.coin_agent_ledger;
+create policy coin_agent_ledger_owner_admin_read on public.coin_agent_ledger for select to authenticated using (agent_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_settlements_owner_admin_read on public.coin_agent_settlements;
+create policy coin_agent_settlements_owner_admin_read on public.coin_agent_settlements for select to authenticated using (agent_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_coin_orders_owner_admin_read on public.coin_agent_coin_orders;
+create policy coin_agent_coin_orders_owner_admin_read on public.coin_agent_coin_orders for select to authenticated using (agent_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+drop policy if exists coin_agent_user_ledger_owner_admin_read on public.coin_agent_user_ledger;
+create policy coin_agent_user_ledger_owner_admin_read on public.coin_agent_user_ledger for select to authenticated using (user_id=(select auth.uid()) or public.is_admin((select auth.uid())));
+revoke all on function public.coin_agent_user_ledger_trigger() from public,anon,authenticated;
