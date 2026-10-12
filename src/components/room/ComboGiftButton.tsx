@@ -149,6 +149,8 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
       await broadcastGiftPlayback(roomId, gift, uniqueTargets, sender, 1, firstSendId!, allSendIds);
       await refresh();
       await qc.invalidateQueries({ queryKey: ["p2p-gift-wallet", profile?.id] });
+      await qc.invalidateQueries({ queryKey: ["p2p-header-balance", profile?.id] });
+      await qc.invalidateQueries({ queryKey: ["p2p-wallet-summary", profile?.id] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
