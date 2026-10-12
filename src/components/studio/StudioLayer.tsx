@@ -1,9 +1,8 @@
-import React, { Component, ErrorInfo, ReactNode, useEffect, useMemo, useState } from "react";
+import React, { Component, ErrorInfo, ReactNode, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizePageConfig, type AppPageKey, type AppPageConfig } from "@/lib/app-customization/schema";
-import { createProductionRenderer } from "@/lib/app-customization/production-renderer";
-import { StudioPreviewEditor } from "./StudioPreviewEditor";
+const StudioPreviewEditor = lazy(() => import("./StudioPreviewEditor").then((m) => ({ default: m.StudioPreviewEditor })));
 
 const PATH_TO_PAGE: Record<string, AppPageKey> = { "/":"home", "/rooms":"rooms", "/voice-room":"voice-room", "/video-room":"video-room", "/wallet":"wallet", "/messages":"messages", "/rank":"ranking", "/gifts":"gifts", "/notifications":"notifications", "/settings":"settings", "/recharge":"recharge", "/recharge-history":"recharge-history", "/withdraw":"withdraw", "/gallery":"gallery", "/visitors":"visitors", "/games":"games", "/privacy":"privacy", "/me":"profile" };
 function pageForPath(pathname: string): AppPageKey | null { if (PATH_TO_PAGE[pathname]) return PATH_TO_PAGE[pathname]; if (pathname.startsWith("/room/")) return "voice-room"; if (pathname.startsWith("/pk/")) return "pk-battle"; if (pathname.startsWith("/profile/")) return "profile"; return null; }
@@ -90,19 +89,31 @@ export function StudioLayer() {
     };
   },[page,studioPreview]);
 
-  useEffect(()=>{
-    if(!config)return;
-    try {
-      const cleanup = createProductionRenderer(config);
-      return typeof cleanup === "function" ? cleanup : undefined;
-    } catch (error) {
-      console.error("[JALWA_STUDIO_RENDERER_ERROR]", error);
-      setRuntimeError(error instanceof Error ? error.message : String(error));
-      return undefined;
-    }
-  },[config]);
+  useEffect(() => {
+    if (!config) return;
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
+    void import("@/lib/app-customization/production-renderer")
+      .then(({ createProductionRenderer }) => {
+        if (cancelled) return;
+        try {
+          cleanup = createProductionRenderer(config);
+        } catch (error) {
+          console.error("[JALWA_STUDIO_RENDERER_ERROR]", error);
+          setRuntimeError(error instanceof Error ? error.message : String(error));
+        }
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("[JALWA_STUDIO_RENDERER_LOAD_ERROR]", error);
+      });
+    return () => {
+      cancelled = true;
+      cleanup?.();
+    };
+  }, [config]);
 
   if(!page)return null;
   if(studioPreview && runtimeError) return <div data-jalwa-studio-fallback className="fixed inset-0 z-[2147483647] flex items-center justify-center bg-black p-6 text-white"><div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-5"><div className="text-sm font-semibold">Jalwa App Studio</div><p className="mt-2 text-xs text-white/60">Studio runtime was isolated so the real application does not get replaced.</p><pre className="mt-3 max-h-40 overflow-auto rounded-lg bg-black/50 p-3 text-[10px] text-red-300 whitespace-pre-wrap">{runtimeError}</pre><button className="mt-4 w-full rounded-lg bg-white px-3 py-2 text-xs font-semibold text-black" onClick={()=>setRuntimeError(null)}>Retry</button></div></div>;
-  return <StudioRuntimeBoundary page={page}>{studioPreview ? <StudioPreviewEditor /> : null}</StudioRuntimeBoundary>;
+  return <StudioRuntimeBoundary page={page}>{studioPreview ? <Suspense fallback={null}><StudioPreviewEditor /></Suspense> : null}</StudioRuntimeBoundary>;
 }
