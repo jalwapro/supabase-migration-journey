@@ -153,8 +153,9 @@ begin
   if (select p2p_private.current_role()) is distinct from 'admin' then raise exception 'ADMIN_REQUIRED'; end if;
   if p_role='admin' then raise exception 'ADMIN_ROLE_MUST_BE_BOOTSTRAPPED_OUT_OF_BAND'; end if;
   select role into v_old_role from public.p2p_profiles where user_id=p_user_id for update;
+  if v_old_role='admin' then raise exception 'ADMIN_ROLE_MUST_BE_MANAGED_OUT_OF_BAND'; end if;
   if v_old_role='super_agent' and p_role<>'super_agent'
-    and exists(select 1 from public.p2p_profiles where super_agent_id=p_user_id and role='sub_agent' and active) then
+    and exists(select 1 from public.p2p_profiles where super_agent_id=p_user_id and role='sub_agent') then
     raise exception 'REASSIGN_OR_DEACTIVATE_SUBAGENTS_FIRST';
   end if;
   if p_role='sub_agent' then
