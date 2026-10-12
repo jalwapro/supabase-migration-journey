@@ -178,7 +178,8 @@ begin
         'payment_methods',coalesce((select jsonb_agg(key) from jsonb_object_keys(a.payment_methods) as method(key) where coalesce(a.payment_methods->>method.key,'') <> ''),'[]'::jsonb)
       ) order by a.sell_rate desc)
       from public.agent_profiles a
-      where a.is_active and not a.is_banned and (v_country is null or lower(a.country)=lower(v_country))
+      where a.is_active and not a.is_banned and a.sell_rate between v_settings.min_agent_coins and v_settings.max_agent_coins
+        and (v_country is null or lower(a.country)=lower(v_country))
     ), '[]'::jsonb);
   elsif action = 'GET_AGENT' then
     select * into v_agent from public.agent_profiles where user_id=actor_id;
