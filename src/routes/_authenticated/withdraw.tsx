@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Coins, Sparkles, ArrowRightLeft } from "lucide-react";
+import { coinAgentAction } from "@/lib/coin-agent";
 
 export const Route = createFileRoute("/_authenticated/withdraw")({ component: Page });
 
@@ -31,10 +32,11 @@ function Page() {
       const { data, error } = await supabase.rpc("get_withdrawal_settings");
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] : data;
+      const coinAgent = await coinAgentAction<{ config?: { min_direct_admin_diamonds?: number } }>("CONFIG");
       return {
         rate: Number(row?.diamond_price_pkr ?? 0.5),
         max: Number(row?.max_withdrawal_diamonds ?? 10_000_000),
-        min: Number(row?.min_withdrawal_diamonds ?? 100),
+        min: Math.max(Number(row?.min_withdrawal_diamonds ?? 100), Number(coinAgent.config?.min_direct_admin_diamonds ?? 50000)),
       };
     },
   });
