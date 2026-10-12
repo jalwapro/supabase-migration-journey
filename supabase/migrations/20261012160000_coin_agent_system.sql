@@ -151,8 +151,8 @@ begin
       'settlements',coalesce((select jsonb_agg(to_jsonb(s)) from (select * from public.coin_agent_settlements where agent_id=actor_id or v_admin order by created_at desc limit 100) s),'[]'::jsonb)
     );
   elsif action='MARKETPLACE' then
-    return coalesce((select jsonb_agg(jsonb_build_object('user_id',a.user_id,'country',a.country,'currency_code',a.currency_code,'diamond_buy_rate_pkr_per_1000',a.diamond_buy_rate_pkr_per_1000,'whatsapp_number',a.whatsapp_number))
-      from public.agent_profiles a where a.coin_agent_enabled and a.is_active and not a.is_banned and a.diamond_buy_rate_pkr_per_1000 between v_cfg.min_user_buy_rate_pkr_per_1000 and v_cfg.max_user_buy_rate_pkr_per_1000),'[]'::jsonb);
+    return coalesce((select jsonb_agg(jsonb_build_object('user_id',a.user_id,'username',p.username,'user_code',p.user_code,'country',a.country,'currency_code',a.currency_code,'diamond_buy_rate_pkr_per_1000',a.diamond_buy_rate_pkr_per_1000,'whatsapp_number',a.whatsapp_number))
+      from public.agent_profiles a join public.profiles p on p.id=a.user_id where a.coin_agent_enabled and a.is_active and not a.is_banned and a.diamond_buy_rate_pkr_per_1000 between v_cfg.min_user_buy_rate_pkr_per_1000 and v_cfg.max_user_buy_rate_pkr_per_1000),'[]'::jsonb);
   elsif action='SAVE_AGENT_RATE' then
     v_rate := nullif(payload->>'rate_pkr_per_1000','')::numeric;
     if v_rate is null or v_rate < v_cfg.min_user_buy_rate_pkr_per_1000 or v_rate > v_cfg.max_user_buy_rate_pkr_per_1000 then raise exception 'BUY_RATE_OUT_OF_RANGE:%:%',v_cfg.min_user_buy_rate_pkr_per_1000,v_cfg.max_user_buy_rate_pkr_per_1000; end if;
