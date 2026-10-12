@@ -1,6 +1,7 @@
-import {createFileRoute} from "@tanstack/react-router";
-import {AppShell} from "@/components/layout/AppShell";
-import {BottomNav} from "@/components/layout/BottomNav";
-import {CoinAgentHub} from "@/components/coin-agent/CoinAgentHub";
-export const Route=createFileRoute("/_authenticated/coin-agents")({component:Page});
-function Page(){return <><AppShell title="Coin Agent Market" subtitle="Sell diamonds, receive agent payout"><CoinAgentHub/></AppShell><BottomNav/></>;}
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+// Legacy wallet/coin/diamond screens now route into the independent P2P Master-Agency workspace.
+export const Route = createFileRoute("/_authenticated/coin-agents")({
+  beforeLoad: () => { throw redirect({ to: "/p2p-agency" }); },
+  component: () => null,
+});
