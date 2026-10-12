@@ -2,6 +2,8 @@
 -- Additive only: no legacy wallet, gift, or LiveKit objects are changed.
 begin;
 
+revoke execute on function public.p2p_admin_issue_coins(uuid,bigint) from authenticated;
+
 create or replace function public.p2p_ensure_profile()
 returns public.p2p_profiles
 language plpgsql
@@ -38,6 +40,27 @@ using((select p2p_private.current_role())='admin');
 create policy p2p_admin_read_all_ledger on public.p2p_ledger
 for select to authenticated
 using((select p2p_private.current_role())='admin');
+
+create or replace function public.p2p_admin_assign_role(
+  p_user_id uuid, p_role public.p2p_role, p_super_agent_id uuid default null, p_display_name text default null
+) returns void language plpgsql security definer set search_path=''
+as $
+begin
+  if (select p2p_private.current_role()) is distinct from 'admin' then raise exception 'ADMIN_REQUIRED'; end if;
+  if p_role='admin' then raise exception 'ADMIN_ROLE_MUST_BE_BOOTSTRAPPED_OUT_OF_BAND'; end if;
+  if p_role='sub_agent' then
+    if p_super_agent_id is null or not exists(select 1 from public.p2p_profiles where user_id=p_super_agent_id and role='super_agent' and active) then
+      raise exception 'ACTIVE_SUPER_AGENT_REQUIRED';
+    end if;
+  elsif p_super_agent_id is not null then
+    raise exception 'ONLY_SUB_AGENT_HAS_PARENT';
+  end if;
+  insert into public.p2p_profiles(user_id,role,super_agent_id,display_name)
+  values(p_user_id,p_role,p_super_agent_id,nullif(trim(p_display_name),''))
+  on conflict(user_id) do update set role=excluded.role,super_agent_id=excluded.super_agent_id,display_name=excluded.display_name,updated_at=now();
+end $;
+revoke all on function public.p2p_admin_assign_role(uuid,public.p2p_role,uuid,text) from public,anon;
+grant execute on function public.p2p_admin_assign_role(uuid,public.p2p_role,uuid,text) to authenticated;
 
 create or replace function public.p2p_admin_grant_coins(
   p_request_key uuid, p_to_user_id uuid, p_amount bigint
