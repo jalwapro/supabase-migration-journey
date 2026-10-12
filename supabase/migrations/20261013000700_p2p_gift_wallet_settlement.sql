@@ -149,6 +149,7 @@ declare
   v_diamond_rate numeric(20,8); v_gift_loop boolean; v_gift_audio_volume numeric;
   v_gift_audio_enabled boolean; v_gift_render_config jsonb;
 begin
+  perform set_config('app.trusted_definer','on',true);
   if v_sender is null then raise exception 'Not authenticated'; end if;
   if _quantity is null or _quantity<1 or _quantity>100 then raise exception 'Invalid quantity'; end if;
   if _room_id is null or _receiver_id is null or _gift_id is null then raise exception 'Gift parameters are required'; end if;
@@ -210,7 +211,11 @@ begin
     insert into public.wallet_transactions(user_id,kind,coins_delta,diamonds_delta,ref_type,ref_id,note)
     values(_receiver_id,'gift_received',0,v_diamonds,'gift',v_row.id,'Received '||coalesce(g.name,'gift'));
   end if;
+  perform set_config('app.trusted_definer','off',true);
   return v_row;
+exception when others then
+  perform set_config('app.trusted_definer','off',true);
+  raise;
 end;$function$;
 
 revoke all on function public.send_gift(uuid,uuid,uuid,integer,boolean) from public,anon;
