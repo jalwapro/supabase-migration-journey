@@ -38,15 +38,15 @@ Deno.serve(async (req) => {
     const allowed = new Set([
       "MARKETPLACE", "GET_AGENT", "GET_ORDER", "SAVE_AGENT_PROFILE", "REQUEST_WHATSAPP", "CREATE_ORDER",
       "BUYER_PAID", "APPEAL", "RELEASE_ORDER", "CANCEL_ORDER", "ADMIN_COMPLETE", "ADMIN_CANCEL",
-      "ADMIN_APPROVE_WHATSAPP", "ADMIN_BAN_AGENT", "ADMIN_SAVE_SETTINGS", "ADMIN_OVERVIEW",
+      "ADMIN_APPROVE_WHATSAPP", "ADMIN_BAN_AGENT", "ADMIN_SAVE_SETTINGS", "ADMIN_OVERVIEW", "MY_ORDERS",
     ]);
     if (!allowed.has(action)) return json({ error: "INVALID_ACTION" }, 400);
 
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const rpcName = action === "MARKETPLACE" ? "p2p_marketplace_for_user" : "p2p_escrow_action";
-    const rpcArgs = action === "MARKETPLACE" ? { actor_id: user.id } : { actor_id: user.id, action, payload };
+    const rpcName = action === "MARKETPLACE" ? "p2p_marketplace_for_user" : action === "MY_ORDERS" ? "p2p_agent_orders_for_user" : "p2p_escrow_action";
+    const rpcArgs = action === "MARKETPLACE" || action === "MY_ORDERS" ? { actor_id: user.id } : { actor_id: user.id, action, payload };
     const { data, error } = await adminClient.rpc(rpcName, rpcArgs);
     if (error) {
       const message = error.message || "P2P_ACTION_FAILED";
