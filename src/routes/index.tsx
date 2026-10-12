@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -984,7 +984,7 @@ function RoomFrameFilters() {
 
 
 
-function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "violet" }) {
+const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "violet" }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
   const glow = frameTone === "gold"
     ? "shadow-[0_10px_30px_-6px_rgba(251,191,36,0.55)]"
@@ -1005,13 +1005,13 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
       {room.cover_url ? (
         <img
           src={room.cover_url}
-          alt=""
+          alt="" loading="lazy" decoding="async"
           className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
         />
       ) : room.host?.avatar ? (
         <img
           src={room.host.avatar}
-          alt=""
+          alt="" loading="lazy" decoding="async"
           className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
         />
       ) : (
@@ -1053,7 +1053,7 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
         <div className="mb-1 flex items-center gap-1.5">
           <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-white/40">
             {room.host?.avatar ? (
-              <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+              <img src={room.host.avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <span className="grid h-full w-full place-items-center bg-white/10 text-[9px] font-bold text-white">
                 {(room.host?.username ?? "?").charAt(0).toUpperCase()}
@@ -1073,10 +1073,9 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
     </div>
 
   );
-}
+});
 
-
-function RoomListItem({ room }: { room: Room }) {
+const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
   return (
     <Link
@@ -1086,9 +1085,9 @@ function RoomListItem({ room }: { room: Room }) {
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
         {room.cover_url ? (
-          <img src={room.cover_url} alt="" className="h-full w-full object-cover" />
+          <img src={room.cover_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : room.host?.avatar ? (
-          <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+          <img src={room.host.avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
         )}
@@ -1129,8 +1128,7 @@ function RoomListItem({ room }: { room: Room }) {
       </div>
     </Link>
   );
-}
-
+});
 
 function EmptyRooms({ tab }: { tab: TabKey }) {
   const label =

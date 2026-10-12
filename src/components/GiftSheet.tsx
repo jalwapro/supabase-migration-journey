@@ -48,7 +48,7 @@ const GiftGrid = memo(function GiftGrid({ gifts, selectedGiftId, onSelect }: { g
 export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:()=>void;roomId:string;receivers:GiftReceiver[]}){
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
  const receiverOptions=useMemo(()=>{const list=[...receivers];if(profile?.id&&!list.some(r=>r.id===profile.id))list.unshift({id:profile.id,username:profile.username??"You",avatar:profile.avatar??null});return list;},[receivers,profile?.id,profile?.username,profile?.avatar]);
- useEffect(()=>{if(open&&receiverOptions.length>0&&selectedReceiverIds.length===0)setSelectedReceiverIds(receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id));},[open,receiverOptions,profile?.id]);
+ useEffect(()=>{if(!open)return;setSendToAll(false);setSelectedReceiverIds(profile?.id?[profile.id]:[]);setSelectedGift(null);setQty(1);},[open,profile?.id]);
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
  const visibleGifts=useMemo(()=>[...(gifts.data??[])].filter(g=>{const p=price(g);return activeTier==="small"?p>=10&&p<=300:tierOf(p)===activeTier}).sort((a,b)=>price(a)-price(b)),[gifts.data,activeTier]);
  const handleGiftSelect=useCallback((gift:Gift)=>{setSelectedGift(gift);preloadGiftVideo(giftVideoUrl(gift));},[activeTier]);
@@ -63,7 +63,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
    if(!uniqueTargets.length)throw new Error("Pick a receiver");
    const sender={id:profile?.id??null,name:profile?.username??"Guest",avatar:profile?.avatar??null};
    if(uniqueTargets.length===1){
-     const{data,error}=await supabase.rpc("send_gift",{_room_id:roomId,_receiver_id:uniqueTargets[0],_gift_id:gift.id,_quantity:quantity});
+     const{data,error}=await supabase.rpc("send_gift",{_room_id:roomId,_receiver_id:uniqueTargets[0],_gift_id:gift.id,_quantity:quantity,_write_message:true});
      if(error)throw error;
      const row=data as { id?: string } | null;
      if(!row?.id)throw new Error("Gift was charged but returned no canonical send id");
@@ -82,7 +82,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
  },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["wallet_tx"]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
  if(!open)return null;const effectiveTargets=[...new Set((sendToAll?receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id):selectedReceiverIds).filter(Boolean))];const totalCost=price(selectedGift)*qty*Math.max(1,effectiveTargets.length);const canAfford=(profile?.coins??0)>=totalCost;
  const performSend=()=>{if(!selectedGift||send.isPending)return;if(!effectiveTargets.length){toast.error("Pick a receiver");return;}onClose();send.mutate({gift:selectedGift,targets:effectiveTargets,quantity:qty});};
- const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(sendToAll)return;setSelectedReceiverIds(prev=>prev.includes(id)?prev.filter(item=>item!==id):[...prev,id]);};
+ const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(sendToAll)return;setSelectedReceiverIds(prev=>{if(id===profile?.id)return prev.includes(id)?[]:[id];const withoutSelf=prev.filter(item=>item!==profile?.id);return withoutSelf.includes(id)?withoutSelf.filter(item=>item!==id):[...withoutSelf,id];});};
  return (
   <div className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/50 p-0 transition-opacity" onClick={onClose}>
     <div
@@ -100,7 +100,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
             ))}
           </div>
         </div>
-        <button onClick={() => setSendToAll((v) => !v)} className={`rounded-lg px-2.5 py-1 text-[10px] font-black transition ${sendToAll ? "bg-pink-600 text-white shadow-lg shadow-pink-600/30" : "bg-white/10 text-white/80 hover:bg-white/15"}`}>
+        <button onClick={() => setSendToAll((v) => { const next = !v; setSelectedReceiverIds(next ? receiverOptions.map(r => r.id).filter(id => id !== profile?.id) : (profile?.id ? [profile.id] : [])); return next; })} className={`rounded-lg px-2.5 py-1 text-[10px] font-black transition ${sendToAll ? "bg-pink-600 text-white shadow-lg shadow-pink-600/30" : "bg-white/10 text-white/80 hover:bg-white/15"}`}>
           {sendToAll ? "ALL SELECTED" : "SEND TO ALL"}
         </button>
       </div>

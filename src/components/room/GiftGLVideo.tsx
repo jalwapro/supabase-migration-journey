@@ -387,8 +387,17 @@ export function GiftGLVideo({
       detect(v);
       const cfg = cfgRef.current;
 
-      const cw = Math.max(1, Math.round(v.videoWidth * (1 - cfg.cropLeft / v.videoWidth - cfg.cropRight / v.videoWidth)));
-      const ch = Math.max(1, Math.round(v.videoHeight * (1 - cfg.cropTop / v.videoHeight - cfg.cropBottom / v.videoHeight)));
+      const sourceW = Math.max(1, Math.round(v.videoWidth * (1 - cfg.cropLeft / v.videoWidth - cfg.cropRight / v.videoWidth)));
+      const sourceH = Math.max(1, Math.round(v.videoHeight * (1 - cfg.cropTop / v.videoHeight - cfg.cropBottom / v.videoHeight)));
+      // Android WebView GPUs struggle when a full-screen gift is rendered at
+      // 1080p/4K while the shader samples several neighbouring pixels. Keep
+      // the source texture at native resolution, but cap the output surface;
+      // CSS still scales it to the same on-screen size.
+      const mobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const maxEdge = mobile ? 720 : 1440;
+      const scale = Math.min(1, maxEdge / Math.max(sourceW, sourceH));
+      const cw = Math.max(1, Math.round(sourceW * scale));
+      const ch = Math.max(1, Math.round(sourceH * scale));
       if (canvas.width !== cw || canvas.height !== ch) {
         canvas.width = cw;
         canvas.height = ch;
@@ -558,9 +567,12 @@ export function GiftGLVideo({
           style={{
             ...style,
             objectFit,
+            // Render config is already applied in the fragment shader. Applying
+            // the same CSS filter again adds another full-screen compositing pass.
+            filter: undefined,
             opacity: 1,
             transition: "none",
-            willChange: "opacity",
+            willChange: "auto",
           }}
         />
       )}

@@ -6,7 +6,7 @@ import SvgaPlayer from "@/components/room/SvgaPlayer";
 import { giftAssetCandidates, giftAssetType } from "@/lib/giftAssetResolver";
 import { acquireGiftBroadcastChannel, releaseGiftBroadcastChannel } from "@/lib/giftBroadcast";
 
-type GiftRow = { id: string; room_id: string; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_chromakey?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
+type GiftRow = { id: string; room_id: string; created_at?: string | null; sender_id?: string | null; receiver_id?: string | null; receiver_ids?: string[] | null; gift_id?: string | null; gift_chromakey?: string | null; gift_name?: string | null; gift_emoji?: string | null; gift_icon?: string | null; gift_icon_path?: string | null; gift_image_url?: string | null; gift_clip_path?: string | null; gift_clip_type?: string | null; gift_price_coins?: number | null; gift_duration_ms?: number | null; gift_audio_url?: string | null; gift_sound_url?: string | null; gift_render_config?: Record<string, unknown> | null; gift_loop?: boolean | null; quantity?: number | null; sender_username?: string | null };
 const num = (v: unknown, fallback: number) => { const n = Number(v); return Number.isFinite(n) ? n : fallback; };
 const assetUrl = (v: string | null | undefined) => { if (!v) return null; const s = v.trim(); if (!s) return null; if (s.startsWith("__l5e/assets-v1/")) return `https://cloud-to-soul.lovable.app/${s}`; if (s.startsWith("/__l5e/")) return `https://cloud-to-soul.lovable.app${s}`; return s; };
 const cleanUrl = (src: string | null) => (src ?? "").split("?")[0].split("#")[0].toLowerCase();
@@ -46,7 +46,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
   const [fallbackType, setFallbackType] = useState<"video" | "svga" | "image" | null>(null);
   const [flyTarget, setFlyTarget] = useState<{ x: number; y: number } | null>(null);
-  const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const endTimerRef = useRef<number | null>(null);
+  const activeRef = useRef<GiftRow | null>(null); const queueRef = useRef<GiftRow[]>([]); const seenRef = useRef(new Set<string>()); const seenOrderRef = useRef<string[]>([]); const localEchoRef = useRef(new Set<string>()); const pendingDbRef = useRef(new Map<string, number>()); const pendingRowsRef = useRef(new Map<string, GiftRow>()); const endTimerRef = useRef<number | null>(null);
   const clearTimer = useCallback(() => { if (endTimerRef.current !== null) window.clearTimeout(endTimerRef.current); endTimerRef.current = null; }, []);
   const finish = useCallback(() => { clearTimer(); setFlyTarget(null); setMediaStarted(false); setMediaDurationMs(null); const next = queueRef.current.shift() ?? null; activeRef.current = next; setActive(next); }, [clearTimer]);
   const enqueue = useCallback((row: GiftRow) => { if (!row?.id || seenRef.current.has(row.id)) return; seenRef.current.add(row.id); seenOrderRef.current.push(row.id); if (seenOrderRef.current.length > 500) { const old = seenOrderRef.current.shift(); if (old) seenRef.current.delete(old); } if (activeRef.current) queueRef.current.push(row); else { activeRef.current = row; setMediaStarted(false); setMediaDurationMs(null); setActive(row); } }, []);
@@ -96,12 +96,67 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
 
   useEffect(() => {
     let alive = true;
+    const scheduleDbFallback = (row: GiftRow) => {
+      if (!row?.id || localEchoRef.current.has(row.id) || seenRef.current.has(row.id) || pendingDbRef.current.has(row.id)) return;
+      pendingDbRef.current.set(row.id, 0);
+      void hydrateRenderConfig(row).then((ready) => {
+        if (!alive || seenRef.current.has(row.id)) {
+          pendingDbRef.current.delete(row.id);
+          pendingRowsRef.current.delete(row.id);
+          return;
+        }
+        pendingRowsRef.current.set(row.id, ready);
+        const timer = window.setTimeout(() => {
+          pendingDbRef.current.delete(row.id);
+          if (!alive || seenRef.current.has(row.id)) { pendingRowsRef.current.delete(row.id); return; }
+          // PostgreSQL now() is transaction-stable, so all gift_sends rows
+          // created by one multi-recipient RPC share the same created_at.
+          const batch = [...pendingRowsRef.current.values()].filter((candidate) =>
+            candidate.created_at && ready.created_at
+              ? candidate.created_at === ready.created_at &&
+                candidate.sender_id === ready.sender_id &&
+                candidate.gift_id === ready.gift_id &&
+                num(candidate.quantity, 1) === num(ready.quantity, 1)
+              : candidate.id === ready.id
+          );
+          const grouped = batch.length ? batch : [ready];
+          const receiverIds = [...new Set(grouped.flatMap((candidate) => [
+            ...(Array.isArray(candidate.receiver_ids) ? candidate.receiver_ids : []),
+            ...(candidate.receiver_id ? [candidate.receiver_id] : []),
+          ]).filter(Boolean))];
+          const primary = grouped[0];
+          for (const candidate of grouped) {
+            pendingRowsRef.current.delete(candidate.id);
+            const timerId = pendingDbRef.current.get(candidate.id);
+            if (timerId !== undefined && timerId > 0) window.clearTimeout(timerId);
+            pendingDbRef.current.delete(candidate.id);
+            if (candidate.id !== primary.id && !seenRef.current.has(candidate.id)) {
+              seenRef.current.add(candidate.id);
+              seenOrderRef.current.push(candidate.id);
+            }
+          }
+          enqueue(receiverIds.length ? { ...primary, receiver_id: receiverIds[0], receiver_ids: receiverIds } : primary);
+        }, 1400);
+        pendingDbRef.current.set(row.id, timer);
+      });
+    };
     const channel = acquireGiftBroadcastChannel(roomId)
       .on("broadcast", { event: "gift_play" }, (message) => {
         if (!alive) return;
         const d = (message.payload ?? {}) as Record<string, unknown>;
         if (typeof d.roomId === "string" && d.roomId !== roomId) return;
         const id = typeof d.id === "string" ? d.id : null; if (!id || localEchoRef.current.has(id)) return;
+        const eventIds = Array.isArray(d.eventIds) ? [...new Set(d.eventIds.filter((x): x is string => typeof x === "string" && x.length > 0))] : [id];
+        // A multi-recipient send creates one gift_sends row per receiver but is
+        // one user action. Cancel DB fallbacks and suppress every sibling row.
+        for (const eventId of eventIds) {
+          const pending = pendingDbRef.current.get(eventId);
+          if (pending !== undefined) { if (pending > 0) window.clearTimeout(pending); pendingDbRef.current.delete(eventId); }
+          pendingRowsRef.current.delete(eventId);
+          if (eventId !== id && !seenRef.current.has(eventId)) {
+            seenRef.current.add(eventId); seenOrderRef.current.push(eventId);
+          }
+        }
         const targets = Array.isArray(d.receiverIds) ? d.receiverIds.filter((x): x is string => typeof x === "string") : (typeof d.receiverId === "string" ? [d.receiverId] : []);
         const row: GiftRow = {
           id, room_id: roomId, sender_id: typeof d.senderId === "string" ? d.senderId : null, receiver_id: typeof d.receiverId === "string" ? d.receiverId : null, receiver_ids: targets,
@@ -117,8 +172,8 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       })
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "gift_sends", filter: `room_id=eq.${roomId}` }, (payload) => {
         if (!alive) return;
-        const row = payload.new as GiftRow; if (!row?.id || localEchoRef.current.has(row.id)) return;
-        void hydrateRenderConfig(row).then((ready) => { if (alive) enqueue(ready); });
+        const row = payload.new as GiftRow;
+        scheduleDbFallback(row);
       })
       .subscribe((status) => {
         // Recover gifts missed while a low-bandwidth client temporarily
@@ -139,10 +194,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
               .then(({ data, error }) => {
                 if (!alive || error || !data) return;
                 for (const recovered of data as GiftRow[]) {
-                  if (!recovered?.id || localEchoRef.current.has(recovered.id)) continue;
-                  void hydrateRenderConfig(recovered).then((ready) => {
-                    if (alive) enqueue(ready);
-                  });
+                  scheduleDbFallback(recovered);
                 }
               });
           }
@@ -163,7 +215,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
       enqueue(row);
     };
     window.addEventListener("jalwa:gift-sent", onLocalGift as EventListener);
-    return () => { alive = false; releaseGiftBroadcastChannel(roomId); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
+    return () => { alive = false; for (const timer of pendingDbRef.current.values()) if (timer > 0) window.clearTimeout(timer); pendingDbRef.current.clear(); pendingRowsRef.current.clear(); releaseGiftBroadcastChannel(roomId); window.removeEventListener("jalwa:gift-sent", onLocalGift as EventListener); };
   }, [roomId, localUserId, enqueue, hydrateRenderConfig]);
 
   useEffect(() => { clearTimer(); if (!active) return; const cfg = normalizeRenderConfig(active.gift_render_config ?? DEFAULT_GIFT_RENDER); const videoSrc = assetUrl(active.gift_clip_path) ?? fallbackSrc; const activeVideo = isVideo(videoSrc, active.gift_clip_type); if (activeVideo && !mediaStarted) return; const declared = mediaDurationMs ?? num(active.gift_duration_ms, 0); const clipFallback = declared > 0 ? declared : 15000; const duration = cfg.endMs != null ? Math.max(300, cfg.endMs) : Math.min(180000, Math.max(1500, clipFallback + cfg.holdMs)); const delay = Math.max(0, cfg.delayMs); endTimerRef.current = window.setTimeout(finish, delay + duration + 250); return clearTimer; }, [active, fallbackSrc, mediaStarted, mediaDurationMs, clearTimer, finish]);
@@ -179,8 +231,17 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : (mediaType === "image" ? (src ?? primaryImage) : primaryImage); const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
   const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
-  const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" ");
-  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, transform: "translate3d(0, 0, 0)", willChange: "transform", ...crop };
+  const filterParts: string[] = [];
+  if (cfg.brightness) filterParts.push(`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`);
+  if (cfg.contrast) filterParts.push(`contrast(${Math.max(0, 1 + cfg.contrast / 100)})`);
+  if (cfg.saturation !== 1) filterParts.push(`saturate(${Math.max(0, cfg.saturation)})`);
+  if (cfg.hue) filterParts.push(`hue-rotate(${cfg.hue}deg)`);
+  if (cfg.blurRadius > 0) filterParts.push(`blur(${cfg.blurRadius}px)`);
+  const filter = filterParts.length ? filterParts.join(" ") : undefined;
+  // Avoid creating an oversized permanent compositor layer for a static,
+  // full-screen gift. Keep transform for smooth video composition without
+  // forcing will-change on every animation.
+  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, transform: "translate3d(0, 0, 0)", willChange: "auto", ...crop };
   const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
   const handleDuration = (ms: number) => { if (ms > 0) setMediaDurationMs(ms); };
   const handleMediaError = () => { if (small) { finish(); return; } setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(() => { if (!fallbackSrc) finish(); }, 7000); };
