@@ -22,6 +22,9 @@ type Withdrawal = {
   status: "pending_payment" | "pending_super_agent_approval" | "completed" | "rejected" | "cancelled";
   payout_screenshot_path: string | null;
   payout_reference: string | null;
+  payout_method: string | null;
+  payout_account_name: string | null;
+  payout_account_number: string | null;
   sub_agent_submitted_at: string | null;
   created_at: string;
   signed_proof_url: string | null;
@@ -63,7 +66,7 @@ function SuperAgentApprovalRoute() {
     queryFn: async () => {
       const { data, error } = await p2pClient
         .from("p2p_diamond_withdrawals")
-        .select("id,user_id,sub_agent_id,super_agent_id,amount,fiat_currency,fiat_amount,status,payout_screenshot_path,payout_reference,sub_agent_submitted_at,created_at")
+        .select("id,user_id,sub_agent_id,super_agent_id,amount,fiat_currency,fiat_amount,status,payout_screenshot_path,payout_reference,payout_method,payout_account_name,payout_account_number,sub_agent_submitted_at,created_at")
         .eq("super_agent_id", user!.id)
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
@@ -149,7 +152,7 @@ function SuperAgentApprovalRoute() {
           const busy = approve.isPending || reject.isPending;
           return <article key={row.id} className="rounded-2xl border border-border bg-card p-4 sm:p-5">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div><div className="flex flex-wrap items-center gap-2"><h2 className="font-black">{Number(row.amount).toLocaleString()} diamonds</h2><Status status={row.status} /></div><p className="mt-1 text-sm text-muted-foreground">Payout: {row.fiat_currency} {Number(row.fiat_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-1 text-xs text-muted-foreground">User: {row.user_id} · Sub-Agent: {row.sub_agent_id}</p><p className="mt-1 text-xs text-muted-foreground">Created: {new Date(row.created_at).toLocaleString()}</p>{row.payout_reference ? <p className="mt-2 text-sm">Payment reference: <span className="font-semibold">{row.payout_reference}</span></p> : null}</div>
+              <div><div className="flex flex-wrap items-center gap-2"><h2 className="font-black">{Number(row.amount).toLocaleString()} diamonds</h2><Status status={row.status} /></div><p className="mt-1 text-sm text-muted-foreground">Payout: {row.fiat_currency} {Number(row.fiat_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-1 text-xs text-muted-foreground">User: {row.user_id} · Sub-Agent: {row.sub_agent_id}</p><p className="mt-1 text-xs text-muted-foreground">Created: {new Date(row.created_at).toLocaleString()}</p>{row.payout_method ? <div className="mt-3 rounded-xl border border-border bg-background/60 p-3 text-sm"><p><span className="text-muted-foreground">Method:</span> <strong>{row.payout_method}</strong></p><p className="mt-1"><span className="text-muted-foreground">Account name:</span> <strong>{row.payout_account_name}</strong></p><p className="mt-1 break-all"><span className="text-muted-foreground">Account / wallet:</span> <strong>{row.payout_account_number}</strong></p></div> : null}{row.payout_reference ? <p className="mt-2 text-sm">Payment reference: <span className="font-semibold">{row.payout_reference}</span></p> : null}</div>
               {row.signed_proof_url ? <a href={row.signed_proof_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-bold"><ExternalLink className="h-4 w-4" /> View proof</a> : row.payout_screenshot_path ? <span className="text-xs text-muted-foreground">Proof preview unavailable</span> : <span className="text-xs text-muted-foreground">Payment proof not submitted</span>}
             </div>
             {row.status === "pending_super_agent_approval" ? <div className="mt-4 border-t border-border pt-4">
