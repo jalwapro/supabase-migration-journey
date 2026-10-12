@@ -40,7 +40,7 @@ begin
   if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
   if p_request_key is null or p_amount is null or p_amount<=0
      or p_fiat_currency !~ '^[A-Z]{3}$' then raise exception 'INVALID_REQUEST'; end if;
-  if p_payout_method not in ('JazzCash','Easypaisa','Bank Transfer','Raast','Other')
+  if coalesce(p_payout_method,'') not in ('JazzCash','Easypaisa','Bank Transfer','Raast','Other')
      or length(trim(coalesce(p_payout_account_name,''))) not between 2 and 120
      or length(trim(coalesce(p_payout_account_number,''))) not between 5 and 80 then
     raise exception 'VALID_PAYOUT_DETAILS_REQUIRED';
