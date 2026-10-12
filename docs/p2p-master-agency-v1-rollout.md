@@ -1,11 +1,12 @@
 # JALWA P2P Master-Agency v1 rollout
 
-This migration is a new, isolated P2P economy. It does not read or write the previous wallet, coin seller, or diamond trade tables. The legacy economy is intentionally not dropped by this change: perform the app cutover and legacy deprecation in a separate reviewed release after the new flows pass staging tests.
+The three `20261013000100`–`20261013000300` migrations create a new, isolated P2P economy. It does not read or write the previous wallet, coin seller, or diamond trade tables. The legacy economy is intentionally not dropped by this change: perform the app cutover and legacy deprecation in a separate reviewed release after the new flows pass staging tests.
 
 ## Included
 
 - Independent profiles/roles, coin inventory, available/locked diamond balances, exchange-rate snapshots, ledger, withdrawals, and notifications.
-- Admin-only role assignment, coin issuance, and fiat conversion-rate configuration.
+- Admin-only role assignment, fiat conversion-rate configuration, and audited coin/diamond grants.
+- Required payout destination (JazzCash, Easypaisa, bank transfer, Raast, or other), account-holder name, and account/wallet number; visible only to withdrawal parties under RLS.
 - Top-down coin transfers: Admin -> Super Agent -> assigned Sub-Agent -> standard User.
 - Diamond withdrawal escrow, private payout screenshot storage, Super Agent approval, and rejection/refund.
 - RLS for table reads and screenshot access; browser clients have no direct balance/table write grants.
@@ -31,7 +32,7 @@ This migration is a new, isolated P2P economy. It does not read or write the pre
 
 ## Withdrawal lifecycle
 
-- User calls `p2p_request_diamond_withdrawal`. The DB calculates the fiat quote from the active exchange rate and atomically moves available diamonds to locked escrow.
+- User calls `p2p_request_diamond_withdrawal` with payout method, account-holder name, and account/wallet number. The DB calculates the fiat quote from the active exchange rate and atomically moves available diamonds to locked escrow.
 - Sub-Agent pays fiat outside the app, uploads a new image to the private `payout_screenshots` bucket at `<withdrawal-uuid>/<random-file>.png`, then calls `p2p_submit_diamond_payout`.
 - Only the assigned Super Agent may call `p2p_approve_diamond_withdrawal` or `p2p_reject_diamond_withdrawal`.
 - Approval atomically debits the user's locked diamonds and credits the Sub-Agent's diamond inventory. Rejection returns locked diamonds to the user.
