@@ -137,7 +137,7 @@ grant execute on function public.p2p_transfer_coins(uuid,uuid,bigint) to authent
 -- Canonical gift RPC: P2P coins are debited and P2P diamonds are credited in
 -- the same transaction. Legacy profile coin/diamond balances are not mutated.
 create or replace function public.send_gift(
-  _room_id uuid,_receiver_id uuid,_gift_id uuid,_quantity integer,_write_message boolean default true
+  _room_id uuid,_receiver_id uuid,_gift_id uuid,_quantity integer,_write_message boolean
 ) returns public.gift_sends
 language plpgsql security definer set search_path=''
 as $function$
