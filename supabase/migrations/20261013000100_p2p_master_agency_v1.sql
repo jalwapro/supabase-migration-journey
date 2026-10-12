@@ -341,7 +341,7 @@ begin
   if not ((v_from_role='admin' and v_to_role='super_agent')
     or (v_from_role='super_agent' and v_to_role='sub_agent' and v_to_super=v_actor)
     or (v_from_role='sub_agent' and v_to_role='user' and exists(
-      select 1 from public.p2p_profiles s where s.user_id=v_actor and s.super_agent_id=v_to_super)))
+      select 1 from public.p2p_profiles s where s.user_id=v_actor and s.role='sub_agent' and s.active)))
     then raise exception 'HIERARCHY_TRANSFER_FORBIDDEN'; end if;
   perform 1 from public.p2p_wallets where user_id in (v_actor,p_to_user_id) order by user_id for update;
   update public.p2p_wallets set coin_available=coin_available-p_amount,updated_at=now()
