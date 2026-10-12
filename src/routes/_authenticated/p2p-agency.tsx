@@ -43,6 +43,9 @@ function P2PAgencyPage() {
   const [displayName, setDisplayName] = useState("");
   const [currency, setCurrency] = useState("PKR");
   const [rate, setRate] = useState("100");
+  const [coinPricePkrPer1000, setCoinPricePkrPer1000] = useState("");
+  const [giftReceiverSharePercent, setGiftReceiverSharePercent] = useState("25");
+  const [giftEconomyActive, setGiftEconomyActive] = useState(false);
   const [grantUserId, setGrantUserId] = useState("");
   const [grantAmount, setGrantAmount] = useState("1000");
   const [grantAsset, setGrantAsset] = useState<"coin" | "diamond">("coin");
@@ -151,6 +154,24 @@ function P2PAgencyPage() {
       return (data ?? []) as Rate[];
     },
   });
+  const giftEconomy = useQuery({
+    queryKey: ["p2p-gift-economy-settings"],
+    enabled: !!user?.id && profile.data?.role === "admin",
+    queryFn: async () => {
+      const { data, error } = await db.from("p2p_gift_economy_settings")
+        .select("coin_price_pkr_per_1000,receiver_share_percent,active")
+        .eq("singleton", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { coin_price_pkr_per_1000: number; receiver_share_percent: number; active: boolean } | null;
+    },
+  });
+  useEffect(() => {
+    if (!giftEconomy.data) return;
+    setCoinPricePkrPer1000(String(giftEconomy.data.coin_price_pkr_per_1000));
+    setGiftReceiverSharePercent(String(giftEconomy.data.receiver_share_percent));
+    setGiftEconomyActive(giftEconomy.data.active);
+  }, [giftEconomy.data]);
   const agents = useQuery({
     queryKey: ["p2p-active-sub-agents"],
     queryFn: async () => {
@@ -198,6 +219,7 @@ function P2PAgencyPage() {
     qc.invalidateQueries({ queryKey: ["p2p-user-search"] }),
     qc.invalidateQueries({ queryKey: ["p2p-agent-listing"] }),
     qc.invalidateQueries({ queryKey: ["p2p-agent-marketplace"] }),
+    qc.invalidateQueries({ queryKey: ["p2p-gift-economy-settings"] }),
   ]);
   const mutation = useMutation({
     mutationFn: async (run: () => Promise<void>) => run(),
@@ -228,6 +250,18 @@ function P2PAgencyPage() {
       throw error;
     }
     setProofFiles((prev) => ({ ...prev, [row.id]: null }));
+  }
+  async function saveGiftEconomy() {
+    const coinPrice = Number(coinPricePkrPer1000);
+    const share = Number(giftReceiverSharePercent);
+    if (!Number.isFinite(coinPrice) || coinPrice <= 0) throw new Error("Enter a valid PKR value per 1,000 coins");
+    if (!Number.isFinite(share) || share <= 0 || share > 100) throw new Error("Gift receiver share must be between 0 and 100");
+    const { error } = await db.rpc("p2p_admin_set_gift_economy", {
+      p_coin_price_pkr_per_1000: coinPrice,
+      p_receiver_share_percent: share,
+      p_active: giftEconomyActive,
+    });
+    if (error) throw error;
   }
   async function saveAgentListing() {
     const price = Number(listingPrice);
@@ -321,6 +355,7 @@ function P2PAgencyPage() {
 
       {me?.role === "admin" && <section className="space-y-4"><div className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="flex items-center gap-2 font-black"><Users className="h-4 w-4"/>Assign P2P role</h2><p className="mt-1 text-xs text-muted-foreground">Search a username or JALWA ID, select the user, then assign a P2P role. Sub-Agents must belong to an active Super Agent.</p><label className="mt-3 block text-xs font-bold text-muted-foreground">Find user<input value={userSearch} onChange={e=>setUserSearch(e.target.value)} className={inputClass} placeholder="Username, JALWA ID or UUID"/></label>{userSearchResults.data?.map(u=><button key={u.id} type="button" onClick={()=>setRoleUserId(u.id)} className={`mt-2 flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs ${roleUserId===u.id?"border-amber-400 bg-amber-400/10":"border-border"}`}><span><strong>{u.username||"JALWA user"}</strong><span className="ml-2 text-muted-foreground">{u.user_code||"No JALWA ID"}</span><span className="mt-1 block break-all text-[10px] text-muted-foreground">{u.id}</span></span><span>{roleUserId===u.id?"Selected":"Select"}</span></button>)}<div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="User UUID"><input value={roleUserId} onChange={e=>setRoleUserId(e.target.value)} className={inputClass}/></Field><Field label="Role"><select value={role} onChange={e=>setRole(e.target.value as any)} className={inputClass}><option value="user">Normal user</option><option value="super_agent">Super Agent</option><option value="sub_agent">Sub-Agent</option></select></Field>{role==="sub_agent" && <><Field label="Parent Super Agent UUID"><input value={parentId} onChange={e=>setParentId(e.target.value)} className={inputClass}/></Field><Field label="Agent country ISO-2"><input value={agentCountryCode} maxLength={2} onChange={e=>setAgentCountryCode(e.target.value)} className={inputClass}/></Field><Field label="Agent currency ISO-3"><input value={agentCurrencyCode} maxLength={3} onChange={e=>setAgentCurrencyCode(e.target.value)} className={inputClass}/></Field></>}<Field label="Display name (optional)"><input value={displayName} onChange={e=>setDisplayName(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(adminAssign)} className={primaryClass}>Save role assignment</button></div>
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Exchange rate</h2><p className="mt-1 text-xs text-muted-foreground">Diamonds per one unit of fiat currency. Payout is calculated on the server.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Currency code"><select value={currency} onChange={e=>setCurrency(e.target.value)} className={inputClass}>{["PKR","USD","INR","BDT","AED","SAR"].map(c=><option key={c}>{c}</option>)}</select></Field><Field label="Diamonds per 1 currency unit"><input type="number" min="0.00000001" step="any" value={rate} onChange={e=>setRate(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(adminRate)} className={primaryClass}>Save rate</button></div>
+      <div className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Gift economy settings</h2><p className="mt-1 text-xs text-muted-foreground">Set the PKR value used to calculate coin cost basis and the receiver's diamond share. Configure the PKR diamond exchange rate above before enabling gifts.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="PKR value per 1,000 coins"><input type="number" min="0.00000001" step="0.01" value={coinPricePkrPer1000} onChange={e=>setCoinPricePkrPer1000(e.target.value)} className={inputClass} placeholder="Enter approved rate"/></Field><Field label="Gift receiver share (%)"><input type="number" min="0.01" max="100" step="0.01" value={giftReceiverSharePercent} onChange={e=>setGiftReceiverSharePercent(e.target.value)} className={inputClass}/></Field></div><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={giftEconomyActive} onChange={e=>setGiftEconomyActive(e.target.checked)}/>Enable P2P gift coin spending and diamond earnings</label><button disabled={mutation.isPending} onClick={()=>mutation.mutate(saveGiftEconomy)} className={primaryClass}>Save gift economy</button></div>
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Audited manual grant</h2><p className="mt-1 text-xs text-muted-foreground">Admin-only initial balances and corrections. Every grant creates a ledger entry.</p><div className="mt-3 grid gap-3 sm:grid-cols-3"><Field label="Recipient UUID"><input value={grantUserId} onChange={e=>setGrantUserId(e.target.value)} className={inputClass}/></Field><Field label="Asset"><select value={grantAsset} onChange={e=>setGrantAsset(e.target.value as any)} className={inputClass}><option value="coin">P2P coins</option><option value="diamond">Diamonds</option></select></Field><Field label="Amount"><input type="number" min="1" step="1" value={grantAmount} onChange={e=>setGrantAmount(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(adminGrant)} className={primaryClass}>Grant balance</button></div></section>}
 
       {(me?.role === "admin" || me?.role === "super_agent" || me?.role === "sub_agent") && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Transfer P2P coins</h2><p className="mt-1 text-xs text-muted-foreground">Server enforces hierarchy: Admin → Super Agent → assigned Sub-Agent → user.</p><label className="mt-3 block text-xs font-bold text-muted-foreground">Find recipient by username or JALWA ID<input value={recipientSearch} onChange={e=>setRecipientSearch(e.target.value)} className={inputClass} placeholder="Username, JALWA ID or UUID"/></label>{recipientSearchResults.data?.map(u=><button key={u.id} type="button" onClick={()=>setTransferTo(u.id)} className={`mt-2 flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs ${transferTo===u.id?"border-amber-400 bg-amber-400/10":"border-border"}`}><span><strong>{u.username||"JALWA user"}</strong><span className="ml-2 text-muted-foreground">{u.user_code||"No JALWA ID"}</span><span className="mt-1 block break-all text-[10px] text-muted-foreground">{u.id}</span></span><span>{transferTo===u.id?"Selected":"Select"}</span></button>)}<div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Recipient UUID"><input value={transferTo} onChange={e=>setTransferTo(e.target.value)} className={inputClass}/></Field><Field label="Amount"><input type="number" min="1" step="1" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(transfer)} className={primaryClass}><ArrowLeftRight className="mr-2 inline h-4 w-4"/>Transfer coins</button></section>}
