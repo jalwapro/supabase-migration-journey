@@ -380,7 +380,7 @@ function MePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
-              {coinAgent && <FeatureCard to="/coin-sellers" icon={Store} title="Coin Agent Panel" sub="Sell coins & check your stock" color="#fbbf24" elite />}
+              <FeatureCard to="/p2p-agency" icon={ShieldCheck} title="P2P Agency Wallet" sub="Independent coins, diamonds & agency payouts" color="#fbbf24" elite />
               {coinAgent && (
                 <a href="/support?topic=coin-seller-stock" className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition-all hover:border-[#22d3ee]/40 active:scale-[0.98]">
                   <div aria-hidden className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: "#22d3ee" }} />
