@@ -63,6 +63,7 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
   const [buyerCode, setBuyerCode] = useState("");
   const [amount, setAmount] = useState("1000");
   const [confirmTransfer, setConfirmTransfer] = useState(false);
+  const [paymentReference, setPaymentReference] = useState("");
   const [transferRequestKey, setTransferRequestKey] = useState(() => globalThis.crypto?.randomUUID?.() ?? "transfer-" + Date.now() + "-" + Math.random().toString(36).slice(2));
 
   const myProfile = useQuery({ queryKey: ["coin_seller_my_profile", user?.id], enabled: !!user?.id, queryFn: async () => { const { data, error } = await supabase.from("profiles").select("username,user_code").eq("id", user!.id).single(); if (error) throw error; return data; }, staleTime: 60_000 });
@@ -121,7 +122,7 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
       const coins = Number(amount);
       if (!Number.isSafeInteger(coins) || coins < 1 || coins > 1_000_000) throw new Error("Enter between 1 and 1,000,000 coins.");
       const transferRpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
-      const { data, error } = await transferRpc("coin_seller_transfer", { p_buyer_code: buyerCode.trim(), p_coins: coins, p_request_key: transferRequestKey });
+      const { data, error } = await transferRpc("coin_seller_transfer", { p_buyer_code: buyerCode.trim(), p_coins: coins, p_request_key: transferRequestKey, p_payment_reference: paymentReference.trim() });
       if (error) throw error;
       if (!data || typeof data !== "object" || !("transaction_id" in data) || !("coins_transferred" in data)) {
         throw new Error("Transfer response was incomplete. Refresh the page and verify the transaction history before retrying.");
@@ -130,7 +131,7 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
     },
     onSuccess: (result) => {
       toast.success(`Transferred ${Number(result.coins_transferred).toLocaleString()} coins to ${result.buyer_username || result.buyer_code || "buyer"}`);
-      setBuyerCode(""); setConfirmTransfer(false);
+      setBuyerCode(""); setPaymentReference(""); setConfirmTransfer(false);
       setTransferRequestKey(globalThis.crypto?.randomUUID?.() ?? "transfer-" + Date.now() + "-" + Math.random().toString(36).slice(2));
       qc.invalidateQueries({ queryKey: ["my_coin_seller_inventory"] });
       qc.invalidateQueries({ queryKey: ["my_coin_seller_transactions"] });
@@ -149,8 +150,10 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
     {isSeller && <section className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-card to-indigo-500/5 p-4 shadow-lg shadow-violet-950/10 sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-muted-foreground">Your available seller inventory</p><p className="mt-1 flex items-center gap-2 text-2xl font-bold"><Coins className="h-5 w-5 text-primary" />{Number(inventory.data?.available_coins ?? 0).toLocaleString()}</p><p className="mt-1 text-xs text-muted-foreground">Lifetime sold: {Number(inventory.data?.total_sold ?? 0).toLocaleString()}</p></div><BadgeCheck className="h-8 w-8 text-primary" /></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><label className="mb-1 block text-[11px] font-bold uppercase tracking-[.16em] text-cyan-300/80">Buyer JALWA ID</label><input value={buyerCode} onChange={(e) => { setBuyerCode(e.target.value); setConfirmTransfer(false); }} placeholder="Enter user ID or username" className="w-full border-0 border-b-2 border-slate-700 bg-transparent px-1 py-3 text-base outline-none transition focus:border-cyan-400" /></div><div><label className="mb-1 block text-[11px] font-bold uppercase tracking-[.16em] text-amber-300/80">Coin volume</label><input type="number" min="1" max="1000000" value={amount} onChange={(e) => { setAmount(e.target.value); setConfirmTransfer(false); }} className="w-full border-0 border-b-2 border-slate-700 bg-transparent px-1 py-3 text-2xl font-black text-amber-300 outline-none transition focus:border-amber-400" /></div></div>
       <div className="mt-3 rounded-xl border border-white/10 bg-black/25 p-3 text-sm"><div className="flex justify-between"><span className="text-muted-foreground">Transfer amount</span><strong>{(Number(amount) || 0).toLocaleString()} coins</strong></div><div className="mt-1 flex justify-between"><span className="text-muted-foreground">Inventory after transfer</span><strong>{(Number(inventory.data?.available_coins ?? 0) - (Number(amount) || 0)).toLocaleString()} coins</strong></div></div>
-      <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={confirmTransfer} onChange={(e) => setConfirmTransfer(e.target.checked)} className="mt-0.5" /><span>I have received/verified the buyer's payment and confirm this coin transfer.</span></label>
-      <button disabled={transfer.isPending || !confirmTransfer || !buyerCode.trim() || !Number.isSafeInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > Number(inventory.data?.available_coins ?? 0)} onClick={() => transfer.mutate()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3.5 text-sm font-black tracking-wide text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50">{transfer.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Confirm and transfer coins</button>
+      <label className="mt-3 block text-[11px] font-bold uppercase tracking-[.16em] text-amber-300/80">Payment transaction reference</label>
+      <input value={paymentReference} onChange={(e) => { setPaymentReference(e.target.value); setConfirmTransfer(false); }} maxLength={160} placeholder="JazzCash / Easypaisa / bank reference" className="mt-1 w-full rounded-xl border border-white/10 bg-black/25 px-3 py-3 text-sm outline-none focus:border-amber-400/50" />
+      <label className="mt-3 flex cursor-pointer items-start gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={confirmTransfer} onChange={(e) => setConfirmTransfer(e.target.checked)} className="mt-0.5" /><span>I have received/verified the buyer's payment and confirm this coin transfer. The reference will be stored in the audit history.</span></label>
+      <button disabled={transfer.isPending || !confirmTransfer || !buyerCode.trim() || paymentReference.trim().length < 3 || !Number.isSafeInteger(Number(amount)) || Number(amount) < 1 || Number(amount) > Number(inventory.data?.available_coins ?? 0)} onClick={() => transfer.mutate()} className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-cyan-300/20 bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-3.5 text-sm font-black tracking-wide text-slate-950 shadow-lg shadow-cyan-950/30 transition hover:brightness-110 active:scale-[.99] disabled:cursor-not-allowed disabled:opacity-50">{transfer.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Confirm and transfer coins</button>
       <p className="mt-2 text-[11px] text-muted-foreground">Transfers are instant and irreversible. Verify the buyer ID and payment before confirming.</p>
     </section>}
 
