@@ -7,13 +7,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, BadgeCheck, Coins , ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/_authenticated/coin-sellers")({ component: CoinSellerMarketplace });
+export const Route = createFileRoute("/_authenticated/coin-sellers")({ component: CoinSellerMarketplaceRoute });
+function CoinSellerMarketplaceRoute() { return <CoinSellerMarketplace />; }
 
 type PublicSeller = { user_id: string; whatsapp_number: string | null; public_name: string | null; public_note: string | null; is_active: boolean; is_listed: boolean; available_coins?: number; profile?: { username: string | null; user_code: string | null; avatar: string | null } | null };
 type SellerInventory = { seller_id: string; available_coins: number; total_allocated: number; total_sold: number };
 type SellerTransaction = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; buyer?: { username: string | null; user_code: string | null } | null; seller?: { username: string | null; user_code: string | null } | null };
 
-function CoinSellerMarketplace() {
+export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -97,7 +98,7 @@ function CoinSellerMarketplace() {
   const visibleSellers = (directory.data ?? []).filter((s) => `${s.public_name ?? ""} ${s.profile?.username ?? ""} ${s.profile?.user_code ?? ""}`.toLowerCase().includes(search.toLowerCase()));
   const isSeller = !!inventory.data;
 
-  return <AppShell><main className="mx-auto w-full max-w-6xl space-y-6 px-3 pb-24 pt-5 sm:px-5 md:pt-7">
+  const content = <main className="mx-auto w-full max-w-6xl space-y-6 px-3 pb-24 pt-5 sm:px-5 md:pt-7">
     <section className="relative isolate overflow-hidden rounded-3xl border border-amber-400/20 bg-gradient-to-br from-amber-500/10 via-background to-orange-500/5 p-5 sm:p-7"><div className="pointer-events-none absolute -right-12 -top-12 -z-10 h-44 w-44 rounded-full bg-amber-400/10 blur-3xl" /><div className="flex items-start gap-3"><button onClick={() => window.history.length > 1 ? window.history.back() : window.location.assign("/")} aria-label="Go back" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-border bg-background/70"><ArrowLeft className="h-4 w-4" /></button><div className="min-w-0 flex-1"><p className="text-[11px] font-extrabold uppercase tracking-[.24em] text-amber-400">JALWA • VIP MERCHANT LOUNGE</p><h1 className="mt-1 bg-gradient-to-r from-amber-200 via-yellow-400 to-orange-500 bg-clip-text text-2xl font-black tracking-tight text-transparent sm:text-3xl">Coin Bank</h1><p className="mt-2 max-w-xl text-sm text-muted-foreground">Buy JALWA coins from listed sellers. Confirm payment details directly with your seller before paying.</p><div className="mt-4 flex flex-wrap gap-2"><span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400"><ShieldCheck className="h-3.5 w-3.5" /> Listed sellers</span><span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-300"><Coins className="h-3.5 w-3.5" /> Live stock</span></div></div><div className="hidden h-14 w-14 shrink-0 place-items-center rounded-2xl border border-amber-400/20 bg-amber-400/10 sm:grid"><Coins className="h-7 w-7 text-amber-400" /></div></div></section>
 
     {isSeller && <section className="relative overflow-hidden rounded-2xl border border-violet-400/20 bg-gradient-to-br from-violet-500/10 via-card to-indigo-500/5 p-4 shadow-lg shadow-violet-950/10 sm:p-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs text-muted-foreground">Your available seller inventory</p><p className="mt-1 flex items-center gap-2 text-2xl font-bold"><Coins className="h-5 w-5 text-primary" />{Number(inventory.data?.available_coins ?? 0).toLocaleString()}</p><p className="mt-1 text-xs text-muted-foreground">Lifetime sold: {Number(inventory.data?.total_sold ?? 0).toLocaleString()}</p></div><BadgeCheck className="h-8 w-8 text-primary" /></div>
@@ -114,5 +115,6 @@ function CoinSellerMarketplace() {
 
     {transactionHistory.data && transactionHistory.data.length > 0 && <section className="glass rounded-2xl p-4"><h2 className="mb-3 flex items-center gap-2 font-bold"><Wallet className="h-4 w-4 text-primary" /> Your coin seller transactions</h2><div className="space-y-2">{transactionHistory.data.slice(0, 20).map((t) => <div key={t.id} className="flex items-center gap-3 rounded-xl border border-border p-3"><div className={`grid h-9 w-9 place-items-center rounded-full ${t.kind === "sale" ? "bg-amber-500/15 text-amber-400" : "bg-emerald-500/15 text-emerald-400"}`}><Coins className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-sm font-semibold">{t.kind === "sale" ? (t.seller_id === user?.id ? `Sold to ${t.buyer?.username || t.buyer?.user_code || "buyer"}` : `Received from ${t.seller?.username || t.seller?.user_code || "seller"}`) : t.kind === "allocation" ? "Admin inventory allocation" : "Inventory adjustment"}</p><p className="text-[11px] text-muted-foreground">{new Date(t.created_at).toLocaleString()}</p></div><div className="text-right"><p className={`text-sm font-bold ${t.kind === "sale" ? "text-amber-400" : "text-emerald-400"}`}>{t.kind === "sale" ? "−" : "+"}{Number(t.coins).toLocaleString()}</p><p className="text-[10px] text-muted-foreground">coins</p></div></div>)}</div></section>}
     <p className="text-center text-[11px] text-muted-foreground">JALWA does not collect seller payments. Pay only after verifying the seller and their payment details.</p>
-  </main></AppShell>;
+  </main>;
+  return embedded ? content : <AppShell>{content}</AppShell>;
 }
