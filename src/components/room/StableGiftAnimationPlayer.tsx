@@ -285,7 +285,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   }
 
   return (<div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 2147483647 }} aria-live="polite"><div style={stageStyle}>
-    {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} />
+    {svga && src && !mediaFailed ? <SvgaPlayer key={`${active.id}:${src}`} src={src} loops={loop ? 0 : 1} clearsAfterStop={false} className="h-full w-full" style={mediaStyle} onFinished={finish} onError={handleMediaError} />
       : video && src && !mediaFailed && requiresGpuGiftRenderer(cfg) && (!isMobileWebView() || isChromaKeyEnabled(active.gift_chromakey, cfg)) ? <GiftGLVideo key={`${active.id}:${src}`} src={src} config={cfg} loop={loop} muted={active.gift_audio_enabled === false} volume={num(active.gift_audio_volume ?? 1, 1)} className="h-full w-full" style={mediaStyle} objectFit={OBJECT_FIT[cfg.fit]} onDuration={handleDuration} onReady={() => setMediaStarted(true)} onEnded={finish} onError={handleMediaError} />
       : video && src && !mediaFailed ? <video key={`${active.id}:${src}`} src={src} playsInline autoPlay preload="auto" muted={active.gift_audio_enabled === false} loop={loop} className="h-full w-full" style={{ ...mediaStyle, transform: "translate3d(0, 0, 0)", willChange: "transform" }}
           onLoadedMetadata={e => { const d = e.currentTarget.duration; if (Number.isFinite(d) && d > 0) handleDuration(Math.ceil(d * 1000)); }}
