@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useInfiniteQuery } from "@tanstack/react-query";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -984,7 +984,7 @@ function RoomFrameFilters() {
 
 
 
-function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "violet" }) {
+const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "violet" }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
   const glow = frameTone === "gold"
     ? "shadow-[0_10px_30px_-6px_rgba(251,191,36,0.55)]"
@@ -1073,10 +1073,9 @@ function RoomCard({ room, frameTone }: { room: Room; frameTone?: "gold" | "viole
     </div>
 
   );
-}
+});
 
-
-function RoomListItem({ room }: { room: Room }) {
+const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
   const TypeIcon = room.room_type === "video" ? Video : Mic;
   return (
     <Link
@@ -1129,8 +1128,7 @@ function RoomListItem({ room }: { room: Room }) {
       </div>
     </Link>
   );
-}
-
+});
 
 function EmptyRooms({ tab }: { tab: TabKey }) {
   const label =
