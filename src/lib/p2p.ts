@@ -4,7 +4,7 @@ export type P2PAction =
   | "MARKETPLACE" | "GET_AGENT" | "GET_ORDER" | "SAVE_AGENT_PROFILE" | "REQUEST_WHATSAPP"
   | "CREATE_ORDER" | "BUYER_PAID" | "APPEAL" | "RELEASE_ORDER" | "CANCEL_ORDER"
   | "ADMIN_COMPLETE" | "ADMIN_CANCEL" | "ADMIN_APPROVE_WHATSAPP" | "ADMIN_BAN_AGENT"
-  | "ADMIN_SAVE_SETTINGS" | "ADMIN_OVERVIEW";
+  | "ADMIN_SAVE_SETTINGS" | "ADMIN_OVERVIEW" | "MY_ORDERS";
 
 export async function p2pAction<T = Record<string, unknown>>(action: P2PAction, payload: Record<string, unknown> = {}): Promise<T> {
   const { data, error } = await supabase.functions.invoke("p2p-escrow", { body: { action, payload } });
