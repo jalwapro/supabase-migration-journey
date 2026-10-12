@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { supabase } from "@/integrations/supabase/client";
@@ -185,5 +185,5 @@ function P2PAgencyPage() {
 
 const inputClass = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-amber-400";
 const primaryClass = "mt-4 inline-flex items-center justify-center rounded-xl bg-amber-400 px-4 py-3 text-sm font-black text-zinc-950 disabled:opacity-50";
-function Field({ label, children }: { label: string; children: React.ReactNode }) { return <label className="block text-xs font-bold text-muted-foreground">{label}{children}</label>; }
-function Balance({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) { return <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><div className="flex items-center gap-2 text-xs text-zinc-400">{icon}{label}</div><p className="mt-2 text-2xl font-black text-amber-300">{Number(value).toLocaleString()}</p></div>; }
+function Field({ label, children }: { label: string; children: ReactNode }) { return <label className="block text-xs font-bold text-muted-foreground">{label}{children}</label>; }
+function Balance({ icon, label, value }: { icon: ReactNode; label: string; value: number }) { return <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><div className="flex items-center gap-2 text-xs text-zinc-400">{icon}{label}</div><p className="mt-2 text-2xl font-black text-amber-300">{Number(value).toLocaleString()}</p></div>; }
