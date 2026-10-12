@@ -39,6 +39,17 @@ function Page() {
   const { user, profile, refresh } = useAuth();
   const qc = useQueryClient();
   const router = useRouter();
+  const p2pBalances = useQuery({
+    queryKey: ["p2p-wallet-summary", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets").select("coin_available,diamond_available").eq("user_id", user!.id).single();
+      if (error) throw error;
+      return { coins: Number(data.coin_available ?? 0), diamonds: Number(data.diamond_available ?? 0) };
+    },
+  });
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -102,6 +113,8 @@ function Page() {
       toast.success(`Purchased with ${vars.currency === "diamonds" ? "💎" : "🪙"}`);
       await refresh();
       qc.invalidateQueries({ queryKey: ["shop"] });
+      qc.invalidateQueries({ queryKey: ["p2p-wallet-summary", user?.id] });
+      qc.invalidateQueries({ queryKey: ["p2p-header-balance", user?.id] });
     },
     onError: (e: Error) => toast.error(`Purchase failed: ${e.message}`),
   });
@@ -183,8 +196,8 @@ function Page() {
   const canAffordCurrency = (it: ShopItem, cur: "coins" | "diamonds") => {
     if (it.is_free) return true;
     return cur === "diamonds"
-      ? (profile?.diamonds ?? 0) >= it.price_diamonds
-      : (profile?.coins ?? 0) >= it.price;
+      ? (p2pBalances.data?.diamonds ?? 0) >= it.price_diamonds
+      : (p2pBalances.data?.coins ?? 0) >= it.price;
   };
   const userLevel = (profile as any)?.vip_level ?? (profile as any)?.level ?? 0;
   const isLocked = (it: ShopItem) => (it.min_level ?? 0) > userLevel;
@@ -229,7 +242,7 @@ function Page() {
                   <Coins className="h-3 w-3 text-amber-950" />
                 </span>
                 <span className="text-xs font-semibold text-amber-200">
-                  {(profile?.coins ?? 0).toLocaleString()}
+                  {Number(p2pBalances.data?.coins ?? 0).toLocaleString()}
                 </span>
               </div>
               <div className="ml-3 flex items-center gap-2 border-l border-white/10 pl-3 pr-2">
@@ -237,12 +250,12 @@ function Page() {
                   <Gem className="h-3 w-3 text-white" />
                 </span>
                 <span className="text-xs font-semibold text-purple-200">
-                  {(profile?.diamonds ?? 0).toLocaleString()}
+                  {Number(p2pBalances.data?.diamonds ?? 0).toLocaleString()}
                 </span>
               </div>
             </div>
             <Link
-              to="/recharge"
+              to="/p2p-agency"
               className="rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 text-xs font-bold text-black shadow-lg shadow-orange-500/20 transition active:scale-95"
             >
               TOP UP
