@@ -14,7 +14,7 @@ export function SuperCoinAgentPanel() {
  const [publicName,setPublicName]=useState("");
  const context=useQuery({queryKey:["super-agent-context"],queryFn:()=>coinAgentAction<Context>("ROLE_CONTEXT"),retry:false,staleTime:15000});
  const create=useMutation({
-  mutationFn:()=>coinAgentAction("SUPER_CREATE_CHILD_AGENT",{target_id:targetId.trim(),whatsapp_number:whatsapp.replace(/\\D/g,""),public_name:publicName.trim()||null}),
+  mutationFn:()=>coinAgentAction("SUPER_CREATE_CHILD_AGENT",{target_id:targetId.trim(),whatsapp_number:whatsapp.replace(/\D/g,""),public_name:publicName.trim()||null}),
   onSuccess:async()=>{toast.success("Coin Agent created");setTargetId("");setWhatsapp("");setPublicName("");await qc.invalidateQueries({queryKey:["super-agent-context"]});},
   onError:(e:Error)=>toast.error(e.message)
  });
@@ -27,7 +27,7 @@ export function SuperCoinAgentPanel() {
    <input value={targetId} onChange={e=>setTargetId(e.target.value)} placeholder="Existing user's UUID" className="w-full rounded-xl border border-border bg-background p-3 text-sm"/>
    <input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} placeholder="WhatsApp with country code (8–15 digits)" inputMode="tel" className="w-full rounded-xl border border-border bg-background p-3 text-sm"/>
    <input value={publicName} onChange={e=>setPublicName(e.target.value)} placeholder="Public agent name (optional)" className="w-full rounded-xl border border-border bg-background p-3 text-sm"/>
-   <button disabled={create.isPending||!targetId.trim()||whatsapp.replace(/\\D/g,"").length<8||whatsapp.replace(/\\D/g,"").length>15} onClick={()=>create.mutate()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 p-3 font-black text-zinc-950 disabled:opacity-50">{create.isPending?<Loader2 className="h-4 w-4 animate-spin"/>:<Users className="h-4 w-4"/>} Create Coin Agent</button>
+   <button disabled={create.isPending||!targetId.trim()||whatsapp.replace(/\D/g,"").length<8||whatsapp.replace(/\D/g,"").length>15} onClick={()=>create.mutate()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 p-3 font-black text-zinc-950 disabled:opacity-50">{create.isPending?<Loader2 className="h-4 w-4 animate-spin"/>:<Users className="h-4 w-4"/>} Create Coin Agent</button>
   </div>:<p className="rounded-xl border border-border p-3 text-sm">Five-agent limit reached. Ask Admin to change the hierarchy.</p>}
   <div className="mt-4 space-y-2"><h3 className="text-sm font-bold">Your Coin Agents</h3>{(context.data.children??[]).map(c=><div key={c.user_id} className="rounded-xl border border-border bg-background p-3"><p className="font-bold">{c.username||"JALWA User"} · {c.user_code||"No JALWA ID"}</p><p className="break-all text-[10px] text-muted-foreground">{c.user_id}</p><p className="mt-1 text-xs text-muted-foreground">{c.is_active?"Active":"Inactive"} · Stock {Number(c.available_coins||0).toLocaleString()} · Sold {Number(c.total_sold||0).toLocaleString()}</p></div>)}{!context.data.children?.length&&<p className="text-xs text-muted-foreground">No child agents yet.</p>}</div>
  </section>;
