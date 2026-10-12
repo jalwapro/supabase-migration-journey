@@ -58,6 +58,10 @@ begin
     or p_listed is null then raise exception 'INVALID_LISTING'; end if;
   v_phone:=regexp_replace(coalesce(p_whatsapp_number,''),'[^0-9]','','g');
   if length(v_phone) not between 8 and 16 then raise exception 'VALID_WHATSAPP_REQUIRED'; end if;
+  if not exists(select 1 from public.p2p_exchange_rates where currency_code=upper(p_currency_code) and active)
+    or not exists(select 1 from public.p2p_exchange_rates where currency_code='PKR' and active) then
+    raise exception 'AGENT_CURRENCY_RATE_UNAVAILABLE';
+  end if;
   insert into public.p2p_agent_listings(user_id,country_code,currency_code,whatsapp_number,sell_price_per_1000,listed,updated_at)
   values(v_actor,upper(p_country_code),upper(p_currency_code),v_phone,p_sell_price_per_1000,p_listed,now())
   on conflict(user_id) do update set country_code=excluded.country_code,currency_code=excluded.currency_code,
