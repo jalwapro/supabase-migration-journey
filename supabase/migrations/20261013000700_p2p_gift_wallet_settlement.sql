@@ -136,7 +136,6 @@ grant execute on function public.p2p_transfer_coins(uuid,uuid,bigint) to authent
 
 -- Canonical gift RPC: P2P coins are debited and P2P diamonds are credited in
 -- the same transaction. Legacy profile coin/diamond balances are not mutated.
-drop function if exists public.send_gift(uuid,uuid,uuid,integer);
 create or replace function public.send_gift(
   _room_id uuid,_receiver_id uuid,_gift_id uuid,_quantity integer,_write_message boolean default true
 ) returns public.gift_sends
@@ -220,6 +219,18 @@ end;$function$;
 
 revoke all on function public.send_gift(uuid,uuid,uuid,integer,boolean) from public,anon;
 grant execute on function public.send_gift(uuid,uuid,uuid,integer,boolean) to authenticated;
+
+-- Keep the four-argument compatibility signature, but route it to the same
+-- P2P settlement implementation so no caller can reach the legacy balance path.
+create or replace function public.send_gift(
+  _room_id uuid,_receiver_id uuid,_gift_id uuid,_quantity integer
+) returns public.gift_sends
+language sql security definer set search_path=''
+as $wrapper$
+  select public.send_gift(_room_id,_receiver_id,_gift_id,_quantity,true);
+$wrapper$;
+revoke all on function public.send_gift(uuid,uuid,uuid,integer) from public,anon;
+grant execute on function public.send_gift(uuid,uuid,uuid,integer) to authenticated;
 
 notify pgrst,'reload schema';
 commit;
