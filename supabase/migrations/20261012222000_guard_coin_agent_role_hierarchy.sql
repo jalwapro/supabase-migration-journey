@@ -1,0 +1,1 @@
+-- Protect parent/child role invariants for Coin Agents.
