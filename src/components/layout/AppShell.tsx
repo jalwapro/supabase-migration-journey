@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Shield, Wallet as WalletIcon, Bell } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
+import { useQuery } from "@tanstack/react-query";
 
 
 export function AppShell({
@@ -21,6 +22,18 @@ export function AppShell({
 }) {
   const { profile, isAdmin, user } = useAuth();
   const unread = useUnreadCount();
+  const p2pBalance = useQuery({
+    queryKey: ["p2p-header-balance", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets").select("coin_available").eq("user_id", user!.id).single();
+      if (error) throw error;
+      return Number(data.coin_available ?? 0);
+    },
+    staleTime: 10_000,
+  });
   const unreadCount = user ? (unread.data ?? 0) : 0;
 
 
@@ -61,11 +74,11 @@ export function AppShell({
 
               {profile && (
                 <Link
-                  to="/wallet"
+                  to="/p2p-agency"
                   className="flex items-center gap-1 rounded-full border border-border bg-card/60 px-3 py-1.5 text-xs font-semibold"
                 >
                   <WalletIcon className="h-3.5 w-3.5 text-[color:var(--gold)]" />
-                  <span title={profile.coins.toLocaleString()}>{formatCompact(profile.coins)}</span>
+                  <span title={Number(p2pBalance.data ?? 0).toLocaleString()}>{formatCompact(p2pBalance.data ?? 0)}</span>
                 </Link>
               )}
               {isAdmin && (
