@@ -167,6 +167,8 @@ begin
   select diamonds_per_fiat_unit into v_diamond_rate from public.p2p_exchange_rates where currency_code='PKR' and active;
   if v_diamond_rate is null or v_diamond_rate<=0 then raise exception 'P2P_PKR_DIAMOND_RATE_NOT_CONFIGURED'; end if;
 
+  insert into public.p2p_profiles(user_id,role,active) values(v_sender,'user',true) on conflict(user_id) do nothing;
+  insert into public.p2p_profiles(user_id,role,active) values(_receiver_id,'user',true) on conflict(user_id) do nothing;
   perform 1 from public.p2p_profiles where user_id in (v_sender,_receiver_id) order by user_id for update;
   if (select count(*) from public.p2p_profiles where user_id in (v_sender,_receiver_id))<>2 then
     raise exception 'P2P_PROFILE_REQUIRED_FOR_GIFT';
