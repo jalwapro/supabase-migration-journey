@@ -3,12 +3,50 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
+import { BottomNav } from "@/components/layout/BottomNav";
+import { CoinAgentHub } from "@/components/coin-agent/CoinAgentHub";
+import { AgentDashboard } from "@/components/p2p/AgentDashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, BadgeCheck, Coins , ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/coin-sellers")({ component: CoinSellerMarketplaceRoute });
-function CoinSellerMarketplaceRoute() { return <CoinSellerMarketplace />; }
+function CoinSellerMarketplaceRoute() {
+  return <>
+    <AppShell title="Coin Agent Workspace" subtitle="Diamonds, coin stock, customer transfers, payment settings and settlements">
+      <main className="mx-auto w-full max-w-6xl space-y-5 px-3 pb-28 pt-4 sm:px-5">
+        <section className="rounded-3xl border border-amber-400/20 bg-gradient-to-br from-zinc-950 via-card to-amber-950/30 p-4 sm:p-6">
+          <p className="text-xs font-black uppercase tracking-[.2em] text-amber-300">JALWA · MERCHANT WORKSPACE</p>
+          <h1 className="mt-1 text-2xl font-black sm:text-3xl">Coin Agent Panel</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Your diamond buying price, coin inventory, transfers by JALWA ID, payment methods, WhatsApp, orders and settlements in one place.</p>
+          <nav aria-label="Coin Agent sections" className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            <a href="#agent-diamonds" className="shrink-0 rounded-full border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-200">Diamonds & price</a>
+            <a href="#agent-inventory" className="shrink-0 rounded-full border border-border bg-background/70 px-3 py-2 text-xs font-bold">Coin inventory</a>
+            <a href="#agent-orders" className="shrink-0 rounded-full border border-border bg-background/70 px-3 py-2 text-xs font-bold">Orders & payments</a>
+          </nav>
+        </section>
+        <section id="agent-diamonds" aria-label="Diamond trades and agent pricing" className="scroll-mt-20">
+          <CoinAgentHub />
+        </section>
+        <section id="agent-inventory" aria-label="Coin inventory and customer transfers" className="scroll-mt-20 rounded-2xl border border-border bg-card p-2 sm:p-3">
+          <div className="px-2 pt-2">
+            <h2 className="text-lg font-black">Coin inventory & customer transfers</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Check your stock, transfer coins to a customer’s JALWA ID and review inventory transactions.</p>
+          </div>
+          <CoinSellerMarketplace embedded />
+        </section>
+        <section id="agent-orders" aria-label="Payment methods and P2P orders" className="scroll-mt-20 rounded-2xl border border-border bg-card p-2 sm:p-3">
+          <div className="px-2 pt-2">
+            <h2 className="text-lg font-black">P2P orders, payment methods & WhatsApp</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Save payment details, request WhatsApp updates and manage orders.</p>
+          </div>
+          <AgentDashboard />
+        </section>
+      </main>
+    </AppShell>
+    <BottomNav />
+  </>;
+}
 
 type PublicSeller = { user_id: string; whatsapp_number: string | null; public_name: string | null; public_note: string | null; is_active: boolean; is_listed: boolean; available_coins?: number; profile?: { username: string | null; user_code: string | null; avatar: string | null } | null };
 type SellerInventory = { seller_id: string; available_coins: number; total_allocated: number; total_sold: number };
