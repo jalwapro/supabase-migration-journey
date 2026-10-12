@@ -57,6 +57,8 @@ export function P2PCoinMarket() {
     },
   });
 
+  const currentRole = role.data?.role;
+
   const market = useQuery({
     queryKey: ["p2p-market-settings"],
     queryFn: async () => {
@@ -249,8 +251,6 @@ export function P2PCoinMarket() {
     queryFn: async () => { const { data, error } = await db.from("p2p_order_messages").select("id,order_id,sender_id,message,created_at").eq("order_id", selectedOrder).order("created_at"); if (error) throw error; return data ?? []; },
     refetchInterval: 10_000,
   });
-
-  const currentRole = role.data?.role;
 
   if (role.isLoading) return <section className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Loading P2P marketplace…</section>;
   if (role.isError) return <section className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive">P2P marketplace is unavailable: {String(role.error)}</section>;
