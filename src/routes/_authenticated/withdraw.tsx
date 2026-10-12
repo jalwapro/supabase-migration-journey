@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuth } from "@/hooks/useAuth";
@@ -138,7 +138,19 @@ function Page() {
             <p className="text-[10px] text-muted-foreground mt-1">≈ Rs. {(balance * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
           </div>
 
-          {/* Red Diamonds & Exchange Card */}
+          {/* Coin Agent withdrawal entry */}
+          <Link to="/coin-agents" className="group block rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 to-cyan-500/10 p-4 transition-colors hover:border-emerald-400/60">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-black text-emerald-300">Withdraw through Coin Agent</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Sell Wallet Diamonds or Red Diamonds to an active agent. The agent pays you directly, and you confirm when payment arrives.</p>
+                <p className="mt-2 text-[11px] font-bold text-emerald-300">Separate balances · Agent rates · Payment confirmation</p>
+              </div>
+              <span className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-black">Open <span aria-hidden="true">→</span></span>
+            </div>
+          </Link>
+
+                    {/* Red Diamonds & Exchange Card */}
           <div className="rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/15 to-purple-500/15 p-4 relative overflow-hidden space-y-3">
             <div className="absolute -right-4 -bottom-4 opacity-10">
               <Sparkles className="w-24 h-24 text-red-400" />
