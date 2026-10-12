@@ -130,14 +130,6 @@ function Page() {
     <>
       <AppShell title="Withdraw Points">
         <div className="space-y-4 px-4 pt-4 pb-20">
-          
-          {/* Available Balance Card */}
-          <div className="glass rounded-3xl p-4 text-center border border-white/10">
-            <p className="text-xs text-muted-foreground">Available balance</p>
-            <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">{balance.toLocaleString()} pts</p>
-            <p className="text-[10px] text-muted-foreground mt-1">≈ Rs. {(balance * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
-          </div>
-
           {/* Coin Agent withdrawal entry */}
           <Link to="/coin-agents" className="group block rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/15 to-cyan-500/10 p-4 transition-colors hover:border-emerald-400/60">
             <div className="flex items-center justify-between gap-3">
@@ -149,6 +141,14 @@ function Page() {
               <span className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-black text-black">Open <span aria-hidden="true">→</span></span>
             </div>
           </Link>
+
+          
+          {/* Available Balance Card */}
+          <div className="glass rounded-3xl p-4 text-center border border-white/10">
+            <p className="text-xs text-muted-foreground">Available balance</p>
+            <p className="mt-1 text-3xl font-black text-[color:var(--gold)]">{balance.toLocaleString()} pts</p>
+            <p className="text-[10px] text-muted-foreground mt-1">≈ Rs. {(balance * rate).toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+          </div>
 
                     {/* Red Diamonds & Exchange Card */}
           <div className="rounded-2xl border border-red-500/30 bg-gradient-to-r from-red-500/15 to-purple-500/15 p-4 relative overflow-hidden space-y-3">
