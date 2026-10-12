@@ -91,7 +91,7 @@ function WalletPage() {
                 <ArrowDownToLine className="mr-1.5 inline h-4 w-4" />
                 Recharge
               </Link>
-              <Link to="/p2p" className="flex-1 rounded-full border border-[#ffcf6a]/35 bg-black/40 py-2.5 text-center text-sm font-black text-[#ffcf6a]">P2P Market</Link>
+              <Link to="/p2p" className="flex-1 rounded-full border border-[#ffcf6a]/35 bg-black/40 py-2.5 text-center text-sm font-black text-[#ffcf6a]">P2P Market</Link>\n              <Link to="/coin-agents" className="flex-1 rounded-full border border-[#8be9fd]/35 bg-black/40 py-2.5 text-center text-sm font-black text-[#8be9fd]">Coin Agent</Link>
               <button
                 onClick={() =>
                   document
