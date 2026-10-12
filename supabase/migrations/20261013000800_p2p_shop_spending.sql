@@ -25,9 +25,10 @@ begin
   v_cost:=round(v_basis.cost_pkr_remaining*v_paid/nullif(v_basis.coins_remaining,0),8);
   update public.p2p_coin_cost_basis set coins_remaining=coins_remaining-v_paid,cost_pkr_remaining=greatest(0,round(cost_pkr_remaining-v_cost,8)),updated_at=now() where user_id=me;
  end if;
- insert into public.p2p_ledger(request_key,kind,asset,amount,from_user_id,actor_id,metadata)
- values(gen_random_uuid(),'gift_spend','coin',greatest(coalesce(v_price,0),1),me,me,jsonb_build_object('purpose','custom_theme_submission'))
- returning null into v_balance;
+ if coalesce(v_price,0)>0 then
+  insert into public.p2p_ledger(request_key,kind,asset,amount,from_user_id,actor_id,metadata)
+  values(gen_random_uuid(),'gift_spend','coin',v_price,me,me,jsonb_build_object('purpose','custom_theme_submission'));
+ end if;
  insert into public.custom_themes(user_id,image_url,coins_paid) values(me,_image_url,coalesce(v_price,0)) returning * into v_row;
  for v_admin in select distinct ur.user_id from public.user_roles ur where ur.role in ('admin'::public.app_role,'super_admin'::public.app_role) loop
   insert into public.notifications(user_id,kind,title,body,data,actor_id,entity_type,entity_id)
