@@ -14,6 +14,10 @@ xml = xml.replace(/\s*<uses-permission android:name="android\.permission\.CAMERA
 const permissions = [
   "android.permission.RECORD_AUDIO",
   "android.permission.MODIFY_AUDIO_SETTINGS",
+  // The app uses navigator.geolocation to auto-detect country/city and for the location setting.
+  "android.permission.ACCESS_COARSE_LOCATION",
+  "android.permission.ACCESS_FINE_LOCATION",
+  // Declaring this is required on Android 13+; runtime request is made by the native push flow.
   "android.permission.POST_NOTIFICATIONS",
 ];
 
