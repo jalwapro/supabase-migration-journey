@@ -1,6 +1,6 @@
 # JALWA P2P Master-Agency v1 rollout
 
-The six `20261013000100`–`20261013000600` migrations create an isolated P2P economy, coin marketplace and gift-accounting cutover. It does not read or write the previous wallet, coin seller, or diamond trade tables. The legacy economy is intentionally not dropped by this change: perform the app cutover and legacy deprecation in a separate reviewed release after the new flows pass staging tests.
+The eight `20261013000100`–`20261013000800` migrations create an isolated P2P economy, coin marketplace and P2P spending cutover. It does not read or write the previous wallet, coin seller, or diamond trade tables. The legacy economy is intentionally not dropped by this change: perform the app cutover and legacy deprecation in a separate reviewed release after the new flows pass staging tests.
 
 ## Included
 
@@ -9,7 +9,7 @@ The six `20261013000100`–`20261013000600` migrations create an isolated P2P ec
 - Required payout destination (JazzCash, Easypaisa, bank transfer, Raast, or other), account-holder name, and account/wallet number; visible only to withdrawal parties under RLS.
 - Top-down coin transfers: Admin -> Super Agent -> assigned Sub-Agent -> standard User; each Super Agent is limited to five Sub-Agents.
 - P2P coin marketplace with agent country/payment details, Admin-controlled pricing and currency conversion, agent coin escrow, payment screenshots, order chat, and Admin appeal resolution.
-- Gift send RPC debits P2P coins and credits P2P diamonds; P2P paid-coin cost basis is maintained for gift payout calculations.
+- Gift send RPC debits P2P coins and credits P2P diamonds; VIP, shop and custom-theme spending also use P2P balances. Paid-coin cost basis is maintained for gift payout calculations.
 - Diamond withdrawal escrow, private payout screenshot storage, Super Agent approval, and rejection/refund.
 - RLS for table reads and screenshot access; browser clients have no direct balance/table write grants.
 - Super Agent review route: `/_authenticated/agency-approvals`.
@@ -36,7 +36,7 @@ The six `20261013000100`–`20261013000600` migrations create an isolated P2P ec
 ## P2P coin order lifecycle
 
 - Admin configures the PKR bundle price, allowed agent bundle range (default 500–600 coins per PKR 50), and currency conversion rates.
-- Sub-Agent publishes country, local currency, supported payment methods, payment details, price within the Admin range, and order limits.
+- Admin assigns each Sub-Agent's country and currency. Agents can configure payment methods/details, price within the Admin range, and order limits but cannot change their assigned country/currency.
 - Order creation atomically locks agent coins. Buyer uploads payment proof and reference; the agent confirms payment to release coins to the buyer. Buyer can open an appeal; Admin resolves to buyer or agent. Unpaid cancellations refund agent escrow.
 - Order messages are restricted to the buyer, assigned Sub-Agent, their Super Agent, and Admin.
 
@@ -63,4 +63,4 @@ The six `20261013000100`–`20261013000600` migrations create an isolated P2P ec
 
 ## Not yet a production cutover
 
-Legacy user-facing finance pages are redirected/hidden, and gift send accounting is switched to P2P balances. This does not migrate existing legacy balances or apply migrations to production. VIP purchases, shop purchases, and several mini-game RPCs still require a separate audited port to P2P balances before claiming the entire app economy has completed its cutover. Those steps require staging verification and an explicit cutover plan to avoid losing balances or breaking existing JALWA features.
+Legacy user-facing finance pages are redirected/hidden, and gift send accounting is switched to P2P balances. This does not migrate existing legacy balances or apply migrations to production. Several mini-game/casino RPCs still use legacy profile coin balances and require a separate audited port to P2P balances before claiming the entire app economy has completed its cutover. Those steps require staging verification and an explicit cutover plan to avoid losing balances or breaking existing JALWA features.
