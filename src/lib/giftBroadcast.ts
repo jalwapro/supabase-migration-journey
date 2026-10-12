@@ -136,6 +136,7 @@ export async function broadcastGiftPlayback(
           soundUrl: payload.giftSoundUrl ?? payload.giftAudioUrl,
           audioEnabled: payload.giftAudioEnabled,
           audioVolume: payload.giftAudioVolume,
+          giftLoop: payload.giftLoop,
           quantity: payload.quantity,
           renderConfig: payload.renderConfig,
           local: true,
