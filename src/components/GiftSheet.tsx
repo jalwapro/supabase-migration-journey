@@ -91,7 +91,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
      await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,rows[0].id!,rows.map(row=>row.id!));
    }
    return{gift,quantity};
- },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["p2p-gift-wallet",profile?.id]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
+ },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["p2p-gift-wallet",profile?.id]});qc.invalidateQueries({queryKey:["p2p-header-balance",profile?.id]});qc.invalidateQueries({queryKey:["p2p-wallet-summary",profile?.id]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
  if(!open)return null;const effectiveTargets=[...new Set((sendToAll?receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id):selectedReceiverIds).filter(Boolean))];const totalCost=price(selectedGift)*qty*Math.max(1,effectiveTargets.length);const canAfford=(p2pGiftWallet.data??0)>=totalCost;
  const performSend=()=>{if(!selectedGift||send.isPending)return;if(!effectiveTargets.length){toast.error("Pick a receiver");return;}onClose();send.mutate({gift:selectedGift,targets:effectiveTargets,quantity:qty});};
  const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(sendToAll)return;setSelectedReceiverIds(prev=>{if(id===profile?.id)return prev.includes(id)?[]:[id];const withoutSelf=prev.filter(item=>item!==profile?.id);return withoutSelf.includes(id)?withoutSelf.filter(item=>item!==id):[...withoutSelf,id];});};
