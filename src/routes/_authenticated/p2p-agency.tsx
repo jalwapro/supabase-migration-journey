@@ -108,10 +108,6 @@ function P2PAgencyPage() {
     onError: (e: Error) => toast.error(errorText(e)),
   });
 
-  const runRpc = (name: string, args: Record<string, unknown>) => async () => {
-    const { error } = await db.rpc(name, args);
-    if (error) throw error;
-  };
   async function requestWithdrawal() {
     if (!subAgentId) throw new Error("Choose a Sub-Agent");
     const n = Number(amount);
