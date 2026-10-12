@@ -14,7 +14,10 @@ Deno.serve(async(req)=>{const origin=req.headers.get("Origin");if(req.method==="
  if(!allowed.has(body.action))return reply({error:"INVALID_ACTION"},400,origin);
  const db=createClient(URL,SERVICE,{auth:{persistSession:false,autoRefreshToken:false}});const isCoin=coinActions.has(body.action);
  const action=body.action==="COIN_ORDER_LIST"?"LIST":body.action==="CREATE_COIN_ORDER"?"CREATE":body.action==="ADMIN_APPROVE_COIN_ORDER"?"APPROVE":body.action==="ADMIN_REJECT_COIN_ORDER"?"REJECT":body.action;
- const {data,error}=await db.rpc(isCoin?"coin_agent_coin_order_action":"coin_agent_action",{actor_id:user.id,action,payload});
+ let rpcName=isCoin?"coin_agent_coin_order_action":"coin_agent_action";let rpcArgs:Record<string,unknown>={actor_id:user.id,action,payload};
+ if(body.action==="ADMIN_ASSIGN_AGENT"){rpcName="admin_assign_coin_agent";rpcArgs={actor_id:user.id,target_id:payload.agent_id,assigned_country:payload.country,assigned_currency:payload.currency_code??"PKR",enable_agent:payload.enabled??true};}
+ else if(body.action==="MARKETPLACE"){rpcName="coin_agent_marketplace_for_user";rpcArgs={actor_id:user.id};}
+ const {data,error}=await db.rpc(rpcName,rpcArgs);
  if(error){const msg=error.message||"COIN_AGENT_ACTION_FAILED";const status=/AUTH_REQUIRED|ADMIN_REQUIRED/i.test(msg)?403:/NOT_FOUND|NOT_AVAILABLE|INSUFFICIENT|OUT_OF_RANGE|INVALID|REQUIRED|BANNED|PENDING|MUST_BE|NO_EXCHANGE|TOO_SMALL|MINIMUM|PACKAGE|DISPUT/i.test(msg)?400:500;return reply({error:msg},status,origin);}
  return reply({data},200,origin);
  }catch(error){console.error("[coin-agent] request failed",error);return reply({error:"INTERNAL_ERROR"},500,origin);}
