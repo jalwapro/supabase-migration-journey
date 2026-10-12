@@ -57,7 +57,7 @@ function P2PAgencyPage() {
   });
   const userSearchResults = useQuery({
     queryKey: ["p2p-user-search", userSearch],
-    enabled: !!user?.id && (profile.data?.role === "admin" || profile.data?.role === "super_agent") && userSearch.trim().length >= 2,
+    enabled: !!user?.id && (profile.data?.role === "admin" || profile.data?.role === "super_agent" || profile.data?.role === "sub_agent") && userSearch.trim().length >= 2,
     queryFn: async () => {
       const term = userSearch.trim().replace(/[,%()]/g, "");
       const query = db.from("profiles").select("id,username,user_code").limit(8);
@@ -106,6 +106,19 @@ function P2PAgencyPage() {
       return (data ?? []) as Array<Pick<P2PProfile, "user_id" | "display_name" | "super_agent_id" | "active">>;
     },
   });
+  const ledger = useQuery({
+    queryKey: ["p2p-ledger", user?.id, profile.data?.role],
+    enabled: !!user?.id && !!profile.data,
+    queryFn: async () => {
+      const { data, error } = await db.from("p2p_ledger")
+        .select("id,kind,asset,amount,from_user_id,to_user_id,withdrawal_id,created_at,metadata")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; kind: string; asset: string; amount: number; from_user_id: string | null; to_user_id: string | null; withdrawal_id: string | null; created_at: string; metadata: Record<string, unknown> }>;
+    },
+    refetchInterval: 30_000,
+  });
   const withdrawals = useQuery({
     queryKey: ["p2p-my-withdrawals", user?.id, profile.data?.role],
     enabled: !!user?.id && !!profile.data,
@@ -128,6 +141,7 @@ function P2PAgencyPage() {
     qc.invalidateQueries({ queryKey: ["p2p-my-withdrawals"] }),
     qc.invalidateQueries({ queryKey: ["p2p-active-sub-agents"] }),
     qc.invalidateQueries({ queryKey: ["p2p-my-subagents"] }),
+    qc.invalidateQueries({ queryKey: ["p2p-ledger"] }),
     qc.invalidateQueries({ queryKey: ["p2p-user-search"] }),
   ]);
   const mutation = useMutation({
@@ -236,9 +250,10 @@ function P2PAgencyPage() {
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Exchange rate</h2><p className="mt-1 text-xs text-muted-foreground">Diamonds per one unit of fiat currency. Payout is calculated on the server.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Currency code"><select value={currency} onChange={e=>setCurrency(e.target.value)} className={inputClass}>{["PKR","USD","INR","BDT","AED","SAR"].map(c=><option key={c}>{c}</option>)}</select></Field><Field label="Diamonds per 1 currency unit"><input type="number" min="0.00000001" step="any" value={rate} onChange={e=>setRate(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(adminRate)} className={primaryClass}>Save rate</button></div>
       <div className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Audited manual grant</h2><p className="mt-1 text-xs text-muted-foreground">Admin-only initial balances and corrections. Every grant creates a ledger entry.</p><div className="mt-3 grid gap-3 sm:grid-cols-3"><Field label="Recipient UUID"><input value={grantUserId} onChange={e=>setGrantUserId(e.target.value)} className={inputClass}/></Field><Field label="Asset"><select value={grantAsset} onChange={e=>setGrantAsset(e.target.value as any)} className={inputClass}><option value="coin">P2P coins</option><option value="diamond">Diamonds</option></select></Field><Field label="Amount"><input type="number" min="1" step="1" value={grantAmount} onChange={e=>setGrantAmount(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(adminGrant)} className={primaryClass}>Grant balance</button></div></section>}
 
-      {(me?.role === "admin" || me?.role === "super_agent" || me?.role === "sub_agent") && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Transfer P2P coins</h2><p className="mt-1 text-xs text-muted-foreground">Server enforces hierarchy: Admin → Super Agent → assigned Sub-Agent → user.</p><div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Recipient UUID"><input value={transferTo} onChange={e=>setTransferTo(e.target.value)} className={inputClass}/></Field><Field label="Amount"><input type="number" min="1" step="1" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(transfer)} className={primaryClass}><ArrowLeftRight className="mr-2 inline h-4 w-4"/>Transfer coins</button></section>}
+      {(me?.role === "admin" || me?.role === "super_agent" || me?.role === "sub_agent") && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><h2 className="font-black">Transfer P2P coins</h2><p className="mt-1 text-xs text-muted-foreground">Server enforces hierarchy: Admin → Super Agent → assigned Sub-Agent → user.</p><label className="mt-3 block text-xs font-bold text-muted-foreground">Find recipient by username or JALWA ID<input value={userSearch} onChange={e=>setUserSearch(e.target.value)} className={inputClass} placeholder="Username, JALWA ID or UUID"/></label>{userSearchResults.data?.map(u=><button key={u.id} type="button" onClick={()=>setTransferTo(u.id)} className={`mt-2 flex w-full items-center justify-between rounded-xl border px-3 py-2 text-left text-xs ${transferTo===u.id?"border-amber-400 bg-amber-400/10":"border-border"}`}><span><strong>{u.username||"JALWA user"}</strong><span className="ml-2 text-muted-foreground">{u.user_code||"No JALWA ID"}</span><span className="mt-1 block break-all text-[10px] text-muted-foreground">{u.id}</span></span><span>{transferTo===u.id?"Selected":"Select"}</span></button>)}<div className="mt-3 grid gap-3 sm:grid-cols-2"><Field label="Recipient UUID"><input value={transferTo} onChange={e=>setTransferTo(e.target.value)} className={inputClass}/></Field><Field label="Amount"><input type="number" min="1" step="1" value={transferAmount} onChange={e=>setTransferAmount(e.target.value)} className={inputClass}/></Field></div><button disabled={mutation.isPending} onClick={()=>mutation.mutate(transfer)} className={primaryClass}><ArrowLeftRight className="mr-2 inline h-4 w-4"/>Transfer coins</button></section>}}
 
       <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><div className="flex items-center justify-between"><h2 className="font-black">Recent withdrawals</h2><button onClick={()=>void withdrawals.refetch()} className="text-xs font-bold text-amber-300">Refresh</button></div>{withdrawals.isLoading ? <Loader2 className="mt-4 h-5 w-5 animate-spin"/> : (withdrawals.data??[]).length ? <div className="mt-3 space-y-2">{withdrawals.data!.map(w=><article key={w.id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">{Number(w.amount).toLocaleString()} diamonds · {w.fiat_currency} {Number(w.fiat_amount).toFixed(2)}</strong><span className="rounded-full border border-border px-2 py-1 text-[10px] font-bold uppercase">{w.status.replaceAll("_"," ")}</span></div><p className="mt-1 break-all text-[11px] text-muted-foreground">{w.id} · {new Date(w.created_at).toLocaleString()}</p>{w.rejection_reason && <p className="mt-2 text-xs text-destructive">Reason: {w.rejection_reason}</p>}</article>)}</div> : <p className="mt-3 text-sm text-muted-foreground">No withdrawal records yet.</p>}</section>
+      <section className="rounded-2xl border border-border bg-card p-4 sm:p-5"><div className="flex items-center justify-between gap-3"><div><h2 className="font-black">P2P Ledger</h2><p className="mt-1 text-xs text-muted-foreground">Audited activity from the new agency economy.</p></div><button onClick={()=>void ledger.refetch()} className="text-xs font-bold text-amber-300">Refresh</button></div>{ledger.isLoading?<Loader2 className="mt-4 h-5 w-5 animate-spin"/>:ledger.isError?<p className="mt-3 text-sm text-destructive">{errorText(ledger.error)}</p>:(ledger.data??[]).length?<div className="mt-3 space-y-2">{ledger.data!.map(item=><article key={item.id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><strong className="text-sm">{item.kind.replaceAll("_"," ")}</strong><span className="rounded-full border border-border px-2 py-1 text-[10px] font-bold uppercase">{item.asset} · {Number(item.amount).toLocaleString()}</span></div><p className="mt-1 break-all text-[10px] text-muted-foreground">{item.from_user_id?(`From ${item.from_user_id}`):"System"}{item.to_user_id?(` · To ${item.to_user_id}`):""}</p><p className="mt-1 text-[10px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p></article>)}</div>:<p className="mt-3 text-sm text-muted-foreground">No P2P ledger activity yet.</p>}</section>
       <Link to="/me" className="inline-flex items-center gap-2 text-sm text-muted-foreground"><span>←</span> Back to profile</Link>
     </main><BottomNav/>
   </AppShell>;
