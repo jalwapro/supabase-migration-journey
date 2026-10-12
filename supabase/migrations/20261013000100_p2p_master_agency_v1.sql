@@ -197,31 +197,65 @@ create or replace function public.p2p_request_diamond_withdrawal(
 ) returns uuid language plpgsql security definer set search_path=''
 as $$
 declare
-  v_user uuid := auth.uid(); v_super uuid; v_id uuid; v_rate numeric(20,8); v_fiat_amount numeric(20,2); v_existing public.p2p_diamond_withdrawals%rowtype;
+  v_user uuid := auth.uid();
+  v_super uuid;
+  v_id uuid;
+  v_rate numeric(20,8);
+  v_fiat_amount numeric(20,2);
+  v_existing public.p2p_diamond_withdrawals%rowtype;
 begin
   if v_user is null then raise exception 'AUTH_REQUIRED'; end if;
-  if p_request_key is null or p_amount is null or p_amount<=0
-    or p_fiat_currency !~ '^[A-Z]{3}
-  select * into v_existing from public.p2p_diamond_withdrawals
-    where user_id=v_user and request_key=p_request_key;
+  if p_request_key is null or p_amount is null or p_amount <= 0
+     or p_fiat_currency !~ '^[A-Z]{3}$' then
+    raise exception 'INVALID_REQUEST';
+  end if;
+
+  select * into v_existing
+  from public.p2p_diamond_withdrawals
+  where user_id = v_user and request_key = p_request_key;
   if found then return v_existing.id; end if;
-  if not exists(select 1 from public.p2p_profiles where user_id=v_user and role='user' and active)
-    then raise exception 'ACTIVE_USER_REQUIRED'; end if;
-  select super_agent_id into v_super from public.p2p_profiles
-    where user_id=p_sub_agent_id and role='sub_agent' and active;
-  if v_super is null or not p2p_private.valid_agent_pair(p_sub_agent_id,v_super)
-    then raise exception 'INVALID_SUB_AGENT'; end if;
-  perform 1 from public.p2p_wallets where user_id=v_user for update;
+
+  if not exists (
+    select 1 from public.p2p_profiles
+    where user_id = v_user and role = 'user' and active
+  ) then raise exception 'ACTIVE_USER_REQUIRED'; end if;
+
+  select super_agent_id into v_super
+  from public.p2p_profiles
+  where user_id = p_sub_agent_id and role = 'sub_agent' and active;
+  if v_super is null or not p2p_private.valid_agent_pair(p_sub_agent_id, v_super) then
+    raise exception 'INVALID_SUB_AGENT';
+  end if;
+
+  select diamonds_per_fiat_unit into v_rate
+  from public.p2p_exchange_rates
+  where currency_code = p_fiat_currency and active = true;
+  if v_rate is null then raise exception 'EXCHANGE_RATE_UNAVAILABLE'; end if;
+  v_fiat_amount := round(p_amount::numeric / v_rate, 2);
+  if v_fiat_amount <= 0 then raise exception 'WITHDRAWAL_BELOW_MINIMUM_FIAT'; end if;
+
+  perform 1 from public.p2p_wallets where user_id = v_user for update;
   if not found then raise exception 'WALLET_NOT_FOUND'; end if;
-  if (select diamond_available from public.p2p_wallets where user_id=v_user)<p_amount
-    then raise exception 'INSUFFICIENT_DIAMONDS'; end if;
-  insert into public.p2p_diamond_withdrawals(request_key,user_id,sub_agent_id,super_agent_id,amount,fiat_currency,fiat_amount,diamond_rate)
-  values(p_request_key,v_user,p_sub_agent_id,v_super,p_amount,p_fiat_currency,v_fiat_amount,v_rate)
-  returning id into v_id;
-  update public.p2p_wallets set diamond_available=diamond_available-p_amount,
-    diamond_locked=diamond_locked+p_amount,updated_at=now() where user_id=v_user;
-  insert into public.p2p_ledger(request_key,kind,asset,amount,from_user_id,to_user_id,withdrawal_id,actor_id)
-  values(gen_random_uuid(),'diamond_lock','diamond',p_amount,v_user,p_sub_agent_id,v_id,v_user);
+  if (select diamond_available from public.p2p_wallets where user_id = v_user) < p_amount then
+    raise exception 'INSUFFICIENT_DIAMONDS';
+  end if;
+
+  insert into public.p2p_diamond_withdrawals(
+    request_key,user_id,sub_agent_id,super_agent_id,amount,fiat_currency,fiat_amount,diamond_rate
+  ) values (
+    p_request_key,v_user,p_sub_agent_id,v_super,p_amount,p_fiat_currency,v_fiat_amount,v_rate
+  ) returning id into v_id;
+
+  update public.p2p_wallets
+  set diamond_available = diamond_available - p_amount,
+      diamond_locked = diamond_locked + p_amount, updated_at = now()
+  where user_id = v_user;
+
+  insert into public.p2p_ledger(
+    request_key,kind,asset,amount,from_user_id,to_user_id,withdrawal_id,actor_id
+  ) values (
+    gen_random_uuid(),'diamond_lock','diamond',p_amount,v_user,p_sub_agent_id,v_id,v_user
+  );
   return v_id;
 end
 $$;
