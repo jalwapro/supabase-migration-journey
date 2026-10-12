@@ -152,6 +152,7 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
         for (const eventId of eventIds) {
           const pending = pendingDbRef.current.get(eventId);
           if (pending !== undefined) { if (pending > 0) window.clearTimeout(pending); pendingDbRef.current.delete(eventId); }
+          pendingRowsRef.current.delete(eventId);
           if (eventId !== id && !seenRef.current.has(eventId)) {
             seenRef.current.add(eventId); seenOrderRef.current.push(eventId);
           }
