@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { isAssetUrlLike, resolveGiftImageUrl, resolvePlayableGiftUrl } from "@/lib/giftMedia";
@@ -14,6 +15,19 @@ export type ComboState = { gift: Gift; targets: string[]; receivers: GiftReceive
 
 export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; state: ComboState | null; onExpire: () => void }) {
   const { profile, refresh } = useAuth();
+  const qc = useQueryClient();
+  const p2pWallet = useQuery({
+    queryKey: ["p2p-gift-wallet", profile?.id],
+    enabled: !!profile?.id && !!state,
+    queryFn: async () => {
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets").select("coin_available").eq("user_id", profile!.id).single();
+      if (error) throw error;
+      return Number(data.coin_available ?? 0);
+    },
+    staleTime: 5_000,
+  });
   const [count, setCount] = useState(1);
   const [remaining, setRemaining] = useState(COMBO_MS);
   const startRef = useRef<number>(Date.now());
@@ -67,7 +81,7 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
   const tap = async () => {
     if (busyRef.current) return;
     const cost = price * targets.length;
-    if ((profile?.coins ?? 0) < cost) { toast.error("Not enough coins"); return; }
+    if (p2pWallet.data !== undefined && p2pWallet.data < cost) { toast.error("Not enough P2P coins"); return; }
     busyRef.current = true;
     startRef.current = Date.now();
     setRemaining(COMBO_MS);
@@ -134,6 +148,7 @@ export function ComboGiftButton({ roomId, state, onExpire }: { roomId: string; s
       setCount((c) => c + 1);
       await broadcastGiftPlayback(roomId, gift, uniqueTargets, sender, 1, firstSendId!, allSendIds);
       await refresh();
+      await qc.invalidateQueries({ queryKey: ["p2p-gift-wallet", profile?.id] });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
