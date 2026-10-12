@@ -44,7 +44,7 @@ using((select p2p_private.current_role())='admin');
 create or replace function public.p2p_admin_assign_role(
   p_user_id uuid, p_role public.p2p_role, p_super_agent_id uuid default null, p_display_name text default null
 ) returns void language plpgsql security definer set search_path=''
-as $
+as $$
 begin
   if (select p2p_private.current_role()) is distinct from 'admin' then raise exception 'ADMIN_REQUIRED'; end if;
   if p_role='admin' then raise exception 'ADMIN_ROLE_MUST_BE_BOOTSTRAPPED_OUT_OF_BAND'; end if;
@@ -58,7 +58,7 @@ begin
   insert into public.p2p_profiles(user_id,role,super_agent_id,display_name)
   values(p_user_id,p_role,p_super_agent_id,nullif(trim(p_display_name),''))
   on conflict(user_id) do update set role=excluded.role,super_agent_id=excluded.super_agent_id,display_name=excluded.display_name,updated_at=now();
-end $;
+end $$;
 revoke all on function public.p2p_admin_assign_role(uuid,public.p2p_role,uuid,text) from public,anon;
 grant execute on function public.p2p_admin_assign_role(uuid,public.p2p_role,uuid,text) to authenticated;
 
