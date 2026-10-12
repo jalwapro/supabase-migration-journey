@@ -226,8 +226,8 @@ function Page() {
               ✦ Royal Shop ✦
             </h1>
             <Link
-              to="/wallet"
-              aria-label="Wallet"
+              to="/p2p-agency"
+              aria-label="P2P Agency"
               className="grid h-10 w-10 place-items-center rounded-full bg-amber-500/10 text-amber-400 ring-1 ring-amber-500/20"
             >
               <Crown className="h-5 w-5" />
