@@ -284,6 +284,87 @@ begin
       if actor_id <> v_order.buyer_id or v_order.status <> 'pending' then raise exception 'INVALID_ORDER_TRANSITION'; end if;
       if coalesce(payload->>'payment_proof_url','') = '' then raise exception 'PAYMENT_PROOF_REQUIRED'; end if;
       if (payload->>'payment_proof_url') !~ ('^' || actor_id::text || '/' || v_order.id::text || '/[^/]+
+    elsif action = 'APPEAL' then
+      if v_order.status not in ('pending','paid') then raise exception 'INVALID_ORDER_TRANSITION'; end if;
+      update public.p2p_orders set status='appealed',appealed_at=now(),resolution_note=left(coalesce(payload->>'reason','Appeal opened'),1000),updated_at=now() where id=v_order.id returning * into v_order;
+    elsif action = 'RELEASE_ORDER' then
+      if actor_id <> v_order.agent_id or v_order.status <> 'paid' then raise exception 'ONLY_AGENT_CAN_RELEASE_PAID_ORDER'; end if;
+      perform set_config('app.trusted_definer','on',true);
+      update public.profiles set coins=coins+v_order.coin_amount,updated_at=now() where id=v_order.buyer_id returning coins into v_buyer_balance;
+      if not found then raise exception 'BUYER_PROFILE_NOT_FOUND'; end if;
+      update public.p2p_orders set status='completed',completed_at=now(),updated_at=now() where id=v_order.id returning * into v_order;
+      insert into public.p2p_ledger(order_id,user_id,entry_type,coin_delta,balance_after,note)
+      values(v_order.id,v_order.buyer_id,'escrow_release',v_order.coin_amount,v_buyer_balance,'Escrow released to buyer');
+    elsif action = 'CANCEL_ORDER' or action = 'ADMIN_CANCEL' then
+      if action='ADMIN_CANCEL' and not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
+      if action='CANCEL_ORDER' and (actor_id not in (v_order.buyer_id,v_order.agent_id) or v_order.status <> 'pending') then raise exception 'ONLY_PENDING_ORDER_CAN_BE_CANCELLED'; end if;
+      if action='ADMIN_CANCEL' and v_order.status in ('completed','cancelled') then raise exception 'ORDER_ALREADY_CLOSED'; end if;
+      perform set_config('app.trusted_definer','on',true);
+      update public.profiles set coins=coins+v_order.coin_amount,updated_at=now() where id=v_order.agent_id returning coins into v_agent_balance;
+      if not found then raise exception 'AGENT_PROFILE_NOT_FOUND'; end if;
+      update public.p2p_orders set status='cancelled',cancelled_at=now(),resolved_by=case when action='ADMIN_CANCEL' then actor_id else null end,resolution_note=coalesce(payload->>'reason',resolution_note),updated_at=now() where id=v_order.id returning * into v_order;
+      insert into public.p2p_ledger(order_id,user_id,entry_type,coin_delta,balance_after,note)
+      values(v_order.id,v_order.agent_id,'escrow_refund',v_order.coin_amount,v_agent_balance,'Escrow refunded to agent');
+    elsif action = 'ADMIN_COMPLETE' then
+      if not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
+      if v_order.status not in ('appealed','paid') then raise exception 'ORDER_NOT_RESOLVABLE'; end if;
+      perform set_config('app.trusted_definer','on',true);
+      update public.profiles set coins=coins+v_order.coin_amount,updated_at=now() where id=v_order.buyer_id returning coins into v_buyer_balance;
+      if not found then raise exception 'BUYER_PROFILE_NOT_FOUND'; end if;
+      update public.p2p_orders set status='completed',completed_at=now(),resolved_by=actor_id,resolution_note=coalesce(payload->>'reason','Admin resolved in buyer favour'),updated_at=now() where id=v_order.id returning * into v_order;
+      insert into public.p2p_ledger(order_id,user_id,entry_type,coin_delta,balance_after,note)
+      values(v_order.id,v_order.buyer_id,'escrow_release',v_order.coin_amount,v_buyer_balance,'Admin resolved escrow to buyer');
+    end if;
+    return jsonb_build_object('order',to_jsonb(v_order));
+  end if;
+  raise exception 'INVALID_ACTION';
+end;
+$$;
+
+revoke all on function public.p2p_escrow_action(uuid,text,jsonb) from public, anon, authenticated;
+grant execute on function public.p2p_escrow_action(uuid,text,jsonb) to service_role;
+) then raise exception 'INVALID_PAYMENT_PROOF_PATH'; end if;
+      update public.p2p_orders set status='paid',payment_proof_url=payload->>'payment_proof_url',buyer_marked_paid_at=now(),updated_at=now() where id=v_order.id returning * into v_order;
+    elsif action = 'APPEAL' then
+      if v_order.status not in ('pending','paid') then raise exception 'INVALID_ORDER_TRANSITION'; end if;
+      update public.p2p_orders set status='appealed',appealed_at=now(),resolution_note=left(coalesce(payload->>'reason','Appeal opened'),1000),updated_at=now() where id=v_order.id returning * into v_order;
+    elsif action = 'RELEASE_ORDER' then
+      if actor_id <> v_order.agent_id or v_order.status <> 'paid' then raise exception 'ONLY_AGENT_CAN_RELEASE_PAID_ORDER'; end if;
+      perform set_config('app.trusted_definer','on',true);
+      update public.profiles set coins=coins+v_order.coin_amount,updated_at=now() where id=v_order.buyer_id returning coins into v_buyer_balance;
+      if not found then raise exception 'BUYER_PROFILE_NOT_FOUND'; end if;
+      update public.p2p_orders set status='completed',completed_at=now(),updated_at=now() where id=v_order.id returning * into v_order;
+      insert into public.p2p_ledger(order_id,user_id,entry_type,coin_delta,balance_after,note)
+      values(v_order.id,v_order.buyer_id,'escrow_release',v_order.coin_amount,v_buyer_balance,'Escrow released to buyer');
+    elsif action = 'CANCEL_ORDER' or action = 'ADMIN_CANCEL' then
+      if action='ADMIN_CANCEL' and not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
+      if action='CANCEL_ORDER' and (actor_id not in (v_order.buyer_id,v_order.agent_id) or v_order.status <> 'pending') then raise exception 'ONLY_PENDING_ORDER_CAN_BE_CANCELLED'; end if;
+      if action='ADMIN_CANCEL' and v_order.status in ('completed','cancelled') then raise exception 'ORDER_ALREADY_CLOSED'; end if;
+      perform set_config('app.trusted_definer','on',true);
+      update public.profiles set coins=coins+v_order.coin_amount,updated_at=now() where id=v_order.agent_id returning coins into v_agent_balance;
+      if not found then raise exception 'AGENT_PROFILE_NOT_FOUND'; end if;
+      update public.p2p_orders set status='cancelled',cancelled_at=now(),resolved_by=case when action='ADMIN_CANCEL' then actor_id else null end,resolution_note=coalesce(payload->>'reason',resolution_note),updated_at=now() where id=v_order.id returning * into v_order;
+      insert into public.p2p_ledger(order_id,user_id,entry_type,coin_delta,balance_after,note)
+      values(v_order.id,v_order.agent_id,'escrow_refund',v_order.coin_amount,v_agent_balance,'Escrow refunded to agent');
+    elsif action = 'ADMIN_COMPLETE' then
+      if not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
+      if v_order.status not in ('appealed','paid') then raise exception 'ORDER_NOT_RESOLVABLE'; end if;
+      perform set_config('app.trusted_definer','on',true);
+      update public.profiles set coins=coins+v_order.coin_amount,updated_at=now() where id=v_order.buyer_id returning coins into v_buyer_balance;
+      if not found then raise exception 'BUYER_PROFILE_NOT_FOUND'; end if;
+      update public.p2p_orders set status='completed',completed_at=now(),resolved_by=actor_id,resolution_note=coalesce(payload->>'reason','Admin resolved in buyer favour'),updated_at=now() where id=v_order.id returning * into v_order;
+      insert into public.p2p_ledger(order_id,user_id,entry_type,coin_delta,balance_after,note)
+      values(v_order.id,v_order.buyer_id,'escrow_release',v_order.coin_amount,v_buyer_balance,'Admin resolved escrow to buyer');
+    end if;
+    return jsonb_build_object('order',to_jsonb(v_order));
+  end if;
+  raise exception 'INVALID_ACTION';
+end;
+$$;
+
+revoke all on function public.p2p_escrow_action(uuid,text,jsonb) from public, anon, authenticated;
+grant execute on function public.p2p_escrow_action(uuid,text,jsonb) to service_role;
+) then raise exception 'INVALID_PAYMENT_PROOF_PATH'; end if;
       update public.p2p_orders set status='paid',payment_proof_url=payload->>'payment_proof_url',buyer_marked_paid_at=now(),updated_at=now() where id=v_order.id returning * into v_order;
     elsif action = 'APPEAL' then
       if v_order.status not in ('pending','paid') then raise exception 'INVALID_ORDER_TRANSITION'; end if;
