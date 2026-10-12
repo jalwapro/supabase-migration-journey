@@ -8,6 +8,7 @@ import { CoinAgentHub } from "@/components/coin-agent/CoinAgentHub";
 import { AgentDashboard } from "@/components/p2p/AgentDashboard";
 import { CoinInventoryRequests } from "@/components/coin-agent/CoinInventoryRequests";
 import { SuperCoinAgentPanel } from "@/components/coin-agent/SuperCoinAgentPanel";
+import { coinAgentAction } from "@/lib/coin-agent";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, BadgeCheck, Coins , ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
 import { toast } from "sonner";
