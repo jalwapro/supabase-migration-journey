@@ -27,10 +27,16 @@ let nativePushBound = false;
 let nativeFcmToken: string | null = null;
 let nativeCurrentUserId: string | null = null;
 
-async function enableNativeFcmForUser(userId: string): Promise<{ token: string } | null> {
+async function enableNativeFcmForUser(
+  userId: string,
+  requestPermissionIfNeeded = false,
+): Promise<{ token: string } | null> {
   const { PushNotifications } = await import("@capacitor/push-notifications");
 
-  const permission = await PushNotifications.checkPermissions();
+  let permission = await PushNotifications.checkPermissions();
+  if (permission.receive !== "granted" && requestPermissionIfNeeded) {
+    permission = await PushNotifications.requestPermissions();
+  }
   if (permission.receive !== "granted") return null;
 
   nativeCurrentUserId = userId;
@@ -267,7 +273,9 @@ function bindForegroundHandler(m: Messaging) {
 }
 
 export async function enableFcmForUser(userId: string): Promise<{ token: string } | null> {
-  if (isNative()) return enableNativeFcmForUser(userId);
+  // This function is called from the user-facing notification opt-in flow,
+  // so it may show Android 13+ notification permission UI when needed.
+  if (isNative()) return enableNativeFcmForUser(userId, true);
   if (!isFcmSupported()) return null;
 
   const perm = await Notification.requestPermission();
