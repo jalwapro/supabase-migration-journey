@@ -26,6 +26,17 @@ type Submission = {
 function CustomThemePage() {
   const { profile, user, refresh } = useAuth();
   const qc = useQueryClient();
+  const p2pBalance = useQuery({
+    queryKey: ["p2p-header-balance", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets").select("coin_available").eq("user_id", user!.id).single();
+      if (error) throw error;
+      return Number(data.coin_available ?? 0);
+    },
+  });
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -76,6 +87,7 @@ function CustomThemePage() {
       setPreview(null);
       await refresh();
       qc.invalidateQueries({ queryKey: ["my_custom_themes"] });
+      qc.invalidateQueries({ queryKey: ["p2p-header-balance", user?.id] });
     },
     onError: (e: Error) => toast.error(e.message),
     onSettled: () => setUploading(false),
@@ -95,7 +107,7 @@ function CustomThemePage() {
   const price = cfg.data?.custom_theme_price_coins ?? 500;
   const hours = cfg.data?.custom_theme_duration_hours ?? 24;
   const enabled = cfg.data?.custom_theme_enabled ?? true;
-  const canAfford = (profile?.coins ?? 0) >= price;
+  const canAfford = (p2pBalance.data ?? 0) >= price;
   const hasPending = mine.data?.some((m) => m.status === "pending");
 
   return (
