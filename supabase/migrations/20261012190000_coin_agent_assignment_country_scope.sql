@@ -160,7 +160,7 @@ as $$
 declare v_buyer_country text; v_agent_country text;
 begin
   select lower(trim(country)) into v_buyer_country from public.profiles where id=new.buyer_id;
-  select lower(trim(country)) into v_agent_country from public.agent_profiles where user_id=new.agent_id and is_active and not is_banned;
+  select lower(trim(country)) into v_agent_country from public.agent_profiles where user_id=new.agent_id and is_active and coin_agent_enabled and not is_banned;
   if coalesce(v_buyer_country,'')='' or coalesce(v_agent_country,'')='' or v_buyer_country<>v_agent_country then
     raise exception 'COUNTRY_MISMATCH: P2P agent and buyer must be in the same country';
   end if;
@@ -183,8 +183,9 @@ begin
   select lower(trim(country)) into v_user_country from public.profiles where id=new.user_id;
   select lower(trim(country)) into v_agent_country from public.agent_profiles
     where user_id=new.agent_id and is_active and not is_banned and coin_agent_enabled;
-  if coalesce(v_user_country,'')='' or coalesce(v_agent_country,'')='' or v_user_country<>v_agent_country then
-    raise exception 'COUNTRY_MISMATCH: Coin Agent and user must be in the same country';
+  if coalesce(v_user_country,'')='' or coalesce(v_agent_country,'')='' or v_user_country<>v_agent_country
+     or not exists(select 1 from public.coin_sellers cs where cs.user_id=new.agent_id and cs.is_active) then
+    raise exception 'COUNTRY_MISMATCH: Coin Agent and user must be in the same country and the agent must be active';
   end if;
   return new;
 end;
@@ -193,3 +194,82 @@ drop trigger if exists enforce_coin_agent_trade_country_trigger on public.coin_a
 create trigger enforce_coin_agent_trade_country_trigger
 before insert on public.coin_agent_trades
 for each row execute function public.enforce_coin_agent_trade_country();
+
+
+-- A single admin switch disables both the Coin Agent and P2P listings without banning the user.
+create or replace function public.admin_set_coin_agent_enabled(
+  actor_id uuid,
+  target_id uuid,
+  enabled boolean
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare v_agent public.agent_profiles%rowtype;
+begin
+  if actor_id is null or not public.is_admin(actor_id) then raise exception 'ADMIN_REQUIRED'; end if;
+  update public.agent_profiles
+    set coin_agent_enabled=coalesce(enabled,false),
+        is_active=case when coalesce(enabled,false) and not is_banned then true else false end,
+        updated_at=now()
+    where user_id=target_id
+    returning * into v_agent;
+  if not found then raise exception 'AGENT_NOT_FOUND'; end if;
+  return jsonb_build_object('agent',to_jsonb(v_agent),'enabled',v_agent.coin_agent_enabled);
+end;
+$$;
+revoke all on function public.admin_set_coin_agent_enabled(uuid,uuid,boolean) from public,anon,authenticated;
+grant execute on function public.admin_set_coin_agent_enabled(uuid,uuid,boolean) to service_role;
+
+create or replace function public.guard_agent_profile_active_status()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if current_setting('app.coin_agent_admin_assignment', true) = 'on' then return new; end if;
+  if not exists(select 1 from public.coin_sellers s where s.user_id=new.user_id and s.is_active) then
+    new.is_active := false;
+    new.coin_agent_enabled := false;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists guard_agent_profile_active_status_trigger on public.agent_profiles;
+create trigger guard_agent_profile_active_status_trigger
+before insert or update of is_active, coin_agent_enabled on public.agent_profiles
+for each row execute function public.guard_agent_profile_active_status();
+
+create or replace function public.p2p_marketplace_for_user(actor_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare v_country text; v_settings public.system_settings%rowtype;
+begin
+  if actor_id is null then raise exception 'AUTH_REQUIRED'; end if;
+  select nullif(trim(country),'') into v_country from public.profiles where id=actor_id;
+  if v_country is null then return '[]'::jsonb; end if;
+  select * into v_settings from public.system_settings order by updated_at desc limit 1;
+  return coalesce((
+    select jsonb_agg(jsonb_build_object(
+      'user_id',a.user_id,'currency_code',a.currency_code,'country',a.country,
+      'sell_rate',a.sell_rate,'buy_rate',a.buy_rate,'base_fiat_amount',v_settings.base_fiat_amount,
+      'payment_methods',coalesce((select jsonb_agg(key) from jsonb_object_keys(a.payment_methods) as method(key)
+        where coalesce(a.payment_methods->>method.key,'')<>''),'[]'::jsonb)
+    ) order by a.sell_rate desc)
+    from public.agent_profiles a
+    where a.is_active and a.coin_agent_enabled and not a.is_banned
+      and exists(select 1 from public.coin_sellers cs where cs.user_id=a.user_id and cs.is_active)
+      and lower(trim(a.country))=lower(trim(v_country))
+      and a.sell_rate between v_settings.min_agent_coins and v_settings.max_agent_coins
+      and exists(select 1 from jsonb_each_text(a.payment_methods) kv where length(trim(kv.value))>0)
+  ),'[]'::jsonb);
+end;
+$$;
+revoke all on function public.p2p_marketplace_for_user(uuid) from public,anon,authenticated;
+grant execute on function public.p2p_marketplace_for_user(uuid) to service_role;
