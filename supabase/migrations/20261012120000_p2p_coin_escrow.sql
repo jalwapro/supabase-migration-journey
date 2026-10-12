@@ -39,7 +39,7 @@ create table if not exists public.p2p_orders (
   id uuid primary key default gen_random_uuid(),
   buyer_id uuid not null references auth.users(id) on delete restrict,
   agent_id uuid not null references public.agent_profiles(user_id) on delete restrict,
-  coin_amount numeric(20,2) not null check (coin_amount > 0),
+  coin_amount numeric(20,2) not null check (coin_amount > 0 and coin_amount = trunc(coin_amount)),
   fiat_amount numeric(12,2) not null check (fiat_amount > 0),
   currency varchar(10) not null,
   status public.p2p_status not null default 'pending',
@@ -190,8 +190,8 @@ begin
     v_methods := coalesce(payload->'payment_methods','{}'::jsonb);
     if jsonb_typeof(v_methods) <> 'object' or jsonb_object_length(v_methods)=0 then raise exception 'INVALID_PAYMENT_METHODS'; end if;
     if not exists (select 1 from jsonb_each_text(v_methods) kv where length(trim(kv.value))>0) then raise exception 'ADD_AT_LEAST_ONE_PAYMENT_METHOD'; end if;
-    if v_rate is null or v_rate < v_settings.min_agent_coins or v_rate > v_settings.max_agent_coins then raise exception 'SELL_RATE_OUT_OF_RANGE:%:%',v_settings.min_agent_coins,v_settings.max_agent_coins; end if;
-    if v_amount is null or v_amount <= 0 or v_amount >= v_rate then raise exception 'INVALID_BUY_RATE'; end if;
+    if v_rate is null or v_rate <> trunc(v_rate) or v_rate < v_settings.min_agent_coins or v_rate > v_settings.max_agent_coins then raise exception 'SELL_RATE_OUT_OF_RANGE:%:%',v_settings.min_agent_coins,v_settings.max_agent_coins; end if;
+    if v_amount is null or v_amount <> trunc(v_amount) or v_amount <= 0 or v_amount >= v_rate then raise exception 'INVALID_BUY_RATE'; end if;
     v_margin := ((v_rate-v_amount)/v_rate)*100;
     if v_margin < v_settings.min_buy_margin_percent or v_margin > v_settings.max_buy_margin_percent then raise exception 'BUY_MARGIN_OUT_OF_RANGE:%:%',v_settings.min_buy_margin_percent,v_settings.max_buy_margin_percent; end if;
     if length(coalesce(payload->>'country','')) > 50 or length(coalesce(payload->>'currency_code','PKR')) > 10 then raise exception 'INVALID_COUNTRY_OR_CURRENCY'; end if;
@@ -216,6 +216,7 @@ begin
     v_order_id := nullif(payload->>'agent_id','')::uuid;
     v_amount := nullif(payload->>'coin_amount','')::numeric;
     if v_order_id is null or v_amount is null or v_amount <= 0 then raise exception 'INVALID_ORDER'; end if;
+    if v_amount <> trunc(v_amount) then raise exception 'COIN_AMOUNT_MUST_BE_WHOLE_NUMBER'; end if;
     if v_amount > 10000000 then raise exception 'ORDER_LIMIT_EXCEEDED'; end if;
     select * into v_agent from public.agent_profiles where user_id=v_order_id for update;
     if not found or not v_agent.is_active or v_agent.is_banned then raise exception 'AGENT_NOT_AVAILABLE'; end if;
