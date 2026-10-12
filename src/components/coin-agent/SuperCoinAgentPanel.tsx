@@ -1,0 +1,3 @@
+import { useState } from "react";
+import { coinAgentAction } from "@/lib/coin-agent";
+export function SuperCoinAgentPanel() { const [targetId,setTargetId] = useState(""); return <section className="rounded-2xl border border-border bg-card p-4"><h2 className="font-bold">Super Coin Agent Team</h2><input value={targetId} onChange={e=>setTargetId(e.target.value)} placeholder="Target user UUID" className="mt-2 w-full rounded-xl border border-border bg-background p-3"/><button onClick={()=>coinAgentAction("SUPER_CREATE_CHILD_AGENT",{target_id:targetId})} className="mt-2 rounded-xl bg-primary p-3 font-bold">Create Coin Agent</button></section>; }
