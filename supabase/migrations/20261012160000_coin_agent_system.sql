@@ -109,6 +109,8 @@ alter table public.coin_agent_ledger enable row level security;
 alter table public.coin_agent_settlements enable row level security;
 revoke all on public.coin_agent_config, public.coin_agent_rate_tiers, public.coin_agent_balances, public.coin_agent_trades, public.coin_agent_ledger, public.coin_agent_settlements from anon, authenticated;
 grant select on public.coin_agent_rate_tiers, public.coin_agent_balances, public.coin_agent_trades, public.coin_agent_ledger, public.coin_agent_settlements to authenticated;
+-- Agent status and enablement are server-managed; clients must use the authenticated Edge RPC.
+revoke update on public.agent_profiles from authenticated;
 
 -- All writes go through this authenticated Edge Function -> service-only RPC.
 create or replace function public.coin_agent_action(actor_id uuid, action text, payload jsonb default '{}'::jsonb)
@@ -154,8 +156,8 @@ begin
   elsif action='SAVE_AGENT_RATE' then
     v_rate := nullif(payload->>'rate_pkr_per_1000','')::numeric;
     if v_rate is null or v_rate < v_cfg.min_user_buy_rate_pkr_per_1000 or v_rate > v_cfg.max_user_buy_rate_pkr_per_1000 then raise exception 'BUY_RATE_OUT_OF_RANGE:%:%',v_cfg.min_user_buy_rate_pkr_per_1000,v_cfg.max_user_buy_rate_pkr_per_1000; end if;
-    update public.agent_profiles set diamond_buy_rate_pkr_per_1000=v_rate, coin_agent_enabled=true, updated_at=now()
-      where user_id=actor_id and is_active and not is_banned returning * into v_agent;
+    update public.agent_profiles set diamond_buy_rate_pkr_per_1000=v_rate, updated_at=now()
+      where user_id=actor_id and is_active and not is_banned and coin_agent_enabled returning * into v_agent;
     if not found then raise exception 'AGENT_NOT_ACTIVE_OR_BANNED'; end if;
     return jsonb_build_object('rate',v_rate,'enabled',true);
   elsif action='CREATE_TRADE' then
