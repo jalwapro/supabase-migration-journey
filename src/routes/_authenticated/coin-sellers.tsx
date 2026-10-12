@@ -7,6 +7,8 @@ import { BottomNav } from "@/components/layout/BottomNav";
 import { CoinAgentHub } from "@/components/coin-agent/CoinAgentHub";
 import { AgentDashboard } from "@/components/p2p/AgentDashboard";
 import { CoinInventoryRequests } from "@/components/coin-agent/CoinInventoryRequests";
+import { SuperCoinAgentPanel } from "@/components/coin-agent/SuperCoinAgentPanel";
+import { coinAgentAction } from "@/lib/coin-agent";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, BadgeCheck, Coins , ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -18,14 +20,12 @@ function CoinSellerMarketplaceRoute() {
     queryKey: ["coin-agent-workspace-access", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("coin_sellers")
-        .select("user_id")
-        .eq("user_id", user!.id)
-        .eq("is_active", true)
-        .maybeSingle();
+      const [{ data, error }, agent] = await Promise.all([
+        supabase.from("coin_sellers").select("user_id").eq("user_id", user!.id).eq("is_active", true).maybeSingle(),
+        coinAgentAction<{ agent?: { is_active?: boolean; coin_agent_enabled?: boolean; is_banned?: boolean } }>("CONFIG"),
+      ]);
       if (error) throw error;
-      return !!data;
+      return !!data && agent?.agent?.is_active === true && agent.agent.coin_agent_enabled === true && agent.agent.is_banned !== true;
     },
     staleTime: 30_000,
     retry: 1,
@@ -42,6 +42,7 @@ function CoinSellerMarketplaceRoute() {
   return <>
     <AppShell title="Coin Agent Workspace" subtitle="Diamonds, coin stock, customer transfers, payment settings and settlements">
       <main className="mx-auto w-full max-w-6xl space-y-5 px-3 pb-28 pt-4 sm:px-5">
+        <SuperCoinAgentPanel />
         <section className="rounded-3xl border border-amber-400/20 bg-gradient-to-br from-zinc-950 via-card to-amber-950/30 p-4 sm:p-6">
           <p className="text-xs font-black uppercase tracking-[.2em] text-amber-300">JALWA · MERCHANT WORKSPACE</p>
           <h1 className="mt-1 text-2xl font-black sm:text-3xl">Coin Agent Panel</h1>
