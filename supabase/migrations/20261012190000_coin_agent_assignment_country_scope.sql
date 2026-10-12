@@ -19,6 +19,7 @@ begin
 
   if tg_op = 'UPDATE' then
     new.country := old.country;
+    new.currency_code := old.currency_code;
   else
     select nullif(trim(p.country), '') into v_profile_country
     from public.profiles p where p.id = new.user_id;
@@ -30,7 +31,7 @@ $$;
 
 drop trigger if exists guard_agent_profile_country_trigger on public.agent_profiles;
 create trigger guard_agent_profile_country_trigger
-before insert or update of country on public.agent_profiles
+before insert or update of country, currency_code on public.agent_profiles
 for each row execute function public.guard_agent_profile_country();
 
 create or replace function public.admin_assign_coin_agent(
@@ -283,11 +284,13 @@ security definer
 set search_path = public, pg_temp
 as $$
 begin
-  if tg_op='DELETE' or (tg_op='UPDATE' and not new.is_active) then
-    update public.agent_profiles set is_active=false,coin_agent_enabled=false,updated_at=now()
-      where user_id=old.user_id;
+  if tg_op='DELETE' then
+    update public.agent_profiles set is_active=false,coin_agent_enabled=false,updated_at=now() where user_id=old.user_id;
+    return old;
   end if;
-  if tg_op='DELETE' then return old; end if;
+  if not new.is_active then
+    update public.agent_profiles set is_active=false,coin_agent_enabled=false,updated_at=now() where user_id=new.user_id;
+  end if;
   return new;
 end;
 $$;
