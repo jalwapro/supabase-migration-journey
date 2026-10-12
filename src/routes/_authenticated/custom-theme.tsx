@@ -24,7 +24,7 @@ type Submission = {
 };
 
 function CustomThemePage() {
-  const { profile, user, refresh } = useAuth();
+  const { user, refresh } = useAuth();
   const qc = useQueryClient();
   const p2pBalance = useQuery({
     queryKey: ["p2p-header-balance", user?.id],
