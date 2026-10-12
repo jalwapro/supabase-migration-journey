@@ -1,0 +1,1 @@
+-- Promote an explicitly marked normal user into a Super Agent's child slot safely.
