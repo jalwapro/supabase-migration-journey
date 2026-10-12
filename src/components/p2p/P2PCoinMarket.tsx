@@ -250,7 +250,7 @@ export function P2PCoinMarket() {
     refetchInterval: 10_000,
   });
 
-  const currentRole = currentRole;
+  const currentRole = role.data?.role;
 
   if (role.isLoading) return <section className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Loading P2P marketplace…</section>;
   if (role.isError) return <section className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive">P2P marketplace is unavailable: {String(role.error)}</section>;
