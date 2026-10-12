@@ -11,7 +11,7 @@ import { ArrowLeftRight, Coins, Gem, Loader2, RefreshCw, ShieldCheck, Upload, Us
 export const Route = createFileRoute("/_authenticated/p2p-agency")({ component: P2PAgencyPage });
 
 type P2PProfile = { user_id: string; role: "admin" | "super_agent" | "sub_agent" | "user"; super_agent_id: string | null; display_name: string | null; active: boolean };
-type Wallet = { coin_available: number; coin_locked: number; diamond_available: number; diamond_locked: number };
+type Wallet = { coin_available: number; diamond_available: number; diamond_locked: number };
 type Rate = { currency_code: string; diamonds_per_fiat_unit: number; active: boolean };
 type Withdrawal = { id: string; user_id: string; sub_agent_id: string; super_agent_id: string; amount: number; fiat_currency: string; fiat_amount: number; status: string; created_at: string; payout_screenshot_path: string | null; payout_reference: string | null; payout_method: string | null; payout_account_name: string | null; payout_account_number: string | null; rejection_reason: string | null };
 
@@ -85,7 +85,7 @@ function P2PAgencyPage() {
     queryKey: ["p2p-wallet", user?.id],
     enabled: !!user?.id && !!profile.data,
     queryFn: async () => {
-      const { data, error } = await db.from("p2p_wallets").select("coin_available,coin_locked,diamond_available,diamond_locked").eq("user_id", user!.id).single();
+      const { data, error } = await db.from("p2p_wallets").select("coin_available,diamond_available,diamond_locked").eq("user_id", user!.id).single();
       if (error) throw error;
       return data as Wallet;
     },
