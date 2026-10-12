@@ -1005,13 +1005,13 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
       {room.cover_url ? (
         <img
           src={room.cover_url}
-          alt=""
+          alt="" loading="lazy" decoding="async"
           className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
         />
       ) : room.host?.avatar ? (
         <img
           src={room.host.avatar}
-          alt=""
+          alt="" loading="lazy" decoding="async"
           className="h-full w-full object-cover transition-transform duration-500 group-active:scale-105"
         />
       ) : (
@@ -1053,7 +1053,7 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
         <div className="mb-1 flex items-center gap-1.5">
           <span className="h-5 w-5 shrink-0 overflow-hidden rounded-full ring-1 ring-white/40">
             {room.host?.avatar ? (
-              <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+              <img src={room.host.avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             ) : (
               <span className="grid h-full w-full place-items-center bg-white/10 text-[9px] font-bold text-white">
                 {(room.host?.username ?? "?").charAt(0).toUpperCase()}
@@ -1085,9 +1085,9 @@ const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
         {room.cover_url ? (
-          <img src={room.cover_url} alt="" className="h-full w-full object-cover" />
+          <img src={room.cover_url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : room.host?.avatar ? (
-          <img src={room.host.avatar} alt="" className="h-full w-full object-cover" />
+          <img src={room.host.avatar} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-[color:var(--secondary)]/70 via-[color:var(--primary)]/50 to-[color:var(--gold)]/40" />
         )}
