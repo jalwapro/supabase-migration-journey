@@ -192,10 +192,10 @@ begin
       where id=v_id and agent_id=actor_id and status='pending_payment' returning * into v_trade;
     if not found then raise exception 'TRADE_NOT_FOUND_OR_INVALID_STATUS'; end if;
     return to_jsonb(v_trade);
-  elsif action='USER_CONFIRM_TRADE' then
+  elsif action='USER_CONFIRM_TRADE' or action='ADMIN_RESOLVE_TRADE_COMPLETE' then
     v_id := nullif(payload->>'trade_id','')::uuid;
     select * into v_trade from public.coin_agent_trades where id=v_id for update;
-    if not found or v_trade.user_id<>actor_id or v_trade.status<>'paid' then raise exception 'TRADE_NOT_FOUND_OR_NOT_PAID'; end if;
+    if not found or (action='USER_CONFIRM_TRADE' and (v_trade.user_id<>actor_id or v_trade.status<>'paid')) or (action='ADMIN_RESOLVE_TRADE_COMPLETE' and (not v_admin or v_trade.status<>'disputed')) then raise exception 'TRADE_NOT_FOUND_OR_NOT_PAID'; end if;
     insert into public.coin_agent_balances(agent_id,source_type,available_diamonds,total_acquired_diamonds)
       values(v_trade.agent_id,v_trade.source_type,v_trade.diamonds,v_trade.diamonds)
       on conflict(agent_id,source_type) do update set available_diamonds=coin_agent_balances.available_diamonds+excluded.available_diamonds,
@@ -204,6 +204,26 @@ begin
     update public.coin_agent_trades set status='completed',user_confirmed_at=now(),updated_at=now() where id=v_trade.id returning * into v_trade;
     insert into public.coin_agent_ledger(trade_id,agent_id,source_type,entry_type,diamond_delta,balance_after,note)
       values(v_trade.id,v_trade.agent_id,v_trade.source_type,'trade_acquired',v_trade.diamonds,v_balance,'User confirmed agent payout');
+    return to_jsonb(v_trade);
+  elsif action='DISPUTE_TRADE' then
+    v_id := nullif(payload->>'trade_id','')::uuid;
+    update public.coin_agent_trades set status='disputed',updated_at=now()
+      where id=v_id and user_id=actor_id and status='paid' returning * into v_trade;
+    if not found then raise exception 'TRADE_NOT_DISPUTABLE'; end if;
+    return to_jsonb(v_trade);
+  elsif action='ADMIN_RESOLVE_TRADE_REFUND' then
+    if not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
+    v_id := nullif(payload->>'trade_id','')::uuid;
+    select * into v_trade from public.coin_agent_trades where id=v_id for update;
+    if not found or v_trade.status<>'disputed' then raise exception 'TRADE_NOT_DISPUTED'; end if;
+    if v_trade.source_type='profile_diamonds' then
+      update public.profiles set diamonds=diamonds+v_trade.diamonds,updated_at=now() where id=v_trade.user_id;
+      insert into public.wallet_transactions(user_id,kind,diamonds,diamonds_delta,ref_type,ref_id,note)
+        values(v_trade.user_id,'coin_agent_trade_refund',v_trade.diamonds,v_trade.diamonds,'coin_agent_trade',v_trade.id,'Admin resolved disputed trade with diamond refund');
+    else
+      update public.host_popularity_stats set red_diamonds=red_diamonds+v_trade.diamonds where host_id=v_trade.user_id;
+    end if;
+    update public.coin_agent_trades set status='cancelled',cancelled_at=now(),updated_at=now() where id=v_trade.id returning * into v_trade;
     return to_jsonb(v_trade);
   elsif action='CANCEL_TRADE' then
     v_id := nullif(payload->>'trade_id','')::uuid;
