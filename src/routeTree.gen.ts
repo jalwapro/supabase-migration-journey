@@ -33,6 +33,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAgencyApprovalsRouteImport } from './routes/_authenticated/agency-approvals'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
 import { Route as AuthenticatedP2pAgencyRouteImport } from './routes/_authenticated/p2p-agency'
@@ -271,6 +272,11 @@ const VoiceRoomRedesignRoute = VoiceRoomRedesignRouteImport.update({
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAgencyApprovalsRoute = AuthenticatedAgencyApprovalsRouteImport.update({
+  id: '/agency-approvals',
+  path: '/agency-approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
@@ -957,6 +963,7 @@ export interface FileRoutesByFullPath {
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/agency-approvals': typeof AuthenticatedAgencyApprovalsRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/p2p-agency': typeof AuthenticatedP2pAgencyRoute
@@ -1247,6 +1254,7 @@ export interface FileRoutesById {
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/agency-approvals': typeof AuthenticatedAgencyApprovalsRoute
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
   '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/_authenticated/p2p-agency': typeof AuthenticatedP2pAgencyRoute
@@ -2019,6 +2027,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/agency-approvals': {
+      id: '/_authenticated/agency-approvals'
+      path: '/agency-approvals'
+      fullPath: '/agency-approvals'
+      preLoaderRoute: typeof AuthenticatedAgencyApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/blocked': {
@@ -3026,6 +3041,7 @@ const AuthenticatedGamesRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAgencyApprovalsRoute: typeof AuthenticatedAgencyApprovalsRoute
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
   AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
   AuthenticatedP2pAgencyRoute: typeof AuthenticatedP2pAgencyRoute
@@ -3058,6 +3074,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAgencyApprovalsRoute: AuthenticatedAgencyApprovalsRoute,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
   AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
   AuthenticatedP2pAgencyRoute: AuthenticatedP2pAgencyRoute,
