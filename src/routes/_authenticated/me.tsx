@@ -78,6 +78,20 @@ function useCounts(userId: string | undefined) {
 function MePage() {
   const { user, profile, isAdmin, signOut, refresh } = useAuth();
   const { data: counts } = useCounts(user?.id);
+  const { data: p2pWallet } = useQuery({
+    queryKey: ["p2p-wallet-summary", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { error: setupError } = await supabase.rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets")
+        .select("coin_available,diamond_available,diamond_locked")
+        .eq("user_id", user!.id).single();
+      if (error) throw error;
+      return data as { coin_available: number; diamond_available: number; diamond_locked: number };
+    },
+    staleTime: 30_000,
+  });
   const { data: vip } = useVipProfile(user?.id);
   const { data: partnerRow } = useQuery({
     queryKey: ["is-partner", user?.id],
@@ -92,21 +106,6 @@ function MePage() {
     },
   });
   const isPartner = !!partnerRow?.is_active;
-  const { data: coinAgent } = useQuery({
-    queryKey: ["me-coin-agent", user?.id],
-    enabled: !!user?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("coin_sellers")
-        .select("user_id,is_active")
-        .eq("user_id", user!.id)
-        .eq("is_active", true)
-        .maybeSingle();
-      if (error) throw error;
-      return data;
-    },
-    staleTime: 60_000,
-  });
   const isVipActive = !!profile?.is_vip && (!profile?.vip_expiry || new Date(profile.vip_expiry) > new Date());
   const { data: adminVipTier } = useQuery({
     queryKey: ["me-admin-vip-tier", user?.id, isVipActive],
@@ -363,8 +362,9 @@ function MePage() {
                   <StatBox to="/friends" search={{ tab: "following" }} icon={<UserPlus className="h-4 w-4" />} color="#38bdf8" value={counts?.following ?? 0} label="Following" />
                   <StatBox to="/visitors" icon={<Users className="h-4 w-4" />} color="#ec4899" value={counts?.visitors ?? 0} label="Visitors" />
                   <StatBox icon={<Star className="h-4 w-4" />} color="#22c55e" value={profile?.xp ?? 0} label="Points" />
-                  <StatBox to="/wallet" icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={profile?.coins ?? 0} label="Coins" />
-                  <StatBox to="/wallet" icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={profile?.diamonds ?? 0} label="Diamonds" />
+                  <StatBox to="/p2p-agency" icon={<Coins className="h-4 w-4" />} color="#fbbf24" value={p2pWallet?.coin_available ?? 0} label="P2P Coins" />
+                  <StatBox to="/p2p-agency" icon={<Gem className="h-4 w-4" />} color="#38bdf8" value={p2pWallet?.diamond_available ?? 0} label="Available Diamonds" />
+                  <StatBox to="/p2p-agency" icon={<Gem className="h-4 w-4" />} color="#a78bfa" value={p2pWallet?.diamond_locked ?? 0} label="Locked Diamonds" />
                   <StatBox to="/rank" icon={<Star className="h-4 w-4" />} color="#fbbf24" value={Number(vip?.row.total_gifted_coins ?? 0)} label="Popularity" />
                   <StatBox to="/vip-level" icon={<Crown className="h-4 w-4" />} color="#a855f7" value={vipLevel} label="Gifting Lv" />
                   <StatBox to="/my-rooms" icon={<Home className="h-4 w-4" />} color="#38bdf8" value={counts?.liveRooms ?? 0} label="Live Rooms" />
@@ -381,14 +381,7 @@ function MePage() {
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
               <FeatureCard to="/p2p-agency" icon={ShieldCheck} title="P2P Agency Wallet" sub="Independent coins, diamonds & agency payouts" color="#fbbf24" elite />
-              {coinAgent && (
-                <a href="/support?topic=coin-seller-stock" className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition-all hover:border-[#22d3ee]/40 active:scale-[0.98]">
-                  <div aria-hidden className="pointer-events-none absolute -bottom-6 -left-6 h-24 w-24 rounded-full opacity-20 blur-2xl" style={{ background: "#22d3ee" }} />
-                  <FeatureInner icon={MessageCircle} title="Request Coins from Admin" sub="Appeal for more seller stock" color="#22d3ee" elite />
-                  <ChevronRight className="absolute bottom-3 right-3 h-4 w-4 text-white/30" />
-                </a>
-              )}
-              <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
+                            <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
               <FeatureCard to="/recharge" icon={Coins} title="Recharge Coins" sub="Buy coins with Easypaisa or JazzCash" color="#fbbf24" />
               <FeatureCard to="/withdraw" icon={Gem} title="Withdraw Points" sub="Cash out your earnings" color="#38bdf8" />
               <FeatureCard to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
