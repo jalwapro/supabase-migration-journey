@@ -1,4 +1,6 @@
 -- Admin-assigned Coin Agent provisioning and hard country boundaries for both marketplaces.
+alter table public.coin_sellers add column if not exists country text not null default 'Pakistan';
+update public.coin_sellers cs set country=coalesce(nullif(trim(p.country),''),cs.country,'Pakistan') from public.profiles p where p.id=cs.user_id;
 -- Coin Agents are provisioned from the existing Coin Seller admin workflow.
 create or replace function public.guard_agent_profile_country()
 returns trigger
@@ -69,7 +71,7 @@ begin
   on conflict(user_id) do update set
     currency_code=excluded.currency_code,
     country=excluded.country,
-    whatsapp_number=coalesce(nullif(public.agent_profiles.whatsapp_number,''),excluded.whatsapp_number),
+    whatsapp_number=coalesce(nullif(agent_profiles.whatsapp_number,''),excluded.whatsapp_number),
     is_active=case when public.agent_profiles.is_banned then false else enable_agent end,
     coin_agent_enabled=case when public.agent_profiles.is_banned then false else enable_agent end,
     diamond_buy_rate_pkr_per_1000=case when public.agent_profiles.is_banned then public.agent_profiles.diamond_buy_rate_pkr_per_1000
