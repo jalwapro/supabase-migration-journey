@@ -174,7 +174,7 @@ begin
     return coalesce((
       select jsonb_agg(jsonb_build_object(
         'user_id',a.user_id,'currency_code',a.currency_code,'country',a.country,
-        'sell_rate',a.sell_rate,'buy_rate',a.buy_rate,
+        'sell_rate',a.sell_rate,'buy_rate',a.buy_rate,'base_fiat_amount',v_settings.base_fiat_amount,
         'payment_methods',coalesce((select jsonb_agg(key) from jsonb_object_keys(a.payment_methods) as key where coalesce(a.payment_methods->>key,'') <> ''),'[]'::jsonb)
       ) order by a.sell_rate desc)
       from public.agent_profiles a
@@ -188,7 +188,8 @@ begin
     v_rate := nullif(payload->>'sell_rate','')::numeric;
     v_amount := nullif(payload->>'buy_rate','')::numeric;
     v_methods := coalesce(payload->'payment_methods','{}'::jsonb);
-    if jsonb_typeof(v_methods) <> 'object' then raise exception 'INVALID_PAYMENT_METHODS'; end if;
+    if jsonb_typeof(v_methods) <> 'object' or jsonb_object_length(v_methods)=0 then raise exception 'INVALID_PAYMENT_METHODS'; end if;
+    if not exists (select 1 from jsonb_each_text(v_methods) kv where length(trim(kv.value))>0) then raise exception 'ADD_AT_LEAST_ONE_PAYMENT_METHOD'; end if;
     if v_rate is null or v_rate < v_settings.min_agent_coins or v_rate > v_settings.max_agent_coins then raise exception 'SELL_RATE_OUT_OF_RANGE:%:%',v_settings.min_agent_coins,v_settings.max_agent_coins; end if;
     if v_amount is null or v_amount <= 0 or v_amount >= v_rate then raise exception 'INVALID_BUY_RATE'; end if;
     v_margin := ((v_rate-v_amount)/v_rate)*100;
