@@ -108,8 +108,7 @@ create policy p2p_ledger_participant_read on public.p2p_ledger for select to aut
 drop policy if exists p2p_ledger_no_client_write on public.p2p_ledger;
 create policy p2p_ledger_no_client_write on public.p2p_ledger for all to authenticated using (false) with check (false);
 
-grant select on public.system_settings to authenticated;
-grant select, insert, update on public.agent_profiles to authenticated;
+revoke all on public.system_settings, public.agent_profiles, public.p2p_orders, public.p2p_ledger from anon, authenticated;
 grant select on public.p2p_orders, public.p2p_ledger to authenticated;
 grant all on public.system_settings, public.agent_profiles, public.p2p_orders, public.p2p_ledger to service_role;
 
@@ -160,7 +159,17 @@ begin
   select * into v_settings from public.system_settings order by updated_at desc limit 1;
   if not found then raise exception 'P2P_SETTINGS_MISSING'; end if;
 
-  if action = 'MARKETPLACE' then
+  if action = 'GET_ORDER' then
+    v_order_id := nullif(payload->>'order_id','')::uuid;
+    select * into v_order from public.p2p_orders where id=v_order_id;
+    if not found then raise exception 'ORDER_NOT_FOUND'; end if;
+    if actor_id not in (v_order.buyer_id,v_order.agent_id) and not v_admin then raise exception 'NOT_ORDER_PARTICIPANT'; end if;
+    select * into v_agent from public.agent_profiles where user_id=v_order.agent_id;
+    return jsonb_build_object('order',to_jsonb(v_order),'agent',jsonb_build_object(
+      'user_id',v_agent.user_id,'currency_code',v_agent.currency_code,'country',v_agent.country,
+      'payment_methods',v_agent.payment_methods,'whatsapp_number',v_agent.whatsapp_number
+    ));
+  elsif action = 'MARKETPLACE' then
     v_country := nullif(trim(payload->>'country'),'');
     return coalesce((
       select jsonb_agg(jsonb_build_object(
@@ -226,7 +235,8 @@ begin
       if not v_admin then raise exception 'ADMIN_REQUIRED'; end if;
       return jsonb_build_object(
         'orders',(select coalesce(jsonb_agg(to_jsonb(o) order by o.created_at desc),'[]'::jsonb) from public.p2p_orders o where o.status in ('appealed','paid','pending')),
-        'agents',(select coalesce(jsonb_agg(to_jsonb(a) order by a.created_at desc),'[]'::jsonb) from public.agent_profiles a where a.pending_whatsapp is not null or a.is_banned)
+        'agents',(select coalesce(jsonb_agg(to_jsonb(a) order by a.created_at desc),'[]'::jsonb) from public.agent_profiles a where a.pending_whatsapp is not null or a.is_banned),
+        'settings',to_jsonb(v_settings)
       );
     end if;
     if action = 'ADMIN_APPROVE_WHATSAPP' then
