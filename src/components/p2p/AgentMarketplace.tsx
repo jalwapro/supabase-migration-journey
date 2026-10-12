@@ -3,11 +3,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Globe2, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { p2pAction, type AgentListing } from "@/lib/p2p";
+import { useAuth } from "@/hooks/useAuth";
 
 const COUNTRIES = ["Global", "Pakistan", "India", "Bangladesh", "Saudi Arabia", "United Arab Emirates", "United Kingdom", "United States", "Indonesia", "Malaysia", "Philippines", "Nigeria", "Turkey"];
 
 export function AgentMarketplace() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [agents, setAgents] = useState<AgentListing[]>([]);
   const [country, setCountry] = useState("Pakistan");
   const [loading, setLoading] = useState(true);
@@ -21,6 +23,7 @@ export function AgentMarketplace() {
     } catch (e) { toast.error((e as Error).message); }
     finally { setLoading(false); }
   }
+  useEffect(() => { if (profile?.country) setCountry(profile.country); }, [profile?.country]);
   useEffect(() => { void load(country); }, [country]);
 
   async function createOrder(agent: AgentListing) {
