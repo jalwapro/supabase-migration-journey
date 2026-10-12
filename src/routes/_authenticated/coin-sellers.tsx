@@ -19,14 +19,12 @@ function CoinSellerMarketplaceRoute() {
     queryKey: ["coin-agent-workspace-access", user?.id],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("coin_sellers")
-        .select("user_id")
-        .eq("user_id", user!.id)
-        .eq("is_active", true)
-        .maybeSingle();
+      const [{ data, error }, agent] = await Promise.all([
+        supabase.from("coin_sellers").select("user_id").eq("user_id", user!.id).eq("is_active", true).maybeSingle(),
+        coinAgentAction<{ agent?: { is_active?: boolean; coin_agent_enabled?: boolean; is_banned?: boolean } }>("CONFIG"),
+      ]);
       if (error) throw error;
-      return !!data;
+      return !!data && agent?.agent?.is_active === true && agent.agent.coin_agent_enabled === true && agent.agent.is_banned !== true;
     },
     staleTime: 30_000,
     retry: 1,
