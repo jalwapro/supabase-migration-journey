@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield, Wallet as WalletIcon, Bell } from "lucide-react";
 import { formatCompact } from "@/lib/utils";
 import { useUnreadCount } from "@/hooks/useNotifications";
