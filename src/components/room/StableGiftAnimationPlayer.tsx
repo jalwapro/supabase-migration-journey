@@ -179,8 +179,17 @@ export function StableGiftAnimationPlayer({ roomId }: { roomId: string }) {
   const svg = small ? !!src && isSvg(src, "svg") : mediaType === "image" && (isSvg(src, active.gift_clip_type) || isSvg(primaryClip, active.gift_clip_type));
   const image = svg ? src : (mediaType === "image" ? (src ?? primaryImage) : primaryImage); const fallbackImage = assetUrl(active.gift_icon); const stageStyle = renderConfigToStyle(cfg);
   const crop = cfg.cropTop || cfg.cropRight || cfg.cropBottom || cfg.cropLeft ? { clipPath: `inset(${cfg.cropTop}px ${cfg.cropRight}px ${cfg.cropBottom}px ${cfg.cropLeft}px)` } : {};
-  const filter = [`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`, `contrast(${Math.max(0, 1 + cfg.contrast / 100)})`, `saturate(${Math.max(0, cfg.saturation)})`, `hue-rotate(${cfg.hue}deg)`, `blur(${Math.max(0, cfg.blurRadius)}px)`].join(" ");
-  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, transform: "translate3d(0, 0, 0)", willChange: "transform", ...crop };
+  const filterParts: string[] = [];
+  if (cfg.brightness) filterParts.push(`brightness(${Math.max(0, 1 + cfg.brightness / 100)})`);
+  if (cfg.contrast) filterParts.push(`contrast(${Math.max(0, 1 + cfg.contrast / 100)})`);
+  if (cfg.saturation !== 1) filterParts.push(`saturate(${Math.max(0, cfg.saturation)})`);
+  if (cfg.hue) filterParts.push(`hue-rotate(${cfg.hue}deg)`);
+  if (cfg.blurRadius > 0) filterParts.push(`blur(${cfg.blurRadius}px)`);
+  const filter = filterParts.length ? filterParts.join(" ") : undefined;
+  // Avoid creating an oversized permanent compositor layer for a static,
+  // full-screen gift. Keep transform for smooth video composition without
+  // forcing will-change on every animation.
+  const mediaStyle: React.CSSProperties = { width: "100%", height: "100%", display: "block", objectFit: OBJECT_FIT[cfg.fit], filter, transform: "translate3d(0, 0, 0)", willChange: "auto", ...crop };
   const loop = Boolean(cfg.loop && cfg.loopCount !== 1);
   const handleDuration = (ms: number) => { if (ms > 0) setMediaDurationMs(ms); };
   const handleMediaError = () => { if (small) { finish(); return; } setMediaFailed(true); clearTimer(); endTimerRef.current = window.setTimeout(() => { if (!fallbackSrc) finish(); }, 7000); };
