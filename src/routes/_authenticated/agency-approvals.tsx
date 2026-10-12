@@ -19,7 +19,7 @@ type Withdrawal = {
   amount: number;
   fiat_currency: string;
   fiat_amount: number;
-  status: "pending_payment" | "pending_approval" | "completed" | "rejected" | "cancelled";
+  status: "pending_payment" | "pending_super_agent_approval" | "completed" | "rejected" | "cancelled";
   payout_screenshot_path: string | null;
   payout_reference: string | null;
   sub_agent_submitted_at: string | null;
@@ -123,7 +123,7 @@ function SuperAgentApprovalRoute() {
   }
 
   const rows = withdrawals.data ?? [];
-  const pending = rows.filter((row) => row.status === "pending_approval");
+  const pending = rows.filter((row) => row.status === "pending_super_agent_approval");
   const waitingProof = rows.filter((row) => row.status === "pending_payment");
 
   return <AppShell title="Super Agent approvals" subtitle="Review payment proof before diamonds are released">
@@ -152,7 +152,7 @@ function SuperAgentApprovalRoute() {
               <div><div className="flex flex-wrap items-center gap-2"><h2 className="font-black">{Number(row.amount).toLocaleString()} diamonds</h2><Status status={row.status} /></div><p className="mt-1 text-sm text-muted-foreground">Payout: {row.fiat_currency} {Number(row.fiat_amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p><p className="mt-1 text-xs text-muted-foreground">User: {row.user_id} · Sub-Agent: {row.sub_agent_id}</p><p className="mt-1 text-xs text-muted-foreground">Created: {new Date(row.created_at).toLocaleString()}</p>{row.payout_reference ? <p className="mt-2 text-sm">Payment reference: <span className="font-semibold">{row.payout_reference}</span></p> : null}</div>
               {row.signed_proof_url ? <a href={row.signed_proof_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-bold"><ExternalLink className="h-4 w-4" /> View proof</a> : row.payout_screenshot_path ? <span className="text-xs text-muted-foreground">Proof preview unavailable</span> : <span className="text-xs text-muted-foreground">Payment proof not submitted</span>}
             </div>
-            {row.status === "pending_approval" ? <div className="mt-4 border-t border-border pt-4">
+            {row.status === "pending_super_agent_approval" ? <div className="mt-4 border-t border-border pt-4">
               <label className="block text-xs font-bold text-muted-foreground">Rejection reason (required only to reject)</label>
               <textarea value={rejectionReasons[row.id] ?? ""} onChange={(event) => setRejectionReasons((prev) => ({ ...prev, [row.id]: event.target.value }))} maxLength={1000} rows={2} placeholder="Explain why the payment proof is invalid..." className="mt-1 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:border-amber-400" />
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-end">
@@ -174,7 +174,7 @@ function Metric({ label, value }: { label: string; value: string }) {
 function Status({ status }: { status: Withdrawal["status"] }) {
   const styles: Record<Withdrawal["status"], string> = {
     pending_payment: "border-slate-400/20 bg-slate-400/10 text-slate-300",
-    pending_approval: "border-amber-400/30 bg-amber-400/10 text-amber-300",
+    pending_super_agent_approval: "border-amber-400/30 bg-amber-400/10 text-amber-300",
     completed: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
     rejected: "border-red-400/20 bg-red-400/10 text-red-300",
     cancelled: "border-slate-400/20 bg-slate-400/10 text-slate-300",
