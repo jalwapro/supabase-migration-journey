@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { BadgeCheck, MessageCircle, PackageCheck, ShieldAlert, ShoppingCart, Upload, XCircle } from "lucide-react";
+import { MessageCircle, PackageCheck, ShieldAlert, ShoppingCart, Upload, XCircle } from "lucide-react";
 
 const db = supabase as any;
 const requestKey = () => crypto.randomUUID();
@@ -87,7 +87,7 @@ export function P2PCoinMarket() {
 
   const ownSettings = useQuery({
     queryKey: ["p2p-own-agent-settings", user?.id],
-    enabled: !!user?.id && role.data?.role === "sub_agent",
+    enabled: !!user?.id && currentRole === "sub_agent",
     queryFn: async () => {
       const { data, error } = await db.from("p2p_agent_settings").select("*").eq("agent_id", user!.id).maybeSingle();
       if (error) throw error;
@@ -101,13 +101,13 @@ export function P2PCoinMarket() {
   });
 
   const orders = useQuery({
-    queryKey: ["p2p-coin-orders", user?.id, role.data?.role],
+    queryKey: ["p2p-coin-orders", user?.id, currentRole],
     enabled: !!user?.id && !!role.data,
     queryFn: async () => {
       let q = db.from("p2p_coin_orders").select("*").order("created_at", { ascending: false }).limit(100);
-      if (role.data?.role === "user") q = q.eq("buyer_id", user!.id);
-      else if (role.data?.role === "sub_agent") q = q.eq("agent_id", user!.id);
-      else if (role.data?.role === "super_agent") q = q.eq("super_agent_id", user!.id);
+      if (currentRole === "user") q = q.eq("buyer_id", user!.id);
+      else if (currentRole === "sub_agent") q = q.eq("agent_id", user!.id);
+      else if (currentRole === "super_agent") q = q.eq("super_agent_id", user!.id);
       const { data, error } = await q;
       if (error) throw error;
       const rows = (data ?? []) as Order[];
@@ -122,7 +122,7 @@ export function P2PCoinMarket() {
 
   const appeals = useQuery({
     queryKey: ["p2p-coin-appeals"],
-    enabled: role.data?.role === "admin",
+    enabled: currentRole === "admin",
     queryFn: async () => {
       const { data, error } = await db.from("p2p_order_appeals").select("*").eq("status", "open").order("created_at", { ascending: true });
       if (error) throw error;
@@ -234,7 +234,6 @@ export function P2PCoinMarket() {
   const quote = selected && Number.isFinite(Number(amount)) && Number(amount) > 0 && market.data
     ? (Number(amount) / Number(selected.coins_per_bundle) * Number(market.data.settings.base_price_pkr) / Number(market.data.rates.find((r: any) => r.currency_code === selected.currency_code)?.pkr_per_fiat_unit ?? 0))
     : null;
-  const activeOrder = orders.data?.find(o => o.id === selectedOrder);
 
   async function sendMessage() {
     if (!user || !selectedOrder || !chatText.trim()) return;
@@ -251,11 +250,13 @@ export function P2PCoinMarket() {
     refetchInterval: 10_000,
   });
 
+  const currentRole = currentRole;
+
   if (role.isLoading) return <section className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground">Loading P2P marketplace…</section>;
   if (role.isError) return <section className="rounded-2xl border border-border bg-card p-4 text-sm text-destructive">P2P marketplace is unavailable: {String(role.error)}</section>;
 
   return <div className="space-y-4">
-    {role.data?.role === "user" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    {currentRole === "user" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3"><ShoppingCart className="mt-1 h-5 w-5 text-amber-300"/><div><h2 className="font-black">Buy coins from a P2P Agent</h2><p className="mt-1 text-xs text-muted-foreground">Agent stock is locked in escrow. Submit payment proof; coins are released only when the agent confirms payment or Admin resolves an appeal.</p></div></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         <label className="text-xs font-bold text-muted-foreground">Country filter<select className={input} value={countryFilter} onChange={e=>setCountryFilter(e.target.value)}><option value="all">All countries</option>{[...new Set((agents.data??[]).map(a=>a.country_code))].map(c=><option key={c}>{c}</option>)}</select></label>
@@ -270,7 +271,7 @@ export function P2PCoinMarket() {
       </div>}
     </section>}
 
-    {role.data?.role === "sub_agent" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    {currentRole === "sub_agent" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <h2 className="font-black">Agent marketplace profile</h2><p className="mt-1 text-xs text-muted-foreground">Set your country, accepted payment methods, payout details and coin price. Admin controls the allowed price range.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <label className="text-xs font-bold text-muted-foreground">Admin-assigned country<input className={input+" opacity-70"} maxLength={2} value={ownSettings.data?.country_code ?? "Not assigned"} readOnly/></label>
@@ -285,13 +286,13 @@ export function P2PCoinMarket() {
       <button className={primary+" mt-3"} disabled={agentSettings.isPending} onClick={()=>agentSettings.mutate()}>Save Agent Profile</button>
     </section>}
 
-    {role.data?.role === "super_agent" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    {currentRole === "super_agent" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <h2 className="font-black">Manage Sub-Agents</h2><p className="mt-1 text-xs text-muted-foreground">You can assign up to five existing JALWA users to your agency. Ask the user for their Supabase UUID.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-muted-foreground">User UUID<input className={input} value={newSubAgentId} onChange={e=>setNewSubAgentId(e.target.value)}/></label><label className="text-xs font-bold text-muted-foreground">Display name<input className={input} value={newSubAgentName} onChange={e=>setNewSubAgentName(e.target.value)}/></label></div>
       <button className={primary+" mt-3"} disabled={createSubAgent.isPending} onClick={()=>createSubAgent.mutate()}>Add Sub-Agent</button>
     </section>}
 
-    {role.data?.role === "admin" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    {currentRole === "admin" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <h2 className="font-black">Admin P2P pricing controls</h2><p className="mt-1 text-xs text-muted-foreground">Default is PKR 50 per bundle. Agents can choose 500–600 coins per bundle within your limits.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-4">
         <label className="text-xs font-bold text-muted-foreground">Base price PKR<input className={input} type="number" min="0.01" value={basePrice} onChange={e=>setBasePrice(e.target.value)}/></label>
@@ -303,16 +304,16 @@ export function P2PCoinMarket() {
       {appeals.data?.map(a=><article key={a.id} className="mt-3 rounded-xl border border-red-400/30 p-3"><p className="flex items-center gap-2 font-bold"><ShieldAlert className="h-4 w-4 text-red-400"/>Open appeal · Order {a.order_id}</p><p className="mt-2 text-sm">{a.reason}</p><div className="mt-3 flex flex-wrap gap-2"><button className={secondary} disabled={resolveAppeal.isPending} onClick={()=>resolveAppeal.mutate({appealId:a.id,resolution:"resolved_to_buyer"})}>Resolve for buyer</button><button className={secondary} disabled={resolveAppeal.isPending} onClick={()=>resolveAppeal.mutate({appealId:a.id,resolution:"resolved_to_agent"})}>Resolve for agent</button></div></article>)}
     </section>}
 
-    {role.data?.role && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+    {currentRole && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <h2 className="font-black">P2P coin orders</h2><p className="mt-1 text-xs text-muted-foreground">Payment proof, agent confirmation, order chat and appeals are recorded per order.</p>
       {!orders.data?.length && <p className="mt-3 text-sm text-muted-foreground">No coin orders yet.</p>}
       <div className="mt-3 space-y-3">{(orders.data??[]).map(o=><article key={o.id} className="rounded-xl border border-border p-3">
         <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="font-black">{Number(o.amount_coins).toLocaleString()} coins · {o.fiat_currency} {Number(o.fiat_amount).toFixed(2)}</p><p className="mt-1 break-all text-[10px] text-muted-foreground">Order {o.id} · {new Date(o.created_at).toLocaleString()}</p></div><span className="rounded-full border border-border px-2 py-1 text-[10px] font-bold uppercase">{o.status.replaceAll("_"," ")}</span></div>
-        <p className="mt-1 text-xs text-muted-foreground">Buyer {o.buyer_id.slice(0,8)} · Agent {o.agent_id.slice(0,8)} · {o.payment_method}</p>{role.data.role==="user" && <pre className="mt-2 overflow-auto rounded-lg bg-background p-3 text-xs">Payment details: {JSON.stringify(agents.data?.find(a=>a.agent_id===o.agent_id)?.payment_details?.[o.payment_method] ?? agents.data?.find(a=>a.agent_id===o.agent_id)?.payment_details ?? {}, null, 2)}</pre>}
+        <p className="mt-1 text-xs text-muted-foreground">Buyer {o.buyer_id.slice(0,8)} · Agent {o.agent_id.slice(0,8)} · {o.payment_method}</p>{currentRole==="user" && <pre className="mt-2 overflow-auto rounded-lg bg-background p-3 text-xs">Payment details: {JSON.stringify(agents.data?.find(a=>a.agent_id===o.agent_id)?.payment_details?.[o.payment_method] ?? agents.data?.find(a=>a.agent_id===o.agent_id)?.payment_details ?? {}, null, 2)}</pre>}
         {o.proof_path && <div className="mt-2 text-sm">{o.signed_proof_url ? <a href={o.signed_proof_url} target="_blank" rel="noreferrer" className="font-bold text-amber-300 underline">View payment proof</a> : <span className="text-muted-foreground">Payment proof submitted</span>}<p className="text-xs text-muted-foreground">Reference: {o.payment_reference}</p></div>}
-        {role.data.role==="user" && o.status==="pending_payment" && <div className="mt-3 space-y-2"><label className="block text-xs font-bold">Transaction/reference<input className={input} value={paymentReference} onChange={e=>setPaymentReference(e.target.value)}/></label><label className="block text-xs font-bold">Payment screenshot<input className="mt-1 block w-full text-xs" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>setProof(e.target.files?.[0]??null)}/></label><button className={primary} disabled={submitPayment.isPending} onClick={()=>submitPayment.mutate(o)}><Upload className="mr-2 h-4 w-4"/>Submit payment proof</button><button className={secondary+" ml-2"} disabled={cancelOrder.isPending} onClick={()=>cancelOrder.mutate(o.id)}><XCircle className="mr-1 h-3 w-3"/>Cancel unpaid order</button></div>}
-        {role.data.role==="sub_agent" && o.status==="payment_submitted" && <button className={primary+" mt-3"} disabled={completeOrder.isPending} onClick={()=>completeOrder.mutate(o.id)}><PackageCheck className="mr-2 h-4 w-4"/>Confirm payment & release coins</button>}
-        {role.data.role==="user" && o.status==="payment_submitted" && <div className="mt-3 space-y-2"><textarea className={input} placeholder="Explain the payment issue to Admin" value={appealReasons[o.id]??""} onChange={e=>setAppealReasons(p=>({...p,[o.id]:e.target.value}))}/><button className={secondary} disabled={openAppeal.isPending} onClick={()=>openAppeal.mutate(o)}>Open appeal</button></div>}
+        {currentRole==="user" && o.status==="pending_payment" && <div className="mt-3 space-y-2"><label className="block text-xs font-bold">Transaction/reference<input className={input} value={paymentReference} onChange={e=>setPaymentReference(e.target.value)}/></label><label className="block text-xs font-bold">Payment screenshot<input className="mt-1 block w-full text-xs" type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>setProof(e.target.files?.[0]??null)}/></label><button className={primary} disabled={submitPayment.isPending} onClick={()=>submitPayment.mutate(o)}><Upload className="mr-2 h-4 w-4"/>Submit payment proof</button><button className={secondary+" ml-2"} disabled={cancelOrder.isPending} onClick={()=>cancelOrder.mutate(o.id)}><XCircle className="mr-1 h-3 w-3"/>Cancel unpaid order</button></div>}
+        {currentRole==="sub_agent" && o.status==="payment_submitted" && <button className={primary+" mt-3"} disabled={completeOrder.isPending} onClick={()=>completeOrder.mutate(o.id)}><PackageCheck className="mr-2 h-4 w-4"/>Confirm payment & release coins</button>}
+        {currentRole==="user" && o.status==="payment_submitted" && <div className="mt-3 space-y-2"><textarea className={input} placeholder="Explain the payment issue to Admin" value={appealReasons[o.id]??""} onChange={e=>setAppealReasons(p=>({...p,[o.id]:e.target.value}))}/><button className={secondary} disabled={openAppeal.isPending} onClick={()=>openAppeal.mutate(o)}>Open appeal</button></div>}
         {["pending_payment","payment_submitted","appealed"].includes(o.status) && <div className="mt-3 rounded-xl border border-border bg-background/50 p-3"><p className="mb-2 flex items-center gap-2 text-xs font-bold"><MessageCircle className="h-4 w-4"/>Order chat</p>{selectedOrder===o.id && <div className="mb-2 max-h-32 space-y-1 overflow-y-auto">{(messages.data??[]).map((m:any)=><p key={m.id} className="text-xs"><strong>{m.sender_id===user?.id?"You":m.sender_id.slice(0,8)}:</strong> {m.message}</p>)}</div>}<div className="flex gap-2"><input className={input+" mt-0"} value={selectedOrder===o.id?chatText:""} placeholder="Message buyer/agent" onFocus={()=>setSelectedOrder(o.id)} onChange={e=>{setSelectedOrder(o.id);setChatText(e.target.value)}}/><button className={secondary} onClick={()=>{setSelectedOrder(o.id);void sendMessage();}} disabled={!chatText.trim()||selectedOrder!==o.id}>Send</button></div></div>}
       </article>)}</div>
     </section>}
