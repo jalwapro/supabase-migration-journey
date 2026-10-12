@@ -175,7 +175,7 @@ begin
       select jsonb_agg(jsonb_build_object(
         'user_id',a.user_id,'currency_code',a.currency_code,'country',a.country,
         'sell_rate',a.sell_rate,'buy_rate',a.buy_rate,'base_fiat_amount',v_settings.base_fiat_amount,
-        'payment_methods',coalesce((select jsonb_agg(key) from jsonb_object_keys(a.payment_methods) as key where coalesce(a.payment_methods->>key,'') <> ''),'[]'::jsonb)
+        'payment_methods',coalesce((select jsonb_agg(key) from jsonb_object_keys(a.payment_methods) as method(key) where coalesce(a.payment_methods->>method.key,'') <> ''),'[]'::jsonb)
       ) order by a.sell_rate desc)
       from public.agent_profiles a
       where a.is_active and not a.is_banned and (v_country is null or lower(a.country)=lower(v_country))
