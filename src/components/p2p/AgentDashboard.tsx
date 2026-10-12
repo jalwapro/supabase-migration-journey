@@ -5,9 +5,11 @@ import { p2pAction, PAYMENT_OPTIONS } from "@/lib/p2p";
 
 type Agent = { user_id: string; currency_code: string; country: string; payment_methods: Record<string,string>; sell_rate: number; buy_rate: number; whatsapp_number: string | null; pending_whatsapp: string | null; is_active: boolean; is_banned: boolean };
 type Settings = { base_fiat_amount: number; base_coin_amount: number; min_agent_coins: number; max_agent_coins: number; min_buy_margin_percent: number; max_buy_margin_percent: number };
+type P2POrder = { id: string; buyer_id: string; coin_amount: number; fiat_amount: number; currency: string; status: "pending" | "paid" | "appealed" | "completed" | "cancelled"; created_at: string };
 
 export function AgentDashboard() {
   const [agent, setAgent] = useState<Agent | null>(null);
+  const [orders, setOrders] = useState<P2POrder[]>([]);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [methods, setMethods] = useState<Record<string,string>>({});
   const [sellRate, setSellRate] = useState("500");
@@ -25,6 +27,7 @@ export function AgentDashboard() {
       const result = await p2pAction<{agent: Agent | null; settings: Settings}>("GET_AGENT");
       setAgent(result.agent);
       setSettings(result.settings);
+      if (result.agent) { try { setOrders(await p2pAction<P2POrder[]>("MY_ORDERS")); } catch { setOrders([]); } } else { setOrders([]); }
       if (result.agent) {
         setMethods(result.agent.payment_methods ?? {});
         setSellRate(String(result.agent.sell_rate));
@@ -47,6 +50,16 @@ export function AgentDashboard() {
     } catch (e) { toast.error((e as Error).message); }
     finally { setBusy(false); }
   }
+  async function handleOrderAction(action: "RELEASE_ORDER" | "CANCEL_ORDER", orderId: string) {
+    setBusy(true);
+    try {
+      await p2pAction(action, { order_id: orderId });
+      toast.success(action === "RELEASE_ORDER" ? "Coins released to buyer" : "Pending order cancelled");
+      setOrders(await p2pAction<P2POrder[]>("MY_ORDERS"));
+    } catch (e) { toast.error((e as Error).message); }
+    finally { setBusy(false); }
+  }
+
   async function requestWhatsApp() {
     setBusy(true);
     try { const result = await p2pAction<{agent: Agent}>("REQUEST_WHATSAPP", { whatsapp_number: whatsapp }); setAgent(result.agent); toast.success("WhatsApp update submitted for admin approval"); }
@@ -67,6 +80,7 @@ export function AgentDashboard() {
       <label className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 text-sm font-semibold"><span>Show my listing in marketplace</span><input type="checkbox" checked={listingActive} onChange={e=>setListingActive(e.target.checked)} /></label>
       <button disabled={busy} onClick={()=>void save()} className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 font-extrabold text-black disabled:opacity-50">{busy?<Loader2 className="animate-spin" size={16}/>:<Save size={16}/>}Save agent profile</button>
     </div>
+    <div className="space-y-3 rounded-2xl border border-border bg-card p-4"><div className="flex items-center justify-between gap-3"><h2 className="font-bold">My P2P orders</h2><span className="text-xs text-muted-foreground">{orders.length} total</span></div><p className="text-xs text-muted-foreground">Orders are limited to your admin-assigned country. Release coins only after you have verified the buyer's payment.</p>{orders.length===0?<p className="rounded-xl bg-background p-3 text-xs text-muted-foreground">No P2P orders yet. Orders from your country will appear here.</p>:orders.map(order=><div key={order.id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-center justify-between gap-2"><b>{Number(order.coin_amount).toLocaleString()} coins</b><span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase">{order.status}</span></div><p className="mt-1 text-xs text-muted-foreground">Buyer {order.buyer_id.slice(0,8)} · {order.currency} {Number(order.fiat_amount).toLocaleString()} · {new Date(order.created_at).toLocaleString()}</p>{order.status==="paid"&&<button disabled={busy} onClick={()=>void handleOrderAction("RELEASE_ORDER",order.id)} className="mt-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">Verify payment & release coins</button>}{order.status==="pending"&&<button disabled={busy} onClick={()=>void handleOrderAction("CANCEL_ORDER",order.id)} className="mt-2 rounded-lg border border-border px-3 py-2 text-xs font-bold disabled:opacity-50">Cancel pending order</button>}</div>)}</div>
     <div className="space-y-3 rounded-2xl border border-border bg-card p-4"><div className="flex items-center gap-2 font-bold"><Smartphone size={17}/>WhatsApp number</div><p className="text-xs text-muted-foreground">Changes are not live until an admin approves them. Current: {agent?.whatsapp_number || "Not set"}{agent?.pending_whatsapp ? ` · Pending: ${agent.pending_whatsapp}` : ""}</p><input value={whatsapp} onChange={e=>setWhatsapp(e.target.value)} maxLength={20} placeholder="+92 3xx xxxxxxx" className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"/><button disabled={busy || !whatsapp.trim()} onClick={()=>void requestWhatsApp()} className="flex items-center justify-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-bold disabled:opacity-50"><Check size={15}/>Request number update</button></div>
   </section>;
 }
