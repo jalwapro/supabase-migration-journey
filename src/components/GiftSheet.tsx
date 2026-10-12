@@ -47,6 +47,18 @@ const GiftGrid = memo(function GiftGrid({ gifts, selectedGiftId, onSelect }: { g
 });
 export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:()=>void;roomId:string;receivers:GiftReceiver[]}){
  const {profile,refresh}=useAuth();const qc=useQueryClient();const[selectedGift,setSelectedGift]=useState<Gift|null>(null);const[sendToAll,setSendToAll]=useState(false);const[qty,setQty]=useState(1);const[activeTier,setActiveTier]=useState<Tier>("small");const[confirmOpen,setConfirmOpen]=useState(false);const [selectedReceiverIds,setSelectedReceiverIds]=useState<string[]>([]);
+ const p2pGiftWallet=useQuery({
+  queryKey:["p2p-gift-wallet",profile?.id],
+  enabled:open&&!!profile?.id,
+  queryFn:async()=>{
+   const {error:setupError}=await (supabase as any).rpc("p2p_ensure_profile");
+   if(setupError)throw setupError;
+   const {data,error}=await (supabase as any).from("p2p_wallets").select("coin_available").eq("user_id",profile!.id).single();
+   if(error)throw error;
+   return Number(data.coin_available??0);
+  },
+  staleTime:5_000,
+ });
  const receiverOptions=useMemo(()=>{const list=[...receivers];if(profile?.id&&!list.some(r=>r.id===profile.id))list.unshift({id:profile.id,username:profile.username??"You",avatar:profile.avatar??null});return list;},[receivers,profile?.id,profile?.username,profile?.avatar]);
  useEffect(()=>{if(!open)return;setSendToAll(false);setSelectedReceiverIds(profile?.id?[profile.id]:[]);setSelectedGift(null);setQty(1);},[open,profile?.id]);
  const gifts=useQuery({queryKey:["gifts"],queryFn:async()=>{const{data,error}=await supabase.from("gifts").select("id,name,emoji,icon,icon_path,image_url,price,price_coins,diamonds_value,category,animation,clip_path,clip_type,sound_url,sort_order,is_active,active,render_config,duration_ms,loop,audio_enabled,audio_volume").order("sort_order");if(error)throw error;const rows=(data??[]) as (Gift&{sort_order?:number;is_active?:boolean;active?:boolean})[];const dbGifts=rows.filter(g=>g.is_active!==false&&g.active!==false);const ids=new Set(dbGifts.map(g=>g.id));return[...dbGifts,...CATALOG_GIFTS.filter(g=>!ids.has(g.id))];},enabled:open,staleTime:10*60_000,gcTime:30*60_000,refetchOnWindowFocus:false});
@@ -79,8 +91,8 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
      await broadcastGiftPlayback(roomId,gift,uniqueTargets,sender,quantity,rows[0].id!,rows.map(row=>row.id!));
    }
    return{gift,quantity};
- },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["wallet_tx"]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
- if(!open)return null;const effectiveTargets=[...new Set((sendToAll?receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id):selectedReceiverIds).filter(Boolean))];const totalCost=price(selectedGift)*qty*Math.max(1,effectiveTargets.length);const canAfford=(profile?.coins??0)>=totalCost;
+ },onSuccess:async()=>{await refresh();qc.invalidateQueries({queryKey:["p2p-gift-wallet",profile?.id]});setSelectedGift(null);setQty(1);},onError:(e:Error)=>toast.error(e.message)});
+ if(!open)return null;const effectiveTargets=[...new Set((sendToAll?receiverOptions.map(r=>r.id).filter(id=>id!==profile?.id):selectedReceiverIds).filter(Boolean))];const totalCost=price(selectedGift)*qty*Math.max(1,effectiveTargets.length);const canAfford=(p2pGiftWallet.data??0)>=totalCost;
  const performSend=()=>{if(!selectedGift||send.isPending)return;if(!effectiveTargets.length){toast.error("Pick a receiver");return;}onClose();send.mutate({gift:selectedGift,targets:effectiveTargets,quantity:qty});};
  const handleSend=()=>{if(!selectedGift||send.isPending)return;if(!canAfford){toast.error("Not enough coins");return;}if(tierOf(price(selectedGift))==="vip"){setConfirmOpen(true);return;}performSend();};const toggleReceiver=(id:string)=>{if(sendToAll)return;setSelectedReceiverIds(prev=>{if(id===profile?.id)return prev.includes(id)?[]:[id];const withoutSelf=prev.filter(item=>item!==profile?.id);return withoutSelf.includes(id)?withoutSelf.filter(item=>item!==id):[...withoutSelf,id];});};
  return (
@@ -133,7 +145,7 @@ export function GiftSheet({open,onClose,roomId,receivers}:{open:boolean;onClose:
       <div className="border-t border-white/10 bg-black/40 px-3 py-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 bg-white/[0.06] border border-white/10 px-3 py-1.5 rounded-xl">
           <Coins className="h-3.5 w-3.5 text-yellow-400 animate-pulse" />
-          <span className="text-xs font-black text-yellow-400">{profile?.coins ?? 0}</span>
+          <span className="text-xs font-black text-yellow-400">{(p2pGiftWallet.data ?? 0).toLocaleString()}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-xl bg-white/10 border border-white/10 overflow-hidden">
