@@ -39,7 +39,6 @@ import {
   Star,
   Heart,
   Flame,
-  Store,
 } from "lucide-react";
 import { toast } from "sonner";
 
