@@ -6,6 +6,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { CoinAgentHub } from "@/components/coin-agent/CoinAgentHub";
 import { AgentDashboard } from "@/components/p2p/AgentDashboard";
+import { CoinInventoryRequests } from "@/components/coin-agent/CoinInventoryRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { ArrowLeft, BadgeCheck, Coins , ExternalLink, Loader2, MessageCircle, Search, ShieldCheck, Store, Wallet } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +36,9 @@ function CoinSellerMarketplaceRoute() {
           </div>
           <CoinSellerMarketplace embedded />
         </section>
+        <section id="agent-inventory-requests" aria-label="Coin inventory requests and economy controls" className="scroll-mt-20">
+          <CoinInventoryRequests />
+        </section>
         <section id="agent-orders" aria-label="Payment methods and P2P orders" className="scroll-mt-20 rounded-2xl border border-border bg-card p-2 sm:p-3">
           <div className="px-2 pt-2">
             <h2 className="text-lg font-black">P2P orders, payment methods & WhatsApp</h2>
@@ -59,6 +63,7 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
   const [buyerCode, setBuyerCode] = useState("");
   const [amount, setAmount] = useState("1000");
   const [confirmTransfer, setConfirmTransfer] = useState(false);
+  const [transferRequestKey, setTransferRequestKey] = useState(() => globalThis.crypto?.randomUUID?.() ?? "transfer-" + Date.now() + "-" + Math.random().toString(36).slice(2));
 
   const myProfile = useQuery({ queryKey: ["coin_seller_my_profile", user?.id], enabled: !!user?.id, queryFn: async () => { const { data, error } = await supabase.from("profiles").select("username,user_code").eq("id", user!.id).single(); if (error) throw error; return data; }, staleTime: 60_000 });
 
@@ -115,7 +120,7 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
       if (!confirmTransfer) throw new Error("Review and confirm the transfer first.");
       const coins = Number(amount);
       if (!Number.isSafeInteger(coins) || coins < 1 || coins > 1_000_000) throw new Error("Enter between 1 and 1,000,000 coins.");
-      const { data, error } = await supabase.rpc("coin_seller_transfer", { p_buyer_code: buyerCode.trim(), p_coins: coins });
+      const { data, error } = await supabase.rpc("coin_seller_transfer", { p_buyer_code: buyerCode.trim(), p_coins: coins, p_request_key: transferRequestKey });
       if (error) throw error;
       if (!data || typeof data !== "object" || !("transaction_id" in data) || !("coins_transferred" in data)) {
         throw new Error("Transfer response was incomplete. Refresh the page and verify the transaction history before retrying.");
@@ -125,6 +130,7 @@ export function CoinSellerMarketplace({ embedded = false }: { embedded?: boolean
     onSuccess: (result) => {
       toast.success(`Transferred ${Number(result.coins_transferred).toLocaleString()} coins to ${result.buyer_username || result.buyer_code || "buyer"}`);
       setBuyerCode(""); setConfirmTransfer(false);
+      setTransferRequestKey(globalThis.crypto?.randomUUID?.() ?? "transfer-" + Date.now() + "-" + Math.random().toString(36).slice(2));
       qc.invalidateQueries({ queryKey: ["my_coin_seller_inventory"] });
       qc.invalidateQueries({ queryKey: ["my_coin_seller_transactions"] });
       qc.invalidateQueries({ queryKey: ["my_wallet"] });
