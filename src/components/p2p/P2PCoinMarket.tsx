@@ -273,8 +273,8 @@ export function P2PCoinMarket() {
     {role.data?.role === "sub_agent" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <h2 className="font-black">Agent marketplace profile</h2><p className="mt-1 text-xs text-muted-foreground">Set your country, accepted payment methods, payout details and coin price. Admin controls the allowed price range.</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <label className="text-xs font-bold text-muted-foreground">Country ISO-2<input className={input} maxLength={2} value={countryCode} onChange={e=>setCountryCode(e.target.value)}/></label>
-        <label className="text-xs font-bold text-muted-foreground">Currency ISO-3<input className={input} maxLength={3} value={currencyCode} onChange={e=>setCurrencyCode(e.target.value)}/></label>
+        <label className="text-xs font-bold text-muted-foreground">Admin-assigned country<input className={input+" opacity-70"} maxLength={2} value={ownSettings.data?.country_code ?? "Not assigned"} readOnly/></label>
+        <label className="text-xs font-bold text-muted-foreground">Admin-assigned currency<input className={input+" opacity-70"} maxLength={3} value={ownSettings.data?.currency_code ?? "Not assigned"} readOnly/></label>
         <label className="text-xs font-bold text-muted-foreground">Coins per 50 PKR bundle<input className={input} type="number" min={market.data?.settings.min_agent_coins_per_bundle ?? 500} max={market.data?.settings.max_agent_coins_per_bundle ?? 600} value={coinsPerBundle} onChange={e=>setCoinsPerBundle(e.target.value)}/></label>
         <label className="text-xs font-bold text-muted-foreground">Minimum order coins<input className={input} type="number" min="1" value={minOrder} onChange={e=>setMinOrder(e.target.value)}/></label>
         <label className="text-xs font-bold text-muted-foreground">Maximum order coins<input className={input} type="number" min={minOrder} value={maxOrder} onChange={e=>setMaxOrder(e.target.value)}/></label>
