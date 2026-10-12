@@ -26,6 +26,17 @@ const SEGMENTS = [
 function LuckySpin() {
   const { profile, refresh } = useAuth();
   const qc = useQueryClient();
+  const p2pBalance = useQuery({
+    queryKey: ["p2p-wallet-summary", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets").select("coin_available").eq("user_id", user!.id).single();
+      if (error) throw error;
+      return Number(data.coin_available ?? 0);
+    },
+  });
   const [bet, setBet] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -68,6 +79,8 @@ function LuckySpin() {
         }
         await refresh();
         qc.invalidateQueries({ queryKey: ["game_history"] });
+        qc.invalidateQueries({ queryKey: ["p2p-wallet-summary", user?.id] });
+        qc.invalidateQueries({ queryKey: ["p2p-header-balance", user?.id] });
       }, 4200);
     },
     onError: (e: Error) => toast.error(e.message),
@@ -78,7 +91,7 @@ function LuckySpin() {
     setLastResult(null);
   }, [bet]);
 
-  const canPlay = !spinning && !play.isPending && (profile?.coins ?? 0) >= bet;
+  const canPlay = !spinning && !play.isPending && (p2pBalance.data ?? 0) >= bet;
 
   return (
     <>
@@ -173,9 +186,9 @@ function LuckySpin() {
               )}
               Spin for {bet.toLocaleString()}
             </button>
-            {(profile?.coins ?? 0) < bet && (
+            {(p2pBalance.data ?? 0) < bet && (
               <p className="mt-2 text-center text-[11px] text-[color:var(--destructive)]">
-                Not enough coins. <Link to="/recharge" className="underline">Recharge</Link>
+                Not enough coins. <Link to="/p2p-agency" className="underline">Recharge</Link>
               </p>
             )}
           </div>
