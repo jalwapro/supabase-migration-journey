@@ -92,7 +92,7 @@ function CoinSellersAdmin() {
   });
 
   const updateSeller = useMutation({
-    mutationFn: async ({ seller, patch }: { seller: Seller; patch: Partial<Pick<Seller, "whatsapp_number" | "public_name" | "public_note" | "is_active" | "is_listed">> }) => {
+    mutationFn: async ({ seller, patch }: { seller: Seller; patch: Partial<Pick<Seller, "country" | "whatsapp_number" | "public_name" | "public_note" | "is_active" | "is_listed">> }) => {
       const { error } = await supabase.from("coin_sellers").update(patch).eq("user_id", seller.user_id);
       if (error) throw error;
       if (patch.country || patch.is_active === true) {
