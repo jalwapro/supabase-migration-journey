@@ -5,11 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin/AdminShell";
 import { BadgeCheck, Coins, Loader2, MessageCircle, Plus, Search, ShieldCheck, Store, Trash2, CreditCard, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
+import { coinAgentAction } from "@/lib/coin-agent";
 
 export const Route = createFileRoute("/_authenticated/admin/coin-sellers")({ component: CoinSellersAdmin });
 
 type Seller = {
-  user_id: string; whatsapp_number: string; public_name: string | null; public_note: string | null;
+  user_id: string; country: string; whatsapp_number: string; public_name: string | null; public_note: string | null;
   is_active: boolean; is_listed: boolean; created_at: string;
   profile?: { username: string | null; user_code: string | null; avatar: string | null } | null;
   inventory?: { available_coins: number; total_allocated: number; total_sold: number } | null;
@@ -18,6 +19,8 @@ type Profile = { id: string; username: string | null; user_code: string | null; 
 type AdminTx = { id: string; seller_id: string; buyer_id: string | null; kind: string; coins: number; inventory_delta: number; seller_balance_after: number; buyer_balance_after: number | null; payment_reference: string | null; note: string | null; created_at: string; seller?: Profile | null; buyer?: Profile | null };
 type FundingAudit = { id: string; seller_id: string; amount_pkr: number; coins_credited: number; coins_per_pkr: number; payment_method: string; payment_reference: string; note: string | null; inventory_before: number; inventory_after: number; verified_by: string; verified_at: string; seller?: Profile | null; verifier?: Profile | null };
 
+const COUNTRY_CURRENCIES: Record<string,string> = { Pakistan:"PKR", "United States":"USD", "United Kingdom":"GBP", India:"INR", "United Arab Emirates":"AED", "Saudi Arabia":"SAR", Canada:"CAD", Australia:"AUD", Bangladesh:"BDT", Turkey:"TRY", Indonesia:"IDR", Malaysia:"MYR", "South Africa":"ZAR", Germany:"EUR", France:"EUR", "Sri Lanka":"LKR", Nepal:"NPR", Qatar:"QAR", Kuwait:"KWD", Oman:"OMR", Bahrain:"BHD", Afghanistan:"AFN", Philippines:"PHP", Thailand:"THB", Singapore:"SGD", Japan:"JPY", China:"CNY" };
+const countryCurrency = (country: string) => COUNTRY_CURRENCIES[country] ?? "USD";
 function CoinSellersAdmin() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -36,11 +39,12 @@ function CoinSellersAdmin() {
   const [fundingReference, setFundingReference] = useState("");
   const [fundingNote, setFundingNote] = useState("");
   const [fundingSeller, setFundingSeller] = useState("");
+  const [agentCountry, setAgentCountry] = useState("Pakistan");
 
   const sellers = useQuery({
     queryKey: ["admin_coin_sellers"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("coin_sellers").select("user_id,whatsapp_number,public_name,public_note,is_active,is_listed,created_at").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("coin_sellers").select("user_id,country,whatsapp_number,public_name,public_note,is_active,is_listed,created_at").order("created_at", { ascending: false });
       if (error) throw error;
       const rows = (data ?? []) as Seller[];
       if (!rows.length) return rows;
@@ -75,13 +79,15 @@ function CoinSellersAdmin() {
       if (number.length < 8 || number.length > 15) throw new Error("Enter WhatsApp with country code, digits only (8–15 digits).");
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError) throw authError;
+      const currency = countryCurrency(agentCountry);
       const { error } = await supabase.from("coin_sellers").upsert({
-        user_id: profile.id, whatsapp_number: number, public_name: publicName.trim() || null,
+        user_id: profile.id, country: agentCountry, whatsapp_number: number, public_name: publicName.trim() || null,
         public_note: note.trim() || null, is_active: true, is_listed: true, assigned_by: authData.user?.id ?? null,
       }, { onConflict: "user_id" });
       if (error) throw error;
+      await coinAgentAction("ADMIN_ASSIGN_AGENT", { agent_id: profile.id, country: agentCountry, currency_code: currency, enabled: true });
     },
-    onSuccess: () => { toast.success("Seller assigned and listed"); setWhatsapp(""); setPublicName(""); setNote(""); setUserSearch(""); setSelectedUserId(""); qc.invalidateQueries({ queryKey: ["admin_coin_sellers"] }); },
+    onSuccess: () => { toast.success("Seller assigned and listed"); setWhatsapp(""); setPublicName(""); setNote(""); setUserSearch(""); setSelectedUserId(""); setAgentCountry("Pakistan"); qc.invalidateQueries({ queryKey: ["admin_coin_sellers"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -89,6 +95,11 @@ function CoinSellersAdmin() {
     mutationFn: async ({ seller, patch }: { seller: Seller; patch: Partial<Pick<Seller, "whatsapp_number" | "public_name" | "public_note" | "is_active" | "is_listed">> }) => {
       const { error } = await supabase.from("coin_sellers").update(patch).eq("user_id", seller.user_id);
       if (error) throw error;
+      if (patch.country || patch.is_active === true) {
+        await coinAgentAction("ADMIN_ASSIGN_AGENT", { agent_id: seller.user_id, country: patch.country ?? seller.country, currency_code: countryCurrency(patch.country ?? seller.country), enabled: patch.is_active ?? seller.is_active });
+      } else if (patch.is_active === false) {
+        await coinAgentAction("ADMIN_TOGGLE_AGENT", { agent_id: seller.user_id, enabled: false });
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin_coin_sellers"] }),
     onError: (e: Error) => toast.error(e.message),
@@ -205,6 +216,7 @@ function CoinSellersAdmin() {
           {searchUsers.data && <div className="mt-2 space-y-1">{searchUsers.data.map((p) => <button key={p.id} onClick={() => setSelectedUserId(p.id)} className={`flex w-full items-center gap-3 rounded-lg border p-2 text-left text-sm ${selectedUserId === p.id ? "border-primary bg-primary/10" : "border-border"}`}><div className="grid h-8 w-8 place-items-center rounded-full bg-primary/15 font-bold">{(p.username || "?").slice(0,1).toUpperCase()}</div><span className="min-w-0 flex-1"><span className="block font-semibold">{p.username || "JALWA user"}</span><span className="text-xs text-muted-foreground">ID: {p.user_code || "—"}</span></span>{selectedUserId === p.id && <BadgeCheck className="h-4 w-4 text-primary" />}</button>)}</div>}
         </div>
         <div className="space-y-3">
+          <div><label className="mb-1 block text-xs text-muted-foreground">Agent country (admin assigned; P2P stays inside this country)</label><select value={agentCountry} onChange={(e) => setAgentCountry(e.target.value)} className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm">{Object.keys(COUNTRY_CURRENCIES).sort().map((country) => <option key={country} value={country}>{country} · {COUNTRY_CURRENCIES[country]}</option>)}</select><p className="mt-1 text-[11px] text-muted-foreground">Currency: {countryCurrency(agentCountry)}. You can change the country later from the seller directory.</p></div>
           <div><label className="mb-1 block text-xs text-muted-foreground">Seller WhatsApp number (with country code)</label><input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="923001234567" inputMode="numeric" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" /></div>
           <div><label className="mb-1 block text-xs text-muted-foreground">Public display name (optional)</label><input value={publicName} onChange={(e) => setPublicName(e.target.value)} placeholder="Seller display name" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" /></div>
           <div><label className="mb-1 block text-xs text-muted-foreground">Public note (optional)</label><input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Payment methods / availability" className="w-full rounded-xl border border-border bg-input px-3 py-2 text-sm outline-none focus:border-primary" /></div>
@@ -242,7 +254,7 @@ function CoinSellersAdmin() {
 
     <section className="rounded-2xl border border-cyan-400/15 bg-gradient-to-br from-cyan-950/10 via-card to-slate-950/30 p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Seller directory and controls</h2><div className="relative max-w-xs flex-1"><Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search listed sellers" className="w-full rounded-xl border border-border bg-input py-2 pl-9 pr-3 text-sm" /></div></div>
-      {sellers.isLoading ? <div className="grid place-items-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div> : sellers.isError ? <p className="py-6 text-sm text-destructive">Could not load sellers. Check migration and admin permissions.</p> : <div className="space-y-2">{(sellers.data ?? []).filter((s) => `${s.profile?.username ?? ""} ${s.profile?.user_code ?? ""} ${s.whatsapp_number}`.toLowerCase().includes(search.toLowerCase())).map((s) => <div key={s.user_id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-start gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-primary/15 font-bold">{(s.profile?.username || "?").slice(0,1).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="font-bold">{s.public_name || s.profile?.username || "Seller"} <span className="text-xs font-normal text-muted-foreground">ID {s.profile?.user_code || "—"}</span></p><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MessageCircle className="h-3 w-3" /> +{s.whatsapp_number}</p><p className="mt-1 text-xs text-muted-foreground">Available {Number(s.inventory?.available_coins ?? 0).toLocaleString()} · Sold {Number(s.inventory?.total_sold ?? 0).toLocaleString()} · Allocated {Number(s.inventory?.total_allocated ?? 0).toLocaleString()}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => updateSeller.mutate({ seller: s, patch: { is_listed: !s.is_listed } })} className="rounded-lg border border-border px-2 py-1 text-xs">{s.is_listed ? "Hide listing" : "Publish listing"}</button><button onClick={() => updateSeller.mutate({ seller: s, patch: { is_active: !s.is_active } })} className={`rounded-lg px-2 py-1 text-xs font-bold ${s.is_active ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>{s.is_active ? "Active" : "Suspended"}</button><button onClick={() => { const n = window.prompt("WhatsApp number with country code", s.whatsapp_number); if (n === null) return; const digits = n.replace(/\D/g, ""); if (digits.length < 8 || digits.length > 15) { toast.error("Enter 8–15 digits including country code."); return; } updateSeller.mutate({ seller: s, patch: { whatsapp_number: digits } }); }} className="rounded-lg border border-border px-2 py-1 text-xs">Edit WhatsApp</button><button disabled={deleteSeller.isPending} onClick={() => { const confirmed = window.confirm(`PERMANENTLY DELETE ${s.public_name || s.profile?.username || "this seller"}? This removes the seller assignment, available inventory, and this seller's Coin Seller transaction history. The JALWA user account itself will NOT be deleted. This cannot be undone.`); if (confirmed) deleteSeller.mutate(s.user_id); }} className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-500/10 px-2 py-1 text-xs font-bold text-red-300 disabled:opacity-50"><Trash2 className="h-3 w-3" /> Delete</button></div></div>{s.public_note && <p className="mt-2 text-xs text-muted-foreground">{s.public_note}</p>}</div>)}</div>}
+      {sellers.isLoading ? <div className="grid place-items-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div> : sellers.isError ? <p className="py-6 text-sm text-destructive">Could not load sellers. Check migration and admin permissions.</p> : <div className="space-y-2">{(sellers.data ?? []).filter((s) => `${s.profile?.username ?? ""} ${s.profile?.user_code ?? ""} ${s.whatsapp_number}`.toLowerCase().includes(search.toLowerCase())).map((s) => <div key={s.user_id} className="rounded-xl border border-border p-3"><div className="flex flex-wrap items-start gap-3"><div className="grid h-10 w-10 place-items-center rounded-full bg-primary/15 font-bold">{(s.profile?.username || "?").slice(0,1).toUpperCase()}</div><div className="min-w-0 flex-1"><p className="font-bold">{s.public_name || s.profile?.username || "Seller"} <span className="text-xs font-normal text-muted-foreground">ID {s.profile?.user_code || "—"}</span></p><p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><MessageCircle className="h-3 w-3" /> +{s.whatsapp_number}</p><p className="mt-1 text-xs text-primary">Assigned agent country: {s.country || "Pakistan"}</p><p className="mt-1 text-xs text-muted-foreground">Available {Number(s.inventory?.available_coins ?? 0).toLocaleString()} · Sold {Number(s.inventory?.total_sold ?? 0).toLocaleString()} · Allocated {Number(s.inventory?.total_allocated ?? 0).toLocaleString()}</p></div><div className="flex flex-wrap gap-2"><button onClick={() => { const next = window.prompt("Set Coin Agent country", s.country || "Pakistan"); if (next === null) return; if (!Object.prototype.hasOwnProperty.call(COUNTRY_CURRENCIES, next)) { toast.error("Unsupported country. Use the country list in Assign a seller."); return; } updateSeller.mutate({ seller: s, patch: { country: next } }); }} className="rounded-lg border border-primary/40 px-2 py-1 text-xs">Change country</button><button onClick={() => updateSeller.mutate({ seller: s, patch: { is_listed: !s.is_listed } }) className="rounded-lg border border-border px-2 py-1 text-xs">{s.is_listed ? "Hide listing" : "Publish listing"}</button><button onClick={() => updateSeller.mutate({ seller: s, patch: { is_active: !s.is_active } })} className={`rounded-lg px-2 py-1 text-xs font-bold ${s.is_active ? "bg-emerald-500/15 text-emerald-400" : "bg-red-500/15 text-red-400"}`}>{s.is_active ? "Active" : "Suspended"}</button><button onClick={() => { const n = window.prompt("WhatsApp number with country code", s.whatsapp_number); if (n === null) return; const digits = n.replace(/\D/g, ""); if (digits.length < 8 || digits.length > 15) { toast.error("Enter 8–15 digits including country code."); return; } updateSeller.mutate({ seller: s, patch: { whatsapp_number: digits } }); }} className="rounded-lg border border-border px-2 py-1 text-xs">Edit WhatsApp</button><button disabled={deleteSeller.isPending} onClick={() => { const confirmed = window.confirm(`PERMANENTLY DELETE ${s.public_name || s.profile?.username || "this seller"}? This removes the seller assignment, available inventory, and this seller's Coin Seller transaction history. The JALWA user account itself will NOT be deleted. This cannot be undone.`); if (confirmed) deleteSeller.mutate(s.user_id); }} className="inline-flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-500/10 px-2 py-1 text-xs font-bold text-red-300 disabled:opacity-50"><Trash2 className="h-3 w-3" /> Delete</button></div></div>{s.public_note && <p className="mt-2 text-xs text-muted-foreground">{s.public_note}</p>}</div>)}</div>}
     </section>
     <section className="rounded-2xl border border-red-400/15 bg-gradient-to-br from-red-950/10 via-card to-slate-950/30 p-4 sm:p-5">
       <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-base font-bold">Transaction audit trail</h2><span className="text-xs text-muted-foreground">Latest 100 entries</span></div>
