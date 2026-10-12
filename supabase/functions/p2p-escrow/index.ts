@@ -45,15 +45,13 @@ Deno.serve(async (req) => {
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    const { data, error } = await adminClient.rpc("p2p_escrow_action", {
-      actor_id: user.id,
-      action,
-      payload,
-    });
+    const rpcName = action === "MARKETPLACE" ? "p2p_marketplace_for_user" : "p2p_escrow_action";
+    const rpcArgs = action === "MARKETPLACE" ? { actor_id: user.id } : { actor_id: user.id, action, payload };
+    const { data, error } = await adminClient.rpc(rpcName, rpcArgs);
     if (error) {
       const message = error.message || "P2P_ACTION_FAILED";
       const status = /AUTH_REQUIRED|INVALID_SESSION|ADMIN_REQUIRED|NOT_ORDER_PARTICIPANT|CANNOT_BUY_FROM_SELF/i.test(message) ? 403
-        : /NOT_FOUND|NOT_AVAILABLE|INSUFFICIENT|OUT_OF_RANGE|INVALID|MUST_BE|LIMIT|TRANSITION|REQUIRED|BANNED|ALREADY|CLOSED/i.test(message) ? 400
+        : /NOT_FOUND|NOT_AVAILABLE|INSUFFICIENT|OUT_OF_RANGE|INVALID|MUST_BE|LIMIT|TRANSITION|REQUIRED|BANNED|ALREADY|CLOSED|COUNTRY_MISMATCH/i.test(message) ? 400
         : 500;
       return json({ error: message }, status);
     }
