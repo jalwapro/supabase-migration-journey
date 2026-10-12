@@ -1,6 +1,6 @@
 # JALWA P2P Master-Agency v1 rollout
 
-The eight `20261013000100`–`20261013000800` migrations create an isolated P2P economy, coin marketplace and P2P spending cutover. It does not read or write the previous wallet, coin seller, or diamond trade tables. The legacy economy is intentionally not dropped by this change: perform the app cutover and legacy deprecation in a separate reviewed release after the new flows pass staging tests.
+The nine `20261013000100`–`20261013000900` migrations create an isolated P2P economy, coin marketplace and P2P spending cutover. It does not read or write the previous wallet, coin seller, or diamond trade tables. The legacy economy is intentionally not dropped by this change: perform the app cutover and legacy deprecation in a separate reviewed release after the new flows pass staging tests.
 
 ## Included
 
