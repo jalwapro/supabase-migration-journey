@@ -145,6 +145,7 @@ const USER_SCOPED_PREFIXES = [
   "moments",
   "proofs",
   "recharge-proofs",
+  "payout-slips",
   "kyc",
 ];
 
