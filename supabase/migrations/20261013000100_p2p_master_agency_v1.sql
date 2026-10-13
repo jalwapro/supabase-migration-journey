@@ -1,5 +1,23 @@
 -- JALWA P2P Master-Agency v1. Independent economy; never mutates legacy wallet tables.
 begin;
+
+-- The production database already has a legacy public.p2p_ledger (entry_type/
+-- coin_delta schema). Preserve it under a legacy name so this new agency ledger
+-- can use the canonical public.p2p_ledger name. Existing legacy functions keep
+-- their relation dependency; new P2P RPCs use the new schema below.
+do $cutover$
+begin
+  if to_regclass('public.p2p_ledger') is not null
+     and exists (
+       select 1 from information_schema.columns
+       where table_schema='public' and table_name='p2p_ledger' and column_name='entry_type'
+     )
+     and to_regclass('public.p2p_ledger_legacy') is null then
+    alter table public.p2p_ledger rename to p2p_ledger_legacy;
+  end if;
+end
+$cutover$;
+
 create schema if not exists p2p_private;
 revoke all on schema p2p_private from public,anon,authenticated;
 create type public.p2p_role as enum ('admin','super_agent','sub_agent','user');
