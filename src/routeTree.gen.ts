@@ -35,6 +35,7 @@ import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redes
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
+import { Route as AuthenticatedP2pAgentRouteImport } from './routes/_authenticated/p2p.agent'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedCustomThemeRouteImport } from './routes/_authenticated/custom-theme'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
@@ -283,6 +284,11 @@ const AuthenticatedCoinSellersRoute =
     path: '/coin-sellers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedP2pAgentRoute = AuthenticatedP2pAgentRouteImport.update({
+  id: '/p2p/agent',
+  path: '/p2p/agent',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
@@ -953,6 +959,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
+  '/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -1096,6 +1103,7 @@ export interface FileRoutesByTo {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
+  '/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -1241,6 +1249,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
   '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
+  '/_authenticated/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
@@ -1387,6 +1396,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/blocked'
     | '/coin-sellers'
+    | '/p2p/agent'
     | '/create-room'
     | '/custom-theme'
     | '/friends'
@@ -1530,6 +1540,7 @@ export interface FileRouteTypes {
     | '/voice-room-redesign'
     | '/blocked'
     | '/coin-sellers'
+    | '/p2p/agent'
     | '/create-room'
     | '/custom-theme'
     | '/friends'
@@ -1674,6 +1685,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/blocked'
     | '/_authenticated/coin-sellers'
+    | '/_authenticated/p2p/agent'
     | '/_authenticated/create-room'
     | '/_authenticated/custom-theme'
     | '/_authenticated/friends'
@@ -3012,6 +3024,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
   AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
+  AuthenticatedP2pAgentRoute: typeof AuthenticatedP2pAgentRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
   AuthenticatedCustomThemeRoute: typeof AuthenticatedCustomThemeRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
@@ -3043,6 +3056,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
   AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
+  AuthenticatedP2pAgentRoute: AuthenticatedP2pAgentRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
   AuthenticatedCustomThemeRoute: AuthenticatedCustomThemeRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,
