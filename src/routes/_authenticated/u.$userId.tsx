@@ -7,7 +7,7 @@ import { LevelAvatar } from "@/components/LevelAvatar";
 import { CountryFlag } from "@/components/CountryFlag";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
-import { getCpStatus } from "@/lib/cp/cpApi";
+import { getCpPublicPartner } from "@/lib/cp/cpApi";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,21 +103,16 @@ function UserProfilePage() {
     },
   });
 
-  const publicCpRelation = useQuery({
-    queryKey: ["public-profile-cp-relation", userId],
-    enabled: !!userId,
-    queryFn: () => getCpStatus(userId),
-  });
   const publicCpPartner = useQuery({
-    queryKey: ["public-profile-cp-partner", userId, publicCpRelation.data?.id],
-    enabled: !!publicCpRelation.data,
+    queryKey: ["public-profile-cp-partner", userId],
+    enabled: !!userId,
     queryFn: async () => {
-      const relation = publicCpRelation.data!;
-      const partnerId = relation.user1_id === userId ? relation.user2_id : relation.user1_id;
-      const { data, error } = await supabase.from("profiles")
-        .select("id, username, avatar").eq("id", partnerId).maybeSingle();
-      if (error) throw error;
-      return data as { id: string; username: string | null; avatar: string | null } | null;
+      const partner = await getCpPublicPartner(userId);
+      return partner ? {
+        id: partner.partner_id,
+        username: partner.partner_username,
+        avatar: partner.partner_avatar,
+      } : null;
     },
   });
 
