@@ -81,7 +81,7 @@ function toCpProposal(row: ProposalRow): CpProposal {
  * CP data access uses the canonical JALWA schema and server RPCs.
  * The legacy cp_relationships/propose_cp/dissolve_cp names from older
  * snippets are intentionally not used: this app uses cp_relations,
- * cp_send_proposal, cp_respond_proposal, and cp_divorce.
+ * cp_send_proposal, cp_respond_proposal, and partner-approved cp breakup requests.
  */
 export function useCpSystem() {
   const { user } = useAuth();
@@ -167,22 +167,22 @@ export function useCpSystem() {
 
   const dissolveMutation = useMutation({
     mutationFn: async (relationshipId: string) => {
-      const { data, error } = await supabase.rpc("cp_divorce", {
+      const { data, error } = await supabase.rpc("cp_request_breakup", {
         p_relation_id: relationshipId,
-        p_fee: 0,
       });
       if (error) throw error;
       return data;
     },
     onSuccess: async () => {
-      toast.info("CP relationship dissolved");
+      toast.info("CP breakup request sent. Your partner must accept before CP ends.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["my_cp"] }),
         queryClient.invalidateQueries({ queryKey: ["cp_proposals"] }),
         queryClient.invalidateQueries({ queryKey: ["cp_weekly_ranking"] }),
+        queryClient.invalidateQueries({ queryKey: ["cp_breakup_requests"] }),
       ]);
     },
-    onError: (error: Error) => toast.error(error.message || "Failed to dissolve CP"),
+    onError: (error: Error) => toast.error(error.message || "Failed to request CP breakup"),
   });
 
   return {
