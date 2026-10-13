@@ -19,6 +19,7 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
   const [posts, setPosts] = useState<CpDiaryPost[]>([]);
   const [gifts, setGifts] = useState<CpExclusiveGift[]>([]);
   const [confirmGift, setConfirmGift] = useState<CpExclusiveGift | null>(null);
+  const [giftCelebration, setGiftCelebration] = useState<CpExclusiveGift | null>(null);
   const [sendingGift, setSendingGift] = useState<string | null>(null);
   const [newPostText, setNewPostText] = useState("");
   const [newPostImage, setNewPostImage] = useState<File | null>(null);
@@ -63,6 +64,7 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
       setSendingGift(gift.id);
       const result = await sendCpExclusiveGift(gift.id);
       setConfirmGift(null);
+      setGiftCelebration(gift);
       toast.success(`${result.gift_name} sent! +${result.points_added} intimacy ❤️`);
       await loadAll();
     } catch (e: unknown) {
@@ -134,6 +136,23 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
 
   return (
     <div className="space-y-6">
+      {giftCelebration && (
+        <div className="fixed inset-0 z-[120] grid place-items-center bg-black/75 p-4 backdrop-blur-sm" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGiftCelebration(null); }}>
+          <section role="dialog" aria-modal="true" aria-labelledby="cp-gift-celebration-title" className="relative w-full max-w-xs overflow-hidden rounded-3xl border border-pink-300/40 bg-gradient-to-b from-pink-950 via-[#17101f] to-purple-950 p-6 text-center text-white shadow-2xl shadow-pink-500/20 animate-in zoom-in-95 duration-200">
+            <button type="button" onClick={() => setGiftCelebration(null)} aria-label="Close gift animation" className="absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white/80"><X className="h-4 w-4" /></button>
+            <span className="pointer-events-none absolute left-5 top-6 animate-ping text-xl text-pink-300/70">♥</span>
+            <span className="pointer-events-none absolute right-7 top-14 animate-bounce text-lg text-rose-300">♥</span>
+            <span className="pointer-events-none absolute bottom-20 left-8 animate-pulse text-lg text-fuchsia-300">♥</span>
+            <div className="mx-auto grid h-24 w-24 place-items-center rounded-3xl border border-pink-300/30 bg-white/5 shadow-lg shadow-pink-500/20">
+              <img src={giftCelebration.icon_url} alt="" className="h-20 w-20 object-contain drop-shadow-lg animate-bounce" />
+            </div>
+            <h2 id="cp-gift-celebration-title" className="mt-4 text-xl font-black">{giftCelebration.name} sent! ❤️</h2>
+            <p className="mt-2 text-sm text-pink-200">Your couple bond is growing stronger.</p>
+            <p className="mt-1 text-sm font-black text-amber-300">+{giftCelebration.intimacy_points.toLocaleString()} intimacy</p>
+            <button type="button" onClick={() => setGiftCelebration(null)} className="mt-5 w-full rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-3 text-sm font-black text-white">Continue together</button>
+          </section>
+        </div>
+      )}
       <div className="relative overflow-hidden rounded-3xl border border-pink-500/30 bg-gradient-to-b from-pink-950/40 via-purple-950/30 to-zinc-950 p-6 text-white shadow-2xl">
         <div className="pointer-events-none absolute -left-10 -top-10 h-40 w-40 rounded-full bg-pink-500/20 blur-3xl" />
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-purple-500/20 blur-3xl" />
