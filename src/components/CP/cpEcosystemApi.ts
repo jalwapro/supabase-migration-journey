@@ -99,3 +99,38 @@ export async function deleteCpDiary(postId: string): Promise<void> {
   const { error } = await supabase.from("cp_diary_posts").delete().eq("id", postId);
   if (error) throw errorMessage(error);
 }
+
+
+export type CpRing = {
+  id: string;
+  name: string;
+  price: number;
+  icon_url: string;
+  description: string | null;
+  broadcast_banner: boolean;
+  sort_order: number;
+};
+
+export async function getCpRings(): Promise<CpRing[]> {
+  const { data, error } = await supabase
+    .from("cp_rings_config")
+    .select("id,name,price,icon_url,description,broadcast_banner,sort_order")
+    .order("sort_order", { ascending: true });
+  if (error) throw errorMessage(error);
+  return (data ?? []).map((ring) => ({ ...ring, price: Number(ring.price) })) as CpRing[];
+}
+
+export async function sendCpProposalV2(
+  receiverId: string,
+  ringId = "silver_ring",
+  message = "Will you be my CP in JALWA? ❤️",
+): Promise<{ proposal_id?: string; ring_name?: string; fee_paid?: number; waived?: boolean }> {
+  const trimmedMessage = message.trim().slice(0, 240);
+  const { data, error } = await supabase.rpc("cp_send_proposal_v2", {
+    p_receiver_id: receiverId,
+    p_ring_id: ringId,
+    p_message: trimmedMessage || "Will you be my CP in JALWA? ❤️",
+  });
+  if (error) throw errorMessage(error);
+  return data as { proposal_id?: string; ring_name?: string; fee_paid?: number; waived?: boolean };
+}
