@@ -7,6 +7,7 @@ import type { RoomState } from "@/types/room";
 import { setVoiceRoomFullscreen } from "@/lib/native";
 import { RoomHeader } from "./RoomHeader";
 import { SeatGrid } from "./SeatGrid";
+import { CpChatBadge } from "@/components/CP/CpChatBadge";
 import { ChatEmojiSheet, type ChatEmoji } from "@/components/chat/ChatEmojiSheet";
 import { GiftSheet, type GiftReceiver } from "@/components/GiftSheet";
 import { RoomGamesSheet } from "@/components/room/RoomGamesSheet";
@@ -23,6 +24,7 @@ const normalizeCapacity = (v: unknown) => Math.min(MAX_CAPACITY, Math.max(MIN_CA
 type HostTheme = { bg_image: string | null; animation_url: string | null; preview_url: string | null; primary_color: string | null; accent_color: string | null };
 type RoomChatMessage = { id: string; user_id: string | null; text: string | null; message?: string | null; kind: string; created_at: string; sender_username?: string | null; sender_avatar?: string | null; user?: { username: string | null; avatar: string | null } | null; pending?: boolean; failed?: boolean; };
 type RoomSettings = { is_locked: boolean; chat_enabled: boolean; gifts_enabled: boolean; guest_mic_enabled: boolean; room_pin?: string | null };
+type CpRoomBadge = { user_id: string; partner_id: string; partner_username: string | null; partner_avatar: string | null; cp_level: number; cp_level_name: string; badge_url: string | null; intimacy_score: number };
 interface GameSlide { id: string; image_url: string; title: string; link_url?: string; }
 interface VoiceRoomScreenProps { room: RoomState; roomId: string; seatCount?: number; roomCode: string; onlineCount: number; micOn: boolean; isHost: boolean; mySeatIndex: number | null; popularityPct: number; topGifterName?: string | null; topGifterCoins?: number; announcement?: string | null; messages?: RoomChatMessage[]; onOpenChat: () => void; onOpenPrivateChat: () => void; onOpenGift: () => void; onOpenMore: () => void; onToggleMic: () => void; speakerMuted: boolean; onToggleSpeaker: () => void; onOpenMusic?: () => void; onSendEmoji?: (emoji: ChatEmoji, targetSeatIndex?: number | null) => void; canPlayMusic?: boolean; onSeatTap: (i: number) => void; onJoinSeat: (i: number) => void; onHostTap?: () => void; onReport: () => void; onShare: () => void; onExit: () => void; onHome: () => void; onRanking: () => void; onOpenGames?: () => void; onOpenNativeGame?: (slug: string) => void; }
 const DEFAULT_ROOM_SETTINGS: RoomSettings = { is_locked: false, chat_enabled: true, gifts_enabled: true, guest_mic_enabled: true, room_pin: null };
@@ -41,6 +43,8 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const [liveSeatCount, setLiveSeatCount] = useState(() => normalizeCapacity(seatCount));
   const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
   const [roomMessages, setRoomMessages] = useState<RoomChatMessage[]>(messages);
+  const [cpBadgesByUser, setCpBadgesByUser] = useState<Record<string, CpRoomBadge>>({});
+  const cpBadgeLookupIdsRef = useRef<Set<string>>(new Set());
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [isModerator, setIsModerator] = useState(false);
@@ -189,6 +193,20 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   const accentThemeColor = hostTheme?.accent_color || "#a855f7";
 
   const visibleMessages = roomMessages.filter(m => m.kind !== "emoji");
+  const cpUserIds = useMemo(() => [...new Set([room.host?.id, ...room.seats.map(seat => seat.user?.id), ...roomMessages.map(message => message.user_id)].filter((id): id is string => !!id))].sort(), [room.host?.id, room.seats, roomMessages]);
+  useEffect(() => {
+    const missing = cpUserIds.filter(id => !cpBadgeLookupIdsRef.current.has(id));
+    if (!missing.length) return;
+    let active = true;
+    missing.forEach(id => cpBadgeLookupIdsRef.current.add(id));
+    void supabase.rpc("cp_room_badges", { p_user_ids: missing }).then(({ data, error }) => {
+      if (!active || error || !data) return;
+      const next: Record<string, CpRoomBadge> = {};
+      for (const badge of data as CpRoomBadge[]) next[badge.user_id] = badge;
+      setCpBadgesByUser(prev => ({ ...prev, ...next }));
+    });
+    return () => { active = false; };
+  }, [cpUserIds]);
   const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setMiniDraft(`@${seat.user.username} `); setShowMiniInputPopup(true); setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
   const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
   
@@ -306,7 +324,11 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
                           <div className="grid h-3.5 w-3.5 shrink-0 overflow-hidden rounded-full bg-amber-500/20 text-[7px] font-bold text-amber-300 place-items-center border border-amber-500/30">
                             {avatar ? <img src={avatar} alt="" className="h-full w-full object-cover" onError={e => { e.currentTarget.style.display = "none"; }} /> : fallback}
                           </div>
-                          <span className="min-w-0 break-words text-white/90">{m.text || m.message || ""}</span>
+                          <div className="min-w-0 flex-1 break-words text-white/90">
+                            <span className="mr-1 font-bold text-amber-200">{m.user?.username || m.sender_username || "User"}</span>
+                            {cpBadgesByUser[m.user_id || ""] && <CpChatBadge level={cpBadgesByUser[m.user_id || ""]!.cp_level} levelName={cpBadgesByUser[m.user_id || ""]!.cp_level_name} partnerName={cpBadgesByUser[m.user_id || ""]!.partner_username} ringIcon={cpBadgesByUser[m.user_id || ""]!.badge_url} size="sm" />}
+                            <span className="ml-1">{m.text || m.message || ""}</span>
+                          </div>
                         </div>
                       ); 
                     })
