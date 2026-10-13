@@ -21,6 +21,16 @@ export type CpRelation = {
   cp_levels_config?: CpLevel | null;
 };
 
+export type CpWeeklyRanking = {
+  rank: number;
+  relation_id: string;
+  user1_id: string;
+  user2_id: string;
+  weekly_intimacy: number;
+  total_intimacy: number;
+  level: number;
+};
+
 export type CpProposal = {
   id: string;
   sender_id: string;
@@ -104,4 +114,11 @@ export async function saveCpLevel(level: CpLevel) {
       badge_url: level.badge_url?.trim() || null,
     }, { onConflict: "level" });
   if (error) throw new Error(error.message);
+}
+
+/** Weekly CP leaderboard resets Sunday at 00:00 in Saudi Arabia time. */
+export async function getCpWeeklyRanking(): Promise<CpWeeklyRanking[]> {
+  const { data, error } = await supabase.rpc("cp_weekly_ranking");
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as CpWeeklyRanking[];
 }
