@@ -185,7 +185,7 @@ $$;
 -- Room-scoped lookup: return only active CP pairs whose two partners both occupy mic seats.
 -- Caller must be a member of the requested room. This does not read or modify LiveKit.
 create or replace function public.cp_room_seated_pairs(p_room_id uuid)
-returns table(relation_id uuid,user1_id uuid,user2_id uuid,intimacy_score bigint,ring_level integer)
+returns table(relation_id uuid,user1_id uuid,user2_id uuid,intimacy_score bigint,ring_level integer,seat_frame_url text)
 language plpgsql stable security definer set search_path=public,pg_temp as $
 begin
   if auth.uid() is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
@@ -193,7 +193,8 @@ begin
     raise exception 'NOT_ROOM_MEMBER' using errcode='42501';
   end if;
   return query
-    select r.id,r.user1_id,r.user2_id,r.intimacy_score,r.ring_level
+    select r.id,r.user1_id,r.user2_id,r.intimacy_score,r.ring_level,
+           (select l.seat_frame_url from public.cp_levels_config l where l.level=r.ring_level)
       from public.cp_relations r
       join public.room_members a on a.room_id=p_room_id and a.user_id=r.user1_id and a.seat_index is not null
       join public.room_members b on b.room_id=p_room_id and b.user_id=r.user2_id and b.seat_index is not null
