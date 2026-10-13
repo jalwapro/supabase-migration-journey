@@ -42,14 +42,18 @@ create table if not exists public.cp_exclusive_gifts_config (
   created_at timestamptz not null default now()
 );
 
+insert into public.cp_levels_config(level,name,min_intimacy)
+values (5,'Royal',100000),(6,'Celestial',200000),(7,'Eternal',500000)
+on conflict (level) do nothing;
+
 insert into public.cp_exclusive_gifts_config
   (id,name,price,icon_url,intimacy_points,required_cp_level,animation_url,broadcast_threshold,description,sort_order)
 values
   ('cp_rose_bouquet','Sweet Rose Bouquet',999,'/gifts/cp/rose-bouquet.png',100,1,'/animations/cp/rose-bloom.svga',false,'A fresh bouquet expressing gentle romantic care',1),
   ('cp_love_letter','Love Confession Scroll',2520,'/gifts/cp/love-letter.png',280,2,'/animations/cp/love-scroll.svga',false,'Handwritten vows carrying double intimate warmth',2),
   ('cp_eternal_wings','Wings of Eternity',9999,'/gifts/cp/eternal-wings.png',1200,3,'/animations/cp/wings.svga',true,'Twin glowing wings that soar together forever',3),
-  ('cp_dream_castle','Fairytale Crystal Palace',29999,'/gifts/cp/crystal-castle.png',4000,4,'/animations/cp/castle.svga',true,'A majestic crystal palace built for two souls',4),
-  ('cp_galaxy_carriage','Interstellar Wedding Carriage',99999,'/gifts/cp/galaxy-carriage.png',15000,4,'/animations/cp/carriage.svga',true,'Royal cosmic carriage with universal room broadcast',5)
+  ('cp_dream_castle','Fairytale Crystal Palace',29999,'/gifts/cp/crystal-castle.png',4000,5,'/animations/cp/castle.svga',true,'A majestic crystal palace built for two souls',4),
+  ('cp_galaxy_carriage','Interstellar Wedding Carriage',99999,'/gifts/cp/galaxy-carriage.png',15000,7,'/animations/cp/carriage.svga',true,'Royal cosmic carriage with universal room broadcast',5)
 on conflict (id) do update set
   name=excluded.name, price=excluded.price, icon_url=excluded.icon_url,
   intimacy_points=excluded.intimacy_points, required_cp_level=excluded.required_cp_level,
@@ -147,11 +151,13 @@ begin
    returning coins into v_balance;
   if not found then raise exception 'INSUFFICIENT_COINS'; end if;
 
+  perform set_config('app.trusted_definer','on',true);
   insert into public.wallet_transactions
     (user_id,kind,coins,coins_delta,balance_coins_after,ref_type,note)
   values
     (v_sender,'cp_exclusive_gift',v_gift.price,-v_gift.price,v_balance,'cp',
      format('CP gift: %s to %s',v_gift.name,coalesce(v_partner_name,'partner')));
+  perform set_config('app.trusted_definer','off',true);
 
   insert into public.cp_exclusive_gift_events
     (relation_id,sender_id,receiver_id,gift_id,coins_spent,intimacy)
@@ -213,19 +219,27 @@ create policy cp_weekly_champion_participants_read on public.cp_weekly_champion_
 revoke all on public.cp_weekly_champion_rewards from anon,authenticated;
 grant select on public.cp_weekly_champion_rewards to authenticated;
 
+create table if not exists public.cp_weekly_settlement_runs (
+  week_start_date date primary key,
+  settled_at timestamptz not null default now(),
+  settled_couples integer not null default 0
+);
+alter table public.cp_weekly_settlement_runs enable row level security;
+revoke all on public.cp_weekly_settlement_runs from anon,authenticated;
+
 create or replace function public.cp_settle_weekly_leaderboard()
 returns jsonb
 language plpgsql security definer set search_path=public,pg_temp as $$
 declare
-  v_this_week date := date_trunc('week', now() at time zone 'Asia/Riyadh')::date;
-  v_last_week date := (date_trunc('week', now() at time zone 'Asia/Riyadh') - interval '7 days')::date;
+  v_this_week date := (date_trunc('week', (now() at time zone 'Asia/Riyadh') + interval '1 day') - interval '1 day')::date;
+  v_last_week date := ((date_trunc('week', (now() at time zone 'Asia/Riyadh') + interval '1 day') - interval '1 day') - interval '7 days')::date;
   v_settled_count integer := 0;
   v_row record;
   v_title text;
 begin
   -- Use the previous fully completed Monday-Sunday week, aligned with CP ranking's Riyadh timezone.
   perform pg_advisory_xact_lock(hashtextextended('cp-weekly-settlement:'||v_last_week::text,0));
-  if exists(select 1 from public.cp_weekly_champion_rewards where week_start_date=v_last_week) then
+  if exists(select 1 from public.cp_weekly_settlement_runs where week_start_date=v_last_week) then
     return jsonb_build_object('success',false,'message','Already settled for this week','week_start',v_last_week);
   end if;
 
@@ -259,14 +273,8 @@ begin
     v_settled_count := v_settled_count+1;
   end loop;
 
-  -- Record an empty settlement too, so reruns cannot repeatedly process the same week.
-  if v_settled_count=0 then
-    insert into public.cp_weekly_champion_rewards
-      (relation_id,rank,week_start_date,intimacy_achieved,reward_title)
-    select id,1,v_last_week,0,'No champion — no qualifying intimacy'
-    from public.cp_relations order by id limit 1
-    on conflict do nothing;
-  end if;
+  insert into public.cp_weekly_settlement_runs(week_start_date,settled_couples)
+  values(v_last_week,v_settled_count);
 
   return jsonb_build_object('success',true,'settled_couples',v_settled_count,'week_start',v_last_week);
 end $$;
