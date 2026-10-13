@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { Heart, Sparkles, Calendar, Award, BookOpen, Send, Trash2, CheckCircle, Gift, Coins } from "lucide-react";
+import { Heart, Sparkles, Calendar, Award, BookOpen, Send, Trash2, CheckCircle, Gift, Coins, ImagePlus, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCpSpaceDetails, getCpDailyTasksWithStatus, claimDailyCpTask,
   getCpDiaryPosts, postCpDiary, deleteCpDiary,
-  getCpExclusiveGifts, sendCpExclusiveGift,
+  getCpExclusiveGifts, sendCpExclusiveGift, uploadCpMemoryPhoto,
   type CpSpaceDetails, type CpDailyTask, type CpDiaryPost, type CpExclusiveGift,
 } from "./cpEcosystemApi";
 
@@ -21,6 +21,8 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
   const [confirmGift, setConfirmGift] = useState<CpExclusiveGift | null>(null);
   const [sendingGift, setSendingGift] = useState<string | null>(null);
   const [newPostText, setNewPostText] = useState("");
+  const [newPostImage, setNewPostImage] = useState<File | null>(null);
+  const [imageInputKey, setImageInputKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submittingPost, setSubmittingPost] = useState(false);
   const [claimingTask, setClaimingTask] = useState<string | null>(null);
@@ -84,14 +86,16 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
   };
 
   const handleCreatePost = async () => {
-    if (!newPostText.trim() || !space?.relation_id) return;
+    if ((!newPostText.trim() && !newPostImage) || !space?.relation_id || submittingPost) return;
     try {
       setSubmittingPost(true);
-      await postCpDiary(space.relation_id, newPostText);
+      const imageUrl = newPostImage ? await uploadCpMemoryPhoto(newPostImage) : null;
+      await postCpDiary(space.relation_id, newPostText.trim() || (imageUrl ? "A shared CP memory ❤️" : ""), imageUrl);
       setNewPostText("");
+      setNewPostImage(null);
+      setImageInputKey((key) => key + 1);
       toast.success("Memory posted to your CP Wall!");
       setPosts(await getCpDiaryPosts(space.relation_id));
-      await loadAll();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed to post");
     } finally {
@@ -234,10 +238,21 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
 
       <div className="rounded-3xl border border-white/10 bg-zinc-900/60 p-5 text-white">
         <h3 className="flex items-center gap-2 text-base font-black"><BookOpen className="h-4 w-4 text-pink-400" /> Couple Diary &amp; Memory Wall</h3>
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input type="text" maxLength={1000} value={newPostText} onChange={(e) => setNewPostText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void handleCreatePost(); } }} placeholder="Write a sweet thought or memory for your partner…" className="min-w-0 flex-1 rounded-2xl border border-white/10 bg-zinc-950 px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:border-pink-500 focus:outline-none" />
-          <button type="button" aria-label="Post memory" disabled={submittingPost || !newPostText.trim()} onClick={() => void handleCreatePost()} className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-pink-600 text-white disabled:opacity-50"><Send className="h-4 w-4" /></button>
+          <div className="flex gap-2">
+            <label className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-2xl border border-white/10 bg-zinc-900 text-pink-300 hover:bg-zinc-800" title="Add a photo (max 10 MB)">
+              <ImagePlus className="h-4 w-4" />
+              <input key={imageInputKey} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={(event) => { const file = event.target.files?.[0] ?? null; if (file && file.size > 10 * 1024 * 1024) { toast.error("Photo must be 10 MB or smaller"); event.target.value = ""; return; } setNewPostImage(file); }} />
+            </label>
+            <button type="button" aria-label="Post memory" disabled={submittingPost || (!newPostText.trim() && !newPostImage)} onClick={() => void handleCreatePost()} className="flex min-w-28 flex-1 items-center justify-center gap-2 rounded-2xl bg-pink-600 px-3 text-xs font-bold text-white disabled:opacity-50 sm:flex-none"><Send className="h-4 w-4" />{submittingPost ? "Posting…" : "Post memory"}</button>
+          </div>
         </div>
+        {newPostImage && <div className="mt-3 flex items-center gap-3 rounded-xl border border-pink-500/20 bg-pink-500/5 p-2">
+          <ImagePlus className="h-5 w-5 shrink-0 text-pink-300" />
+          <span className="min-w-0 flex-1 truncate text-xs text-pink-200">{newPostImage.name}</span>
+          <button type="button" aria-label="Remove selected photo" onClick={() => { setNewPostImage(null); setImageInputKey((key) => key + 1); }} className="rounded-lg p-2 text-zinc-400 hover:text-white"><X className="h-4 w-4" /></button>
+        </div>}
         <div className="mt-4 space-y-3">
           {posts.length === 0 ? (
             <p className="rounded-2xl bg-zinc-950/40 p-6 text-center text-xs text-zinc-500">No memories posted yet. Write your first note above!</p>
@@ -247,7 +262,8 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
                 <span>{new Date(post.created_at).toLocaleDateString()}</span>
                 {post.author_id === userId && <button type="button" aria-label="Delete memory" onClick={() => void handleDeletePost(post.id)} className="text-zinc-500 hover:text-red-400"><Trash2 className="h-3.5 w-3.5" /></button>}
               </div>
-              <p className="mt-2 whitespace-pre-wrap break-words text-zinc-200">{post.content}</p>
+              {post.content && <p className="mt-2 whitespace-pre-wrap break-words text-zinc-200">{post.content}</p>}
+              {post.image_url && <img src={post.image_url} alt="CP shared memory" loading="lazy" className="mt-3 max-h-72 w-full rounded-xl object-cover" />}
             </div>
           ))}
         </div>
