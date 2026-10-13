@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
 import { VoiceRoomScreen } from "@/components/voice-room/VoiceRoomScreen";
 import { useAuth } from "@/hooks/useAuth";
+import { getCpStatus } from "@/lib/cp/cpApi";
 import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
 import { nativePlatform } from "@/lib/native";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
@@ -4075,6 +4076,24 @@ function MiniProfileSheet({
     },
   });
 
+  const miniProfileCpRelation = useQuery({
+    queryKey: ["mini-profile-cp-relation", target?.id],
+    enabled: !!target?.id,
+    queryFn: () => getCpStatus(target!.id),
+  });
+  const miniProfileCpPartner = useQuery({
+    queryKey: ["mini-profile-cp-partner", target?.id, miniProfileCpRelation.data?.id],
+    enabled: !!target?.id && !!miniProfileCpRelation.data,
+    queryFn: async () => {
+      const relation = miniProfileCpRelation.data!;
+      const partnerId = relation.user1_id === target!.id ? relation.user2_id : relation.user1_id;
+      const { data, error } = await supabase.from("profiles")
+        .select("id, username, avatar").eq("id", partnerId).maybeSingle();
+      if (error) throw error;
+      return data as { id: string; username: string | null; avatar: string | null } | null;
+    },
+  });
+
 
 
   const [busy, setBusy] = React.useState(false);
@@ -4132,6 +4151,18 @@ function MiniProfileSheet({
             {target.username ?? "user"}
           </p>
         </div>
+
+        {miniProfileCpPartner.data && (
+          <button type="button" onClick={() => { onClose(); navigate({ to: "/u/$userId", params: { userId: miniProfileCpPartner.data!.id } }); }}
+            className="mt-4 flex w-full items-center gap-3 rounded-2xl border border-pink-300/30 bg-gradient-to-r from-pink-500/15 to-fuchsia-500/10 p-3 text-left">
+            {miniProfileCpPartner.data.avatar
+              ? <img src={miniProfileCpPartner.data.avatar} alt="" className="h-11 w-11 rounded-full border-2 border-pink-300/70 object-cover" />
+              : <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-pink-300/70 bg-pink-500/15 text-lg">♥</span>}
+            <span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.18em] text-pink-300">CP Partner</span><span className="block truncate text-sm font-extrabold">{miniProfileCpPartner.data.username || "JALWA User"}</span></span>
+            {miniProfileCpPartner.data.avatar && <img src={miniProfileCpPartner.data.avatar} alt="" className="h-9 w-9 rounded-full border border-pink-300/50 object-cover" />}
+            <Heart className="h-4 w-4 shrink-0 text-pink-300" />
+          </button>
+        )}
 
         <div className="mt-5 grid grid-cols-3 gap-2">
           <button
