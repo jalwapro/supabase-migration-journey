@@ -16,6 +16,21 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/coin-sellers")({ component: CoinSellerMarketplaceRoute });
 function CoinSellerMarketplaceRoute() {
   const { user, isAdmin } = useAuth();
+  const publicSellers = useQuery({
+    queryKey: ["public-coin-seller-marketplace"],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("coin_sellers")
+        .select("user_id,whatsapp_number,public_name,public_note,country")
+        .eq("is_active", true)
+        .eq("is_listed", true)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 30_000,
+  });
   const access = useQuery({
     queryKey: ["coin-agent-workspace-access", user?.id],
     enabled: !!user?.id,
@@ -35,8 +50,30 @@ function CoinSellerMarketplaceRoute() {
     return <AppShell title="Coin Agent Panel"><div className="mx-auto flex min-h-[50vh] max-w-lg items-center justify-center gap-3 p-6 text-sm text-muted-foreground"><Loader2 className="h-5 w-5 animate-spin" /> Checking Coin Agent access…</div></AppShell>;
   }
 
-  if (!user || (!isAdmin && access.data !== true)) {
-    return <AppShell title="Coin Agent Panel"><main className="mx-auto max-w-lg p-6"><section className="rounded-2xl border border-border bg-card p-5 text-center"><Store className="mx-auto h-10 w-10 text-muted-foreground" /><h1 className="mt-3 text-xl font-black">Coin Agent access required</h1><p className="mt-2 text-sm text-muted-foreground">This workspace is only available to approved, active Coin Agents. Normal user accounts cannot access seller inventory, payment settings or customer transfers.</p><a href="/me" className="mt-5 inline-flex rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground">Back to Profile</a></section></main></AppShell>;
+  if (!user) {
+    return <AppShell title="P2P Buy / Sell"><main className="mx-auto max-w-lg p-6 text-sm text-muted-foreground">Please sign in to browse verified Coin Agents.</main></AppShell>;
+  }
+
+  if (!isAdmin && access.data !== true) {
+    return <AppShell title="P2P Buy / Sell" subtitle="Contact a listed Coin Agent directly">
+      <main className="mx-auto w-full max-w-4xl space-y-4 px-3 pb-28 pt-4 sm:px-5">
+        <section className="overflow-hidden rounded-3xl border border-amber-400/30 bg-gradient-to-br from-zinc-950 via-card to-amber-950/30 p-5 sm:p-7">
+          <p className="text-[10px] font-black uppercase tracking-[.22em] text-amber-300">JALWA · P2P MARKETPLACE</p>
+          <h1 className="mt-2 text-2xl font-black sm:text-3xl">Buy Coins · Sell Diamonds</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">Choose a listed Coin Agent and contact them on WhatsApp to confirm the rate and payment details. Never share your password or OTP.</p>
+          <div className="mt-4 flex flex-wrap gap-2 text-xs font-bold"><span className="rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1.5 text-amber-200">Verified listing</span><span className="rounded-full border border-border bg-background/70 px-3 py-1.5">Direct agent contact</span></div>
+        </section>
+        {publicSellers.isLoading ? <div className="rounded-2xl border border-border bg-card p-5 text-sm text-muted-foreground">Loading listed agents…</div> :
+          publicSellers.isError ? <div className="rounded-2xl border border-red-400/20 bg-card p-5 text-sm text-red-300">Agent marketplace could not load right now. Please try again shortly.</div> :
+          (publicSellers.data?.length ?? 0) === 0 ? <div className="rounded-2xl border border-border bg-card p-6 text-center"><Store className="mx-auto h-8 w-8 text-muted-foreground" /><h2 className="mt-3 font-black">No agents listed yet</h2><p className="mt-1 text-sm text-muted-foreground">Please check back later.</p></div> :
+          <div className="grid gap-3 sm:grid-cols-2">{publicSellers.data!.map((seller) => <section key={seller.user_id} className="rounded-2xl border border-border bg-card p-4">
+            <div className="flex items-start gap-3"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-amber-400/20 bg-amber-400/10 text-amber-300"><Store className="h-5 w-5" /></span><div className="min-w-0 flex-1"><h2 className="truncate font-black">{seller.public_name || "JALWA Coin Agent"}</h2><p className="mt-1 text-xs text-muted-foreground">{seller.country || "Country not set"}</p></div><BadgeCheck className="h-5 w-5 shrink-0 text-emerald-400" /></div>
+            {seller.public_note && <p className="mt-3 text-sm text-muted-foreground">{seller.public_note}</p>}
+            <a href={`https://wa.me/${String(seller.whatsapp_number).replace(/\\D/g, "")}`} target="_blank" rel="noreferrer" className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-3 text-sm font-black text-white"><MessageCircle className="h-4 w-4" /> Contact on WhatsApp</a>
+          </section>)}</div>}
+        <p className="px-1 text-[11px] text-muted-foreground">Rates and settlement are confirmed directly with the agent. JALWA will not ask for your password, login code or OTP.</p>
+      </main>
+    </AppShell>;
   }
 
   return <>
