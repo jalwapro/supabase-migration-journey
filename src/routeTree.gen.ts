@@ -110,6 +110,7 @@ import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
+import { Route as AuthenticatedAdminCpRouteImport } from './routes/_authenticated/admin.cp'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
 import { Route as AuthenticatedAdminProfileCardsRouteImport } from './routes/_authenticated/admin.profile-cards'
 import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
@@ -683,6 +684,11 @@ const AuthenticatedAdminPaymentAccountsRoute =
     path: '/payment-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCpRoute = AuthenticatedAdminCpRouteImport.update({
+  id: '/cp',
+  path: '/cp',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPkRoute = AuthenticatedAdminPkRouteImport.update({
   id: '/pk',
   path: '/pk',
@@ -1032,6 +1038,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/admin/cp': typeof AuthenticatedAdminCpRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
   '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
@@ -1322,6 +1329,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/_authenticated/admin/cp': typeof AuthenticatedAdminCpRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
   '/_authenticated/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
@@ -2968,6 +2976,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
+  AuthenticatedAdminCpRoute: AuthenticatedAdminCpRoute,
   AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
   AuthenticatedAdminProfileCardsRoute: AuthenticatedAdminProfileCardsRoute,
