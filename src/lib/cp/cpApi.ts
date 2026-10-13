@@ -72,6 +72,15 @@ export async function divorceCp(relationId: string, fee = 0) {
   return requireData(data, error);
 }
 
+/** Verified romantic-gift spend exchanged before an active CP relationship. */
+export async function getCpPrelinkRomanticGiftTotal(receiverId: string): Promise<number> {
+  const { data, error } = await supabase.rpc("cp_prelink_romantic_gift_total", {
+    p_receiver_id: receiverId,
+  });
+  if (error) throw new Error(error.message);
+  return Number(data ?? 0);
+}
+
 export async function getCpStatus(userId: string): Promise<CpRelation | null> {
   const { data, error } = await supabase
     .from("cp_relations")
