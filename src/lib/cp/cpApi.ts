@@ -117,6 +117,19 @@ export async function getCpBreakupRequests(userId: string): Promise<CpBreakupReq
   return (data ?? []) as CpBreakupRequest[];
 }
 
+export type CpPublicPartner = {
+  partner_id: string;
+  partner_username: string | null;
+  partner_avatar: string | null;
+};
+
+export async function getCpPublicPartner(userId: string): Promise<CpPublicPartner | null> {
+  const { data, error } = await supabase.rpc("cp_public_partner", { p_user_id: userId });
+  if (error) throw new Error(error.message);
+  const row = Array.isArray(data) ? data[0] : data;
+  return (row as CpPublicPartner | undefined) ?? null;
+}
+
 export async function getCpStatus(userId: string): Promise<CpRelation | null> {
   const { data, error } = await supabase
     .from("cp_relations")
