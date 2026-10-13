@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const PRIVATE_BUCKETS = new Set(["chat-media", "voice-notes", "recharge-proofs"]);
+const PRIVATE_BUCKETS = new Set(["chat-media", "voice-notes", "recharge-proofs", "payout-slips"]);
 const SIGN_TTL_SECONDS = 60 * 60; // 1h — refreshed lazily via cache.
 
 export type StorageRef = { bucket: string; path: string };
