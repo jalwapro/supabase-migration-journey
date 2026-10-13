@@ -163,6 +163,7 @@ declare
   v_start timestamptz;
   v_end timestamptz;
   v_evidence bigint:=0;
+  v_required_count bigint:=1;
   v_new_score bigint;
   v_new_level integer;
 begin
@@ -190,7 +191,8 @@ begin
       select e.id from public.cp_exclusive_gift_events e where e.relation_id=v_relation.id and e.created_at>=v_start and e.created_at<v_end
     ) gift_events;
   end if;
-  if v_evidence < case when v_task.verification_type='two_gifts' then 2 else 1 end then
+  v_required_count:=case when v_task.verification_type='two_gifts' then 2 else 1 end;
+  if v_evidence < v_required_count then
     raise exception 'TASK_REQUIREMENT_NOT_MET' using hint='Complete the task in the app first, then claim its reward.';
   end if;
 
