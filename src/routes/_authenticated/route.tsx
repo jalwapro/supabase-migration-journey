@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { CpGlobalMarquee } from "@/components/CP/CpGlobalMarquee";
 
 function AuthedShell() {
-  return <Outlet />;
+  return <><CpGlobalMarquee /><Outlet /></>;
 }
 
 async function waitForStoredSession() {
