@@ -1,74 +1,64 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
-import { ArrowRight, Globe2, Loader2, RefreshCw, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import type { P2POrder } from "@/lib/p2p";
-import { p2pAction, type AgentListing } from "@/lib/p2p";
-import { useAuth } from "@/hooks/useAuth";
+CREATE TABLE IF NOT EXISTS public.diamond_payout_requests (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES auth.users(id),
+  normal_agent_id uuid NOT NULL REFERENCES auth.users(id),
+  super_agent_id uuid REFERENCES auth.users(id),
+  diamonds bigint NOT NULL CHECK (diamonds > 0),
+  payout_amount numeric(14,2) NOT NULL CHECK (payout_amount > 0),
+  currency text NOT NULL DEFAULT 'PKR',
+  payout_method text NOT NULL,
+  payout_account_number text NOT NULL,
+  payout_account_name text NOT NULL,
+  payout_slip_url text,
+  status text NOT NULL DEFAULT 'pending_agent_payment' 
+    CHECK (status IN ('pending_agent_payment', 'slip_submitted', 'completed', 'rejected')),
+  agent_paid_at timestamptz,
+  super_agent_approved_at timestamptz,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
 
-const COUNTRIES = ["Global", "Pakistan", "India", "Bangladesh", "Saudi Arabia", "United Arab Emirates", "United Kingdom", "United States", "Indonesia", "Malaysia", "Philippines", "Nigeria", "Turkey"];
+-- Super Agent verify function
+CREATE OR REPLACE FUNCTION public.super_agent_verify_payout_slip(
+  _request_id uuid,
+  _decision text
+) RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_req record;
+BEGIN
+  SELECT * INTO v_req FROM public.diamond_payout_requests WHERE id = _request_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'REQUEST_NOT_FOUND'; END IF;
+  
+  -- Verify caller is the Super Agent for this Normal Agent
+  IF NOT EXISTS (
+    SELECT 1 FROM public.coin_agent_roles 
+    WHERE user_id = v_req.normal_agent_id AND parent_agent_id = auth.uid()
+  ) AND NOT EXISTS (
+    SELECT 1 FROM public.user_roles WHERE user_id = auth.uid() AND role IN ('admin', 'super_admin')
+  ) THEN
+    RAISE EXCEPTION 'UNAUTHORIZED_NOT_PARENT_SUPER_AGENT';
+  END IF;
 
-export function AgentMarketplace() {
-  const navigate = useNavigate();
-  const { profile, user } = useAuth();
-  const [agents, setAgents] = useState<AgentListing[]>([]);
-  const [country, setCountry] = useState("Pakistan");
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [myOrders, setMyOrders] = useState<P2POrder[]>([]);
+  IF _decision = 'APPROVE' THEN
+    UPDATE public.diamond_payout_requests 
+    SET status = 'completed', super_agent_approved_at = now(), updated_at = now()
+    WHERE id = _request_id;
 
-  async function load(nextCountry = country) {
-    setLoading(true);
-    try {
-      const result = await p2pAction<AgentListing[]>("MARKETPLACE", { country: nextCountry === "Global" ? null : nextCountry });
-      setAgents(Array.isArray(result) ? result : []);
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setLoading(false); }
-  }
-  useEffect(() => { if (profile?.country) setCountry(profile.country); }, [profile?.country]);
-  useEffect(() => { void load(country); }, [country]);
-  useEffect(() => {
-    let cancelled = false;
-    if (!user) { setMyOrders([]); return; }
-    void supabase.from("p2p_orders").select("id,buyer_id,agent_id,coin_amount,fiat_amount,currency,status,payment_proof_url,resolution_note,created_at").or(`buyer_id.eq.${user.id},agent_id.eq.${user.id}`).order("created_at",{ascending:false}).limit(10).then(({data,error})=>{
-      if (cancelled) return;
-      if (error) { console.warn("[p2p] order history load failed",error); return; }
-      setMyOrders((data??[]) as P2POrder[]);
-    });
-    return () => { cancelled = true; };
-  }, [user?.id]);
-
-  async function createOrder(agent: AgentListing) {
-    setBusy(agent.user_id);
-    try {
-      const result = await p2pAction<{ order: { id: string } }>("CREATE_ORDER", { agent_id: agent.user_id, coin_amount: agent.sell_rate });
-      toast.success("Escrow order created. Agent coins are locked securely.");
-      await navigate({ to: "/p2p/order/$orderId", params: { orderId: result.order.id } });
-    } catch (e) { toast.error((e as Error).message); }
-    finally { setBusy(null); }
-  }
-
-  return <section className="mx-auto w-full max-w-3xl space-y-4 p-3 pb-24 text-foreground sm:p-5">
-    <div className="rounded-3xl border border-amber-400/20 bg-gradient-to-br from-zinc-900 via-zinc-900 to-amber-950/40 p-5 shadow-xl">
-      <div className="flex items-center gap-2 text-amber-300"><ShieldCheck size={18}/><span className="text-xs font-bold uppercase tracking-[.2em]">Protected coin trading</span></div>
-      <h1 className="mt-2 text-2xl font-black">P2P Coin Market</h1>
-      <p className="mt-1 max-w-lg text-sm text-zinc-400">Coins are locked in escrow until the agent confirms payment. Never mark paid before sending the money.</p>
-      <label className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-black/20 px-3 py-2">
-        <Globe2 size={17} className="text-amber-300"/>
-        <span className="text-xs text-zinc-400">Country</span>
-        <select value={country} onChange={e => setCountry(e.target.value)} className="ml-auto min-w-0 flex-1 bg-transparent text-right text-sm outline-none">
-          {COUNTRIES.map(c => <option key={c} value={c} className="bg-zinc-900">{c}</option>)}
-        </select>
-      </label>
-    </div>
-    {myOrders.length > 0 && <div className="rounded-2xl border border-border bg-card p-4"><h2 className="mb-3 font-bold">Your recent escrow orders</h2><div className="space-y-2">{myOrders.map(order=><button key={order.id} onClick={()=>void navigate({to:"/p2p/order/$orderId",params:{orderId:order.id}})} className="flex w-full items-center justify-between gap-3 rounded-xl border border-border p-3 text-left"><span className="min-w-0"><span className="block font-bold">Order {order.id.slice(0,8).toUpperCase()}</span><span className="text-xs text-muted-foreground">{Number(order.coin_amount).toLocaleString()} coins · {order.currency} {Number(order.fiat_amount).toLocaleString()}</span></span><span className="rounded-full bg-muted px-2 py-1 text-[10px] font-bold uppercase">{order.status}</span></button>)}</div></div>}
-    {loading ? <div className="flex justify-center py-12"><Loader2 className="animate-spin text-amber-300"/></div> :
-      agents.length === 0 ? <div className="rounded-2xl border border-border bg-card p-8 text-center"><Globe2 className="mx-auto mb-3 text-muted-foreground"/><p className="font-semibold">No active agents found</p><p className="mt-1 text-sm text-muted-foreground">Try Global or another country.</p><button onClick={() => void load()} className="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm"><RefreshCw size={14}/>Refresh</button></div> :
-      <div className="space-y-3">{agents.map(agent => <article key={agent.user_id} className="rounded-2xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="font-bold">Agent {agent.user_id.slice(0, 6).toUpperCase()}</div><div className="mt-1 text-xs text-muted-foreground">{agent.country} · {agent.currency_code}</div></div><span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold text-emerald-400">ESCROW READY</span></div>
-        <div className="mt-3 flex flex-wrap gap-1.5">{agent.payment_methods.map(method => <span key={method} className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold capitalize">{method.replaceAll("_"," ")}</span>)}</div>
-        <div className="mt-4 flex items-end justify-between gap-3"><div><div className="text-xs text-muted-foreground">Rate per {agent.sell_rate} coins</div><div className="text-xl font-black text-emerald-400">{agent.currency_code} {Number(agent.base_fiat_amount).toFixed(0)}</div><div className="text-xs text-muted-foreground">Default order: {agent.sell_rate} coins</div></div><button disabled={busy === agent.user_id} onClick={() => void createOrder(agent)} className="inline-flex items-center gap-2 rounded-xl bg-amber-400 px-4 py-2.5 text-sm font-extrabold text-black disabled:opacity-50">{busy === agent.user_id ? <Loader2 size={15} className="animate-spin"/> : <>Buy coins <ArrowRight size={15}/></>}</button></div>
-      </article>)}</div>}
-  </section>;
-}
+    -- Credit diamonds into Normal Agent inventory
+    INSERT INTO public.coin_agent_balances (agent_id, source_type, available_diamonds, total_acquired_diamonds)
+    VALUES (v_req.normal_agent_id, 'profile_diamonds', v_req.diamonds, v_req.diamonds)
+    ON CONFLICT (agent_id, source_type)
+    DO UPDATE SET 
+      available_diamonds = coin_agent_balances.available_diamonds + EXCLUDED.available_diamonds,
+      total_acquired_diamonds = coin_agent_balances.total_acquired_diamonds + EXCLUDED.total_acquired_diamonds,
+      updated_at = now();
+  ELSE
+    UPDATE public.diamond_payout_requests 
+    SET status = 'rejected', updated_at = now() 
+    WHERE id = _request_id;
+  END IF;
+END;
+$$;
