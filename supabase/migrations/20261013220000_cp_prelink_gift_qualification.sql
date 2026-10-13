@@ -130,6 +130,30 @@ begin
 end
 $$;
 
+create or replace function public.cp_prelink_romantic_gift_total(p_receiver_id uuid)
+returns bigint
+language plpgsql
+stable
+security definer
+set search_path=public,pg_temp
+as $
+declare
+  v_sender uuid := auth.uid();
+  v_total bigint;
+begin
+  if v_sender is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
+  if p_receiver_id is null or p_receiver_id = v_sender then raise exception 'INVALID_RECEIVER'; end if;
+  select coalesce(sum(e.intimacy),0)::bigint into v_total
+    from public.cp_prelink_intimacy_events e
+   where (e.sender_id=v_sender and e.receiver_id=p_receiver_id)
+      or (e.sender_id=p_receiver_id and e.receiver_id=v_sender);
+  return v_total;
+end
+$;
+
+revoke all on function public.cp_prelink_romantic_gift_total(uuid) from public, anon;
+grant execute on function public.cp_prelink_romantic_gift_total(uuid) to authenticated;
+
 revoke all on function public.cp_track_prelink_romantic_gift() from public, anon, authenticated;
 revoke all on function public.cp_send_proposal(uuid,bigint) from public, anon;
 grant execute on function public.cp_send_proposal(uuid,bigint) to authenticated;
