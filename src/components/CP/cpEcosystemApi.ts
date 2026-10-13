@@ -26,16 +26,14 @@ export type CpDailyTask = {
 
 export type CpBroadcastItem = {
   id: string;
-  broadcast_type: "new_cp" | "level_up" | "anniversary";
-  relation_id?: string | null;
-  user1_id: string;
-  user2_id: string;
-  user1_name: string;
-  user2_name: string;
-  ring_name?: string | null;
-  ring_icon?: string | null;
-  level?: number | null;
+  type: "new_cp" | "level_up" | "anniversary" | "gift" | string;
+  title: string;
   message: string;
+  sender_name: string | null;
+  sender_avatar: string | null;
+  receiver_name: string | null;
+  receiver_avatar: string | null;
+  icon_url: string | null;
   created_at: string;
 };
 
@@ -173,4 +171,76 @@ export async function cancelCpBreakupRequest(requestId: string): Promise<unknown
   });
   if (error) throw errorMessage(error);
   return data;
+}
+
+
+export type CpExclusiveGift = {
+  id: string;
+  name: string;
+  price: number;
+  icon_url: string;
+  intimacy_points: number;
+  required_cp_level: number;
+  animation_url: string | null;
+  broadcast_threshold: boolean;
+  description: string | null;
+  sort_order: number;
+};
+
+export async function getCpExclusiveGifts(): Promise<CpExclusiveGift[]> {
+  const { data, error } = await supabase
+    .from("cp_exclusive_gifts_config")
+    .select("id,name,price,icon_url,intimacy_points,required_cp_level,animation_url,broadcast_threshold,description,sort_order")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw errorMessage(error);
+  return (data ?? []).map((gift) => ({
+    ...gift,
+    price: Number(gift.price),
+    intimacy_points: Number(gift.intimacy_points),
+    required_cp_level: Number(gift.required_cp_level),
+  })) as CpExclusiveGift[];
+}
+
+export type CpExclusiveGiftResult = {
+  success: boolean;
+  event_id: string;
+  gift_name: string;
+  coins_spent: number;
+  coins_remaining: number;
+  points_added: number;
+  new_intimacy: number;
+  new_level: number;
+  animation_url: string | null;
+  partner_name: string | null;
+};
+
+export async function sendCpExclusiveGift(giftId: string, message = ""): Promise<CpExclusiveGiftResult> {
+  if (!giftId.trim()) throw new Error("Choose a CP gift first.");
+  const { data, error } = await supabase.rpc("cp_send_exclusive_gift", {
+    p_gift_id: giftId,
+    p_message: message.trim().slice(0, 250) || null,
+  });
+  if (error) throw errorMessage(error);
+  return data as CpExclusiveGiftResult;
+}
+
+export async function uploadCpMemoryPhoto(file: File): Promise<string> {
+  const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+  if (!allowedTypes.has(file.type)) throw new Error("Use a JPG, PNG, WebP, or GIF image.");
+  if (file.size > 10 * 1024 * 1024) throw new Error("CP memory photos must be 10 MB or smaller.");
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError) throw errorMessage(authError);
+  if (!authData.user) throw new Error("Please sign in to upload a CP memory.");
+
+  const safeName = file.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").slice(-80) || "memory";
+  const path = `${authData.user.id}/${Date.now()}-${safeName}`;
+  const { error } = await supabase.storage.from("cp-photos").upload(path, file, {
+    cacheControl: "3600",
+    contentType: file.type,
+    upsert: false,
+  });
+  if (error) throw errorMessage(error);
+  return supabase.storage.from("cp-photos").getPublicUrl(path).data.publicUrl;
 }
