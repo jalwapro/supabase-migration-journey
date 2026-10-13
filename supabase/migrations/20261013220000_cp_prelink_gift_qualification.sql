@@ -150,7 +150,7 @@ begin
       or (e.sender_id=p_receiver_id and e.receiver_id=v_sender);
   return v_total;
 end
-$;
+$$;
 
 revoke all on function public.cp_prelink_romantic_gift_total(uuid) from public, anon;
 grant execute on function public.cp_prelink_romantic_gift_total(uuid) to authenticated;
