@@ -391,6 +391,7 @@ function MePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
+              <FeatureCard to="/coin-sellers" icon={Coins} title="P2P Buy / Sell" sub="Browse listed Coin Agents and contact them on WhatsApp" color="#fbbf24" elite />
               {(coinAgentRole === "super_coin_agent" || coinAgentRole === "coin_agent" || !!coinAgent) && <FeatureCard to="/coin-sellers" icon={coinAgentRole === "super_coin_agent" ? Crown : Store} title={coinAgentRole === "super_coin_agent" ? "Super Coin Agent Dashboard" : "Coin Agent Panel"} sub={coinAgentRole === "super_coin_agent" ? "Manage up to 5 agents and your coin team" : "Manage coin stock and customer transfers"} color="#fbbf24" elite />}
               {coinAgent && <FeatureCard to="/coin-sellers" icon={Store} title="Coin Agent Panel" sub="Sell coins & check your stock" color="#fbbf24" elite />}
               {coinAgent && (
