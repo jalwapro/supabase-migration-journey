@@ -168,10 +168,7 @@ create or replace function public.cp_weekly_ranking()
 returns table(rank bigint, relation_id uuid, user1_id uuid, user2_id uuid, weekly_intimacy bigint, total_intimacy bigint, level integer)
 language sql stable security definer set search_path=public,pg_temp as $$
   with week_start as (
-    select date_trunc('week', (now() at time zone 'Asia/Riyadh') - interval '1 day')
-           + interval '1 day' as unused,
-           (date_trunc('week', (now() at time zone 'Asia/Riyadh') - interval '1 day')
-             + interval '1 day') at time zone 'Asia/Riyadh' as start_at
+    select (date_trunc('week', (now() at time zone 'Asia/Riyadh') + interval '1 day') - interval '1 day') at time zone 'Asia/Riyadh' as start_at
   ), scores as (
     select r.id, r.user1_id, r.user2_id, r.intimacy_score, r.ring_level,
            coalesce(sum(e.intimacy) filter (where e.created_at >= w.start_at),0)::bigint as weekly
