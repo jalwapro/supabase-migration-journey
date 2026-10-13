@@ -45,6 +45,7 @@ export function SuperCoinAgentPanel() {
         .select(`
           id,
           diamonds,
+          source_type,
           payout_amount,
           currency,
           payout_slip_url,
@@ -160,7 +161,7 @@ export function SuperCoinAgentPanel() {
                 <div className="flex justify-between items-start">
                   <div>
                     <span className="text-xs font-bold text-amber-400">Agent: {slip.normal_agent?.username || "Sub-Agent"}</span>
-                    <p className="text-sm font-black text-foreground">User: {slip.user?.username} ({Number(slip.diamonds).toLocaleString()} Diamonds)</p>
+                    <p className="text-sm font-black text-foreground">User: {slip.user?.username} ({Number(slip.diamonds).toLocaleString()} {slip.source_type === "red_diamonds" ? "Red Diamonds" : "Wallet Diamonds"})</p>
                     <p className="text-xs text-emerald-400 font-bold">Paid: {slip.currency} {Number(slip.payout_amount).toLocaleString()} via {slip.payout_method}</p>
                     <p className="text-[11px] text-muted-foreground">Account: {slip.payout_account_number} ({slip.payout_account_name})</p>
                   </div>
