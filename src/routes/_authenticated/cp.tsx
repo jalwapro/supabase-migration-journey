@@ -82,7 +82,7 @@ function CpHome() {
     <main className="mx-auto min-h-screen w-full max-w-4xl space-y-5 bg-background px-4 py-5 text-foreground sm:px-6">
       <header className="rounded-3xl border border-fuchsia-400/20 bg-gradient-to-br from-[#180b22] via-[#100d1c] to-[#151e3b] p-5 sm:p-7">
         <div className="flex items-center gap-3">
-          <span className="grid h-12 w-12 place-items-center rounded-2xl bg-fuchsia-500/15 text-fuchsia-300"><Heart className="h-6 w-6" /></span>
+          <span className="grid h-12 w-12 place-items-center overflow-hidden rounded-2xl bg-fuchsia-500/15"><img src="/images/cp/ic_open_page_cp.png" alt="" className="h-full w-full object-contain" /></span>
           <div><p className="text-xs font-bold uppercase tracking-[.22em] text-fuchsia-300">JALWA Couples</p><h1 className="text-2xl font-black sm:text-3xl">CP Center</h1></div>
         </div>
         <p className="mt-3 max-w-2xl text-sm text-white/65">Send a proposal, manage your relationship and follow the weekly CP intimacy ranking.</p>
@@ -124,7 +124,7 @@ function CpHome() {
 
       <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <div><h2 className="flex items-center gap-2 text-lg font-black"><Trophy className="h-5 w-5 text-amber-400" /> Weekly CP ranking</h2><p className="mt-1 text-xs text-muted-foreground">Resets Sunday at 00:00 Saudi Arabia time.</p></div>
+          <div><h2 className="flex items-center gap-2 text-lg font-black"><img src="/images/cp/icon_vpt_cp_rank_double_heart.png" alt="" className="h-7 w-7 object-contain" /> Weekly CP ranking</h2><p className="mt-1 text-xs text-muted-foreground">Resets Sunday at 00:00 Saudi Arabia time.</p></div>
           <button type="button" onClick={() => void refresh()} className="grid h-9 w-9 place-items-center rounded-xl border border-border text-muted-foreground hover:text-foreground" aria-label="Refresh CP"><RefreshCw className="h-4 w-4" /></button>
         </div>
         {ranking.length ? <div className="space-y-2">{ranking.map((row) => {
