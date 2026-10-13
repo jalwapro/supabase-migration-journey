@@ -4,6 +4,7 @@ import { Users, Loader2, ShieldCheck, CheckCircle2, XCircle, FileImage, Coins, A
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { coinAgentAction } from "@/lib/coin-agent";
+import { useSignedMediaUrl } from "@/lib/signedMedia";
 
 export function SuperCoinAgentPanel() {
   const qc = useQueryClient();
@@ -13,6 +14,7 @@ export function SuperCoinAgentPanel() {
   const [whatsapp, setWhatsapp] = useState("");
   const [publicName, setPublicName] = useState("");
   const [selectedSlip, setSelectedSlip] = useState<string | null>(null);
+  const selectedSlipUrl = useSignedMediaUrl(selectedSlip);
 
   // 1. Context: Team of max 5 agents
   const context = useQuery({
@@ -273,7 +275,7 @@ export function SuperCoinAgentPanel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setSelectedSlip(null)}>
           <div className="relative max-w-lg w-full bg-background rounded-2xl p-4 overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <h4 className="text-sm font-bold mb-2">Payment Receipt Slip</h4>
-            <img src={selectedSlip} alt="Payment Receipt" className="w-full h-auto max-h-[70vh] object-contain rounded-xl border border-border" />
+            {selectedSlipUrl ? <img src={selectedSlipUrl} alt="Payment Receipt" className="w-full h-auto max-h-[70vh] object-contain rounded-xl border border-border" /> : <p className="py-10 text-center text-sm text-muted-foreground">Loading secure receipt…</p>}
             <button onClick={() => setSelectedSlip(null)} className="mt-3 w-full rounded-xl bg-muted py-2 text-xs font-bold">Close</button>
           </div>
         </div>
