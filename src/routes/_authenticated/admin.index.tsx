@@ -248,6 +248,18 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Finance quick actions stay visible on desktop and mobile, not hidden in the sidebar. */}
+      <section aria-label="Finance quick actions" className="mb-5 grid gap-3 sm:grid-cols-2">
+        <Link to="/admin/coin-agent" className="group flex min-h-[94px] items-center gap-4 rounded-2xl border border-amber-400/35 bg-gradient-to-br from-zinc-950 via-card to-amber-950/30 p-4 transition hover:-translate-y-0.5 hover:border-amber-300">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-300"><Coins className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-amber-200">Coin Agent & P2P Control</span><span className="mt-1 block text-xs text-muted-foreground">Assign Super Coin Agents, manage pricing and agent access</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-amber-300 transition group-hover:translate-x-0.5" />
+        </Link>
+        <Link to="/admin/p2p" className="group flex min-h-[94px] items-center gap-4 rounded-2xl border border-cyan-400/25 bg-gradient-to-br from-zinc-950 via-card to-cyan-950/20 p-4 transition hover:-translate-y-0.5 hover:border-cyan-300">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-cyan-300/25 bg-cyan-400/10 text-cyan-300"><Wallet className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-cyan-200">P2P Escrow & Settlements</span><span className="mt-1 block text-xs text-muted-foreground">Review disputes, payouts and transaction ledger</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-cyan-300 transition group-hover:translate-x-0.5" />
+        </Link>
+      </section>
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="New Users" value={newUsers.data ?? 0} icon={Users} tone="bg-primary/15 text-primary" sub={rangeLabel} />
