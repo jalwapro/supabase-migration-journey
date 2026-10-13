@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  divorceCp, getCpStatus, getCpProposals, respondCpProposal, sendCpProposal,
+  divorceCp, getCpStatus, getCpProposals, getCpPrelinkRomanticGiftTotal, respondCpProposal, sendCpProposal,
   type CpProposal, type CpRelation,
 } from "@/lib/cp/cpApi";
 
@@ -11,6 +11,7 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
   const [myCp, setMyCp] = useState<CpRelation | null>(null);
   const [targetCp, setTargetCp] = useState<CpRelation | null>(null);
   const [incoming, setIncoming] = useState<CpProposal | null>(null);
+  const [prelinkGiftCoins, setPrelinkGiftCoins] = useState(0);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -19,10 +20,11 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
   async function refresh() {
     setLoading(true); setError("");
     try {
-      const [mine, theirs, proposals] = await Promise.all([
+      const [mine, theirs, proposals, prelinkCoins] = await Promise.all([
         getCpStatus(currentUserId), getCpStatus(targetUser.id), getCpProposals(),
+        getCpPrelinkRomanticGiftTotal(targetUser.id),
       ]);
-      setMyCp(mine); setTargetCp(theirs);
+      setMyCp(mine); setTargetCp(theirs); setPrelinkGiftCoins(prelinkCoins);
       setIncoming(proposals.find((p) => p.sender_id === targetUser.id && p.receiver_id === currentUserId) ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load CP status");
@@ -84,10 +86,13 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
           ) : null}
           {!loading && !isPartner && !incoming ? (
             <button type="button" disabled={busy || eitherHasPartner || currentUserId === targetUser.id}
-              onClick={() => void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent · 13,333 coins charged.")}
+              onClick={() => void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent. The server calculated the fee from verified romantic-gift history.")}
               className="mt-4 w-full rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-3 font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-50">
-              💍 Send CP Proposal · 13,333 coins
+              💍 Send CP Proposal · {prelinkGiftCoins >= 13333 ? "Free" : "up to 13,333 coins"}
             </button>
+            <p className="mt-2 text-center text-xs text-white/60">
+              Verified pre-CP romantic gifts: {prelinkGiftCoins.toLocaleString()} / 13,333 coins. Qualifying gifts waive the proposal fee.
+            </p>
           ) : null}
           {eitherHasPartner && !isPartner && !incoming && !loading ? <p className="mt-3 text-center text-xs text-amber-200">You or this user already has an active CP partner.</p> : null}
           {busy ? <p className="mt-3 text-sm text-white/60">Processing securely…</p> : null}
