@@ -6,9 +6,9 @@ import {
 } from "@/lib/cp/cpApi";
 
 type CpTargetUser = { id: string; username?: string | null; avatar?: string | null; avatarUrl?: string | null };
-type Props = { isOpen: boolean; onClose: () => void; currentUserId: string; targetUser: CpTargetUser };
+type Props = { isOpen: boolean; onClose: () => void; currentUserId: string; targetUser: CpTargetUser; onStartProposal?: (verifiedPrelinkCoins: number) => void };
 
-export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: Props) {
+export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser, onStartProposal }: Props) {
   const [myCp, setMyCp] = useState<CpRelation | null>(null);
   const [targetCp, setTargetCp] = useState<CpRelation | null>(null);
   const [incoming, setIncoming] = useState<CpProposal | null>(null);
@@ -106,13 +106,13 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
           {!loading && !isPartner && !incoming ? (
             <>
             <button type="button" disabled={busy || eitherHasPartner || currentUserId === targetUser.id}
-              onClick={() => void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent. The server calculated the fee from verified romantic-gift history.")}
+              onClick={() => onStartProposal ? onStartProposal(prelinkGiftCoins) : void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent. The server calculated the fee from verified romantic-gift history.")}
               className="mt-4 w-full rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-3 font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-50">
-              <span className="inline-flex items-center justify-center gap-2"><img src="/images/cp/icon_vpt_apply_cp.png" alt="" className="h-6 w-6 object-contain" /> Send CP Proposal · {prelinkGiftCoins >= 13333 ? "Free" : "up to 13,333 coins"}</span>
+              <span className="inline-flex items-center justify-center gap-2"><img src="/images/cp/icon_vpt_apply_cp.png" alt="" className="h-6 w-6 object-contain" /> {onStartProposal ? "Choose Ring & Send Proposal" : `Send CP Proposal · ${prelinkGiftCoins >= 13333 ? "Free" : "up to 13,333 coins"}`}</span>
             </button>
             <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-xs text-white/60">
               <img src="/images/cp/icon_vpt_cp_question.png" alt="" className="h-4 w-4 shrink-0 object-contain" />
-              Verified pre-CP romantic gifts: {prelinkGiftCoins.toLocaleString()} / 13,333 coins. Qualifying gifts waive the proposal fee.
+              Verified pre-CP romantic gifts: {prelinkGiftCoins.toLocaleString()} coins. The server verifies ring-fee eligibility before charging.
             </p>
             </>
           ) : null}
