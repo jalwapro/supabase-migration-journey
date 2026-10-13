@@ -2212,6 +2212,7 @@ style={roomStyle}
 <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
 {cpMicPairId && (
   <div key={cpMicPairId} className="pointer-events-none absolute inset-0 z-[100] grid place-items-center">
+    <img src="/images/cp/ic_room_entry_cp.png" alt="" className="absolute top-[14%] h-12 w-12 object-contain drop-shadow-lg" />
     <SvgaPlayer
       src="/animations/cp/svga_room_mic_cp.svga"
       loops={1}
