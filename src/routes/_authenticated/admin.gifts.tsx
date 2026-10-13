@@ -33,6 +33,7 @@ type GiftRow = {
   clip_type: string | null;
   image_url?: string | null;
   is_milestone?: boolean | null;
+  is_cp_romantic?: boolean | null;
   audio_url?: string | null;
   sound_url?: string | null;
   audio_enabled?: boolean | null;
@@ -56,6 +57,7 @@ type Draft = {
   /** PNG/WebP thumbnail shown in the gift box grid. */
   image_url: string;
   is_milestone: boolean;
+  is_cp_romantic: boolean;
   /** Dedicated sound file (falls back to the clip's own audio track). */
   audio_url: string;
   /** Admin master switch — off means this gift is silent for every user. */
@@ -75,6 +77,7 @@ const EMPTY_DRAFT: Draft = {
   clip_type: "none",
   image_url: "",
   is_milestone: false,
+  is_cp_romantic: false,
   audio_url: "",
   audio_enabled: true,
   audio_volume: 1,
@@ -192,7 +195,7 @@ function GiftsAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gifts")
-        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,audio_url,sound_url,audio_enabled,audio_volume")
+        .select("id,name,emoji,icon,price,category,animation,sort_order,is_active,clip_path,clip_type,image_url,is_milestone,is_cp_romantic,audio_url,sound_url,audio_enabled,audio_volume")
         .order("category")
         .order("sort_order");
       if (error) throw error;
@@ -243,6 +246,7 @@ function GiftsAdmin() {
         is_active: true,
         active: true,
         is_milestone: draft.is_milestone,
+        is_cp_romantic: draft.is_cp_romantic,
         audio_url: draft.audio_url.trim() || null,
         audio_enabled: draft.audio_enabled,
         audio_volume: draft.audio_enabled ? Math.max(0, Math.min(1, draft.audio_volume)) : 0,
@@ -366,6 +370,7 @@ function GiftsAdmin() {
         : "none") as Draft["clip_type"],
       image_url: royalRose ? ROYAL_ROSE_THUMB_URL : g.image_url ?? "",
       is_milestone: Boolean(g.is_milestone),
+      is_cp_romantic: Boolean(g.is_cp_romantic) || (g.category ?? "").toLowerCase().includes("romantic"),
       audio_url: g.audio_url ?? g.sound_url ?? "",
       audio_enabled: g.audio_enabled !== false && Number(g.audio_volume ?? 1) > 0,
       audio_volume: Number(g.audio_volume ?? 1),
@@ -666,6 +671,11 @@ function GiftsAdmin() {
                 onChange={(e) => setDraft((d) => ({ ...d, is_milestone: e.target.checked }))}
               />
               ⭐ Milestone gift — mark up to 3. Host picks one when a room hits 100%.
+            </label>
+            <label className="col-span-2 flex items-center gap-2 rounded-lg border border-pink-400/40 bg-pink-500/10 px-2 py-1.5 text-[11px] font-bold">
+              <input type="checkbox" checked={draft.is_cp_romantic}
+                onChange={(e) => setDraft((d) => ({ ...d, is_cp_romantic: e.target.checked }))} />
+              💗 CP romantic gift — counts toward CP intimacy and the 13,333-coin proposal-fee waiver.
             </label>
           </div>
 
