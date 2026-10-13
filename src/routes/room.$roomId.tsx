@@ -398,6 +398,7 @@ function RoomPage() {
 
   const [members, setMembers] = useState<Member[]>([]);
   const [cpMicPairId, setCpMicPairId] = useState<string | null>(null);
+  const [cpMicPairUserIds, setCpMicPairUserIds] = useState<[string, string] | null>(null);
   const [cpSeatFrames, setCpSeatFrames] = useState<Record<string, string>>({});
   const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
     coin_score: 0,
@@ -588,6 +589,7 @@ function RoomPage() {
     if (!seatedMemberKey) {
       cpMicPairRef.current = null;
       setCpMicPairId(null);
+      setCpMicPairUserIds(null);
       return;
     }
     let cancelled = false;
@@ -611,8 +613,10 @@ function RoomPage() {
       if (!nextPairId) {
         cpMicPairRef.current = null;
         setCpMicPairId(null);
+        setCpMicPairUserIds(null);
         return;
       }
+      setCpMicPairUserIds([pairs[0].user1_id, pairs[0].user2_id]);
       if (cpMicPairRef.current !== nextPairId) {
         cpMicPairRef.current = nextPairId;
         setCpMicPairId(nextPairId);
@@ -2213,6 +2217,28 @@ style={roomStyle}
 {cpMicPairId && (
   <div key={cpMicPairId} className="pointer-events-none absolute inset-0 z-[100] grid place-items-center">
     <img src="/images/cp/ic_room_entry_cp.png" alt="" className="absolute top-[14%] h-12 w-12 object-contain drop-shadow-lg" />
+    {/* The SVGA is a static animation asset, so render both live partner DPs above it. */}
+    {cpMicPairUserIds?.map((partnerId, index) => {
+      const partner = members.find((member) => member.user_id === partnerId);
+      const avatar = partner?.user?.avatar;
+      const name = partner?.user?.username ?? "CP Partner";
+      return (
+        <div
+          key={partnerId}
+          className={`absolute bottom-[22%] z-[101] h-14 w-14 overflow-hidden rounded-full border-[3px] border-pink-200 bg-black/80 shadow-[0_0_22px_rgba(255,105,180,0.9)] ring-2 ring-fuchsia-400/70 ${index === 0 ? "left-[calc(50%-68px)]" : "left-[calc(50%+12px)]"}`}
+          aria-label={name}
+          title={name}
+        >
+          {avatar ? (
+            <img src={avatar} alt={name} className="h-full w-full object-cover" />
+          ) : (
+            <span className="grid h-full w-full place-items-center text-xl font-black text-white">
+              {name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+        </div>
+      );
+    })}
     <SvgaPlayer
       src="/animations/cp/svga_room_mic_cp.svga"
       loops={1}
