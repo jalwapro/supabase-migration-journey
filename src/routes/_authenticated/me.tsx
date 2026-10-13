@@ -44,6 +44,7 @@ import { CountryFlag } from "@/components/CountryFlag";
 import { ShareSheet } from "@/components/ShareSheet";
 import { formatCompact } from "@/lib/utils";
 import { useVipProfile } from "@/hooks/useVipProfile";
+import { coinAgentAction } from "@/lib/coin-agent";
 import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
 import { vipTierForLevel, vipProgressFor, formatCoins, MILESTONE_REWARDS } from "@/lib/vip-levels";
 
@@ -92,6 +93,16 @@ function MePage() {
     },
   });
   const isPartner = !!partnerRow?.is_active;
+  const { data: coinAgentRole } = useQuery({
+    queryKey: ["me-coin-agent-role", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const result = await coinAgentAction<{ role?: string }>("ROLE_CONTEXT");
+      return String(result?.role ?? "normal_user");
+    },
+    staleTime: 30_000,
+    retry: false,
+  });
   const { data: coinAgent } = useQuery({
     queryKey: ["me-coin-agent", user?.id],
     enabled: !!user?.id,
@@ -380,6 +391,7 @@ function MePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
+              {(coinAgentRole === "super_coin_agent" || coinAgentRole === "coin_agent" || !!coinAgent) && <FeatureCard to="/coin-sellers" icon={coinAgentRole === "super_coin_agent" ? Crown : Store} title={coinAgentRole === "super_coin_agent" ? "Super Coin Agent Dashboard" : "Coin Agent Panel"} sub={coinAgentRole === "super_coin_agent" ? "Manage up to 5 agents and your coin team" : "Manage coin stock and customer transfers"} color="#fbbf24" elite />}
               {coinAgent && <FeatureCard to="/coin-sellers" icon={Store} title="Coin Agent Panel" sub="Sell coins & check your stock" color="#fbbf24" elite />}
               {coinAgent && (
                 <a href="/support?topic=coin-seller-stock" className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition-all hover:border-[#22d3ee]/40 active:scale-[0.98]">
