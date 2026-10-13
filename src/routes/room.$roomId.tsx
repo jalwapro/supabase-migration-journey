@@ -4154,7 +4154,6 @@ function MiniProfileSheet({
               ? <img src={miniProfileCpPartner.data.avatar} alt="" className="h-11 w-11 rounded-full border-2 border-pink-300/70 object-cover" />
               : <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-pink-300/70 bg-pink-500/15 text-lg">♥</span>}
             <span className="min-w-0 flex-1"><span className="block text-[10px] font-black uppercase tracking-[.18em] text-pink-300">CP Partner</span><span className="block truncate text-sm font-extrabold">{miniProfileCpPartner.data.username || "JALWA User"}</span></span>
-            {miniProfileCpPartner.data.avatar && <img src={miniProfileCpPartner.data.avatar} alt="" className="h-9 w-9 rounded-full border border-pink-300/50 object-cover" />}
             <Heart className="h-4 w-4 shrink-0 text-pink-300" />
           </button>
         )}
