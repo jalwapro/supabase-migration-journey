@@ -6,6 +6,7 @@ import { CpProfileModal } from "@/components/CP/CpProfileModal";
 import { getCpProposals, getCpStatus, getCpWeeklyRanking, type CpProposal, type CpRelation, type CpWeeklyRanking } from "@/lib/cp/cpApi";
 
 type Person = { id: string; username: string | null; avatar: string | null; user_code?: string | null };
+// Keep the CP Center route explicitly registered under the authenticated shell.
 export const Route = createFileRoute("/_authenticated/cp")({ component: CpHome });
 
 function CpHome() {
