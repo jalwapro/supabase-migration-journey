@@ -88,7 +88,7 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
             <button type="button" disabled={busy || eitherHasPartner || currentUserId === targetUser.id}
               onClick={() => void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent. The server calculated the fee from verified romantic-gift history.")}
               className="mt-4 w-full rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-3 font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-50">
-              💍 Send CP Proposal · {prelinkGiftCoins >= 13333 ? "Free" : "up to 13,333 coins"}
+              <span className="inline-flex items-center justify-center gap-2"><img src="/images/cp/icon_vpt_apply_cp.png" alt="" className="h-6 w-6 object-contain" /> Send CP Proposal · {prelinkGiftCoins >= 13333 ? "Free" : "up to 13,333 coins"}</span>
             </button>
             <p className="mt-2 text-center text-xs text-white/60">
               Verified pre-CP romantic gifts: {prelinkGiftCoins.toLocaleString()} / 13,333 coins. Qualifying gifts waive the proposal fee.
