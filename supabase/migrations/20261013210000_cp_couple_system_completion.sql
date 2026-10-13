@@ -182,6 +182,28 @@ language sql stable security definer set search_path=public,pg_temp as $$
     from scores order by weekly desc,intimacy_score desc,id limit 100
 $$;
 
+-- Room-scoped lookup: return only active CP pairs whose two partners both occupy mic seats.
+-- Caller must be a member of the requested room. This does not read or modify LiveKit.
+create or replace function public.cp_room_seated_pairs(p_room_id uuid)
+returns table(relation_id uuid,user1_id uuid,user2_id uuid,intimacy_score bigint,ring_level integer)
+language plpgsql stable security definer set search_path=public,pg_temp as $
+begin
+  if auth.uid() is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
+  if not exists(select 1 from public.room_members m where m.room_id=p_room_id and m.user_id=auth.uid()) then
+    raise exception 'NOT_ROOM_MEMBER' using errcode='42501';
+  end if;
+  return query
+    select r.id,r.user1_id,r.user2_id,r.intimacy_score,r.ring_level
+      from public.cp_relations r
+      join public.room_members a on a.room_id=p_room_id and a.user_id=r.user1_id and a.seat_index is not null
+      join public.room_members b on b.room_id=p_room_id and b.user_id=r.user2_id and b.seat_index is not null
+     where r.status='active'
+     order by r.created_at asc;
+end $;
+
+revoke all on function public.cp_room_seated_pairs(uuid) from public,anon;
+grant execute on function public.cp_room_seated_pairs(uuid) to authenticated;
+
 revoke all on function public.cp_send_proposal(uuid,bigint) from public,anon;
 revoke all on function public.cp_respond_proposal(uuid,boolean) from public,anon;
 revoke all on function public.cp_divorce(uuid,bigint) from public,anon;
