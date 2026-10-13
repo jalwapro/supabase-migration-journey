@@ -1,9 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { MessageCircle, PackageCheck, ShieldAlert, ShoppingCart, Upload, XCircle } from "lucide-react";
+
+function countryFlag(code: string) { const upper=code.toUpperCase(); return /^[A-Z]{2}$/.test(upper) ? String.fromCodePoint(...[...upper].map(ch=>127397+ch.charCodeAt(0))) : "🌐"; }
 
 const db = supabase as any;
 const requestKey = () => crypto.randomUUID();
@@ -17,9 +19,15 @@ type Order = { id: string; buyer_id: string; agent_id: string; super_agent_id: s
 type Appeal = { id: string; order_id: string; opened_by: string; reason: string; status: string; created_at: string; resolution_note: string | null };
 
 export function P2PCoinMarket() {
-  const { user } = useAuth();
+  const { user, profile: authProfile } = useAuth();
   const qc = useQueryClient();
   const [countryFilter, setCountryFilter] = useState("all");
+  useEffect(() => {
+    const raw = String(authProfile?.country ?? "").trim();
+    const known: Record<string,string> = { PAKISTAN:"PK", INDIA:"IN", BANGLADESH:"BD", "UNITED ARAB EMIRATES":"AE", UAE:"AE", "SAUDI ARABIA":"SA", "UNITED STATES":"US", USA:"US", "UNITED KINGDOM":"GB", UK:"GB", INDONESIA:"ID", MALAYSIA:"MY", PHILIPPINES:"PH", NIGERIA:"NG", TURKEY:"TR" };
+    const code = raw.length === 2 ? raw.toUpperCase() : known[raw.toUpperCase()];
+    if (code) setCountryFilter(code);
+  }, [authProfile?.country]);
   const [selectedAgent, setSelectedAgent] = useState("");
   const [amount, setAmount] = useState("500");
   const [method, setMethod] = useState("");
@@ -212,7 +220,7 @@ export function P2PCoinMarket() {
   const createSubAgent = useMutation({
     mutationFn: async () => {
       if (!newSubAgentId.trim()) throw new Error("Enter an existing JALWA user's Supabase UUID");
-      const { error } = await db.rpc("p2p_super_agent_create_sub_agent", { p_user_id: newSubAgentId.trim(), p_display_name: newSubAgentName.trim() || null });
+      const { error } = await db.rpc("p2p_super_create_sub_agent", { p_user_id: newSubAgentId.trim(), p_display_name: newSubAgentName.trim() || null });
       if (error) throw error;
     },
     onSuccess: async () => { setNewSubAgentId(""); setNewSubAgentName(""); toast.success("Sub-Agent assigned to your agency"); await invalidate(); },
@@ -259,8 +267,8 @@ export function P2PCoinMarket() {
     {currentRole === "user" && <section className="rounded-2xl border border-border bg-card p-4 sm:p-5">
       <div className="flex items-start gap-3"><ShoppingCart className="mt-1 h-5 w-5 text-amber-300"/><div><h2 className="font-black">Buy coins from a P2P Agent</h2><p className="mt-1 text-xs text-muted-foreground">Agent stock is locked in escrow. Submit payment proof; coins are released only when the agent confirms payment or Admin resolves an appeal.</p></div></div>
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <label className="text-xs font-bold text-muted-foreground">Country filter<select className={input} value={countryFilter} onChange={e=>setCountryFilter(e.target.value)}><option value="all">All countries</option>{[...new Set((agents.data??[]).map(a=>a.country_code))].map(c=><option key={c}>{c}</option>)}</select></label>
-        <label className="text-xs font-bold text-muted-foreground">Agent<select className={input} value={selectedAgent} onChange={e=>{setSelectedAgent(e.target.value);setMethod("");}}><option value="">Choose agent</option>{filteredAgents.map(a=><option key={a.agent_id} value={a.agent_id}>{a.profile?.display_name || a.agent_id.slice(0,8)} · {a.country_code} · {a.coins_per_bundle} coins / {market.data?.settings.base_price_pkr} PKR</option>)}</select></label>
+        <label className="text-xs font-bold text-muted-foreground">Country filter<select className={input} value={countryFilter} onChange={e=>setCountryFilter(e.target.value)}><option value="all">All countries</option>{[...new Set((agents.data??[]).map(a=>a.country_code))].map(c=><option key={c} value={c}>{countryFlag(c)} {c}</option>)}</select></label>
+        <label className="text-xs font-bold text-muted-foreground">Agent<select className={input} value={selectedAgent} onChange={e=>{setSelectedAgent(e.target.value);setMethod("");}}><option value="">Choose agent</option>{filteredAgents.map(a=><option key={a.agent_id} value={a.agent_id}>{a.profile?.display_name || a.agent_id.slice(0,8)} · {countryFlag(a.country_code)} {a.country_code} · {a.coins_per_bundle} coins / {market.data?.settings.base_price_pkr} PKR</option>)}</select></label>
         <label className="text-xs font-bold text-muted-foreground">Coin amount<input className={input} type="number" min={selected?.min_order_coins ?? 1} max={selected?.max_order_coins ?? 100000} step="1" value={amount} onChange={e=>setAmount(e.target.value)}/></label>
       </div>
       {selected && <div className="mt-3 rounded-xl border border-border bg-background/50 p-3 text-sm">
