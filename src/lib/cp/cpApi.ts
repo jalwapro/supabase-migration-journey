@@ -48,7 +48,7 @@ function requireData<T>(data: T | null, error: { message: string } | null): T {
 }
 
 /** Coins are charged atomically by the database RPC; never debit in the browser. */
-export async function sendCpProposal(receiverId: string, ringPrice = 5000) {
+export async function sendCpProposal(receiverId: string, ringPrice = 13333) {
   const { data, error } = await supabase.rpc("cp_send_proposal", {
     p_receiver_id: receiverId,
     p_ring_price: ringPrice,
@@ -64,7 +64,7 @@ export async function respondCpProposal(proposalId: string, accept: boolean) {
   return requireData(data, error);
 }
 
-export async function divorceCp(relationId: string, fee = 10000) {
+export async function divorceCp(relationId: string, fee = 0) {
   const { data, error } = await supabase.rpc("cp_divorce", {
     p_relation_id: relationId,
     p_fee: fee,
