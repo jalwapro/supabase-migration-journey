@@ -134,7 +134,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
   // Load all seated users' frame/ring/level/country metadata in one batch.
   // Keep the dependency as a stable ID string so mic-level/speaking updates
   // do not retrigger database requests.
-  const seatUserIds = [...new Set(seats.map((seat) => seat.user?.id).filter((id): id is string => !!id))].sort().join(",");
+  const seatUserIds = [...new Set([host.id, ...seats.map((seat) => seat.user?.id).filter((id): id is string => !!id)])].sort().join(",");
   const [profileMediaById, setProfileMediaById] = useState<Record<string, SeatProfileMedia>>({});
   useEffect(() => {
     if (!seatUserIds) { setProfileMediaById({}); return; }
@@ -442,12 +442,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
           const occupiedIds = new Set([host.id, ...seats.map((item) => item.user?.id).filter((id): id is string => !!id)]);
           const seatCp = seat.user?.id ? profileMediaById[seat.user.id] : null;
           const partnerPresentOnStage = !!seatCp?.cp_partner_id && occupiedIds.has(seatCp.cp_partner_id);
+          const hostCp = profileMediaById[host.id];
+          const hostPartnerPresentOnStage = !!hostCp?.cp_partner_id && occupiedIds.has(hostCp.cp_partner_id);
           if (seat.isHost) return (
             <div key={seatIdx} data-seat="true" data-seat-cell="true" data-user-dp={host.id} data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex h-[68px] min-h-[68px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible">
               <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
                 <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-amber-300 shadow">{seatIdx}</span>
                 <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-                  <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><HostCard host={host} onTap={() => onHostTap?.()} /></span>
+                  <span className="relative block h-full w-full overflow-visible rounded-full border-2 border-amber-400 z-10 bg-transparent shadow-md"><CpSeatAura cpLevel={hostCp?.cp_level} partnerPresentOnStage={hostPartnerPresentOnStage}><HostCard host={host} onTap={() => onHostTap?.()} /></CpSeatAura></span>
 
                 </span>
                 <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold text-white text-center drop-shadow"><span className="truncate">{host.username}</span><CountryFlag country={(host as { country?: string | null }).country} countryCode={(host as { country_code?: string | null }).country_code} className="text-[10px]" /></span>
