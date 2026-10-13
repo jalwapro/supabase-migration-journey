@@ -261,10 +261,10 @@ export function SuperCoinAgentPanel() {
             Exchange your approved diamonds collected by sub-agents with Super Admin for Cash or fresh Coin stock in your country currency.
           </p>
           <div className="grid grid-cols-2 gap-3">
-            <button className="flex items-center justify-center gap-2 rounded-xl bg-amber-400 p-3 text-xs font-black text-black">
+            <button onClick={() => window.location.assign("/coin-sellers#agent-buy-coins")} className="flex items-center justify-center gap-2 rounded-xl bg-amber-400 p-3 text-xs font-black text-black">
               <Coins className="h-4 w-4" /> Buy Coins from Admin
             </button>
-            <button className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background p-3 text-xs font-bold text-foreground">
+            <button onClick={() => window.location.assign("/coin-sellers#agent-settle-diamonds")} className="flex items-center justify-center gap-2 rounded-xl border border-border bg-background p-3 text-xs font-bold text-foreground">
               <ArrowRightLeft className="h-4 w-4" /> Redeem Diamonds
             </button>
           </div>
