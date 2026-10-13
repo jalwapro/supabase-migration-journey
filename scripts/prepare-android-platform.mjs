@@ -15,6 +15,9 @@ const googleServices = resolve(appDir, "google-services.json");
 const backupDir = resolve(root, ".native-build");
 const backupGoogle = resolve(backupDir, "google-services.json");
 const assetsDir = resolve(appDir, "src", "main", "assets");
+const cpModelTemplateDir = resolve(root, "native-templates", "android", "src", "main", "java", "com", "jalwa", "common", "entity");
+const cpModelTargetDir = resolve(appDir, "src", "main", "java", "com", "jalwa", "common", "entity");
+const cpModelNames = ["VptApplyCpEntity.java", "VptUserCpInfoVo.java"];
 
 function run(cmd, args) {
   console.log(`[android-prepare] $ ${cmd} ${args.join(" ")}`);
@@ -62,6 +65,18 @@ if (!isCompleteAndroidPlatform()) {
   throw new Error(
     "Capacitor did not create a complete Android platform. Expected AndroidManifest.xml, app Gradle file, and Gradle wrapper under android/.",
   );
+}
+
+// Restore project-owned CP Java models after Android platform regeneration.
+if (existsSync(cpModelTemplateDir)) {
+  mkdirSync(cpModelTargetDir, { recursive: true });
+  for (const name of cpModelNames) {
+    const source = resolve(cpModelTemplateDir, name);
+    if (existsSync(source)) {
+      copyFileSync(source, resolve(cpModelTargetDir, name));
+      console.log(`[android-prepare] Restored CP model ${name}`);
+    }
+  }
 }
 
 // Capacitor sync writes capacitor.config.json and capacitor.plugins.json here.
