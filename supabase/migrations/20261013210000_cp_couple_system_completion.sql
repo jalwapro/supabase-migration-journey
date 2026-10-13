@@ -2,6 +2,9 @@
 -- No LiveKit tables, tokens, rooms, or APIs are modified.
 begin;
 
+-- Explicit flag allows admins to classify gifts as CP-romantic without relying on display categories.
+alter table public.gifts add column if not exists is_cp_romantic boolean not null default false;
+
 -- Immutable audit trail for CP intimacy earned during each weekly ranking period.
 create table if not exists public.cp_intimacy_events (
   id uuid primary key default gen_random_uuid(),
@@ -128,12 +131,16 @@ create or replace function public.cp_apply_romantic_gift_intimacy()
 returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 declare
   v_category text;
+  v_is_cp_romantic boolean;
   v_relation public.cp_relations%rowtype;
   v_new_score bigint;
   v_new_level integer;
+  v_event_id uuid;
 begin
-  select lower(coalesce(category,'')) into v_category from public.gifts where id=new.gift_id;
-  if v_category not like '%romantic%' or new.coins_spent <= 0 or new.sender_id = new.receiver_id then
+  select lower(coalesce(category,'')), coalesce(is_cp_romantic,false)
+    into v_category,v_is_cp_romantic from public.gifts where id=new.gift_id;
+  if not (v_is_cp_romantic or v_category like '%romantic%')
+     or new.coins_spent <= 0 or new.sender_id = new.receiver_id then
     return new;
   end if;
 
@@ -144,6 +151,12 @@ begin
     for update;
   if not found then return new; end if;
 
+  insert into public.cp_intimacy_events(relation_id,sender_id,receiver_id,gift_send_id,intimacy)
+    values(v_relation.id,new.sender_id,new.receiver_id,new.id,new.coins_spent)
+    on conflict(gift_send_id) do nothing
+    returning id into v_event_id;
+  if v_event_id is null then return new; end if;
+
   v_new_score := v_relation.intimacy_score + new.coins_spent;
   select level into v_new_level from public.cp_levels_config
     where min_intimacy <= v_new_score order by min_intimacy desc, level desc limit 1;
@@ -151,10 +164,6 @@ begin
     set intimacy_score=v_new_score,
         ring_level=coalesce(v_new_level,ring_level)
     where id=v_relation.id;
-
-  insert into public.cp_intimacy_events(relation_id,sender_id,receiver_id,gift_send_id,intimacy)
-    values(v_relation.id,new.sender_id,new.receiver_id,new.id,new.coins_spent)
-    on conflict(gift_send_id) do nothing;
   return new;
 end $$;
 
