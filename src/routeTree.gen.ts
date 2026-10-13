@@ -34,6 +34,7 @@ import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
+import { Route as AuthenticatedCpRouteImport } from './routes/_authenticated/cp'
 import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
 import { Route as AuthenticatedP2pAgentRouteImport } from './routes/_authenticated/p2p.agent'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
@@ -277,6 +278,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
   id: '/blocked',
   path: '/blocked',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCpRoute = AuthenticatedCpRouteImport.update({
+  id: '/cp',
+  path: '/cp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCoinSellersRoute =
@@ -964,6 +970,7 @@ export interface FileRoutesByFullPath {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
+  '/cp': typeof AuthenticatedCpRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
@@ -1255,6 +1262,7 @@ export interface FileRoutesById {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
+  '/_authenticated/cp': typeof AuthenticatedCpRoute
   '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/_authenticated/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
@@ -3071,6 +3079,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
+  AuthenticatedCpRoute: AuthenticatedCpRoute,
   AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
   AuthenticatedP2pAgentRoute: AuthenticatedP2pAgentRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
