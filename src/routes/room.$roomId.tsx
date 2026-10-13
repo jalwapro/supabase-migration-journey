@@ -2272,7 +2272,7 @@ onToggleMic={() => void toggleMuteWithSync()} onOpenMusic={() => { if (!isHost &
 onToggleSpeaker={agora.toggleSpeaker}
 onSeatTap={(idx) => void onSeatTap(idx)}
 onJoinSeat={(idx) => void takeSeat(idx)}
-onHostTap={() => void onSeatTap(1)}
+onHostTap={() => setMiniProfileUser({ id: r.host_id, username: r.host?.username ?? "Host", avatar: r.host?.avatar ?? null })}
 onReport={async () => {
   const reason = window.prompt("Report this room?");
   if (reason && reason.trim().length >= 3) {
@@ -2390,6 +2390,20 @@ onClose={() => setChatEmojiSheetOpen(false)}
 onPick={(emoji: ChatEmoji) => {
   setText((previous) => `${previous}${previous ? " " : ""}${emoji.emoji}`);
 }}
+/>
+<MiniProfileSheet
+  target={miniProfileUser}
+  currentUserId={user?.id ?? null}
+  onClose={() => setMiniProfileUser(null)}
+  onManage={(isHost || isModerator) && miniProfileUser && miniProfileUser.id !== user?.id
+    ? () => {
+        const member = members.find((item) => item.user_id === miniProfileUser.id);
+        if (member) {
+          setMiniProfileUser(null);
+          setManageMember(member);
+        }
+      }
+    : undefined}
 />
 </div>
 </CamPipelineProvider>
