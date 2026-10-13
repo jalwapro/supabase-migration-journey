@@ -27,7 +27,7 @@ export function DiamondPayoutFlow() {
     queryKey: ["diamond-payout-agents"],
     enabled: !!user?.id,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("diamond_payout_agents_for_user");
+      const { data, error } = await (supabase as any).rpc("diamond_payout_agents_for_user");
       if (error) throw error;
       return (Array.isArray(data) ? data : []) as PayoutAgent[];
     },
@@ -62,7 +62,7 @@ export function DiamondPayoutFlow() {
     if (!agentId || !accountName.trim() || accountNumber.trim().length < 5) return toast.error("Select an agent and enter valid payout account details.");
     setBusy("create");
     try {
-      const { error } = await supabase.rpc("create_diamond_payout_request", {
+      const { error } = await (supabase as any).rpc("create_diamond_payout_request", {
         _agent_id: agentId, _source_type: source, _diamonds: amount, _payout_method: method,
         _payout_account_number: accountNumber.trim(), _payout_account_name: accountName.trim(),
       });
