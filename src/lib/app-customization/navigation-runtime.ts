@@ -33,7 +33,8 @@ function asItem(value: unknown, index: number): NavigationItemConfig | null {
 export function extractNavigation(raw: unknown): NavigationItemConfig[] {
   const source = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
   const candidate = Array.isArray(source.items) ? source.items : Array.isArray(source.bottom) ? source.bottom : Array.isArray(source.bottomNavigation) ? source.bottomNavigation : [];
-  const parsed = candidate.map(asItem).filter((item): item is NavigationItemConfig => !!item && item.visible !== false && !!item.route);
+  const legacyFinanceRoutes = new Set(["/wallet", "/withdraw", "/recharge", "/coin-agents", "/coin-sellers", "/p2p"]);
+  const parsed = candidate.map(asItem).filter((item): item is NavigationItemConfig => !!item && item.visible !== false && !!item.route && !legacyFinanceRoutes.has(item.route));
   return parsed.length ? parsed.sort((a, b) => a.order - b.order).map((item, index) => ({ ...item, order: index })) : DEFAULT_NAVIGATION;
 }
 

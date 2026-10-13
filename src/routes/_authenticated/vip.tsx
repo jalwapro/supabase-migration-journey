@@ -13,6 +13,17 @@ export const Route = createFileRoute("/_authenticated/vip")({ component: Page })
 function Page() {
   const { user, profile } = useAuth();
   const qc = useQueryClient();
+  const p2pBalance = useQuery({
+    queryKey: ["p2p-header-balance", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { error: setupError } = await (supabase as any).rpc("p2p_ensure_profile");
+      if (setupError) throw setupError;
+      const { data, error } = await (supabase as any).from("p2p_wallets").select("coin_available").eq("user_id", user!.id).single();
+      if (error) throw error;
+      return Number(data.coin_available ?? 0);
+    },
+  });
 
   const { data: subscription } = useQuery({
     queryKey: ["vip-subscription", user?.id],
@@ -42,12 +53,13 @@ function Page() {
 
   async function subscribe(tier: any) {
     if (!user || !profile) return;
-    if ((profile.coins ?? 0) < tier.price) return toast.error("Not enough coins");
+    if ((p2pBalance.data ?? 0) < tier.price) return toast.error("Not enough P2P coins");
     const { data, error } = await supabase.rpc("purchase_vip", { _tier_id: tier.id });
     if (error) return toast.error(error.message);
     const result = data as { tier?: string; coins_after?: number } | null;
     toast.success(`Welcome to ${result?.tier ?? tier.name} VIP`);
     qc.invalidateQueries();
+    qc.invalidateQueries({ queryKey: ["p2p-header-balance", user?.id] });
   }
 
   return (
@@ -109,7 +121,7 @@ function Page() {
                 <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">
                   <p className="uppercase tracking-widest text-white/40">Coins</p>
                   <p className="mt-0.5 font-black text-[#ffd66a]">
-                    {(profile?.coins ?? 0).toLocaleString()}
+                    {Number(p2pBalance.data ?? 0).toLocaleString()}
                   </p>
                 </div>
                 <div className="rounded-lg border border-white/10 bg-black/30 px-2 py-1.5">

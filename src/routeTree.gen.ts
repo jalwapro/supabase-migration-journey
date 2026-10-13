@@ -33,8 +33,10 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedAgencyApprovalsRouteImport } from './routes/_authenticated/agency-approvals'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
 import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
+import { Route as AuthenticatedP2pAgencyRouteImport } from './routes/_authenticated/p2p-agency'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
 import { Route as AuthenticatedCustomThemeRouteImport } from './routes/_authenticated/custom-theme'
 import { Route as AuthenticatedFriendsRouteImport } from './routes/_authenticated/friends'
@@ -272,6 +274,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAgencyApprovalsRoute = AuthenticatedAgencyApprovalsRouteImport.update({
+  id: '/agency-approvals',
+  path: '/agency-approvals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
   id: '/blocked',
   path: '/blocked',
@@ -283,6 +290,11 @@ const AuthenticatedCoinSellersRoute =
     path: '/coin-sellers',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedP2pAgencyRoute = AuthenticatedP2pAgencyRouteImport.update({
+  id: '/p2p-agency',
+  path: '/p2p-agency',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCreateRoomRoute = AuthenticatedCreateRoomRouteImport.update({
   id: '/create-room',
   path: '/create-room',
@@ -951,8 +963,10 @@ export interface FileRoutesByFullPath {
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/agency-approvals': typeof AuthenticatedAgencyApprovalsRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
+  '/p2p-agency': typeof AuthenticatedP2pAgencyRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -1096,6 +1110,7 @@ export interface FileRoutesByTo {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/blocked': typeof AuthenticatedBlockedRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
+  '/p2p-agency': typeof AuthenticatedP2pAgencyRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
   '/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/friends': typeof AuthenticatedFriendsRoute
@@ -1239,8 +1254,10 @@ export interface FileRoutesById {
   '/test-livekit': typeof TestLivekitRoute
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/agency-approvals': typeof AuthenticatedAgencyApprovalsRoute
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
   '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
+  '/_authenticated/p2p-agency': typeof AuthenticatedP2pAgencyRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
   '/_authenticated/custom-theme': typeof AuthenticatedCustomThemeRoute
   '/_authenticated/friends': typeof AuthenticatedFriendsRoute
@@ -2012,6 +2029,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/agency-approvals': {
+      id: '/_authenticated/agency-approvals'
+      path: '/agency-approvals'
+      fullPath: '/agency-approvals'
+      preLoaderRoute: typeof AuthenticatedAgencyApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/blocked': {
       id: '/_authenticated/blocked'
       path: '/blocked'
@@ -2024,6 +2048,13 @@ declare module '@tanstack/react-router' {
       path: '/coin-sellers'
       fullPath: '/coin-sellers'
       preLoaderRoute: typeof AuthenticatedCoinSellersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/p2p-agency': {
+      id: '/_authenticated/p2p-agency'
+      path: '/p2p-agency'
+      fullPath: '/p2p-agency'
+      preLoaderRoute: typeof AuthenticatedP2pAgencyRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/create-room': {
@@ -3010,8 +3041,10 @@ const AuthenticatedGamesRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAgencyApprovalsRoute: typeof AuthenticatedAgencyApprovalsRoute
   AuthenticatedBlockedRoute: typeof AuthenticatedBlockedRoute
   AuthenticatedCoinSellersRoute: typeof AuthenticatedCoinSellersRoute
+  AuthenticatedP2pAgencyRoute: typeof AuthenticatedP2pAgencyRoute
   AuthenticatedCreateRoomRoute: typeof AuthenticatedCreateRoomRoute
   AuthenticatedCustomThemeRoute: typeof AuthenticatedCustomThemeRoute
   AuthenticatedFriendsRoute: typeof AuthenticatedFriendsRoute
@@ -3041,8 +3074,10 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAgencyApprovalsRoute: AuthenticatedAgencyApprovalsRoute,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
   AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
+  AuthenticatedP2pAgencyRoute: AuthenticatedP2pAgencyRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,
   AuthenticatedCustomThemeRoute: AuthenticatedCustomThemeRoute,
   AuthenticatedFriendsRoute: AuthenticatedFriendsRoute,

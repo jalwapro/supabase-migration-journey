@@ -11,6 +11,8 @@ export const ADMIN_ROUTE_PERMISSIONS: Record<string, string | string[]> = {
   "/admin/coin-sellers": "coin_sellers.manage",
   "/admin/coin-agent": "coin_sellers.manage",
   "/admin/p2p": "coin_sellers.manage",
+  "/p2p-agency": "coin_sellers.manage",
+  "/agency-approvals": "coin_sellers.manage",
   "/admin/recharge": "recharge.review",
   "/admin/withdrawals": "withdrawals.review",
   "/admin/finance-reports": "finance.reports",

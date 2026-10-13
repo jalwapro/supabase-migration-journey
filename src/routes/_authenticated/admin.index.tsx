@@ -248,6 +248,18 @@ function Dashboard() {
         </div>
       </div>
 
+      {/* Direct access to the new P2P Master-Agency controls */}
+      <div className="mb-5 grid gap-3 sm:grid-cols-2">
+        <Link to="/admin/coin-agent" className="group flex items-center gap-4 rounded-2xl border border-amber-400/40 bg-gradient-to-br from-amber-500/15 via-card to-amber-950/30 p-4 shadow-[0_0_22px_rgba(245,158,11,0.08)] transition hover:border-amber-300 hover:from-amber-500/20">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/30 bg-amber-400/15 text-amber-300"><Coins className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-black text-amber-200">Coin Agent Control</span><span className="mt-1 block text-xs text-muted-foreground">Super Agents, agent hierarchy and pricing</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-amber-300 transition group-hover:translate-x-0.5" />
+        </Link>
+        <Link to="/admin/p2p" className="group flex items-center gap-4 rounded-2xl border border-amber-400/30 bg-gradient-to-br from-zinc-900 via-card to-amber-950/20 p-4 transition hover:border-amber-300">
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-amber-300/25 bg-amber-400/10 text-amber-300"><Wallet className="h-6 w-6" /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-black">P2P Escrow</span><span className="mt-1 block text-xs text-muted-foreground">Review trade issues, payouts and ledger activity</span></span><ArrowUpRight className="h-5 w-5 shrink-0 text-amber-300 transition group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="New Users" value={newUsers.data ?? 0} icon={Users} tone="bg-primary/15 text-primary" sub={rangeLabel} />

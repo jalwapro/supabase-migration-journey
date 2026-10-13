@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
-import P2PResolution from "@/pages/admin/P2PResolution";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/_authenticated/admin/p2p")({ component: P2PResolution });
+// Legacy finance administration is superseded by P2P Master-Agency.
+export const Route = createFileRoute("/_authenticated/admin/p2p")({ beforeLoad: () => { throw redirect({ to: "/p2p-agency" }); }, component: () => null });
