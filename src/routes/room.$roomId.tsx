@@ -398,6 +398,7 @@ function RoomPage() {
 
   const [members, setMembers] = useState<Member[]>([]);
   const [cpMicPairId, setCpMicPairId] = useState<string | null>(null);
+  const [cpSeatFrames, setCpSeatFrames] = useState<Record<string, string>>({});
   const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
     coin_score: 0,
     like_count: 0,
@@ -597,7 +598,15 @@ function RoomPage() {
         console.warn("[CP mic animation]", error.message);
         return;
       }
-      const pairs = (data ?? []) as Array<{ relation_id: string }>;
+      const pairs = (data ?? []) as Array<{ relation_id: string; user1_id: string; user2_id: string; seat_frame_url: string | null }>;
+      const frameMap: Record<string, string> = {};
+      for (const pair of pairs) {
+        if (pair.seat_frame_url) {
+          frameMap[pair.user1_id] = pair.seat_frame_url;
+          frameMap[pair.user2_id] = pair.seat_frame_url;
+        }
+      }
+      setCpSeatFrames(frameMap);
       const nextPairId = pairs[0]?.relation_id ?? null;
       if (!nextPairId) {
         cpMicPairRef.current = null;
@@ -2142,6 +2151,7 @@ function RoomPage() {
       id: r.host_id,
       username: r.host?.username ?? "Host",
       avatar: r.host?.avatar ?? null,
+      avatar_frame_url: cpSeatFrames[r.host_id] ?? r.host?.frame ?? null,
       country: r.host?.country ?? null,
       country_code: r.host?.country_code ?? null,
       city: r.host?.city ?? null,
@@ -2168,6 +2178,7 @@ function RoomPage() {
           id: m.user_id,
           username: m.user?.username ?? "User",
           avatar: m.user?.avatar ?? null,
+          avatar_frame_url: cpSeatFrames[m.user_id] ?? m.user?.frame ?? null,
           country: m.user?.country ?? null,
           country_code: m.user?.country_code ?? null,
           city: (m.user as { city?: string | null } | undefined)?.city ?? null,
