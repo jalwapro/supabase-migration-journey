@@ -4,10 +4,10 @@ import { Heart } from "lucide-react";
 
 type CpBroadcast = {
   id: string;
-  broadcast_type: "new_cp" | "level_up" | "anniversary";
-  user1_name: string;
-  user2_name: string;
-  ring_name?: string | null;
+  type: "new_cp" | "level_up" | "anniversary" | "gift" | string;
+  title: string;
+  sender_name?: string | null;
+  receiver_name?: string | null;
   message: string;
 };
 
@@ -46,11 +46,13 @@ export function CpGlobalMarquee() {
 
   if (!current) return null;
 
-  const announcementLabel = current.broadcast_type === "level_up"
-    ? "CP LEVEL UP"
-    : current.broadcast_type === "anniversary"
-      ? "CP ANNIVERSARY"
-      : "NEW CP COUPLE";
+  const announcementLabel = current.type === "gift"
+    ? "CP EXCLUSIVE GIFT"
+    : current.type === "level_up"
+      ? "CP LEVEL UP"
+      : current.type === "anniversary"
+        ? "CP ANNIVERSARY"
+        : "NEW CP COUPLE";
 
   return (
     <aside aria-label="Global CP Announcement" role="status" aria-live="polite" className="pointer-events-none fixed left-1/2 top-16 z-[150] w-[92%] max-w-lg -translate-x-1/2 animate-in slide-in-from-top-4 duration-300">
@@ -61,7 +63,7 @@ export function CpGlobalMarquee() {
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="rounded bg-pink-500/30 px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-pink-200">{announcementLabel}</span>
-              <span className="text-[11px] font-bold text-amber-300">{current.ring_name || "Forever Ring"}</span>
+              <span className="text-[11px] font-bold text-amber-300">{current.title || "JALWA CP"}</span>
             </div>
             <p className="mt-0.5 truncate text-xs font-bold text-white">{current.message}</p>
           </div>
