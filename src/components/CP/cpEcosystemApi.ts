@@ -102,12 +102,20 @@ export async function postCpDiary(relationId: string, content: string, imageUrl?
   if (authError) throw errorMessage(authError);
   const user = authData.user;
   if (!user) throw new Error("Please sign in to post a memory.");
-  const { error } = await supabase.from("cp_diary_posts").insert({
-    relation_id: relationId,
-    author_id: user.id,
-    content: trimmed,
-  });
+
+  const { data, error } = await supabase
+    .from("cp_diary_posts")
+    .insert({
+      relation_id: relationId,
+      author_id: user.id,
+      content: trimmed,
+      image_url: imageUrl ?? null,
+    })
+    .select("id,relation_id,author_id,content,image_url,created_at")
+    .single();
+
   if (error) throw errorMessage(error);
+  return data as CpDiaryPost;
 }
 
 export async function deleteCpDiary(postId: string): Promise<void> {
