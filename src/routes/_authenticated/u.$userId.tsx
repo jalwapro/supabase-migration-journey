@@ -104,8 +104,13 @@ function UserProfilePage() {
   });
 
   const publicCpPartner = useQuery({
-    queryKey: ["public-profile-cp-partner", userId],
-    enabled: !!userId,
+    queryKey: ["public-profile-cp-partner", userId, me?.id],
+    // The RPC requires an authenticated JWT. Wait for auth hydration so a
+    // third-party visitor does not make an early anonymous request and cache null/error.
+    enabled: !!userId && !!me?.id,
+    staleTime: 0,
+    refetchOnMount: "always",
+    retry: 2,
     queryFn: async () => {
       const partner = await getCpPublicPartner(userId);
       return partner ? {
