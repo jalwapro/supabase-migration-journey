@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/layout/AppShell";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { CoinAgentHub } from "@/components/coin-agent/CoinAgentHub";
+import { DiamondPayoutFlow } from "@/components/coin-agent/DiamondPayoutFlow";
 import { AgentDashboard } from "@/components/p2p/AgentDashboard";
 import { CoinInventoryRequests } from "@/components/coin-agent/CoinInventoryRequests";
 import { coinAgentAction } from "@/lib/coin-agent";
@@ -91,6 +92,7 @@ function CoinSellerMarketplaceRoute() {
         </section>
         <section id="agent-diamonds" aria-label="Diamond trades and agent pricing" className="scroll-mt-20">
           <CoinAgentHub />
+        <section aria-label="Verified diamond payout requests"><DiamondPayoutFlow /></section>
         </section>
         <section id="agent-inventory" aria-label="Coin inventory and customer transfers" className="scroll-mt-20 rounded-2xl border border-border bg-card p-2 sm:p-3">
           <div className="px-2 pt-2">
