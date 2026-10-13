@@ -85,6 +85,7 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
             </div>
           ) : null}
           {!loading && !isPartner && !incoming ? (
+            <>
             <button type="button" disabled={busy || eitherHasPartner || currentUserId === targetUser.id}
               onClick={() => void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent. The server calculated the fee from verified romantic-gift history.")}
               className="mt-4 w-full rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-3 font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-50">
@@ -94,6 +95,7 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
               <img src="/images/cp/icon_vpt_cp_question.png" alt="" className="h-4 w-4 shrink-0 object-contain" />
               Verified pre-CP romantic gifts: {prelinkGiftCoins.toLocaleString()} / 13,333 coins. Qualifying gifts waive the proposal fee.
             </p>
+            </>
           ) : null}
           {eitherHasPartner && !isPartner && !incoming && !loading ? <p className="mt-3 text-center text-xs text-amber-200">You or this user already has an active CP partner.</p> : null}
           {busy ? <p className="mt-3 text-sm text-white/60">Processing securely…</p> : null}
