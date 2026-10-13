@@ -4077,8 +4077,11 @@ function MiniProfileSheet({
   });
 
   const miniProfileCpPartner = useQuery({
-    queryKey: ["mini-profile-cp-partner", target?.id],
-    enabled: !!target?.id,
+    queryKey: ["mini-profile-cp-partner", target?.id, currentUserId],
+    enabled: !!target?.id && !!currentUserId,
+    staleTime: 0,
+    refetchOnMount: "always",
+    retry: 2,
     queryFn: async () => {
       const partner = await getCpPublicPartner(target!.id);
       return partner ? {
