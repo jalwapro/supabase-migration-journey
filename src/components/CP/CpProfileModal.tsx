@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import {
-  divorceCp, getCpStatus, getCpProposals, getCpPrelinkRomanticGiftTotal, respondCpProposal, sendCpProposal,
-  type CpProposal, type CpRelation,
+  getCpStatus, getCpProposals, getCpPrelinkRomanticGiftTotal, respondCpProposal, sendCpProposal,
+  getCpBreakupRequests, requestCpBreakup, respondCpBreakupRequest,
+  type CpProposal, type CpRelation, type CpBreakupRequest,
 } from "@/lib/cp/cpApi";
 
 type CpTargetUser = { id: string; username?: string | null; avatar?: string | null; avatarUrl?: string | null };
@@ -11,6 +12,7 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
   const [myCp, setMyCp] = useState<CpRelation | null>(null);
   const [targetCp, setTargetCp] = useState<CpRelation | null>(null);
   const [incoming, setIncoming] = useState<CpProposal | null>(null);
+  const [breakupRequests, setBreakupRequests] = useState<CpBreakupRequest[]>([]);
   const [prelinkGiftCoins, setPrelinkGiftCoins] = useState(0);
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -20,11 +22,12 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
   async function refresh() {
     setLoading(true); setError("");
     try {
-      const [mine, theirs, proposals, prelinkCoins] = await Promise.all([
+      const [mine, theirs, proposals, prelinkCoins, breakupRows] = await Promise.all([
         getCpStatus(currentUserId), getCpStatus(targetUser.id), getCpProposals(),
-        getCpPrelinkRomanticGiftTotal(targetUser.id),
+        getCpPrelinkRomanticGiftTotal(targetUser.id), getCpBreakupRequests(currentUserId),
       ]);
       setMyCp(mine); setTargetCp(theirs); setPrelinkGiftCoins(prelinkCoins);
+      setBreakupRequests(breakupRows);
       setIncoming(proposals.find((p) => p.sender_id === targetUser.id && p.receiver_id === currentUserId) ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not load CP status");
@@ -69,13 +72,29 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
             <div className="mt-3 text-center">
               <p className="font-semibold text-pink-300">♥ Your CP Partner ♥</p>
               <p className="mt-1 text-sm text-white/70">Intimacy: {relation.intimacy_score} · Level {relation.ring_level}</p>
-              <button type="button" disabled={busy} onClick={() => {
-                if (window.confirm("End this CP relationship? This action is free and clears the relationship intimacy.")) {
-                  void act(() => divorceCp(relation.id, 0), "CP relationship ended.");
-                }
-              }} className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 font-bold disabled:opacity-50">
-                End CP relationship · Free
-              </button>
+              {(() => {
+                const pending = breakupRequests.find((request) => request.relation_id === relation.id);
+                if (!pending) return (
+                  <button type="button" disabled={busy} onClick={() => {
+                    if (window.confirm("Send a request to end CP? Your partner must accept before the relationship ends.")) {
+                      void act(() => requestCpBreakup(relation.id), "CP breakup request sent. Your partner must accept to end the relationship.");
+                    }
+                  }} className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 font-bold disabled:opacity-50">
+                    Request to End CP
+                  </button>
+                );
+                if (pending.requester_id === currentUserId) return <p className="mt-4 rounded-xl border border-amber-300/20 bg-amber-500/10 p-3 text-sm text-amber-200">Your request is pending. CP will end only if your partner accepts.</p>;
+                return (
+                  <div className="mt-4 w-full rounded-xl border border-red-300/20 bg-red-500/10 p-3">
+                    <p className="text-sm font-semibold text-red-200">Your partner requested to end CP.</p>
+                    <p className="mt-1 text-xs text-white/65">Accept to end the relationship for both users, or reject to keep CP active.</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <button type="button" disabled={busy} onClick={() => void act(() => respondCpBreakupRequest(pending.id, true), "CP relationship ended after partner approval.")} className="rounded-lg bg-red-600 px-3 py-2 font-bold disabled:opacity-50">Accept</button>
+                      <button type="button" disabled={busy} onClick={() => void act(() => respondCpBreakupRequest(pending.id, false), "Request rejected. Your CP relationship remains active.")} className="rounded-lg bg-white/10 px-3 py-2 font-bold disabled:opacity-50">Reject</button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ) : null}
           {!loading && !isPartner && incoming ? (
