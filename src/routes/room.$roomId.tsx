@@ -11,7 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { RoomState, RoomParticipant, RoomSeat } from "@/types/room";
 import { VoiceRoomScreen } from "@/components/voice-room/VoiceRoomScreen";
 import { useAuth } from "@/hooks/useAuth";
-import { getCpStatus } from "@/lib/cp/cpApi";
+import { getCpPublicPartner } from "@/lib/cp/cpApi";
 import { useVoiceRoomSession } from "@/context/VoiceRoomSessionContext";
 import { nativePlatform } from "@/lib/native";
 import { useDefaultBgOpacity } from "@/hooks/useDefaultBgOpacity";
@@ -4076,21 +4076,16 @@ function MiniProfileSheet({
     },
   });
 
-  const miniProfileCpRelation = useQuery({
-    queryKey: ["mini-profile-cp-relation", target?.id],
-    enabled: !!target?.id,
-    queryFn: () => getCpStatus(target!.id),
-  });
   const miniProfileCpPartner = useQuery({
-    queryKey: ["mini-profile-cp-partner", target?.id, miniProfileCpRelation.data?.id],
-    enabled: !!target?.id && !!miniProfileCpRelation.data,
+    queryKey: ["mini-profile-cp-partner", target?.id],
+    enabled: !!target?.id,
     queryFn: async () => {
-      const relation = miniProfileCpRelation.data!;
-      const partnerId = relation.user1_id === target!.id ? relation.user2_id : relation.user1_id;
-      const { data, error } = await supabase.from("profiles")
-        .select("id, username, avatar").eq("id", partnerId).maybeSingle();
-      if (error) throw error;
-      return data as { id: string; username: string | null; avatar: string | null } | null;
+      const partner = await getCpPublicPartner(target!.id);
+      return partner ? {
+        id: partner.partner_id,
+        username: partner.partner_username,
+        avatar: partner.partner_avatar,
+      } : null;
     },
   });
 
