@@ -24,6 +24,21 @@ export type CpDailyTask = {
   completed_today: boolean;
 };
 
+export type CpBroadcastItem = {
+  id: string;
+  broadcast_type: "new_cp" | "level_up" | "anniversary";
+  relation_id?: string | null;
+  user1_id: string;
+  user2_id: string;
+  user1_name: string;
+  user2_name: string;
+  ring_name?: string | null;
+  ring_icon?: string | null;
+  level?: number | null;
+  message: string;
+  created_at: string;
+};
+
 export type CpDiaryPost = {
   id: string;
   relation_id: string;
@@ -79,7 +94,7 @@ export async function getCpDiaryPosts(relationId: string): Promise<CpDiaryPost[]
   return (data ?? []) as CpDiaryPost[];
 }
 
-export async function postCpDiary(relationId: string, content: string): Promise<void> {
+export async function postCpDiary(relationId: string, content: string, imageUrl?: string | null): Promise<CpDiaryPost> {
   const trimmed = content.trim();
   if (!trimmed) throw new Error("Please write a memory first.");
   if (trimmed.length > 1000) throw new Error("Memory must be 1000 characters or fewer.");
@@ -133,4 +148,21 @@ export async function sendCpProposalV2(
   });
   if (error) throw errorMessage(error);
   return data as { proposal_id?: string; ring_name?: string; fee_paid?: number; waived?: boolean };
+}
+
+export async function respondCpProposalV2(proposalId: string, accept: boolean): Promise<unknown> {
+  const { data, error } = await supabase.rpc("cp_respond_proposal_v2", {
+    p_proposal_id: proposalId,
+    p_accept: accept,
+  });
+  if (error) throw errorMessage(error);
+  return data;
+}
+
+export async function cancelCpBreakupRequest(requestId: string): Promise<unknown> {
+  const { data, error } = await supabase.rpc("cp_cancel_breakup_request", {
+    p_request_id: requestId,
+  });
+  if (error) throw errorMessage(error);
+  return data;
 }
