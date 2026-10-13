@@ -209,7 +209,7 @@ begin
       join public.room_members b on b.room_id=p_room_id and b.user_id=r.user2_id and b.seat_index is not null
      where r.status='active'
      order by r.created_at asc;
-end $;
+end $$;
 
 revoke all on function public.cp_room_seated_pairs(uuid) from public,anon;
 grant execute on function public.cp_room_seated_pairs(uuid) to authenticated;
