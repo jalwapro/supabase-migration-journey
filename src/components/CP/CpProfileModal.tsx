@@ -36,7 +36,7 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
   }, [isOpen, currentUserId, targetUser.id]);
 
   if (!isOpen) return null;
-  const relation = myCp?.id && myCp.id === targetCp?.id ? myCp : myCp;
+  const relation = myCp;
   const isPartner = !!relation && (relation.user1_id === targetUser.id || relation.user2_id === targetUser.id);
   const eitherHasPartner = !!myCp || !!targetCp;
 
@@ -68,11 +68,11 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
               <p className="font-semibold text-pink-300">♥ Your CP Partner ♥</p>
               <p className="mt-1 text-sm text-white/70">Intimacy: {relation.intimacy_score} · Level {relation.ring_level}</p>
               <button type="button" disabled={busy} onClick={() => {
-                if (window.confirm("Break this CP relationship? 10,000 coins will be charged.")) {
-                  void act(() => divorceCp(relation.id, 10000), "CP relationship ended.");
+                if (window.confirm("End this CP relationship? This action is free and clears the relationship intimacy.")) {
+                  void act(() => divorceCp(relation.id, 0), "CP relationship ended.");
                 }
               }} className="mt-4 w-full rounded-xl bg-red-600 px-4 py-3 font-bold disabled:opacity-50">
-                Divorce · 10,000 coins
+                End CP relationship · Free
               </button>
             </div>
           ) : null}
@@ -84,9 +84,9 @@ export function CpProfileModal({ isOpen, onClose, currentUserId, targetUser }: P
           ) : null}
           {!loading && !isPartner && !incoming ? (
             <button type="button" disabled={busy || eitherHasPartner || currentUserId === targetUser.id}
-              onClick={() => void act(() => sendCpProposal(targetUser.id, 5000), "CP proposal sent · 5,000 coins charged.")}
+              onClick={() => void act(() => sendCpProposal(targetUser.id, 13333), "CP proposal sent · 13,333 coins charged.")}
               className="mt-4 w-full rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-4 py-3 font-bold shadow-lg disabled:cursor-not-allowed disabled:opacity-50">
-              💍 Send CP Proposal · 5,000 coins
+              💍 Send CP Proposal · 13,333 coins
             </button>
           ) : null}
           {eitherHasPartner && !isPartner && !incoming && !loading ? <p className="mt-3 text-center text-xs text-amber-200">You or this user already has an active CP partner.</p> : null}
