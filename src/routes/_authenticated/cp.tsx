@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Heart, Search, Users, RefreshCw, UserRound, Check, X, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CpProfileModal } from "@/components/CP/CpProfileModal";
+import { CpRingSelectorModal } from "@/components/CP/CpRingSelectorModal";
 import { getCpProposals, getCpStatus, getCpWeeklyRanking, getCpBreakupRequests, requestCpBreakup, respondCpBreakupRequest, type CpProposal, type CpRelation, type CpWeeklyRanking, type CpBreakupRequest } from "@/lib/cp/cpApi";
 
 type Person = { id: string; username: string | null; avatar: string | null; user_code?: string | null };
@@ -22,6 +23,8 @@ function CpHome() {
   const [searchCode, setSearchCode] = useState("");
   const [target, setTarget] = useState<Person | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [ringModalOpen, setRingModalOpen] = useState(false);
+  const [ringPrelinkCoins, setRingPrelinkCoins] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState("");
