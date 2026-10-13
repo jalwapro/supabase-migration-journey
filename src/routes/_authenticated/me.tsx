@@ -92,6 +92,17 @@ function MePage() {
     },
     staleTime: 30_000,
   });
+  const { data: p2pProfile } = useQuery({
+    queryKey: ["p2p-profile-role", user?.id],
+    enabled: !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any).from("p2p_profiles")
+        .select("role,active").eq("user_id", user!.id).maybeSingle();
+      if (error) throw error;
+      return data as { role: string; active: boolean } | null;
+    },
+    staleTime: 30_000,
+  });
   const { data: vip } = useVipProfile(user?.id);
   const { data: partnerRow } = useQuery({
     queryKey: ["is-partner", user?.id],
@@ -372,7 +383,8 @@ function MePage() {
             <div className="grid grid-cols-2 gap-2.5">
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
-              <FeatureCard to="/p2p-agency" icon={ShieldCheck} title="P2P Master-Agency" sub="New coins, diamonds, agent payouts & approvals" color="#fbbf24" elite />
+              <FeatureCard to="/p2p-agency" icon={Coins} title="P2P Trade" sub="Buy coins & sell diamonds via verified agents" color="#fbbf24" elite />
+              {(p2pProfile?.active && (p2pProfile.role === "super_agent" || p2pProfile.role === "sub_agent")) && <FeatureCard to="/p2p-agency" icon={ShieldCheck} title="Agent Portal" sub={p2pProfile.role === "super_agent" ? "Manage your team of up to 5 agents & approve payouts" : "Manage user payouts, payment proofs & coin transfers"} color="#f59e0b" elite />}
                             <FeatureCard to="/gallery" icon={ImageIcon} title="Gallery" sub="Manage your photos" color="#22c55e" />
               <FeatureCard to="/theme-shop" icon={ShoppingBag} title="Shop" sub="Cars, frames, rings, entrances & more" color="#fbbf24" />
               <FeatureCard to="/custom-theme" icon={Palette} title="Custom Theme" sub="Design your own background" color="#8b5cf6" />
