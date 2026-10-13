@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Heart, Sparkles, Calendar, Award, BookOpen, Send, Trash2, CheckCircle } from "lucide-react";
+import { Heart, Sparkles, Calendar, Award, BookOpen, Send, Trash2, CheckCircle, Gift, Coins } from "lucide-react";
 import { toast } from "sonner";
 import {
   getCpSpaceDetails, getCpDailyTasksWithStatus, claimDailyCpTask,
   getCpDiaryPosts, postCpDiary, deleteCpDiary,
-  type CpSpaceDetails, type CpDailyTask, type CpDiaryPost,
+  getCpExclusiveGifts, sendCpExclusiveGift,
+  type CpSpaceDetails, type CpDailyTask, type CpDiaryPost, type CpExclusiveGift,
 } from "./cpEcosystemApi";
 
 type Props = {
@@ -16,6 +17,9 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
   const [space, setSpace] = useState<CpSpaceDetails | null>(null);
   const [tasks, setTasks] = useState<CpDailyTask[]>([]);
   const [posts, setPosts] = useState<CpDiaryPost[]>([]);
+  const [gifts, setGifts] = useState<CpExclusiveGift[]>([]);
+  const [confirmGift, setConfirmGift] = useState<CpExclusiveGift | null>(null);
+  const [sendingGift, setSendingGift] = useState<string | null>(null);
   const [newPostText, setNewPostText] = useState("");
   const [loading, setLoading] = useState(true);
   const [submittingPost, setSubmittingPost] = useState(false);
@@ -27,15 +31,19 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
       const spaceData = await getCpSpaceDetails(userId);
       setSpace(spaceData);
       if (spaceData?.relation_id) {
-        const [taskData, diaryData] = await Promise.all([
+        const [taskData, diaryData, giftData] = await Promise.all([
           getCpDailyTasksWithStatus(spaceData.relation_id),
           getCpDiaryPosts(spaceData.relation_id),
+          getCpExclusiveGifts(),
         ]);
         setTasks(taskData);
         setPosts(diaryData);
+        setGifts(giftData);
       } else {
         setTasks([]);
         setPosts([]);
+        setGifts([]);
+        setConfirmGift(null);
       }
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : "Failed to load CP Space");
@@ -47,6 +55,20 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
   useEffect(() => {
     void loadAll();
   }, [userId]);
+
+  const handleSendExclusiveGift = async (gift: CpExclusiveGift) => {
+    try {
+      setSendingGift(gift.id);
+      const result = await sendCpExclusiveGift(gift.id);
+      setConfirmGift(null);
+      toast.success(`${result.gift_name} sent! +${result.points_added} intimacy ❤️`);
+      await loadAll();
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Could not send CP gift");
+    } finally {
+      setSendingGift(null);
+    }
+  };
 
   const handleClaimTask = async (taskKey: string) => {
     try {
@@ -144,6 +166,44 @@ export function CpSpaceView({ userId, onOpenBreakupDialog }: Props) {
               Manage CP relationship
             </button>
           )}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-pink-500/20 bg-gradient-to-br from-pink-950/30 via-zinc-900/80 to-purple-950/30 p-5 text-white">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="flex items-center gap-2 text-base font-black"><Gift className="h-4 w-4 text-pink-300" /> Exclusive Couple Gifts</h3>
+          <span className="text-xs text-zinc-400">Coins are charged securely on the server</span>
+        </div>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {gifts.map((gift) => {
+            const locked = space.level < gift.required_cp_level;
+            const confirming = confirmGift?.id === gift.id;
+            return (
+              <div key={gift.id} className="rounded-2xl border border-white/10 bg-zinc-950/70 p-3.5">
+                <div className="flex items-start gap-3">
+                  <img src={gift.icon_url} alt="" loading="lazy" className="h-14 w-14 shrink-0 rounded-xl bg-white/5 object-contain" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-extrabold">{gift.name}</p>
+                    <p className="mt-1 text-xs text-zinc-400">{gift.description}</p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-[11px] font-bold">
+                      <span className="inline-flex items-center gap-1 text-amber-300"><Coins className="h-3 w-3" /> {gift.price.toLocaleString()}</span>
+                      <span className="text-pink-300">+{gift.intimacy_points} intimacy</span>
+                    </div>
+                    {locked && <p className="mt-1 text-[11px] font-semibold text-rose-300">Unlock at CP level {gift.required_cp_level}</p>}
+                  </div>
+                </div>
+                {confirming ? (
+                  <div className="mt-3 flex gap-2">
+                    <button type="button" onClick={() => setConfirmGift(null)} className="flex-1 rounded-xl border border-white/10 px-3 py-2 text-xs font-bold text-zinc-300">Cancel</button>
+                    <button type="button" disabled={sendingGift === gift.id} onClick={() => void handleSendExclusiveGift(gift)} className="flex-1 rounded-xl bg-gradient-to-r from-pink-600 to-rose-500 px-3 py-2 text-xs font-black text-white disabled:opacity-50">{sendingGift === gift.id ? "Sending…" : `Confirm · ${gift.price.toLocaleString()} coins`}</button>
+                  </div>
+                ) : (
+                  <button type="button" disabled={locked || sendingGift !== null} onClick={() => setConfirmGift(gift)} className="mt-3 w-full rounded-xl bg-pink-600/90 px-3 py-2 text-xs font-black text-white hover:bg-pink-500 disabled:cursor-not-allowed disabled:opacity-40">{locked ? "Level locked" : "Send romantic gift"}</button>
+                )}
+              </div>
+            );
+          })}
+          {gifts.length === 0 && <p className="col-span-full rounded-2xl bg-zinc-950/50 p-5 text-center text-xs text-zinc-500">No exclusive gifts are available right now.</p>}
         </div>
       </div>
 
