@@ -28,6 +28,7 @@ set search_path=public,pg_temp
 as $$
 declare
   v_category text;
+  v_is_cp_romantic boolean;
   v_user1 uuid;
   v_user2 uuid;
 begin
@@ -35,9 +36,9 @@ begin
     return new;
   end if;
 
-  select lower(coalesce(g.category,'')) into v_category
-    from public.gifts g where g.id = new.gift_id;
-  if coalesce(v_category,'') not like '%romantic%' then
+  select lower(coalesce(g.category,'')), coalesce(g.is_cp_romantic,false)
+    into v_category,v_is_cp_romantic from public.gifts g where g.id = new.gift_id;
+  if not (v_is_cp_romantic or coalesce(v_category,'') like '%romantic%') then
     return new;
   end if;
 
