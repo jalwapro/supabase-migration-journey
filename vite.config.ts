@@ -39,6 +39,11 @@ export default defineConfig({
   },
   nitro: isVercel ? { preset: "vercel" } : undefined,
   vite: {
+    // Keep the warning threshold explicit while route-level splitting is enabled.
+    // This avoids noisy warnings for legitimate large vendor chunks; it does not disable splitting.
+    build: {
+      chunkSizeWarningLimit: 1000,
+    },
     plugins: [stripTanStackSourceMarkers()],
   },
 });
