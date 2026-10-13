@@ -195,7 +195,7 @@ $$;
 -- Caller must be a member of the requested room. This does not read or modify LiveKit.
 create or replace function public.cp_room_seated_pairs(p_room_id uuid)
 returns table(relation_id uuid,user1_id uuid,user2_id uuid,intimacy_score bigint,ring_level integer,seat_frame_url text)
-language plpgsql stable security definer set search_path=public,pg_temp as $
+language plpgsql stable security definer set search_path=public,pg_temp as $$
 begin
   if auth.uid() is null then raise exception 'AUTH_REQUIRED' using errcode='42501'; end if;
   if not exists(select 1 from public.room_members m where m.room_id=p_room_id and m.user_id=auth.uid()) then
