@@ -2038,6 +2038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoinSellersRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/p2p/agent': {
+      id: '/_authenticated/p2p/agent'
+      path: '/p2p/agent'
+      fullPath: '/p2p/agent'
+      preLoaderRoute: typeof AuthenticatedP2pAgentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/create-room': {
       id: '/_authenticated/create-room'
       path: '/create-room'
