@@ -214,6 +214,7 @@ end $$;
 revoke all on function public.cp_room_seated_pairs(uuid) from public,anon;
 grant execute on function public.cp_room_seated_pairs(uuid) to authenticated;
 
+revoke execute on function public.cp_apply_romantic_gift_intimacy() from public, anon, authenticated;
 revoke all on function public.cp_send_proposal(uuid,bigint) from public,anon;
 revoke all on function public.cp_respond_proposal(uuid,boolean) from public,anon;
 revoke all on function public.cp_divorce(uuid,bigint) from public,anon;
