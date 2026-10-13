@@ -4,7 +4,7 @@ import { Heart, Search, Users, RefreshCw, UserRound, Check, X, Clock } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { CpProfileModal } from "@/components/CP/CpProfileModal";
 import { CpRingSelectorModal } from "@/components/CP/CpRingSelectorModal";
-import { CpExclusiveGiftShop } from "@/components/CP/CpExclusiveGiftShop";
+import { CpSpaceView } from "@/components/CP/CpSpaceView";
 import { getCpProposals, getCpStatus, getCpWeeklyRanking, getCpBreakupRequests, requestCpBreakup, respondCpBreakupRequest, type CpProposal, type CpRelation, type CpWeeklyRanking, type CpBreakupRequest } from "@/lib/cp/cpApi";
 
 type Person = { id: string; username: string | null; avatar: string | null; user_code?: string | null };
@@ -119,9 +119,7 @@ function CpHome() {
         {error && <p role="alert" className="mt-3 rounded-xl border border-red-400/20 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
       </header>
 
-      {!loading && myRelation && (
-        <CpExclusiveGiftShop cpLevel={myRelation.ring_level} onGiftSent={() => void refresh()} />
-      )}
+      {!loading && myRelation && <CpSpaceView userId={userId} />}
 
       {loading ? <div className="rounded-2xl border border-border p-6 text-sm text-muted-foreground">Loading CP details…</div> : (
         <section className="grid gap-4 sm:grid-cols-2">
