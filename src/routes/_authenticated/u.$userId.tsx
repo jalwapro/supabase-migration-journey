@@ -7,6 +7,7 @@ import { LevelAvatar } from "@/components/LevelAvatar";
 import { CountryFlag } from "@/components/CountryFlag";
 import { vipTierForLevel } from "@/lib/vip-levels";
 import { useAutoProfileCardFrame } from "@/hooks/useAutoProfileCardFrame";
+import { getCpStatus } from "@/lib/cp/cpApi";
 import { VipProgressBar } from "@/components/vip/VipProgressBar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -99,6 +100,24 @@ function UserProfilePage() {
       if (error) throw error;
       if (!data) throw new Error("User not found");
       return data as FullProfile;
+    },
+  });
+
+  const publicCpRelation = useQuery({
+    queryKey: ["public-profile-cp-relation", userId],
+    enabled: !!userId,
+    queryFn: () => getCpStatus(userId),
+  });
+  const publicCpPartner = useQuery({
+    queryKey: ["public-profile-cp-partner", userId, publicCpRelation.data?.id],
+    enabled: !!publicCpRelation.data,
+    queryFn: async () => {
+      const relation = publicCpRelation.data!;
+      const partnerId = relation.user1_id === userId ? relation.user2_id : relation.user1_id;
+      const { data, error } = await supabase.from("profiles")
+        .select("id, username, avatar").eq("id", partnerId).maybeSingle();
+      if (error) throw error;
+      return data as { id: string; username: string | null; avatar: string | null } | null;
     },
   });
 
@@ -558,6 +577,18 @@ function UserProfilePage() {
                   </span>
                 )}
               </div>
+
+              {publicCpPartner.data && (
+                <Link to="/u/$userId" params={{ userId: publicCpPartner.data.id }}
+                  className="mt-3 flex items-center gap-3 rounded-2xl border border-pink-300/30 bg-gradient-to-r from-pink-500/15 to-fuchsia-500/10 px-3 py-2.5 shadow-[0_0_18px_rgba(236,72,153,0.12)]">
+                  <div className="relative">
+                    {publicCpPartner.data.avatar ? <img src={publicCpPartner.data.avatar} alt="" className="h-11 w-11 rounded-full border-2 border-pink-300/70 object-cover" /> : <span className="grid h-11 w-11 place-items-center rounded-full border-2 border-pink-300/70 bg-pink-500/15 text-lg">♥</span>}
+                    <span className="absolute -bottom-1 -right-1 grid h-5 w-5 place-items-center rounded-full bg-pink-500 text-[10px] text-white">♥</span>
+                  </div>
+                  <span className="text-left"><span className="block text-[10px] font-black uppercase tracking-[.18em] text-pink-300">CP Partner</span><span className="block max-w-[190px] truncate text-sm font-extrabold text-white">{publicCpPartner.data.username || "JALWA User"}</span></span>
+                  <Heart className="ml-1 h-4 w-4 text-pink-300" />
+                </Link>
+              )}
 
               {/* Chips row */}
               <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 text-[11px] text-white/70">
