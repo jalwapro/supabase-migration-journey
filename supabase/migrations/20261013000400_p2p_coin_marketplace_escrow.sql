@@ -146,18 +146,36 @@ grant execute on function public.p2p_admin_set_coin_fiat_rate(text,numeric,boole
 
 create or replace function public.p2p_admin_set_agent_location(p_agent_id uuid,p_country_code text,p_currency_code text)
 returns void language plpgsql security definer set search_path=''
-as $
-declare v_market public.p2p_market_settings%rowtype;
+as $$
+declare
+  v_market public.p2p_market_settings%rowtype;
 begin
- if (select p2p_private.current_role()) is distinct from 'admin' then raise exception 'ADMIN_REQUIRED'; end if;
- if not exists(select 1 from public.p2p_profiles where user_id=p_agent_id and role='sub_agent' and active) then raise exception 'ACTIVE_SUB_AGENT_REQUIRED'; end if;
- if p_country_code !~ '^[A-Z]{2}p_country_code text,p_currency_code text,p_coins_per_bundle bigint,p_payment_methods text[],p_payment_details jsonb,p_min_order_coins bigint,p_max_order_coins bigint,p_is_listed boolean default true)
+  if (select p2p_private.current_role()) is distinct from 'admin' then raise exception 'ADMIN_REQUIRED'; end if;
+  if p_country_code !~ '^[A-Z]{2}$' or p_currency_code !~ '^[A-Z]{3}$' then raise exception 'INVALID_AGENT_LOCATION'; end if;
+  if not exists(select 1 from public.p2p_profiles where user_id=p_agent_id and role='sub_agent' and active) then raise exception 'ACTIVE_SUB_AGENT_REQUIRED'; end if;
+  select * into v_market from public.p2p_market_settings where singleton=true and active;
+  if not found then raise exception 'MARKET_DISABLED'; end if;
+  if not exists(select 1 from public.p2p_coin_fiat_rates where currency_code=p_currency_code and active) then raise exception 'COIN_FIAT_RATE_UNAVAILABLE'; end if;
+  insert into public.p2p_agent_settings(agent_id,country_code,currency_code,coins_per_bundle,payment_methods,payment_details,min_order_coins,max_order_coins,is_listed)
+  values(p_agent_id,p_country_code,p_currency_code,v_market.min_agent_coins_per_bundle,array['JazzCash']::text[],'{}'::jsonb,500,100000,false)
+  on conflict(agent_id) do update set country_code=excluded.country_code,currency_code=excluded.currency_code,is_listed=false,updated_at=now();
+end $$;
+revoke all on function public.p2p_admin_set_agent_location(uuid,text,text) from public,anon;
+grant execute on function public.p2p_admin_set_agent_location(uuid,text,text) to authenticated;
+
+create or replace function public.p2p_agent_set_market_profile(
+  p_country_code text,p_currency_code text,p_coins_per_bundle bigint,p_payment_methods text[],
+  p_payment_details jsonb,p_min_order_coins bigint,p_max_order_coins bigint,p_is_listed boolean default true
+)
 returns void language plpgsql security definer set search_path=''
 as $$
-declare v_user uuid:=auth.uid(); v_market public.p2p_market_settings%rowtype; v_existing public.p2p_agent_settings%rowtype;
+declare
+  v_user uuid:=auth.uid();
+  v_market public.p2p_market_settings%rowtype;
+  v_existing public.p2p_agent_settings%rowtype;
 begin
   if v_user is null or not exists(select 1 from public.p2p_profiles where user_id=v_user and role='sub_agent' and active) then raise exception 'ACTIVE_SUB_AGENT_REQUIRED'; end if;
-  select * into v_existing from public.p2p_agent_settings where agent_id=v_user;
+  select * into v_existing from public.p2p_agent_settings where agent_id=v_user for update;
   if not found then raise exception 'ADMIN_MUST_ASSIGN_AGENT_COUNTRY_FIRST'; end if;
   if p_country_code<>v_existing.country_code or p_currency_code<>v_existing.currency_code then raise exception 'COUNTRY_CURRENCY_ADMIN_CONTROLLED'; end if;
   select * into v_market from public.p2p_market_settings where singleton=true and active;
@@ -170,9 +188,9 @@ begin
   if exists(select 1 from unnest(p_payment_methods) m where m not in ('JazzCash','Easypaisa','Bank Transfer','Raast','Other')) then raise exception 'UNSUPPORTED_PAYMENT_METHOD'; end if;
   insert into public.p2p_agent_settings(agent_id,country_code,currency_code,coins_per_bundle,payment_methods,payment_details,min_order_coins,max_order_coins,is_listed)
   values(v_user,p_country_code,p_currency_code,p_coins_per_bundle,p_payment_methods,coalesce(p_payment_details,'{}'::jsonb),p_min_order_coins,p_max_order_coins,p_is_listed)
-  on conflict(agent_id) do update set country_code=excluded.country_code,currency_code=excluded.currency_code,coins_per_bundle=excluded.coins_per_bundle,
-    payment_methods=excluded.payment_methods,payment_details=excluded.payment_details,min_order_coins=excluded.min_order_coins,
-    max_order_coins=excluded.max_order_coins,is_listed=excluded.is_listed,updated_at=now();
+  on conflict(agent_id) do update set coins_per_bundle=excluded.coins_per_bundle,payment_methods=excluded.payment_methods,
+    payment_details=excluded.payment_details,min_order_coins=excluded.min_order_coins,max_order_coins=excluded.max_order_coins,
+    is_listed=excluded.is_listed,updated_at=now();
 end $$;
 revoke all on function public.p2p_agent_set_market_profile(text,text,bigint,text[],jsonb,bigint,bigint,boolean) from public,anon;
 grant execute on function public.p2p_agent_set_market_profile(text,text,bigint,text[],jsonb,bigint,bigint,boolean) to authenticated;
