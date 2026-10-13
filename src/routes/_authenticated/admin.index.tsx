@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Users, DoorOpen, Wallet, Coins, Flag, Crown, TrendingUp, ArrowUpRight,
   Radio, Video, Mic, ArrowUpFromLine, Search, Bell, Calendar, Server, Database,
-  CheckCircle2, AlertTriangle, Loader2, RefreshCw,
+  CheckCircle2, AlertTriangle, Loader2, RefreshCw, Heart,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
