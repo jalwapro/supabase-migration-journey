@@ -49,6 +49,17 @@ function WalletPage() {
   return (
     <>
       <AppShell title="Wallet" subtitle="Coins & points">
+        <section className="mb-4 overflow-hidden rounded-3xl border border-amber-400/35 bg-gradient-to-r from-zinc-950 via-[#201605] to-zinc-950 p-4 shadow-[0_12px_40px_rgba(245,158,11,0.10)] sm:p-5">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-amber-400/10 text-amber-300"><Coins className="h-6 w-6" /></div>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[.2em] text-amber-300">JALWA P2P Marketplace</p>
+              <h2 className="mt-1 text-base font-black text-white sm:text-lg">Buy Coins · Sell Diamonds</h2>
+              <p className="mt-1 text-xs text-white/60">Browse listed Coin Agents and contact them directly.</p>
+            </div>
+            <Link to="/coin-sellers" className="shrink-0 rounded-xl bg-gradient-to-b from-amber-200 to-amber-500 px-3 py-2.5 text-xs font-black text-zinc-950 shadow-lg sm:px-4">Trade Now <span aria-hidden>↗</span></Link>
+          </div>
+        </section>
         <TheatreCard>
           {/* Balance hero */}
           <div className="px-6 pt-8 pb-5 text-center">
@@ -92,7 +103,7 @@ function WalletPage() {
                 <ArrowDownToLine className="mr-1.5 inline h-4 w-4" />
                 Recharge
               </Link>
-              <Link to="/p2p" className="flex-1 rounded-full border border-[#ffcf6a]/35 bg-black/40 py-2.5 text-center text-sm font-black text-[#ffcf6a]">P2P Market</Link>\n              <Link to="/coin-agents" className="flex-1 rounded-full border border-[#8be9fd]/35 bg-black/40 py-2.5 text-center text-sm font-black text-[#8be9fd]">Coin Agent</Link>
+              <Link to="/coin-sellers" className="flex-1 rounded-full border border-[#ffcf6a]/35 bg-black/40 py-2.5 text-center text-sm font-black text-[#ffcf6a]">P2P Buy / Sell</Link>
               <button
                 onClick={() =>
                   document
