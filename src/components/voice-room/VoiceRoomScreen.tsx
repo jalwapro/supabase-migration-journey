@@ -197,15 +197,17 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   useEffect(() => {
     const missing = cpUserIds.filter(id => !cpBadgeLookupIdsRef.current.has(id));
     if (!missing.length) return;
-    let active = true;
     missing.forEach(id => cpBadgeLookupIdsRef.current.add(id));
     void supabase.rpc("cp_room_badges", { p_user_ids: missing }).then(({ data, error }) => {
-      if (!active || error || !data) return;
+      if (error || !data) {
+        // Allow retry after a transient API failure.
+        missing.forEach(id => cpBadgeLookupIdsRef.current.delete(id));
+        return;
+      }
       const next: Record<string, CpRoomBadge> = {};
       for (const badge of data as CpRoomBadge[]) next[badge.user_id] = badge;
       setCpBadgesByUser(prev => ({ ...prev, ...next }));
     });
-    return () => { active = false; };
   }, [cpUserIds]);
   const openMemberProfile = (seatIndex: number) => { const seat = room.seats.find(s => s.index === seatIndex); if (!seat?.user) return; setMiniDraft(`@${seat.user.username} `); setShowMiniInputPopup(true); setSelectedMember({ id: seat.user.id, username: seat.user.username, avatar: seat.user.avatar, level: seat.user.level, gift_score: seat.user.gift_score, is_muted: seat.user.is_muted }); };
   const currentSlide = gameSlides[currentSlideIndex] || gameSlides[0];
