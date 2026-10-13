@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Heart, Search, Users, Trophy, RefreshCw, UserRound } from "lucide-react";
+import { Heart, Search, Users, RefreshCw, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CpProfileModal } from "@/components/CP/CpProfileModal";
 import { getCpProposals, getCpStatus, getCpWeeklyRanking, type CpProposal, type CpRelation, type CpWeeklyRanking } from "@/lib/cp/cpApi";
