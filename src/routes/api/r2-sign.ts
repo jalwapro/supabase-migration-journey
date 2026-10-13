@@ -89,6 +89,21 @@ async function verifyUser(request: Request): Promise<{ id: string; token: string
 }
 
 /** Server-side admin check — never trust a client-supplied role claim. */
+async function canReviewPayoutSlip(normalAgentId: string, token: string): Promise<boolean> {
+  const { url, anon } = supabaseEnv();
+  if (!normalAgentId || !anon) return false;
+  try {
+    const res = await fetch(`${url}/rest/v1/rpc/can_view_diamond_payout_slip`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, apikey: anon },
+      body: JSON.stringify({ _normal_agent_id: normalAgentId }),
+    });
+    if (!res.ok) return false;
+    return (await res.json()) === true;
+  } catch { return false; }
+}
+
+/** Server-side admin check — never trust a client-supplied role claim. */
 async function isAdmin(userId: string, token: string): Promise<boolean> {
   const { url, anon } = supabaseEnv();
   try {
@@ -256,7 +271,11 @@ export const Route = createFileRoute("/api/r2-sign")({
           const denied = authorizeWrite(path, user.id, admin);
           if (denied) return json({ error: denied }, 403);
         } else {
-          const denied = authorizeRead(path, user.id, admin);
+          let denied = authorizeRead(path, user.id, admin);
+          if (denied && path.startsWith("payout-slips/")) {
+            const normalAgentId = path.split("/")[1] ?? "";
+            if (await canReviewPayoutSlip(normalAgentId, user.token)) denied = null;
+          }
           if (denied) return json({ error: denied }, 403);
         }
 
