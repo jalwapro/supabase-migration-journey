@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Heart, Search, Users, RefreshCw, UserRound } from "lucide-react";
+import { Heart, Search, Users, RefreshCw, UserRound, Check, X, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CpProfileModal } from "@/components/CP/CpProfileModal";
-import { getCpProposals, getCpStatus, getCpWeeklyRanking, type CpProposal, type CpRelation, type CpWeeklyRanking } from "@/lib/cp/cpApi";
+import { getCpProposals, getCpStatus, getCpWeeklyRanking, getCpBreakupRequests, requestCpBreakup, respondCpBreakupRequest, type CpProposal, type CpRelation, type CpWeeklyRanking, type CpBreakupRequest } from "@/lib/cp/cpApi";
 
 type Person = { id: string; username: string | null; avatar: string | null; user_code?: string | null };
 // Keep the CP Center route explicitly registered under the authenticated shell.
@@ -15,6 +15,8 @@ function CpHome() {
   const [partner, setPartner] = useState<Person | null>(null);
   const [incoming, setIncoming] = useState<Array<{ proposal: CpProposal; person: Person }>>([]);
   const [sent, setSent] = useState<CpProposal[]>([]);
+  const [breakupRequests, setBreakupRequests] = useState<CpBreakupRequest[]>([]);
+  const [breakupBusy, setBreakupBusy] = useState(false);
   const [ranking, setRanking] = useState<CpWeeklyRanking[]>([]);
   const [rankProfiles, setRankProfiles] = useState<Record<string, Person>>({});
   const [searchCode, setSearchCode] = useState("");
@@ -31,14 +33,15 @@ function CpHome() {
       const id = auth.user?.id;
       if (!id) throw new Error("Please sign in to use CP.");
       setUserId(id);
-      const [relation, proposals, ranks] = await Promise.all([
-        getCpStatus(id), getCpProposals(), getCpWeeklyRanking(),
+      const [relation, proposals, ranks, breakupRows] = await Promise.all([
+        getCpStatus(id), getCpProposals(), getCpWeeklyRanking(), getCpBreakupRequests(id),
       ]);
+      setBreakupRequests(breakupRows);
       setMyRelation(relation);
       setSent(proposals.filter((p) => p.sender_id === id));
       const incomingRows = proposals.filter((p) => p.receiver_id === id);
       const partnerId = relation ? (relation.user1_id === id ? relation.user2_id : relation.user1_id) : null;
-      const profileIds = [...new Set([...incomingRows.map((p) => p.sender_id), ...(partnerId ? [partnerId] : []), ...ranks.flatMap((r) => [r.user1_id, r.user2_id])])];
+      const profileIds = [...new Set([...incomingRows.map((p) => p.sender_id), ...(partnerId ? [partnerId] : []), ...breakupRows.flatMap((r) => [r.requester_id, r.recipient_id]), ...ranks.flatMap((r) => [r.user1_id, r.user2_id])])];
       const { data: people, error: peopleError } = profileIds.length
         ? await supabase.from("profiles").select("id,username,avatar,user_code").in("id", profileIds)
         : { data: [], error: null };
@@ -79,6 +82,21 @@ function CpHome() {
     setModalOpen(true);
   }
 
+  async function handleBreakupRequest() {
+    if (!myRelation) return;
+    setBreakupBusy(true);
+    try { await requestCpBreakup(myRelation.id); await refresh(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not send CP breakup request."); }
+    finally { setBreakupBusy(false); }
+  }
+
+  async function handleBreakupResponse(requestId: string, accept: boolean) {
+    setBreakupBusy(true);
+    try { await respondCpBreakupRequest(requestId, accept); await refresh(); }
+    catch (e) { setError(e instanceof Error ? e.message : "Could not respond to CP breakup request."); }
+    finally { setBreakupBusy(false); }
+  }
+
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl space-y-5 bg-background px-4 py-5 text-foreground sm:px-6">
       <header className="rounded-3xl border border-fuchsia-400/20 bg-gradient-to-br from-[#180b22] via-[#100d1c] to-[#151e3b] p-5 sm:p-7">
@@ -108,6 +126,12 @@ function CpHome() {
                 <span className="text-xs font-bold text-fuchsia-300">Open</span>
               </button>
             ) : <p className="rounded-xl bg-muted/40 p-4 text-sm text-muted-foreground">You are not in a CP relationship yet. Search for a partner by JALWA ID above.</p>}
+            {myRelation && (() => {
+              const pending = breakupRequests.find((r) => r.relation_id === myRelation.id);
+              if (!pending) return <button type="button" disabled={breakupBusy} onClick={() => void handleBreakupRequest()} className="mt-3 w-full rounded-xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm font-bold text-rose-300 disabled:opacity-50"><Heart className="mr-2 inline h-4 w-4" /> {breakupBusy ? "Please wait…" : "Request to end CP"}</button>;
+              if (pending.requester_id === userId) return <p className="mt-3 flex items-center gap-2 rounded-xl border border-amber-400/20 bg-amber-500/10 p-3 text-xs text-amber-200"><Clock className="h-4 w-4 shrink-0" /> Your CP breakup request is waiting for your partner's approval.</p>;
+              return <div className="mt-3 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3"><p className="text-sm font-bold text-rose-200">Your partner wants to end this CP.</p><p className="mt-1 text-xs text-muted-foreground">Accepting ends the relationship for both users. Rejecting keeps CP active.</p><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" disabled={breakupBusy} onClick={() => void handleBreakupResponse(pending.id, true)} className="rounded-lg bg-rose-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"><Check className="mr-1 inline h-4 w-4" /> Accept</button><button type="button" disabled={breakupBusy} onClick={() => void handleBreakupResponse(pending.id, false)} className="rounded-lg border border-border px-3 py-2 text-sm font-bold disabled:opacity-50"><X className="mr-1 inline h-4 w-4" /> Reject</button></div></div>;
+            })()}
           </article>
           <article className="rounded-2xl border border-border bg-card p-4">
             <div className="mb-3 flex items-center gap-2 text-sm font-bold"><Users className="h-4 w-4 text-amber-400" /> Incoming proposals</div>
