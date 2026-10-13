@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { HostCard } from "./HostCard";
 import { LevelAvatar } from "@/components/LevelAvatar";
 import { CountryFlag } from "@/components/CountryFlag";
+import { CpSeatAura } from "@/components/CP/CpSeatAura";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -26,8 +27,8 @@ function EmptySeatArt({ locked }: { locked: boolean }) {
   );
 }
 
-type SeatProfileMedia = { frame: string | null; ring: string | null; level: number | null; render_config: unknown; country: string | null; country_code: string | null };
-type SeatProps = { seat: RoomSeat; onClick: () => void; profileMedia?: SeatProfileMedia | null };
+type SeatProfileMedia = { frame: string | null; ring: string | null; level: number | null; render_config: unknown; country: string | null; country_code: string | null; cp_level?: number | null; cp_level_name?: string | null; cp_partner_id?: string | null; cp_partner_username?: string | null; cp_partner_avatar?: string | null; cp_badge_url?: string | null; cp_intimacy_score?: number | null };
+type SeatProps = { seat: RoomSeat; onClick: () => void; profileMedia?: SeatProfileMedia | null; partnerPresentOnStage?: boolean };
 
 export type RoomSeatUser = {
   id?: string;
@@ -66,7 +67,7 @@ export type RoomParticipant = {
   level?: number;
 };
 
-export function Seat({ seat, onClick, profileMedia = null }: SeatProps) {
+export function Seat({ seat, onClick, profileMedia = null, partnerPresentOnStage = false }: SeatProps) {
   const { user, is_locked, index, seatNumber, className } = seat;
   const num = index ?? seatNumber ?? 1;
   const username = user?.username || user?.name || `No.${num}`;
@@ -99,7 +100,7 @@ export function Seat({ seat, onClick, profileMedia = null }: SeatProps) {
       <button type="button" onClick={onClick} className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0 transition-all active:scale-95 border-0 shadow-none cursor-pointer">
         <span className="absolute left-0.5 top-0 z-10 grid h-3.5 w-3.5 place-items-center rounded-full bg-black/80 border border-amber-500 text-[8px] font-black text-white shadow">{num}</span>
         <span data-avatar="true" data-seat-media="true" className="relative z-20 h-[62px] w-[62px] shrink-0 p-0 flex items-center justify-center my-0.5 bg-transparent overflow-visible">
-          <LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} />
+          <CpSeatAura cpLevel={profileMedia?.cp_level} partnerPresentOnStage={partnerPresentOnStage} isSpeaking={speaking}><LevelAvatar src={avatar} name={username} level={level} size="sm" showBadge={false} frame={equippedFrame} ring={equippedRing} renderConfigOverride={profileMedia?.render_config} className={cn("origin-center", speaking && "ring-2 ring-fuchsia-400 shadow-[0_0_24px_rgba(236,72,153,0.95)] animate-[pulse_0.85s_ease-in-out_infinite]")} /></CpSeatAura>
           <span className={cn("absolute bottom-0 right-0 z-40 grid h-4 w-4 place-items-center rounded-full border-2 border-black text-white shadow-md", isMuted ? "bg-red-500" : "bg-emerald-500")}>{isMuted ? <MicOff className="h-2 w-2" /> : <Mic className="h-2 w-2" />}</span>
         </span>
         <span className="flex w-full items-center justify-center gap-0.5 truncate px-0.5 text-[9px] font-bold leading-tight text-white text-center drop-shadow"><span className="truncate">{username}</span><CountryFlag country={profileMedia?.country} countryCode={profileMedia?.country_code} className="text-[10px]" /></span>
@@ -155,6 +156,14 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
             country_code: row.country_code ?? null,
           };
         }
+        void supabase.rpc("cp_room_badges", { p_user_ids: ids }).then(({ data: cpRows, error: cpError }) => {
+          if (!active || cpError || !cpRows) return;
+          for (const cp of cpRows as Array<{ user_id: string; partner_id: string; partner_username: string | null; partner_avatar: string | null; cp_level: number; cp_level_name: string; badge_url: string | null; intimacy_score: number }>) {
+            const previous = next[cp.user_id] ?? { frame: null, ring: null, level: 0, render_config: {}, country: null, country_code: null };
+            next[cp.user_id] = { ...previous, cp_level: Number(cp.cp_level), cp_level_name: cp.cp_level_name, cp_partner_id: cp.partner_id, cp_partner_username: cp.partner_username, cp_partner_avatar: cp.partner_avatar, cp_badge_url: cp.badge_url, cp_intimacy_score: Number(cp.intimacy_score) };
+          }
+          if (active) setProfileMediaById({ ...next });
+        });
         setProfileMediaById(next);
       });
     return () => { active = false; };
@@ -430,6 +439,9 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
       <div data-seat-grid-cells="true" className="grid w-full grid-cols-5 items-start justify-items-center gap-x-1 gap-y-1 bg-transparent [grid-auto-rows:84px]">
         {allSeats.map((seat) => {
           const seatIdx = seat.index ?? seat.seatNumber ?? 1;
+          const occupiedIds = new Set([host.id, ...seats.map((item) => item.user?.id).filter((id): id is string => !!id)]);
+          const seatCp = seat.user?.id ? profileMediaById[seat.user.id] : null;
+          const partnerPresentOnStage = !!seatCp?.cp_partner_id && occupiedIds.has(seatCp.cp_partner_id);
           if (seat.isHost) return (
             <div key={seatIdx} data-seat="true" data-seat-cell="true" data-user-dp={host.id} data-jalwa-live-component="voice.host" data-seat-index={seatIdx} className="relative flex h-[68px] min-h-[68px] w-full min-w-0 flex-col items-center justify-start p-0.5 overflow-visible">
               <div className="group relative flex w-full flex-col items-center justify-center gap-0.5 bg-transparent p-0">
@@ -443,7 +455,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
               </div>
             </div>
           );
-          return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} profileMedia={seat.user?.id ? profileMediaById[seat.user.id] ?? null : null} onClick={() => void handleSeatClick(seat)} />;
+          return <Seat key={seatIdx} seat={{ ...seat, index: seatIdx }} profileMedia={seat.user?.id ? profileMediaById[seat.user.id] ?? null : null} partnerPresentOnStage={partnerPresentOnStage} onClick={() => void handleSeatClick(seat)} />;
         })}
       </div>
 
