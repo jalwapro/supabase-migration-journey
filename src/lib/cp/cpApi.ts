@@ -81,6 +81,42 @@ export async function getCpPrelinkRomanticGiftTotal(receiverId: string): Promise
   return Number(data ?? 0);
 }
 
+export type CpBreakupRequest = {
+  id: string;
+  relation_id: string;
+  requester_id: string;
+  recipient_id: string;
+  status: "pending" | "accepted" | "rejected" | "cancelled";
+  created_at: string;
+  responded_at: string | null;
+};
+
+export async function requestCpBreakup(relationId: string) {
+  const { data, error } = await supabase.rpc("cp_request_breakup", {
+    p_relation_id: relationId,
+  });
+  return requireData(data, error);
+}
+
+export async function respondCpBreakupRequest(requestId: string, accept: boolean) {
+  const { data, error } = await supabase.rpc("cp_respond_breakup_request", {
+    p_request_id: requestId,
+    p_accept: accept,
+  });
+  return requireData(data, error);
+}
+
+export async function getCpBreakupRequests(userId: string): Promise<CpBreakupRequest[]> {
+  const { data, error } = await supabase
+    .from("cp_breakup_requests")
+    .select("*")
+    .eq("status", "pending")
+    .or(`requester_id.eq.${userId},recipient_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as CpBreakupRequest[];
+}
+
 export async function getCpStatus(userId: string): Promise<CpRelation | null> {
   const { data, error } = await supabase
     .from("cp_relations")
