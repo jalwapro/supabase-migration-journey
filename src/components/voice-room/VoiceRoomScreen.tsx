@@ -208,16 +208,10 @@ export const VoiceRoomScreen = ({ room, roomId, seatCount, roomCode, onlineCount
   };
 
   const handleHostSeatProfileTap = () => {
-    const host = room.host;
-    if (!host?.id) return;
-    setSelectedMember({
-      id: host.id,
-      username: host.username,
-      avatar: host.avatar,
-      level: host.level,
-      gift_score: host.gift_score,
-      is_muted: false,
-    });
+    // Viewing the host profile is allowed for every room participant.
+    // Occupying/changing the host seat remains a separate, owner-only action.
+    if (!room.host?.id) return;
+    onHostTap?.();
   };
 
   return (
