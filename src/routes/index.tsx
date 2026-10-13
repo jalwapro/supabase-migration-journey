@@ -47,6 +47,7 @@ import {
   LifeBuoy,
   Share2,
   Globe2,
+  Heart,
 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -498,6 +499,14 @@ function Home() {
             <div className="flex shrink-0 items-center gap-1.5">
               {user && (
                 <>
+                  <Link
+                    to="/cp"
+                    aria-label="CP Center"
+                    title="CP Center"
+                    className="grid h-9 w-9 place-items-center rounded-full border border-fuchsia-400/30 bg-fuchsia-500/10 text-fuchsia-300 transition hover:border-fuchsia-300/70 hover:bg-fuchsia-500/20"
+                  >
+                    <Heart className="h-4 w-4 fill-current" />
+                  </Link>
                   <Link
                     to="/notifications"
                     aria-label="Notifications"

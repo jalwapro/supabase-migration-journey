@@ -392,6 +392,7 @@ function MePage() {
               {isAdmin && <FeatureCard to="/admin" icon={ShieldCheck} title="Admin Panel" sub="Manage the whole app" color="#fbbf24" elite />}
               {isPartner && <FeatureCard to="/partner" icon={ShieldCheck} title="Partner" sub={`${partnerRow?.percentage ?? 0}% share`} color="#fbbf24" elite />}
               <FeatureCard to="/coin-sellers" icon={Coins} title="P2P Buy / Sell" sub="Browse listed Coin Agents and contact them on WhatsApp" color="#fbbf24" elite />
+              <FeatureCard to="/cp" icon={CpHomeAssetIcon} title="CP Center" sub="Couple proposals, intimacy levels and weekly ranking" color="#e879f9" elite />
               {(coinAgentRole === "super_coin_agent" || coinAgentRole === "coin_agent" || !!coinAgent) && <FeatureCard to={coinAgentRole === "super_coin_agent" ? "/p2p/agent" : "/coin-sellers"} icon={coinAgentRole === "super_coin_agent" ? Crown : Store} title={coinAgentRole === "super_coin_agent" ? "Super Coin Agent Dashboard" : "Coin Agent Panel"} sub={coinAgentRole === "super_coin_agent" ? "Manage your team of up to 5 agents" : "Manage coin stock and customer transfers"} color="#fbbf24" elite />}
               {coinAgent && (
                 <a href="/support?topic=coin-seller-stock" className="group relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-4 transition-all hover:border-[#22d3ee]/40 active:scale-[0.98]">
@@ -593,6 +594,10 @@ function Quick({
       <span className="text-[11px] font-semibold text-white/85">{label}</span>
     </Link>
   );
+}
+
+function CpHomeAssetIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return <img src="/images/cp/ic_home_cp.png" alt="" className={className} style={{ objectFit: "contain", ...style }} />;
 }
 
 function FeatureCard({

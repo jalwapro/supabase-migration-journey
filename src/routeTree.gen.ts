@@ -34,6 +34,7 @@ import { Route as TestLivekitRouteImport } from './routes/test-livekit'
 import { Route as VoiceRoomRedesignRouteImport } from './routes/voice-room-redesign'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedBlockedRouteImport } from './routes/_authenticated/blocked'
+import { Route as AuthenticatedCpRouteImport } from './routes/_authenticated/cp'
 import { Route as AuthenticatedCoinSellersRouteImport } from './routes/_authenticated/coin-sellers'
 import { Route as AuthenticatedP2pAgentRouteImport } from './routes/_authenticated/p2p.agent'
 import { Route as AuthenticatedCreateRoomRouteImport } from './routes/_authenticated/create-room'
@@ -110,6 +111,7 @@ import { Route as AuthenticatedAdminNotificationsRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminPartnersRouteImport } from './routes/_authenticated/admin.partners'
 import { Route as AuthenticatedAdminPaymentAccountsRouteImport } from './routes/_authenticated/admin.payment-accounts'
 import { Route as AuthenticatedAdminPkRouteImport } from './routes/_authenticated/admin.pk'
+import { Route as AuthenticatedAdminCpRouteImport } from './routes/_authenticated/admin.cp'
 import { Route as AuthenticatedAdminProfileAdminRouteImport } from './routes/_authenticated/admin.profile-admin'
 import { Route as AuthenticatedAdminProfileCardsRouteImport } from './routes/_authenticated/admin.profile-cards'
 import { Route as AuthenticatedAdminPushRouteImport } from './routes/_authenticated/admin.push'
@@ -276,6 +278,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
 const AuthenticatedBlockedRoute = AuthenticatedBlockedRouteImport.update({
   id: '/blocked',
   path: '/blocked',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCpRoute = AuthenticatedCpRouteImport.update({
+  id: '/cp',
+  path: '/cp',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCoinSellersRoute =
@@ -683,6 +690,11 @@ const AuthenticatedAdminPaymentAccountsRoute =
     path: '/payment-accounts',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCpRoute = AuthenticatedAdminCpRouteImport.update({
+  id: '/cp',
+  path: '/cp',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminPkRoute = AuthenticatedAdminPkRouteImport.update({
   id: '/pk',
   path: '/pk',
@@ -958,6 +970,7 @@ export interface FileRoutesByFullPath {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/blocked': typeof AuthenticatedBlockedRoute
+  '/cp': typeof AuthenticatedCpRoute
   '/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/create-room': typeof AuthenticatedCreateRoomRoute
@@ -1032,6 +1045,7 @@ export interface FileRoutesByFullPath {
   '/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/admin/cp': typeof AuthenticatedAdminCpRoute
   '/admin/pk': typeof AuthenticatedAdminPkRoute
   '/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
   '/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
@@ -1248,6 +1262,7 @@ export interface FileRoutesById {
   '/voice-room-redesign': typeof VoiceRoomRedesignRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/_authenticated/blocked': typeof AuthenticatedBlockedRoute
+  '/_authenticated/cp': typeof AuthenticatedCpRoute
   '/_authenticated/coin-sellers': typeof AuthenticatedCoinSellersRoute
   '/_authenticated/p2p/agent': typeof AuthenticatedP2pAgentRoute
   '/_authenticated/create-room': typeof AuthenticatedCreateRoomRoute
@@ -1322,6 +1337,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/notifications': typeof AuthenticatedAdminNotificationsRoute
   '/_authenticated/admin/partners': typeof AuthenticatedAdminPartnersRoute
   '/_authenticated/admin/payment-accounts': typeof AuthenticatedAdminPaymentAccountsRoute
+  '/_authenticated/admin/cp': typeof AuthenticatedAdminCpRoute
   '/_authenticated/admin/pk': typeof AuthenticatedAdminPkRoute
   '/_authenticated/admin/profile-admin': typeof AuthenticatedAdminProfileAdminRoute
   '/_authenticated/admin/profile-cards': typeof AuthenticatedAdminProfileCardsRoute
@@ -2968,6 +2984,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminPartnersRoute: AuthenticatedAdminPartnersRoute,
   AuthenticatedAdminPaymentAccountsRoute:
     AuthenticatedAdminPaymentAccountsRoute,
+  AuthenticatedAdminCpRoute: AuthenticatedAdminCpRoute,
   AuthenticatedAdminPkRoute: AuthenticatedAdminPkRoute,
   AuthenticatedAdminProfileAdminRoute: AuthenticatedAdminProfileAdminRoute,
   AuthenticatedAdminProfileCardsRoute: AuthenticatedAdminProfileCardsRoute,
@@ -3062,6 +3079,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
   AuthenticatedBlockedRoute: AuthenticatedBlockedRoute,
+  AuthenticatedCpRoute: AuthenticatedCpRoute,
   AuthenticatedCoinSellersRoute: AuthenticatedCoinSellersRoute,
   AuthenticatedP2pAgentRoute: AuthenticatedP2pAgentRoute,
   AuthenticatedCreateRoomRoute: AuthenticatedCreateRoomRoute,

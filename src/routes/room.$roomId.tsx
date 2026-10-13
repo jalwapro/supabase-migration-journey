@@ -71,6 +71,7 @@ import { GiftSheet, type GiftReceiver, type Gift as ShopGift } from "@/component
 import { ComboGiftButton, type ComboState } from "@/components/room/ComboGiftButton";
 import { GiftAnimationPlayer } from "@/components/room/GiftAnimationPlayer";
 import { EntrancePlayer } from "@/components/room/EntrancePlayer";
+import SvgaPlayer from "@/components/room/SvgaPlayer";
 import { useRoomEntrances } from "@/hooks/useRoomEntrances";
 import GiftComboHud from "@/components/room/GiftComboHud";
 import { GiftAudioControl } from "@/components/room/GiftAudioControl";
@@ -396,6 +397,8 @@ function RoomPage() {
   }, []);
 
   const [members, setMembers] = useState<Member[]>([]);
+  const [cpMicPairId, setCpMicPairId] = useState<string | null>(null);
+  const [cpSeatFrames, setCpSeatFrames] = useState<Record<string, string>>({});
   const [popularity, setPopularity] = useState<{ coin_score: number; like_count: number; gift_count: number }>({
     coin_score: 0,
     like_count: 0,
@@ -451,6 +454,7 @@ function RoomPage() {
   const [giftPoints, setGiftPoints] = useState<Record<string, number>>({});
   const [recentGiftUsers, setRecentGiftUsers] = useState<Record<string, number>>({});
   const membersRef = useRef<Member[]>([]);
+  const cpMicPairRef = useRef<string | null>(null);
   const [milestoneOpen, setMilestoneOpen] = useState(false);
   const [topGifters, setTopGifters] = useState<TopGifter[]>([]);
   const [milestoneGifts, setMilestoneGifts] = useState<Array<{ id: string; name: string; emoji: string | null; icon: string | null; clip_path: string | null; clip_type: string | null }>>([]);
@@ -570,6 +574,52 @@ function RoomPage() {
   const shouldPublish = isHost || iAmOnSeat;
   const isVideo = room.data?.room_type === "video";
   const isModerator = !!myMember?.is_moderator;
+  const seatedMemberKey = members
+    .filter((member) => member.seat_index !== null && member.seat_index !== undefined)
+    .map((member) => member.user_id)
+    .sort()
+    .join("|");
+  const finishCpMicAnimation = useCallback(() => setCpMicPairId(null), []);
+
+  // CP entrance effect is driven by the app's room_members seat state only.
+  // It does not change microphone permissions or any LiveKit/Zego transport code.
+  useEffect(() => {
+    if (!user?.id || !roomId) return;
+    if (!seatedMemberKey) {
+      cpMicPairRef.current = null;
+      setCpMicPairId(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase.rpc("cp_room_seated_pairs", { p_room_id: roomId });
+      if (cancelled) return;
+      if (error) {
+        console.warn("[CP mic animation]", error.message);
+        return;
+      }
+      const pairs = (data ?? []) as Array<{ relation_id: string; user1_id: string; user2_id: string; seat_frame_url: string | null }>;
+      const frameMap: Record<string, string> = {};
+      for (const pair of pairs) {
+        if (pair.seat_frame_url) {
+          frameMap[pair.user1_id] = pair.seat_frame_url;
+          frameMap[pair.user2_id] = pair.seat_frame_url;
+        }
+      }
+      setCpSeatFrames(frameMap);
+      const nextPairId = pairs[0]?.relation_id ?? null;
+      if (!nextPairId) {
+        cpMicPairRef.current = null;
+        setCpMicPairId(null);
+        return;
+      }
+      if (cpMicPairRef.current !== nextPairId) {
+        cpMicPairRef.current = nextPairId;
+        setCpMicPairId(nextPairId);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [roomId, user?.id, seatedMemberKey]);
 
   useEffect(() => {
     setLockedSeats(room.data?.locked_seats ?? []);
@@ -2101,6 +2151,7 @@ function RoomPage() {
       id: r.host_id,
       username: r.host?.username ?? "Host",
       avatar: r.host?.avatar ?? null,
+      avatar_frame_url: cpSeatFrames[r.host_id] ?? r.host?.frame ?? null,
       country: r.host?.country ?? null,
       country_code: r.host?.country_code ?? null,
       city: r.host?.city ?? null,
@@ -2127,6 +2178,7 @@ function RoomPage() {
           id: m.user_id,
           username: m.user?.username ?? "User",
           avatar: m.user?.avatar ?? null,
+          avatar_frame_url: cpSeatFrames[m.user_id] ?? m.user?.frame ?? null,
           country: m.user?.country ?? null,
           country_code: m.user?.country_code ?? null,
           city: (m.user as { city?: string | null } | undefined)?.city ?? null,
@@ -2158,6 +2210,18 @@ className="fixed inset-0 z-40 flex flex-col overflow-hidden text-white bg-black 
 style={roomStyle}
 >
 <CamStudio open={filterSheetOpen} onClose={() => setFilterSheetOpen(false)} />
+{cpMicPairId && (
+  <div key={cpMicPairId} className="pointer-events-none absolute inset-0 z-[100] grid place-items-center">
+    <img src="/images/cp/ic_room_entry_cp.png" alt="" className="absolute top-[14%] h-12 w-12 object-contain drop-shadow-lg" />
+    <SvgaPlayer
+      src="/animations/cp/svga_room_mic_cp.svga"
+      loops={1}
+      clearsAfterStop
+      className="h-[min(68vh,420px)] w-[min(92vw,420px)]"
+      onFinished={finishCpMicAnimation}
+    />
+  </div>
+)}
 
 <VoiceRoomScreen 
 room={mappedRoomState}
