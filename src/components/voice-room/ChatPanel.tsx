@@ -93,11 +93,11 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
 
   return (
     <div 
-      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60 backdrop-blur-sm animate-fade-in p-0" 
+      className="fixed inset-0 z-[2147483000] flex items-end justify-center bg-black/60  animate-fade-in p-0" 
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[485px] h-[52svh] rounded-t-[32px] border-t border-white/20 bg-[#0d0714]/95 p-4 text-white shadow-[0_-10px_35px_rgba(139,92,246,0.25)] backdrop-blur-2xl flex flex-col justify-between animate-slide-up"
+        className="w-full max-w-[485px] h-[52svh] rounded-t-[32px] border-t border-white/20 bg-[#0d0714]/95 p-4 text-white shadow-[0_-10px_35px_rgba(139,92,246,0.25)]  flex flex-col justify-between animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Top Header & Announcement Bar */}
@@ -148,7 +148,7 @@ export function ChatPanel({ open, onClose, messages, onSend, announcement }: Cha
       {/* Clean Comment Input Popup attached directly to keyboard with search/plain input mode to completely prevent key/card/location toolbars */}
       {showInputPopup && (
         <div 
-          className="fixed inset-0 z-[2147483500] flex items-end justify-center bg-black/50 backdrop-blur-[2px] animate-fade-in p-0"
+          className="fixed inset-0 z-[2147483500] flex items-end justify-center bg-black/50  animate-fade-in p-0"
           onClick={() => setShowInputPopup(false)}
         >
           <div 
