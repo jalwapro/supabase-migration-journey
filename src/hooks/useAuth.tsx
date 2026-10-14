@@ -9,6 +9,7 @@ import {
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getDevicePosition } from "@/lib/device-location";
 
 export type Profile = {
   id: string;
@@ -183,14 +184,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAdminPermissions(permissions);
   }, [user]);
 
-  // Automatically request GPS once for a signed-in profile that has no country.
-  // Country and city are persisted only as coarse location; exact coordinates are discarded.
+  // Automatically detect a coarse country/city for signed-in profiles using
+  // Capacitor's native GPS bridge on Android and browser geolocation on web.
   useEffect(() => {
     if (!user || !profile || profile.country || profile.country_code || isStudioPreview()) return;
-    if (typeof navigator === "undefined" || !navigator.geolocation) return;
     let cancelled = false;
-    navigator.geolocation.getCurrentPosition(async (position) => {
+    void (async () => {
       try {
+        const position = await getDevicePosition({
+          enableHighAccuracy: false,
+          timeout: 12000,
+          maximumAge: 300000,
+        });
         const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${position.coords.latitude}&lon=${position.coords.longitude}&zoom=10&addressdetails=1`;
         const response = await fetch(url, { headers: { Accept: "application/json" } });
         if (!response.ok) return;
@@ -216,10 +221,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         if (!cancelled) console.warn("[useAuth] GPS country detection", error);
       }
-    }, (error) => {
-      // Permission denial is not fatal; the profile screen offers a retry button.
-      if (error.code !== 1) console.info("[useAuth] GPS location unavailable", error.message);
-    }, { enableHighAccuracy: false, timeout: 12000, maximumAge: 300000 });
+    })();
     return () => { cancelled = true; };
   }, [user?.id, profile?.id, profile?.country, profile?.country_code, refresh]);
 
