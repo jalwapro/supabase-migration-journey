@@ -51,17 +51,36 @@ export function subscribeAssetCacheProgress(listener: (value: AssetCacheProgress
   return () => { listeners.delete(listener); };
 }
 
+let metaDbPromise: Promise<IDBDatabase | null> | null = null;
+
 function openMetaDb(): Promise<IDBDatabase | null> {
   if (!isBrowser() || !("indexedDB" in window)) return Promise.resolve(null);
-  return new Promise(resolve => {
+  if (metaDbPromise) return metaDbPromise;
+
+  metaDbPromise = new Promise(resolve => {
     const req = indexedDB.open(META_DB, 1);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(META_STORE)) db.createObjectStore(META_STORE, { keyPath: "url" });
     };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => resolve(null);
+    req.onsuccess = () => {
+      const db = req.result;
+      db.onversionchange = () => {
+        db.close();
+        metaDbPromise = null;
+      };
+      resolve(db);
+    };
+    req.onerror = () => {
+      metaDbPromise = null;
+      resolve(null);
+    };
+    req.onblocked = () => {
+      metaDbPromise = null;
+      resolve(null);
+    };
   });
+  return metaDbPromise;
 }
 
 async function putMeta(meta: Meta) {
@@ -188,6 +207,11 @@ export async function warmAssetManifest(assets: AssetManifestItem[], concurrency
         failed += 1;
         publish({ status: navigator.onLine ? "downloading" : "offline" });
       }
+      // Yield between low-end-device downloads so cache warmup does not keep
+      // the WebView main thread and network queue continuously busy.
+      if (concurrency <= BACKGROUND_CONCURRENCY) {
+        await new Promise(resolve => window.setTimeout(resolve, 80));
+      }
     }
   };
 
@@ -216,6 +240,7 @@ export async function clearJalwaAssetCache() {
   await caches.delete(CACHE_NAME);
   const db = await openMetaDb();
   if (db) db.close();
+  metaDbPromise = null;
 }
 
 export async function initJalwaAssetCache() {
@@ -265,8 +290,16 @@ export async function initJalwaAssetCache() {
   if (!navigator.onLine) {
     publish({ status: "offline", total: 0, completed: 0, percent: 0, currentAsset: null });
   } else {
-    // Let the first screen render before starting bulk media downloads.
-    window.setTimeout(startWarmup, 1200);
+    // Let startup, route rendering, and the first user interaction settle before
+    // bulk media downloads. This is especially important for Android WebView.
+    const win = window as Window & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+    };
+    if (win.requestIdleCallback) {
+      win.requestIdleCallback(startWarmup, { timeout: 6000 });
+    } else {
+      window.setTimeout(startWarmup, 4500);
+    }
   }
 
   // If first launch happened offline, begin filling the cache when connectivity
