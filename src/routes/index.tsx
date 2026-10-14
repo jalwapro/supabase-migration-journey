@@ -163,7 +163,7 @@ function FirstHomeLoading({
       aria-live="polite"
       aria-label="Loading JALWA"
     >
-      <div className="mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-background/95 p-3.5 shadow-2xl backdrop-blur-xl">
+      <div className="mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-background/95 p-3.5 shadow-2xl ">
         <div className="flex items-center gap-3">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-[color:var(--primary)]" />
@@ -269,6 +269,9 @@ function Home() {
 
   const liveUsers = useQuery({
     queryKey: ["home-live-users"],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const since = new Date(Date.now() - 2 * 60_000).toISOString();
       const { data, error } = await supabase
@@ -291,6 +294,9 @@ function Home() {
   // popularity/coin_score, take top 2. Cheap and independent of pagination.
   const topHostsQ = useQuery({
     queryKey: ["home-top-hosts", tab, countryFilter],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       let sel = supabase
         .from("live_rooms")
@@ -456,7 +462,7 @@ function Home() {
         />
         {/* Premium top bar */}
         <header
-          className="sticky top-0 z-30 border-b border-white/10 bg-[#10051C]/85 text-white shadow-[0_8px_28px_rgba(0,0,0,0.24)] backdrop-blur-2xl"
+          className="sticky top-0 z-30 border-b border-white/10 bg-[#10051C]/85 text-white shadow-[0_8px_28px_rgba(0,0,0,0.24)] -2xl"
           style={{ paddingTop: "env(safe-area-inset-top)" }}
         >
           <div className="mx-auto grid max-w-md grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-3 py-2.5">
@@ -486,7 +492,7 @@ function Home() {
             </Link>
             )}
 
-            <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-[#1D0C33]/80 px-3 py-2 shadow-inner backdrop-blur transition focus-within:border-yellow-400/60 focus-within:bg-[#2A154A]/80">
+            <label className="group flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-[#1D0C33]/80 px-3 py-2 shadow-inner  transition focus-within:border-yellow-400/60 focus-within:bg-[#2A154A]/80">
               <Search className="h-4 w-4 text-white/45 transition group-focus-within:text-yellow-400" />
               <input
                 value={q}
@@ -662,7 +668,7 @@ function Home() {
             ) : (
               <div className="glow-4d relative aspect-[16/8] w-full overflow-hidden rounded-3xl border border-white/10 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklab,var(--gold)_35%,transparent),transparent_60%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklab,var(--secondary)_50%,transparent),transparent_60%),linear-gradient(135deg,color-mix(in_oklab,var(--primary)_40%,transparent),color-mix(in_oklab,var(--secondary)_50%,transparent))] p-5">
                 <div className="flex h-full flex-col justify-between">
-                  <span className="w-fit rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
+                  <span className="w-fit rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest ">
                     <Sparkles className="mr-1 inline h-3 w-3" /> Welcome
                   </span>
                   <div>
@@ -736,7 +742,7 @@ function Home() {
 
           {/* Country filter replaces the Voice Room tab */}
           <section className="mx-auto mt-4 max-w-md px-4">
-            <label className="flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-gradient-to-r from-[#251142]/95 to-[#160925]/95 px-3 py-2.5 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl">
+            <label className="flex items-center gap-2 rounded-2xl border border-yellow-400/20 bg-gradient-to-r from-[#251142]/95 to-[#160925]/95 px-3 py-2.5 text-sm shadow-[0_8px_24px_rgba(0,0,0,0.2)] ">
               <Globe2 className="h-4 w-4 shrink-0 text-yellow-400" />
               <span className="shrink-0 text-[10px] font-black uppercase tracking-[.18em] text-white/60">Country</span>
               <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} className="min-w-0 flex-1 rounded-lg bg-transparent text-sm font-bold text-white outline-none focus-visible:ring-1 focus-visible:ring-yellow-400" style={{ colorScheme: "dark" }}>
@@ -918,6 +924,9 @@ type TopFrameRow = {
 function useTopRankFrames() {
   return useQuery({
     queryKey: ["room_top_frames_active"],
+    staleTime: 10 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("room_top_frames")
@@ -1046,13 +1055,13 @@ const RoomCard = memo(function RoomCard({ room, frameTone }: { room: Room; frame
         </div>
       )}
 
-      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur">
+      <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white ">
         <Users className="h-2.5 w-2.5" />
         {room.viewer_count}
       </div>
 
       {room.is_locked && (
-        <div className="absolute right-2 top-9 grid h-6 w-6 place-items-center rounded-full bg-black/60 backdrop-blur">
+        <div className="absolute right-2 top-9 grid h-6 w-6 place-items-center rounded-full bg-black/60 ">
           <Lock className="h-3 w-3 text-white" />
         </div>
       )}
@@ -1090,7 +1099,7 @@ const RoomListItem = memo(function RoomListItem({ room }: { room: Room }) {
     <Link
       to="/room/$roomId"
       params={{ roomId: room.id }}
-      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-r from-[#251142]/95 to-[#120624]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)] backdrop-blur-xl transition active:scale-[0.99] hover:border-yellow-400/20"
+      className="group flex items-center gap-3 rounded-2xl border border-white/10 bg-gradient-to-r from-[#251142]/95 to-[#120624]/95 p-2.5 shadow-[0_8px_24px_rgba(0,0,0,0.2)]  transition active:scale-[0.99] hover:border-yellow-400/20"
     >
       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white/5">
         {room.cover_url ? (
