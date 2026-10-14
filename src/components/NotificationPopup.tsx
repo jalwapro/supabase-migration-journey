@@ -159,7 +159,7 @@ export function NotificationPopup() {
   return (
     <DialogPrimitive.Root open={!!notif} onOpenChange={(o) => !o && close()}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
           className="fixed left-1/2 top-6 z-50 w-[calc(100%-1.5rem)] max-w-sm -translate-x-1/2 rounded-3xl p-[1.5px] outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-top-4 data-[state=open]:slide-in-from-top-4"
           style={{
@@ -170,12 +170,12 @@ export function NotificationPopup() {
           }}
         >
           {notif && theme && (
-            <div className="relative overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-gradient-to-b from-[#1a0b2e]/95 via-[#2d0b4d]/95 to-[#0f0520]/95 backdrop-blur-2xl">
+            <div className="relative overflow-hidden rounded-[calc(1.5rem-1.5px)] bg-gradient-to-b from-[#1a0b2e]/95 via-[#2d0b4d]/95 to-[#0f0520]/95 ">
               {/* accent glow */}
               <div className={`pointer-events-none absolute -top-16 -right-10 h-40 w-40 rounded-full bg-gradient-to-br ${theme.accent} opacity-30 blur-3xl`} />
               <div className="pointer-events-none absolute -bottom-20 -left-10 h-40 w-40 rounded-full bg-gradient-to-br from-fuchsia-500/30 to-transparent blur-3xl" />
 
-              <DialogPrimitive.Close className="absolute right-3 top-3 z-10 rounded-full bg-white/5 p-1.5 text-white/70 backdrop-blur transition hover:bg-white/15 hover:text-white">
+              <DialogPrimitive.Close className="absolute right-3 top-3 z-10 rounded-full bg-white/5 p-1.5 text-white/70  transition hover:bg-white/15 hover:text-white">
                 <X className="h-4 w-4" />
                 <span className="sr-only">Close</span>
               </DialogPrimitive.Close>
@@ -215,7 +215,7 @@ export function NotificationPopup() {
 
                 {/* Quick reply for DMs */}
                 {isDM && peerId && (
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-2 backdrop-blur">
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-2 ">
                     <textarea
                       value={reply}
                       onChange={(e) => setReply(e.target.value)}
