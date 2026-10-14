@@ -565,7 +565,7 @@ export function SeatGrid({ seats, seatCount, host, roomId, isHost = false, onSea
 
       {selectedEmptySeat && (
         <div className="absolute inset-0 z-50 flex items-end justify-center px-3 pb-3 pointer-events-none" onClick={() => setSelectedEmptySeat(null)}>
-          <div className="pointer-events-auto relative w-full max-w-sm rounded-[26px] border border-white/10 bg-slate-950/95 p-4 text-white shadow-2xl backdrop-blur-2xl" onClick={e => e.stopPropagation()}>
+          <div className="pointer-events-auto relative w-full max-w-sm rounded-[26px] border border-white/10 bg-slate-950/95 p-4 text-white shadow-2xl " onClick={e => e.stopPropagation()}>
             <div className="mb-3 flex items-center justify-between">
               <div><div className="text-[11px] font-black uppercase tracking-wider text-amber-300">Seat Manager</div><div className="text-sm font-bold">Seat No. {selectedEmptySeat.index ?? selectedEmptySeat.seatNumber}</div></div>
               <button type="button" onClick={() => setSelectedEmptySeat(null)} className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white"><X className="h-4 w-4" /></button>
